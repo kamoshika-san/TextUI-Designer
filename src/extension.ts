@@ -95,7 +95,6 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
-<<<<<<< HEAD
 	// --- Diagnostics（赤波線）機能 ---
 	const diagnosticCollection = vscode.languages.createDiagnosticCollection('textui-designer');
 
@@ -156,7 +155,6 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 	// 拡張機能起動時にも全*.tui.ymlをチェック
 	vscode.workspace.textDocuments.forEach(doc => validateAndReportDiagnostics(doc));
-=======
 	// --- YAML用IntelliSense: コンポーネント名補完 ---
 	const COMPONENT_NAMES = [
 		'Text', 'Input', 'Button', 'Checkbox', 'Radio', 'Select', 'Divider', 'Container', 'Alert', 'Form'
@@ -277,7 +275,6 @@ export function activate(context: vscode.ExtensionContext) {
 			'-', ':' // トリガー文字: ハイフン・コロン
 		)
 	);
->>>>>>> main
 }
 
 function sendYamlToWebview(panel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
