@@ -14,7 +14,8 @@ TextUI Designerは、YAML/JSONベースのDSLでフロントエンドUIを宣言
 - ライブプレビュー（WebView）
 - JSON Schemaによる型安全なDSLバリデーション
 - **IntelliSense（自動補完・型チェック）対応**
-- 豊富なスニペット
+- **エラー箇所のハイライト（赤波線）**
+- **スニペット入力補助（tui:form など）対応**
 - ワンクリックでReact/Tailwind/Pug/HTMLへのエクスポート
 
 ## サンプルDSL（sample.tui.yml）
@@ -137,20 +138,7 @@ page:
 - Container（horizontal, vertical, flex, grid）
 - Form
 
-## 必要要件
-- VS Code 1.80以上
-- Node.js 16以上（開発・ビルド時）
-
-## 既知の問題
-- スキーマや型定義の変更時は、拡張機能の再読み込みが必要な場合があります。
-- 一部の複雑なレイアウトやカスタムCSSには未対応です。
-
-## ライセンス
-MIT
-
 ---
-
-ご意見・ご要望はIssueまでお寄せください。
 
 ## IntelliSense（自動補完・型チェック）について
 
@@ -169,3 +157,50 @@ components:
 ```
 
 ---
+
+## スニペット機能について
+
+主要なTextUIコンポーネントのテンプレートを、Tab補完やコマンドパレットから素早く挿入できます。
+
+- `tui:form` … フォーム一式のテンプレート
+- `tui:input` … 入力欄のテンプレート
+- `tui:container` … レイアウト用コンテナのテンプレート
+- `tui:alert` … アラートのテンプレート
+
+### 使い方
+1. `*.tui.yml` または `*.tui.json` ファイルで、`tui:form` などと入力
+2. Tabキーや補完候補から選択すると、テンプレートが展開されます
+3. `$1`, `$2` などの変数位置にカーソル移動しながら編集できます
+
+### 例（tui:form）
+```yaml
+- Form:
+    id: myForm
+    fields:
+      - Input:
+          label: ユーザー名
+          name: username
+          type: text
+    actions:
+      - Button:
+          kind: primary
+          label: 送信
+          submit: true
+```
+
+---
+
+## 必要要件
+- VS Code 1.80以上
+- Node.js 16以上（開発・ビルド時）
+
+## 既知の問題
+- スキーマや型定義の変更時は、拡張機能の再読み込みが必要な場合があります。
+- 一部の複雑なレイアウトやカスタムCSSには未対応です。
+
+## ライセンス
+MIT
+
+---
+
+ご意見・ご要望はIssueまでお寄せください。
