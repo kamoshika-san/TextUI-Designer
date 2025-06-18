@@ -95,6 +95,66 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
+	// --- Diagnostics（赤波線）機能 ---
+	const diagnosticCollection = vscode.languages.createDiagnosticCollection('textui-designer');
+
+	async function validateAndReportDiagnostics(document: vscode.TextDocument) {
+		if (!document.fileName.endsWith('.tui.yml')) return;
+		const text = document.getText();
+		let diagnostics: vscode.Diagnostic[] = [];
+		try {
+			const yaml = YAML.parse(text);
+			const schemaPath = path.join(context.extensionPath, 'schemas', 'schema.json');
+			const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf-8'));
+			const ajv = new Ajv({ allErrors: true, allowUnionTypes: true });
+			const validate = ajv.compile(schema);
+			const valid = validate(yaml);
+			if (!valid && validate.errors) {
+				for (const err of validate.errors) {
+					const key = err.instancePath.split('/').filter(Boolean).pop();
+					if (key) {
+						const regex = new RegExp(`^\s*${key}:`, 'm');
+						const match = text.match(regex);
+						if (match) {
+							const start = text.indexOf(match[0]);
+							const startPos = document.positionAt(start);
+							const endPos = document.positionAt(start + match[0].length);
+							const diag = new vscode.Diagnostic(
+								new vscode.Range(startPos, endPos),
+								err.message || 'スキーマエラー',
+								vscode.DiagnosticSeverity.Error
+							);
+							diagnostics.push(diag);
+						}
+					}
+				}
+			}
+		} catch (e) {
+			const msg = e instanceof Error ? e.message : String(e);
+			const diag = new vscode.Diagnostic(
+				new vscode.Range(0, 0, 0, 1),
+				msg,
+				vscode.DiagnosticSeverity.Error
+			);
+			diagnostics.push(diag);
+		}
+		diagnosticCollection.set(document.uri, diagnostics);
+	}
+
+	// ドキュメント変更時にDiagnosticsを更新
+	context.subscriptions.push(
+		vscode.workspace.onDidChangeTextDocument(event => {
+			validateAndReportDiagnostics(event.document);
+		})
+	);
+	// アクティブ時にもDiagnosticsを更新
+	context.subscriptions.push(
+		vscode.window.onDidChangeActiveTextEditor(editor => {
+			if (editor) validateAndReportDiagnostics(editor.document);
+		})
+	);
+	// 拡張機能起動時にも全*.tui.ymlをチェック
+	vscode.workspace.textDocuments.forEach(doc => validateAndReportDiagnostics(doc));
 	// --- YAML用IntelliSense: コンポーネント名補完 ---
 	const COMPONENT_NAMES = [
 		'Text', 'Input', 'Button', 'Checkbox', 'Radio', 'Select', 'Divider', 'Container', 'Alert', 'Form'
