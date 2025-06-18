@@ -3,7 +3,7 @@
   "displayName": "TextUI Designer",
   "description": "YAML/JSON DSLでUIを設計するVS Code拡張",
   "publisher": "kamoshika-san",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -20,6 +20,14 @@
       {
         "command": "textui-designer.openPreview",
         "title": "TextUI: Open Preview"
+      },
+      {
+        "command": "textui-designer.createTemplate",
+        "title": "TextUI: 新規テンプレート作成"
+      },
+      {
+        "command": "textui-designer.insertTemplate",
+        "title": "TextUI: テンプレート挿入"
       }
     ],
     "menus": {
