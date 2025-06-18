@@ -45,12 +45,38 @@ export interface FormComponent {
   actions: FormAction[];
 }
 
+export interface RadioComponent {
+  name: string;
+  options: { label: string; value: string }[];
+  selected?: string;
+}
+
+export interface SelectComponent {
+  name: string;
+  options: { label: string; value: string }[];
+  selected?: string;
+}
+
+export interface DividerComponent {
+  label?: string;
+}
+
+export interface AlertComponent {
+  type: 'info' | 'success' | 'warning' | 'error';
+  message: string;
+}
+
 export type ComponentDef =
   | { Text: TextComponent }
   | { Input: InputComponent }
   | { Button: ButtonComponent }
   | { Checkbox: CheckboxComponent }
-  | { Form: FormComponent };
+  | { Form: FormComponent }
+  | { Container: { layout: string; components: ComponentDef[] } }
+  | { Radio: RadioComponent }
+  | { Select: SelectComponent }
+  | { Divider: DividerComponent }
+  | { Alert: AlertComponent };
 
 export interface PageDef {
   id: string;

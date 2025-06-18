@@ -6,6 +6,10 @@ import { Button } from './components/Button';
 import { Checkbox } from './components/Checkbox';
 import { Container } from './components/Container';
 import { Form } from './components/Form';
+import { Radio } from './components/Radio';
+import { Select } from './components/Select';
+import { Divider } from './components/Divider';
+import { Alert } from './components/Alert';
 import type { TextUIDSL, ComponentDef, FormComponent, FormField, FormAction } from './types';
 
 const vscode = (window as any).acquireVsCodeApi ? (window as any).acquireVsCodeApi() : undefined;
@@ -22,6 +26,18 @@ function renderComponent(comp: ComponentDef, key: number): React.ReactNode {
   }
   if ('Checkbox' in comp) {
     return <Checkbox key={key} {...comp.Checkbox} />;
+  }
+  if ('Radio' in comp) {
+    return <Radio key={key} {...comp.Radio} />;
+  }
+  if ('Select' in comp) {
+    return <Select key={key} {...comp.Select} />;
+  }
+  if ('Divider' in comp) {
+    return <Divider key={key} {...comp.Divider} />;
+  }
+  if ('Alert' in comp) {
+    return <Alert key={key} {...comp.Alert} />;
   }
   if ('Container' in comp) {
     // Containerのchildrenを再帰的に描画（仮: childrenプロパティがcomponents配列である前提）
