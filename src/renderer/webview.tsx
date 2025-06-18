@@ -97,7 +97,11 @@ const App: React.FC = () => {
         setError(null);
       } else if (message.type === 'error') {
         setError(message.error);
-        setJson(null);
+      } else if (message.type === 'schema-error') {
+        setError(
+          'スキーマバリデーションエラー:\n' +
+          (message.errors?.map((e: any) => `- ${e.instancePath} ${e.message}`).join('\n') || '')
+        );
       }
     });
   }, []);

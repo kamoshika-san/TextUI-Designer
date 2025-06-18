@@ -1,0 +1,86 @@
+page:
+  id: sample-mvp
+  title: "MVPコンポーネントサンプル"
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: "MVPコンポーネントサンプル"
+    - Text:
+        variant: h2
+        value: "MVPコンポーネントサンプル"
+    - Alert:
+        variant: info
+        message: "これはインフォメーションアラートです"
+    - Alert:
+        variant: warning
+        message: "これは警告アラートです"
+    - Divider:
+        orientation: horizontal
+    - Input:
+        label: "名前"
+        name: "name"
+        type: text
+        required: true
+    - Input:
+        label: "メールアドレス"
+        name: "email"
+        type: email
+        required: true
+    - Checkbox:
+        label: "利用規約に同意する"
+        name: "agree"
+        required: true
+    - Radio:
+        label: "性別"
+        name: "gender"
+        options:
+          - label: "男性"
+            value: "male"
+          - label: "女性"
+            value: "female"
+          - label: "その他"
+            value: "other"
+    - Select:
+        label: "国"
+        name: "country"
+        options:
+          - label: "日本"
+            value: "jp"
+          - label: "アメリカ"
+            value: "us"
+          - label: "イギリス"
+            value: "uk"
+    - Divider:
+        orientation: horizontal
+    - Container:
+        layout: horizontal
+        components:
+          - Button:
+              kind: primary
+              label: "送信"
+              submit: true
+          - Button:
+              kind: secondary
+              label: "キャンセル"
+    - Form:
+        id: "sample-form"
+        fields:
+          - Input:
+              label: "ユーザー名"
+              name: "username"
+              type: text
+              required: true
+          - Input:
+              label: "パスワード"
+              name: "password"
+              type: password
+              required: true
+          - Checkbox:
+              label: "ログイン状態を保持"
+              name: "remember"
+        actions:
+          - Button:
+              kind: submit
+              label: "ログイン"
+              submit: true

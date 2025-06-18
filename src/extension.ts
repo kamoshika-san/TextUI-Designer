@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as YAML from 'yaml';
+import Ajv from 'ajv';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -19,10 +20,9 @@ export function activate(context: vscode.ExtensionContext) {
 	// The commandId parameter must match the command field in package.json
 
 	// プレビューを開くコマンドの登録
-	let disposable = vscode.commands.registerCommand('textui-designer.openPreview', () => {
-		const columnToShowIn = vscode.window.activeTextEditor
-			? vscode.window.activeTextEditor.viewColumn
-			: undefined;
+	let disposable = vscode.commands.registerCommand('textui-designer.openPreview', async () => {
+		// 右側（ViewColumn.Two）にWebViewパネルを表示
+		const columnToShowIn = vscode.ViewColumn.Two;
 
 		if (currentPanel) {
 			currentPanel.reveal(columnToShowIn);
@@ -30,15 +30,18 @@ export function activate(context: vscode.ExtensionContext) {
 			currentPanel = vscode.window.createWebviewPanel(
 				'textuiPreview',
 				'TextUI Preview',
-				columnToShowIn || vscode.ViewColumn.One,
+				columnToShowIn,
 				{
 					enableScripts: true,
 					retainContextWhenHidden: true,
 				}
 			);
 
-			// WebViewの内容を更新
-			updateWebviewContent(currentPanel, context);
+			// WebViewのHTMLは初回のみセット
+			currentPanel.webview.html = getWebviewContent(context, currentPanel);
+
+			// 初回データ送信
+			sendYamlToWebview(currentPanel);
 
 			// パネルが閉じられたときの処理
 			currentPanel.onDidDispose(
@@ -58,7 +61,7 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.window.onDidChangeActiveTextEditor(editor => {
 			if (editor && editor.document.fileName.endsWith('.tui.yml')) {
 				if (currentPanel) {
-					updateWebviewContent(currentPanel, context);
+					sendYamlToWebview(currentPanel);
 				}
 			}
 		})
@@ -69,48 +72,44 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.workspace.onDidChangeTextDocument(event => {
 			if (event.document.fileName.endsWith('.tui.yml')) {
 				if (currentPanel) {
-					updateWebviewContent(currentPanel, context);
+					sendYamlToWebview(currentPanel);
 				}
 			}
 		})
 	);
 }
 
-function updateWebviewContent(panel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
+function sendYamlToWebview(panel: vscode.WebviewPanel) {
 	const editor = vscode.window.activeTextEditor;
-	if (!editor) {
-		panel.webview.html = getErrorHtml('エディタが開かれていません');
-		return;
-	}
-
+	if (!editor) return;
 	const document = editor.document;
-	if (!document.fileName.endsWith('.tui.yml')) {
-		panel.webview.html = getErrorHtml('TextUI YAMLファイルを開いてください');
-		return;
-	}
-
-	// YAMLファイルの内容を取得
+	if (!document.fileName.endsWith('.tui.yml')) return;
 	const yamlContent = document.getText();
-
-	// YAML→JSON変換
 	let json: any = null;
 	let error: string | null = null;
+	let schemaErrors: any = null;
 	try {
 		json = YAML.parse(yamlContent);
+		// スキーマバリデーション
+		const schemaPath = path.join(__dirname, '../../doc/schema.json');
+		const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf-8'));
+		const ajv = new Ajv({ allErrors: true, allowUnionTypes: true });
+		const validate = ajv.compile(schema);
+		const valid = validate(json);
+		if (!valid) {
+			schemaErrors = validate.errors;
+		}
 	} catch (e: any) {
 		error = e.message;
 	}
-
-	// WebViewのHTMLを生成
-	panel.webview.html = getWebviewContent(context, panel);
-
-	// JSONまたはエラーをWebViewに送信
 	setTimeout(() => {
-		panel.webview.postMessage(
-			error
-				? { type: 'error', error }
-				: { type: 'json', json }
-		);
+		if (error) {
+			panel.webview.postMessage({ type: 'error', error });
+		} else if (schemaErrors) {
+			panel.webview.postMessage({ type: 'schema-error', errors: schemaErrors });
+		} else {
+			panel.webview.postMessage({ type: 'json', json });
+		}
 	}, 100);
 }
 
@@ -120,12 +119,29 @@ function getWebviewContent(context: vscode.ExtensionContext, panel?: vscode.Webv
 		const scriptUri = vscode.Uri.joinPath(context.extensionUri, 'media', 'webview.js');
 		scriptSrc = panel.webview.asWebviewUri(scriptUri).toString();
 	}
+
+	// media/assets配下のCSSファイルを検出
+	let cssLink = '';
+	try {
+		const assetsDir = path.join(context.extensionPath, 'media', 'assets');
+		const files = fs.readdirSync(assetsDir);
+		const cssFile = files.find(f => f.endsWith('.css'));
+		if (cssFile && panel) {
+			const cssUri = vscode.Uri.joinPath(context.extensionUri, 'media', 'assets', cssFile);
+			const cssSrc = panel.webview.asWebviewUri(cssUri).toString();
+			cssLink = `<link rel="stylesheet" href="${cssSrc}" />`;
+		}
+	} catch (e) {
+		// CSSが見つからない場合は何もしない
+	}
+
 	return `<!DOCTYPE html>
 	<html lang="ja">
 	<head>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>TextUI Preview</title>
+		${cssLink}
 	</head>
 	<body>
 		<div id="root"></div>

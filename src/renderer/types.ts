@@ -46,23 +46,23 @@ export interface FormComponent {
 }
 
 export interface RadioComponent {
+  label: string;
   name: string;
   options: { label: string; value: string }[];
-  selected?: string;
 }
 
 export interface SelectComponent {
+  label: string;
   name: string;
   options: { label: string; value: string }[];
-  selected?: string;
 }
 
 export interface DividerComponent {
-  label?: string;
+  orientation?: 'horizontal' | 'vertical';
 }
 
 export interface AlertComponent {
-  type: 'info' | 'success' | 'warning' | 'error';
+  variant: 'info' | 'success' | 'warning' | 'error';
   message: string;
 }
 

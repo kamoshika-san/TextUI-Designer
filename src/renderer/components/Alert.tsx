@@ -1,15 +1,17 @@
 import React from 'react';
 import type { AlertComponent } from '../types';
 
-const typeStyles: Record<AlertComponent['type'], string> = {
-  info: 'bg-blue-100 text-blue-800 border-blue-300',
-  success: 'bg-green-100 text-green-800 border-green-300',
-  warning: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-  error: 'bg-red-100 text-red-800 border-red-300',
+const variantStyles: Record<AlertComponent['variant'], string> = {
+  info: 'bg-blue-50 border-blue-200 text-blue-800',
+  success: 'bg-green-50 border-green-200 text-green-800',
+  warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+  error: 'bg-red-50 border-red-200 text-red-800',
 };
 
-export const Alert: React.FC<AlertComponent> = ({ type, message }) => {
+export const Alert: React.FC<AlertComponent> = ({ variant, message }) => {
   return (
-    <div className={`border-l-4 p-3 mb-2 rounded ${typeStyles[type]}`}>{message}</div>
+    <div className={`p-4 rounded-lg mb-4 border ${variantStyles[variant]}`}>
+      {message}
+    </div>
   );
 }; 
