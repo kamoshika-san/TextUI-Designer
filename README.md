@@ -1,71 +1,146 @@
-# textui-designer README
+# TextUI Designer
 
-This is the README for your extension "textui-designer". After writing up a brief description, we recommend including the following sections.
+TextUI Designerは、YAML/JSONベースのDSLでフロントエンドUIを宣言的に設計し、VS Code上で即時プレビュー・型安全な編集体験を提供する拡張機能です。
 
-## Features
+## 主な特徴
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **YAML/JSON DSLでUI設計**: テキストだけでUIを記述し、バージョン管理やレビューも容易。
+- **ライブプレビュー**: `TextUI: Open Preview` コマンドでWebViewプレビュー。保存時に自動リロード。
+- **型安全・バリデーション**: JSON Schema + Ajvによる100%構文・型検証。ミスは即座に赤波線で検知。
+- **豊富なコンポーネント**: Text, Alert, Divider, Input, Checkbox, Radio, Select, Button, Container, Form などをサポート。
+- **Tailwind CSSベースの美しいUI**: カスタムCSS不要でモダンな見た目。
 
-For example if there is an image subfolder under your extension project workspace:
+## サンプルDSL（sample.tui.yml）
 
-\!\[feature X\]\(images/feature-x.png\)
+```yaml
+page:
+  id: sample-mvp
+  title: "MVPコンポーネントサンプル"
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: "MVPコンポーネントサンプル"
+    - Text:
+        variant: h2
+        value: "MVPコンポーネントサンプル"
+    - Alert:
+        variant: info
+        message: "これはインフォメーションアラートです"
+    - Alert:
+        variant: warning
+        message: "これは警告アラートです"
+    - Divider:
+        orientation: horizontal
+    - Input:
+        label: "名前"
+        name: "name"
+        type: text
+        required: true
+    - Input:
+        label: "メールアドレス"
+        name: "email"
+        type: email
+        required: true
+    - Checkbox:
+        label: "利用規約に同意する"
+        name: "agree"
+        required: true
+    - Radio:
+        label: "性別"
+        name: "gender"
+        options:
+          - label: "男性"
+            value: "male"
+          - label: "女性"
+            value: "female"
+          - label: "その他"
+            value: "other"
+    - Select:
+        label: "国"
+        name: "country"
+        options:
+          - label: "日本"
+            value: "jp"
+          - label: "アメリカ"
+            value: "us"
+          - label: "イギリス"
+            value: "uk"
+    - Divider:
+        orientation: horizontal
+    - Container:
+        layout: horizontal
+        components:
+          - Button:
+              kind: primary
+              label: "送信"
+              submit: true
+          - Button:
+              kind: secondary
+              label: "キャンセル"
+    - Container:
+        layout: horizontal
+        components:
+          - Input:
+              label: "test-box"
+              name: "test-name"
+              type: text
+          - Input:
+              label: "test-box"
+              name: "test-name"
+              type: text
+    - Form:
+        id: "sample-form"
+        fields:
+          - Input:
+              label: "ユーザー名"
+              name: "username"
+              type: text
+              required: true
+          - Input:
+              label: "パスワード"
+              name: "password"
+              type: password
+              required: true
+          - Checkbox:
+              label: "ログイン状態を保持"
+              name: "remember"
+        actions:
+          - Button:
+              kind: submit
+              label: "ログイン"
+              submit: true
+```
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## 使い方
 
-## Requirements
+1. `.tui.yml`ファイルを作成し、上記のようなDSLでUIを記述します。
+2. コマンドパレットで`TextUI: Open Preview`を実行し、ライブプレビューを表示します。
+3. ファイル保存時に自動でプレビューが更新されます。
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## サポートコンポーネント一覧
+- Text（h1, h2, h3, p, small, caption）
+- Alert（info, warning, success, error）
+- Divider（horizontal, vertical）
+- Input（text, email, password, number）
+- Checkbox
+- Radio
+- Select
+- Button（primary, secondary, submit）
+- Container（horizontal, vertical, flex, grid）
+- Form
 
-## Extension Settings
+## 必要要件
+- VS Code 1.80以上
+- Node.js 16以上（開発・ビルド時）
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+## 既知の問題
+- スキーマや型定義の変更時は、拡張機能の再読み込みが必要な場合があります。
+- 一部の複雑なレイアウトやカスタムCSSには未対応です。
 
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+## ライセンス
+MIT
 
 ---
 
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+ご意見・ご要望はIssueまでお寄せください。
