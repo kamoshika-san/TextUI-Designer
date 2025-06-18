@@ -30,7 +30,17 @@
           "group": "navigation"
         }
       ]
-    }
+    },
+    "snippets": [
+      {
+        "language": "yaml",
+        "path": "./snippets/tui-snippets.json"
+      },
+      {
+        "language": "json",
+        "path": "./snippets/tui-snippets.json"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

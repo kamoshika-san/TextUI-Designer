@@ -1,0 +1,49 @@
+{
+  "tui:form": {
+    "prefix": "tui:form",
+    "body": [
+      "- Form:",
+      "    id: $1",
+      "    fields:",
+      "      - Input:",
+      "          label: $2",
+      "          name: $3",
+      "          type: ${4|text,email,password,number,multiline|}",
+      "    actions:",
+      "      - Button:",
+      "          kind: primary",
+      "          label: $5",
+      "          submit: true"
+    ],
+    "description": "フォームのテンプレート"
+  },
+  "tui:input": {
+    "prefix": "tui:input",
+    "body": [
+      "- Input:",
+      "    label: $1",
+      "    name: $2",
+      "    type: ${3|text,email,password,number,multiline|}",
+      "    required: ${4|true,false|}"
+    ],
+    "description": "入力欄のテンプレート"
+  },
+  "tui:container": {
+    "prefix": "tui:container",
+    "body": [
+      "- Container:",
+      "    layout: ${1|vertical,horizontal,flex,grid|}",
+      "    components: "
+    ],
+    "description": "レイアウト用コンテナのテンプレート"
+  },
+  "tui:alert": {
+    "prefix": "tui:alert",
+    "body": [
+      "- Alert:",
+      "    variant: ${1|info,success,warning,error|}",
+      "    message: $2"
+    ],
+    "description": "アラートのテンプレート"
+  }
+} 
