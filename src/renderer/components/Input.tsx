@@ -1,21 +1,18 @@
 import React from 'react';
-
-type InputType = 'text' | 'email' | 'password' | 'number';
+import type { InputType } from '../types';
 
 interface InputProps {
   label: string;
   name: string;
   type: InputType;
   required?: boolean;
-  multiline?: boolean;
 }
 
 export const Input: React.FC<InputProps> = ({
   label,
   name,
   type,
-  required = false,
-  multiline = false,
+  required = false
 }) => {
   const inputClasses = 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500';
 
@@ -25,7 +22,7 @@ export const Input: React.FC<InputProps> = ({
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
-      {multiline ? (
+      {type === 'multiline' ? (
         <textarea
           id={name}
           name={name}
