@@ -1,0 +1,272 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://example.com/textui/v0/schema.json",
+    "title": "TextUI Designer DSL v0",
+    "description": "Minimum viable component set for TextUI Designer (v0).",
+    "type": "object",
+    "properties": {
+      "page": {
+        "type": "object",
+        "description": "Page-level metadataとトップレベルのUI要素",
+        "required": ["components"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "layout": {
+            "type": "string",
+            "enum": ["vertical", "horizontal", "flex", "grid"]
+          },
+          "components": { "$ref": "#/definitions/componentArray" }
+        }
+      },
+      "components": { "$ref": "#/definitions/componentArray" }
+    },
+    "definitions": {
+      "componentArray": {
+        "type": "array",
+        "items": { "$ref": "#/definitions/component" }
+      },
+      "component": {
+        "type": "object",
+        "description": "Tagged union of all v0 components",
+        "oneOf": [
+          { "$ref": "#/definitions/Text" },
+          { "$ref": "#/definitions/Input" },
+          { "$ref": "#/definitions/Button" },
+          { "$ref": "#/definitions/Form" },
+          { "$ref": "#/definitions/Checkbox" },
+          { "$ref": "#/definitions/Radio" },
+          { "$ref": "#/definitions/Select" },
+          { "$ref": "#/definitions/Divider" },
+          { "$ref": "#/definitions/Container" },
+          { "$ref": "#/definitions/Alert" }
+        ]
+      },
+  
+      "Text": {
+        "type": "object",
+        "required": ["Text"],
+        "properties": {
+          "Text": {
+            "type": "object",
+            "required": ["variant", "value"],
+            "properties": {
+              "variant": {
+                "type": "string",
+                "enum": ["h1", "h2", "h3", "p", "small", "caption"]
+              },
+              "value": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+  
+      "Input": {
+        "type": "object",
+        "required": ["Input"],
+        "properties": {
+          "Input": {
+            "type": "object",
+            "required": ["label", "name", "type"],
+            "properties": {
+              "label": { "type": "string" },
+              "name": { "type": "string" },
+              "type": {
+                "type": "string",
+                "enum": ["text", "email", "password", "number", "multiline"]
+              },
+              "required": { "type": "boolean", "default": false }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+  
+      "Button": {
+        "type": "object",
+        "required": ["Button"],
+        "properties": {
+          "Button": {
+            "type": "object",
+            "required": ["label"],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["primary", "secondary", "submit"],
+                "default": "primary"
+              },
+              "label": { "type": "string" },
+              "submit": { "type": "boolean", "default": false }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+  
+      "Checkbox": {
+        "type": "object",
+        "required": ["Checkbox"],
+        "properties": {
+          "Checkbox": {
+            "type": "object",
+            "required": ["label", "name"],
+            "properties": {
+              "label": { "type": "string" },
+              "name": { "type": "string" },
+              "required": { "type": "boolean", "default": false }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+  
+      "Radio": {
+        "type": "object",
+        "required": ["Radio"],
+        "properties": {
+          "Radio": {
+            "type": "object",
+            "required": ["label", "name", "options"],
+            "properties": {
+              "label": { "type": "string" },
+              "name": { "type": "string" },
+              "options": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["label", "value"],
+                  "properties": {
+                    "label": { "type": "string" },
+                    "value": { "type": ["string", "number", "boolean"] }
+                  },
+                  "additionalProperties": false
+                },
+                "minItems": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+  
+      "Select": {
+        "type": "object",
+        "required": ["Select"],
+        "properties": {
+          "Select": {
+            "type": "object",
+            "required": ["label", "name", "options"],
+            "properties": {
+              "label": { "type": "string" },
+              "name": { "type": "string" },
+              "options": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["label", "value"],
+                  "properties": {
+                    "label": { "type": "string" },
+                    "value": { "type": ["string", "number", "boolean"] }
+                  },
+                  "additionalProperties": false
+                },
+                "minItems": 1
+              },
+              "multiple": { "type": "boolean", "default": false }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+  
+      "Divider": {
+        "type": "object",
+        "required": ["Divider"],
+        "properties": {
+          "Divider": {
+            "type": "object",
+            "properties": {
+              "orientation": {
+                "type": "string",
+                "enum": ["horizontal", "vertical"],
+                "default": "horizontal"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+  
+      "Container": {
+        "type": "object",
+        "required": ["Container"],
+        "properties": {
+          "Container": {
+            "type": "object",
+            "properties": {
+              "layout": {
+                "type": "string",
+                "enum": ["vertical", "horizontal", "flex", "grid"]
+              },
+              "components": { "$ref": "#/definitions/componentArray" }
+            },
+            "required": ["components"],
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+  
+      "Alert": {
+        "type": "object",
+        "required": ["Alert"],
+        "properties": {
+          "Alert": {
+            "type": "object",
+            "required": ["variant", "message"],
+            "properties": {
+              "variant": {
+                "type": "string",
+                "enum": ["info", "success", "warning", "error"],
+                "default": "info"
+              },
+              "message": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+  
+      "Form": {
+        "type": "object",
+        "required": ["Form"],
+        "properties": {
+          "Form": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "fields": { "$ref": "#/definitions/componentArray" },
+              "actions": {
+                "type": "array",
+                "items": { "$ref": "#/definitions/Button" }
+              }
+            },
+            "required": ["fields"],
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "additionalProperties": false
+  }
+  

@@ -41,7 +41,7 @@ export function activate(context: vscode.ExtensionContext) {
 			currentPanel.webview.html = getWebviewContent(context, currentPanel);
 
 			// 初回データ送信
-			sendYamlToWebview(currentPanel);
+			sendYamlToWebview(currentPanel, context);
 
 			// パネルが閉じられたときの処理
 			currentPanel.onDidDispose(
@@ -61,7 +61,7 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.window.onDidChangeActiveTextEditor(editor => {
 			if (editor && editor.document.fileName.endsWith('.tui.yml')) {
 				if (currentPanel) {
-					sendYamlToWebview(currentPanel);
+					sendYamlToWebview(currentPanel, context);
 				}
 			}
 		})
@@ -72,14 +72,14 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.workspace.onDidChangeTextDocument(event => {
 			if (event.document.fileName.endsWith('.tui.yml')) {
 				if (currentPanel) {
-					sendYamlToWebview(currentPanel);
+					sendYamlToWebview(currentPanel, context);
 				}
 			}
 		})
 	);
 }
 
-function sendYamlToWebview(panel: vscode.WebviewPanel) {
+function sendYamlToWebview(panel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
 	const editor = vscode.window.activeTextEditor;
 	if (!editor) return;
 	const document = editor.document;
@@ -91,7 +91,7 @@ function sendYamlToWebview(panel: vscode.WebviewPanel) {
 	try {
 		json = YAML.parse(yamlContent);
 		// スキーマバリデーション
-		const schemaPath = path.join(__dirname, '../../doc/schema.json');
+		const schemaPath = path.join(context.extensionPath, 'schemas', 'schema.json');
 		const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf-8'));
 		const ajv = new Ajv({ allErrors: true, allowUnionTypes: true });
 		const validate = ajv.compile(schema);

@@ -1,8 +1,9 @@
 .vscode/**
+.git/
+*.ts
+*.map
+*.log
 .vscode-test/**
-out/**
-node_modules/**
-src/**
 .gitignore
 .yarnrc
 webpack.config.js
@@ -10,5 +11,19 @@ vsc-extension-quickstart.md
 **/tsconfig.json
 **/eslint.config.mjs
 **/*.map
-**/*.ts
 **/.vscode-test.*
+
+# テスト関連
+test/
+src/test/
+out/test/
+
+# 型定義
+*.d.ts
+**/*.d.ts
+
+# 一時ファイル
+.DS_Store
+Thumbs.db
+npm-debug.log
+yarn.lock
