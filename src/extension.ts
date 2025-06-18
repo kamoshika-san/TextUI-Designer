@@ -113,7 +113,7 @@ export function activate(context: vscode.ExtensionContext) {
 				for (const err of validate.errors) {
 					const key = err.instancePath.split('/').filter(Boolean).pop();
 					if (key) {
-						const regex = new RegExp(`^\s*${key}:`, 'm');
+						const regex = new RegExp(`^\\s*${key}:`, 'm');
 						const match = text.match(regex);
 						if (match) {
 							const start = text.indexOf(match[0]);
