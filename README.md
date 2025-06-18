@@ -12,6 +12,13 @@ TextUI Designerは、YAML/JSONベースのDSLでフロントエンドUIを宣言
 - **IntelliSense（自動補完・型チェック）対応**
 - **エラー箇所のハイライト（赤波線）**
 
+## 主な機能
+- ライブプレビュー（WebView）
+- JSON Schemaによる型安全なDSLバリデーション
+- **IntelliSense（自動補完・型チェック）対応**
+- 豊富なスニペット
+- ワンクリックでReact/Tailwind/Pug/HTMLへのエクスポート
+
 ## サンプルDSL（sample.tui.yml）
 
 ```yaml
@@ -163,3 +170,21 @@ MIT
 ---
 
 ご意見・ご要望はIssueまでお寄せください。
+
+## IntelliSense（自動補完・型チェック）について
+
+- `*.tui.yml`/`*.tui.json`ファイルで、コンポーネント名・プロパティ名・値の補完候補が表示されます。
+- スキーマに基づく型エラーや必須項目の未入力は赤波線で警告されます。
+- 補完候補を選択すると、説明（description）もツールチップで表示されます。
+
+### 使い方例
+```yaml
+components:
+  - Input:
+      label: ユーザー名
+      name: username
+      type: text # ← 候補がポップアップ
+      required: true # ← true/falseも補完
+```
+
+---
