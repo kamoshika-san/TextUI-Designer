@@ -20,6 +20,14 @@
       {
         "command": "textui-designer.openPreview",
         "title": "TextUI: Open Preview"
+      },
+      {
+        "command": "textui-designer.createTemplate",
+        "title": "TextUI: 新規テンプレート作成"
+      },
+      {
+        "command": "textui-designer.insertTemplate",
+        "title": "TextUI: テンプレート挿入"
       }
     ],
     "menus": {

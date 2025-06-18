@@ -11,19 +11,33 @@ import Ajv from 'ajv';
 export function activate(context: vscode.ExtensionContext) {
 	let currentPanel: vscode.WebviewPanel | undefined = undefined;
 
-	// YAML/JSONスキーマ連携: *.tui.yml, *.tui.json に schema.json を紐付け
+	// YAML/JSONスキーマ連携: *.tui.yml, *.tui.json, *.template.yml, *.template.yaml, *.template.json に schema.json を紐付け
 	const schemaPath = path.join(context.extensionPath, 'schemas', 'schema.json');
 	const schemaUri = vscode.Uri.file(schemaPath).toString();
 
+	// テンプレート用スキーマを一時ファイルとして生成
+	const templateSchemaPath = path.join(context.extensionPath, 'schemas', 'template-schema.json');
+	if (!fs.existsSync(templateSchemaPath)) {
+		const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf-8'));
+		const templateSchema = {
+			...schema,
+			type: 'array',
+			items: schema.definitions.component
+		};
+		fs.writeFileSync(templateSchemaPath, JSON.stringify(templateSchema, null, 2), 'utf-8');
+	}
+	const templateSchemaUri = vscode.Uri.file(templateSchemaPath).toString();
+
 	// YAML拡張（redhat.vscode-yaml）向け
 	vscode.workspace.getConfiguration('yaml').update('schemas', {
-		[schemaUri]: ['*.tui.yml']
+		[schemaUri]: ['*.tui.yml', '*.tui.json'],
+		[templateSchemaUri]: ['*.template.yml', '*.template.yaml', '*.template.json']
 	}, vscode.ConfigurationTarget.Global);
 
 	// JSON拡張向け
 	vscode.workspace.getConfiguration('json').update('schemas', [
 		{
-			fileMatch: ['*.tui.json'],
+			fileMatch: ['*.tui.json', '*.template.json'],
 			schema: JSON.parse(fs.readFileSync(schemaPath, 'utf-8'))
 		}
 	], vscode.ConfigurationTarget.Global);
@@ -99,7 +113,9 @@ export function activate(context: vscode.ExtensionContext) {
 	const diagnosticCollection = vscode.languages.createDiagnosticCollection('textui-designer');
 
 	async function validateAndReportDiagnostics(document: vscode.TextDocument) {
-		if (!document.fileName.endsWith('.tui.yml')) return;
+		const isTui = document.fileName.endsWith('.tui.yml');
+		const isTemplate = /\.template\.(ya?ml|json)$/.test(document.fileName);
+		if (!isTui && !isTemplate) return;
 		const text = document.getText();
 		let diagnostics: vscode.Diagnostic[] = [];
 		try {
@@ -107,13 +123,24 @@ export function activate(context: vscode.ExtensionContext) {
 			const schemaPath = path.join(context.extensionPath, 'schemas', 'schema.json');
 			const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf-8'));
 			const ajv = new Ajv({ allErrors: true, allowUnionTypes: true });
-			const validate = ajv.compile(schema);
+			let validate;
+			if (isTemplate) {
+				// テンプレート用: ルートがコンポーネント配列でもOKなスキーマを動的生成
+				const templateSchema = {
+					...schema,
+					type: 'array',
+					items: schema.definitions.component
+				};
+				validate = ajv.compile(templateSchema);
+			} else {
+				validate = ajv.compile(schema);
+			}
 			const valid = validate(yaml);
 			if (!valid && validate.errors) {
 				for (const err of validate.errors) {
 					const key = err.instancePath.split('/').filter(Boolean).pop();
 					if (key) {
-						const regex = new RegExp(`^\\s*${key}:`, 'm');
+						const regex = new RegExp(`^\s*${key}:`, 'm');
 						const match = text.match(regex);
 						if (match) {
 							const start = text.indexOf(match[0]);
@@ -274,6 +301,113 @@ export function activate(context: vscode.ExtensionContext) {
 			},
 			'-', ':' // トリガー文字: ハイフン・コロン
 		)
+	);
+
+	// --- コマンドパレットからの新規テンプレート作成 ---
+	context.subscriptions.push(
+		vscode.commands.registerCommand('textui-designer.createTemplate', async () => {
+			// テンプレート種別を選択
+			const templateType = await vscode.window.showQuickPick([
+				{ label: 'フォーム', value: 'form' },
+				{ label: '一覧', value: 'list' },
+				{ label: '空テンプレート', value: 'empty' }
+			], { placeHolder: 'テンプレート種別を選択してください' });
+			if (!templateType) return;
+
+			// 保存先・ファイル名を選択
+			const defaultFileName = `${templateType.value}-template.template.yml`;
+			const uri = await vscode.window.showSaveDialog({
+				filters: { 'YAMLテンプレート': ['template.yml'] },
+				defaultUri: vscode.Uri.joinPath(
+					vscode.workspace.workspaceFolders?.[0]?.uri || vscode.Uri.file(''),
+					defaultFileName
+				)
+			});
+			if (!uri) return;
+
+			// テンプレート内容を決定
+			let content = '';
+			if (templateType.value === 'form') {
+				content = `- Form:\n    id: myForm\n    fields:\n      - Input:\n          label: ユーザー名\n          name: username\n          type: text\n    actions:\n      - Button:\n          kind: primary\n          label: 送信\n          submit: true\n`;
+			} else if (templateType.value === 'list') {
+				content = `- Container:\n    layout: vertical\n    components:\n      - Text:\n          variant: h2\n          value: 一覧タイトル\n      - Divider:\n      - Alert:\n          variant: info\n          message: サンプル一覧\n`;
+			} else {
+				content = `# TextUI Designer 空テンプレート\n`;
+			}
+
+			// ファイル生成・内容挿入
+			await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf8'));
+			// エディタで自動的に開く
+			const doc = await vscode.workspace.openTextDocument(uri);
+			await vscode.window.showTextDocument(doc);
+		})
+	);
+
+	// --- テンプレート挿入コマンド ---
+	context.subscriptions.push(
+		vscode.commands.registerCommand('textui-designer.insertTemplate', async () => {
+			const editor = vscode.window.activeTextEditor;
+			if (!editor || !editor.document.fileName.match(/\.ya?ml$/)) {
+				vscode.window.showWarningMessage('YAMLファイルを開いているときのみテンプレート挿入が可能です');
+				return;
+			}
+
+			// プリセットテンプレート
+			const presets = [
+				{ label: 'フォーム（プリセット）', value: 'form', kind: vscode.QuickPickItemKind.Default },
+				{ label: '一覧（プリセット）', value: 'list', kind: vscode.QuickPickItemKind.Default },
+				{ label: '空テンプレート（プリセット）', value: 'empty', kind: vscode.QuickPickItemKind.Default }
+			];
+
+			// ユーザーテンプレート（カレントディレクトリ配下の*.yml, *.yaml, *.json）
+			const cwd = vscode.workspace.workspaceFolders?.[0]?.uri;
+			let userTemplates: { label: string; value: vscode.Uri; kind: vscode.QuickPickItemKind }[] = [];
+			if (cwd) {
+				const files = await vscode.workspace.findFiles('**/*.template.{yml,yaml,json}', '**/node_modules/**', 50);
+				userTemplates = files.map(uri => ({
+					label: `${vscode.workspace.asRelativePath(uri)}（ユーザーテンプレート）`,
+					value: uri,
+					kind: vscode.QuickPickItemKind.Default
+				}));
+			}
+
+			const items = [
+				{ label: '--- プリセット ---', kind: vscode.QuickPickItemKind.Separator },
+				...presets,
+				{ label: '--- ユーザーテンプレート ---', kind: vscode.QuickPickItemKind.Separator },
+				...userTemplates
+			];
+
+			const picked = await vscode.window.showQuickPick(items, { placeHolder: '挿入するテンプレートを選択してください' });
+			if (!picked || !('value' in picked)) return;
+
+			let content = '';
+			if (typeof picked.value === 'string') {
+				if (picked.value === 'form') {
+					content = `- Form:\n    id: myForm\n    fields:\n      - Input:\n          label: ユーザー名\n          name: username\n          type: text\n    actions:\n      - Button:\n          kind: primary\n          label: 送信\n          submit: true\n`;
+				} else if (picked.value === 'list') {
+					content = `- Container:\n    layout: vertical\n    components:\n      - Text:\n          variant: h2\n          value: 一覧タイトル\n      - Divider:\n      - Alert:\n          variant: info\n          message: サンプル一覧\n`;
+				} else {
+					content = `# TextUI Designer 空テンプレート\n`;
+				}
+			} else if (picked.value instanceof vscode.Uri) {
+				const buf = await vscode.workspace.fs.readFile(picked.value);
+				content = buf.toString();
+			}
+
+			// カーソル位置のインデント量を取得
+			const lineText = editor.document.lineAt(editor.selection.active.line).text;
+			const indentMatch = lineText.match(/^\s*/);
+			const baseIndent = indentMatch ? indentMatch[0] : '';
+
+			// テンプレート各行にインデントを付与
+			const indentedContent = content.split('\n').map((line, idx) => idx === 0 ? line : (line ? baseIndent + line : '')).join('\n');
+
+			// カーソル位置に挿入
+			editor.edit(editBuilder => {
+				editBuilder.insert(editor.selection.active, indentedContent);
+			});
+		})
 	);
 }
 
