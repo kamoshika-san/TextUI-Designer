@@ -7,7 +7,7 @@ export interface TextComponent {
   value: string;
 }
 
-export type InputType = 'text' | 'email' | 'password' | 'number';
+export type InputType = 'text' | 'email' | 'password' | 'number' | 'multiline';
 
 export interface InputComponent {
   label: string;

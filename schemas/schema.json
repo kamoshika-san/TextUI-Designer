@@ -53,14 +53,17 @@
             "properties": {
               "variant": {
                 "type": "string",
-                "enum": ["h1", "h2", "h3", "p", "small", "caption"]
+                "enum": ["h1", "h2", "h3", "p", "small", "caption"],
+                "description": "テキストの見た目（見出し・段落・注釈など）を指定します。"
               },
-              "value": { "type": "string" }
+              "value": { "type": "string", "description": "表示するテキスト内容。" }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "テキスト（見出し・段落など）を表示するコンポーネント。\n利用可能な属性: variant, value"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "テキスト（見出し・段落など）を表示するコンポーネント。"
       },
   
       "Input": {
@@ -71,18 +74,21 @@
             "type": "object",
             "required": ["label", "name", "type"],
             "properties": {
-              "label": { "type": "string" },
-              "name": { "type": "string" },
+              "label": { "type": "string", "description": "入力欄のラベル（表示名）。" },
+              "name": { "type": "string", "description": "フォーム送信時のname属性。" },
               "type": {
                 "type": "string",
-                "enum": ["text", "email", "password", "number", "multiline"]
+                "enum": ["text", "email", "password", "number", "multiline"],
+                "description": "入力欄の種類（テキスト・メール・パスワード・数値・複数行）。"
               },
-              "required": { "type": "boolean", "default": false }
+              "required": { "type": "boolean", "default": false, "description": "必須入力かどうか。trueで必須。" }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "テキスト入力用コンポーネント。\n利用可能な属性: label, name, type, required"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "テキスト入力用コンポーネント。"
       },
   
       "Button": {
@@ -96,15 +102,18 @@
               "kind": {
                 "type": "string",
                 "enum": ["primary", "secondary", "submit"],
-                "default": "primary"
+                "default": "primary",
+                "description": "ボタンの種類（主ボタン・副ボタン・送信ボタン）。"
               },
-              "label": { "type": "string" },
-              "submit": { "type": "boolean", "default": false }
+              "label": { "type": "string", "description": "ボタンに表示するテキスト。" },
+              "submit": { "type": "boolean", "default": false, "description": "フォーム送信ボタンかどうか。" }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "ボタンコンポーネント。\n利用可能な属性: kind, label, submit"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "ボタンコンポーネント。"
       },
   
       "Checkbox": {
@@ -115,14 +124,16 @@
             "type": "object",
             "required": ["label", "name"],
             "properties": {
-              "label": { "type": "string" },
-              "name": { "type": "string" },
-              "required": { "type": "boolean", "default": false }
+              "label": { "type": "string", "description": "チェックボックスのラベル。" },
+              "name": { "type": "string", "description": "フォーム送信時のname属性。" },
+              "required": { "type": "boolean", "default": false, "description": "必須項目かどうか。" }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "チェックボックスコンポーネント。\n利用可能な属性: label, name, required"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "チェックボックスコンポーネント。"
       },
   
       "Radio": {
@@ -133,26 +144,30 @@
             "type": "object",
             "required": ["label", "name", "options"],
             "properties": {
-              "label": { "type": "string" },
-              "name": { "type": "string" },
+              "label": { "type": "string", "description": "ラジオボタンのラベル。" },
+              "name": { "type": "string", "description": "フォーム送信時のname属性。" },
               "options": {
                 "type": "array",
                 "items": {
                   "type": "object",
                   "required": ["label", "value"],
                   "properties": {
-                    "label": { "type": "string" },
-                    "value": { "type": ["string", "number", "boolean"] }
+                    "label": { "type": "string", "description": "選択肢の表示名。" },
+                    "value": { "type": ["string", "number", "boolean"], "description": "選択肢の値。" }
                   },
-                  "additionalProperties": false
+                  "additionalProperties": false,
+                  "description": "ラジオボタンの選択肢。"
                 },
-                "minItems": 1
+                "minItems": 1,
+                "description": "選択肢の配列。"
               }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "ラジオボタンコンポーネント。\n利用可能な属性: label, name, options"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "ラジオボタンコンポーネント。"
       },
   
       "Select": {
@@ -163,27 +178,31 @@
             "type": "object",
             "required": ["label", "name", "options"],
             "properties": {
-              "label": { "type": "string" },
-              "name": { "type": "string" },
+              "label": { "type": "string", "description": "セレクトボックスのラベル。" },
+              "name": { "type": "string", "description": "フォーム送信時のname属性。" },
               "options": {
                 "type": "array",
                 "items": {
                   "type": "object",
                   "required": ["label", "value"],
                   "properties": {
-                    "label": { "type": "string" },
-                    "value": { "type": ["string", "number", "boolean"] }
+                    "label": { "type": "string", "description": "選択肢の表示名。" },
+                    "value": { "type": ["string", "number", "boolean"], "description": "選択肢の値。" }
                   },
-                  "additionalProperties": false
+                  "additionalProperties": false,
+                  "description": "セレクトボックスの選択肢。"
                 },
-                "minItems": 1
+                "minItems": 1,
+                "description": "選択肢の配列。"
               },
-              "multiple": { "type": "boolean", "default": false }
+              "multiple": { "type": "boolean", "default": false, "description": "複数選択を許可するか。" }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "セレクトボックスコンポーネント。\n利用可能な属性: label, name, options, multiple"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "セレクトボックスコンポーネント。"
       },
   
       "Divider": {
@@ -196,13 +215,16 @@
               "orientation": {
                 "type": "string",
                 "enum": ["horizontal", "vertical"],
-                "default": "horizontal"
+                "default": "horizontal",
+                "description": "区切り線の向き（横・縦）。"
               }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "区切り線コンポーネント。\n利用可能な属性: orientation"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "区切り線コンポーネント。"
       },
   
       "Container": {
@@ -214,15 +236,18 @@
             "properties": {
               "layout": {
                 "type": "string",
-                "enum": ["vertical", "horizontal", "flex", "grid"]
+                "enum": ["vertical", "horizontal", "flex", "grid"],
+                "description": "子コンポーネントの配置方法。"
               },
-              "components": { "$ref": "#/definitions/componentArray" }
+              "components": { "$ref": "#/definitions/componentArray", "description": "子コンポーネントの配列。" }
             },
             "required": ["components"],
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "レイアウト用コンテナコンポーネント。\n利用可能な属性: layout, components"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "レイアウト用コンテナコンポーネント。"
       },
   
       "Alert": {
@@ -236,14 +261,17 @@
               "variant": {
                 "type": "string",
                 "enum": ["info", "success", "warning", "error"],
-                "default": "info"
+                "default": "info",
+                "description": "アラートの種類（情報・成功・警告・エラー）。"
               },
-              "message": { "type": "string" }
+              "message": { "type": "string", "description": "表示するメッセージ内容。" }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "アラートコンポーネント。\n利用可能な属性: variant, message"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "アラートコンポーネント。"
       },
   
       "Form": {
@@ -253,18 +281,21 @@
           "Form": {
             "type": "object",
             "properties": {
-              "id": { "type": "string" },
-              "fields": { "$ref": "#/definitions/componentArray" },
+              "id": { "type": "string", "description": "フォームのID。" },
+              "fields": { "$ref": "#/definitions/componentArray", "description": "フォーム内の入力フィールド群。" },
               "actions": {
                 "type": "array",
-                "items": { "$ref": "#/definitions/Button" }
+                "items": { "$ref": "#/definitions/Button" },
+                "description": "フォーム下部のボタン群。"
               }
             },
             "required": ["fields"],
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "フォームコンポーネント。\n利用可能な属性: id, fields, actions"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "フォームコンポーネント。"
       }
     },
     "additionalProperties": false
