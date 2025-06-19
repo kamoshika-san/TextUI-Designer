@@ -1,27 +1,21 @@
 import React from 'react';
 
-type LayoutType = 'flex' | 'grid' | 'vertical' | 'horizontal';
+type Layout = 'vertical' | 'horizontal' | 'flex' | 'grid';
 
 interface ContainerProps {
-  layout: LayoutType;
+  layout: Layout;
   children: React.ReactNode;
-  className?: string;
 }
 
-const layoutClasses: Record<LayoutType, string> = {
-  flex: 'flex flex-wrap',
-  grid: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4',
-  vertical: 'flex flex-col space-y-4',
-  horizontal: 'flex flex-row space-x-4',
+const layoutClasses: Record<Layout, string> = {
+  vertical: 'textui-container flex flex-col space-y-4',
+  horizontal: 'textui-container flex flex-row space-x-4',
+  flex: 'textui-container flex flex-wrap gap-4',
+  grid: 'textui-container grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4',
 };
 
-export const Container: React.FC<ContainerProps> = ({
-  layout,
-  children,
-  className = '',
-}) => {
-  const baseClasses = 'p-4';
-  const containerClasses = `${baseClasses} ${layoutClasses[layout]} ${className}`;
+export const Container: React.FC<ContainerProps> = ({ layout, children }) => {
+  const className = layoutClasses[layout];
 
-  return <div className={containerClasses}>{children}</div>;
+  return <div className={className}>{children}</div>;
 }; 

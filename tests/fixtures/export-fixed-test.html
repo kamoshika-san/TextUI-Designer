@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TextUI Export - Fixed</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* VS Codeダークテーマスタイル */
+    body {
+      background-color: #1e1e1e;
+      color: #cccccc;
+    }
+    
+    /* テーマ変数の影響を排除 */
+    :root {
+      --vscode-foreground: unset;
+      --vscode-background: unset;
+      --vscode-button-background: unset;
+      --vscode-button-foreground: unset;
+      --vscode-input-background: unset;
+      --vscode-input-foreground: unset;
+      --vscode-border: unset;
+      --vscode-font-family: unset;
+      --vscode-font-size: unset;
+      --vscode-font-weight: unset;
+      --vscode-line-height: unset;
+      --vscode-letter-spacing: unset;
+      --vscode-text-decoration: unset;
+      --vscode-text-transform: unset;
+      --vscode-text-align: unset;
+      --vscode-vertical-align: unset;
+      --vscode-white-space: unset;
+      --vscode-word-break: unset;
+      --vscode-word-wrap: unset;
+      --vscode-overflow-wrap: unset;
+      --vscode-text-overflow: unset;
+      --vscode-text-indent: unset;
+      --vscode-text-shadow: unset;
+      --vscode-box-shadow: unset;
+      --vscode-border-radius: unset;
+      --vscode-border-width: unset;
+      --vscode-border-style: unset;
+      --vscode-border-color: unset;
+      --vscode-outline: unset;
+      --vscode-outline-offset: unset;
+      --vscode-margin: unset;
+      --vscode-padding: unset;
+      --vscode-width: unset;
+      --vscode-height: unset;
+      --vscode-min-width: unset;
+      --vscode-max-width: unset;
+      --vscode-min-height: unset;
+      --vscode-max-height: unset;
+      --vscode-display: unset;
+      --vscode-position: unset;
+      --vscode-top: unset;
+      --vscode-right: unset;
+      --vscode-bottom: unset;
+      --vscode-left: unset;
+      --vscode-z-index: unset;
+      --vscode-float: unset;
+      --vscode-clear: unset;
+      --vscode-overflow: unset;
+      --vscode-overflow-x: unset;
+      --vscode-overflow-y: unset;
+      --vscode-clip: unset;
+      --vscode-zoom: unset;
+      --vscode-opacity: unset;
+      --vscode-visibility: unset;
+      --vscode-cursor: unset;
+      --vscode-pointer-events: unset;
+      --vscode-user-select: unset;
+      --vscode-resize: unset;
+      --vscode-transition: unset;
+      --vscode-animation: unset;
+      --vscode-transform: unset;
+      --vscode-transform-origin: unset;
+      --vscode-backface-visibility: unset;
+      --vscode-perspective: unset;
+      --vscode-perspective-origin: unset;
+      --vscode-filter: unset;
+      --vscode-backdrop-filter: unset;
+      --vscode-mix-blend-mode: unset;
+      --vscode-isolation: unset;
+      --vscode-object-fit: unset;
+      --vscode-object-position: unset;
+      --vscode-image-rendering: unset;
+      --vscode-image-orientation: unset;
+      --vscode-image-resolution: unset;
+      --vscode-shape-image-threshold: unset;
+      --vscode-shape-margin: unset;
+      --vscode-shape-outside: unset;
+      --vscode-clip-path: unset;
+      --vscode-mask: unset;
+      --vscode-mask-clip: unset;
+      --vscode-mask-composite: unset;
+      --vscode-mask-image: unset;
+      --vscode-mask-mode: unset;
+      --vscode-mask-origin: unset;
+      --vscode-mask-position: unset;
+      --vscode-mask-repeat: unset;
+      --vscode-mask-size: unset;
+      --vscode-mask-type: unset;
+      --vscode-paint-order: unset;
+      --vscode-vector-effect: unset;
+      --vscode-d: unset;
+      --vscode-calc: unset;
+      --vscode-attr: unset;
+      --vscode-counter-increment: unset;
+      --vscode-counter-reset: unset;
+      --vscode-counter-set: unset;
+      --vscode-quotes: unset;
+      --vscode-content: unset;
+      --vscode-target: unset;
+      --vscode-tab-size: unset;
+      --vscode-text-size-adjust: unset;
+      --vscode-text-rendering: unset;
+      --vscode-text-orientation: unset;
+      --vscode-text-emphasis: unset;
+      --vscode-text-emphasis-color: unset;
+      --vscode-text-emphasis-style: unset;
+      --vscode-text-emphasis-position: unset;
+      --vscode-text-underline-position: unset;
+      --vscode-text-underline-offset: unset;
+      --vscode-text-combine-upright: unset;
+      --vscode-text-autospace: unset;
+      --vscode-text-justify: unset;
+      --vscode-text-align-last: unset;
+      --vscode-text-align-all: unset;
+      --vscode-text-spacing: unset;
+      --vscode-text-spacing-trim: unset;
+      --vscode-text-edge: unset;
+      --vscode-text-group-align: unset;
+      --vscode-text-group-justify: unset;
+      --vscode-text-group-kinsoku: unset;
+      --vscode-text-group-overflow: unset;
+      --vscode-text-group-wrap: unset;
+      --vscode-text-group-indent: unset;
+      --vscode-text-group-indent-first: unset;
+      --vscode-text-group-indent-last: unset;
+      --vscode-text-group-indent-hanging: unset;
+      --vscode-text-group-indent-negative: unset;
+      --vscode-text-group-indent-positive: unset;
+      --vscode-text-group-indent-zero: unset;
+      --vscode-text-group-indent-inherit: unset;
+      --vscode-text-group-indent-initial: unset;
+      --vscode-text-group-indent-unset: unset;
+      --vscode-text-group-indent-revert: unset;
+      --vscode-text-group-indent-revert-layer: unset;
+    }
+    
+    /* 基本的なスタイルリセット（Tailwind CSSを妨げない程度） */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+    
+    /* HTML要素の基本設定 */
+    html {
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      color: #cccccc;
+      background-color: #1e1e1e;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* フォーム要素の基本リセット */
+    input,
+    button,
+    textarea,
+    select {
+      font-family: inherit;
+      font-size: inherit;
+      line-height: inherit;
+      color: inherit;
+      margin: 0;
+      padding: 0;
+    }
+    
+    /* リンクの基本リセット */
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+    
+    /* 画像の基本リセット */
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+    
+    /* テーブルの基本リセット */
+    table {
+      border-collapse: collapse;
+      border-spacing: 0;
+    }
+    
+    /* 引用の基本リセット */
+    blockquote,
+    q {
+      quotes: none;
+    }
+    
+    blockquote:before,
+    blockquote:after,
+    q:before,
+    q:after {
+      content: '';
+      content: none;
+    }
+    
+    /* プレースホルダーの基本リセット */
+    ::placeholder {
+      opacity: 1;
+    }
+    
+    /* スクロールバーの非表示 */
+    ::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+    }
+    
+    /* Tailwind CSSが確実に適用されるように */
+    .container {
+      display: block;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-300 min-h-screen">
+  <div class="container mx-auto p-6">
+    <!-- 修正されたエクスポートテスト -->
+    <div class="mb-8 p-4 bg-gray-800 rounded-lg border border-gray-600">
+      <h2 class="text-2xl font-medium mb-2 text-gray-300">エクスポート修正テスト</h2>
+      <p class="text-base mb-2 text-gray-300">プレビュー画面とエクスポートHTMLのスタイルが一致することを確認します。</p>
+    </div>
+    
+    <!-- 実際のコンポーネント -->
+    <h1 class="text-4xl font-bold mb-4 text-gray-300">TextUI Designer サンプル</h1>
+    <p class="text-base mb-2 text-gray-300">これはTextUI Designerのサンプルページです。VS Codeのダークテーマスタイルで表示されます。</p>
+    <div class="p-4 border rounded-md bg-blue-900 border-blue-700 text-blue-200">
+      <p class="text-sm">VS Codeのダークテーマスタイルが適用されています。</p>
+    </div>
+    <hr class="border-gray-700 my-4">
+    <div class="grid grid-cols-1 gap-4">
+      <h2 class="text-3xl font-semibold mb-3 text-gray-300">フォーム例</h2>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-400 mb-2">ユーザー名</label>
+        <input type="text" placeholder="ユーザー名を入力してください" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " required>
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-400 mb-2">メールアドレス</label>
+        <input type="email" placeholder="example@example.com" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " required>
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-400 mb-2">選択肢</label>
+        <select class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ">
+          <option value="option1" class="bg-gray-800 text-gray-400">オプション1</option>
+          <option value="option2" class="bg-gray-800 text-gray-400">オプション2</option>
+          <option value="option3" class="bg-gray-800 text-gray-400">オプション3</option>
+        </select>
+      </div>
+    </div>
+    <hr class="border-gray-700 my-4">
+    <div class="flex space-x-4">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-400 mb-2">ラジオボタン</label>
+        <div class="flex items-center mb-2">
+          <input type="radio" name="radio" value="a" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 bg-gray-800 ">
+          <label class="ml-2 block text-sm text-gray-400">選択肢A</label>
+        </div>
+        <div class="flex items-center mb-2">
+          <input type="radio" name="radio" value="b" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 bg-gray-800 ">
+          <label class="ml-2 block text-sm text-gray-400">選択肢B</label>
+        </div>
+        <div class="flex items-center mb-2">
+          <input type="radio" name="radio" value="c" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 bg-gray-800 ">
+          <label class="ml-2 block text-sm text-gray-400">選択肢C</label>
+        </div>
+      </div>
+      <div class="flex items-center mb-4">
+        <input type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-800 ">
+        <label class="ml-2 block text-sm text-gray-400">チェックボックス</label>
+      </div>
+    </div>
+    <div class="p-4 border rounded-md bg-green-900 border-green-700 text-green-200">
+      <p class="text-sm">フォームが正常に設定されました。</p>
+    </div>
+    <div class="p-4 border rounded-md bg-yellow-900 border-yellow-700 text-yellow-200">
+      <p class="text-sm">注意事項がここに表示されます。</p>
+    </div>
+    <div class="p-4 border rounded-md bg-red-900 border-red-700 text-red-200">
+      <p class="text-sm">エラーメッセージがここに表示されます。</p>
+    </div>
+    <div class="flex space-x-4">
+      <button class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-base  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">プライマリボタン</button>
+      <button class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm bg-gray-700 hover:bg-gray-600 text-gray-300 px-4 py-2 text-base  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">セカンダリボタン</button>
+      <button class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-base  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">送信</button>
+    </div>
+  </div>
+</body>
+</html>

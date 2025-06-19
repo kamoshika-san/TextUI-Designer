@@ -15,4 +15,11 @@ export default defineConfig({
     },
   },
   plugins: [react()],
+  // 開発モードの設定
+  server: {
+    port: 3000,
+    watch: {
+      usePolling: true,
+    },
+  },
 }); 

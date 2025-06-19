@@ -1,10 +1,13 @@
 import React from 'react';
-import type { DividerComponent } from '../types';
 
-export const Divider: React.FC<DividerComponent> = ({ orientation = 'horizontal' }) => {
+interface DividerProps {
+  orientation?: 'horizontal' | 'vertical';
+}
+
+export const Divider: React.FC<DividerProps> = ({ orientation = 'horizontal' }) => {
   if (orientation === 'vertical') {
-    return <div className="border-l border-gray-200 mx-4" />;
+    return <div className="inline-block w-px h-6 bg-gray-700 mx-4" />;
   }
   
-  return <div className="border-t border-gray-200 my-4" />;
+  return <hr className="border-gray-700 my-4" />;
 }; 
