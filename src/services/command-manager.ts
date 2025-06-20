@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import { WebViewManager } from './webview-manager';
-import { ExportManager } from '../exporters';
-import path from 'path';
+import { ExportService } from './export-service';
+import { TemplateService } from './template-service';
+import { SettingsService } from './settings-service';
+import { SchemaManager } from './schema-manager';
 
 /**
  * コマンド管理サービス
@@ -10,16 +12,25 @@ import path from 'path';
 export class CommandManager {
   private context: vscode.ExtensionContext;
   private webViewManager: WebViewManager;
-  private exportManager: ExportManager;
+  private exportService: ExportService;
+  private templateService: TemplateService;
+  private settingsService: SettingsService;
+  private schemaManager: SchemaManager;
 
   constructor(
     context: vscode.ExtensionContext,
     webViewManager: WebViewManager,
-    exportManager: ExportManager
+    exportService: ExportService,
+    templateService: TemplateService,
+    settingsService: SettingsService,
+    schemaManager: SchemaManager
   ) {
     this.context = context;
     this.webViewManager = webViewManager;
-    this.exportManager = exportManager;
+    this.exportService = exportService;
+    this.templateService = templateService;
+    this.settingsService = settingsService;
+    this.schemaManager = schemaManager;
   }
 
   /**
@@ -30,6 +41,8 @@ export class CommandManager {
     this.registerExportCommand();
     this.registerDevToolsCommand();
     this.registerTemplateCommands();
+    this.registerSettingsCommands();
+    this.registerSchemaCommands();
   }
 
   /**
@@ -47,7 +60,8 @@ export class CommandManager {
    */
   private registerExportCommand(): void {
     const disposable = vscode.commands.registerCommand('textui-designer.export', async () => {
-      await this.handleExport();
+      const lastTuiFile = this.webViewManager.getLastTuiFile();
+      await this.exportService.executeExport(lastTuiFile);
     });
     this.context.subscriptions.push(disposable);
   }
@@ -68,207 +82,64 @@ export class CommandManager {
   private registerTemplateCommands(): void {
     // 新規テンプレート作成コマンド
     const createTemplateDisposable = vscode.commands.registerCommand('textui-designer.createTemplate', async () => {
-      await this.handleCreateTemplate();
+      await this.templateService.createTemplate();
     });
     this.context.subscriptions.push(createTemplateDisposable);
 
     // テンプレート挿入コマンド
     const insertTemplateDisposable = vscode.commands.registerCommand('textui-designer.insertTemplate', async () => {
-      await this.handleInsertTemplate();
+      await this.templateService.insertTemplate();
     });
     this.context.subscriptions.push(insertTemplateDisposable);
   }
 
   /**
-   * エクスポート処理を実行
+   * 設定関連コマンドを登録
    */
-  private async handleExport(): Promise<void> {
-    try {
-      const activeEditor = vscode.window.activeTextEditor;
-      let filePath: string | undefined;
+  private registerSettingsCommands(): void {
+    // 設定を開くコマンド
+    const openSettingsDisposable = vscode.commands.registerCommand('textui-designer.openSettings', async () => {
+      await this.settingsService.openSettings();
+    });
+    this.context.subscriptions.push(openSettingsDisposable);
 
-      if (activeEditor && activeEditor.document.fileName.endsWith('.tui.yml')) {
-        filePath = activeEditor.document.fileName;
-      } else {
-        // アクティブなエディタがない場合は最後に開いていたファイルを使用
-        filePath = this.webViewManager.getLastTuiFile();
-      }
+    // 設定をリセットコマンド
+    const resetSettingsDisposable = vscode.commands.registerCommand('textui-designer.resetSettings', async () => {
+      await this.settingsService.resetSettings();
+    });
+    this.context.subscriptions.push(resetSettingsDisposable);
 
-      if (!filePath) {
-        vscode.window.showErrorMessage('エクスポート対象の.tui.ymlファイルが見つかりません。');
-        return;
-      }
-
-      // エクスポート形式を選択
-      const format = await vscode.window.showQuickPick(
-        this.exportManager.getSupportedFormats(),
-        {
-          placeHolder: 'エクスポート形式を選択してください'
-        }
-      );
-
-      if (!format) return;
-
-      // 保存先を選択
-      const extension = this.exportManager.getFileExtension(format);
-      const uri = await vscode.window.showSaveDialog({
-        filters: {
-          [`${format.toUpperCase()} Files`]: [extension]
-        }
-      });
-
-      if (!uri) return;
-
-      // エクスポート実行
-      const content = await this.exportManager.exportFromFile(filePath, {
-        format: format as 'react' | 'pug' | 'html',
-        outputPath: uri.fsPath,
-        fileName: path.basename(uri.fsPath)
-      });
-
-      // ファイルに保存
-      await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf-8'));
-
-      vscode.window.showInformationMessage(`${format.toUpperCase()}ファイルをエクスポートしました: ${uri.fsPath}`);
-    } catch (error) {
-      vscode.window.showErrorMessage(`エクスポートに失敗しました: ${error}`);
-    }
+    // 設定を表示コマンド
+    const showSettingsDisposable = vscode.commands.registerCommand('textui-designer.showSettings', async () => {
+      await this.settingsService.showSettings();
+    });
+    this.context.subscriptions.push(showSettingsDisposable);
   }
 
   /**
-   * 新規テンプレート作成処理
+   * スキーマ関連コマンドを登録
    */
-  private async handleCreateTemplate(): Promise<void> {
-    try {
-      // テンプレート種別を選択
-      const templateType = await vscode.window.showQuickPick([
-        { label: 'フォーム', value: 'form' },
-        { label: '一覧', value: 'list' },
-        { label: '空', value: 'empty' }
-      ], {
-        placeHolder: 'テンプレート種別を選択してください'
-      });
-
-      if (!templateType) return;
-
-      // 保存先を選択
-      const uri = await vscode.window.showSaveDialog({
-        filters: {
-          'YAML Template': ['template.yml', 'template.yaml']
-        }
-      });
-
-      if (!uri) return;
-
-      // テンプレート内容を生成
-      const templateContent = this.generateTemplateContent(templateType.value);
-
-      // ファイルを作成
-      const document = await vscode.workspace.openTextDocument({
-        content: templateContent,
-        language: 'yaml'
-      });
-
-      await vscode.window.showTextDocument(document);
-      await document.save();
-
-      vscode.window.showInformationMessage('テンプレートファイルを作成しました。');
-    } catch (error) {
-      vscode.window.showErrorMessage(`テンプレート作成に失敗しました: ${error}`);
-    }
-  }
-
-  /**
-   * テンプレート挿入処理
-   */
-  private async handleInsertTemplate(): Promise<void> {
-    try {
-      const activeEditor = vscode.window.activeTextEditor;
-      if (!activeEditor) {
-        vscode.window.showErrorMessage('アクティブなエディタがありません。');
-        return;
+  private registerSchemaCommands(): void {
+    // スキーマ再初期化コマンド
+    const reinitializeSchemasDisposable = vscode.commands.registerCommand('textui-designer.reinitializeSchemas', async () => {
+      try {
+        await this.schemaManager.reinitialize();
+        vscode.window.showInformationMessage('スキーマを再初期化しました。');
+      } catch (error) {
+        vscode.window.showErrorMessage(`スキーマの再初期化に失敗しました: ${error}`);
       }
+    });
+    this.context.subscriptions.push(reinitializeSchemasDisposable);
 
-      // テンプレートファイルを選択
-      const uris = await vscode.window.showOpenDialog({
-        canSelectFiles: true,
-        canSelectFolders: false,
-        canSelectMany: false,
-        filters: {
-          'YAML Template': ['template.yml', 'template.yaml']
-        }
-      });
-
-      if (!uris || uris.length === 0) return;
-
-      const templateUri = uris[0];
-      const templateDocument = await vscode.workspace.openTextDocument(templateUri);
-      const templateContent = templateDocument.getText();
-
-      // 現在のエディタに挿入
-      await activeEditor.edit(editBuilder => {
-        const position = activeEditor.selection.active;
-        editBuilder.insert(position, templateContent);
-      });
-
-      vscode.window.showInformationMessage('テンプレートを挿入しました。');
-    } catch (error) {
-      vscode.window.showErrorMessage(`テンプレート挿入に失敗しました: ${error}`);
-    }
-  }
-
-  /**
-   * テンプレート内容を生成
-   */
-  private generateTemplateContent(type: string): string {
-    switch (type) {
-      case 'form':
-        return `- Form:
-    id: myForm
-    fields:
-      - Input:
-          label: ユーザー名
-          name: username
-          type: text
-          required: true
-      - Input:
-          label: メールアドレス
-          name: email
-          type: email
-          required: true
-      - Checkbox:
-          label: 利用規約に同意する
-          name: agree
-          required: true
-    actions:
-      - Button:
-          kind: submit
-          label: 送信
-          submit: true`;
-      
-      case 'list':
-        return `- Container:
-    layout: vertical
-    components:
-      - Text:
-          variant: h2
-          value: "一覧"
-      - Divider:
-          orientation: horizontal
-      - Text:
-          variant: p
-          value: "リストアイテム1"
-      - Text:
-          variant: p
-          value: "リストアイテム2"
-      - Text:
-          variant: p
-          value: "リストアイテム3"`;
-      
-      case 'empty':
-      default:
-        return `# 空のテンプレート
-# ここにコンポーネントを追加してください`;
-    }
+    // スキーマデバッグコマンド
+    const debugSchemasDisposable = vscode.commands.registerCommand('textui-designer.debugSchemas', async () => {
+      try {
+        await this.schemaManager.debugSchemas();
+        vscode.window.showInformationMessage('スキーマ状態をデバッグ出力しました。開発者ツールのコンソールを確認してください。');
+      } catch (error) {
+        vscode.window.showErrorMessage(`スキーマデバッグに失敗しました: ${error}`);
+      }
+    });
+    this.context.subscriptions.push(debugSchemasDisposable);
   }
 } 
