@@ -19,18 +19,17 @@ export const Select: React.FC<SelectProps> = ({
   multiple = false,
 }) => {
   return (
-    <div className="mb-4">
-      <label htmlFor={name} className="block text-sm font-medium text-gray-400 mb-2">
+    <div className="textui-select">
+      <label htmlFor={name} className="textui-text">
         {label}
       </label>
       <select
         id={name}
         name={name}
         multiple={multiple}
-        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
       >
         {options.map((option, index) => (
-          <option key={index} value={option.value} className="bg-gray-800 text-gray-400">
+          <option key={index} value={option.value}>
             {option.label}
           </option>
         ))}

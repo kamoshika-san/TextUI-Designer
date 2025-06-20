@@ -3,7 +3,8 @@
   "displayName": "TextUI Designer",
   "description": "YAML/JSON DSLでUIを設計するVS Code拡張",
   "publisher": "kamoshika-san",
-  "version": "0.0.4",
+  "version": "0.0.5-dev",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.85.0"
   },

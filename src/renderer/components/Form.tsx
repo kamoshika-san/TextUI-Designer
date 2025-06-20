@@ -23,7 +23,7 @@ export const Form: React.FC<FormProps> = ({
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
     const data = Object.fromEntries(formData);
-    onSubmit(data);
+      onSubmit(data);
   };
 
   return (

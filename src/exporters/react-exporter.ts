@@ -57,23 +57,21 @@ ${componentCode}
   }
 
   private renderText(props: any, key: number): string {
-    const { value, size = 'base', weight = 'normal', color = 'text-gray-900' } = props;
-    const sizeClasses = {
-      'xs': 'text-xs',
-      'sm': 'text-sm',
-      'base': 'text-base',
-      'lg': 'text-lg',
-      'xl': 'text-xl',
-      '2xl': 'text-2xl'
-    };
-    const weightClasses = {
-      'normal': 'font-normal',
-      'medium': 'font-medium',
-      'semibold': 'font-semibold',
-      'bold': 'font-bold'
+    const { value, variant = 'p' } = props;
+    
+    // variantに基づいて適切なHTML要素とクラスを決定
+    const variantConfig = {
+      'h1': { element: 'h1', className: 'text-4xl font-bold mb-4 text-gray-900' },
+      'h2': { element: 'h2', className: 'text-3xl font-semibold mb-3 text-gray-900' },
+      'h3': { element: 'h3', className: 'text-2xl font-medium mb-2 text-gray-900' },
+      'p': { element: 'p', className: 'text-base mb-2 text-gray-700' },
+      'small': { element: 'p', className: 'text-sm text-gray-600' },
+      'caption': { element: 'p', className: 'text-xs text-gray-500' }
     };
     
-    return `      <p key={${key}} className=\"${sizeClasses[size as keyof typeof sizeClasses]} ${weightClasses[weight as keyof typeof weightClasses]} ${color}\">{\"${value}\"}</p>`;
+    const config = variantConfig[variant as keyof typeof variantConfig] || variantConfig.p;
+    
+    return `      <${config.element} key={${key}} className="${config.className}">${value}</${config.element}>`;
   }
 
   private renderInput(props: any, key: number): string {
@@ -93,23 +91,20 @@ ${componentCode}
   }
 
   private renderButton(props: any, key: number): string {
-    const { label, variant = 'primary', size = 'md', disabled = false, onClick } = props;
-    const variantClasses = {
+    const { label, kind = 'primary' } = props;
+    
+    // kindに基づいて適切なクラスを決定
+    const kindClasses = {
       'primary': 'bg-blue-600 hover:bg-blue-700 text-white',
       'secondary': 'bg-gray-600 hover:bg-gray-700 text-white',
-      'outline': 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+      'submit': 'bg-green-600 hover:bg-green-700 text-white'
     };
-    const sizeClasses = {
-      'sm': 'px-3 py-1.5 text-sm',
-      'md': 'px-4 py-2 text-base',
-      'lg': 'px-6 py-3 text-lg'
-    };
-    const disabledClass = disabled ? 'opacity-50 cursor-not-allowed' : '';
+    
+    const className = kindClasses[kind as keyof typeof kindClasses] || kindClasses.primary;
     
     return `      <button
         key={${key}}
-        ${disabled ? 'disabled' : ''}
-        className=\"inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${variantClasses[variant as keyof typeof variantClasses]} ${sizeClasses[size as keyof typeof sizeClasses]} ${disabledClass} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500\"
+        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${className} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
       >
         ${label}
       </button>`;
@@ -186,16 +181,19 @@ ${optionsCode}
   }
 
   private renderAlert(props: any, key: number): string {
-    const { message, type = 'info', title } = props;
-    const typeClasses = {
+    const { message, variant = 'info' } = props;
+    
+    // variantに基づいて適切なクラスを決定
+    const variantClasses = {
       'info': 'bg-blue-50 border-blue-200 text-blue-800',
       'success': 'bg-green-50 border-green-200 text-green-800',
       'warning': 'bg-yellow-50 border-yellow-200 text-yellow-800',
       'error': 'bg-red-50 border-red-200 text-red-800'
     };
     
-    return `      <div key={${key}} className="p-4 border rounded-md ${typeClasses[type as keyof typeof typeClasses]}">
-        ${title ? `<h3 className="text-sm font-medium mb-1">${title}</h3>` : ''}
+    const className = variantClasses[variant as keyof typeof variantClasses] || variantClasses.info;
+    
+    return `      <div key={${key}} className="p-4 border rounded-md ${className}">
         <p className="text-sm">${message}</p>
       </div>`;
   }

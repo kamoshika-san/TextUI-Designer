@@ -1,5 +1,3 @@
-import * as vscode from 'vscode';
-import * as path from 'path';
 import * as fs from 'fs';
 import * as YAML from 'yaml';
 import { ReactExporter } from './react-exporter';

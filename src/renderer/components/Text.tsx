@@ -8,12 +8,12 @@ interface TextProps {
 }
 
 const variantClasses: Record<TextVariant, string> = {
-  h1: 'text-4xl font-bold mb-4 text-gray-300',
-  h2: 'text-3xl font-semibold mb-3 text-gray-300',
-  h3: 'text-2xl font-medium mb-2 text-gray-300',
-  p: 'text-base mb-2 text-gray-300',
-  small: 'text-sm text-gray-400',
-  caption: 'text-xs text-gray-500',
+  h1: 'textui-text h1',
+  h2: 'textui-text h2',
+  h3: 'textui-text h3',
+  p: 'textui-text p',
+  small: 'textui-text small',
+  caption: 'textui-text caption',
 };
 
 export const Text: React.FC<TextProps> = ({ variant, value }) => {

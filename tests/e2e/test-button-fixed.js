@@ -1,4 +1,4 @@
-const { HtmlExporter } = require('./out/exporters/html-exporter');
+const { HtmlExporter } = require('../../out/exporters/html-exporter');
 
 // テスト用のDSL
 const testDSL = {
