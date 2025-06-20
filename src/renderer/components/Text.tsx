@@ -8,11 +8,11 @@ interface TextProps {
 }
 
 const variantClasses: Record<TextVariant, string> = {
-  h1: 'text-4xl font-bold mb-4',
-  h2: 'text-3xl font-semibold mb-3',
-  h3: 'text-2xl font-medium mb-2',
-  p: 'text-base mb-2',
-  small: 'text-sm text-gray-600',
+  h1: 'text-4xl font-bold mb-4 text-gray-300',
+  h2: 'text-3xl font-semibold mb-3 text-gray-300',
+  h3: 'text-2xl font-medium mb-2 text-gray-300',
+  p: 'text-base mb-2 text-gray-300',
+  small: 'text-sm text-gray-400',
   caption: 'text-xs text-gray-500',
 };
 

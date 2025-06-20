@@ -8,8 +8,8 @@ interface FormProps {
   id: string;
   fields: FormField[];
   actions: FormAction[];
-  onSubmit?: (data: Record<string, any>) => void;
-  children?: React.ReactNode;
+  onSubmit: (data: any) => void;
+  children: React.ReactNode;
 }
 
 export const Form: React.FC<FormProps> = ({
@@ -19,18 +19,15 @@ export const Form: React.FC<FormProps> = ({
   onSubmit,
   children,
 }) => {
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSubmit) {
-      const form = e.currentTarget;
-      const formData = new FormData(form);
-      const data = Object.fromEntries(formData.entries());
-      onSubmit(data);
-    }
+    const formData = new FormData(e.target as HTMLFormElement);
+    const data = Object.fromEntries(formData);
+    onSubmit(data);
   };
 
   return (
-    <form id={id} onSubmit={handleSubmit} className="space-y-6">
+    <form id={id} onSubmit={handleSubmit} className="textui-container">
       {/* childrenでfields/actionsを描画する場合 */}
       {children}
       {/* 直接描画する場合は下記を有効化

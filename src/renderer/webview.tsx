@@ -14,6 +14,11 @@ import type { TextUIDSL, ComponentDef, FormComponent, FormField, FormAction } fr
 
 const vscode = (window as any).acquireVsCodeApi ? (window as any).acquireVsCodeApi() : undefined;
 
+// window.vscodeにセットして、HTMLテンプレートのexportUI関数からもアクセスできるようにする
+if (vscode) {
+  (window as any).vscode = vscode;
+}
+
 function renderComponent(comp: ComponentDef, key: number): React.ReactNode {
   if ('Text' in comp) {
     return <Text key={key} {...comp.Text} />;
@@ -107,10 +112,18 @@ const App: React.FC = () => {
   }, []);
 
   if (error) {
-    return <div style={{ color: 'red' }}>YAMLパースエラー: {error}</div>;
+    return (
+      <div style={{ padding: 24 }}>
+        <div style={{ color: 'red' }}>YAMLパースエラー: {error}</div>
+      </div>
+    );
   }
   if (!json) {
-    return <div>Loading...</div>;
+    return (
+      <div style={{ padding: 24 }}>
+        <div>Loading...</div>
+      </div>
+    );
   }
 
   const components: ComponentDef[] = json.page?.components || [];
@@ -121,5 +134,27 @@ const App: React.FC = () => {
   );
 };
 
-const root = createRoot(document.getElementById('root')!);
-root.render(<App />); 
+// メッセージリスナーを設定
+window.addEventListener('message', (event) => {
+	const message = event.data;
+	
+	if (message.type === 'openDevTools') {
+		// 開発者ツールを開く（Electron環境でのみ動作）
+		if (window.require) {
+			try {
+				const { remote } = window.require('electron');
+				const currentWindow = remote.getCurrentWindow();
+				currentWindow.webContents.openDevTools();
+			} catch (e) {
+				console.log('開発者ツールを開けませんでした:', e);
+			}
+		}
+	}
+});
+
+// Reactアプリをレンダリング
+const container = document.getElementById('root');
+if (container) {
+	const root = createRoot(container);
+	root.render(<App />);
+} 

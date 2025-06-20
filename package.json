@@ -3,7 +3,7 @@
   "displayName": "TextUI Designer",
   "description": "YAML/JSON DSLでUIを設計するVS Code拡張",
   "publisher": "kamoshika-san",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -12,6 +12,7 @@
   ],
   "activationEvents": [
     "onCommand:textui-designer.openPreview",
+    "onCommand:textui-designer.export",
     "onLanguage:yaml"
   ],
   "main": "./out/extension.js",
@@ -28,6 +29,14 @@
       {
         "command": "textui-designer.insertTemplate",
         "title": "TextUI: テンプレート挿入"
+      },
+      {
+        "command": "textui-designer.export",
+        "title": "TextUI: Export to Code"
+      },
+      {
+        "command": "textui-designer.openDevTools",
+        "title": "TextUI: Open Developer Tools"
       }
     ],
     "menus": {
@@ -35,6 +44,11 @@
         {
           "command": "textui-designer.openPreview",
           "when": "resourceLangId == yaml",
+          "group": "navigation"
+        },
+        {
+          "command": "textui-designer.export",
+          "when": "resourceExtname == .tui.yml",
           "group": "navigation"
         }
       ]
@@ -56,7 +70,10 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "build:webview": "vite build",
+    "dev:webview": "vite build --watch",
+    "build:all": "npm run compile && npm run build:webview"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.6",

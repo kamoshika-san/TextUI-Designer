@@ -1,44 +1,55 @@
 import React from 'react';
-import type { InputType } from '../types';
 
 interface InputProps {
-  label: string;
+  label?: string;
   name: string;
-  type: InputType;
+  type?: 'text' | 'email' | 'password' | 'number' | 'multiline';
   required?: boolean;
+  placeholder?: string;
 }
 
 export const Input: React.FC<InputProps> = ({
   label,
   name,
-  type,
-  required = false
+  type = 'text',
+  required = false,
+  placeholder,
 }) => {
-  const inputClasses = 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500';
-
-  return (
-    <div className="mb-4">
-      <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
-      {type === 'multiline' ? (
+  if (type === 'multiline') {
+    return (
+      <div className="mb-4">
+        {label && (
+          <label htmlFor={name} className="block text-sm font-medium text-gray-400 mb-2">
+            {label}
+          </label>
+        )}
         <textarea
           id={name}
           name={name}
-          className={inputClasses}
+          required={required}
+          placeholder={placeholder}
+          className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           rows={4}
-          required={required}
         />
-      ) : (
-        <input
-          id={name}
-          name={name}
-          type={type}
-          className={inputClasses}
-          required={required}
-        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-4">
+      {label && (
+        <label htmlFor={name} className="block text-sm font-medium text-gray-400 mb-2">
+          {label}
+        </label>
       )}
+      <input
+        id={name}
+        name={name}
+        type={type}
+        required={required}
+        placeholder={placeholder}
+        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      />
     </div>
   );
 }; 

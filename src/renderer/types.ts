@@ -33,6 +33,8 @@ export interface CheckboxComponent {
 export interface FormField {
   Input?: InputComponent;
   Checkbox?: CheckboxComponent;
+  Radio?: RadioComponent;
+  Select?: SelectComponent;
 }
 
 export interface FormAction {

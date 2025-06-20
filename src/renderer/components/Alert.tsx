@@ -1,16 +1,22 @@
 import React from 'react';
-import type { AlertComponent } from '../types';
 
-const variantStyles: Record<AlertComponent['variant'], string> = {
-  info: 'bg-blue-50 border-blue-200 text-blue-800',
-  success: 'bg-green-50 border-green-200 text-green-800',
-  warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
-  error: 'bg-red-50 border-red-200 text-red-800',
+type AlertVariant = 'info' | 'success' | 'warning' | 'error';
+
+interface AlertProps {
+  variant: AlertVariant;
+  message: string;
+}
+
+const variantClasses: Record<AlertVariant, string> = {
+  info: 'p-4 border rounded-md bg-blue-900 border-blue-700 text-blue-200',
+  success: 'p-4 border rounded-md bg-green-900 border-green-700 text-green-200',
+  warning: 'p-4 border rounded-md bg-yellow-900 border-yellow-700 text-yellow-200',
+  error: 'p-4 border rounded-md bg-red-900 border-red-700 text-red-200',
 };
 
-export const Alert: React.FC<AlertComponent> = ({ variant, message }) => {
+export const Alert: React.FC<AlertProps> = ({ variant, message }) => {
   return (
-    <div className={`p-4 rounded-lg mb-4 border ${variantStyles[variant]}`}>
+    <div className={variantClasses[variant]}>
       {message}
     </div>
   );
