@@ -258,4 +258,20 @@ export class WebViewManager {
       this.currentPanel.dispose();
     }
   }
+
+  /**
+   * WebViewにテーマ変更を通知
+   */
+  notifyThemeChange(theme: 'light' | 'dark'): void {
+    if (!this.currentPanel) {
+      console.log('[WebViewManager] テーマ変更通知: パネルが存在しません');
+      return;
+    }
+
+    console.log(`[WebViewManager] テーマ変更通知: ${theme}`);
+    this.currentPanel.webview.postMessage({
+      type: 'theme-change',
+      theme: theme
+    });
+  }
 } 

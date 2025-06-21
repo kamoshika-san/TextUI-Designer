@@ -179,6 +179,17 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // VSCodeテーマ変更の監視
+  context.subscriptions.push(
+    vscode.window.onDidChangeActiveColorTheme(colorTheme => {
+      console.log(`[Theme] VSCodeテーマが変更されました: ${colorTheme.kind}`);
+      
+      // WebViewにテーマ変更を通知
+      const theme = colorTheme.kind === vscode.ColorThemeKind.Light ? 'light' : 'dark';
+      webViewManager.notifyThemeChange(theme);
+    })
+  );
+
   // パフォーマンス監視の終了
   const endTime = Date.now();
   const activationTime = endTime - startTime;

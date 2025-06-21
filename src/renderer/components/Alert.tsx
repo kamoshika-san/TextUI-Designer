@@ -1,10 +1,12 @@
 import React from 'react';
+import { AlertComponent } from '../types';
 
 type AlertVariant = 'info' | 'success' | 'warning' | 'error';
 
-interface AlertProps {
-  variant: AlertVariant;
+interface AlertProps extends AlertComponent {
+  variant?: AlertVariant;
   message: string;
+  title?: string;
 }
 
 const variantClasses: Record<AlertVariant, string> = {
@@ -14,10 +16,15 @@ const variantClasses: Record<AlertVariant, string> = {
   error: 'textui-alert error',
 };
 
-export const Alert: React.FC<AlertProps> = ({ variant, message }) => {
+export const Alert: React.FC<AlertProps> = ({ 
+  variant = 'info', 
+  message,
+  title 
+}) => {
   return (
     <div className={variantClasses[variant]}>
-      {message}
+      {title && <div className="textui-alert-title">{title}</div>}
+      <div className="textui-alert-message">{message}</div>
     </div>
   );
 }; 

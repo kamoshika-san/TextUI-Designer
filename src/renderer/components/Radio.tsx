@@ -1,20 +1,36 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { RadioComponent, RadioOption } from '../types';
 
-interface RadioOption {
-  label: string;
-  value: string;
+interface RadioProps extends RadioComponent {
+  label?: string;
+  name?: string;
+  value?: string;
+  checked?: boolean;
+  disabled?: boolean;
+  options?: RadioOption[];
 }
 
-interface RadioProps {
-  label: string;
-  name: string;
-  options: RadioOption[];
-}
+export const Radio: React.FC<RadioProps> = ({ 
+  label, 
+  name = 'radio', 
+  value: initialValue,
+  checked: initialChecked = false,
+  disabled = false,
+  options = [] 
+}) => {
+  const [selectedValue, setSelectedValue] = useState(initialValue || '');
 
-export const Radio: React.FC<RadioProps> = ({ label, name, options }) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!disabled) {
+      setSelectedValue(e.target.value);
+    }
+  };
+
   return (
     <div className="textui-radio-group">
-      <label className="block text-sm font-medium mb-2 textui-text">{label}</label>
+      {label && (
+        <label className="block text-sm font-medium mb-2 textui-text">{label}</label>
+      )}
       {options.map((option, index) => (
         <div key={index} className="textui-radio-option">
           <input
@@ -22,6 +38,9 @@ export const Radio: React.FC<RadioProps> = ({ label, name, options }) => {
             id={`${name}-${index}`}
             name={name}
             value={option.value}
+            checked={selectedValue === option.value}
+            disabled={disabled}
+            onChange={handleChange}
           />
           <label htmlFor={`${name}-${index}`} className="textui-text">
             {option.label}

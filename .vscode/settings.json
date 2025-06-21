@@ -9,5 +9,17 @@
 		"dist": true // set this to false to include "dist" folder in search results
 	},
 	// Turn off tsc task auto detection since we have the necessary tasks as npm scripts
-	"typescript.tsc.autoDetect": "off"
+	"typescript.tsc.autoDetect": "off",
+	// CSS検証の設定
+	"css.validate": false,
+	"less.validate": false,
+	"scss.validate": false,
+	// Tailwind CSS IntelliSenseの設定
+	"tailwindCSS.includeLanguages": {
+		"css": "css"
+	},
+	"tailwindCSS.experimental.classRegex": [
+		["@apply\\s+([^;}]+)", "([^;}]+)"],
+		["classList\\.add\\(([^)]*)\\)", "([^)]*)"]
+	]
 }
