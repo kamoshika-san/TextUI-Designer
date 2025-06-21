@@ -260,6 +260,19 @@ export class WebViewManager {
   }
 
   /**
+   * テーマ用CSS変数をWebViewへ送信
+   */
+  applyThemeVariables(css: string): void {
+    if (!this.currentPanel) {
+      return;
+    }
+    this.currentPanel.webview.postMessage({
+      type: 'theme-variables',
+      css
+    });
+  }
+
+  /**
    * WebViewにテーマ変更を通知
    */
   notifyThemeChange(theme: 'light' | 'dark'): void {
