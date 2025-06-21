@@ -10,6 +10,7 @@ import { Radio } from './components/Radio';
 import { Select } from './components/Select';
 import { Divider } from './components/Divider';
 import { Alert } from './components/Alert';
+import { ThemeToggle } from './components/ThemeToggle';
 import type { TextUIDSL, ComponentDef, FormComponent, FormField, FormAction } from './types';
 
 // HTMLテンプレートで既に取得されているvscodeオブジェクトを使用
@@ -99,6 +100,10 @@ const App: React.FC = () => {
         console.log('[React] JSONデータを受信:', message.json);
         setJson(message.json);
         setError(null);
+      } else if (message.type === 'update') {
+        console.log('[React] 更新データを受信:', message.data);
+        setJson(message.data);
+        setError(null);
       } else if (message.type === 'error') {
         console.log('[React] エラーメッセージを受信:', message.error);
         setError(message.error);
@@ -108,6 +113,9 @@ const App: React.FC = () => {
           'スキーマバリデーションエラー:\n' +
           (message.errors?.map((e: any) => `- ${e.instancePath} ${e.message}`).join('\n') || '')
         );
+      } else if (message.type === 'theme-change') {
+        console.log('[React] テーマ変更メッセージを受信:', message.theme);
+        // テーマ変更はThemeToggleコンポーネントで処理される
       } else {
         console.log('[React] 未対応のメッセージタイプ:', message.type);
       }
@@ -139,9 +147,13 @@ const App: React.FC = () => {
   const components: ComponentDef[] = json.page?.components || [];
   return (
     <div style={{ padding: 24, position: 'relative' }}>
+      {/* テーマ切り替えスイッチ */}
+      <ThemeToggle />
+      
       {/* エクスポートボタン */}
       <button 
         onClick={handleExport}
+        className="export-button"
         style={{
           position: 'fixed',
           top: '1rem',
@@ -154,7 +166,12 @@ const App: React.FC = () => {
           fontSize: '0.875rem',
           cursor: 'pointer',
           transition: 'all 0.2s',
-          zIndex: 1000
+          zIndex: 1000,
+          height: '2.5rem', // 高さを固定
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minWidth: '4.5rem' // 最小幅を設定
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = 'rgba(55, 65, 81, 0.9)';

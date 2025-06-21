@@ -15,6 +15,15 @@ export default defineConfig({
     },
   },
   plugins: [react()],
+  // PostCSS設定
+  css: {
+    postcss: {
+      plugins: [
+        require('tailwindcss'),
+        require('autoprefixer'),
+      ],
+    },
+  },
   // 開発モードの設定
   server: {
     port: 3000,

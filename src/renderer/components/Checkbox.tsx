@@ -1,23 +1,36 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { CheckboxComponent } from '../types';
 
-interface CheckboxProps {
+interface CheckboxProps extends CheckboxComponent {
   label: string;
-  name: string;
-  required?: boolean;
+  name?: string;
+  checked?: boolean;
+  disabled?: boolean;
 }
 
 export const Checkbox: React.FC<CheckboxProps> = ({
   label,
-  name,
-  required = false,
+  name = 'checkbox',
+  checked: initialChecked = false,
+  disabled = false,
 }) => {
+  const [isChecked, setIsChecked] = useState(initialChecked);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!disabled) {
+      setIsChecked(e.target.checked);
+    }
+  };
+
   return (
     <div className="flex items-center mb-4">
       <input
         type="checkbox"
         id={name}
         name={name}
-        required={required}
+        checked={isChecked}
+        disabled={disabled}
+        onChange={handleChange}
         className="textui-checkbox"
       />
       <label htmlFor={name} className="ml-2 block text-sm textui-text">

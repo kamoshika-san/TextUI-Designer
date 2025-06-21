@@ -1,3 +1,4 @@
+/* Tailwind CSS */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -18,8 +19,19 @@
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
+/* ライトモード用のコンテナスタイル */
+.light .textui-container {
+  background-color: rgb(255 255 255) !important; /* 白背景 */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
 .textui-text {
   color: rgb(243 244 246) !important; /* 明るいグレー文字 */
+}
+
+/* ライトモード用のテキストスタイル */
+.light .textui-text {
+  color: rgb(31 41 55) !important; /* ダークグレー文字 */
 }
 
 .textui-text.h1 {
@@ -28,15 +40,32 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
+/* ライトモード用のh1スタイル */
+.light .textui-text.h1 {
+  color: rgb(17 24 39) !important; /* ダーク文字 */
+  text-shadow: none;
+}
+
 .textui-text.h2 {
   @apply text-3xl font-semibold mb-3;
   color: rgb(255 255 255) !important; /* 白文字 */
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
+/* ライトモード用のh2スタイル */
+.light .textui-text.h2 {
+  color: rgb(17 24 39) !important; /* ダーク文字 */
+  text-shadow: none;
+}
+
 .textui-text.h3 {
   @apply text-2xl font-medium mb-2;
   color: rgb(243 244 246) !important; /* 明るいグレー文字 */
+}
+
+/* ライトモード用のh3スタイル */
+.light .textui-text.h3 {
+  color: rgb(31 41 55) !important; /* ダークグレー文字 */
 }
 
 .textui-text.p {
@@ -45,14 +74,29 @@
   line-height: 1.6;
 }
 
+/* ライトモード用のpスタイル */
+.light .textui-text.p {
+  color: rgb(55 65 81) !important; /* ダークグレー文字 */
+}
+
 .textui-text.small {
   @apply text-sm;
   color: rgb(156 163 175) !important; /* 中程度のグレー文字 */
 }
 
+/* ライトモード用のsmallスタイル */
+.light .textui-text.small {
+  color: rgb(107 114 128) !important; /* 中程度のグレー文字 */
+}
+
 .textui-text.caption {
   @apply text-xs;
   color: rgb(107 114 128) !important; /* やや暗いグレー文字 */
+}
+
+/* ライトモード用のcaptionスタイル */
+.light .textui-text.caption {
+  color: rgb(156 163 175) !important; /* やや明るいグレー文字 */
 }
 
 /* アラートコンポーネントの改善 */
@@ -67,10 +111,24 @@
   color: rgb(147 197 253) !important; /* 明るいブルー文字 */
 }
 
+/* ライトモード用のinfoアラート */
+.light .textui-alert.info {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  border-color: rgb(59 130 246) !important;
+  color: rgb(30 64 175) !important; /* ダークブルー文字 */
+}
+
 .textui-alert.success {
   background-color: rgba(34, 197, 94, 0.1) !important;
   border-color: rgb(34 197 94) !important;
   color: rgb(134 239 172) !important; /* 明るいグリーン文字 */
+}
+
+/* ライトモード用のsuccessアラート */
+.light .textui-alert.success {
+  background-color: rgba(34, 197, 94, 0.1) !important;
+  border-color: rgb(34 197 94) !important;
+  color: rgb(22 163 74) !important; /* ダークグリーン文字 */
 }
 
 .textui-alert.warning {
@@ -79,10 +137,24 @@
   color: rgb(253 230 138) !important; /* 明るいイエロー文字 */
 }
 
+/* ライトモード用のwarningアラート */
+.light .textui-alert.warning {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+  border-color: rgb(245 158 11) !important;
+  color: rgb(161 98 7) !important; /* ダークイエロー文字 */
+}
+
 .textui-alert.error {
   background-color: rgba(239, 68, 68, 0.1) !important;
   border-color: rgb(239 68 68) !important;
   color: rgb(252 165 165) !important; /* 明るいレッド文字 */
+}
+
+/* ライトモード用のerrorアラート */
+.light .textui-alert.error {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgb(239 68 68) !important;
+  color: rgb(185 28 28) !important; /* ダークレッド文字 */
 }
 
 /* 区切り線の改善 */
@@ -91,9 +163,19 @@
   border-top: 1px solid rgb(75 85 99) !important; /* ダークグレー */
 }
 
+/* ライトモード用の区切り線 */
+.light .textui-divider {
+  border-top: 1px solid rgb(209 213 219) !important; /* ライトグレー */
+}
+
 .textui-divider.vertical {
   @apply mx-4;
   border-left: 1px solid rgb(75 85 99) !important; /* ダークグレー */
+}
+
+/* ライトモード用の垂直区切り線 */
+.light .textui-divider.vertical {
+  border-left: 1px solid rgb(209 213 219) !important; /* ライトグレー */
 }
 
 /* ラジオグループの改善 */
@@ -115,6 +197,11 @@
   color: rgb(229 231 235) !important; /* 明るいグレー文字 */
 }
 
+/* ライトモード用のラジオラベル */
+.light .textui-radio-option label {
+  color: rgb(55 65 81) !important; /* ダークグレー文字 */
+}
+
 /* セレクトボックスの改善 */
 .textui-select {
   @apply mb-4;
@@ -125,11 +212,23 @@
   color: rgb(229 231 235) !important; /* 明るいグレー文字 */
 }
 
+/* ライトモード用のセレクトラベル */
+.light .textui-select label {
+  color: rgb(55 65 81) !important; /* ダークグレー文字 */
+}
+
 .textui-select select {
   @apply block w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2;
   background-color: rgb(55 65 81) !important; /* ダークグレー背景 */
   border: 1px solid rgb(75 85 99) !important; /* ダークグレーボーダー */
   color: rgb(229 231 235) !important; /* 明るいグレー文字 */
+}
+
+/* ライトモード用のセレクトボックス */
+.light .textui-select select {
+  background-color: rgb(255 255 255) !important; /* 白背景 */
+  border: 1px solid rgb(209 213 219) !important; /* ライトグレーボーダー */
+  color: rgb(55 65 81) !important; /* ダークグレー文字 */
 }
 
 .textui-select select:focus {
@@ -165,6 +264,16 @@
   background-color: rgb(55 65 81) !important;
 }
 
+/* ライトモード用のセカンダリボタン */
+.light .textui-button.secondary {
+  background-color: rgb(156 163 175) !important; /* ライトグレー */
+  color: rgb(255 255 255) !important;
+}
+
+.light .textui-button.secondary:hover {
+  background-color: rgb(107 114 128) !important;
+}
+
 .textui-button.submit {
   background-color: rgb(34 197 94) !important; /* グリーン */
   color: rgb(255 255 255) !important;
@@ -185,6 +294,13 @@
   color: rgb(229 231 235) !important; /* 明るいグレー文字 */
 }
 
+/* ライトモード用の入力フィールド */
+.light .textui-input {
+  background-color: rgb(255 255 255) !important; /* 白背景 */
+  border: 1px solid rgb(209 213 219) !important; /* ライトグレーボーダー */
+  color: rgb(55 65 81) !important; /* ダークグレー文字 */
+}
+
 .textui-input:focus {
   border-color: rgb(59 130 246) !important; /* ブルーフォーカス */
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
@@ -192,6 +308,11 @@
 
 .textui-input::placeholder {
   color: rgb(107 114 128) !important; /* プレースホルダー色 */
+}
+
+/* ライトモード用のプレースホルダー */
+.light .textui-input::placeholder {
+  color: rgb(156 163 175) !important; /* ライトグレープレースホルダー */
 }
 
 /* チェックボックスの改善 */
@@ -206,8 +327,61 @@ body {
   color: rgb(229 231 235) !important; /* 明るいグレー文字 */
 }
 
+/* ライトモード用の背景色 */
+body.light {
+  background-color: rgb(249 250 251) !important; /* ライトグレー背景 */
+  color: rgb(55 65 81) !important; /* ダークグレー文字 */
+}
+
 #root {
   background-color: rgb(17 24 39) !important; /* ダーク背景 */
   min-height: 100vh;
   padding: 1rem;
+}
+
+/* ライトモード用のルート背景 */
+.light #root {
+  background-color: rgb(249 250 251) !important; /* ライトグレー背景 */
+}
+
+/* テーマ切り替えボタンのスタイル */
+.theme-toggle {
+  transition: all 0.2s ease-in-out;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.05);
+}
+
+/* ライトモード用のテーマ切り替えボタン */
+.light .theme-toggle {
+  background-color: rgba(156, 163, 175, 0.8) !important;
+  color: rgb(55 65 81) !important;
+  border-color: rgba(107, 114, 128, 0.5) !important;
+}
+
+.light .theme-toggle:hover {
+  background-color: rgba(107, 114, 128, 0.9) !important;
+  border-color: rgba(75, 85, 99, 0.7) !important;
+}
+
+/* Exportボタンのスタイル統一 */
+.export-button {
+  transition: all 0.2s ease-in-out;
+}
+
+.export-button:hover {
+  transform: scale(1.05);
+}
+
+/* ライトモード用のExportボタン */
+.light .export-button {
+  background-color: rgba(156, 163, 175, 0.8) !important;
+  color: rgb(55 65 81) !important;
+  border-color: rgba(107, 114, 128, 0.5) !important;
+}
+
+.light .export-button:hover {
+  background-color: rgba(107, 114, 128, 0.9) !important;
+  border-color: rgba(75, 85, 99, 0.7) !important;
 } 

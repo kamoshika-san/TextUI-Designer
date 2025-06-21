@@ -2,9 +2,9 @@ import React from 'react';
 import { Input } from './Input';
 import { Button } from './Button';
 import { Checkbox } from './Checkbox';
-import type { FormField, FormAction } from '../types';
+import type { FormComponent, FormField, FormAction } from '../types';
 
-interface FormProps {
+interface FormProps extends FormComponent {
   id: string;
   fields: FormField[];
   actions: FormAction[];

@@ -18,8 +18,37 @@ export class SchemaManager {
 
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
-    this.schemaPath = path.join(context.extensionPath, 'schemas', 'schema.json');
-    this.templateSchemaPath = path.join(context.extensionPath, 'schemas', 'template-schema.json');
+    
+    // デバッグモードでのスキーマファイルパス解決を改善
+    const possiblePaths = [
+      path.join(context.extensionPath, 'schemas', 'schema.json'),
+      path.join(__dirname, '..', '..', 'schemas', 'schema.json'),
+      path.join(process.cwd(), 'schemas', 'schema.json')
+    ];
+    
+    // 最初に存在するパスを使用
+    let foundSchemaPath = '';
+    for (const schemaPath of possiblePaths) {
+      if (fs.existsSync(schemaPath)) {
+        foundSchemaPath = schemaPath;
+        console.log('[SchemaManager] スキーマパスを設定:', foundSchemaPath);
+        break;
+      }
+    }
+    
+    if (!foundSchemaPath) {
+      console.error('[SchemaManager] スキーマファイルが見つかりません。検索したパス:', possiblePaths);
+      // フォールバックとしてデフォルトパスを使用
+      this.schemaPath = path.join(context.extensionPath, 'schemas', 'schema.json');
+    } else {
+      this.schemaPath = foundSchemaPath;
+    }
+    
+    this.templateSchemaPath = path.join(path.dirname(this.schemaPath), 'template-schema.json');
+    
+    console.log('[SchemaManager] 初期化完了');
+    console.log('[SchemaManager] スキーマパス:', this.schemaPath);
+    console.log('[SchemaManager] テンプレートスキーマパス:', this.templateSchemaPath);
   }
 
   /**
@@ -54,12 +83,24 @@ export class SchemaManager {
    */
   private async registerSchemas(): Promise<void> {
     try {
+      // スキーマファイルの存在確認
+      if (!fs.existsSync(this.schemaPath)) {
+        throw new Error(`スキーマファイルが存在しません: ${this.schemaPath}`);
+      }
+      
+      if (!fs.existsSync(this.templateSchemaPath)) {
+        console.warn('[SchemaManager] テンプレートスキーマファイルが存在しません。作成を試行します。');
+        await this.createTemplateSchema();
+      }
+      
       const schemaUri = vscode.Uri.file(this.schemaPath).toString();
       const templateSchemaUri = vscode.Uri.file(this.templateSchemaPath).toString();
 
       console.log('[SchemaManager] スキーマ登録を開始');
       console.log('[SchemaManager] スキーマURI:', schemaUri);
       console.log('[SchemaManager] テンプレートスキーマURI:', templateSchemaUri);
+      console.log('[SchemaManager] スキーマファイル存在確認:', fs.existsSync(this.schemaPath));
+      console.log('[SchemaManager] テンプレートスキーマファイル存在確認:', fs.existsSync(this.templateSchemaPath));
 
       // YAML拡張（redhat.vscode-yaml）向け
       try {

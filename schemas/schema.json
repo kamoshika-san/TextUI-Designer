@@ -81,10 +81,11 @@
                 "enum": ["text", "email", "password", "number", "multiline"],
                 "description": "入力欄の種類（テキスト・メール・パスワード・数値・複数行）。"
               },
-              "required": { "type": "boolean", "default": false, "description": "必須入力かどうか。trueで必須。" }
+              "required": { "type": "boolean", "default": false, "description": "必須入力かどうか。trueで必須。" },
+              "placeholder": { "type": "string", "description": "入力欄のプレースホルダー（薄い説明文）。" }
             },
             "additionalProperties": false,
-            "description": "テキスト入力用コンポーネント。\n利用可能な属性: label, name, type, required"
+            "description": "テキスト入力用コンポーネント。\n利用可能な属性: label, name, type, required, placeholder"
           }
         },
         "additionalProperties": false,
@@ -195,10 +196,11 @@
                 "minItems": 1,
                 "description": "選択肢の配列。"
               },
-              "multiple": { "type": "boolean", "default": false, "description": "複数選択を許可するか。" }
+              "multiple": { "type": "boolean", "default": false, "description": "複数選択を許可するか。" },
+              "placeholder": { "type": "string", "description": "セレクトボックスのプレースホルダー（未選択時の表示）。" }
             },
             "additionalProperties": false,
-            "description": "セレクトボックスコンポーネント。\n利用可能な属性: label, name, options, multiple"
+            "description": "セレクトボックスコンポーネント。\n利用可能な属性: label, name, options, multiple, placeholder"
           }
         },
         "additionalProperties": false,

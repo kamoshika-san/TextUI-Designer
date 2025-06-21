@@ -110,7 +110,7 @@ export type ContainerLayout = 'vertical' | 'horizontal' | 'flex' | 'grid';
 
 export interface ContainerComponent {
   layout?: ContainerLayout;
-  components: ComponentDef[];
+  components?: ComponentDef[];
 }
 
 export type ComponentDef =
