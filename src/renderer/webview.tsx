@@ -92,6 +92,12 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // WebView準備完了メッセージを送信
+    if (vscode && vscode.postMessage) {
+      console.log('[React] WebView準備完了メッセージを送信');
+      vscode.postMessage({ type: 'webview-ready' });
+    }
+
     window.addEventListener('message', (event) => {
       const message = event.data;
       console.log('[React] メッセージを受信:', message);
@@ -117,9 +123,14 @@ const App: React.FC = () => {
         console.log('[React] テーマ変更メッセージを受信:', message.theme);
         // テーマ変更はThemeToggleコンポーネントで処理される
       } else if (message.type === 'theme-variables') {
+        console.log('[React] theme-variablesメッセージを受信:', message.css);
         const styleEl = document.getElementById('theme-vars');
         if (styleEl) {
+          console.log('[React] theme-vars要素が見つかりました。CSSを適用します');
           styleEl.textContent = message.css;
+          console.log('[React] CSS変数を適用しました');
+        } else {
+          console.error('[React] theme-vars要素が見つかりません');
         }
       } else {
         console.log('[React] 未対応のメッセージタイプ:', message.type);

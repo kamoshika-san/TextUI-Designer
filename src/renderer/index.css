@@ -9,22 +9,16 @@
   --vscode-background: unset !important;
   --vscode-editor-foreground: unset !important;
   --vscode-editor-background: unset !important;
-  --color-primary: #3B82F6;
-  --color-secondary: #6B7280;
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
-  --color-surface: #1f2937;
-  --color-background: #ffffff;
-  --color-text-primary: #e5e7eb;
-  --color-text-dark: #1f2937;
+  --vscode-font-family: unset !important;
+  --vscode-font-size: unset !important;
+  --vscode-font-weight: unset !important;
 }
 
 /* ダークモード対応のカスタムスタイル */
 .textui-container {
-  @apply max-w-4xl mx-auto p-6;
-  background-color: var(--color-surface) !important;
-  border-radius: 0.75rem;
+  @apply max-w-4xl mx-auto;
+  padding: var(--spacing-lg, 1.5rem);
+  border-radius: var(--borderRadius-lg, 0.75rem);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
@@ -36,88 +30,173 @@
 
 .textui-text {
   color: var(--color-text-primary) !important;
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
+  font-weight: normal !important;
+  line-height: 1.6 !important;
 }
 
 /* ライトモード用のテキストスタイル */
 .light .textui-text {
   color: var(--color-text-dark) !important;
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
+  font-weight: normal !important;
+  line-height: 1.6 !important;
+}
+
+/* textui-textクラスの強力なセレクター */
+body .textui-text,
+body.light .textui-text {
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
+  font-weight: normal !important;
+  line-height: 1.6 !important;
 }
 
 .textui-text.h1 {
-  @apply text-4xl font-bold mb-4;
-  color: rgb(255 255 255) !important; /* 白文字 */
+  @apply font-bold;
+  font-size: var(--typography-fontSize-4xl, 2.25rem) !important;
+  line-height: 1.2;
+  margin-bottom: var(--spacing-md, 1rem);
+  color: var(--color-text-primary, rgb(255 255 255)) !important;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* ライトモード用のh1スタイル */
 .light .textui-text.h1 {
-  color: rgb(17 24 39) !important; /* ダーク文字 */
+  color: var(--color-text-dark, rgb(17 24 39)) !important;
   text-shadow: none;
 }
 
 .textui-text.h2 {
-  @apply text-3xl font-semibold mb-3;
-  color: rgb(255 255 255) !important; /* 白文字 */
+  @apply font-semibold;
+  font-size: var(--typography-fontSize-3xl, 1.875rem) !important;
+  line-height: 1.3;
+  margin-bottom: var(--spacing-sm, 0.75rem);
+  color: var(--color-text-primary, rgb(255 255 255)) !important;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* ライトモード用のh2スタイル */
 .light .textui-text.h2 {
-  color: rgb(17 24 39) !important; /* ダーク文字 */
+  color: var(--color-text-dark, rgb(17 24 39)) !important;
   text-shadow: none;
 }
 
 .textui-text.h3 {
-  @apply text-2xl font-medium mb-2;
-  color: rgb(243 244 246) !important; /* 明るいグレー文字 */
+  @apply font-medium;
+  font-size: var(--typography-fontSize-2xl, 1.5rem) !important;
+  line-height: 1.4;
+  margin-bottom: var(--spacing-xs, 0.5rem);
+  color: var(--color-text-secondary, rgb(243 244 246)) !important;
 }
 
 /* ライトモード用のh3スタイル */
 .light .textui-text.h3 {
-  color: rgb(31 41 55) !important; /* ダークグレー文字 */
+  color: var(--color-text-dark, rgb(31 41 55)) !important;
 }
 
 .textui-text.p {
-  @apply text-base mb-2;
-  color: rgb(229 231 235) !important; /* やや明るいグレー文字 */
+  font-size: var(--typography-fontSize-base, 1rem) !important;
   line-height: 1.6;
+  margin-bottom: var(--spacing-xs, 0.5rem);
+  color: var(--color-text-secondary, rgb(229 231 235)) !important;
 }
 
 /* ライトモード用のpスタイル */
 .light .textui-text.p {
-  color: rgb(55 65 81) !important; /* ダークグレー文字 */
+  color: var(--color-text-dark, rgb(55 65 81)) !important;
 }
 
 .textui-text.small {
-  @apply text-sm;
-  color: rgb(156 163 175) !important; /* 中程度のグレー文字 */
+  font-size: var(--typography-fontSize-sm, 0.875rem) !important;
+  color: var(--color-text-muted, rgb(156 163 175)) !important;
 }
 
 /* ライトモード用のsmallスタイル */
 .light .textui-text.small {
-  color: rgb(107 114 128) !important; /* 中程度のグレー文字 */
+  color: var(--color-text-secondary, rgb(107 114 128)) !important;
 }
 
 .textui-text.caption {
-  @apply text-xs;
-  color: rgb(107 114 128) !important; /* やや暗いグレー文字 */
+  font-size: var(--typography-fontSize-xs, 0.75rem) !important;
+  color: var(--color-text-muted, rgb(107 114 128)) !important;
 }
 
 /* ライトモード用のcaptionスタイル */
 .light .textui-text.caption {
-  color: rgb(156 163 175) !important; /* やや明るいグレー文字 */
+  color: var(--color-text-muted, rgb(156 163 175)) !important;
 }
 
 /* アラートコンポーネントの改善 */
 .textui-alert {
-  @apply p-4 rounded-lg mb-4 border;
+  @apply rounded-lg mb-4 border;
+  padding: var(--spacing-md, 1rem);
   backdrop-filter: blur(10px);
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
+  font-weight: normal !important;
+  line-height: 1.6 !important;
+  margin: 0 !important;
+  margin-bottom: var(--spacing-md, 1rem) !important;
+}
+
+/* VS Codeのbodyスタイルを上書きするための強力なセレクター */
+body .textui-alert,
+body.light .textui-alert {
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
+  font-weight: normal !important;
+  line-height: 1.6 !important;
+  margin: 0 !important;
+  margin-bottom: var(--spacing-md, 1rem) !important;
+}
+
+/* Inputラベルの強力なセレクター */
+body .textui-input,
+body.light .textui-input {
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
+  font-weight: normal !important;
+}
+
+/* Selectラベルの強力なセレクター */
+body .textui-select label,
+body.light .textui-select label {
+  font-size: var(--typography-fontSize-sm, 0.875rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
+  font-weight: normal !important;
+}
+
+/* Select値の強力なセレクター */
+body .textui-select select,
+body.light .textui-select select {
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
+  font-weight: normal !important;
+}
+
+/* Checkboxラベルの強力なセレクター */
+body .textui-checkbox + label,
+body.light .textui-checkbox + label {
+  font-size: var(--typography-fontSize-sm, 0.875rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
+  font-weight: normal !important;
+}
+
+/* Radioラベルの強力なセレクター */
+body .textui-radio-option label,
+body.light .textui-radio-option label {
+  font-size: var(--typography-fontSize-sm, 0.875rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
+  font-weight: normal !important;
 }
 
 .textui-alert.info {
   background-color: rgba(59, 130, 246, 0.1) !important;
-  border-color: var(--color-primary) !important;
-  color: var(--color-primary) !important;
+  border-color: var(--color-primary, #3B82F6) !important;
+  color: var(--color-primary, #3B82F6) !important;
 }
 
 /* ライトモード用のinfoアラート */
@@ -129,8 +208,8 @@
 
 .textui-alert.success {
   background-color: rgba(34, 197, 94, 0.1) !important;
-  border-color: var(--color-success) !important;
-  color: var(--color-success) !important;
+  border-color: var(--color-success, #10B981) !important;
+  color: var(--color-success, #10B981) !important;
 }
 
 /* ライトモード用のsuccessアラート */
@@ -142,8 +221,8 @@
 
 .textui-alert.warning {
   background-color: rgba(245, 158, 11, 0.1) !important;
-  border-color: var(--color-warning) !important;
-  color: var(--color-warning) !important;
+  border-color: var(--color-warning, #F59E0B) !important;
+  color: var(--color-warning, #F59E0B) !important;
 }
 
 /* ライトモード用のwarningアラート */
@@ -155,8 +234,8 @@
 
 .textui-alert.error {
   background-color: rgba(239, 68, 68, 0.1) !important;
-  border-color: var(--color-error) !important;
-  color: var(--color-error) !important;
+  border-color: var(--color-error, #EF4444) !important;
+  color: var(--color-error, #EF4444) !important;
 }
 
 /* ライトモード用のerrorアラート */
@@ -169,27 +248,32 @@
 /* 区切り線の改善 */
 .textui-divider {
   @apply my-4;
-  border-top: 1px solid rgb(75 85 99) !important; /* ダークグレー */
+  margin-top: var(--spacing-md, 1rem);
+  margin-bottom: var(--spacing-md, 1rem);
+  border-top: 1px solid var(--color-secondary, rgb(75 85 99)) !important;
 }
 
 /* ライトモード用の区切り線 */
 .light .textui-divider {
-  border-top: 1px solid rgb(209 213 219) !important; /* ライトグレー */
+  border-top: 1px solid var(--color-secondary, rgb(209 213 219)) !important;
 }
 
 .textui-divider.vertical {
   @apply mx-4;
-  border-left: 1px solid rgb(75 85 99) !important; /* ダークグレー */
+  margin-left: var(--spacing-md, 1rem);
+  margin-right: var(--spacing-md, 1rem);
+  border-left: 1px solid var(--color-secondary, rgb(75 85 99)) !important;
 }
 
 /* ライトモード用の垂直区切り線 */
 .light .textui-divider.vertical {
-  border-left: 1px solid rgb(209 213 219) !important; /* ライトグレー */
+  border-left: 1px solid var(--color-secondary, rgb(209 213 219)) !important;
 }
 
 /* ラジオグループの改善 */
 .textui-radio-group {
-  @apply space-y-2 mb-4;
+  @apply mb-4;
+  gap: var(--spacing-xs, 0.5rem);
 }
 
 .textui-radio-option {
@@ -198,63 +282,101 @@
 
 .textui-radio-option input[type="radio"] {
   @apply mr-2;
-  accent-color: rgb(59 130 246); /* ブルーアクセント */
+  accent-color: var(--color-primary, rgb(59 130 246));
 }
 
 .textui-radio-option label {
-  @apply text-sm;
-  color: rgb(229 231 235) !important; /* 明るいグレー文字 */
+  font-size: var(--typography-fontSize-sm, 0.875rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
+  color: var(--color-text-secondary, rgb(229 231 235)) !important;
 }
 
 /* ライトモード用のラジオラベル */
 .light .textui-radio-option label {
-  color: rgb(55 65 81) !important; /* ダークグレー文字 */
+  color: var(--color-text-dark, rgb(229 231 235)) !important;
 }
 
 /* セレクトボックスの改善 */
 .textui-select {
   @apply mb-4;
+  padding: var(--spacing-xs, 0.5rem) 0;
 }
 
 .textui-select label {
-  @apply block text-sm font-medium mb-1;
-  color: rgb(229 231 235) !important; /* 明るいグレー文字 */
+  @apply block font-medium mb-1;
+  font-size: var(--typography-fontSize-sm, 0.875rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
+  color: var(--color-text-primary, rgb(229 231 235)) !important;
 }
 
 /* ライトモード用のセレクトラベル */
 .light .textui-select label {
-  color: rgb(55 65 81) !important; /* ダークグレー文字 */
+  color: var(--color-text-primary, rgb(229 231 235)) !important;
 }
 
 .textui-select select {
   @apply block w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2;
-  background-color: rgb(55 65 81) !important; /* ダークグレー背景 */
-  border: 1px solid rgb(75 85 99) !important; /* ダークグレーボーダー */
-  color: rgb(229 231 235) !important; /* 明るいグレー文字 */
+  background-color: var(--color-surface, rgb(55 65 81)) !important;
+  border: 1px solid var(--color-secondary, rgb(75 85 99)) !important;
+  color: var(--color-text-secondary, rgb(229 231 235)) !important;
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
 }
 
 /* ライトモード用のセレクトボックス */
 .light .textui-select select {
-  background-color: rgb(255 255 255) !important; /* 白背景 */
-  border: 1px solid rgb(209 213 219) !important; /* ライトグレーボーダー */
-  color: rgb(55 65 81) !important; /* ダークグレー文字 */
+  background-color: var(--color-background, rgb(255 255 255)) !important;
+  border: 1px solid var(--color-secondary, rgb(209 213 219)) !important;
+  color: var(--color-text-secondary, rgb(107 114 128)) !important;
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
 }
 
 .textui-select select:focus {
-  border-color: rgb(59 130 246) !important; /* ブルーフォーカス */
+  border-color: var(--color-primary, rgb(59 130 246)) !important;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* プレースホルダーオプション（disabled属性付き）のスタイル */
+.textui-select select option[disabled] {
+  color: var(--color-text-muted, rgb(107 114 128)) !important;
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
+}
+
+/* ライトモード用のプレースホルダーオプション */
+.light .textui-select select option[disabled] {
+  color: var(--color-text-muted, rgb(156 163 175)) !important;
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
+}
+
+/* 通常のオプションのスタイル */
+.textui-select select option:not([disabled]) {
+  color: var(--color-text-secondary, rgb(229 231 235)) !important;
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
+}
+
+/* ライトモード用の通常オプション */
+.light .textui-select select option:not([disabled]) {
+  color: var(--color-text-secondary, rgb(107 114 128)) !important;
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
 }
 
 /* ボタンの改善 */
 .textui-button {
-  @apply px-4 py-2 rounded-md font-medium transition-all duration-200;
+  @apply rounded-md font-medium transition-all duration-200;
+  padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);
+  font-size: var(--typography-fontSize-base, 1rem);
   border: none;
   cursor: pointer;
 }
 
 .textui-button.primary {
-  background-color: var(--color-primary) !important;
-  color: rgb(255 255 255) !important;
+  background-color: var(--color-primary, #3B82F6) !important;
+  color: var(--color-text-primary, rgb(255 255 255)) !important;
   box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
 }
 
@@ -265,8 +387,8 @@
 }
 
 .textui-button.secondary {
-  background-color: var(--color-secondary) !important;
-  color: rgb(255 255 255) !important;
+  background-color: var(--color-secondary, #6B7280) !important;
+  color: var(--color-text-primary, rgb(255 255 255)) !important;
 }
 
 .textui-button.secondary:hover {
@@ -276,7 +398,7 @@
 /* ライトモード用のセカンダリボタン */
 .light .textui-button.secondary {
   background-color: rgb(156 163 175) !important; /* ライトグレー */
-  color: rgb(255 255 255) !important;
+  color: var(--color-text-primary, rgb(255 255 255)) !important;
 }
 
 .light .textui-button.secondary:hover {
@@ -284,8 +406,8 @@
 }
 
 .textui-button.submit {
-  background-color: var(--color-success) !important;
-  color: rgb(255 255 255) !important;
+  background-color: var(--color-success, #10B981) !important;
+  color: var(--color-text-primary, rgb(255 255 255)) !important;
   box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.2);
 }
 
@@ -297,60 +419,94 @@
 
 /* 入力フィールドの改善 */
 .textui-input {
-  @apply block w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2;
-  background-color: rgb(55 65 81) !important; /* ダークグレー背景 */
-  border: 1px solid rgb(75 85 99) !important; /* ダークグレーボーダー */
-  color: rgb(229 231 235) !important; /* 明るいグレー文字 */
+  @apply block w-full rounded-md shadow-sm focus:outline-none focus:ring-2;
+  padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
+  background-color: var(--color-surface, rgb(55 65 81)) !important;
+  border: 1px solid var(--color-secondary, rgb(75 85 99)) !important;
+  color: var(--color-text-secondary, rgb(229 231 235)) !important;
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
 }
 
 /* ライトモード用の入力フィールド */
 .light .textui-input {
-  background-color: rgb(255 255 255) !important; /* 白背景 */
-  border: 1px solid rgb(209 213 219) !important; /* ライトグレーボーダー */
-  color: rgb(55 65 81) !important; /* ダークグレー文字 */
+  background-color: var(--color-background, rgb(255 255 255)) !important;
+  border: 1px solid var(--color-secondary, rgb(209 213 219)) !important;
+  color: var(--color-text-dark, rgb(55 65 81)) !important;
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
 }
 
 .textui-input:focus {
-  border-color: rgb(59 130 246) !important; /* ブルーフォーカス */
+  border-color: var(--color-primary, rgb(59 130 246)) !important;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
 }
 
 .textui-input::placeholder {
-  color: rgb(107 114 128) !important; /* プレースホルダー色 */
+  color: var(--color-text-muted, rgb(107 114 128)) !important;
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
 }
 
 /* ライトモード用のプレースホルダー */
 .light .textui-input::placeholder {
-  color: rgb(156 163 175) !important; /* ライトグレープレースホルダー */
+  color: var(--color-text-muted, rgb(156 163 175)) !important;
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
 }
 
 /* チェックボックスの改善 */
 .textui-checkbox {
   @apply h-4 w-4 rounded;
-  accent-color: rgb(59 130 246); /* ブルーアクセント */
+  accent-color: var(--color-primary, rgb(59 130 246));
+  margin-right: var(--spacing-xs, 0.5rem);
+}
+
+/* チェックボックスのラベルスタイル */
+.textui-checkbox + label {
+  font-size: var(--typography-fontSize-sm, 0.875rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
+  color: var(--color-text-secondary, rgb(229 231 235)) !important;
+}
+
+/* ライトモード用のチェックボックスラベル */
+.light .textui-checkbox + label {
+  color: var(--color-text-dark, rgb(55 65 81)) !important;
+  font-size: var(--typography-fontSize-sm, 0.875rem) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
 }
 
 /* 全体的な背景色の設定 */
 body {
-  background-color: var(--color-surface) !important;
-  color: var(--color-text-primary) !important;
+  background-color: var(--color-surface, #1F2937) !important;
+  color: var(--color-text-primary, #F9FAFB) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-weight: normal !important;
+  margin: 0 !important;
+  padding: 0 20px !important;
+  overscroll-behavior-x: none !important;
 }
 
 /* ライトモード用の背景色 */
 body.light {
-  background-color: var(--color-background) !important;
-  color: var(--color-text-dark) !important;
+  background-color: var(--color-background, #F9FAFB) !important;
+  color: var(--color-text-dark, #111827) !important;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif) !important;
+  font-size: var(--typography-fontSize-base, 1rem) !important;
+  font-weight: normal !important;
 }
 
 #root {
-  background-color: var(--color-surface) !important;
+  background-color: var(--color-surface, #1F2937) !important;
   min-height: 100vh;
   padding: 1rem;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
 }
 
 /* ライトモード用のルート背景 */
 .light #root {
-  background-color: var(--color-background) !important;
+  background-color: var(--color-background, #F9FAFB) !important;
 }
 
 /* テーマ切り替えボタンのスタイル */
@@ -393,4 +549,10 @@ body.light {
 .light .export-button:hover {
   background-color: rgba(107, 114, 128, 0.9) !important;
   border-color: rgba(75, 85, 99, 0.7) !important;
+}
+
+.textui-form {
+  @apply w-full;
+  padding: var(--spacing-md, 1rem);
+  gap: var(--spacing-sm, 0.75rem);
 } 

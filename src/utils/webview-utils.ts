@@ -25,7 +25,6 @@ export function getWebviewContent(context: vscode.ExtensionContext, panel?: vsco
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TextUI Preview</title>
   <link rel="stylesheet" href="${cssUri}">
-  <style id="theme-vars"></style>
   <style>
     /* VS Codeテーマ変数を無効化 */
     :root {
@@ -47,6 +46,8 @@ export function getWebviewContent(context: vscode.ExtensionContext, panel?: vsco
       padding: 1rem;
     }
   </style>
+  <!-- テーマ変数はビルドされたCSSの後に適用される -->
+  <style id="theme-vars"></style>
 </head>
 <body>
   <div id="root">

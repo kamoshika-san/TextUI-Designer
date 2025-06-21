@@ -48,9 +48,9 @@ export function activate(context: vscode.ExtensionContext) {
   const schemaManager = new SchemaManager(context);
   globalSchemaManager = schemaManager; // グローバルに保存
   
-  const webViewManager = new WebViewManager(context);
   const themeManager = new ThemeManager(context);
   themeManagerInstance = themeManager;
+  const webViewManager = new WebViewManager(context, themeManager);
   const exportManager = new ExportManager();
   const exportService = new ExportService(exportManager);
   const templateService = new TemplateService();
