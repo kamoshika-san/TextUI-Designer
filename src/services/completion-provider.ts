@@ -7,6 +7,10 @@ import * as YAML from 'yaml';
  */
 export class TextUICompletionProvider implements vscode.CompletionItemProvider {
   private schemaManager: any; // SchemaManagerの型を後で定義
+  private schemaCache: any = null;
+  private lastSchemaLoad: number = 0;
+  private completionCache: Map<string, { items: vscode.CompletionItem[]; timestamp: number }> = new Map();
+  private readonly CACHE_TTL = 10000; // 10秒
 
   constructor(schemaManager: any) {
     this.schemaManager = schemaManager;
@@ -37,14 +41,54 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     }
     
     try {
-      const yaml = YAML.parse(text);
-      const schema = this.schemaManager.loadSchema();
+      // キャッシュキーを生成
+      const cacheKey = this.generateCacheKey(document, position, context, isTemplate);
+      const now = Date.now();
       
-      return this.generateCompletionItems(linePrefix, position, currentWord, schema, isTemplate);
+      // キャッシュチェック
+      const cached = this.completionCache.get(cacheKey);
+      if (cached && (now - cached.timestamp) < this.CACHE_TTL) {
+        console.log('[CompletionProvider] キャッシュされた補完候補を使用');
+        return cached.items;
+      }
+
+      const yaml = YAML.parse(text);
+      
+      // スキーマキャッシュの更新チェック
+      if (!this.schemaCache || (now - this.lastSchemaLoad) > this.CACHE_TTL) {
+        this.schemaCache = this.schemaManager.loadSchema();
+        this.lastSchemaLoad = now;
+      }
+      
+      const items = this.generateCompletionItems(linePrefix, position, currentWord, this.schemaCache, isTemplate);
+      
+      // キャッシュを更新
+      this.completionCache.set(cacheKey, {
+        items: items,
+        timestamp: now
+      });
+      
+      return items;
     } catch (error) {
       // YAMLパースエラーの場合は基本的な補完を提供
       return this.getBasicCompletions(linePrefix, position, currentWord);
     }
+  }
+
+  /**
+   * キャッシュキーを生成
+   */
+  private generateCacheKey(
+    document: vscode.TextDocument, 
+    position: vscode.Position, 
+    context: vscode.CompletionContext,
+    isTemplate: boolean
+  ): string {
+    const text = document.getText();
+    const linePrefix = text.substring(document.offsetAt(new vscode.Position(position.line, 0)), document.offsetAt(position));
+    const triggerChar = context.triggerCharacter || '';
+    
+    return `${document.uri.toString()}:${position.line}:${position.character}:${isTemplate}:${triggerChar}:${linePrefix}`;
   }
 
   /**
@@ -208,18 +252,18 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
   }
 
   /**
-   * プロパティの値の補完候補を取得
+   * プロパティの値補完候補を取得
    */
   private getPropertyValueCompletions(propertyName?: string, componentName?: string): vscode.CompletionItem[] {
     if (!propertyName || !componentName) return [];
 
-    const valueCompletions = this.getPropertyValues(propertyName, componentName);
+    const values = this.getPropertyValues(propertyName, componentName);
     
-    return valueCompletions.map(value => {
-      const item = new vscode.CompletionItem(value.value, vscode.CompletionItemKind.Value);
-      item.detail = value.description;
-      item.insertText = value.value;
-      item.sortText = `0${value.value}`;
+    return values.map(val => {
+      const item = new vscode.CompletionItem(val.value, vscode.CompletionItemKind.Value);
+      item.detail = val.description;
+      item.insertText = val.value;
+      item.sortText = `0${val.value}`;
       return item;
     });
   }
@@ -228,41 +272,39 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
    * ルートレベルの補完候補を取得
    */
   private getRootLevelCompletions(): vscode.CompletionItem[] {
-    const rootItems = [
-      { name: 'page:', description: 'ページ定義' },
-      { name: 'components:', description: 'コンポーネント配列' }
-    ];
-
-    return rootItems.map(item => {
-      const completionItem = new vscode.CompletionItem(item.name, vscode.CompletionItemKind.Snippet);
-      completionItem.detail = item.description;
-      completionItem.insertText = item.name;
-      completionItem.sortText = `0${item.name}`;
-      return completionItem;
-    });
+    const items: vscode.CompletionItem[] = [];
+    
+    const pageItem = new vscode.CompletionItem('page', vscode.CompletionItemKind.Module);
+    pageItem.detail = 'ページ定義';
+    pageItem.insertText = 'page:\n  id: \n  title: \n  layout: vertical\n  components:\n    - ';
+    pageItem.sortText = '0page';
+    items.push(pageItem);
+    
+    return items;
   }
 
   /**
-   * 基本的な補完アイテムを取得
+   * 基本的な補完候補を取得（YAMLパースエラー時）
    */
   private getBasicCompletions(linePrefix: string, position: vscode.Position, currentWord: string): vscode.CompletionItem[] {
     const items: vscode.CompletionItem[] = [];
-
+    
     // 基本的なYAML構造
-    if (linePrefix.trim() === '') {
-      const basicStructure = [
-        { name: 'page:', description: 'ページ定義' },
-        { name: 'components:', description: 'コンポーネント配列' }
-      ];
-
-      basicStructure.forEach(item => {
-        const completionItem = new vscode.CompletionItem(item.name, vscode.CompletionItemKind.Snippet);
-        completionItem.detail = item.description;
-        completionItem.insertText = item.name;
-        items.push(completionItem);
-      });
-    }
-
+    const basicItems = [
+      { name: 'page', description: 'ページ定義' },
+      { name: 'id', description: 'ID' },
+      { name: 'title', description: 'タイトル' },
+      { name: 'layout', description: 'レイアウト' },
+      { name: 'components', description: 'コンポーネントリスト' }
+    ];
+    
+    basicItems.forEach(item => {
+      const completionItem = new vscode.CompletionItem(item.name, vscode.CompletionItemKind.Field);
+      completionItem.detail = item.description;
+      completionItem.insertText = `${item.name}: `;
+      items.push(completionItem);
+    });
+    
     return items;
   }
 
@@ -270,53 +312,64 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
    * コンポーネントのプロパティを取得
    */
   private getComponentProperties(componentName: string): Array<{ name: string; description: string }> {
-    const properties: { [key: string]: Array<{ name: string; description: string }> } = {
+    const properties: Record<string, Array<{ name: string; description: string }>> = {
       Text: [
-        { name: 'variant', description: 'テキストの種類 (h1, h2, h3, p, small, caption)' },
-        { name: 'value', description: 'テキストの内容' }
+        { name: 'variant', description: 'テキストの種類（h1, h2, h3, p, span）' },
+        { name: 'value', description: 'テキストの内容' },
+        { name: 'className', description: 'CSSクラス名' }
       ],
       Input: [
-        { name: 'label', description: 'ラベル' },
-        { name: 'name', description: 'フィールド名' },
-        { name: 'type', description: '入力タイプ (text, email, password, number, multiline)' },
-        { name: 'required', description: '必須項目かどうか' }
+        { name: 'type', description: '入力タイプ（text, email, password, number）' },
+        { name: 'placeholder', description: 'プレースホルダーテキスト' },
+        { name: 'value', description: '初期値' },
+        { name: 'required', description: '必須入力' },
+        { name: 'className', description: 'CSSクラス名' }
       ],
       Button: [
-        { name: 'kind', description: 'ボタンの種類 (primary, secondary, submit)' },
-        { name: 'label', description: 'ボタンのラベル' },
-        { name: 'submit', description: '送信ボタンかどうか' }
+        { name: 'variant', description: 'ボタンの種類（primary, secondary, outline）' },
+        { name: 'text', description: 'ボタンのテキスト' },
+        { name: 'onClick', description: 'クリック時の処理' },
+        { name: 'disabled', description: '無効化' },
+        { name: 'className', description: 'CSSクラス名' }
       ],
       Checkbox: [
         { name: 'label', description: 'チェックボックスのラベル' },
-        { name: 'name', description: 'フィールド名' },
-        { name: 'required', description: '必須項目かどうか' }
+        { name: 'checked', description: 'チェック状態' },
+        { name: 'onChange', description: '変更時の処理' },
+        { name: 'className', description: 'CSSクラス名' }
       ],
       Radio: [
-        { name: 'label', description: 'ラジオボタンのラベル' },
-        { name: 'name', description: 'フィールド名' },
-        { name: 'options', description: '選択肢の配列' }
+        { name: 'name', description: 'ラジオボタングループ名' },
+        { name: 'options', description: '選択肢の配列' },
+        { name: 'value', description: '選択された値' },
+        { name: 'onChange', description: '変更時の処理' },
+        { name: 'className', description: 'CSSクラス名' }
       ],
       Select: [
-        { name: 'label', description: 'セレクトボックスのラベル' },
-        { name: 'name', description: 'フィールド名' },
         { name: 'options', description: '選択肢の配列' },
-        { name: 'multiple', description: '複数選択を許可するか' }
+        { name: 'value', description: '選択された値' },
+        { name: 'placeholder', description: 'プレースホルダーテキスト' },
+        { name: 'onChange', description: '変更時の処理' },
+        { name: 'className', description: 'CSSクラス名' }
       ],
       Divider: [
-        { name: 'orientation', description: '区切り線の向き (horizontal, vertical)' }
-      ],
-      Container: [
-        { name: 'layout', description: 'レイアウト (vertical, horizontal, flex, grid)' },
-        { name: 'components', description: '子コンポーネントの配列' }
+        { name: 'orientation', description: '区切り線の方向（horizontal, vertical）' },
+        { name: 'className', description: 'CSSクラス名' }
       ],
       Alert: [
-        { name: 'variant', description: 'アラートの種類 (info, success, warning, error)' },
-        { name: 'message', description: '表示するメッセージ内容' }
+        { name: 'variant', description: 'アラートの種類（info, success, warning, error）' },
+        { name: 'title', description: 'アラートのタイトル' },
+        { name: 'message', description: 'アラートのメッセージ' },
+        { name: 'className', description: 'CSSクラス名' }
+      ],
+      Container: [
+        { name: 'layout', description: 'レイアウト（vertical, horizontal）' },
+        { name: 'spacing', description: '要素間の間隔' },
+        { name: 'className', description: 'CSSクラス名' }
       ],
       Form: [
-        { name: 'id', description: 'フォームのID' },
-        { name: 'fields', description: 'フィールドの配列' },
-        { name: 'actions', description: 'アクションボタンの配列' }
+        { name: 'onSubmit', description: '送信時の処理' },
+        { name: 'className', description: 'CSSクラス名' }
       ]
     };
 
@@ -327,57 +380,46 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
    * プロパティの値を取得
    */
   private getPropertyValues(propertyName: string, componentName: string): Array<{ value: string; description: string }> {
-    const valueMap: { [key: string]: { [key: string]: Array<{ value: string; description: string }> } } = {
-      Text: {
-        variant: [
-          { value: 'h1', description: '見出し1' },
-          { value: 'h2', description: '見出し2' },
-          { value: 'h3', description: '見出し3' },
-          { value: 'p', description: '段落' },
-          { value: 'small', description: '小さいテキスト' },
-          { value: 'caption', description: 'キャプション' }
-        ]
-      },
-      Input: {
-        type: [
-          { value: 'text', description: 'テキスト' },
-          { value: 'email', description: 'メールアドレス' },
-          { value: 'password', description: 'パスワード' },
-          { value: 'number', description: '数値' },
-          { value: 'multiline', description: '複数行テキスト' }
-        ]
-      },
-      Button: {
-        kind: [
-          { value: 'primary', description: '主要ボタン' },
-          { value: 'secondary', description: '副ボタン' },
-          { value: 'submit', description: '送信ボタン' }
-        ]
-      },
-      Divider: {
-        orientation: [
-          { value: 'horizontal', description: '横線' },
-          { value: 'vertical', description: '縦線' }
-        ]
-      },
-      Container: {
-        layout: [
-          { value: 'vertical', description: '縦配置' },
-          { value: 'horizontal', description: '横配置' },
-          { value: 'flex', description: 'フレックスレイアウト' },
-          { value: 'grid', description: 'グリッドレイアウト' }
-        ]
-      },
-      Alert: {
-        variant: [
-          { value: 'info', description: '情報' },
-          { value: 'success', description: '成功' },
-          { value: 'warning', description: '警告' },
-          { value: 'error', description: 'エラー' }
-        ]
-      }
+    const values: Record<string, Array<{ value: string; description: string }>> = {
+      variant: [
+        { value: 'h1', description: '見出し1' },
+        { value: 'h2', description: '見出し2' },
+        { value: 'h3', description: '見出し3' },
+        { value: 'p', description: '段落' },
+        { value: 'span', description: 'インライン' },
+        { value: 'primary', description: 'プライマリ' },
+        { value: 'secondary', description: 'セカンダリ' },
+        { value: 'outline', description: 'アウトライン' },
+        { value: 'info', description: '情報' },
+        { value: 'success', description: '成功' },
+        { value: 'warning', description: '警告' },
+        { value: 'error', description: 'エラー' }
+      ],
+      type: [
+        { value: 'text', description: 'テキスト' },
+        { value: 'email', description: 'メールアドレス' },
+        { value: 'password', description: 'パスワード' },
+        { value: 'number', description: '数値' }
+      ],
+      layout: [
+        { value: 'vertical', description: '縦並び' },
+        { value: 'horizontal', description: '横並び' }
+      ],
+      orientation: [
+        { value: 'horizontal', description: '水平' },
+        { value: 'vertical', description: '垂直' }
+      ]
     };
 
-    return valueMap[componentName]?.[propertyName] || [];
+    return values[propertyName] || [];
+  }
+
+  /**
+   * キャッシュをクリア
+   */
+  clearCache(): void {
+    this.completionCache.clear();
+    this.schemaCache = null;
+    this.lastSchemaLoad = 0;
   }
 } 

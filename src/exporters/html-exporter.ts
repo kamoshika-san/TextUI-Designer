@@ -392,15 +392,36 @@ ${componentCode}
   }
 
   private renderRadio(props: any, key: number): string {
-    const { label, value, name, checked = false, disabled = false } = props;
+    const { label, name, options = [], disabled = false } = props;
     const disabledClass = disabled ? 'opacity-50 cursor-not-allowed' : '';
-    const checkedAttr = checked ? ' checked' : '';
     const disabledAttr = disabled ? ' disabled' : '';
     
-    return `    <div class="flex items-center mb-4">
-      <input type="radio" name="${name || 'radio'}" value="${value || ''}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 bg-gray-800 ${disabledClass}"${checkedAttr}${disabledAttr}>
-      <label class="ml-2 block text-sm text-gray-400">${label}</label>
-    </div>`;
+    let code = `    <div class="mb-4">`;
+    if (label) {
+      code += `\n      <label class="block text-sm font-medium text-gray-400 mb-2">${label}</label>`;
+    }
+    
+    // options配列がある場合は、各オプションをラジオボタンとしてレンダリング
+    if (options && options.length > 0) {
+      options.forEach((opt: any, index: number) => {
+        const checkedAttr = opt.checked ? ' checked' : '';
+        code += `\n      <div class="flex items-center mb-2">
+        <input type="radio" name="${name || 'radio'}" value="${opt.value || ''}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 bg-gray-800 ${disabledClass}"${checkedAttr}${disabledAttr}>
+        <label class="ml-2 block text-sm text-gray-400">${opt.label}</label>
+      </div>`;
+      });
+    } else {
+      // 単一のラジオボタン（後方互換性のため）
+      const { value, checked = false } = props;
+      const checkedAttr = checked ? ' checked' : '';
+      code += `\n      <div class="flex items-center mb-2">
+        <input type="radio" name="${name || 'radio'}" value="${value || ''}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 bg-gray-800 ${disabledClass}"${checkedAttr}${disabledAttr}>
+        <label class="ml-2 block text-sm text-gray-400">${label}</label>
+      </div>`;
+    }
+    
+    code += `\n    </div>`;
+    return code;
   }
 
   private renderSelect(props: any, key: number): string {

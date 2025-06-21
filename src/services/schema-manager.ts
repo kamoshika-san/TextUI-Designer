@@ -10,6 +10,11 @@ export class SchemaManager {
   private context: vscode.ExtensionContext;
   private schemaPath: string;
   private templateSchemaPath: string;
+  private schemaCache: any = null;
+  private templateSchemaCache: any = null;
+  private lastSchemaLoad: number = 0;
+  private lastTemplateSchemaLoad: number = 0;
+  private readonly CACHE_TTL = 30000; // 30秒
 
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
@@ -172,24 +177,46 @@ export class SchemaManager {
   }
 
   /**
-   * スキーマの内容を読み込み
+   * スキーマの内容を読み込み（キャッシュ付き）
    */
   async loadSchema(): Promise<any> {
+    const now = Date.now();
+    
+    // キャッシュチェック
+    if (this.schemaCache && (now - this.lastSchemaLoad) < this.CACHE_TTL) {
+      console.log('[SchemaManager] キャッシュされたスキーマを使用');
+      return this.schemaCache;
+    }
+
     try {
       const content = fs.readFileSync(this.schemaPath, 'utf-8');
-      return JSON.parse(content);
+      this.schemaCache = JSON.parse(content);
+      this.lastSchemaLoad = now;
+      console.log('[SchemaManager] スキーマをキャッシュに保存');
+      return this.schemaCache;
     } catch (error) {
       throw new Error(`スキーマファイルの読み込みに失敗しました: ${error}`);
     }
   }
 
   /**
-   * テンプレートスキーマの内容を読み込み
+   * テンプレートスキーマの内容を読み込み（キャッシュ付き）
    */
   async loadTemplateSchema(): Promise<any> {
+    const now = Date.now();
+    
+    // キャッシュチェック
+    if (this.templateSchemaCache && (now - this.lastTemplateSchemaLoad) < this.CACHE_TTL) {
+      console.log('[SchemaManager] キャッシュされたテンプレートスキーマを使用');
+      return this.templateSchemaCache;
+    }
+
     try {
       const content = fs.readFileSync(this.templateSchemaPath, 'utf-8');
-      return JSON.parse(content);
+      this.templateSchemaCache = JSON.parse(content);
+      this.lastTemplateSchemaLoad = now;
+      console.log('[SchemaManager] テンプレートスキーマをキャッシュに保存');
+      return this.templateSchemaCache;
     } catch (error) {
       throw new Error(`テンプレートスキーマファイルの読み込みに失敗しました: ${error}`);
     }
@@ -199,63 +226,48 @@ export class SchemaManager {
    * スキーマをクリーンアップ（拡張非アクティブ化時に呼び出し）
    */
   async cleanup(): Promise<void> {
+    console.log('[SchemaManager] スキーマクリーンアップを開始');
+    
     try {
-      console.log('[SchemaManager] スキーマクリーンアップを開始');
-
-      // YAML拡張からTextUI Designer関連のスキーマを削除
-      try {
-        const yamlConfig = vscode.workspace.getConfiguration('yaml');
-        const currentSchemas = yamlConfig.get('schemas') as Record<string, string[]> || {};
-        
-        const filteredSchemas = Object.fromEntries(
-          Object.entries(currentSchemas).filter(([uri, patterns]) => {
-            // URIに基づくフィルタリング
-            const isTextUIDesignerSchema = uri.includes('textui-designer') || 
-                                         uri.includes('schema.json') || 
-                                         uri.includes('template-schema.json');
-            
-            // パターンに基づくフィルタリング
-            const hasTextUIPatterns = patterns.some(pattern => 
-              pattern.includes('tui') || pattern.includes('template')
-            );
-            
-            return !isTextUIDesignerSchema && !hasTextUIPatterns;
-          })
-        );
-        
-        await yamlConfig.update('schemas', filteredSchemas, vscode.ConfigurationTarget.Global);
-        console.log('[SchemaManager] YAMLスキーマクリーンアップ成功');
-        console.log('[SchemaManager] 残存スキーマ:', filteredSchemas);
-      } catch (error) {
-        console.warn('[SchemaManager] YAMLスキーマクリーンアップに失敗しました:', error);
-      }
-
-      // JSON拡張からTextUI Designer関連のスキーマを削除
-      try {
-        const jsonConfig = vscode.workspace.getConfiguration('json');
-        const currentSchemas = jsonConfig.get('schemas') as any[] || [];
-        
-        const filteredSchemas = currentSchemas.filter(schema => {
-          // fileMatchに基づくフィルタリング
-          const hasTextUIMatch = schema.fileMatch?.some((match: string) => 
-            match.includes('tui') || match.includes('template')
+      // YAML拡張の設定をクリーンアップ
+      const yamlConfig = vscode.workspace.getConfiguration('yaml');
+      const currentSchemas = yamlConfig.get('schemas') as Record<string, string[]> || {};
+      
+      const filteredSchemas = Object.fromEntries(
+        Object.entries(currentSchemas).filter(([uri, patterns]) => {
+          const isTextUIDesignerSchema = uri.includes('textui-designer') || 
+                                       uri.includes('schema.json') || 
+                                       uri.includes('template-schema.json');
+          
+          const hasTextUIPatterns = patterns.some(pattern => 
+            pattern.includes('tui') || pattern.includes('template')
           );
           
-          // schemaオブジェクトに基づくフィルタリング
-          const isTextUISchema = schema.schema?.$id?.includes('textui') ||
-                                schema.schema?.title?.includes('TextUI');
-          
-          return !hasTextUIMatch && !isTextUISchema;
-        });
-        
-        await jsonConfig.update('schemas', filteredSchemas, vscode.ConfigurationTarget.Global);
-        console.log('[SchemaManager] JSONスキーマクリーンアップ成功');
-        console.log('[SchemaManager] 残存スキーマ数:', filteredSchemas.length);
-      } catch (error) {
-        console.warn('[SchemaManager] JSONスキーマクリーンアップに失敗しました:', error);
-      }
+          return !isTextUIDesignerSchema && !hasTextUIPatterns;
+        })
+      );
+      
+      await yamlConfig.update('schemas', filteredSchemas, vscode.ConfigurationTarget.Global);
+      console.log('[SchemaManager] YAMLスキーマクリーンアップ完了');
 
-      console.log('[SchemaManager] スキーマクリーンアップ完了');
+      // JSON拡張の設定をクリーンアップ
+      const jsonConfig = vscode.workspace.getConfiguration('json');
+      const currentJsonSchemas = jsonConfig.get('schemas') as any[] || [];
+      
+      const filteredJsonSchemas = currentJsonSchemas.filter(schema => {
+        const hasTextUIMatch = schema.fileMatch?.some((match: string) => 
+          match.includes('tui') || match.includes('template')
+        );
+        
+        const isTextUISchema = schema.schema?.$id?.includes('textui') ||
+                              schema.schema?.title?.includes('TextUI');
+        
+        return !hasTextUIMatch && !isTextUISchema;
+      });
+      
+      await jsonConfig.update('schemas', filteredJsonSchemas, vscode.ConfigurationTarget.Global);
+      console.log('[SchemaManager] JSONスキーマクリーンアップ完了');
+      
     } catch (error) {
       console.error('[SchemaManager] スキーマクリーンアップ中にエラーが発生しました:', error);
     }
@@ -266,54 +278,33 @@ export class SchemaManager {
    */
   async reinitialize(): Promise<void> {
     console.log('[SchemaManager] スキーマ再初期化を開始');
+    this.clearCache();
     await this.cleanup();
     await this.initialize();
     console.log('[SchemaManager] スキーマ再初期化完了');
   }
 
   /**
-   * 現在のスキーマ状態をデバッグ出力
+   * スキーマのデバッグ情報を出力
    */
   async debugSchemas(): Promise<void> {
-    try {
-      console.log('[SchemaManager] 現在のスキーマ状態を確認中...');
-      
-      // YAMLスキーマの確認
-      const yamlConfig = vscode.workspace.getConfiguration('yaml');
-      const yamlSchemas = yamlConfig.get('schemas') as Record<string, string[]> || {};
-      console.log('[SchemaManager] YAMLスキーマ:', yamlSchemas);
-      
-      // JSONスキーマの確認
-      const jsonConfig = vscode.workspace.getConfiguration('json');
-      const jsonSchemas = jsonConfig.get('schemas') as any[] || [];
-      console.log('[SchemaManager] JSONスキーマ数:', jsonSchemas.length);
-      jsonSchemas.forEach((schema, index) => {
-        console.log(`[SchemaManager] JSONスキーマ[${index}]:`, {
-          fileMatch: schema.fileMatch,
-          schemaId: schema.schema?.$id,
-          schemaTitle: schema.schema?.title
-        });
-      });
-      
-      // TextUI Designer関連のスキーマを特定
-      const textUISchemas = Object.entries(yamlSchemas).filter(([uri, patterns]) => {
-        const isTextUIDesignerSchema = uri.includes('textui-designer') || 
-                                     uri.includes('schema.json') || 
-                                     uri.includes('template-schema.json');
-        const hasTextUIPatterns = patterns.some(pattern => 
-          pattern.includes('tui') || pattern.includes('template')
-        );
-        return isTextUIDesignerSchema || hasTextUIPatterns;
-      });
-      
-      if (textUISchemas.length > 0) {
-        console.log('[SchemaManager] 検出されたTextUI Designer関連スキーマ:', textUISchemas);
-      } else {
-        console.log('[SchemaManager] TextUI Designer関連スキーマは検出されませんでした');
-      }
-      
-    } catch (error) {
-      console.error('[SchemaManager] スキーマデバッグ中にエラーが発生しました:', error);
-    }
+    console.log('[SchemaManager] スキーマデバッグ情報:');
+    console.log('- スキーマパス:', this.schemaPath);
+    console.log('- テンプレートスキーマパス:', this.templateSchemaPath);
+    console.log('- スキーマキャッシュ:', this.schemaCache ? '有効' : '無効');
+    console.log('- テンプレートスキーマキャッシュ:', this.templateSchemaCache ? '有効' : '無効');
+    console.log('- 最終スキーマ読み込み:', new Date(this.lastSchemaLoad).toISOString());
+    console.log('- 最終テンプレートスキーマ読み込み:', new Date(this.lastTemplateSchemaLoad).toISOString());
+  }
+
+  /**
+   * キャッシュをクリア
+   */
+  clearCache(): void {
+    this.schemaCache = null;
+    this.templateSchemaCache = null;
+    this.lastSchemaLoad = 0;
+    this.lastTemplateSchemaLoad = 0;
+    console.log('[SchemaManager] スキーマキャッシュをクリアしました');
   }
 } 

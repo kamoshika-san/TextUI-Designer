@@ -10,15 +10,34 @@ import { SettingsService } from './services/settings-service';
 import { ExportManager } from './exporters';
 import { ErrorHandler } from './utils/error-handler';
 import { ConfigManager } from './utils/config-manager';
+import { PerformanceMonitor } from './utils/performance-monitor';
 
 // グローバル変数としてSchemaManagerを保存
 let globalSchemaManager: SchemaManager | undefined;
+
+/**
+ * サポートされているファイルかチェック
+ */
+function isSupportedFile(fileName: string): boolean {
+	return fileName.endsWith('.tui.yml') || fileName.endsWith('.tui.yaml');
+}
 
 /**
  * 拡張機能のアクティベーション
  */
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "textui-designer" is now active!');
+
+  // パフォーマンス監視の開始
+  const startTime = Date.now();
+
+  // パフォーマンスモニターの初期化
+  const performanceMonitor = PerformanceMonitor.getInstance();
+  performanceMonitor.initialize().then(() => {
+    if (process.env.NODE_ENV === 'development') {
+      performanceMonitor.startMemoryMonitoring();
+    }
+  });
 
   // サービスの初期化
   const schemaManager = new SchemaManager(context);
@@ -83,67 +102,107 @@ export function activate(context: vscode.ExtensionContext) {
   });
   context.subscriptions.push(settingsWatcher);
 
-  // ファイル変更の監視
-	context.subscriptions.push(
-		vscode.window.onDidChangeActiveTextEditor(editor => {
-			if (editor && isSupportedFile(editor.document.fileName)) {
-        webViewManager.setLastTuiFile(editor.document.fileName);
-        // プレビューが開かれていない場合は自動的に開く
-        if (ConfigManager.isAutoPreviewEnabled() && !webViewManager.hasPanel()) {
-          webViewManager.openPreview();
-        } else {
-          webViewManager.updatePreview();
-				}
-			}
-		})
-	);
-
-  // ドキュメント変更の監視
-	context.subscriptions.push(
-		vscode.workspace.onDidChangeTextDocument(event => {
-			if (isSupportedFile(event.document.fileName)) {
-        webViewManager.updatePreview();
-        
-        const diagnosticSettings = ConfigManager.getDiagnosticSettings();
-        if (diagnosticSettings.enabled && diagnosticSettings.validateOnChange) {
-          diagnosticManager.validateAndReportDiagnostics(event.document);
+  // ファイル変更の監視（デバウンス付き）
+  let activeEditorTimeout: NodeJS.Timeout | undefined;
+  context.subscriptions.push(
+    vscode.window.onDidChangeActiveTextEditor(editor => {
+      if (editor && isSupportedFile(editor.document.fileName)) {
+        // 既存のタイマーをクリア
+        if (activeEditorTimeout) {
+          clearTimeout(activeEditorTimeout);
         }
-			}
-		})
-	);
+
+        // デバウンス処理（200ms）
+        activeEditorTimeout = setTimeout(() => {
+          webViewManager.setLastTuiFile(editor.document.fileName);
+          // プレビューが開かれていない場合は自動的に開く
+          if (ConfigManager.isAutoPreviewEnabled() && !webViewManager.hasPanel()) {
+            webViewManager.openPreview();
+          } else {
+            webViewManager.updatePreview();
+          }
+        }, 200);
+      }
+    })
+  );
+
+  // ドキュメント変更の監視（デバウンス付き）
+  let documentChangeTimeout: NodeJS.Timeout | undefined;
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeTextDocument(event => {
+      if (isSupportedFile(event.document.fileName)) {
+        // 既存のタイマーをクリア
+        if (documentChangeTimeout) {
+          clearTimeout(documentChangeTimeout);
+        }
+
+        // デバウンス処理（300ms）
+        documentChangeTimeout = setTimeout(() => {
+          webViewManager.updatePreview();
+          
+          const diagnosticSettings = ConfigManager.getDiagnosticSettings();
+          if (diagnosticSettings.enabled && diagnosticSettings.validateOnChange) {
+            diagnosticManager.validateAndReportDiagnostics(event.document);
+          }
+        }, 300);
+      }
+    })
+  );
 
   // ドキュメント保存時の診断
-	context.subscriptions.push(
+  context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument(document => {
       const diagnosticSettings = ConfigManager.getDiagnosticSettings();
       if (diagnosticSettings.enabled && diagnosticSettings.validateOnSave) {
         diagnosticManager.validateAndReportDiagnostics(document);
       }
-		})
-	);
+    })
+  );
 
   // ドキュメントを開いた時の診断
-	context.subscriptions.push(
+  context.subscriptions.push(
     vscode.workspace.onDidOpenTextDocument(document => {
       const diagnosticSettings = ConfigManager.getDiagnosticSettings();
       if (diagnosticSettings.enabled) {
         diagnosticManager.validateAndReportDiagnostics(document);
       }
-		})
-	);
+    })
+  );
 
   // ドキュメントを閉じた時の診断クリア
-	context.subscriptions.push(
+  context.subscriptions.push(
     vscode.workspace.onDidCloseTextDocument(document => {
       diagnosticManager.clearDiagnosticsForUri(document.uri);
-		})
-	);
+    })
+  );
+
+  // パフォーマンス監視の終了
+  const endTime = Date.now();
+  const activationTime = endTime - startTime;
+  console.log(`[Performance] 拡張機能のアクティベーション完了: ${activationTime}ms`);
+  performanceMonitor.recordMetric('extension.activation', activationTime);
+
+  // メモリ使用量の監視（開発時のみ）
+  if (process.env.NODE_ENV === 'development') {
+    setInterval(() => {
+      const memUsage = process.memoryUsage();
+      console.log(`[Performance] メモリ使用量:`, {
+        rss: `${Math.round(memUsage.rss / 1024 / 1024)}MB`,
+        heapUsed: `${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
+        heapTotal: `${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`
+      });
+    }, 30000); // 30秒ごと
+  }
 }
 
 /**
  * 拡張機能の非アクティベーション
  */
 export function deactivate() {
+  // パフォーマンスモニターのクリーンアップ
+  const performanceMonitor = PerformanceMonitor.getInstance();
+  performanceMonitor.dispose();
+
   // スキーマのクリーンアップ
   console.log('TextUI Designer拡張を非アクティブ化中...');
   
@@ -153,12 +212,6 @@ export function deactivate() {
     });
     globalSchemaManager = undefined;
   }
-}
 
-/**
- * サポートされているファイルかどうかをチェック
- */
-function isSupportedFile(fileName: string): boolean {
-  const supportedExtensions = ConfigManager.getSupportedFileExtensions();
-  return supportedExtensions.some(ext => fileName.endsWith(ext));
+  console.log('TextUI Designer拡張の非アクティベーション完了');
 } 

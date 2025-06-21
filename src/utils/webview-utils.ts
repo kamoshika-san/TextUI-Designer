@@ -45,31 +45,9 @@ export function getWebviewContent(context: vscode.ExtensionContext, panel?: vsco
     #root {
       padding: 1rem;
     }
-    
-    /* エクスポートボタンのスタイル */
-    .export-button {
-      position: fixed;
-      top: 1rem;
-      right: 1rem;
-      background-color: rgba(75, 85, 99, 0.8);
-      color: #d1d5db;
-      border: 1px solid rgba(107, 114, 128, 0.5);
-      padding: 0.5rem 1rem;
-      border-radius: 0.375rem;
-      font-size: 0.875rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      z-index: 1000;
-    }
-    
-    .export-button:hover {
-      background-color: rgba(55, 65, 81, 0.9);
-      border-color: rgba(75, 85, 99, 0.7);
-    }
   </style>
 </head>
 <body>
-  <button class="export-button" onclick="exportToCode()">Export</button>
   <div id="root">
     <div style="text-align: center; padding: 2rem;">
       <h2>TextUI Designer Preview</h2>
@@ -90,13 +68,6 @@ export function getWebviewContent(context: vscode.ExtensionContext, panel?: vsco
         postMessage: (message) => console.log('[WebView] ダミーpostMessage:', message)
       };
       window.vscode = vscode;
-    }
-    
-    // エクスポート関数
-    function exportToCode() {
-      if (vscode && vscode.postMessage) {
-        vscode.postMessage({ type: 'export' });
-      }
     }
     
     // メッセージ受信処理

@@ -27,28 +27,39 @@
             "type": "string"
           },
           "default": [".tui.yml", ".tui.yaml"],
-          "description": "TextUI Designerが処理するファイル拡張子"
+          "description": "サポートするファイル拡張子"
         },
         "textui-designer.autoPreview.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "ファイルを開いた時に自動的にプレビューを開く"
+          "description": "ファイルを開いた時に自動的にプレビューを表示"
         },
         "textui-designer.devTools.enabled": {
           "type": "boolean",
           "default": false,
-          "description": "開発者ツール機能を有効にする"
+          "description": "開発者ツールの有効化"
         },
         "textui-designer.webview.disableThemeVariables": {
           "type": "boolean",
           "default": true,
-          "description": "WebViewでVS Codeのテーマ変数を無効にする"
+          "description": "VS Codeのテーマ変数を無効化して独自スタイルを使用"
+        },
+        "textui-designer.webview.theme": {
+          "type": "string",
+          "enum": ["auto", "light", "dark"],
+          "default": "auto",
+          "description": "WebViewのテーマ"
+        },
+        "textui-designer.webview.fontSize": {
+          "type": "number",
+          "default": 14,
+          "description": "WebViewのフォントサイズ"
         },
         "textui-designer.export.defaultFormat": {
           "type": "string",
           "enum": ["html", "react", "pug"],
           "default": "html",
-          "description": "エクスポートのデフォルト形式"
+          "description": "デフォルトのエクスポート形式"
         },
         "textui-designer.export.includeComments": {
           "type": "boolean",
@@ -58,57 +69,42 @@
         "textui-designer.export.minify": {
           "type": "boolean",
           "default": false,
-          "description": "エクスポート時にコードを最小化する"
+          "description": "エクスポート時にコードを圧縮"
         },
         "textui-designer.diagnostics.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "診断機能を有効にする"
+          "description": "診断機能の有効化"
         },
         "textui-designer.diagnostics.maxProblems": {
           "type": "number",
           "default": 100,
-          "minimum": 1,
-          "maximum": 1000,
-          "description": "表示する診断問題の最大数"
+          "description": "最大診断問題数"
         },
         "textui-designer.diagnostics.validateOnSave": {
           "type": "boolean",
           "default": true,
-          "description": "ファイル保存時に診断を実行する"
+          "description": "保存時に診断を実行"
         },
         "textui-designer.diagnostics.validateOnChange": {
           "type": "boolean",
           "default": true,
-          "description": "ファイル変更時に診断を実行する"
+          "description": "変更時に診断を実行"
         },
         "textui-designer.schema.validation.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "JSON Schemaによる検証を有効にする"
+          "description": "スキーマ検証の有効化"
         },
         "textui-designer.schema.autoReload": {
           "type": "boolean",
           "default": true,
-          "description": "スキーマファイルの変更を自動的に再読み込みする"
-        },
-        "textui-designer.webview.theme": {
-          "type": "string",
-          "enum": ["auto", "light", "dark"],
-          "default": "auto",
-          "description": "WebViewのテーマ設定"
-        },
-        "textui-designer.webview.fontSize": {
-          "type": "number",
-          "default": 14,
-          "minimum": 8,
-          "maximum": 32,
-          "description": "WebViewのフォントサイズ"
+          "description": "スキーマの自動再読み込み"
         },
         "textui-designer.templates.defaultLocation": {
           "type": "string",
           "default": "",
-          "description": "テンプレートファイルのデフォルト保存場所"
+          "description": "テンプレートのデフォルト保存場所"
         },
         "textui-designer.templates.customTemplates": {
           "type": "array",
@@ -132,6 +128,53 @@
           },
           "default": [],
           "description": "カスタムテンプレートの設定"
+        },
+        "textui-designer.performance.webviewDebounceDelay": {
+          "type": "number",
+          "default": 300,
+          "minimum": 0,
+          "maximum": 2000,
+          "description": "WebView更新のデバウンス時間（ミリ秒）"
+        },
+        "textui-designer.performance.diagnosticDebounceDelay": {
+          "type": "number",
+          "default": 500,
+          "minimum": 0,
+          "maximum": 2000,
+          "description": "診断のデバウンス時間（ミリ秒）"
+        },
+        "textui-designer.performance.completionDebounceDelay": {
+          "type": "number",
+          "default": 200,
+          "minimum": 0,
+          "maximum": 1000,
+          "description": "補完のデバウンス時間（ミリ秒）"
+        },
+        "textui-designer.performance.cacheTTL": {
+          "type": "number",
+          "default": 10000,
+          "minimum": 1000,
+          "maximum": 60000,
+          "description": "キャッシュの有効期限（ミリ秒）"
+        },
+        "textui-designer.performance.schemaCacheTTL": {
+          "type": "number",
+          "default": 30000,
+          "minimum": 5000,
+          "maximum": 300000,
+          "description": "スキーマキャッシュの有効期限（ミリ秒）"
+        },
+        "textui-designer.performance.memoryMonitorInterval": {
+          "type": "number",
+          "default": 30000,
+          "minimum": 10000,
+          "maximum": 300000,
+          "description": "メモリ使用量の監視間隔（ミリ秒、開発時のみ）"
+        },
+        "textui-designer.performance.enablePerformanceLogs": {
+          "type": "boolean",
+          "default": false,
+          "description": "パフォーマンスログの有効化"
         }
       }
     },
@@ -175,6 +218,18 @@
       {
         "command": "textui-designer.debugSchemas",
         "title": "TextUI: スキーマ状態をデバッグ"
+      },
+      {
+        "command": "textui-designer.showPerformanceReport",
+        "title": "TextUI: パフォーマンスレポートを表示"
+      },
+      {
+        "command": "textui-designer.clearPerformanceMetrics",
+        "title": "TextUI: パフォーマンスメトリクスをクリア"
+      },
+      {
+        "command": "textui-designer.togglePerformanceMonitoring",
+        "title": "TextUI: パフォーマンス監視の切り替え"
       }
     ],
     "menus": {
@@ -203,15 +258,21 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run package",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js",
-    "build:webview": "vite build",
-    "dev:webview": "vite build --watch",
-    "build:all": "npm run compile && npm run build:webview"
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "mocha tests/unit/**/*.js",
+    "vscode-test": "node ./out/test/runTest.js",
+    "test:regression": "mocha ./tests/regression/export-regression-suite.js",
+    "test:unit": "mocha ./tests/unit/export-service.test.js && node ./tests/unit/webview-manager.test.js",
+    "test:integration": "mocha ./tests/integration/command-manager.test.js",
+    "test:e2e": "mocha ./tests/e2e/export-from-preview-e2e.test.js",
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:regression"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.6",
@@ -223,7 +284,10 @@
     "eslint": "^8.56.0",
     "glob": "^10.3.10",
     "mocha": "^10.2.0",
-    "typescript": "^5.3.3"
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
   },
   "dependencies": {
     "@types/react": "^18.2.0",

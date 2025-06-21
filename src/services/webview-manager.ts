@@ -10,6 +10,10 @@ export class WebViewManager {
   private currentPanel: vscode.WebviewPanel | undefined = undefined;
   private context: vscode.ExtensionContext;
   private lastTuiFile: string | undefined = undefined;
+  private updateTimeout: NodeJS.Timeout | undefined = undefined;
+  private lastYamlContent: string = '';
+  private lastParsedData: any = null;
+  private isUpdating: boolean = false;
 
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
@@ -49,7 +53,15 @@ export class WebViewManager {
       this.currentPanel.webview.onDidReceiveMessage(
         async (message) => {
           if (message.type === 'export') {
-            await vscode.commands.executeCommand('textui-designer.export');
+            console.log('[WebViewManager] エクスポートメッセージを受信');
+            // 最後に開いていたtui.ymlファイルを使用してエクスポート
+            if (this.lastTuiFile) {
+              console.log(`[WebViewManager] エクスポート用ファイル: ${this.lastTuiFile}`);
+              await vscode.commands.executeCommand('textui-designer.export', this.lastTuiFile);
+            } else {
+              console.log('[WebViewManager] エクスポート用ファイルが見つかりません');
+              vscode.window.showWarningMessage('エクスポートするファイルが見つかりません。先に.tui.ymlファイルを開いてください。');
+            }
           }
         },
         undefined,
@@ -60,6 +72,7 @@ export class WebViewManager {
       this.currentPanel.onDidDispose(
         () => {
           this.currentPanel = undefined;
+          this.clearCache();
         },
         null,
         this.context.subscriptions
@@ -68,11 +81,19 @@ export class WebViewManager {
   }
 
   /**
-   * プレビューを更新
+   * プレビューを更新（デバウンス付き）
    */
   async updatePreview(): Promise<void> {
     if (this.currentPanel) {
-      await this.sendYamlToWebview();
+      // 既存のタイマーをクリア
+      if (this.updateTimeout) {
+        clearTimeout(this.updateTimeout);
+      }
+
+      // デバウンス（300ms）
+      this.updateTimeout = setTimeout(async () => {
+        await this.sendYamlToWebview();
+      }, 300);
     } else {
       // プレビューが開かれていない場合は自動的に開く
       await this.openPreview();
@@ -94,13 +115,15 @@ export class WebViewManager {
   }
 
   /**
-   * WebViewにYAMLデータを送信
+   * WebViewにYAMLデータを送信（キャッシュ付き）
    */
   private async sendYamlToWebview(): Promise<void> {
-    if (!this.currentPanel) {
-      console.log('[WebViewManager] パネルが存在しません');
+    if (!this.currentPanel || this.isUpdating) {
+      console.log('[WebViewManager] パネルが存在しないか、更新中です');
       return;
     }
+
+    this.isUpdating = true;
 
     try {
       const activeEditor = vscode.window.activeTextEditor;
@@ -115,14 +138,12 @@ export class WebViewManager {
         fileName = activeEditor.document.fileName;
         this.setLastTuiFile(fileName);
         console.log(`[WebViewManager] アクティブエディタからYAMLを取得: ${fileName}`);
-        console.log(`[WebViewManager] YAML内容: ${yamlContent.substring(0, 200)}...`);
       } else if (this.lastTuiFile) {
         // アクティブなエディタがない場合は最後に開いていたファイルを使用
         const document = await vscode.workspace.openTextDocument(this.lastTuiFile);
         yamlContent = document.getText();
         fileName = this.lastTuiFile;
         console.log(`[WebViewManager] 最後のファイルからYAMLを取得: ${fileName}`);
-        console.log(`[WebViewManager] YAML内容: ${yamlContent.substring(0, 200)}...`);
       } else {
         // デフォルトのサンプルデータ
         yamlContent = `page:
@@ -138,21 +159,23 @@ export class WebViewManager {
         value: "プレビューが表示されています"`;
         fileName = 'sample.tui.yml';
         console.log(`[WebViewManager] サンプルデータを使用`);
-        console.log(`[WebViewManager] YAML内容: ${yamlContent}`);
+      }
+
+      // キャッシュチェック
+      if (yamlContent === this.lastYamlContent && this.lastParsedData) {
+        console.log('[WebViewManager] キャッシュされたデータを使用');
+        this.sendMessageToWebView(this.lastParsedData, fileName);
+        return;
       }
 
       const yaml = YAML.parse(yamlContent);
       console.log(`[WebViewManager] YAML解析成功、WebViewに送信: ${fileName}`);
-      console.log(`[WebViewManager] 解析結果:`, yaml);
       
-      const message = {
-        type: 'update',
-        data: yaml,
-        fileName: fileName
-      };
+      // キャッシュを更新
+      this.lastYamlContent = yamlContent;
+      this.lastParsedData = yaml;
       
-      console.log(`[WebViewManager] 送信メッセージ:`, message);
-      this.currentPanel.webview.postMessage(message);
+      this.sendMessageToWebView(yaml, fileName);
       console.log(`[WebViewManager] メッセージ送信完了`);
     } catch (error) {
       console.error('[WebViewManager] YAMLデータの送信に失敗しました:', error);
@@ -160,6 +183,36 @@ export class WebViewManager {
         type: 'error',
         message: `YAMLの解析に失敗しました: ${error}`
       });
+    } finally {
+      this.isUpdating = false;
+    }
+  }
+
+  /**
+   * WebViewにメッセージを送信
+   */
+  private sendMessageToWebView(data: any, fileName: string): void {
+    if (!this.currentPanel) return;
+
+    const message = {
+      type: 'update',
+      data: data,
+      fileName: fileName
+    };
+    
+    console.log(`[WebViewManager] 送信メッセージ:`, message);
+    this.currentPanel.webview.postMessage(message);
+  }
+
+  /**
+   * キャッシュをクリア
+   */
+  private clearCache(): void {
+    this.lastYamlContent = '';
+    this.lastParsedData = null;
+    if (this.updateTimeout) {
+      clearTimeout(this.updateTimeout);
+      this.updateTimeout = undefined;
     }
   }
 
@@ -186,5 +239,15 @@ export class WebViewManager {
    */
   getPanel(): vscode.WebviewPanel | undefined {
     return this.currentPanel;
+  }
+
+  /**
+   * リソースをクリーンアップ
+   */
+  dispose(): void {
+    this.clearCache();
+    if (this.currentPanel) {
+      this.currentPanel.dispose();
+    }
   }
 } 

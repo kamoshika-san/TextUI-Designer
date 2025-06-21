@@ -9,6 +9,13 @@ import Ajv from 'ajv';
 export class DiagnosticManager {
   private diagnosticCollection: vscode.DiagnosticCollection;
   private schemaManager: any; // SchemaManagerの型を後で定義
+  private validationCache: Map<string, { content: string; diagnostics: vscode.Diagnostic[]; timestamp: number }> = new Map();
+  private validationTimeouts: Map<string, NodeJS.Timeout> = new Map();
+  private ajvInstance: Ajv | null = null;
+  private schemaCache: any = null;
+  private lastSchemaLoad: number = 0;
+  private readonly CACHE_TTL = 5000; // 5秒
+  private readonly DEBOUNCE_DELAY = 500; // 500ms
 
   constructor(schemaManager: any) {
     this.diagnosticCollection = vscode.languages.createDiagnosticCollection('textui-designer');
@@ -16,7 +23,7 @@ export class DiagnosticManager {
   }
 
   /**
-   * ドキュメントの診断を実行
+   * ドキュメントの診断を実行（デバウンス付き）
    */
   async validateAndReportDiagnostics(document: vscode.TextDocument): Promise<void> {
     const isTui = document.fileName.endsWith('.tui.yml');
@@ -24,25 +31,65 @@ export class DiagnosticManager {
     
     if (!isTui && !isTemplate) return;
 
+    const uri = document.uri.toString();
     const text = document.getText();
+
+    // 既存のタイマーをクリア
+    if (this.validationTimeouts.has(uri)) {
+      clearTimeout(this.validationTimeouts.get(uri)!);
+    }
+
+    // デバウンス処理
+    const timeout = setTimeout(async () => {
+      await this.performValidation(document, text, isTemplate);
+      this.validationTimeouts.delete(uri);
+    }, this.DEBOUNCE_DELAY);
+
+    this.validationTimeouts.set(uri, timeout);
+  }
+
+  /**
+   * 実際の検証処理を実行
+   */
+  private async performValidation(document: vscode.TextDocument, text: string, isTemplate: boolean): Promise<void> {
+    const uri = document.uri.toString();
+    const now = Date.now();
+
+    // キャッシュチェック
+    const cached = this.validationCache.get(uri);
+    if (cached && cached.content === text && (now - cached.timestamp) < this.CACHE_TTL) {
+      console.log('[DiagnosticManager] キャッシュされた診断結果を使用');
+      this.diagnosticCollection.set(document.uri, cached.diagnostics);
+      return;
+    }
+
     let diagnostics: vscode.Diagnostic[] = [];
 
     try {
       const yaml = YAML.parse(text);
-      const schema = await this.schemaManager.loadSchema();
-      const ajv = new Ajv({ allErrors: true, allowUnionTypes: true });
+      
+      // スキーマキャッシュの更新チェック
+      if (!this.schemaCache || (now - this.lastSchemaLoad) > this.CACHE_TTL) {
+        this.schemaCache = await this.schemaManager.loadSchema();
+        this.lastSchemaLoad = now;
+        this.ajvInstance = new Ajv({ allErrors: true, allowUnionTypes: true });
+      }
+
+      if (!this.ajvInstance) {
+        this.ajvInstance = new Ajv({ allErrors: true, allowUnionTypes: true });
+      }
       
       let validate;
       if (isTemplate) {
         // テンプレート用: ルートがコンポーネント配列でもOKなスキーマを動的生成
         const templateSchema = {
-          ...schema,
+          ...this.schemaCache,
           type: 'array',
-          items: schema.definitions.component
+          items: this.schemaCache.definitions.component
         };
-        validate = ajv.compile(templateSchema);
+        validate = this.ajvInstance.compile(templateSchema);
       } else {
-        validate = ajv.compile(schema);
+        validate = this.ajvInstance.compile(this.schemaCache);
       }
 
       const valid = validate(yaml);
@@ -58,6 +105,13 @@ export class DiagnosticManager {
       );
       diagnostics.push(diag);
     }
+
+    // キャッシュを更新
+    this.validationCache.set(uri, {
+      content: text,
+      diagnostics: diagnostics,
+      timestamp: now
+    });
 
     this.diagnosticCollection.set(document.uri, diagnostics);
   }
@@ -99,6 +153,9 @@ export class DiagnosticManager {
    */
   clearDiagnostics(): void {
     this.diagnosticCollection.clear();
+    this.validationCache.clear();
+    this.validationTimeouts.forEach(timeout => clearTimeout(timeout));
+    this.validationTimeouts.clear();
   }
 
   /**
@@ -106,12 +163,30 @@ export class DiagnosticManager {
    */
   clearDiagnosticsForUri(uri: vscode.Uri): void {
     this.diagnosticCollection.delete(uri);
+    this.validationCache.delete(uri.toString());
+    
+    const timeout = this.validationTimeouts.get(uri.toString());
+    if (timeout) {
+      clearTimeout(timeout);
+      this.validationTimeouts.delete(uri.toString());
+    }
+  }
+
+  /**
+   * キャッシュをクリア
+   */
+  clearCache(): void {
+    this.validationCache.clear();
+    this.schemaCache = null;
+    this.ajvInstance = null;
+    this.lastSchemaLoad = 0;
   }
 
   /**
    * 診断コレクションを破棄
    */
   dispose(): void {
+    this.clearDiagnostics();
     this.diagnosticCollection.dispose();
   }
 } 

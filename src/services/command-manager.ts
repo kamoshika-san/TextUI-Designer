@@ -4,6 +4,8 @@ import { ExportService } from './export-service';
 import { TemplateService } from './template-service';
 import { SettingsService } from './settings-service';
 import { SchemaManager } from './schema-manager';
+import { ErrorHandler } from '../utils/error-handler';
+import { ConfigManager } from '../utils/config-manager';
 
 /**
  * コマンド管理サービス
@@ -34,112 +36,101 @@ export class CommandManager {
   }
 
   /**
-   * すべてのコマンドを登録
+   * コマンドを登録
    */
   registerCommands(): void {
-    this.registerPreviewCommand();
-    this.registerExportCommand();
-    this.registerDevToolsCommand();
-    this.registerTemplateCommands();
-    this.registerSettingsCommands();
-    this.registerSchemaCommands();
+    // プレビュー関連
+    this.registerCommand('textui-designer.openPreview', () => this.webViewManager.openPreview());
+    this.registerCommand('textui-designer.openDevTools', () => this.webViewManager.openDevTools());
+
+    // エクスポート関連
+    this.registerCommand('textui-designer.export', (filePath?: string) => this.exportService.executeExport(filePath));
+
+    // テンプレート関連
+    this.registerCommand('textui-designer.createTemplate', () => this.templateService.createTemplate());
+    this.registerCommand('textui-designer.insertTemplate', () => this.templateService.insertTemplate());
+
+    // 設定関連
+    this.registerCommand('textui-designer.openSettings', () => this.settingsService.openSettings());
+    this.registerCommand('textui-designer.resetSettings', () => this.settingsService.resetSettings());
+    this.registerCommand('textui-designer.showSettings', () => this.settingsService.showSettings());
+
+    // スキーマ関連
+    this.registerCommand('textui-designer.reinitializeSchemas', () => this.schemaManager.reinitialize());
+    this.registerCommand('textui-designer.debugSchemas', () => this.schemaManager.debugSchemas());
+
+    // パフォーマンス関連
+    this.registerCommand('textui-designer.showPerformanceReport', () => this.showPerformanceReport());
+    this.registerCommand('textui-designer.clearPerformanceMetrics', () => this.clearPerformanceMetrics());
+    this.registerCommand('textui-designer.togglePerformanceMonitoring', () => this.togglePerformanceMonitoring());
   }
 
   /**
-   * プレビューコマンドを登録
+   * パフォーマンスレポートを表示
    */
-  private registerPreviewCommand(): void {
-    const disposable = vscode.commands.registerCommand('textui-designer.openPreview', async () => {
-      await this.webViewManager.openPreview();
-    });
+  private async showPerformanceReport(): Promise<void> {
+    const result = await ErrorHandler.executeSafely(async () => {
+      const { PerformanceMonitor } = await import('../utils/performance-monitor');
+      const monitor = PerformanceMonitor.getInstance();
+      monitor.showReport();
+    }, 'パフォーマンスレポートの表示に失敗しました');
+
+    if (!result) {
+      // エラーハンドリングは既にErrorHandlerで処理済み
+      return;
+    }
+  }
+
+  /**
+   * パフォーマンスメトリクスをクリア
+   */
+  private async clearPerformanceMetrics(): Promise<void> {
+    const result = await ErrorHandler.executeSafely(async () => {
+      const { PerformanceMonitor } = await import('../utils/performance-monitor');
+      const monitor = PerformanceMonitor.getInstance();
+      monitor.clearMetrics();
+      ErrorHandler.showInfo('パフォーマンスメトリクスをクリアしました');
+    }, 'パフォーマンスメトリクスのクリアに失敗しました');
+
+    if (!result) {
+      // エラーハンドリングは既にErrorHandlerで処理済み
+      return;
+    }
+  }
+
+  /**
+   * パフォーマンス監視の有効化/無効化を切り替え
+   */
+  private async togglePerformanceMonitoring(): Promise<void> {
+    const result = await ErrorHandler.executeSafely(async () => {
+      const { PerformanceMonitor } = await import('../utils/performance-monitor');
+      const monitor = PerformanceMonitor.getInstance();
+      
+      // 現在の状態を確認（簡易的な方法）
+      const currentSettings = ConfigManager.getPerformanceSettings();
+      const newEnabled = !currentSettings.enablePerformanceLogs;
+      
+      // 設定を更新
+      await ConfigManager.set('performance.enablePerformanceLogs', newEnabled);
+      
+      // モニターの状態を更新
+      monitor.setEnabled(newEnabled);
+      
+      const status = newEnabled ? '有効化' : '無効化';
+      ErrorHandler.showInfo(`パフォーマンス監視を${status}しました`);
+    }, 'パフォーマンス監視の切り替えに失敗しました');
+
+    if (!result) {
+      // エラーハンドリングは既にErrorHandlerで処理済み
+      return;
+    }
+  }
+
+  /**
+   * コマンドを登録
+   */
+  private registerCommand(command: string, callback: (...args: any[]) => void): void {
+    const disposable = vscode.commands.registerCommand(command, callback);
     this.context.subscriptions.push(disposable);
-  }
-
-  /**
-   * エクスポートコマンドを登録
-   */
-  private registerExportCommand(): void {
-    const disposable = vscode.commands.registerCommand('textui-designer.export', async () => {
-      const lastTuiFile = this.webViewManager.getLastTuiFile();
-      await this.exportService.executeExport(lastTuiFile);
-    });
-    this.context.subscriptions.push(disposable);
-  }
-
-  /**
-   * 開発者ツールコマンドを登録
-   */
-  private registerDevToolsCommand(): void {
-    const disposable = vscode.commands.registerCommand('textui-designer.openDevTools', () => {
-      this.webViewManager.openDevTools();
-    });
-    this.context.subscriptions.push(disposable);
-  }
-
-  /**
-   * テンプレート関連コマンドを登録
-   */
-  private registerTemplateCommands(): void {
-    // 新規テンプレート作成コマンド
-    const createTemplateDisposable = vscode.commands.registerCommand('textui-designer.createTemplate', async () => {
-      await this.templateService.createTemplate();
-    });
-    this.context.subscriptions.push(createTemplateDisposable);
-
-    // テンプレート挿入コマンド
-    const insertTemplateDisposable = vscode.commands.registerCommand('textui-designer.insertTemplate', async () => {
-      await this.templateService.insertTemplate();
-    });
-    this.context.subscriptions.push(insertTemplateDisposable);
-  }
-
-  /**
-   * 設定関連コマンドを登録
-   */
-  private registerSettingsCommands(): void {
-    // 設定を開くコマンド
-    const openSettingsDisposable = vscode.commands.registerCommand('textui-designer.openSettings', async () => {
-      await this.settingsService.openSettings();
-    });
-    this.context.subscriptions.push(openSettingsDisposable);
-
-    // 設定をリセットコマンド
-    const resetSettingsDisposable = vscode.commands.registerCommand('textui-designer.resetSettings', async () => {
-      await this.settingsService.resetSettings();
-    });
-    this.context.subscriptions.push(resetSettingsDisposable);
-
-    // 設定を表示コマンド
-    const showSettingsDisposable = vscode.commands.registerCommand('textui-designer.showSettings', async () => {
-      await this.settingsService.showSettings();
-    });
-    this.context.subscriptions.push(showSettingsDisposable);
-  }
-
-  /**
-   * スキーマ関連コマンドを登録
-   */
-  private registerSchemaCommands(): void {
-    // スキーマ再初期化コマンド
-    const reinitializeSchemasDisposable = vscode.commands.registerCommand('textui-designer.reinitializeSchemas', async () => {
-      try {
-        await this.schemaManager.reinitialize();
-        vscode.window.showInformationMessage('スキーマを再初期化しました。');
-      } catch (error) {
-        vscode.window.showErrorMessage(`スキーマの再初期化に失敗しました: ${error}`);
-      }
-    });
-    this.context.subscriptions.push(reinitializeSchemasDisposable);
-
-    // スキーマデバッグコマンド
-    const debugSchemasDisposable = vscode.commands.registerCommand('textui-designer.debugSchemas', async () => {
-      try {
-        await this.schemaManager.debugSchemas();
-        vscode.window.showInformationMessage('スキーマ状態をデバッグ出力しました。開発者ツールのコンソールを確認してください。');
-      } catch (error) {
-        vscode.window.showErrorMessage(`スキーマデバッグに失敗しました: ${error}`);
-      }
-    });
-    this.context.subscriptions.push(debugSchemasDisposable);
   }
 } 
