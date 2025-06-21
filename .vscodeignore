@@ -1,3 +1,4 @@
+# 開発用ファイル
 .vscode/**
 .git/
 *.ts
@@ -18,6 +19,10 @@ test/
 src/test/
 out/test/
 tests/
+**/*.test.js
+**/*.test.ts
+**/*.spec.js
+**/*.spec.ts
 
 # 型定義
 *.d.ts
@@ -28,3 +33,26 @@ tests/
 Thumbs.db
 npm-debug.log
 yarn.lock
+icon.svg
+
+# 設定ファイル（開発用）
+postcss.config.js
+tailwind.config.js
+vite.config.js
+vite.config.ts
+eslint.config.js
+eslint.config.mjs
+
+# ドキュメント（LICENSE.mdは除外しない）
+*.md
+!LICENSE
+README.md
+CHANGELOG.md
+doc/
+
+# ソースマップ
+**/*.map
+
+# 開発用ディレクトリ
+.github/
+src/

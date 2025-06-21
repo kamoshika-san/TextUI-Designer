@@ -5,9 +5,11 @@ interface DividerProps {
 }
 
 export const Divider: React.FC<DividerProps> = ({ orientation = 'horizontal' }) => {
+  const className = `textui-divider ${orientation}`;
+  
   if (orientation === 'vertical') {
-    return <div className="inline-block w-px h-6 bg-gray-700 mx-4" />;
+    return <div className={className} />;
   }
   
-  return <hr className="border-gray-700 my-4" />;
+  return <hr className={className} />;
 }; 

@@ -1,0 +1,28 @@
+{
+  "textui-designer.supportedFileExtensions": [
+    ".tui.yml",
+    ".tui.yaml"
+  ],
+  "textui-designer.autoPreview.enabled": true,
+  "textui-designer.devTools.enabled": false,
+  "textui-designer.webview.disableThemeVariables": true,
+  "textui-designer.webview.theme": "auto",
+  "textui-designer.webview.fontSize": 14,
+  "textui-designer.export.defaultFormat": "html",
+  "textui-designer.export.includeComments": true,
+  "textui-designer.export.minify": false,
+  "textui-designer.diagnostics.enabled": true,
+  "textui-designer.diagnostics.maxProblems": 100,
+  "textui-designer.diagnostics.validateOnSave": true,
+  "textui-designer.diagnostics.validateOnChange": true,
+  "textui-designer.schema.validation.enabled": true,
+  "textui-designer.schema.autoReload": true,
+  "textui-designer.templates.defaultLocation": "",
+  "textui-designer.templates.customTemplates": [
+    {
+      "name": "カスタムフォーム",
+      "path": "./templates/custom-form.tui.yml",
+      "description": "カスタムフォームテンプレート"
+    }
+  ]
+} 

@@ -128,17 +128,15 @@ function runIntegrationTests() {
  * 単体テストを実行する関数
  */
 function runUnitTests() {
-  console.log('\n🧩 単体テストを開始します...');
-  
+  console.log('\n�� 単体テストを開始します...');
   // 単体テストファイルを動的に読み込み
   const unitTestDir = path.join(__dirname, 'unit');
   if (fs.existsSync(unitTestDir)) {
-    const unitTestFiles = fs.readdirSync(unitTestDir).filter(file => file.endsWith('.js'));
-    
+    const unitTestFiles = fs.readdirSync(unitTestDir)
+      .filter(file => file.endsWith('.js') && file !== 'refactoring-test.js'); // 除外
     unitTestFiles.forEach(testFile => {
       const testPath = path.join(unitTestDir, testFile);
       const testModule = require(testPath);
-      
       if (typeof testModule.runTest === 'function') {
         runTest(`Unit: ${testFile}`, () => testModule.runTest());
       } else {
@@ -147,6 +145,22 @@ function runUnitTests() {
     });
   } else {
     console.log('ℹ️  単体テストディレクトリが存在しません');
+  }
+}
+
+/**
+ * リファクタリングテストを実行する関数
+ */
+function runRefactoringTests() {
+  console.log('\n🔧 リファクタリングテストを開始します...');
+  const refactoringTestFile = path.join(__dirname, 'unit', 'refactoring-test.js');
+  if (fs.existsSync(refactoringTestFile)) {
+    const refactoringTests = require(refactoringTestFile);
+    Object.entries(refactoringTests).forEach(([name, fn]) => {
+      runTest(`Refactoring: ${name}`, fn);
+    });
+  } else {
+    console.log('ℹ️  リファクタリングテストファイルが存在しません');
   }
 }
 
@@ -163,6 +177,7 @@ function runAllTests() {
   runUnitTests();
   runIntegrationTests();
   runE2ETests();
+  runRefactoringTests();
   
   const endTime = Date.now();
   const duration = (endTime - startTime) / 1000;
@@ -190,11 +205,13 @@ TextUI Designer テストスイート
   --unit, -u          単体テストのみ実行
   --integration, -i   統合テストのみ実行
   --e2e, -e           E2Eテストのみ実行
+  --refactoring, -r   リファクタリングテストのみ実行
   --help, -h          このヘルプを表示
 
 例:
   node tests/test-suite.js --unit
   node tests/test-suite.js --e2e
+  node tests/test-suite.js --refactoring
   node tests/test-suite.js          # すべてのテストを実行
 `);
   process.exit(0);
@@ -212,6 +229,10 @@ if (args.includes('--unit') || args.includes('-u')) {
   runE2ETests();
   displayResults();
   process.exit(testResults.failed > 0 ? 1 : 0);
+} else if (args.includes('--refactoring') || args.includes('-r')) {
+  runRefactoringTests();
+  displayResults();
+  process.exit(testResults.failed > 0 ? 1 : 0);
 } else {
   runAllTests();
 }
@@ -222,5 +243,6 @@ module.exports = {
   runUnitTests,
   runIntegrationTests,
   runE2ETests,
+  runRefactoringTests,
   displayResults
 }; 

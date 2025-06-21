@@ -1,7 +1,13 @@
 import type { TextUIDSL, ComponentDef, FormComponent, FormField, FormAction } from '../renderer/types';
-import type { ExportOptions, Exporter } from './index';
+import type { ExportOptions } from './index';
+import { BaseComponentRenderer } from './base-component-renderer';
+import { StyleManager } from '../utils/style-manager';
 
-export class ReactExporter implements Exporter {
+export class ReactExporter extends BaseComponentRenderer {
+  constructor() {
+    super('react');
+  }
+
   async export(dsl: TextUIDSL, options: ExportOptions): Promise<string> {
     const components = dsl.page?.components || [];
     const componentCode = components.map((comp, index) => this.renderComponent(comp, index)).join('\n\n');
@@ -21,64 +27,19 @@ ${componentCode}
     return '.tsx';
   }
 
-  private renderComponent(comp: ComponentDef, key: number): string {
-    if ('Text' in comp) {
-      return this.renderText(comp.Text, key);
-    }
-    if ('Input' in comp) {
-      return this.renderInput(comp.Input, key);
-    }
-    if ('Button' in comp) {
-      return this.renderButton(comp.Button, key);
-    }
-    if ('Checkbox' in comp) {
-      return this.renderCheckbox(comp.Checkbox, key);
-    }
-    if ('Radio' in comp) {
-      return this.renderRadio(comp.Radio, key);
-    }
-    if ('Select' in comp) {
-      return this.renderSelect(comp.Select, key);
-    }
-    if ('Divider' in comp) {
-      return this.renderDivider(comp.Divider, key);
-    }
-    if ('Alert' in comp) {
-      return this.renderAlert(comp.Alert, key);
-    }
-    if ('Container' in comp) {
-      return this.renderContainer(comp.Container, key);
-    }
-    if ('Form' in comp) {
-      return this.renderForm(comp.Form, key);
-    }
+  protected renderText(props: any, key: number): string {
+    const { value, variant = 'p' } = props;
     
-    return `      {/* 未対応コンポーネント: ${Object.keys(comp)[0]} */}`;
+    // StyleManagerを使用してスタイルを取得
+    const styleManager = this.getStyleManager();
+    const config = styleManager.getTextVariantConfig(variant, this.format);
+    
+    return `      <${config.element} key={${key}} className="${config.className}">${value}</${config.element}>`;
   }
 
-  private renderText(props: any, key: number): string {
-    const { value, size = 'base', weight = 'normal', color = 'text-gray-900' } = props;
-    const sizeClasses = {
-      'xs': 'text-xs',
-      'sm': 'text-sm',
-      'base': 'text-base',
-      'lg': 'text-lg',
-      'xl': 'text-xl',
-      '2xl': 'text-2xl'
-    };
-    const weightClasses = {
-      'normal': 'font-normal',
-      'medium': 'font-medium',
-      'semibold': 'font-semibold',
-      'bold': 'font-bold'
-    };
-    
-    return `      <p key={${key}} className=\"${sizeClasses[size as keyof typeof sizeClasses]} ${weightClasses[weight as keyof typeof weightClasses]} ${color}\">{\"${value}\"}</p>`;
-  }
-
-  private renderInput(props: any, key: number): string {
+  protected renderInput(props: any, key: number): string {
     const { label, placeholder, type = 'text', required = false, disabled = false } = props;
-    const disabledClass = disabled ? 'opacity-50 cursor-not-allowed' : '';
+    const disabledClass = this.getDisabledClass(disabled);
     
     return `      <div key={${key}} className="mb-4">
         ${label ? `<label className="block text-sm font-medium text-gray-700 mb-2">${label}</label>` : ''}
@@ -92,32 +53,24 @@ ${componentCode}
       </div>`;
   }
 
-  private renderButton(props: any, key: number): string {
-    const { label, variant = 'primary', size = 'md', disabled = false, onClick } = props;
-    const variantClasses = {
-      'primary': 'bg-blue-600 hover:bg-blue-700 text-white',
-      'secondary': 'bg-gray-600 hover:bg-gray-700 text-white',
-      'outline': 'border border-gray-300 hover:bg-gray-50 text-gray-700'
-    };
-    const sizeClasses = {
-      'sm': 'px-3 py-1.5 text-sm',
-      'md': 'px-4 py-2 text-base',
-      'lg': 'px-6 py-3 text-lg'
-    };
-    const disabledClass = disabled ? 'opacity-50 cursor-not-allowed' : '';
+  protected renderButton(props: any, key: number): string {
+    const { label, kind = 'primary' } = props;
+    
+    // StyleManagerを使用してスタイルを取得
+    const styleManager = this.getStyleManager();
+    const className = styleManager.getButtonKindClass(kind, this.format);
     
     return `      <button
         key={${key}}
-        ${disabled ? 'disabled' : ''}
-        className=\"inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${variantClasses[variant as keyof typeof variantClasses]} ${sizeClasses[size as keyof typeof sizeClasses]} ${disabledClass} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500\"
+        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${className} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
       >
         ${label}
       </button>`;
   }
 
-  private renderCheckbox(props: any, key: number): string {
+  protected renderCheckbox(props: any, key: number): string {
     const { label, checked = false, disabled = false } = props;
-    const disabledClass = disabled ? 'opacity-50 cursor-not-allowed' : '';
+    const disabledClass = this.getDisabledClass(disabled);
     
     return `      <div key={${key}} className="flex items-center mb-4">
         <input
@@ -132,9 +85,9 @@ ${componentCode}
       </div>`;
   }
 
-  private renderRadio(props: any, key: number): string {
+  protected renderRadio(props: any, key: number): string {
     const { label, value, name, checked = false, disabled = false } = props;
-    const disabledClass = disabled ? 'opacity-50 cursor-not-allowed' : '';
+    const disabledClass = this.getDisabledClass(disabled);
     
     return `      <div key={${key}} className="flex items-center mb-4">
         <input
@@ -151,9 +104,9 @@ ${componentCode}
       </div>`;
   }
 
-  private renderSelect(props: any, key: number): string {
+  protected renderSelect(props: any, key: number): string {
     const { label, options = [], placeholder, disabled = false } = props;
-    const disabledClass = disabled ? 'opacity-50 cursor-not-allowed' : '';
+    const disabledClass = this.getDisabledClass(disabled);
     const optionsCode = options.map((opt: any) => 
       `          <option key="${opt.value}" value="${opt.value}">${opt.label}</option>`
     ).join('\n');
@@ -170,13 +123,10 @@ ${optionsCode}
       </div>`;
   }
 
-  private renderDivider(props: any, key: number): string {
+  protected renderDivider(props: any, key: number): string {
     const { orientation = 'horizontal', spacing = 'md' } = props;
-    const spacingClasses = {
-      'sm': 'my-2',
-      'md': 'my-4',
-      'lg': 'my-6'
-    };
+    const styleManager = this.getStyleManager();
+    const spacingClasses = styleManager.getSpacingClasses(this.format);
     
     if (orientation === 'vertical') {
       return `      <div key={${key}} className="inline-block w-px h-6 bg-gray-300 mx-4"></div>`;
@@ -185,22 +135,20 @@ ${optionsCode}
     return `      <hr key={${key}} className="border-gray-300 ${spacingClasses[spacing as keyof typeof spacingClasses]}" />`;
   }
 
-  private renderAlert(props: any, key: number): string {
-    const { message, type = 'info', title } = props;
-    const typeClasses = {
-      'info': 'bg-blue-50 border-blue-200 text-blue-800',
-      'success': 'bg-green-50 border-green-200 text-green-800',
-      'warning': 'bg-yellow-50 border-yellow-200 text-yellow-800',
-      'error': 'bg-red-50 border-red-200 text-red-800'
-    };
+  protected renderAlert(props: any, key: number): string {
+    const { message, variant = 'info' } = props;
     
-    return `      <div key={${key}} className="p-4 border rounded-md ${typeClasses[type as keyof typeof typeClasses]}">
-        ${title ? `<h3 className="text-sm font-medium mb-1">${title}</h3>` : ''}
+    // StyleManagerを使用してスタイルを取得
+    const styleManager = this.getStyleManager();
+    const variantClasses = styleManager.getAlertVariantClasses(this.format);
+    const className = variantClasses[variant as keyof typeof variantClasses] || variantClasses.info;
+    
+    return `      <div key={${key}} className="p-4 border rounded-md ${className}">
         <p className="text-sm">${message}</p>
       </div>`;
   }
 
-  private renderContainer(props: any, key: number): string {
+  protected renderContainer(props: any, key: number): string {
     const { layout = 'vertical', components = [] } = props;
     const layoutClasses = {
       'vertical': 'flex flex-col space-y-4',
@@ -217,7 +165,7 @@ ${childrenCode}
       </div>`;
   }
 
-  private renderForm(props: FormComponent, key: number): string {
+  protected renderForm(props: FormComponent, key: number): string {
     const { id, fields = [], actions = [] } = props;
     
     const fieldsCode = fields.map((field: FormField, index: number) => {

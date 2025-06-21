@@ -18,9 +18,9 @@ export const Checkbox: React.FC<CheckboxProps> = ({
         id={name}
         name={name}
         required={required}
-        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-800"
+        className="textui-checkbox"
       />
-      <label htmlFor={name} className="ml-2 block text-sm text-gray-400">
+      <label htmlFor={name} className="ml-2 block text-sm textui-text">
         {label}
       </label>
     </div>

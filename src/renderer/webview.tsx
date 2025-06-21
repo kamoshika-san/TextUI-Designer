@@ -12,12 +12,8 @@ import { Divider } from './components/Divider';
 import { Alert } from './components/Alert';
 import type { TextUIDSL, ComponentDef, FormComponent, FormField, FormAction } from './types';
 
-const vscode = (window as any).acquireVsCodeApi ? (window as any).acquireVsCodeApi() : undefined;
-
-// window.vscodeにセットして、HTMLテンプレートのexportUI関数からもアクセスできるようにする
-if (vscode) {
-  (window as any).vscode = vscode;
-}
+// HTMLテンプレートで既に取得されているvscodeオブジェクトを使用
+const vscode = (window as any).vscode;
 
 function renderComponent(comp: ComponentDef, key: number): React.ReactNode {
   if ('Text' in comp) {
@@ -97,19 +93,33 @@ const App: React.FC = () => {
   useEffect(() => {
     window.addEventListener('message', (event) => {
       const message = event.data;
+      console.log('[React] メッセージを受信:', message);
+      
       if (message.type === 'json') {
+        console.log('[React] JSONデータを受信:', message.json);
         setJson(message.json);
         setError(null);
       } else if (message.type === 'error') {
+        console.log('[React] エラーメッセージを受信:', message.error);
         setError(message.error);
       } else if (message.type === 'schema-error') {
+        console.log('[React] スキーマエラーメッセージを受信:', message.errors);
         setError(
           'スキーマバリデーションエラー:\n' +
           (message.errors?.map((e: any) => `- ${e.instancePath} ${e.message}`).join('\n') || '')
         );
+      } else {
+        console.log('[React] 未対応のメッセージタイプ:', message.type);
       }
     });
   }, []);
+
+  const handleExport = () => {
+    if (vscode && vscode.postMessage) {
+      console.log('[React] エクスポートボタンがクリックされました');
+      vscode.postMessage({ type: 'export' });
+    }
+  };
 
   if (error) {
     return (
@@ -128,7 +138,37 @@ const App: React.FC = () => {
 
   const components: ComponentDef[] = json.page?.components || [];
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: 24, position: 'relative' }}>
+      {/* エクスポートボタン */}
+      <button 
+        onClick={handleExport}
+        style={{
+          position: 'fixed',
+          top: '1rem',
+          right: '1rem',
+          backgroundColor: 'rgba(75, 85, 99, 0.8)',
+          color: '#d1d5db',
+          border: '1px solid rgba(107, 114, 128, 0.5)',
+          padding: '0.5rem 1rem',
+          borderRadius: '0.375rem',
+          fontSize: '0.875rem',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          zIndex: 1000
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'rgba(55, 65, 81, 0.9)';
+          e.currentTarget.style.borderColor = 'rgba(75, 85, 99, 0.7)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'rgba(75, 85, 99, 0.8)';
+          e.currentTarget.style.borderColor = 'rgba(107, 114, 128, 0.5)';
+        }}
+      >
+        Export
+      </button>
+      
+      {/* プレビューコンテンツ */}
       {components.map((comp, i) => renderComponent(comp, i))}
     </div>
   );
