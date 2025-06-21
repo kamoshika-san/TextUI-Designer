@@ -63,6 +63,8 @@ export class CommandManager {
     this.registerCommand('textui-designer.showPerformanceReport', () => this.showPerformanceReport());
     this.registerCommand('textui-designer.clearPerformanceMetrics', () => this.clearPerformanceMetrics());
     this.registerCommand('textui-designer.togglePerformanceMonitoring', () => this.togglePerformanceMonitoring());
+    this.registerCommand('textui-designer.enablePerformanceMonitoring', () => this.enablePerformanceMonitoring());
+    this.registerCommand('textui-designer.generateSampleEvents', () => this.generateSampleEvents());
   }
 
   /**
@@ -72,7 +74,16 @@ export class CommandManager {
     const result = await ErrorHandler.executeSafely(async () => {
       const { PerformanceMonitor } = await import('../utils/performance-monitor');
       const monitor = PerformanceMonitor.getInstance();
-      monitor.showReport();
+      const report = monitor.generateReport();
+      
+      // 新しいドキュメントでレポートを表示
+      const doc = await vscode.workspace.openTextDocument({
+        content: report,
+        language: 'markdown'
+      });
+      await vscode.window.showTextDocument(doc);
+      
+      ErrorHandler.showInfo('パフォーマンスレポートを表示しました');
     }, 'パフォーマンスレポートの表示に失敗しました');
 
     if (!result) {
@@ -88,7 +99,7 @@ export class CommandManager {
     const result = await ErrorHandler.executeSafely(async () => {
       const { PerformanceMonitor } = await import('../utils/performance-monitor');
       const monitor = PerformanceMonitor.getInstance();
-      monitor.clearMetrics();
+      monitor.clear();
       ErrorHandler.showInfo('パフォーマンスメトリクスをクリアしました');
     }, 'パフォーマンスメトリクスのクリアに失敗しました');
 
@@ -119,6 +130,43 @@ export class CommandManager {
       const status = newEnabled ? '有効化' : '無効化';
       ErrorHandler.showInfo(`パフォーマンス監視を${status}しました`);
     }, 'パフォーマンス監視の切り替えに失敗しました');
+
+    if (!result) {
+      // エラーハンドリングは既にErrorHandlerで処理済み
+      return;
+    }
+  }
+
+  /**
+   * パフォーマンス監視を有効化
+   */
+  private async enablePerformanceMonitoring(): Promise<void> {
+    const result = await ErrorHandler.executeSafely(async () => {
+      const { PerformanceMonitor } = await import('../utils/performance-monitor');
+      const monitor = PerformanceMonitor.getInstance();
+      const currentSettings = ConfigManager.getPerformanceSettings();
+      const newEnabled = true;
+      await ConfigManager.set('performance.enablePerformanceLogs', newEnabled);
+      monitor.setEnabled(newEnabled);
+      ErrorHandler.showInfo('パフォーマンス監視を有効化しました');
+    }, 'パフォーマンス監視の有効化に失敗しました');
+
+    if (!result) {
+      // エラーハンドリングは既にErrorHandlerで処理済み
+      return;
+    }
+  }
+
+  /**
+   * サンプルイベントを生成
+   */
+  private async generateSampleEvents(): Promise<void> {
+    const result = await ErrorHandler.executeSafely(async () => {
+      const { PerformanceMonitor } = await import('../utils/performance-monitor');
+      const monitor = PerformanceMonitor.getInstance();
+      monitor.generateSampleEvents();
+      ErrorHandler.showInfo('サンプルイベントを生成しました');
+    }, 'サンプルイベントの生成に失敗しました');
 
     if (!result) {
       // エラーハンドリングは既にErrorHandlerで処理済み

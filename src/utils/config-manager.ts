@@ -11,6 +11,9 @@ export class ConfigManager {
    */
   static get<T>(key: string, defaultValue: T): T {
     const config = vscode.workspace.getConfiguration(this.CONFIG_SECTION);
+    if (!config || typeof config.get !== 'function') {
+      return defaultValue;
+    }
     return config.get(key, defaultValue);
   }
 
@@ -115,7 +118,7 @@ export class ConfigManager {
       // メモリ使用量の監視間隔（ミリ秒、開発時のみ）
       memoryMonitorInterval: this.get('performance.memoryMonitorInterval', 30000),
       // パフォーマンスログの有効化
-      enablePerformanceLogs: this.get('performance.enablePerformanceLogs', false)
+      enablePerformanceLogs: this.get('performance.enablePerformanceLogs', true)
     };
   }
 

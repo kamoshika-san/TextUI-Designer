@@ -48,6 +48,7 @@ eslint.config.mjs
 !LICENSE
 README.md
 CHANGELOG.md
+doc/
 
 # ソースマップ
 **/*.map

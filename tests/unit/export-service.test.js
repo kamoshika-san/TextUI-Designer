@@ -4,6 +4,43 @@
  * プレビュー画面からのエクスポート機能に関連する処理をテストします
  */
 
+// VS Code APIのモック
+const mockVscode = {
+  window: {
+    activeTextEditor: null,
+    showQuickPick: () => Promise.resolve('html'),
+    showSaveDialog: () => Promise.resolve({ fsPath: '/test/output.html' })
+  },
+  workspace: {
+    getConfiguration: () => ({
+      get: (key, defaultValue) => {
+        // パフォーマンス設定のデフォルト値を返す
+        const defaults = {
+          'textui.performance.enabled': true,
+          'textui.performance.cacheTTL': 300000,
+          'textui.performance.maxCacheSize': 100,
+          'textui.performance.monitoringEnabled': true,
+          'textui.performance.forceEnabled': false
+        };
+        return defaults[key] !== undefined ? defaults[key] : defaultValue;
+      }
+    }),
+    fs: {
+      writeFile: () => Promise.resolve()
+    }
+  },
+  ViewColumn: {
+    One: 1,
+    Two: 2
+  },
+  Uri: {
+    file: (path) => ({ fsPath: path })
+  }
+};
+
+// グローバルにモックを設定
+global.vscode = mockVscode;
+
 const assert = require('assert');
 const path = require('path');
 const fs = require('fs');

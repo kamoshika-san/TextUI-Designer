@@ -33,11 +33,14 @@ export function activate(context: vscode.ExtensionContext) {
 
   // パフォーマンスモニターの初期化
   const performanceMonitor = PerformanceMonitor.getInstance();
-  performanceMonitor.initialize().then(() => {
-    if (process.env.NODE_ENV === 'development') {
-      performanceMonitor.startMemoryMonitoring();
-    }
-  });
+  
+  // 開発モードではパフォーマンス監視を有効化
+  if (process.env.NODE_ENV === 'development') {
+    performanceMonitor.setEnabled(true);
+  }
+  
+  // パフォーマンス監視を強制的に有効化（デバッグ用）
+  performanceMonitor.forceEnable();
 
   // サービスの初期化
   const schemaManager = new SchemaManager(context);
@@ -180,7 +183,7 @@ export function activate(context: vscode.ExtensionContext) {
   const endTime = Date.now();
   const activationTime = endTime - startTime;
   console.log(`[Performance] 拡張機能のアクティベーション完了: ${activationTime}ms`);
-  performanceMonitor.recordMetric('extension.activation', activationTime);
+  performanceMonitor.recordEvent('export', activationTime, { type: 'activation' });
 
   // メモリ使用量の監視（開発時のみ）
   if (process.env.NODE_ENV === 'development') {

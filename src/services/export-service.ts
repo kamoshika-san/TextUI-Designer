@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ExportManager } from '../exporters';
 import { ErrorHandler } from '../utils/error-handler';
 import { ConfigManager } from '../utils/config-manager';
+import { PerformanceMonitor } from '../utils/performance-monitor';
 import path from 'path';
 
 /**
@@ -9,9 +10,11 @@ import path from 'path';
  */
 export class ExportService {
   private exportManager: ExportManager;
+  private performanceMonitor: PerformanceMonitor;
 
   constructor(exportManager: ExportManager) {
     this.exportManager = exportManager;
+    this.performanceMonitor = PerformanceMonitor.getInstance();
   }
 
   /**
@@ -96,13 +99,15 @@ export class ExportService {
     format: string, 
     outputUri: vscode.Uri
   ): Promise<void> {
-    const content = await this.exportManager.exportFromFile(filePath, {
-      format: format as 'react' | 'pug' | 'html',
-      outputPath: outputUri.fsPath,
-      fileName: path.basename(outputUri.fsPath)
-    });
+    return this.performanceMonitor.measureExportTime(async () => {
+      const content = await this.exportManager.exportFromFile(filePath, {
+        format: format as 'react' | 'pug' | 'html',
+        outputPath: outputUri.fsPath,
+        fileName: path.basename(outputUri.fsPath)
+      });
 
-    await vscode.workspace.fs.writeFile(outputUri, Buffer.from(content, 'utf-8'));
+      await vscode.workspace.fs.writeFile(outputUri, Buffer.from(content, 'utf-8'));
+    });
   }
 
   /**

@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as YAML from 'yaml';
 import { getWebviewContent } from '../utils/webview-utils';
+import { PerformanceMonitor } from '../utils/performance-monitor';
 
 /**
  * WebView管理サービス
@@ -14,9 +15,11 @@ export class WebViewManager {
   private lastYamlContent: string = '';
   private lastParsedData: any = null;
   private isUpdating: boolean = false;
+  private performanceMonitor: PerformanceMonitor;
 
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
+    this.performanceMonitor = PerformanceMonitor.getInstance();
   }
 
   /**
@@ -118,35 +121,36 @@ export class WebViewManager {
    * WebViewにYAMLデータを送信（キャッシュ付き）
    */
   private async sendYamlToWebview(): Promise<void> {
-    if (!this.currentPanel || this.isUpdating) {
-      console.log('[WebViewManager] パネルが存在しないか、更新中です');
-      return;
-    }
+    return this.performanceMonitor.measureRenderTime(async () => {
+      if (!this.currentPanel || this.isUpdating) {
+        console.log('[WebViewManager] パネルが存在しないか、更新中です');
+        return;
+      }
 
-    this.isUpdating = true;
+      this.isUpdating = true;
 
-    try {
-      const activeEditor = vscode.window.activeTextEditor;
-      let yamlContent = '';
-      let fileName = '';
+      try {
+        const activeEditor = vscode.window.activeTextEditor;
+        let yamlContent = '';
+        let fileName = '';
 
-      console.log(`[WebViewManager] アクティブエディタ: ${activeEditor?.document.fileName}`);
-      console.log(`[WebViewManager] 最後のファイル: ${this.lastTuiFile}`);
+        console.log(`[WebViewManager] アクティブエディタ: ${activeEditor?.document.fileName}`);
+        console.log(`[WebViewManager] 最後のファイル: ${this.lastTuiFile}`);
 
-      if (activeEditor && activeEditor.document.fileName.endsWith('.tui.yml')) {
-        yamlContent = activeEditor.document.getText();
-        fileName = activeEditor.document.fileName;
-        this.setLastTuiFile(fileName);
-        console.log(`[WebViewManager] アクティブエディタからYAMLを取得: ${fileName}`);
-      } else if (this.lastTuiFile) {
-        // アクティブなエディタがない場合は最後に開いていたファイルを使用
-        const document = await vscode.workspace.openTextDocument(this.lastTuiFile);
-        yamlContent = document.getText();
-        fileName = this.lastTuiFile;
-        console.log(`[WebViewManager] 最後のファイルからYAMLを取得: ${fileName}`);
-      } else {
-        // デフォルトのサンプルデータ
-        yamlContent = `page:
+        if (activeEditor && activeEditor.document.fileName.endsWith('.tui.yml')) {
+          yamlContent = activeEditor.document.getText();
+          fileName = activeEditor.document.fileName;
+          this.setLastTuiFile(fileName);
+          console.log(`[WebViewManager] アクティブエディタからYAMLを取得: ${fileName}`);
+        } else if (this.lastTuiFile) {
+          // アクティブなエディタがない場合は最後に開いていたファイルを使用
+          const document = await vscode.workspace.openTextDocument(this.lastTuiFile);
+          yamlContent = document.getText();
+          fileName = this.lastTuiFile;
+          console.log(`[WebViewManager] 最後のファイルからYAMLを取得: ${fileName}`);
+        } else {
+          // デフォルトのサンプルデータ
+          yamlContent = `page:
   id: sample
   title: "サンプル"
   layout: vertical
@@ -157,35 +161,39 @@ export class WebViewManager {
     - Text:
         variant: p
         value: "プレビューが表示されています"`;
-        fileName = 'sample.tui.yml';
-        console.log(`[WebViewManager] サンプルデータを使用`);
-      }
+          fileName = 'sample.tui.yml';
+          console.log(`[WebViewManager] サンプルデータを使用`);
+        }
 
-      // キャッシュチェック
-      if (yamlContent === this.lastYamlContent && this.lastParsedData) {
-        console.log('[WebViewManager] キャッシュされたデータを使用');
-        this.sendMessageToWebView(this.lastParsedData, fileName);
-        return;
-      }
+        // キャッシュチェック
+        if (yamlContent === this.lastYamlContent && this.lastParsedData) {
+          console.log('[WebViewManager] キャッシュされたデータを使用');
+          this.performanceMonitor.recordCacheHit(true);
+          this.sendMessageToWebView(this.lastParsedData, fileName);
+          return;
+        }
 
-      const yaml = YAML.parse(yamlContent);
-      console.log(`[WebViewManager] YAML解析成功、WebViewに送信: ${fileName}`);
-      
-      // キャッシュを更新
-      this.lastYamlContent = yamlContent;
-      this.lastParsedData = yaml;
-      
-      this.sendMessageToWebView(yaml, fileName);
-      console.log(`[WebViewManager] メッセージ送信完了`);
-    } catch (error) {
-      console.error('[WebViewManager] YAMLデータの送信に失敗しました:', error);
-      this.currentPanel.webview.postMessage({
-        type: 'error',
-        message: `YAMLの解析に失敗しました: ${error}`
-      });
-    } finally {
-      this.isUpdating = false;
-    }
+        this.performanceMonitor.recordCacheHit(false);
+
+        const yaml = YAML.parse(yamlContent);
+        console.log(`[WebViewManager] YAML解析成功、WebViewに送信: ${fileName}`);
+        
+        // キャッシュを更新
+        this.lastYamlContent = yamlContent;
+        this.lastParsedData = yaml;
+        
+        this.sendMessageToWebView(yaml, fileName);
+        console.log(`[WebViewManager] メッセージ送信完了`);
+      } catch (error) {
+        console.error('[WebViewManager] YAMLデータの送信に失敗しました:', error);
+        this.currentPanel.webview.postMessage({
+          type: 'error',
+          message: `YAMLの解析に失敗しました: ${error}`
+        });
+      } finally {
+        this.isUpdating = false;
+      }
+    });
   }
 
   /**
