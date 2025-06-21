@@ -9,29 +9,38 @@
   --vscode-background: unset !important;
   --vscode-editor-foreground: unset !important;
   --vscode-editor-background: unset !important;
+  --color-primary: #3B82F6;
+  --color-secondary: #6B7280;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-surface: #1f2937;
+  --color-background: #ffffff;
+  --color-text-primary: #e5e7eb;
+  --color-text-dark: #1f2937;
 }
 
 /* ダークモード対応のカスタムスタイル */
 .textui-container {
   @apply max-w-4xl mx-auto p-6;
-  background-color: rgb(31 41 55) !important; /* ダークグレー背景 */
+  background-color: var(--color-surface) !important;
   border-radius: 0.75rem;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 /* ライトモード用のコンテナスタイル */
 .light .textui-container {
-  background-color: rgb(255 255 255) !important; /* 白背景 */
+  background-color: var(--color-background) !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .textui-text {
-  color: rgb(243 244 246) !important; /* 明るいグレー文字 */
+  color: var(--color-text-primary) !important;
 }
 
 /* ライトモード用のテキストスタイル */
 .light .textui-text {
-  color: rgb(31 41 55) !important; /* ダークグレー文字 */
+  color: var(--color-text-dark) !important;
 }
 
 .textui-text.h1 {
@@ -107,8 +116,8 @@
 
 .textui-alert.info {
   background-color: rgba(59, 130, 246, 0.1) !important;
-  border-color: rgb(59 130 246) !important;
-  color: rgb(147 197 253) !important; /* 明るいブルー文字 */
+  border-color: var(--color-primary) !important;
+  color: var(--color-primary) !important;
 }
 
 /* ライトモード用のinfoアラート */
@@ -120,8 +129,8 @@
 
 .textui-alert.success {
   background-color: rgba(34, 197, 94, 0.1) !important;
-  border-color: rgb(34 197 94) !important;
-  color: rgb(134 239 172) !important; /* 明るいグリーン文字 */
+  border-color: var(--color-success) !important;
+  color: var(--color-success) !important;
 }
 
 /* ライトモード用のsuccessアラート */
@@ -133,8 +142,8 @@
 
 .textui-alert.warning {
   background-color: rgba(245, 158, 11, 0.1) !important;
-  border-color: rgb(245 158 11) !important;
-  color: rgb(253 230 138) !important; /* 明るいイエロー文字 */
+  border-color: var(--color-warning) !important;
+  color: var(--color-warning) !important;
 }
 
 /* ライトモード用のwarningアラート */
@@ -146,8 +155,8 @@
 
 .textui-alert.error {
   background-color: rgba(239, 68, 68, 0.1) !important;
-  border-color: rgb(239 68 68) !important;
-  color: rgb(252 165 165) !important; /* 明るいレッド文字 */
+  border-color: var(--color-error) !important;
+  color: var(--color-error) !important;
 }
 
 /* ライトモード用のerrorアラート */
@@ -244,7 +253,7 @@
 }
 
 .textui-button.primary {
-  background-color: rgb(59 130 246) !important; /* ブルー */
+  background-color: var(--color-primary) !important;
   color: rgb(255 255 255) !important;
   box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
 }
@@ -256,7 +265,7 @@
 }
 
 .textui-button.secondary {
-  background-color: rgb(75 85 99) !important; /* グレー */
+  background-color: var(--color-secondary) !important;
   color: rgb(255 255 255) !important;
 }
 
@@ -275,7 +284,7 @@
 }
 
 .textui-button.submit {
-  background-color: rgb(34 197 94) !important; /* グリーン */
+  background-color: var(--color-success) !important;
   color: rgb(255 255 255) !important;
   box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.2);
 }
@@ -323,25 +332,25 @@
 
 /* 全体的な背景色の設定 */
 body {
-  background-color: rgb(17 24 39) !important; /* ダーク背景 */
-  color: rgb(229 231 235) !important; /* 明るいグレー文字 */
+  background-color: var(--color-surface) !important;
+  color: var(--color-text-primary) !important;
 }
 
 /* ライトモード用の背景色 */
 body.light {
-  background-color: rgb(249 250 251) !important; /* ライトグレー背景 */
-  color: rgb(55 65 81) !important; /* ダークグレー文字 */
+  background-color: var(--color-background) !important;
+  color: var(--color-text-dark) !important;
 }
 
 #root {
-  background-color: rgb(17 24 39) !important; /* ダーク背景 */
+  background-color: var(--color-surface) !important;
   min-height: 100vh;
   padding: 1rem;
 }
 
 /* ライトモード用のルート背景 */
 .light #root {
-  background-color: rgb(249 250 251) !important; /* ライトグレー背景 */
+  background-color: var(--color-background) !important;
 }
 
 /* テーマ切り替えボタンのスタイル */

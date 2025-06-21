@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/textui/theme-schema.json",
+  "title": "TextUI Theme Schema",
+  "type": "object",
+  "properties": {
+    "theme": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "tokens": {
+          "type": "object",
+          "properties": {
+            "color": { "type": "object" },
+            "spacing": { "type": "object" },
+            "typography": { "type": "object" },
+            "borderRadius": { "type": "object" },
+            "shadow": { "type": "object" }
+          },
+          "additionalProperties": true
+        },
+        "components": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": ["tokens"],
+      "additionalProperties": true
+    }
+  },
+  "required": ["theme"],
+  "additionalProperties": false
+}

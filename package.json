@@ -264,7 +264,8 @@
     ],
     "yaml.schemas": {
       "./schemas/schema.json": ["*.tui.yml", "*.tui.yaml"],
-      "./schemas/template-schema.json": ["*.template.yml", "*.template.yaml"]
+      "./schemas/template-schema.json": ["*.template.yml", "*.template.yaml"],
+      "./schemas/theme-schema.json": ["textui-theme.yml", "textui-theme.yaml"]
     }
   },
   "scripts": {

@@ -116,6 +116,11 @@ const App: React.FC = () => {
       } else if (message.type === 'theme-change') {
         console.log('[React] テーマ変更メッセージを受信:', message.theme);
         // テーマ変更はThemeToggleコンポーネントで処理される
+      } else if (message.type === 'theme-variables') {
+        const styleEl = document.getElementById('theme-vars');
+        if (styleEl) {
+          styleEl.textContent = message.css;
+        }
       } else {
         console.log('[React] 未対応のメッセージタイプ:', message.type);
       }
