@@ -8,6 +8,7 @@ export class ThemeManager {
   private context: vscode.ExtensionContext;
   private themePath: string | undefined;
   private tokens: any = {};
+  private components: any = {};
   private watcher: vscode.FileSystemWatcher | undefined;
 
   // デフォルトテーマ
@@ -60,6 +61,87 @@ export class ThemeManager {
     }
   };
 
+  // デフォルトコンポーネントスタイル
+  private defaultComponents = {
+    button: {
+      primary: {
+        backgroundColor: 'var(--color-primary)',
+        color: 'var(--color-text-primary)',
+        padding: 'var(--spacing-sm) var(--spacing-md)',
+        borderRadius: 'var(--border-radius-md)',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: 'var(--typography-fontSize-base)',
+        fontWeight: 'medium',
+        transition: 'all 0.2s ease-in-out'
+      },
+      secondary: {
+        backgroundColor: 'var(--color-secondary)',
+        color: 'var(--color-text-primary)',
+        padding: 'var(--spacing-sm) var(--spacing-md)',
+        borderRadius: 'var(--border-radius-md)',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: 'var(--typography-fontSize-base)',
+        fontWeight: 'medium',
+        transition: 'all 0.2s ease-in-out'
+      },
+      submit: {
+        backgroundColor: 'var(--color-success)',
+        color: 'var(--color-text-primary)',
+        padding: 'var(--spacing-sm) var(--spacing-md)',
+        borderRadius: 'var(--border-radius-md)',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: 'var(--typography-fontSize-base)',
+        fontWeight: 'medium',
+        transition: 'all 0.2s ease-in-out'
+      }
+    },
+    alert: {
+      info: {
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderColor: 'var(--color-primary)',
+        color: 'var(--color-primary)',
+        borderWidth: '1px',
+        borderRadius: 'var(--border-radius-lg)',
+        padding: 'var(--spacing-md)',
+        fontSize: 'var(--typography-fontSize-base)',
+        fontWeight: 'normal'
+      },
+      success: {
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        borderColor: 'var(--color-success)',
+        color: 'var(--color-success)',
+        borderWidth: '1px',
+        borderRadius: 'var(--border-radius-lg)',
+        padding: 'var(--spacing-md)',
+        fontSize: 'var(--typography-fontSize-base)',
+        fontWeight: 'normal'
+      },
+      warning: {
+        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+        borderColor: 'var(--color-warning)',
+        color: 'var(--color-warning)',
+        borderWidth: '1px',
+        borderRadius: 'var(--border-radius-lg)',
+        padding: 'var(--spacing-md)',
+        fontSize: 'var(--typography-fontSize-base)',
+        fontWeight: 'normal'
+      },
+      error: {
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        borderColor: 'var(--color-error)',
+        color: 'var(--color-error)',
+        borderWidth: '1px',
+        borderRadius: 'var(--border-radius-lg)',
+        padding: 'var(--spacing-md)',
+        fontSize: 'var(--typography-fontSize-base)',
+        fontWeight: 'normal'
+      }
+    }
+  };
+
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
     const folder = vscode.workspace.workspaceFolders?.[0];
@@ -72,6 +154,7 @@ export class ThemeManager {
     if (!this.themePath || !fs.existsSync(this.themePath)) {
       console.log('[ThemeManager] theme file not found, using default theme');
       this.tokens = this.defaultTokens;
+      this.components = this.defaultComponents;
       return;
     }
     try {
@@ -81,17 +164,23 @@ export class ThemeManager {
       console.log('[ThemeManager] parsed theme data:', JSON.stringify(data, null, 2));
       await this.validateTheme(data);
       this.tokens = data.theme?.tokens || this.defaultTokens;
+      this.components = data.theme?.components || this.defaultComponents;
       console.log('[ThemeManager] extracted tokens:', JSON.stringify(this.tokens, null, 2));
+      console.log('[ThemeManager] extracted components:', JSON.stringify(this.components, null, 2));
       console.log('[ThemeManager] theme loaded');
     } catch (err) {
       console.error('[ThemeManager] failed to load theme, using default theme', err);
       this.tokens = this.defaultTokens;
+      this.components = this.defaultComponents;
     }
   }
 
   generateCSSVariables(): string {
     const flat = this.flattenTokens(this.tokens);
+    const componentVars = this.generateComponentVariables();
+    
     console.log('[ThemeManager] flattened tokens:', JSON.stringify(flat, null, 2));
+    console.log('[ThemeManager] component variables:', JSON.stringify(componentVars, null, 2));
     
     // spacing変数のデバッグ
     console.log('[ThemeManager] spacing-md value:', flat['spacing-md']);
@@ -116,7 +205,10 @@ export class ThemeManager {
       'typography-fontSize-4xl': flat['typography-fontSize-4xl']
     });
     
-    const lines = Object.entries(flat).map(([k, v]) => `  --${k}: ${v} !important;`);
+    // すべての変数を結合
+    const allVars = { ...flat, ...componentVars };
+    const lines = Object.entries(allVars).map(([k, v]) => `  --${k}: ${v} !important;`);
+    
     // 複数のセレクターでCSS変数を定義し、最高の優先度を確保
     const css = `html body :root {\n${lines.join('\n')}\n}\nhtml :root {\n${lines.join('\n')}\n}\n:root {\n${lines.join('\n')}\n}\nbody {\n${lines.join('\n')}\n}\n#root {\n${lines.join('\n')}\n}`;
     console.log('[ThemeManager] generated CSS:', css);
@@ -136,6 +228,21 @@ export class ThemeManager {
         result[newKey] = String(value);
       }
     }
+    return result;
+  }
+
+  private generateComponentVariables(): Record<string, string> {
+    const result: Record<string, string> = {};
+    
+    for (const [componentName, variants] of Object.entries(this.components)) {
+      for (const [variantName, styles] of Object.entries(variants as any)) {
+        for (const [propertyName, value] of Object.entries(styles as any)) {
+          const varName = `component-${componentName}-${variantName}-${propertyName}`;
+          result[varName] = String(value);
+        }
+      }
+    }
+    
     return result;
   }
 
@@ -174,6 +281,7 @@ export class ThemeManager {
     this.watcher.onDidDelete(async () => {
       console.log('[ThemeManager] theme file deleted, using default theme');
       this.tokens = this.defaultTokens;
+      this.components = this.defaultComponents;
       const css = this.generateCSSVariables();
       callback(css);
     });

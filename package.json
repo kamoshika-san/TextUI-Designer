@@ -16,15 +16,16 @@
     "onCommand:textui-designer.export",
     "onLanguage:yaml"
   ],
-  "main": "./out/extension.js",
+  "main": "./dist/extension.js",
   "files": [
-    "out/**/*",
+    "dist/**/*",
     "schemas/**/*",
     "media/**/*",
     "snippets/**/*",
     "icon.png",
     "LICENSE",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "README.md"
   ],
   "contributes": {
     "configuration": {
