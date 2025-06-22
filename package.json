@@ -21,7 +21,10 @@
     "out/**/*",
     "schemas/**/*",
     "media/**/*",
-    "snippets/**/*"
+    "snippets/**/*",
+    "icon.png",
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "contributes": {
     "configuration": {
