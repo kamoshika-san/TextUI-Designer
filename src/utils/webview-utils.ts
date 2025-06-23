@@ -8,15 +8,25 @@ import * as fs from 'fs';
 export function getWebviewContent(context: vscode.ExtensionContext, panel?: vscode.WebviewPanel): string {
   // CSSファイルのパスを取得
   const cssPath = path.join(context.extensionPath, 'media', 'assets');
-  const cssFiles = fs.readdirSync(cssPath).filter(file => file.endsWith('.css'));
-  const latestCssFile = cssFiles.sort().pop();
-  const cssUri = panel ? panel.webview.asWebviewUri(vscode.Uri.file(path.join(cssPath, latestCssFile || 'index.css'))) : '';
+  let cssFiles: string[] = [];
+  try {
+    cssFiles = fs.readdirSync(cssPath).filter(file => file.endsWith('.css'));
+  } catch (error) {
+    console.warn(`[getWebviewContent] Failed to read CSS directory: ${cssPath}`, error);
+  }
+  const latestCssFile = cssFiles.sort().pop() || 'index.css';
+  const cssUri = panel ? panel.webview.asWebviewUri(vscode.Uri.file(path.join(cssPath, latestCssFile))) : '';
 
   // JavaScriptファイルのパスを取得
   const jsPath = path.join(context.extensionPath, 'media');
-  const jsFiles = fs.readdirSync(jsPath).filter(file => file.endsWith('.js'));
-  const latestJsFile = jsFiles.sort().pop();
-  const jsUri = panel ? panel.webview.asWebviewUri(vscode.Uri.file(path.join(jsPath, latestJsFile || 'webview.js'))) : '';
+  let jsFiles: string[] = [];
+  try {
+    jsFiles = fs.readdirSync(jsPath).filter(file => file.endsWith('.js'));
+  } catch (error) {
+    console.warn(`[getWebviewContent] Failed to read JS directory: ${jsPath}`, error);
+  }
+  const latestJsFile = jsFiles.sort().pop() || 'webview.js';
+  const jsUri = panel ? panel.webview.asWebviewUri(vscode.Uri.file(path.join(jsPath, latestJsFile))) : '';
 
   return `<!DOCTYPE html>
 <html lang="ja">
