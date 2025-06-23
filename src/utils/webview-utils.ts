@@ -46,6 +46,8 @@ export function getWebviewContent(context: vscode.ExtensionContext, panel?: vsco
       padding: 1rem;
     }
   </style>
+  <!-- テーマ変数はビルドされたCSSの後に適用される -->
+  <style id="theme-vars"></style>
 </head>
 <body>
   <div id="root">

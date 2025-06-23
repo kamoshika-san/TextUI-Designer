@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as YAML from 'yaml';
 import { getWebviewContent } from '../utils/webview-utils';
 import { PerformanceMonitor } from '../utils/performance-monitor';
+import { ThemeManager } from './theme-manager';
 
 /**
  * WebView管理サービス
@@ -16,9 +17,11 @@ export class WebViewManager {
   private lastParsedData: any = null;
   private isUpdating: boolean = false;
   private performanceMonitor: PerformanceMonitor;
+  private themeManager: ThemeManager | undefined;
 
-  constructor(context: vscode.ExtensionContext) {
+  constructor(context: vscode.ExtensionContext, themeManager?: ThemeManager) {
     this.context = context;
+    this.themeManager = themeManager;
     this.performanceMonitor = PerformanceMonitor.getInstance();
   }
 
@@ -49,9 +52,6 @@ export class WebViewManager {
       // WebViewのHTMLをセット
       this.currentPanel.webview.html = getWebviewContent(this.context, this.currentPanel);
 
-      // 初回データ送信
-      await this.sendYamlToWebview();
-
       // WebViewからのメッセージを処理
       this.currentPanel.webview.onDidReceiveMessage(
         async (message) => {
@@ -64,6 +64,14 @@ export class WebViewManager {
             } else {
               console.log('[WebViewManager] エクスポート用ファイルが見つかりません');
               vscode.window.showWarningMessage('エクスポートするファイルが見つかりません。先に.tui.ymlファイルを開いてください。');
+            }
+          } else if (message.type === 'webview-ready') {
+            console.log('[WebViewManager] WebView準備完了メッセージを受信');
+            // WebViewが準備完了したら、YAMLデータとテーマ変数を送信
+            await this.sendYamlToWebview();
+            if (this.themeManager) {
+              console.log('[WebViewManager] 初回テーマ変数を送信');
+              this.applyThemeVariables(this.themeManager.generateCSSVariables());
             }
           }
         },
@@ -257,6 +265,22 @@ export class WebViewManager {
     if (this.currentPanel) {
       this.currentPanel.dispose();
     }
+  }
+
+  /**
+   * テーマ用CSS変数をWebViewへ送信
+   */
+  applyThemeVariables(css: string): void {
+    console.log('[WebViewManager] applyThemeVariables called with CSS:', css);
+    if (!this.currentPanel) {
+      console.log('[WebViewManager] applyThemeVariables: no current panel');
+      return;
+    }
+    console.log('[WebViewManager] applyThemeVariables: sending theme-variables message');
+    this.currentPanel.webview.postMessage({
+      type: 'theme-variables',
+      css
+    });
   }
 
   /**

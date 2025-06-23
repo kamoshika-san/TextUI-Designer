@@ -16,12 +16,16 @@
     "onCommand:textui-designer.export",
     "onLanguage:yaml"
   ],
-  "main": "./out/extension.js",
+  "main": "./dist/extension.js",
   "files": [
-    "out/**/*",
+    "dist/**/*",
     "schemas/**/*",
     "media/**/*",
-    "snippets/**/*"
+    "snippets/**/*",
+    "icon.png",
+    "LICENSE",
+    "CHANGELOG.md",
+    "README.md"
   ],
   "contributes": {
     "configuration": {
@@ -264,7 +268,8 @@
     ],
     "yaml.schemas": {
       "./schemas/schema.json": ["*.tui.yml", "*.tui.yaml"],
-      "./schemas/template-schema.json": ["*.template.yml", "*.template.yaml"]
+      "./schemas/template-schema.json": ["*.template.yml", "*.template.yaml"],
+      "./schemas/theme-schema.json": ["textui-theme.yml", "textui-theme.yaml"]
     }
   },
   "scripts": {

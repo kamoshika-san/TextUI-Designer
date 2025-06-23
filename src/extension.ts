@@ -11,9 +11,11 @@ import { ExportManager } from './exporters';
 import { ErrorHandler } from './utils/error-handler';
 import { ConfigManager } from './utils/config-manager';
 import { PerformanceMonitor } from './utils/performance-monitor';
+import { ThemeManager } from './services/theme-manager';
 
 // グローバル変数としてSchemaManagerを保存
 let globalSchemaManager: SchemaManager | undefined;
+let themeManagerInstance: ThemeManager | undefined;
 
 /**
  * サポートされているファイルかチェック
@@ -46,7 +48,9 @@ export function activate(context: vscode.ExtensionContext) {
   const schemaManager = new SchemaManager(context);
   globalSchemaManager = schemaManager; // グローバルに保存
   
-  const webViewManager = new WebViewManager(context);
+  const themeManager = new ThemeManager(context);
+  themeManagerInstance = themeManager;
+  const webViewManager = new WebViewManager(context, themeManager);
   const exportManager = new ExportManager();
   const exportService = new ExportService(exportManager);
   const templateService = new TemplateService();
@@ -77,6 +81,14 @@ export function activate(context: vscode.ExtensionContext) {
 
   // コマンドの登録
   commandManager.registerCommands();
+
+  // テーマ読み込み
+  themeManager.loadTheme().then(() => {
+    webViewManager.applyThemeVariables(themeManager.generateCSSVariables());
+  });
+  themeManager.watchThemeFile(css => {
+    webViewManager.applyThemeVariables(css);
+  });
 
   // 補完プロバイダーの登録
   const completionDisposable = vscode.languages.registerCompletionItemProvider(
@@ -226,6 +238,8 @@ export function deactivate() {
     });
     globalSchemaManager = undefined;
   }
+
+  themeManagerInstance?.dispose?.();
 
   console.log('TextUI Designer拡張の非アクティベーション完了');
 } 

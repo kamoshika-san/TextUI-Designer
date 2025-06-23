@@ -9,339 +9,447 @@
   --vscode-background: unset !important;
   --vscode-editor-foreground: unset !important;
   --vscode-editor-background: unset !important;
+  --vscode-font-family: unset !important;
+  --vscode-font-size: unset !important;
+  --vscode-font-weight: unset !important;
 }
 
+/* Container */
 /* ダークモード対応のカスタムスタイル */
 .textui-container {
-  @apply max-w-4xl mx-auto p-6;
-  background-color: rgb(31 41 55) !important; /* ダークグレー背景 */
-  border-radius: 0.75rem;
+  @apply max-w-4xl mx-auto;
+  padding: var(--spacing-lg, 1.5rem);
+  border-radius: var(--borderRadius-lg, 0.75rem);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 /* ライトモード用のコンテナスタイル */
 .light .textui-container {
-  background-color: rgb(255 255 255) !important; /* 白背景 */
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  background-color: var(--color-background);
 }
 
+/* Text */
 .textui-text {
-  color: rgb(243 244 246) !important; /* 明るいグレー文字 */
+  color: var(--color-text-primary, rgb(255 255 255));
+  font-size: var(--typography-fontSize-base, 1rem);
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
+  font-weight: normal;
+  line-height: 1.6;
 }
 
 /* ライトモード用のテキストスタイル */
 .light .textui-text {
-  color: rgb(31 41 55) !important; /* ダークグレー文字 */
+  color: var(--color-text-dark, rgb(17 24 39));
 }
 
 .textui-text.h1 {
-  @apply text-4xl font-bold mb-4;
-  color: rgb(255 255 255) !important; /* 白文字 */
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-/* ライトモード用のh1スタイル */
-.light .textui-text.h1 {
-  color: rgb(17 24 39) !important; /* ダーク文字 */
-  text-shadow: none;
+  @apply font-bold;
+  font-size: var(--typography-fontSize-4xl, 2.25rem);
+  font-weight: bold;
+  margin-bottom: var(--spacing-md, 1rem);
 }
 
 .textui-text.h2 {
-  @apply text-3xl font-semibold mb-3;
-  color: rgb(255 255 255) !important; /* 白文字 */
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-/* ライトモード用のh2スタイル */
-.light .textui-text.h2 {
-  color: rgb(17 24 39) !important; /* ダーク文字 */
-  text-shadow: none;
+  @apply font-semibold;
+  font-size: var(--typography-fontSize-3xl, 1.875rem);
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm, 0.75rem);
 }
 
 .textui-text.h3 {
-  @apply text-2xl font-medium mb-2;
-  color: rgb(243 244 246) !important; /* 明るいグレー文字 */
+  @apply font-medium;
+  color: var(--color-text-secondary, rgb(243 244 246));
+  font-size: var(--typography-fontSize-2xl, 1.5rem);
+  font-weight: 500;
+  line-height: 1.4;
+  margin-bottom: var(--spacing-xs, 0.5rem);
 }
 
-/* ライトモード用のh3スタイル */
 .light .textui-text.h3 {
-  color: rgb(31 41 55) !important; /* ダークグレー文字 */
+  color: var(--color-text-dark, rgb(31 41 55));
 }
 
 .textui-text.p {
-  @apply text-base mb-2;
-  color: rgb(229 231 235) !important; /* やや明るいグレー文字 */
+  color: var(--color-text-secondary, rgb(229 231 235));
+  font-size: var(--typography-fontSize-base, 1rem);
   line-height: 1.6;
+  margin-bottom: var(--spacing-xs, 0.5rem);
 }
 
-/* ライトモード用のpスタイル */
 .light .textui-text.p {
-  color: rgb(55 65 81) !important; /* ダークグレー文字 */
+  color: var(--color-text-dark, rgb(17 24 39));
 }
 
 .textui-text.small {
-  @apply text-sm;
-  color: rgb(156 163 175) !important; /* 中程度のグレー文字 */
+  color: var(--color-text-muted, rgb(156 163 175));
+  font-size: var(--typography-fontSize-sm, 0.875rem);
 }
 
 /* ライトモード用のsmallスタイル */
 .light .textui-text.small {
-  color: rgb(107 114 128) !important; /* 中程度のグレー文字 */
+  color: var(--color-text-secondary, rgb(107 114 128));
 }
 
 .textui-text.caption {
-  @apply text-xs;
-  color: rgb(107 114 128) !important; /* やや暗いグレー文字 */
+  color: var(--color-text-muted, rgb(107 114 128));
+  font-size: var(--typography-fontSize-xs, 0.75rem);
 }
 
-/* ライトモード用のcaptionスタイル */
-.light .textui-text.caption {
-  color: rgb(156 163 175) !important; /* やや明るいグレー文字 */
-}
-
+/* Alert */
 /* アラートコンポーネントの改善 */
 .textui-alert {
-  @apply p-4 rounded-lg mb-4 border;
+  @apply mb-4 border;
+  border-radius: var(--component-alert-info-borderRadius, var(--borderRadius-lg, 0.5rem));
+  padding: var(--component-alert-info-padding, var(--spacing-md, 1rem));
   backdrop-filter: blur(10px);
+  font-size: var(--component-alert-info-fontSize, var(--typography-fontSize-base, 1rem));
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
+  font-weight: var(--component-alert-info-fontWeight, normal);
+  line-height: 1.6;
+  margin: 0;
+  margin-bottom: var(--spacing-md, 1rem);
 }
 
 .textui-alert.info {
-  background-color: rgba(59, 130, 246, 0.1) !important;
-  border-color: rgb(59 130 246) !important;
-  color: rgb(147 197 253) !important; /* 明るいブルー文字 */
+  background-color: var(--component-alert-info-backgroundColor, rgba(59, 130, 246, 0.1));
+  border-color: var(--component-alert-info-borderColor, var(--color-primary, #3B82F6));
+  color: var(--component-alert-info-color, var(--color-primary, #3B82F6));
+  border-width: var(--component-alert-info-borderWidth, 1px);
+  border-radius: var(--component-alert-info-borderRadius, var(--borderRadius-lg, 0.5rem));
+  padding: var(--component-alert-info-padding, var(--spacing-md, 1rem));
+  font-size: var(--component-alert-info-fontSize, var(--typography-fontSize-base, 1rem));
+  font-weight: var(--component-alert-info-fontWeight, normal);
+  text-align: var(--component-alert-info-textAlign, left);
+  box-shadow: var(--component-alert-info-boxShadow, none);
 }
 
 /* ライトモード用のinfoアラート */
 .light .textui-alert.info {
-  background-color: rgba(59, 130, 246, 0.1) !important;
-  border-color: rgb(59 130 246) !important;
-  color: rgb(30 64 175) !important; /* ダークブルー文字 */
+  background-color: var(--component-alert-info-light-backgroundColor, rgba(59, 130, 246, 0.1));
+  border-color: var(--component-alert-info-light-borderColor, rgb(59 130 246));
+  color: var(--component-alert-info-light-color, rgb(30 64 175)); /* ダークブルー文字 */
 }
 
 .textui-alert.success {
-  background-color: rgba(34, 197, 94, 0.1) !important;
-  border-color: rgb(34 197 94) !important;
-  color: rgb(134 239 172) !important; /* 明るいグリーン文字 */
+  background-color: var(--component-alert-success-backgroundColor, rgba(34, 197, 94, 0.1));
+  border-color: var(--component-alert-success-borderColor, var(--color-success, #10B981));
+  color: var(--component-alert-success-color, var(--color-success, #10B981));
+  border-width: var(--component-alert-success-borderWidth, 1px);
+  border-radius: var(--component-alert-success-borderRadius, var(--borderRadius-lg, 0.5rem));
+  padding: var(--component-alert-success-padding, var(--spacing-md, 1rem));
+  font-size: var(--component-alert-success-fontSize, var(--typography-fontSize-base, 1rem));
+  font-weight: var(--component-alert-success-fontWeight, normal);
+  text-align: var(--component-alert-success-textAlign, left);
+  box-shadow: var(--component-alert-success-boxShadow, none);
 }
 
 /* ライトモード用のsuccessアラート */
 .light .textui-alert.success {
-  background-color: rgba(34, 197, 94, 0.1) !important;
-  border-color: rgb(34 197 94) !important;
-  color: rgb(22 163 74) !important; /* ダークグリーン文字 */
+  background-color: var(--component-alert-success-light-backgroundColor, rgba(34, 197, 94, 0.1));
+  border-color: var(--component-alert-success-light-borderColor, rgb(34 197 94));
+  color: var(--component-alert-success-light-color, rgb(22 163 74)); /* ダークグリーン文字 */
 }
 
 .textui-alert.warning {
-  background-color: rgba(245, 158, 11, 0.1) !important;
-  border-color: rgb(245 158 11) !important;
-  color: rgb(253 230 138) !important; /* 明るいイエロー文字 */
+  background-color: var(--component-alert-warning-backgroundColor, rgba(245, 158, 11, 0.1));
+  border-color: var(--component-alert-warning-borderColor, var(--color-warning, #F59E0B));
+  color: var(--component-alert-warning-color, var(--color-warning, #F59E0B));
+  border-width: var(--component-alert-warning-borderWidth, 1px);
+  border-radius: var(--component-alert-warning-borderRadius, var(--borderRadius-lg, 0.5rem));
+  padding: var(--component-alert-warning-padding, var(--spacing-md, 1rem));
+  font-size: var(--component-alert-warning-fontSize, var(--typography-fontSize-base, 1rem));
+  font-weight: var(--component-alert-warning-fontWeight, normal);
+  text-align: var(--component-alert-warning-textAlign, left);
+  box-shadow: var(--component-alert-warning-boxShadow, none);
 }
 
 /* ライトモード用のwarningアラート */
 .light .textui-alert.warning {
-  background-color: rgba(245, 158, 11, 0.1) !important;
-  border-color: rgb(245 158 11) !important;
-  color: rgb(161 98 7) !important; /* ダークイエロー文字 */
+  background-color: var(--component-alert-warning-light-backgroundColor, rgba(245, 158, 11, 0.1));
+  border-color: var(--component-alert-warning-light-borderColor, rgb(245 158 11));
+  color: var(--component-alert-warning-light-color, rgb(161 98 7)); /* ダークイエロー文字 */
 }
 
 .textui-alert.error {
-  background-color: rgba(239, 68, 68, 0.1) !important;
-  border-color: rgb(239 68 68) !important;
-  color: rgb(252 165 165) !important; /* 明るいレッド文字 */
+  background-color: var(--component-alert-error-backgroundColor, rgba(239, 68, 68, 0.1));
+  border-color: var(--component-alert-error-borderColor, var(--color-error, #EF4444));
+  color: var(--component-alert-error-color, var(--color-error, #EF4444));
+  border-width: var(--component-alert-error-borderWidth, 1px);
+  border-radius: var(--component-alert-error-borderRadius, var(--borderRadius-lg, 0.5rem));
+  padding: var(--component-alert-error-padding, var(--spacing-md, 1rem));
+  font-size: var(--component-alert-error-fontSize, var(--typography-fontSize-base, 1rem));
+  font-weight: var(--component-alert-error-fontWeight, normal);
+  text-align: var(--component-alert-error-textAlign, left);
+  box-shadow: var(--component-alert-error-boxShadow, none);
 }
 
 /* ライトモード用のerrorアラート */
 .light .textui-alert.error {
-  background-color: rgba(239, 68, 68, 0.1) !important;
-  border-color: rgb(239 68 68) !important;
-  color: rgb(185 28 28) !important; /* ダークレッド文字 */
+  background-color: var(--component-alert-error-light-backgroundColor, rgba(239, 68, 68, 0.1));
+  border-color: var(--component-alert-error-light-borderColor, rgb(239 68 68));
+  color: var(--component-alert-error-light-color, rgb(185 28 28)); /* ダークレッド文字 */
 }
 
-/* 区切り線の改善 */
-.textui-divider {
-  @apply my-4;
-  border-top: 1px solid rgb(75 85 99) !important; /* ダークグレー */
+/* Input */
+/* Inputラベルのセレクター */
+.textui-input label{
+  color: var(--color-text-primary, rgb(255 255 255));
+  font-size: var(--typography-fontSize-base, 1rem);
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
+  font-weight: normal;
 }
 
-/* ライトモード用の区切り線 */
-.light .textui-divider {
-  border-top: 1px solid rgb(209 213 219) !important; /* ライトグレー */
+.light .textui-input label {
+  color: var(--color-text-dark, rgb(17 24 39));
 }
 
-.textui-divider.vertical {
-  @apply mx-4;
-  border-left: 1px solid rgb(75 85 99) !important; /* ダークグレー */
+/* 入力フィールドの改善 */
+.textui-input {
+  @apply block w-full shadow-sm focus:outline-none focus:ring-2;
+  border-radius: var(--borderRadius-md, 0.375rem);
+  padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
+  background-color: var(--color-surface, rgb(55 65 81));
+  border: 1px solid var(--color-secondary, rgb(75 85 99));
+  color: var(--color-text-secondary, rgb(229 231 235));
+  font-size: var(--typography-fontSize-base, 1rem);
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
 }
 
-/* ライトモード用の垂直区切り線 */
-.light .textui-divider.vertical {
-  border-left: 1px solid rgb(209 213 219) !important; /* ライトグレー */
+/* ライトモード用の入力フィールド */
+.light .textui-input {
+  background-color: var(--color-background, rgb(255 255 255));
+  border: 1px solid var(--color-secondary, rgb(209 213 219));
+  color: var(--color-text-dark, rgb(55 65 81));
 }
 
+.textui-input:focus {
+  border-color: var(--color-primary, rgb(59 130 246));
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* 入力フィールドのプレースホルダー */
+.textui-input::placeholder {
+  color: var(--color-text-muted, rgb(107 114 128));
+}
+
+/* ライトモード用のプレースホルダー */
+.light .textui-input::placeholder {
+  color: var(--color-text-muted, rgb(156 163 175));
+}
+
+/* Select */
+/* セレクトボックスの改善 */
+.textui-select {
+  @apply mb-4;
+  padding: var(--spacing-xs, 0.5rem) 0;
+  font-weight: normal;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
+  font-size: var(--typography-fontSize-base, 1rem);
+}
+
+.light .textui-select label {
+  color: var(--color-text-dark, rgb(17 24 39));
+}
+
+/* Select値のセレクター */
+.textui-select select {
+  @apply block w-full px-3 py-2 shadow-sm focus:outline-none focus:ring-2;
+  border-radius: var(--borderRadius-md, 0.375rem);
+  background-color: var(--color-surface, rgb(55 65 81));
+  border: 1px solid var(--color-secondary, rgb(75 85 99));
+  color: var(--color-text-primary, rgb(229 231 235));
+}
+
+/* ライトモード用のセレクトボックス */
+.light .textui-select select {
+  background-color: var(--color-background, rgb(255 255 255));
+  border: 1px solid var(--color-secondary, rgb(209 213 219));
+  color: var(--color-text-secondary, rgb(107 114 128));
+}
+
+.textui-select select:focus {
+  border-color: var(--color-primary, rgb(59 130 246));
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Checkbox */
+/* チェックボックスの改善 */
+.textui-checkbox {
+  @apply h-4 w-4;
+  border-radius: var(--borderRadius-sm, 0.25rem);
+  accent-color: var(--color-primary, rgb(59 130 246));
+}
+
+/* Checkboxラベルのセレクター */
+.textui-checkbox label {
+  font-size: var(--typography-fontSize-sm, 0.875rem);
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
+  font-weight: normal;
+  color: var(--color-text-secondary, rgb(229 231 235));
+}
+
+/* ライトモード用のチェックボックスラベル */
+.light .textui-checkbox label {
+  color: var(--color-text-dark, rgb(55 65 81));
+}
+
+/* Radio */
 /* ラジオグループの改善 */
 .textui-radio-group {
-  @apply space-y-2 mb-4;
+  @apply mb-4;
+  gap: var(--spacing-xs, 0.5rem);
 }
 
 .textui-radio-option {
   @apply flex items-center;
 }
 
-.textui-radio-option input[type="radio"] {
-  @apply mr-2;
-  accent-color: rgb(59 130 246); /* ブルーアクセント */
-}
-
+/* Radioラベルのセレクター */
 .textui-radio-option label {
-  @apply text-sm;
-  color: rgb(229 231 235) !important; /* 明るいグレー文字 */
+  @apply mr-2;
+  font-size: var(--typography-fontSize-sm, 0.875rem);
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
+  font-weight: normal;
+  color: var(--color-text-secondary, rgb(229 231 235));
+  margin-left: var(--spacing-xs, 0.5rem);
 }
 
 /* ライトモード用のラジオラベル */
 .light .textui-radio-option label {
-  color: rgb(55 65 81) !important; /* ダークグレー文字 */
+  color: var(--color-text-dark, rgb(55 65 81));
 }
 
-/* セレクトボックスの改善 */
-.textui-select {
-  @apply mb-4;
+.textui-radio-option input[type="radio"] {
+  accent-color: var(--color-primary, rgb(59 130 246));
 }
 
-.textui-select label {
-  @apply block text-sm font-medium mb-1;
-  color: rgb(229 231 235) !important; /* 明るいグレー文字 */
+/* Divider */
+/* 区切り線の改善 */
+.textui-divider {
+  @apply my-4;
+  margin-top: var(--spacing-md, 1rem);
+  margin-bottom: var(--spacing-md, 1rem);
+  border-top: 1px solid var(--color-secondary, rgb(75 85 99));
 }
 
-/* ライトモード用のセレクトラベル */
-.light .textui-select label {
-  color: rgb(55 65 81) !important; /* ダークグレー文字 */
+/* ライトモード用の区切り線 */
+.light .textui-divider {
+  border-top: 1px solid var(--color-secondary, rgb(209 213 219));
 }
 
-.textui-select select {
-  @apply block w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2;
-  background-color: rgb(55 65 81) !important; /* ダークグレー背景 */
-  border: 1px solid rgb(75 85 99) !important; /* ダークグレーボーダー */
-  color: rgb(229 231 235) !important; /* 明るいグレー文字 */
+.textui-divider.vertical {
+  @apply mx-4;
+  margin-left: var(--spacing-md, 1rem);
+  margin-right: var(--spacing-md, 1rem);
+  border-left: 1px solid var(--color-secondary, rgb(75 85 99));
 }
 
-/* ライトモード用のセレクトボックス */
-.light .textui-select select {
-  background-color: rgb(255 255 255) !important; /* 白背景 */
-  border: 1px solid rgb(209 213 219) !important; /* ライトグレーボーダー */
-  color: rgb(55 65 81) !important; /* ダークグレー文字 */
+/* ライトモード用の垂直区切り線 */
+.light .textui-divider.vertical {
+  border-left: 1px solid var(--color-secondary, rgb(209 213 219));
 }
 
-.textui-select select:focus {
-  border-color: rgb(59 130 246) !important; /* ブルーフォーカス */
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-}
-
+/* Button */
 /* ボタンの改善 */
 .textui-button {
-  @apply px-4 py-2 rounded-md font-medium transition-all duration-200;
-  border: none;
-  cursor: pointer;
+  @apply font-medium transition-all duration-200;
+  border-radius: var(--component-button-primary-borderRadius, var(--borderRadius-md, 0.375rem));
+  padding: var(--component-button-primary-padding, var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem));
+  font-size: var(--component-button-primary-fontSize, var(--typography-fontSize-base, 1rem));
+  border: var(--component-button-primary-border, none);
+  cursor: var(--component-button-primary-cursor, pointer);
+  font-weight: var(--component-button-primary-fontWeight, medium);
+  transition: var(--component-button-primary-transition, all 0.2s ease-in-out);
 }
 
 .textui-button.primary {
-  background-color: rgb(59 130 246) !important; /* ブルー */
-  color: rgb(255 255 255) !important;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+  background-color: var(--component-button-primary-backgroundColor, var(--color-primary, #3B82F6));
+  color: var(--component-button-primary-color, var(--color-text-primary, rgb(255 255 255)));
+  box-shadow: var(--component-button-primary-boxShadow, 0 4px 6px -1px rgba(59, 130, 246, 0.2));
 }
 
 .textui-button.primary:hover {
-  background-color: rgb(37 99 235) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.3);
+  background-color: var(--component-button-primary-hover-backgroundColor, rgb(37 99 235));
+  transform: var(--component-button-primary-hover-transform, translateY(-1px));
+  box-shadow: var(--component-button-primary-hover-boxShadow, 0 6px 8px -1px rgba(59, 130, 246, 0.3));
 }
 
 .textui-button.secondary {
-  background-color: rgb(75 85 99) !important; /* グレー */
-  color: rgb(255 255 255) !important;
+  background-color: var(--component-button-secondary-backgroundColor, var(--color-secondary, #6B7280));
+  color: var(--component-button-secondary-color, var(--color-text-primary, rgb(255 255 255)));
+  border-radius: var(--component-button-secondary-borderRadius, var(--borderRadius-md, 0.375rem));
+  padding: var(--component-button-secondary-padding, var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem));
+  font-size: var(--component-button-secondary-fontSize, var(--typography-fontSize-base, 1rem));
+  border: var(--component-button-secondary-border, none);
+  cursor: var(--component-button-secondary-cursor, pointer);
+  font-weight: var(--component-button-secondary-fontWeight, medium);
+  transition: var(--component-button-secondary-transition, all 0.2s ease-in-out);
 }
 
 .textui-button.secondary:hover {
-  background-color: rgb(55 65 81) !important;
+  background-color: var(--component-button-secondary-hover-backgroundColor, rgb(55 65 81));
 }
 
 /* ライトモード用のセカンダリボタン */
 .light .textui-button.secondary {
-  background-color: rgb(156 163 175) !important; /* ライトグレー */
-  color: rgb(255 255 255) !important;
+  background-color: var(--component-button-secondary-light-backgroundColor, rgb(156 163 175)); /* ライトグレー */
+  color: var(--component-button-secondary-light-color, var(--color-text-primary, rgb(255 255 255)));
 }
 
 .light .textui-button.secondary:hover {
-  background-color: rgb(107 114 128) !important;
+  background-color: var(--component-button-secondary-light-hover-backgroundColor, rgb(107 114 128));
 }
 
 .textui-button.submit {
-  background-color: rgb(34 197 94) !important; /* グリーン */
-  color: rgb(255 255 255) !important;
-  box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.2);
+  background-color: var(--component-button-submit-backgroundColor, var(--color-success, #10B981));
+  color: var(--component-button-submit-color, var(--color-text-primary, rgb(255 255 255)));
+  box-shadow: var(--component-button-submit-boxShadow, 0 4px 6px -1px rgba(34, 197, 94, 0.2));
+  border-radius: var(--component-button-submit-borderRadius, var(--borderRadius-md, 0.375rem));
+  padding: var(--component-button-submit-padding, var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem));
+  font-size: var(--component-button-submit-fontSize, var(--typography-fontSize-base, 1rem));
+  border: var(--component-button-submit-border, none);
+  cursor: var(--component-button-submit-cursor, pointer);
+  font-weight: var(--component-button-submit-fontWeight, medium);
+  transition: var(--component-button-submit-transition, all 0.2s ease-in-out);
 }
 
 .textui-button.submit:hover {
-  background-color: rgb(22 163 74) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 8px -1px rgba(34, 197, 94, 0.3);
-}
-
-/* 入力フィールドの改善 */
-.textui-input {
-  @apply block w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2;
-  background-color: rgb(55 65 81) !important; /* ダークグレー背景 */
-  border: 1px solid rgb(75 85 99) !important; /* ダークグレーボーダー */
-  color: rgb(229 231 235) !important; /* 明るいグレー文字 */
-}
-
-/* ライトモード用の入力フィールド */
-.light .textui-input {
-  background-color: rgb(255 255 255) !important; /* 白背景 */
-  border: 1px solid rgb(209 213 219) !important; /* ライトグレーボーダー */
-  color: rgb(55 65 81) !important; /* ダークグレー文字 */
-}
-
-.textui-input:focus {
-  border-color: rgb(59 130 246) !important; /* ブルーフォーカス */
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-}
-
-.textui-input::placeholder {
-  color: rgb(107 114 128) !important; /* プレースホルダー色 */
-}
-
-/* ライトモード用のプレースホルダー */
-.light .textui-input::placeholder {
-  color: rgb(156 163 175) !important; /* ライトグレープレースホルダー */
-}
-
-/* チェックボックスの改善 */
-.textui-checkbox {
-  @apply h-4 w-4 rounded;
-  accent-color: rgb(59 130 246); /* ブルーアクセント */
+  background-color: var(--component-button-submit-hover-backgroundColor, rgb(22 163 74));
+  transform: var(--component-button-submit-hover-transform, translateY(-1px));
+  box-shadow: var(--component-button-submit-hover-boxShadow, 0 6px 8px -1px rgba(34, 197, 94, 0.3));
 }
 
 /* 全体的な背景色の設定 */
 body {
-  background-color: rgb(17 24 39) !important; /* ダーク背景 */
-  color: rgb(229 231 235) !important; /* 明るいグレー文字 */
+  background-color: var(--color-surface, #1F2937);
+  color: var(--color-text-primary, #F9FAFB);
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
+  font-size: var(--typography-fontSize-base, 1rem);
+  font-weight: normal;
+  margin: 0;
+  padding: 0 20px;
+  overscroll-behavior-x: none;
 }
 
 /* ライトモード用の背景色 */
 body.light {
-  background-color: rgb(249 250 251) !important; /* ライトグレー背景 */
-  color: rgb(55 65 81) !important; /* ダークグレー文字 */
+  background-color: var(--color-background, #F9FAFB);
+  color: var(--color-text-dark, #111827);
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
+  font-size: var(--typography-fontSize-base, 1rem);
+  font-weight: normal;
 }
 
 #root {
-  background-color: rgb(17 24 39) !important; /* ダーク背景 */
+  background-color: var(--color-surface, #1F2937);
   min-height: 100vh;
   padding: 1rem;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
 }
 
 /* ライトモード用のルート背景 */
 .light #root {
-  background-color: rgb(249 250 251) !important; /* ライトグレー背景 */
+  background-color: var(--color-background, #F9FAFB);
 }
 
 /* テーマ切り替えボタンのスタイル */
@@ -355,14 +463,14 @@ body.light {
 
 /* ライトモード用のテーマ切り替えボタン */
 .light .theme-toggle {
-  background-color: rgba(156, 163, 175, 0.8) !important;
-  color: rgb(55 65 81) !important;
-  border-color: rgba(107, 114, 128, 0.5) !important;
+  background-color: rgba(156, 163, 175, 0.8);
+  color: rgb(55 65 81);
+  border-color: rgba(107, 114, 128, 0.5);
 }
 
 .light .theme-toggle:hover {
-  background-color: rgba(107, 114, 128, 0.9) !important;
-  border-color: rgba(75, 85, 99, 0.7) !important;
+  background-color: rgba(107, 114, 128, 0.9);
+  border-color: rgba(75, 85, 99, 0.7);
 }
 
 /* Exportボタンのスタイル統一 */
@@ -376,12 +484,18 @@ body.light {
 
 /* ライトモード用のExportボタン */
 .light .export-button {
-  background-color: rgba(156, 163, 175, 0.8) !important;
-  color: rgb(55 65 81) !important;
-  border-color: rgba(107, 114, 128, 0.5) !important;
+  background-color: rgba(156, 163, 175, 0.8);
+  color: rgb(55 65 81);
+  border-color: rgba(107, 114, 128, 0.5);
 }
 
 .light .export-button:hover {
-  background-color: rgba(107, 114, 128, 0.9) !important;
-  border-color: rgba(75, 85, 99, 0.7) !important;
+  background-color: rgba(107, 114, 128, 0.9);
+  border-color: rgba(75, 85, 99, 0.7);
+}
+
+.textui-form {
+  @apply w-full;
+  padding: var(--spacing-md, 1rem);
+  gap: var(--spacing-sm, 0.75rem);
 } 
