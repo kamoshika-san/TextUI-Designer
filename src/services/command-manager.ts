@@ -53,7 +53,8 @@ export class CommandManager {
     // 設定関連
     this.registerCommand('textui-designer.openSettings', () => this.settingsService.openSettings());
     this.registerCommand('textui-designer.resetSettings', () => this.settingsService.resetSettings());
-    this.registerCommand('textui-designer.showSettings', () => this.settingsService.showSettings());
+    this.registerCommand('textui-designer.showSettings', () => this.settingsService.showAutoPreviewSetting());
+    this.registerCommand('textui-designer.checkAutoPreviewSetting', () => this.checkAutoPreviewSetting());
 
     // スキーマ関連
     this.registerCommand('textui-designer.reinitializeSchemas', () => this.schemaManager.reinitialize());
@@ -167,6 +168,23 @@ export class CommandManager {
       monitor.generateSampleEvents();
       ErrorHandler.showInfo('サンプルイベントを生成しました');
     }, 'サンプルイベントの生成に失敗しました');
+
+    if (!result) {
+      // エラーハンドリングは既にErrorHandlerで処理済み
+      return;
+    }
+  }
+
+  /**
+   * 自動プレビュー設定を確認
+   */
+  private async checkAutoPreviewSetting(): Promise<void> {
+    const result = await ErrorHandler.executeSafely(async () => {
+      const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
+      const message = `自動プレビュー設定: ${autoPreviewEnabled ? 'ON' : 'OFF'}`;
+      console.log(`[CommandManager] ${message}`);
+      ErrorHandler.showInfo(message);
+    }, '自動プレビュー設定の確認に失敗しました');
 
     if (!result) {
       // エラーハンドリングは既にErrorHandlerで処理済み

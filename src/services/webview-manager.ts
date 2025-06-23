@@ -112,6 +112,18 @@ export class WebViewManager {
   }
 
   /**
+   * プレビューを閉じる
+   */
+  closePreview(): void {
+    if (this.currentPanel) {
+      console.log('[WebViewManager] プレビューを閉じます');
+      this.currentPanel.dispose();
+      this.currentPanel = undefined;
+      this.clearCache();
+    }
+  }
+
+  /**
    * 最後に開いていたtui.ymlファイルのパスを設定
    */
   setLastTuiFile(filePath: string): void {

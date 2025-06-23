@@ -44,6 +44,16 @@ export function activate(context: vscode.ExtensionContext) {
   // パフォーマンス監視を強制的に有効化（デバッグ用）
   performanceMonitor.forceEnable();
 
+  // 初期設定値をログ出力
+  const initialAutoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
+  console.log(`[Initialization] 自動プレビュー設定の初期値: ${initialAutoPreviewEnabled ? 'ON' : 'OFF'}`);
+  
+  // 設定値を詳細にログ出力
+  console.log('[Initialization] 設定値の詳細:');
+  console.log(`  - autoPreview.enabled: ${ConfigManager.isAutoPreviewEnabled()}`);
+  console.log(`  - supportedFileExtensions: ${JSON.stringify(ConfigManager.getSupportedFileExtensions())}`);
+  console.log(`  - devTools.enabled: ${ConfigManager.isDevToolsEnabled()}`);
+
   // サービスの初期化
   const schemaManager = new SchemaManager(context);
   globalSchemaManager = schemaManager; // グローバルに保存
@@ -107,6 +117,18 @@ export function activate(context: vscode.ExtensionContext) {
     // 設定が変更された時の処理
     console.log('TextUI Designer設定が変更されました');
     
+    // 自動プレビュー設定の変更をログ出力
+    const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
+    console.log(`[Settings] 自動プレビュー設定: ${autoPreviewEnabled ? 'ON' : 'OFF'}`);
+    
+    // 自動プレビュー設定が無効化された場合、既存のプレビューを閉じる
+    if (!autoPreviewEnabled && webViewManager.hasPanel()) {
+      console.log('[Settings] 自動プレビューが無効化されたため、既存のプレビューを閉じます');
+      webViewManager.closePreview();
+    } else if (autoPreviewEnabled) {
+      console.log('[Settings] 自動プレビューが有効化されました');
+    }
+    
     // スキーマ関連の設定が変更された場合は再初期化
     const schemaSettings = ConfigManager.getSchemaSettings();
     if (schemaSettings.validationEnabled) {
@@ -130,11 +152,22 @@ export function activate(context: vscode.ExtensionContext) {
         // デバウンス処理（200ms）
         activeEditorTimeout = setTimeout(() => {
           webViewManager.setLastTuiFile(editor.document.fileName);
-          // プレビューが開かれていない場合は自動的に開く
-          if (ConfigManager.isAutoPreviewEnabled() && !webViewManager.hasPanel()) {
+          
+          // 自動プレビュー設定をチェック
+          const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
+          console.log(`[AutoPreview] 設定値: ${autoPreviewEnabled ? 'ON' : 'OFF'}, パネル存在: ${webViewManager.hasPanel()}`);
+          console.log(`[AutoPreview] ファイル: ${editor.document.fileName}`);
+          console.log(`[AutoPreview] 設定詳細: autoPreview.enabled = ${autoPreviewEnabled}`);
+          
+          // プレビューが開かれていない場合は自動的に開く（設定が有効な場合のみ）
+          if (autoPreviewEnabled && !webViewManager.hasPanel()) {
+            console.log('[AutoPreview] 自動プレビューを開きます');
             webViewManager.openPreview();
-          } else {
+          } else if (webViewManager.hasPanel()) {
+            console.log('[AutoPreview] 既存のプレビューを更新します');
             webViewManager.updatePreview();
+          } else {
+            console.log('[AutoPreview] 自動プレビューが無効化されているため、プレビューを開きません');
           }
         }, 200);
       }

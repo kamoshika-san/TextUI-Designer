@@ -12,9 +12,12 @@ export class ConfigManager {
   static get<T>(key: string, defaultValue: T): T {
     const config = vscode.workspace.getConfiguration(this.CONFIG_SECTION);
     if (!config || typeof config.get !== 'function') {
+      console.log(`[ConfigManager] 設定オブジェクトが無効です: ${key}, デフォルト値: ${defaultValue}`);
       return defaultValue;
     }
-    return config.get(key, defaultValue);
+    const value = config.get(key, defaultValue);
+    console.log(`[ConfigManager] 設定取得: ${key} = ${value} (デフォルト: ${defaultValue})`);
+    return value;
   }
 
   /**
@@ -36,7 +39,7 @@ export class ConfigManager {
    * 自動プレビューが有効かチェック
    */
   static isAutoPreviewEnabled(): boolean {
-    return this.get('autoPreview.enabled', true);
+    return this.get('autoPreview.enabled', false);
   }
 
   /**
@@ -169,7 +172,7 @@ export class ConfigManager {
         },
         'autoPreview.enabled': {
           type: 'boolean',
-          default: true,
+          default: false,
           description: 'ファイルを開いた時に自動的にプレビューを表示'
         },
         'devTools.enabled': {

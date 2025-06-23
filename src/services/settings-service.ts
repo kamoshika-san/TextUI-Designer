@@ -66,6 +66,23 @@ export class SettingsService {
   }
 
   /**
+   * 自動プレビュー設定を通知で表示
+   */
+  async showAutoPreviewSetting(): Promise<void> {
+    const result = await ErrorHandler.executeSafely(async () => {
+      const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
+      const message = `自動プレビュー設定: ${autoPreviewEnabled ? 'ON' : 'OFF'}`;
+      console.log(`[SettingsService] ${message}`);
+      ErrorHandler.showInfo(message);
+    }, '自動プレビュー設定の表示に失敗しました');
+
+    if (!result) {
+      // エラーハンドリングは既にErrorHandlerで処理済み
+      return;
+    }
+  }
+
+  /**
    * 現在の設定を取得
    */
   private getCurrentSettings(): Record<string, any> {
@@ -96,7 +113,19 @@ export class SettingsService {
    * 設定変更の監視を開始
    */
   startWatching(callback: () => void): vscode.Disposable {
-    return ConfigManager.onConfigurationChanged(callback);
+    return vscode.workspace.onDidChangeConfiguration(event => {
+      if (event.affectsConfiguration('textui-designer')) {
+        console.log('[SettingsService] TextUI Designer設定が変更されました');
+        
+        // 自動プレビュー設定の変更を詳細にログ出力
+        if (event.affectsConfiguration('textui-designer.autoPreview.enabled')) {
+          const newValue = ConfigManager.isAutoPreviewEnabled();
+          console.log(`[SettingsService] 自動プレビュー設定が変更されました: ${newValue ? 'ON' : 'OFF'}`);
+        }
+        
+        callback();
+      }
+    });
   }
 
   /**

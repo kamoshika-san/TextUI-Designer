@@ -3,7 +3,7 @@
   "displayName": "TextUI Designer",
   "description": "YAML/JSON DSLでUIを設計するVS Code拡張",
   "publisher": "kamoshika-san",
-  "version": "0.0.6-dev",
+  "version": "0.0.7-dev",
   "license": "MIT",
   "engines": {
     "vscode": "^1.85.0"
@@ -14,6 +14,7 @@
   "activationEvents": [
     "onCommand:textui-designer.openPreview",
     "onCommand:textui-designer.export",
+    "onCommand:textui-designer.checkAutoPreviewSetting",
     "onLanguage:yaml"
   ],
   "main": "./dist/extension.js",
@@ -41,7 +42,7 @@
         },
         "textui-designer.autoPreview.enabled": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "ファイルを開いた時に自動的にプレビューを表示"
         },
         "textui-designer.devTools.enabled": {
@@ -240,6 +241,10 @@
       {
         "command": "textui-designer.togglePerformanceMonitoring",
         "title": "TextUI: パフォーマンス監視の切り替え"
+      },
+      {
+        "command": "textui-designer.checkAutoPreviewSetting",
+        "title": "TextUI: 自動プレビュー設定を確認"
       }
     ],
     "menus": {
