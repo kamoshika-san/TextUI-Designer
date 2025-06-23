@@ -93,10 +93,10 @@ export class WebViewManager {
         clearTimeout(this.updateTimeout);
       }
 
-      // デバウンス（300ms）
+      // デバウンス（150ms）
       this.updateTimeout = setTimeout(async () => {
         await this.sendYamlToWebview();
-      }, 300);
+      }, 150);
     } else {
       // プレビューが開かれていない場合は自動的に開く
       await this.openPreview();
