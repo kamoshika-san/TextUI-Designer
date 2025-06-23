@@ -115,7 +115,7 @@ export function activate(context: vscode.ExtensionContext) {
           clearTimeout(activeEditorTimeout);
         }
 
-        // デバウンス処理（200ms）
+        // デバウンス処理（100ms）
         activeEditorTimeout = setTimeout(() => {
           webViewManager.setLastTuiFile(editor.document.fileName);
           // プレビューが開かれていない場合は自動的に開く
@@ -124,7 +124,7 @@ export function activate(context: vscode.ExtensionContext) {
           } else {
             webViewManager.updatePreview();
           }
-        }, 200);
+        }, 100);
       }
     })
   );
@@ -139,7 +139,7 @@ export function activate(context: vscode.ExtensionContext) {
           clearTimeout(documentChangeTimeout);
         }
 
-        // デバウンス処理（300ms）
+        // デバウンス処理（150ms）
         documentChangeTimeout = setTimeout(() => {
           webViewManager.updatePreview();
           
@@ -147,7 +147,7 @@ export function activate(context: vscode.ExtensionContext) {
           if (diagnosticSettings.enabled && diagnosticSettings.validateOnChange) {
             diagnosticManager.validateAndReportDiagnostics(event.document);
           }
-        }, 300);
+        }, 150);
       }
     })
   );
