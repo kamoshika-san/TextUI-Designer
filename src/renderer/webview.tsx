@@ -56,22 +56,28 @@ function renderComponent(comp: ComponentDef, key: number): React.ReactNode {
     return (
       <Form
         key={key}
-        id={form.id}
-        fields={form.fields}
-        actions={form.actions}
+        id={form.id || ''}
+        fields={form.fields || []}
+        actions={form.actions || []}
         onSubmit={data => {
           // ここで何かアクションを追加可能
           console.log('Form submit:', data);
         }}
       >
         {/* fields, actionsを再帰的に描画 */}
-        {form.fields.map((field: FormField, i: number) => {
+        {(form.fields || []).map((field: FormField, i: number) => {
           if (field.Input) return <Input key={i} {...field.Input} />;
           if (field.Checkbox) return <Checkbox key={i} {...field.Checkbox} />;
+          if (field.Radio) return <Radio key={i} {...field.Radio} />;
+          if (field.Select) return <Select key={i} {...field.Select} />;
+          if (field.Text) return <Text key={i} {...field.Text} />;
+          if (field.Divider) return <Divider key={i} {...field.Divider} />;
+          if (field.Alert) return <Alert key={i} {...field.Alert} />;
+          if (field.Container) return <Container key={i} {...field.Container} />;
           return null;
         })}
         <div style={{ display: 'flex', gap: 8 }}>
-          {form.actions.map((action: FormAction, i: number) => {
+          {(form.actions || []).map((action: FormAction, i: number) => {
             if (action.Button) return <Button key={i} {...action.Button} />;
             return null;
           })}

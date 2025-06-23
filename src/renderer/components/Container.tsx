@@ -5,7 +5,7 @@ type Layout = 'vertical' | 'horizontal' | 'flex' | 'grid';
 
 interface ContainerProps extends Omit<ContainerComponent, 'components'> {
   layout?: Layout;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 const layoutClasses: Record<Layout, string> = {
@@ -21,5 +21,5 @@ export const Container: React.FC<ContainerProps> = ({
 }) => {
   const className = layoutClasses[layout];
 
-  return <div className={className}>{children}</div>;
+  return <div className={className}>{children || null}</div>;
 }; 

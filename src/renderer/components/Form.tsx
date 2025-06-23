@@ -5,9 +5,9 @@ import { Checkbox } from './Checkbox';
 import type { FormComponent, FormField, FormAction } from '../types';
 
 interface FormProps extends FormComponent {
-  id: string;
+  id?: string;
   fields: FormField[];
-  actions: FormAction[];
+  actions?: FormAction[];
   onSubmit: (data: any) => void;
   children: React.ReactNode;
 }

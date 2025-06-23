@@ -78,6 +78,10 @@ export interface FormField {
   Checkbox?: CheckboxComponent;
   Radio?: RadioComponent;
   Select?: SelectComponent;
+  Text?: TextComponent;
+  Divider?: DividerComponent;
+  Alert?: AlertComponent;
+  Container?: ContainerComponent;
 }
 
 export interface FormAction {
@@ -85,9 +89,9 @@ export interface FormAction {
 }
 
 export interface FormComponent {
-  id: string;
+  id?: string;
   fields: FormField[];
-  actions: FormAction[];
+  actions?: FormAction[];
 }
 
 export type DividerOrientation = 'horizontal' | 'vertical';
