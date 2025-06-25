@@ -217,9 +217,17 @@ export class WebViewManager {
   }
 
   /**
-   * 最後に開いていたtui.ymlファイルのパスを設定
+   * 最後に開いたtui.ymlファイルを設定
    */
   setLastTuiFile(filePath: string): void {
+    console.log(`[WebViewManager] setLastTuiFile called: ${filePath}`);
+    
+    // ファイルが変更された場合はキャッシュをクリア
+    if (this.lastTuiFile !== filePath) {
+      console.log(`[WebViewManager] ファイルが変更されました: ${this.lastTuiFile} -> ${filePath}`);
+      this.clearCache();
+    }
+    
     this.lastTuiFile = filePath;
   }
 
@@ -262,6 +270,13 @@ export class WebViewManager {
         if (activeEditor && activeEditor.document.fileName.endsWith('.tui.yml')) {
           yamlContent = activeEditor.document.getText();
           fileName = activeEditor.document.fileName;
+          
+          // アクティブエディタのファイルが変更された場合はキャッシュをクリア
+          if (this.lastTuiFile !== fileName) {
+            console.log(`[WebViewManager] アクティブエディタのファイルが変更されました: ${this.lastTuiFile} -> ${fileName}`);
+            this.clearCache();
+          }
+          
           this.setLastTuiFile(fileName);
           console.log(`[WebViewManager] アクティブエディタからYAMLを取得: ${fileName}`);
         } else if (this.lastTuiFile) {
@@ -298,7 +313,7 @@ export class WebViewManager {
         }
 
         // キャッシュチェック
-        if (yamlContent === this.lastYamlContent && this.lastParsedData) {
+        if (yamlContent === this.lastYamlContent && this.lastParsedData && this.lastTuiFile === fileName) {
           console.log('[WebViewManager] キャッシュされたデータを使用');
           this.performanceMonitor.recordCacheHit(true);
           this.sendMessageToWebView(this.lastParsedData, fileName);

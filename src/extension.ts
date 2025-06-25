@@ -156,12 +156,14 @@ export function activate(context: vscode.ExtensionContext) {
 
         // デバウンス処理（200ms）
         activeEditorTimeout = setTimeout(() => {
+          const previousFile = webViewManager.getLastTuiFile();
           webViewManager.setLastTuiFile(editor.document.fileName);
           
           // 自動プレビュー設定をチェック
           const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
           console.log(`[AutoPreview] アクティブエディタ変更時の設定値: ${autoPreviewEnabled ? 'ON' : 'OFF'}, パネル存在: ${webViewManager.hasPanel()}`);
           console.log(`[AutoPreview] ファイル: ${editor.document.fileName}`);
+          console.log(`[AutoPreview] 前のファイル: ${previousFile}`);
           
           // 自動プレビュー設定が有効な場合のみプレビューを開く/更新
           if (autoPreviewEnabled) {
