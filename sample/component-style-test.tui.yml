@@ -1,24 +1,161 @@
 page:
-  id: container
-  title: コンテナ・ネスト
-  layout: vertical
+  id: test
+  title: "テストページ"
+  layout: grid
   components:
+    - Text: 
+        value: "サンプルページ"
+        variant: h2
+    - Alert:
+        variant: warning
+        message: "something wrong!!!"
+    - Divider:
+        orientation: horizontal
+    - Input:
+        type: multiline
+        label: "備考欄"
+        name: "remarks"
+        required: false
+    - Select:
+        label: "どうします？こうします？そうします？"
+        multiple: true
+        name: "aaa"
+        options:
+          - label: "どうするか！"
+            value: dousuru
+          - label: "こうするか！"
+            value: kousuru
+          - label: "そうする"
+            value: sousuru
+          - label: "どうもしない"
+            value: doumoshinai
+    - Input:
+        label: "test"
+        name: "aaa"
+        type: number
+        required: false
+    - Button: 
+        kind: primary
+        submit: false
+        label: "test"
+    - Checkbox:
+        label: "test"
+        name: "ckb"
+        required: false
+    - Form:   
+        id: "123"
+        fields:
+            - Input:
+                label: "strings"
+                name: "123"
+                type: password
+                required: true
+            - Input:
+                label: "テスト"
+                name: "test"
+                type: number
+
+        actions:
+          - Button:
+              kind: submit
+              label: "input"
+              submit: false
+        
     - Container:
-        layout: horizontal
+        layout: vertical
+        components: 
+            - Alert:
+                variant: info
+                message: "test message"
+    - Container:
+        layout: vertical
+        components: 
+            - Form:
+                id: "test"
+                fields:
+                  - Input:
+                      label: efejeawofji
+                      name: sanfwafewfwafwaoig
+                      type: text
+                actions:
+                  - Button:
+                      kind: primary
+                      label: aaaaaa
+                      submit: true
+    - Container:
+        layout: vertical
         components:
-          - Text:
-              variant: h2
-              value: "左カラム"
-          - Divider:
-              orientation: vertical
-          - Container:
-              layout: vertical
-              components:
-                - Text:
-                    variant: h3
-                    value: "右上"
-                - Divider:
-                    orientation: horizontal
-                - Text:
-                    variant: p
-                    value: "右下のテキスト"
+        - Text:
+            variant: h2
+            value: 一覧タイトルaaa
+        - Divider:
+            orientation: horizontal
+        - Alert:
+            variant: error
+            message: "メッセージはここに表示されます"
+        
+    - Container:
+        layout: vertical
+        components: 
+            - Alert:
+                variant: info
+                message: "test message"
+    - Container:
+        layout: vertical
+        components: 
+            - Form:
+                id: "test"
+                fields:
+                  - Input:
+                      label: efejeawofji
+                      name: sanfwafewfwafwaoig
+                      type: text
+                actions:
+                  - Button:
+                      kind: primary
+                      label: aaaaaa
+                      submit: true
+    - Container:
+        layout: vertical
+        components:
+        - Text:
+            variant: h2
+            value: 一覧タイトルaaa
+        - Divider:
+            orientation: horizontal
+        - Alert:
+            variant: error
+            message: "メッセージはここに表示されます"
+        
+    - Container:
+        layout: vertical
+        components: 
+            - Alert:
+                variant: info
+                message: "test message"
+    - Container:
+        layout: vertical
+        components: 
+            - Form:
+                id: "test"
+                fields:
+                  - Input:
+                      label: efejeawofji
+                      name: sanfwafewfwafwaoig
+                      type: text
+                actions:
+                  - Button:
+                      kind: primary
+                      label: aaaaaabbb
+                      submit: true
+    - Container:
+        layout: vertical
+        components:
+        - Text:
+            variant: h2
+            value: 一覧タイトル
+        - Divider:
+            orientation: horizontal
+        - Alert:
+            variant: error
+            message: "メッセージはここに表示されます"

@@ -341,6 +341,13 @@ export class WebViewManager {
           this.lastParsedData = null;
         }
         
+        // 定期的なキャッシュクリーンアップ（50MB以上で実行）
+        if (memUsage.heapUsed > 50 * 1024 * 1024) {
+          console.log('[WebViewManager] メモリ使用量が50MBを超えたため、キャッシュをクリアします');
+          this.lastYamlContent = '';
+          this.lastParsedData = null;
+        }
+        
         this.sendMessageToWebView(yaml, fileName);
       } catch (error) {
         console.error('[WebViewManager] YAMLデータの送信に失敗しました:', error);

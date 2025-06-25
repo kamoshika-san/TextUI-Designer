@@ -14,7 +14,7 @@ page:
         message: "これはインフォメーションアラートです"
     - Alert:
         variant: warning
-        message: "これは警告アラートです"
+        message: "これは警告アラートですよ"
     - Divider:
         orientation: horizontal
     - Input:

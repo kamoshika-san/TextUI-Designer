@@ -16,6 +16,7 @@ import { ThemeManager } from './services/theme-manager';
 // グローバル変数としてSchemaManagerを保存
 let globalSchemaManager: SchemaManager | undefined;
 let themeManagerInstance: ThemeManager | undefined;
+let globalDiagnosticManager: DiagnosticManager | undefined;
 
 /**
  * サポートされているファイルかチェック
@@ -60,6 +61,7 @@ export function activate(context: vscode.ExtensionContext) {
   const templateService = new TemplateService();
   const settingsService = new SettingsService();
   const diagnosticManager = new DiagnosticManager(schemaManager);
+  globalDiagnosticManager = diagnosticManager;
   const completionProvider = new TextUICompletionProvider(schemaManager);
   const commandManager = new CommandManager(
     context, 
@@ -175,6 +177,7 @@ export function activate(context: vscode.ExtensionContext) {
         // 既存のタイマーをクリア
         if (saveTimeout) {
           clearTimeout(saveTimeout);
+          saveTimeout = undefined;
         }
 
         // 保存処理をデバウンス（100ms）
@@ -347,6 +350,12 @@ export function deactivate() {
       console.error('スキーマのクリーンアップに失敗しました:', error);
     });
     globalSchemaManager = undefined;
+  }
+
+  // 診断マネージャーのクリーンアップ
+  if (globalDiagnosticManager) {
+    globalDiagnosticManager.clearCache();
+    globalDiagnosticManager.dispose();
   }
 
   themeManagerInstance?.dispose?.();

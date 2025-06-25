@@ -17,6 +17,8 @@ export class DiagnosticManager {
   private readonly CACHE_TTL = 5000; // 5秒
   private readonly DEBOUNCE_DELAY = 500; // 500ms
   private diagnosticTimeout: NodeJS.Timeout | null = null;
+  private readonly MAX_CACHE_SIZE = 100; // キャッシュサイズ制限
+  private readonly MAX_CACHE_AGE = 30000; // 30秒でキャッシュをクリア
 
   constructor(schemaManager: any) {
     this.diagnosticCollection = vscode.languages.createDiagnosticCollection('textui-designer');
@@ -48,6 +50,15 @@ export class DiagnosticManager {
   private async performDiagnostics(document: vscode.TextDocument): Promise<void> {
     const text = document.getText();
     const uri = document.uri.toString();
+    
+    // 古いキャッシュをクリーンアップ
+    this.cleanupOldCache();
+    
+    // キャッシュサイズ制限をチェック
+    if (this.validationCache.size >= this.MAX_CACHE_SIZE) {
+      console.log('[DiagnosticManager] キャッシュサイズ制限に達したため、古いキャッシュをクリアします');
+      this.cleanupOldCache(true); // 強制クリーンアップ
+    }
     
     // キャッシュをチェック
     const cacheKey = `${uri}:${this.hashText(text)}`;
@@ -102,6 +113,11 @@ export class DiagnosticManager {
       if (!this.schemaCache || (now - this.lastSchemaLoad) > this.CACHE_TTL) {
         this.schemaCache = await this.schemaManager.loadSchema();
         this.lastSchemaLoad = now;
+        
+        // 古いAjvインスタンスを破棄して新しいインスタンスを作成
+        if (this.ajvInstance) {
+          this.ajvInstance = null;
+        }
         this.ajvInstance = new Ajv({ allErrors: true, allowUnionTypes: true });
       }
 
@@ -208,7 +224,12 @@ export class DiagnosticManager {
   clearCache(): void {
     this.validationCache.clear();
     this.schemaCache = null;
-    this.ajvInstance = null;
+    
+    // Ajvインスタンスを適切に破棄
+    if (this.ajvInstance) {
+      this.ajvInstance = null;
+    }
+    
     this.lastSchemaLoad = 0;
   }
 
@@ -217,6 +238,13 @@ export class DiagnosticManager {
    */
   dispose(): void {
     this.clearDiagnostics();
+    
+    // 診断タイマーをクリア
+    if (this.diagnosticTimeout) {
+      clearTimeout(this.diagnosticTimeout);
+      this.diagnosticTimeout = null;
+    }
+    
     this.diagnosticCollection.dispose();
   }
 
@@ -231,5 +259,23 @@ export class DiagnosticManager {
       hash = hash & hash; // 32bit整数に変換
     }
     return hash.toString();
+  }
+
+  /**
+   * 古いキャッシュをクリーンアップ
+   */
+  private cleanupOldCache(force: boolean = false): void {
+    const now = Date.now();
+    const oldCache = [];
+
+    for (const [key, { timestamp }] of this.validationCache) {
+      if (force || (now - timestamp > this.MAX_CACHE_AGE)) {
+        oldCache.push(key);
+      }
+    }
+
+    for (const key of oldCache) {
+      this.validationCache.delete(key);
+    }
   }
 } 
