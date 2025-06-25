@@ -66,7 +66,17 @@ export class DiagnosticManager {
     let diagnostics: vscode.Diagnostic[] = [];
 
     try {
-      const yaml = YAML.parse(text);
+      // YAMLパース処理を非同期で実行（ブロッキングを防ぐ）
+      const yaml = await new Promise((resolve, reject) => {
+        setImmediate(() => {
+          try {
+            const parsed = YAML.parse(text);
+            resolve(parsed);
+          } catch (error) {
+            reject(error);
+          }
+        });
+      });
       
       // スキーマキャッシュの更新チェック
       if (!this.schemaCache || (now - this.lastSchemaLoad) > this.CACHE_TTL) {

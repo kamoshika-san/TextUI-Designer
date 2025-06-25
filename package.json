@@ -3,7 +3,7 @@
   "displayName": "TextUI Designer",
   "description": "YAML/JSON DSLでUIを設計するVS Code拡張",
   "publisher": "kamoshika-san",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "license": "MIT",
   "engines": {
     "vscode": "^1.85.0"
@@ -142,50 +142,64 @@
         },
         "textui-designer.performance.webviewDebounceDelay": {
           "type": "number",
-          "default": 300,
+          "default": 500,
           "minimum": 0,
           "maximum": 2000,
           "description": "WebView更新のデバウンス時間（ミリ秒）"
         },
         "textui-designer.performance.diagnosticDebounceDelay": {
           "type": "number",
-          "default": 500,
+          "default": 800,
           "minimum": 0,
           "maximum": 2000,
           "description": "診断のデバウンス時間（ミリ秒）"
         },
         "textui-designer.performance.completionDebounceDelay": {
           "type": "number",
-          "default": 200,
+          "default": 300,
           "minimum": 0,
           "maximum": 1000,
           "description": "補完のデバウンス時間（ミリ秒）"
         },
         "textui-designer.performance.cacheTTL": {
           "type": "number",
-          "default": 10000,
+          "default": 30000,
           "minimum": 1000,
           "maximum": 60000,
           "description": "キャッシュの有効期限（ミリ秒）"
         },
         "textui-designer.performance.schemaCacheTTL": {
           "type": "number",
-          "default": 30000,
+          "default": 60000,
           "minimum": 5000,
           "maximum": 300000,
           "description": "スキーマキャッシュの有効期限（ミリ秒）"
         },
         "textui-designer.performance.memoryMonitorInterval": {
           "type": "number",
-          "default": 30000,
+          "default": 60000,
           "minimum": 10000,
           "maximum": 300000,
           "description": "メモリ使用量の監視間隔（ミリ秒、開発時のみ）"
         },
         "textui-designer.performance.enablePerformanceLogs": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "パフォーマンスログの有効化"
+        },
+        "textui-designer.performance.minUpdateInterval": {
+          "type": "number",
+          "default": 200,
+          "minimum": 50,
+          "maximum": 1000,
+          "description": "最小更新間隔（ミリ秒）"
+        },
+        "textui-designer.performance.maxConcurrentOperations": {
+          "type": "number",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 10,
+          "description": "最大同時処理数"
         }
       }
     },
@@ -280,6 +294,7 @@
   "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "tsc -p ./",
+    "build": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "package": "webpack --mode production --devtool hidden-source-map",
     "build-webview": "vite build",

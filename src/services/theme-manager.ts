@@ -160,7 +160,19 @@ export class ThemeManager {
     try {
       const content = fs.readFileSync(this.themePath, 'utf-8');
       console.log('[ThemeManager] theme file content length:', content.length);
-      const data = YAML.parse(content);
+      
+      // YAMLパース処理を非同期で実行（ブロッキングを防ぐ）
+      const data = await new Promise<any>((resolve, reject) => {
+        setImmediate(() => {
+          try {
+            const parsed = YAML.parse(content);
+            resolve(parsed);
+          } catch (error) {
+            reject(error);
+          }
+        });
+      });
+      
       console.log('[ThemeManager] parsed theme data:', JSON.stringify(data, null, 2));
       await this.validateTheme(data);
       this.tokens = data.theme?.tokens || this.defaultTokens;

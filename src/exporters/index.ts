@@ -59,7 +59,18 @@ export class ExportManager {
     return this.performanceMonitor.measureExportTime(async () => {
       try {
         const content = fs.readFileSync(filePath, 'utf-8');
-        const dsl = YAML.parse(content) as TextUIDSL;
+        
+        // YAMLパース処理を非同期で実行（ブロッキングを防ぐ）
+        const dsl = await new Promise<TextUIDSL>((resolve, reject) => {
+          setImmediate(() => {
+            try {
+              const parsed = YAML.parse(content) as TextUIDSL;
+              resolve(parsed);
+            } catch (error) {
+              reject(error);
+            }
+          });
+        });
         
         const exporter = this.exporters.get(options.format);
         if (!exporter) {
