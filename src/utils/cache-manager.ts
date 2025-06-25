@@ -19,6 +19,8 @@ export interface CacheOptions {
 export class CacheManager {
   private cache: Map<string, CacheEntry> = new Map();
   private options: CacheOptions;
+  private totalRequests = 0;
+  private cacheHits = 0;
 
   constructor(options: Partial<CacheOptions> = {}) {
     this.options = {
@@ -53,6 +55,7 @@ export class CacheManager {
    * キャッシュから値を取得
    */
   get(dsl: TextUIDSL, format: ExportFormat): string | null {
+    this.totalRequests++;
     const key = this.generateKey(dsl, format);
     const entry = this.cache.get(key);
 
@@ -66,6 +69,7 @@ export class CacheManager {
       return null;
     }
 
+    this.cacheHits++;
     return entry.content;
   }
 
@@ -73,6 +77,7 @@ export class CacheManager {
    * キャッシュに値を保存
    */
   set(dsl: TextUIDSL, format: ExportFormat, content: string): void {
+    this.totalRequests++;
     const key = this.generateKey(dsl, format);
     const hash = this.hashString(JSON.stringify(dsl));
 
@@ -131,10 +136,11 @@ export class CacheManager {
    * キャッシュ統計を取得
    */
   getStats(): { size: number; maxSize: number; hitRate: number } {
+    const hitRate = this.totalRequests === 0 ? 0 : this.cacheHits / this.totalRequests;
     return {
       size: this.cache.size,
       maxSize: this.options.maxSize,
-      hitRate: 0 // TODO: ヒット率の計算を実装
+      hitRate
     };
   }
 
