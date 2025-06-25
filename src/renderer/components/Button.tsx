@@ -1,9 +1,10 @@
 import React from 'react';
 import { ButtonComponent } from '../types';
+import { BaseComponent, type BaseComponentProps } from './BaseComponent';
 
 type ButtonKind = 'primary' | 'secondary' | 'submit';
 
-interface ButtonProps extends ButtonComponent {
+interface ButtonProps extends ButtonComponent, BaseComponentProps {
   kind?: ButtonKind;
   label: string;
   submit?: boolean;
@@ -13,9 +14,9 @@ interface ButtonProps extends ButtonComponent {
 }
 
 const kindClasses: Record<ButtonKind, string> = {
-  primary: 'textui-button primary',
-  secondary: 'textui-button secondary',
-  submit: 'textui-button submit',
+  primary: 'primary',
+  secondary: 'secondary',
+  submit: 'submit',
 };
 
 const sizeClasses: Record<string, string> = {
@@ -24,27 +25,27 @@ const sizeClasses: Record<string, string> = {
   lg: 'px-6 py-3 text-lg',
 };
 
-export const Button: React.FC<ButtonProps> = ({
-  kind = 'primary',
-  label,
-  submit = false,
-  disabled = false,
-  size = 'md',
-  onClick,
-}) => {
-  const className = [
-    kindClasses[kind],
-    sizeClasses[size]
-  ].join(' ');
+export class Button extends BaseComponent<ButtonProps> {
+  protected defaultClassName = 'textui-button';
 
-  return (
-    <button
-      type={submit ? 'submit' : 'button'}
-      className={className}
-      disabled={disabled}
-      onClick={onClick}
-    >
-      {label}
-    </button>
-  );
-}; 
+  render() {
+    const { kind = 'primary', label, submit = false, disabled = false, size = 'md', onClick } = this.props;
+
+    const className = [
+      this.getMergedClassName(),
+      kindClasses[kind],
+      sizeClasses[size]
+    ].join(' ');
+
+    return (
+      <button
+        type={submit ? 'submit' : 'button'}
+        className={className}
+        disabled={disabled}
+        onClick={onClick}
+      >
+        {label}
+      </button>
+    );
+  }
+}

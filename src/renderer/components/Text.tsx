@@ -1,9 +1,10 @@
 import React from 'react';
 import { TextComponent } from '../types';
+import { BaseComponent, type BaseComponentProps } from './BaseComponent';
 
 type TextVariant = 'h1' | 'h2' | 'h3' | 'p' | 'small' | 'caption';
 
-interface TextProps extends TextComponent {
+interface TextProps extends TextComponent, BaseComponentProps {
   variant?: TextVariant;
   value: string;
   size?: 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl';
@@ -12,12 +13,12 @@ interface TextProps extends TextComponent {
 }
 
 const variantClasses: Record<TextVariant, string> = {
-  h1: 'textui-text h1',
-  h2: 'textui-text h2',
-  h3: 'textui-text h3',
-  p: 'textui-text p',
-  small: 'textui-text small',
-  caption: 'textui-text caption',
+  h1: 'h1',
+  h2: 'h2',
+  h3: 'h3',
+  p: 'p',
+  small: 'small',
+  caption: 'caption',
 };
 
 const sizeClasses: Record<string, string> = {
@@ -36,21 +37,21 @@ const weightClasses: Record<string, string> = {
   bold: 'font-bold',
 };
 
-export const Text: React.FC<TextProps> = ({ 
-  variant = 'p', 
-  value, 
-  size, 
-  weight, 
-  color 
-}) => {
-  const Component = variant.startsWith('h') ? variant : 'p';
-  
-  const className = [
-    variantClasses[variant],
-    size && sizeClasses[size],
-    weight && weightClasses[weight],
-    color
-  ].filter(Boolean).join(' ');
+export class Text extends BaseComponent<TextProps> {
+  protected defaultClassName = 'textui-text';
 
-  return React.createElement(Component, { className }, value);
-}; 
+  render() {
+    const { variant = 'p', value, size, weight, color } = this.props;
+    const Component = variant.startsWith('h') ? variant : 'p';
+
+    const className = [
+      this.getMergedClassName(),
+      variantClasses[variant],
+      size && sizeClasses[size],
+      weight && weightClasses[weight],
+      color
+    ].filter(Boolean).join(' ');
+
+    return React.createElement(Component, { className }, value);
+  }
+}
