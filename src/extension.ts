@@ -129,23 +129,29 @@ export function activate(context: vscode.ExtensionContext) {
         // デバウンス処理（100ms）- より短くしてリアルタイム性を向上
         activeEditorTimeout = setTimeout(() => {
           const previousFile = webViewManager.getLastTuiFile();
-          webViewManager.setLastTuiFile(editor.document.fileName);
           
-          // 自動プレビュー設定をチェック
-          const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
-          console.log(`[AutoPreview] アクティブエディタ変更時の設定値: ${autoPreviewEnabled ? 'ON' : 'OFF'}, パネル存在: ${webViewManager.hasPanel()}`);
-          console.log(`[AutoPreview] ファイル: ${editor.document.fileName}`);
-          console.log(`[AutoPreview] 前のファイル: ${previousFile}`);
-          
-          // 自動プレビュー設定が有効な場合のみプレビューを開く/更新
-          if (autoPreviewEnabled) {
-            if (!webViewManager.hasPanel()) {
-              console.log('[AutoPreview] 自動プレビューを開きます');
-              webViewManager.openPreview();
+          // ファイルが変更された場合は常にプレビューを更新
+          if (previousFile !== editor.document.fileName) {
+            console.log('[AutoPreview] ファイルが変更されたため、プレビューを更新します');
+            
+            // ファイル変更時に即座のプレビュー更新を有効にしてsetLastTuiFileを呼び出し
+            webViewManager.setLastTuiFile(editor.document.fileName, true);
+            
+            // 自動プレビュー設定をチェック
+            const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
+            console.log(`[AutoPreview] アクティブエディタ変更時の設定値: ${autoPreviewEnabled ? 'ON' : 'OFF'}, パネル存在: ${webViewManager.hasPanel()}`);
+            console.log(`[AutoPreview] ファイル: ${editor.document.fileName}`);
+            console.log(`[AutoPreview] 前のファイル: ${previousFile}`);
+            
+            if (autoPreviewEnabled) {
+              if (!webViewManager.hasPanel()) {
+                console.log('[AutoPreview] 自動プレビューを開きます');
+                webViewManager.openPreview();
+              }
             }
           } else {
-            // プレビュー画面が開かれている場合は常に更新
-            webViewManager.updatePreview();
+            // ファイルが同じ場合は通常のsetLastTuiFileを呼び出し
+            webViewManager.setLastTuiFile(editor.document.fileName);
           }
         }, 100);
       }

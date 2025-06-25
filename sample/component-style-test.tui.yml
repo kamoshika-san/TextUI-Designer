@@ -1,0 +1,24 @@
+page:
+  id: container
+  title: コンテナ・ネスト
+  layout: vertical
+  components:
+    - Container:
+        layout: horizontal
+        components:
+          - Text:
+              variant: h2
+              value: "左カラム"
+          - Divider:
+              orientation: vertical
+          - Container:
+              layout: vertical
+              components:
+                - Text:
+                    variant: h3
+                    value: "右上"
+                - Divider:
+                    orientation: horizontal
+                - Text:
+                    variant: p
+                    value: "右下のテキスト"

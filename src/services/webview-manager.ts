@@ -107,17 +107,10 @@ export class WebViewManager {
         clearTimeout(this.updateTimeout);
       }
 
-<<<<<<< HEAD
       // より短いデバウンス時間（200ms）でリアルタイム性を向上
       this.updateTimeout = setTimeout(async () => {
         await this.queueUpdate(() => this.sendYamlToWebview(true));
       }, 200);
-=======
-      // デバウンス（150ms）
-      this.updateTimeout = setTimeout(async () => {
-        await this.sendYamlToWebview();
-      }, 150);
->>>>>>> 13c31475ef28b514d9155e229aa33f0cb8a8698d
     } else {
       // プレビューが開かれていない場合は自動プレビュー設定をチェック
       const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
@@ -207,13 +200,19 @@ export class WebViewManager {
   /**
    * 最後に開いたtui.ymlファイルを設定
    */
-  setLastTuiFile(filePath: string): void {
-    console.log(`[WebViewManager] setLastTuiFile called: ${filePath}`);
+  setLastTuiFile(filePath: string, updatePreview: boolean = false): void {
+    console.log(`[WebViewManager] setLastTuiFile called: ${filePath}, updatePreview: ${updatePreview}`);
     
     // ファイルが変更された場合はキャッシュをクリア
     if (this.lastTuiFile !== filePath) {
       console.log(`[WebViewManager] ファイルが変更されました: ${this.lastTuiFile} -> ${filePath}`);
       this.clearCache();
+      
+      // プレビュー更新が要求された場合、即座に更新
+      if (updatePreview && this.currentPanel) {
+        console.log('[WebViewManager] ファイル変更による即座のプレビュー更新を実行します');
+        this.queueUpdate(() => this.sendYamlToWebview(true));
+      }
     }
     
     this.lastTuiFile = filePath;
@@ -264,6 +263,7 @@ export class WebViewManager {
           }
           
           this.setLastTuiFile(fileName);
+          console.log(`[WebViewManager] アクティブエディタからYAMLを取得: ${fileName}`);
         } else if (this.lastTuiFile) {
           // アクティブなエディタがない場合は最後に開いていたファイルを使用
           const document = await vscode.workspace.openTextDocument(this.lastTuiFile);
@@ -295,8 +295,8 @@ export class WebViewManager {
           return;
         }
 
-        // キャッシュチェック
-        if (yamlContent === this.lastYamlContent && this.lastParsedData && this.lastTuiFile === fileName) {
+        // キャッシュチェック（forceUpdateがtrueの場合はスキップ）
+        if (!forceUpdate && yamlContent === this.lastYamlContent && this.lastParsedData && this.lastTuiFile === fileName) {
           console.log('[WebViewManager] キャッシュされたデータを使用');
           this.performanceMonitor.recordCacheHit(true);
           this.sendMessageToWebView(this.lastParsedData, fileName);
