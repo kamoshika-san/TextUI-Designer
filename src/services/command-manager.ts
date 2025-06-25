@@ -40,7 +40,7 @@ export class CommandManager {
    */
   registerCommands(): void {
     // プレビュー関連
-    this.registerCommand('textui-designer.openPreview', () => this.webViewManager.openPreview());
+    this.registerCommand('textui-designer.openPreview', () => this.openPreviewWithCheck());
     this.registerCommand('textui-designer.openDevTools', () => this.webViewManager.openDevTools());
 
     // エクスポート関連
@@ -198,5 +198,21 @@ export class CommandManager {
   private registerCommand(command: string, callback: (...args: any[]) => void): void {
     const disposable = vscode.commands.registerCommand(command, callback);
     this.context.subscriptions.push(disposable);
+  }
+
+  /**
+   * 自動プレビュー設定をチェックしてプレビューを開く
+   */
+  private async openPreviewWithCheck(): Promise<void> {
+    const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
+    console.log(`[CommandManager] openPreviewコマンド実行時の設定値: autoPreview.enabled = ${autoPreviewEnabled}`);
+    
+    if (autoPreviewEnabled) {
+      console.log('[CommandManager] 自動プレビューが有効なため、プレビューを開きます');
+      await this.webViewManager.openPreview();
+    } else {
+      console.log('[CommandManager] 自動プレビューが無効なため、プレビューを開きません');
+      ErrorHandler.showInfo('自動プレビューが無効になっているため、プレビューを開くことができません。設定で有効にしてください。');
+    }
   }
 } 

@@ -16,27 +16,18 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     this.schemaManager = schemaManager;
   }
 
-  provideCompletionItems(
+  async provideCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
     token: vscode.CancellationToken,
     context: vscode.CompletionContext
-  ): vscode.ProviderResult<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
-    const isTui = document.fileName.endsWith('.tui.yml');
-    const isTemplate = /\.template\.(ya?ml|json)$/.test(document.fileName);
-    
-    if (!isTui && !isTemplate) return [];
-
+  ): Promise<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
     const text = document.getText();
     const linePrefix = text.substring(document.offsetAt(new vscode.Position(position.line, 0)), document.offsetAt(position));
-    const wordRange = document.getWordRangeAtPosition(position);
-    const currentWord = wordRange ? document.getText(wordRange) : '';
+    const currentWord = this.getCurrentWord(linePrefix);
+    const isTemplate = /\.template\.(ya?ml|json)$/.test(document.fileName);
     
-    // トリガー文字のチェック
-    const triggerChar = context.triggerCharacter;
-    const shouldTrigger = !triggerChar || ['-', ':', ' '].includes(triggerChar);
-    
-    if (!shouldTrigger && context.triggerKind !== vscode.CompletionTriggerKind.Invoke) {
+    if (!document.fileName.endsWith('.tui.yml') && !isTemplate) {
       return [];
     }
     
@@ -52,7 +43,17 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
         return cached.items;
       }
 
-      const yaml = YAML.parse(text);
+      // YAMLパース処理を非同期で実行（ブロッキングを防ぐ）
+      const yaml = await new Promise((resolve, reject) => {
+        setImmediate(() => {
+          try {
+            const parsed = YAML.parse(text);
+            resolve(parsed);
+          } catch (error) {
+            reject(error);
+          }
+        });
+      });
       
       // スキーマキャッシュの更新チェック
       if (!this.schemaCache || (now - this.lastSchemaLoad) > this.CACHE_TTL) {
@@ -421,5 +422,13 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     this.completionCache.clear();
     this.schemaCache = null;
     this.lastSchemaLoad = 0;
+  }
+
+  /**
+   * 現在の単語を取得
+   */
+  private getCurrentWord(linePrefix: string): string {
+    const words = linePrefix.trim().split(/\s+/);
+    return words[words.length - 1] || '';
   }
 } 

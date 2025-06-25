@@ -32,10 +32,15 @@ export function activate(context: vscode.ExtensionContext) {
 
   // パフォーマンス監視の開始
   const startTime = Date.now();
-
+  console.log('TextUI Designer拡張をアクティブ化中...');
+  
   // パフォーマンスモニターの初期化
   const performanceMonitor = PerformanceMonitor.getInstance();
-  
+
+  // 設定値の確認
+  const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
+  console.log(`[Extension] 起動時の設定値: autoPreview.enabled = ${autoPreviewEnabled}`);
+
   // 開発モードではパフォーマンス監視を有効化
   if (process.env.NODE_ENV === 'development') {
     performanceMonitor.setEnabled(true);
@@ -155,17 +160,18 @@ export function activate(context: vscode.ExtensionContext) {
           
           // 自動プレビュー設定をチェック
           const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
-          console.log(`[AutoPreview] 設定値: ${autoPreviewEnabled ? 'ON' : 'OFF'}, パネル存在: ${webViewManager.hasPanel()}`);
+          console.log(`[AutoPreview] アクティブエディタ変更時の設定値: ${autoPreviewEnabled ? 'ON' : 'OFF'}, パネル存在: ${webViewManager.hasPanel()}`);
           console.log(`[AutoPreview] ファイル: ${editor.document.fileName}`);
-          console.log(`[AutoPreview] 設定詳細: autoPreview.enabled = ${autoPreviewEnabled}`);
           
-          // プレビューが開かれていない場合は自動的に開く（設定が有効な場合のみ）
-          if (autoPreviewEnabled && !webViewManager.hasPanel()) {
-            console.log('[AutoPreview] 自動プレビューを開きます');
-            webViewManager.openPreview();
-          } else if (webViewManager.hasPanel()) {
-            console.log('[AutoPreview] 既存のプレビューを更新します');
-            webViewManager.updatePreview();
+          // 自動プレビュー設定が有効な場合のみプレビューを開く/更新
+          if (autoPreviewEnabled) {
+            if (!webViewManager.hasPanel()) {
+              console.log('[AutoPreview] 自動プレビューを開きます');
+              webViewManager.openPreview();
+            } else {
+              console.log('[AutoPreview] 既存のプレビューを更新します');
+              webViewManager.updatePreview();
+            }
           } else {
             console.log('[AutoPreview] 自動プレビューが無効化されているため、プレビューを開きません');
           }
@@ -174,35 +180,134 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // ドキュメント保存時の診断（重複処理を防ぐ）
+  let saveTimeout: NodeJS.Timeout | undefined;
+  let isSaving = false; // 保存中フラグを追加
+  let lastSaveTime = 0; // 最後の保存時刻を記録
+  
+  context.subscriptions.push(
+    vscode.workspace.onDidSaveTextDocument(document => {
+      if (isSupportedFile(document.fileName)) {
+        const now = Date.now();
+        lastSaveTime = now;
+        
+        // 保存中フラグを設定
+        isSaving = true;
+        console.log('[Extension] ドキュメント保存を検知しました:', document.fileName);
+        
+        // 既存のタイマーをクリア
+        if (saveTimeout) {
+          clearTimeout(saveTimeout);
+        }
+
+        // 保存処理をデバウンス（100ms）
+        saveTimeout = setTimeout(() => {
+          try {
+            const diagnosticSettings = ConfigManager.getDiagnosticSettings();
+            if (diagnosticSettings.enabled && diagnosticSettings.validateOnSave) {
+              diagnosticManager.validateAndReportDiagnostics(document);
+            }
+          } catch (error) {
+            console.error('[Extension] ドキュメント保存処理でエラーが発生しました:', error);
+          } finally {
+            // 保存処理完了後、少し遅延してからフラグをリセット
+            setTimeout(() => {
+              isSaving = false;
+              console.log('[Extension] 保存処理完了、フラグをリセットしました');
+            }, 500);
+          }
+        }, 100);
+      }
+    })
+  );
+
   // ドキュメント変更の監視（デバウンス付き）
   let documentChangeTimeout: NodeJS.Timeout | undefined;
+  let lastChangeTime: number = 0;
+  const MIN_CHANGE_INTERVAL = 200; // より長い間隔に変更
+  let changeCount = 0; // 変更回数をカウント
+  const MAX_CHANGES_PER_SECOND = 10; // 1秒あたりの最大変更回数
+
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument(event => {
       if (isSupportedFile(event.document.fileName)) {
+        const now = Date.now();
+        
+        // 保存直後（2秒以内）は変更処理をスキップ
+        if (now - lastSaveTime < 2000) {
+          console.log('[Extension] 保存直後のため、変更処理をスキップします');
+          return;
+        }
+        
+        // 保存中は変更処理をスキップ
+        if (isSaving) {
+          console.log('[Extension] 保存中のため、変更処理をスキップします');
+          return;
+        }
+
+        // 変更回数制限をチェック
+        changeCount++;
+        if (changeCount > MAX_CHANGES_PER_SECOND) {
+          console.log('[Extension] 変更回数が上限を超えたため、スキップします');
+          return;
+        }
+
+        // 1秒後にカウンターをリセット
+        setTimeout(() => {
+          changeCount = 0;
+        }, 1000);
+
+        // 最小変更間隔をチェック
+        if (now - lastChangeTime < MIN_CHANGE_INTERVAL) {
+          console.log('[Extension] 変更間隔が短すぎるため、スキップします');
+          return;
+        }
+        lastChangeTime = now;
+
+        // ドキュメントサイズをチェック
+        const documentSize = event.document.getText().length;
+        if (documentSize > 1024 * 1024) { // 1MB以上
+          console.log(`[Extension] ドキュメントサイズが大きすぎます: ${Math.round(documentSize / 1024)}KB`);
+          vscode.window.showWarningMessage(`ドキュメントサイズが大きすぎます（${Math.round(documentSize / 1024)}KB）。1MB以下にしてください。`);
+          return;
+        }
+
         // 既存のタイマーをクリア
         if (documentChangeTimeout) {
           clearTimeout(documentChangeTimeout);
         }
 
-        // デバウンス処理（300ms）
-        documentChangeTimeout = setTimeout(() => {
-          webViewManager.updatePreview();
-          
-          const diagnosticSettings = ConfigManager.getDiagnosticSettings();
-          if (diagnosticSettings.enabled && diagnosticSettings.validateOnChange) {
-            diagnosticManager.validateAndReportDiagnostics(event.document);
-          }
-        }, 300);
-      }
-    })
-  );
+        // より長いデバウンス処理（800ms）で安定性を向上
+        documentChangeTimeout = setTimeout(async () => {
+          try {
+            // メモリ使用量を監視
+            const memUsage = process.memoryUsage();
+            if (memUsage.heapUsed > 200 * 1024 * 1024) { // 200MB以上
+              console.warn(`[Extension] メモリ使用量が大きすぎます: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`);
+              vscode.window.showWarningMessage('メモリ使用量が大きすぎます。VSCodeを再起動してください。');
+              return;
+            }
 
-  // ドキュメント保存時の診断
-  context.subscriptions.push(
-    vscode.workspace.onDidSaveTextDocument(document => {
-      const diagnosticSettings = ConfigManager.getDiagnosticSettings();
-      if (diagnosticSettings.enabled && diagnosticSettings.validateOnSave) {
-        diagnosticManager.validateAndReportDiagnostics(document);
+            // 自動プレビュー設定をチェック
+            const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
+            console.log(`[AutoPreview] ドキュメント変更時の設定値: ${autoPreviewEnabled ? 'ON' : 'OFF'}, ファイル: ${event.document.fileName}`);
+            
+            // 自動プレビュー設定が有効な場合のみプレビューを更新
+            if (autoPreviewEnabled) {
+              console.log('[AutoPreview] ドキュメント変更によりプレビューを更新します');
+              await webViewManager.updatePreview();
+            } else {
+              console.log('[AutoPreview] 自動プレビューが無効化されているため、プレビュー更新をスキップします');
+            }
+            
+            const diagnosticSettings = ConfigManager.getDiagnosticSettings();
+            if (diagnosticSettings.enabled && diagnosticSettings.validateOnChange) {
+              diagnosticManager.validateAndReportDiagnostics(event.document);
+            }
+          } catch (error) {
+            console.error('[Extension] ドキュメント変更処理でエラーが発生しました:', error);
+          }
+        }, 800);
       }
     })
   );
@@ -235,6 +340,16 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // 設定変更の監視
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration(event => {
+      if (event.affectsConfiguration('textui-designer.autoPreview.enabled')) {
+        const newValue = ConfigManager.isAutoPreviewEnabled();
+        console.log(`[Extension] 自動プレビュー設定が変更されました: ${newValue ? 'ON' : 'OFF'}`);
+      }
+    })
+  );
+
   // パフォーマンス監視の終了
   const endTime = Date.now();
   const activationTime = endTime - startTime;
@@ -250,7 +365,13 @@ export function activate(context: vscode.ExtensionContext) {
         heapUsed: `${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
         heapTotal: `${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`
       });
-    }, 30000); // 30秒ごと
+      
+      // メモリ使用量が大きすぎる場合は警告
+      if (memUsage.heapUsed > 150 * 1024 * 1024) { // 150MB以上
+        console.warn(`[Performance] メモリ使用量が大きすぎます: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`);
+        vscode.window.showWarningMessage(`メモリ使用量が大きすぎます（${Math.round(memUsage.heapUsed / 1024 / 1024)}MB）。VSCodeを再起動することをお勧めします。`);
+      }
+    }, 15000); // 15秒ごと（より頻繁に監視）
   }
 }
 
