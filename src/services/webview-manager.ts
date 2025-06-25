@@ -22,19 +22,14 @@ export class WebViewManager {
   private updateQueue: (() => Promise<void>)[] = [];
   private isProcessingQueue: boolean = false;
   private lastUpdateTime: number = 0;
-  private readonly MIN_UPDATE_INTERVAL: number;
+  private readonly MIN_UPDATE_INTERVAL = 50; // より短い間隔に変更（リアルタイム性向上）
   private readonly MAX_YAML_SIZE: number = 1024 * 1024; // 1MB制限
   private readonly MAX_QUEUE_SIZE: number = 5; // キューサイズ制限
-  private parseTimeout: NodeJS.Timeout | undefined = undefined;
 
   constructor(context: vscode.ExtensionContext, themeManager?: ThemeManager) {
     this.context = context;
     this.themeManager = themeManager;
     this.performanceMonitor = PerformanceMonitor.getInstance();
-    
-    // 設定から最小更新間隔を取得
-    const performanceSettings = ConfigManager.getPerformanceSettings();
-    this.MIN_UPDATE_INTERVAL = performanceSettings.minUpdateInterval;
   }
 
   /**
@@ -78,24 +73,10 @@ export class WebViewManager {
               vscode.window.showWarningMessage('エクスポートするファイルが見つかりません。先に.tui.ymlファイルを開いてください。');
             }
           } else if (message.type === 'webview-ready') {
-            console.log('[WebViewManager] WebView準備完了メッセージを受信');
-            console.log('[WebViewManager] 設定チェックを開始します');
-            
-            // 自動プレビュー設定をチェック
-            const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
-            console.log(`[WebViewManager] WebView準備完了時の設定値: autoPreview.enabled = ${autoPreviewEnabled}`);
-            console.log(`[WebViewManager] 設定チェック結果: ${autoPreviewEnabled ? '有効' : '無効'}`);
-            
-            if (autoPreviewEnabled) {
-              console.log('[WebViewManager] 設定が有効なため、YAMLデータを送信します');
-              // WebViewが準備完了したら、YAMLデータとテーマ変数を送信
-              await this.sendYamlToWebview();
-              if (this.themeManager) {
-                console.log('[WebViewManager] 初回テーマ変数を送信');
-                this.applyThemeVariables(this.themeManager.generateCSSVariables());
-              }
-            } else {
-              console.log('[WebViewManager] 自動プレビューが無効なため、初期データ送信をスキップします');
+            // プレビューが開かれた場合は常にYAMLデータを送信
+            await this.sendYamlToWebview(true);
+            if (this.themeManager) {
+              this.applyThemeVariables(this.themeManager.generateCSSVariables());
             }
           }
         },
@@ -119,30 +100,34 @@ export class WebViewManager {
    * プレビューを更新（デバウンス付き）
    */
   async updatePreview(): Promise<void> {
-    // 自動プレビュー設定をチェック
-    const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
-    console.log(`[WebViewManager] updatePreview called - autoPreview.enabled = ${autoPreviewEnabled}`);
-    
-    if (!autoPreviewEnabled) {
-      console.log('[WebViewManager] 自動プレビューが無効なため、プレビュー更新をスキップします');
-      return;
-    }
-
     if (this.currentPanel) {
-      console.log('[WebViewManager] 既存のパネルを更新します');
+      // プレビュー画面が開かれている場合は常に更新
       // 既存のタイマーをクリア
       if (this.updateTimeout) {
         clearTimeout(this.updateTimeout);
       }
 
-      // より長いデバウンス時間（500ms）で安定性を向上
+<<<<<<< HEAD
+      // より短いデバウンス時間（200ms）でリアルタイム性を向上
       this.updateTimeout = setTimeout(async () => {
-        await this.queueUpdate(() => this.sendYamlToWebview());
-      }, 500);
+        await this.queueUpdate(() => this.sendYamlToWebview(true));
+      }, 200);
+=======
+      // デバウンス（150ms）
+      this.updateTimeout = setTimeout(async () => {
+        await this.sendYamlToWebview();
+      }, 150);
+>>>>>>> 13c31475ef28b514d9155e229aa33f0cb8a8698d
     } else {
-      // プレビューが開かれていない場合は自動的に開く
-      console.log('[WebViewManager] プレビューが開かれていないため、自動的に開きます');
-      await this.openPreview();
+      // プレビューが開かれていない場合は自動プレビュー設定をチェック
+      const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
+      
+      if (autoPreviewEnabled) {
+        // 自動プレビューが有効な場合は自動的に開く
+        await this.openPreview();
+      } else {
+        console.log('[WebViewManager] 自動プレビューが無効なため、プレビューを開きません');
+      }
     }
   }
 
@@ -150,16 +135,19 @@ export class WebViewManager {
    * 更新処理をキューに追加（競合状態を防ぐ）
    */
   private async queueUpdate(updateFunction: () => Promise<void>): Promise<void> {
-    // 最小更新間隔をチェック
+    // 設定から最小更新間隔を取得
+    const performanceSettings = ConfigManager.getPerformanceSettings();
+    const minInterval = performanceSettings.minUpdateInterval;
+    
+    // 最小更新間隔をチェック（短縮してリアルタイム性を向上）
     const now = Date.now();
-    if (now - this.lastUpdateTime < this.MIN_UPDATE_INTERVAL) {
-      console.log('[WebViewManager] 更新間隔が短すぎるため、スキップします');
+    if (now - this.lastUpdateTime < minInterval) {
+      console.log(`[WebViewManager] 最小更新間隔（${minInterval}ms）を待機中...`);
       return;
     }
 
     // キューサイズ制限をチェック
     if (this.updateQueue.length >= this.MAX_QUEUE_SIZE) {
-      console.log('[WebViewManager] キューが上限に達したため、古い処理を削除します');
       this.updateQueue.shift(); // 古い処理を削除
     }
 
@@ -190,9 +178,9 @@ export class WebViewManager {
             await updateFunction();
             this.lastUpdateTime = Date.now();
             
-            // 処理間に少し間隔を空ける
+            // 処理間に少し間隔を空ける（短縮してリアルタイム性を向上）
             if (this.updateQueue.length > 0) {
-              await new Promise(resolve => setTimeout(resolve, 50));
+              await new Promise(resolve => setTimeout(resolve, 20));
             }
           } catch (error) {
             console.error('[WebViewManager] 更新処理でエラーが発生しました:', error);
@@ -241,14 +229,15 @@ export class WebViewManager {
   /**
    * WebViewにYAMLデータを送信（キャッシュ付き）
    */
-  private async sendYamlToWebview(): Promise<void> {
-    // 自動プレビュー設定をチェック
-    const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
-    console.log(`[WebViewManager] sendYamlToWebview called - autoPreview.enabled = ${autoPreviewEnabled}`);
-    
-    if (!autoPreviewEnabled) {
-      console.log('[WebViewManager] 自動プレビューが無効なため、YAML送信をスキップします');
-      return;
+  private async sendYamlToWebview(forceUpdate: boolean = false): Promise<void> {
+    // 自動プレビュー設定をチェック（明示的な実行時はスキップ）
+    if (!forceUpdate) {
+      const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
+      
+      if (!autoPreviewEnabled) {
+        console.log('[WebViewManager] 自動プレビューが無効なため、YAML送信をスキップします');
+        return;
+      }
     }
 
     return this.performanceMonitor.measureRenderTime(async () => {
@@ -264,9 +253,6 @@ export class WebViewManager {
         let yamlContent = '';
         let fileName = '';
 
-        console.log(`[WebViewManager] アクティブエディタ: ${activeEditor?.document.fileName}`);
-        console.log(`[WebViewManager] 最後のファイル: ${this.lastTuiFile}`);
-
         if (activeEditor && activeEditor.document.fileName.endsWith('.tui.yml')) {
           yamlContent = activeEditor.document.getText();
           fileName = activeEditor.document.fileName;
@@ -278,13 +264,11 @@ export class WebViewManager {
           }
           
           this.setLastTuiFile(fileName);
-          console.log(`[WebViewManager] アクティブエディタからYAMLを取得: ${fileName}`);
         } else if (this.lastTuiFile) {
           // アクティブなエディタがない場合は最後に開いていたファイルを使用
           const document = await vscode.workspace.openTextDocument(this.lastTuiFile);
           yamlContent = document.getText();
           fileName = this.lastTuiFile;
-          console.log(`[WebViewManager] 最後のファイルからYAMLを取得: ${fileName}`);
         } else {
           // デフォルトのサンプルデータ
           yamlContent = `page:
@@ -299,7 +283,6 @@ export class WebViewManager {
         variant: p
         value: "プレビューが表示されています"`;
           fileName = 'sample.tui.yml';
-          console.log(`[WebViewManager] サンプルデータを使用`);
         }
 
         // ファイルサイズ制限をチェック
@@ -322,33 +305,18 @@ export class WebViewManager {
 
         this.performanceMonitor.recordCacheHit(false);
 
-        // 既存のパースタイマーをクリア
-        if (this.parseTimeout) {
-          clearTimeout(this.parseTimeout);
-        }
-
-        // YAMLパース処理をより安全に非同期で実行
+        // YAMLパース処理を非同期で実行
         let yaml;
         try {
-          // パース処理をより長いタイムアウトで非同期化
           yaml = await new Promise((resolve, reject) => {
-            this.parseTimeout = setTimeout(() => {
+            setImmediate(() => {
               try {
-                // メモリ使用量を監視
-                const memBefore = process.memoryUsage().heapUsed;
-                console.log(`[WebViewManager] パース前メモリ使用量: ${Math.round(memBefore / 1024 / 1024)}MB`);
-                
                 const parsed = YAML.parse(yamlContent);
-                
-                const memAfter = process.memoryUsage().heapUsed;
-                console.log(`[WebViewManager] パース後メモリ使用量: ${Math.round(memAfter / 1024 / 1024)}MB`);
-                console.log(`[WebViewManager] メモリ増加量: ${Math.round((memAfter - memBefore) / 1024 / 1024)}MB`);
-                
                 resolve(parsed);
               } catch (error) {
                 reject(error);
               }
-            }, 10); // 10ms遅延でUIスレッドを解放
+            });
           });
         } catch (parseError) {
           console.error('[WebViewManager] YAMLパースエラー:', parseError);
@@ -374,7 +342,6 @@ export class WebViewManager {
         }
         
         this.sendMessageToWebView(yaml, fileName);
-        console.log(`[WebViewManager] メッセージ送信完了`);
       } catch (error) {
         console.error('[WebViewManager] YAMLデータの送信に失敗しました:', error);
         if (this.currentPanel) {
@@ -401,7 +368,6 @@ export class WebViewManager {
       fileName: fileName
     };
     
-    console.log(`[WebViewManager] 送信メッセージ:`, message);
     this.currentPanel.webview.postMessage(message);
   }
 
@@ -414,10 +380,6 @@ export class WebViewManager {
     if (this.updateTimeout) {
       clearTimeout(this.updateTimeout);
       this.updateTimeout = undefined;
-    }
-    if (this.parseTimeout) {
-      clearTimeout(this.parseTimeout);
-      this.parseTimeout = undefined;
     }
     this.updateQueue = [];
     this.isProcessingQueue = false;
@@ -462,12 +424,9 @@ export class WebViewManager {
    * テーマ用CSS変数をWebViewへ送信
    */
   applyThemeVariables(css: string): void {
-    console.log('[WebViewManager] applyThemeVariables called with CSS:', css);
     if (!this.currentPanel) {
-      console.log('[WebViewManager] applyThemeVariables: no current panel');
       return;
     }
-    console.log('[WebViewManager] applyThemeVariables: sending theme-variables message');
     this.currentPanel.webview.postMessage({
       type: 'theme-variables',
       css
@@ -479,11 +438,8 @@ export class WebViewManager {
    */
   notifyThemeChange(theme: 'light' | 'dark'): void {
     if (!this.currentPanel) {
-      console.log('[WebViewManager] テーマ変更通知: パネルが存在しません');
       return;
     }
-
-    console.log(`[WebViewManager] テーマ変更通知: ${theme}`);
     this.currentPanel.webview.postMessage({
       type: 'theme-change',
       theme: theme

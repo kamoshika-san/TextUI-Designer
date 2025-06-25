@@ -201,18 +201,10 @@ export class CommandManager {
   }
 
   /**
-   * 自動プレビュー設定をチェックしてプレビューを開く
+   * プレビューを開く（ユーザーの明示的な指示による実行）
    */
   private async openPreviewWithCheck(): Promise<void> {
-    const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
-    console.log(`[CommandManager] openPreviewコマンド実行時の設定値: autoPreview.enabled = ${autoPreviewEnabled}`);
-    
-    if (autoPreviewEnabled) {
-      console.log('[CommandManager] 自動プレビューが有効なため、プレビューを開きます');
-      await this.webViewManager.openPreview();
-    } else {
-      console.log('[CommandManager] 自動プレビューが無効なため、プレビューを開きません');
-      ErrorHandler.showInfo('自動プレビューが無効になっているため、プレビューを開くことができません。設定で有効にしてください。');
-    }
+    // ユーザーが明示的にコマンドを実行した場合は、Auto Preview設定に関係なくプレビューを開く
+    await this.webViewManager.openPreview();
   }
 } 
