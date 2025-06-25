@@ -1,30 +1,36 @@
-# BaseComponentRenderer とは
+# BaseComponentRendererについて
 
-`BaseComponentRenderer` は、エクスポーターで共通となるコンポーネントレンダリング処理をまとめた基底クラスです。HTML/React/Pug など各フォーマットへの出力ロジックを一元化することで、重複コードを削減し保守性を高めます。
+## 目的
+`BaseComponentRenderer` は、HTML/React/Pug など複数のエクスポーターに共通するレンダリング処理をまとめる基底クラスです。各エクスポーターはこのクラスを継承し、個々のコンポーネントをどのように出力するかを実装します。重複コードの削減と型安全性の向上が主な目的です。
 
-## 基本プロパティ
+## インターフェース
+`BaseComponentRenderer` は `Exporter` インターフェースを実装し、以下の抽象メソッドを持ちます。
 
-```typescript
+```ts
 export abstract class BaseComponentRenderer implements Exporter {
-  protected format: ExportFormat;
-
-  constructor(format: ExportFormat) {
-    this.format = format;
+  protected renderComponent(comp: ComponentDef, key: number): string {
+    // 型ガードで各コンポーネントを判定
   }
 
-  abstract export(dsl: TextUIDSL, options: ExportOptions): Promise<string>;
-  abstract getFileExtension(): string;
-  // ... コンポーネント別の抽象メソッド
+  protected abstract renderText(props: TextComponent, key: number): string;
+  protected abstract renderInput(props: InputComponent, key: number): string;
+  protected abstract renderButton(props: ButtonComponent, key: number): string;
+  protected abstract renderCheckbox(props: CheckboxComponent, key: number): string;
+  protected abstract renderRadio(props: RadioComponent, key: number): string;
+  protected abstract renderSelect(props: SelectComponent, key: number): string;
+  protected abstract renderDivider(props: DividerComponent, key: number): string;
+  protected abstract renderAlert(props: AlertComponent, key: number): string;
+  protected abstract renderContainer(props: ContainerComponent, key: number): string;
+  protected abstract renderForm(props: FormComponent, key: number): string;
 }
 ```
 
-`format` プロパティに出力形式 (`'html'`, `'react'`, `'pug'`) を保持し、各コンポーネントのレンダリング処理は抽象メソッドとして定義します。
+これらのメソッドにより、各エクスポーターは必要なコンポーネントのみを実装すればよくなります。共通処理は `renderComponent` が自動的に呼び分けます。
 
-## 拡張方法
+## 拡張例
+HTML 形式を出力する `HtmlExporter` は次のように `BaseComponentRenderer` を継承します。
 
-各エクスポーターはこの基底クラスを継承し、抽象メソッドを実装します。以下は `HtmlExporter` の例です。
-
-```typescript
+```ts
 export class HtmlExporter extends BaseComponentRenderer {
   constructor() {
     super('html');
