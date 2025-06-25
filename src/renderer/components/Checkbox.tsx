@@ -1,41 +1,49 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { CheckboxComponent } from '../types';
+import { BaseComponent, BaseComponentProps } from './BaseComponent';
 
-interface CheckboxProps extends CheckboxComponent {
+interface CheckboxProps extends CheckboxComponent, BaseComponentProps {
   label: string;
-  name?: string;
-  checked?: boolean;
-  disabled?: boolean;
 }
 
-export const Checkbox: React.FC<CheckboxProps> = ({
-  label,
-  name = 'checkbox',
-  checked: initialChecked = false,
-  disabled = false,
-}) => {
-  const [isChecked, setIsChecked] = useState(initialChecked);
+interface CheckboxState {
+  checked: boolean;
+}
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!disabled) {
-      setIsChecked(e.target.checked);
+export class Checkbox extends BaseComponent<CheckboxProps, CheckboxState> {
+  protected defaultClassName = 'textui-checkbox';
+
+  state: CheckboxState = { checked: this.props.checked ?? false };
+
+  constructor(props: CheckboxProps) {
+    super(props);
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  private handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!this.props.disabled) {
+      this.setState({ checked: e.target.checked });
     }
-  };
+  }
 
-  return (
-    <div className="flex items-center mb-4">
-      <input
-        type="checkbox"
-        id={name}
-        name={name}
-        checked={isChecked}
-        disabled={disabled}
-        onChange={handleChange}
-        className="textui-checkbox"
-      />
-      <label htmlFor={name} className="ml-2 block text-sm textui-text">
-        {label}
-      </label>
-    </div>
-  );
-}; 
+  render() {
+    const { label, name = 'checkbox', disabled = false, className } = this.props;
+
+    return (
+      <div className="flex items-center mb-4">
+        <input
+          type="checkbox"
+          id={name}
+          name={name}
+          checked={this.state.checked}
+          disabled={disabled}
+          onChange={this.handleChange}
+          className={this.mergeClassName(className)}
+        />
+        <label htmlFor={name} className="ml-2 block text-sm textui-text">
+          {label}
+        </label>
+      </div>
+    );
+  }
+}

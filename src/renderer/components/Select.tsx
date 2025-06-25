@@ -1,57 +1,67 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { SelectComponent, SelectOption } from '../types';
+import { BaseComponent, BaseComponentProps } from './BaseComponent';
 
-interface SelectProps extends SelectComponent {
-  label?: string;
-  name?: string;
-  options?: SelectOption[];
-  placeholder?: string;
-  disabled?: boolean;
-  multiple?: boolean;
+interface SelectProps extends SelectComponent, BaseComponentProps {}
+
+interface SelectState {
+  selectedValue: string;
 }
 
-export const Select: React.FC<SelectProps> = ({
-  label,
-  name = 'select',
-  options = [],
-  placeholder,
-  disabled = false,
-  multiple = false,
-}) => {
-  const [selectedValue, setSelectedValue] = useState('');
+export class Select extends BaseComponent<SelectProps, SelectState> {
+  protected defaultClassName = 'textui-select';
 
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (!disabled) {
-      setSelectedValue(e.target.value);
+  state: SelectState = { selectedValue: '' };
+
+  constructor(props: SelectProps) {
+    super(props);
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  private handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    if (!this.props.disabled) {
+      this.setState({ selectedValue: e.target.value });
     }
-  };
+  }
 
-  return (
-    <div className="textui-select">
-      {label && (
-        <label htmlFor={name} className="textui-text">
-          {label}
-        </label>
-      )}
-      <select
-        id={name}
-        name={name}
-        multiple={multiple}
-        disabled={disabled}
-        value={selectedValue}
-        onChange={handleChange}
-      >
-        {placeholder && !multiple && (
-          <option value="" disabled hidden>
-            {placeholder}
-          </option>
+  render() {
+    const {
+      label,
+      name = 'select',
+      options = [],
+      placeholder,
+      disabled = false,
+      multiple = false,
+      className,
+    } = this.props;
+
+    return (
+      <div className={this.mergeClassName(className)}>
+        {label && (
+          <label htmlFor={name} className="textui-text">
+            {label}
+          </label>
         )}
-        {options.map((option, index) => (
-          <option key={index} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}; 
+        <select
+          id={name}
+          name={name}
+          multiple={multiple}
+          disabled={disabled}
+          value={this.state.selectedValue}
+          onChange={this.handleChange}
+        >
+          {placeholder && !multiple && (
+            <option value="" disabled hidden>
+              {placeholder}
+            </option>
+          )}
+          {options.map((option, index) => (
+            <option key={index} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+}

@@ -1,35 +1,66 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { InputComponent } from '../types';
+import { BaseComponent, BaseComponentProps } from './BaseComponent';
 
-interface InputProps extends InputComponent {
-  label?: string;
-  name?: string;
-  type?: 'text' | 'email' | 'password' | 'number' | 'multiline';
-  required?: boolean;
-  placeholder?: string;
-  disabled?: boolean;
-  multiline?: boolean;
+interface InputProps extends InputComponent, BaseComponentProps {}
+
+interface InputState {
+  value: string;
 }
 
-export const Input: React.FC<InputProps> = ({
-  label,
-  name = 'input',
-  type = 'text',
-  required = false,
-  placeholder,
-  disabled = false,
-  multiline = false,
-}) => {
-  const [value, setValue] = useState('');
-  const inputType = multiline ? 'multiline' : type;
+export class Input extends BaseComponent<InputProps, InputState> {
+  protected defaultClassName = 'textui-input';
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    if (!disabled) {
-      setValue(e.target.value);
+  state: InputState = { value: '' };
+
+  constructor(props: InputProps) {
+    super(props);
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  private handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    if (!this.props.disabled) {
+      this.setState({ value: e.target.value });
     }
-  };
-  
-  if (inputType === 'multiline') {
+  }
+
+  render() {
+    const {
+      label,
+      name = 'input',
+      type = 'text',
+      required = false,
+      placeholder,
+      disabled = false,
+      multiline = false,
+      className,
+    } = this.props;
+
+    const inputType = multiline ? 'multiline' : type;
+
+    if (inputType === 'multiline') {
+      return (
+        <div className="mb-4">
+          {label && (
+            <label htmlFor={name} className="block text-sm font-medium mb-2 textui-text">
+              {label}
+            </label>
+          )}
+          <textarea
+            id={name}
+            name={name}
+            value={this.state.value}
+            required={required}
+            placeholder={placeholder}
+            disabled={disabled}
+            onChange={this.handleChange}
+            className={this.mergeClassName(className)}
+            rows={4}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="mb-4">
         {label && (
@@ -37,39 +68,18 @@ export const Input: React.FC<InputProps> = ({
             {label}
           </label>
         )}
-        <textarea
+        <input
           id={name}
           name={name}
-          value={value}
+          type={inputType}
+          value={this.state.value}
           required={required}
           placeholder={placeholder}
           disabled={disabled}
-          onChange={handleChange}
-          className="textui-input"
-          rows={4}
+          onChange={this.handleChange}
+          className={this.mergeClassName(className)}
         />
       </div>
     );
   }
-
-  return (
-    <div className="mb-4">
-      {label && (
-        <label htmlFor={name} className="block text-sm font-medium mb-2 textui-text">
-          {label}
-        </label>
-      )}
-      <input
-        id={name}
-        name={name}
-        type={inputType}
-        value={value}
-        required={required}
-        placeholder={placeholder}
-        disabled={disabled}
-        onChange={handleChange}
-        className="textui-input"
-      />
-    </div>
-  );
-}; 
+}

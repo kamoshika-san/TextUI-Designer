@@ -1,75 +1,98 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { BaseComponent, BaseComponentProps } from './BaseComponent';
 
 type ThemeMode = 'light' | 'dark' | 'auto';
 
-interface ThemeToggleProps {
-  className?: string;
+interface ThemeToggleProps extends BaseComponentProps {}
+
+interface ThemeToggleState {
+  themeMode: ThemeMode;
+  currentTheme: 'light' | 'dark';
 }
 
-export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
-  const [themeMode, setThemeMode] = useState<ThemeMode>('auto');
-  const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('dark');
+export class ThemeToggle extends BaseComponent<ThemeToggleProps, ThemeToggleState> {
+  protected defaultClassName = 'theme-toggle';
 
-  // 初期化時にlocalStorageから設定を読み込み
-  useEffect(() => {
+  state: ThemeToggleState = { themeMode: 'auto', currentTheme: 'dark' };
+
+  constructor(props: ThemeToggleProps) {
+    super(props);
+    this.handleThemeChange = this.handleThemeChange.bind(this);
+    this.handleMessage = this.handleMessage.bind(this);
+  }
+
+  componentDidMount() {
     const savedMode = localStorage.getItem('textui-theme-mode') as ThemeMode;
     if (savedMode && ['light', 'dark', 'auto'].includes(savedMode)) {
-      setThemeMode(savedMode);
+      this.setState({ themeMode: savedMode }, this.updateCurrentTheme);
+    } else {
+      this.updateCurrentTheme();
     }
-  }, []);
 
-  // テーマモードが変更された時の処理
-  useEffect(() => {
-    localStorage.setItem('textui-theme-mode', themeMode);
-    
+    window.addEventListener('message', this.handleMessage);
+    this.updateBodyClass();
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('message', this.handleMessage);
+  }
+
+  componentDidUpdate(prevProps: ThemeToggleProps, prevState: ThemeToggleState) {
+    if (prevState.themeMode !== this.state.themeMode) {
+      localStorage.setItem('textui-theme-mode', this.state.themeMode);
+      this.updateCurrentTheme();
+    }
+
+    if (prevState.currentTheme !== this.state.currentTheme) {
+      this.updateBodyClass();
+    }
+  }
+
+  private updateCurrentTheme() {
+    const { themeMode, currentTheme } = this.state;
     if (themeMode === 'auto') {
-      // VSCodeのテーマに連動
       const vscode = (window as any).vscode;
       if (vscode && vscode.getState) {
         const state = vscode.getState();
         const vscodeTheme = state?.theme || 'dark';
-        setCurrentTheme(vscodeTheme === 'light' ? 'light' : 'dark');
+        const newTheme = vscodeTheme === 'light' ? 'light' : 'dark';
+        if (newTheme !== currentTheme) {
+          this.setState({ currentTheme: newTheme });
+        }
       }
-    } else {
-      setCurrentTheme(themeMode);
+    } else if (themeMode !== currentTheme) {
+      this.setState({ currentTheme: themeMode });
     }
-  }, [themeMode]);
+  }
 
-  // 現在のテーマに応じてbodyクラスを設定
-  useEffect(() => {
+  private updateBodyClass() {
     const body = document.body;
-    if (currentTheme === 'dark') {
+    if (this.state.currentTheme === 'dark') {
       body.classList.add('dark');
       body.classList.remove('light');
     } else {
       body.classList.add('light');
       body.classList.remove('dark');
     }
-  }, [currentTheme]);
+  }
 
-  // VSCodeからのメッセージでテーマ変更を検知
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      const message = event.data;
-      if (message.type === 'theme-change' && themeMode === 'auto') {
-        const newTheme = message.theme === 'light' ? 'light' : 'dark';
-        setCurrentTheme(newTheme);
-      }
-    };
+  private handleMessage(event: MessageEvent) {
+    const message = event.data;
+    if (message.type === 'theme-change' && this.state.themeMode === 'auto') {
+      const newTheme = message.theme === 'light' ? 'light' : 'dark';
+      this.setState({ currentTheme: newTheme });
+    }
+  }
 
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [themeMode]);
-
-  const handleThemeChange = () => {
+  private handleThemeChange() {
     const modes: ThemeMode[] = ['auto', 'light', 'dark'];
-    const currentIndex = modes.indexOf(themeMode);
+    const currentIndex = modes.indexOf(this.state.themeMode);
     const nextIndex = (currentIndex + 1) % modes.length;
-    setThemeMode(modes[nextIndex]);
-  };
+    this.setState({ themeMode: modes[nextIndex] });
+  }
 
-  const getThemeIcon = () => {
-    switch (themeMode) {
+  private getThemeIcon() {
+    switch (this.state.themeMode) {
       case 'light':
         return '☀️';
       case 'dark':
@@ -79,10 +102,10 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
       default:
         return '🌙';
     }
-  };
+  }
 
-  const getThemeLabel = () => {
-    switch (themeMode) {
+  private getThemeLabel() {
+    switch (this.state.themeMode) {
       case 'light':
         return 'ライト';
       case 'dark':
@@ -92,43 +115,47 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
       default:
         return '自動';
     }
-  };
+  }
 
-  return (
-    <button
-      onClick={handleThemeChange}
-      className={`theme-toggle ${className}`}
-      title={`テーマ: ${getThemeLabel()} (クリックで切り替え)`}
-      style={{
-        position: 'fixed',
-        top: '1rem',
-        right: '6rem', // Exportボタンとの間隔を広げる
-        backgroundColor: 'rgba(75, 85, 99, 0.8)',
-        color: '#d1d5db',
-        border: '1px solid rgba(107, 114, 128, 0.5)',
-        padding: '0.5rem 0.75rem',
-        borderRadius: '0.375rem',
-        fontSize: '0.875rem',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        zIndex: 1000,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '2.5rem', // Exportボタンと同じ高さ
-        minWidth: '3rem',
-        width: '3rem' // 幅を固定
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(55, 65, 81, 0.9)';
-        e.currentTarget.style.borderColor = 'rgba(75, 85, 99, 0.7)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(75, 85, 99, 0.8)';
-        e.currentTarget.style.borderColor = 'rgba(107, 114, 128, 0.5)';
-      }}
-    >
-      <span style={{ fontSize: '1rem' }}>{getThemeIcon()}</span>
-    </button>
-  );
-}; 
+  render() {
+    const { className } = this.props;
+
+    return (
+      <button
+        onClick={this.handleThemeChange}
+        className={this.mergeClassName(className)}
+        title={`テーマ: ${this.getThemeLabel()} (クリックで切り替え)`}
+        style={{
+          position: 'fixed',
+          top: '1rem',
+          right: '6rem',
+          backgroundColor: 'rgba(75, 85, 99, 0.8)',
+          color: '#d1d5db',
+          border: '1px solid rgba(107, 114, 128, 0.5)',
+          padding: '0.5rem 0.75rem',
+          borderRadius: '0.375rem',
+          fontSize: '0.875rem',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '2.5rem',
+          minWidth: '3rem',
+          width: '3rem'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'rgba(55, 65, 81, 0.9)';
+          e.currentTarget.style.borderColor = 'rgba(75, 85, 99, 0.7)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'rgba(75, 85, 99, 0.8)';
+          e.currentTarget.style.borderColor = 'rgba(107, 114, 128, 0.5)';
+        }}
+      >
+        <span style={{ fontSize: '1rem' }}>{this.getThemeIcon()}</span>
+      </button>
+    );
+  }
+
