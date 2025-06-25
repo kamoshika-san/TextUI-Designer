@@ -24,5 +24,14 @@
       "path": "./templates/custom-form.tui.yml",
       "description": "カスタムフォームテンプレート"
     }
-  ]
+  ],
+  "textui-designer.performance.webviewDebounceDelay": 300,
+  "textui-designer.performance.diagnosticDebounceDelay": 500,
+  "textui-designer.performance.completionDebounceDelay": 200,
+  "textui-designer.performance.cacheTTL": 30000,
+  "textui-designer.performance.schemaCacheTTL": 60000,
+  "textui-designer.performance.memoryMonitorInterval": 30000,
+  "textui-designer.performance.enablePerformanceLogs": true,
+  "textui-designer.performance.minUpdateInterval": 100,
+  "textui-designer.performance.maxConcurrentOperations": 2
 } 

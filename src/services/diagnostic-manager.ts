@@ -16,6 +16,7 @@ export class DiagnosticManager {
   private lastSchemaLoad: number = 0;
   private readonly CACHE_TTL = 5000; // 5秒
   private readonly DEBOUNCE_DELAY = 500; // 500ms
+  private diagnosticTimeout: NodeJS.Timeout | null = null;
 
   constructor(schemaManager: any) {
     this.diagnosticCollection = vscode.languages.createDiagnosticCollection('textui-designer');
@@ -23,29 +24,48 @@ export class DiagnosticManager {
   }
 
   /**
-   * ドキュメントの診断を実行（デバウンス付き）
+   * 診断を実行（デバウンス付き）
    */
   async validateAndReportDiagnostics(document: vscode.TextDocument): Promise<void> {
-    const isTui = document.fileName.endsWith('.tui.yml');
-    const isTemplate = /\.template\.(ya?ml|json)$/.test(document.fileName);
-    
-    if (!isTui && !isTemplate) return;
-
-    const uri = document.uri.toString();
-    const text = document.getText();
-
     // 既存のタイマーをクリア
-    if (this.validationTimeouts.has(uri)) {
-      clearTimeout(this.validationTimeouts.get(uri)!);
+    if (this.diagnosticTimeout) {
+      clearTimeout(this.diagnosticTimeout);
     }
 
-    // デバウンス処理
-    const timeout = setTimeout(async () => {
-      await this.performValidation(document, text, isTemplate);
-      this.validationTimeouts.delete(uri);
-    }, this.DEBOUNCE_DELAY);
+    // より短いデバウンス時間（300ms）でリアルタイム性を向上
+    this.diagnosticTimeout = setTimeout(async () => {
+      try {
+        await this.performDiagnostics(document);
+      } catch (error) {
+        console.error('[DiagnosticManager] 診断処理でエラーが発生しました:', error);
+      }
+    }, 300);
+  }
 
-    this.validationTimeouts.set(uri, timeout);
+  /**
+   * 診断を実行
+   */
+  private async performDiagnostics(document: vscode.TextDocument): Promise<void> {
+    const text = document.getText();
+    const uri = document.uri.toString();
+    
+    // キャッシュをチェック
+    const cacheKey = `${uri}:${this.hashText(text)}`;
+    const cached = this.validationCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      return;
+    }
+
+    // 診断を実行
+    await this.performValidation(document, text, false);
+    
+    // キャッシュに保存
+    const currentDiagnostics = this.diagnosticCollection.get(document.uri) || [];
+    this.validationCache.set(cacheKey, {
+      content: text,
+      timestamp: Date.now(),
+      diagnostics: [...currentDiagnostics] // 配列をコピー
+    });
   }
 
   /**
@@ -119,8 +139,8 @@ export class DiagnosticManager {
     // キャッシュを更新
     this.validationCache.set(uri, {
       content: text,
-      diagnostics: diagnostics,
-      timestamp: now
+      timestamp: now,
+      diagnostics: diagnostics
     });
 
     this.diagnosticCollection.set(document.uri, diagnostics);
@@ -198,5 +218,18 @@ export class DiagnosticManager {
   dispose(): void {
     this.clearDiagnostics();
     this.diagnosticCollection.dispose();
+  }
+
+  /**
+   * テキストのハッシュを生成
+   */
+  private hashText(text: string): string {
+    let hash = 0;
+    for (let i = 0; i < text.length; i++) {
+      const char = text.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // 32bit整数に変換
+    }
+    return hash.toString();
   }
 } 
