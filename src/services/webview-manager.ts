@@ -107,10 +107,17 @@ export class WebViewManager {
         clearTimeout(this.updateTimeout);
       }
 
+<<<<<<< HEAD
       // より短いデバウンス時間（200ms）でリアルタイム性を向上
       this.updateTimeout = setTimeout(async () => {
         await this.queueUpdate(() => this.sendYamlToWebview(true));
       }, 200);
+=======
+      // デバウンス（150ms）
+      this.updateTimeout = setTimeout(async () => {
+        await this.sendYamlToWebview();
+      }, 150);
+>>>>>>> 13c31475ef28b514d9155e229aa33f0cb8a8698d
     } else {
       // プレビューが開かれていない場合は自動プレビュー設定をチェック
       const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();

@@ -260,7 +260,7 @@ export function activate(context: vscode.ExtensionContext) {
           } catch (error) {
             console.error('[Extension] ドキュメント変更処理でエラーが発生しました:', error);
           }
-        }, 300);
+        }, 150);
       }
     })
   );
