@@ -39,7 +39,6 @@ export function activate(context: vscode.ExtensionContext) {
 
   // 設定値の確認
   const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
-  console.log(`[Extension] 起動時の設定値: autoPreview.enabled = ${autoPreviewEnabled}`);
 
   // 開発モードではパフォーマンス監視を有効化
   if (process.env.NODE_ENV === 'development') {
@@ -48,16 +47,6 @@ export function activate(context: vscode.ExtensionContext) {
   
   // パフォーマンス監視を強制的に有効化（デバッグ用）
   performanceMonitor.forceEnable();
-
-  // 初期設定値をログ出力
-  const initialAutoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
-  console.log(`[Initialization] 自動プレビュー設定の初期値: ${initialAutoPreviewEnabled ? 'ON' : 'OFF'}`);
-  
-  // 設定値を詳細にログ出力
-  console.log('[Initialization] 設定値の詳細:');
-  console.log(`  - autoPreview.enabled: ${ConfigManager.isAutoPreviewEnabled()}`);
-  console.log(`  - supportedFileExtensions: ${JSON.stringify(ConfigManager.getSupportedFileExtensions())}`);
-  console.log(`  - devTools.enabled: ${ConfigManager.isDevToolsEnabled()}`);
 
   // サービスの初期化
   const schemaManager = new SchemaManager(context);
@@ -87,11 +76,6 @@ export function activate(context: vscode.ExtensionContext) {
     ErrorHandler.showWarning(
       'TextUI Designer: スキーマの初期化に失敗しました。IntelliSense機能が制限される可能性があります。'
     );
-  }).then(() => {
-    // 初期化後にデバッグ情報を出力
-    schemaManager.debugSchemas().catch(error => {
-      console.error('スキーマデバッグに失敗しました:', error);
-    });
   });
 
   // コマンドの登録
@@ -119,20 +103,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   // 設定変更の監視
   const settingsWatcher = settingsService.startWatching(() => {
-    // 設定が変更された時の処理
-    console.log('TextUI Designer設定が変更されました');
-    
-    // 自動プレビュー設定の変更をログ出力
-    const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
-    console.log(`[Settings] 自動プレビュー設定: ${autoPreviewEnabled ? 'ON' : 'OFF'}`);
-    
-    // 自動プレビュー設定が無効化された場合、既存のプレビューを閉じる
-    if (!autoPreviewEnabled && webViewManager.hasPanel()) {
-      console.log('[Settings] 自動プレビューが無効化されたため、既存のプレビューを閉じます');
-      webViewManager.closePreview();
-    } else if (autoPreviewEnabled) {
-      console.log('[Settings] 自動プレビューが有効化されました');
-    }
+    // Auto Preview設定の変更は、プレビュー画面の自動表示/非表示のみに影響
+    // 既に開かれているプレビュー画面は維持する
     
     // スキーマ関連の設定が変更された場合は再初期化
     const schemaSettings = ConfigManager.getSchemaSettings();
@@ -154,28 +126,23 @@ export function activate(context: vscode.ExtensionContext) {
           clearTimeout(activeEditorTimeout);
         }
 
-        // デバウンス処理（200ms）
+        // デバウンス処理（100ms）- より短くしてリアルタイム性を向上
         activeEditorTimeout = setTimeout(() => {
           webViewManager.setLastTuiFile(editor.document.fileName);
           
-          // 自動プレビュー設定をチェック
-          const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
-          console.log(`[AutoPreview] アクティブエディタ変更時の設定値: ${autoPreviewEnabled ? 'ON' : 'OFF'}, パネル存在: ${webViewManager.hasPanel()}`);
-          console.log(`[AutoPreview] ファイル: ${editor.document.fileName}`);
-          
-          // 自動プレビュー設定が有効な場合のみプレビューを開く/更新
-          if (autoPreviewEnabled) {
-            if (!webViewManager.hasPanel()) {
-              console.log('[AutoPreview] 自動プレビューを開きます');
+          if (!webViewManager.hasPanel()) {
+            // プレビュー画面が開かれていない場合は自動プレビュー設定をチェック
+            const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
+            
+            if (autoPreviewEnabled) {
+              // 自動プレビューが有効な場合は自動的に開く
               webViewManager.openPreview();
-            } else {
-              console.log('[AutoPreview] 既存のプレビューを更新します');
-              webViewManager.updatePreview();
             }
           } else {
-            console.log('[AutoPreview] 自動プレビューが無効化されているため、プレビューを開きません');
+            // プレビュー画面が開かれている場合は常に更新
+            webViewManager.updatePreview();
           }
-        }, 200);
+        }, 100);
       }
     })
   );
@@ -193,7 +160,6 @@ export function activate(context: vscode.ExtensionContext) {
         
         // 保存中フラグを設定
         isSaving = true;
-        console.log('[Extension] ドキュメント保存を検知しました:', document.fileName);
         
         // 既存のタイマーをクリア
         if (saveTimeout) {
@@ -213,7 +179,6 @@ export function activate(context: vscode.ExtensionContext) {
             // 保存処理完了後、少し遅延してからフラグをリセット
             setTimeout(() => {
               isSaving = false;
-              console.log('[Extension] 保存処理完了、フラグをリセットしました');
             }, 500);
           }
         }, 100);
@@ -224,31 +189,28 @@ export function activate(context: vscode.ExtensionContext) {
   // ドキュメント変更の監視（デバウンス付き）
   let documentChangeTimeout: NodeJS.Timeout | undefined;
   let lastChangeTime: number = 0;
-  const MIN_CHANGE_INTERVAL = 200; // より長い間隔に変更
+  const MIN_CHANGE_INTERVAL = 100; // より短い間隔に変更（リアルタイム性向上）
   let changeCount = 0; // 変更回数をカウント
-  const MAX_CHANGES_PER_SECOND = 10; // 1秒あたりの最大変更回数
+  const MAX_CHANGES_PER_SECOND = 15; // 1秒あたりの最大変更回数を増加（リアルタイム性向上）
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument(event => {
       if (isSupportedFile(event.document.fileName)) {
         const now = Date.now();
         
-        // 保存直後（2秒以内）は変更処理をスキップ
-        if (now - lastSaveTime < 2000) {
-          console.log('[Extension] 保存直後のため、変更処理をスキップします');
+        // 保存直後（1秒以内）は変更処理をスキップ（短縮）
+        if (now - lastSaveTime < 1000) {
           return;
         }
         
         // 保存中は変更処理をスキップ
         if (isSaving) {
-          console.log('[Extension] 保存中のため、変更処理をスキップします');
           return;
         }
 
         // 変更回数制限をチェック
         changeCount++;
         if (changeCount > MAX_CHANGES_PER_SECOND) {
-          console.log('[Extension] 変更回数が上限を超えたため、スキップします');
           return;
         }
 
@@ -259,7 +221,6 @@ export function activate(context: vscode.ExtensionContext) {
 
         // 最小変更間隔をチェック
         if (now - lastChangeTime < MIN_CHANGE_INTERVAL) {
-          console.log('[Extension] 変更間隔が短すぎるため、スキップします');
           return;
         }
         lastChangeTime = now;
@@ -277,7 +238,7 @@ export function activate(context: vscode.ExtensionContext) {
           clearTimeout(documentChangeTimeout);
         }
 
-        // より長いデバウンス処理（800ms）で安定性を向上
+        // より短いデバウンス処理（300ms）でリアルタイム性を向上
         documentChangeTimeout = setTimeout(async () => {
           try {
             // メモリ使用量を監視
@@ -288,17 +249,9 @@ export function activate(context: vscode.ExtensionContext) {
               return;
             }
 
-            // 自動プレビュー設定をチェック
-            const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
-            console.log(`[AutoPreview] ドキュメント変更時の設定値: ${autoPreviewEnabled ? 'ON' : 'OFF'}, ファイル: ${event.document.fileName}`);
-            
-            // 自動プレビュー設定が有効な場合のみプレビューを更新
-            if (autoPreviewEnabled) {
-              console.log('[AutoPreview] ドキュメント変更によりプレビューを更新します');
-              await webViewManager.updatePreview();
-            } else {
-              console.log('[AutoPreview] 自動プレビューが無効化されているため、プレビュー更新をスキップします');
-            }
+            // プレビュー画面が開かれている場合は常に更新
+            // Auto Preview設定はプレビュー画面を自動で開くかどうかのみに影響
+            await webViewManager.updatePreview();
             
             const diagnosticSettings = ConfigManager.getDiagnosticSettings();
             if (diagnosticSettings.enabled && diagnosticSettings.validateOnChange) {
@@ -307,7 +260,7 @@ export function activate(context: vscode.ExtensionContext) {
           } catch (error) {
             console.error('[Extension] ドキュメント変更処理でエラーが発生しました:', error);
           }
-        }, 800);
+        }, 150);
       }
     })
   );
@@ -332,8 +285,6 @@ export function activate(context: vscode.ExtensionContext) {
   // VSCodeテーマ変更の監視
   context.subscriptions.push(
     vscode.window.onDidChangeActiveColorTheme(colorTheme => {
-      console.log(`[Theme] VSCodeテーマが変更されました: ${colorTheme.kind}`);
-      
       // WebViewにテーマ変更を通知
       const theme = colorTheme.kind === vscode.ColorThemeKind.Light ? 'light' : 'dark';
       webViewManager.notifyThemeChange(theme);
@@ -344,8 +295,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration(event => {
       if (event.affectsConfiguration('textui-designer.autoPreview.enabled')) {
-        const newValue = ConfigManager.isAutoPreviewEnabled();
-        console.log(`[Extension] 自動プレビュー設定が変更されました: ${newValue ? 'ON' : 'OFF'}`);
+        // 設定変更時の処理は既にsettingsWatcherで処理済み
       }
     })
   );
@@ -360,18 +310,13 @@ export function activate(context: vscode.ExtensionContext) {
   if (process.env.NODE_ENV === 'development') {
     setInterval(() => {
       const memUsage = process.memoryUsage();
-      console.log(`[Performance] メモリ使用量:`, {
-        rss: `${Math.round(memUsage.rss / 1024 / 1024)}MB`,
-        heapUsed: `${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
-        heapTotal: `${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`
-      });
       
       // メモリ使用量が大きすぎる場合は警告
       if (memUsage.heapUsed > 150 * 1024 * 1024) { // 150MB以上
         console.warn(`[Performance] メモリ使用量が大きすぎます: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`);
         vscode.window.showWarningMessage(`メモリ使用量が大きすぎます（${Math.round(memUsage.heapUsed / 1024 / 1024)}MB）。VSCodeを再起動することをお勧めします。`);
       }
-    }, 15000); // 15秒ごと（より頻繁に監視）
+    }, 30000); // 30秒ごと（適切な間隔に戻す）
   }
 }
 

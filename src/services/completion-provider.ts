@@ -11,15 +11,46 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
   private lastSchemaLoad: number = 0;
   private completionCache: Map<string, { items: vscode.CompletionItem[]; timestamp: number }> = new Map();
   private readonly CACHE_TTL = 10000; // 10秒
+  private completionTimeout: NodeJS.Timeout | null = null;
 
   constructor(schemaManager: any) {
     this.schemaManager = schemaManager;
   }
 
+  /**
+   * 補完を提供（デバウンス付き）
+   */
   async provideCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
     token: vscode.CancellationToken,
+    context: vscode.CompletionContext
+  ): Promise<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
+    // 既存のタイマーをクリア
+    if (this.completionTimeout) {
+      clearTimeout(this.completionTimeout);
+    }
+
+    // より短いデバウンス時間（150ms）でリアルタイム性を向上
+    return new Promise((resolve) => {
+      this.completionTimeout = setTimeout(async () => {
+        try {
+          const items = await this.generateCompletionItems(document, position, context);
+          resolve(items);
+        } catch (error) {
+          console.error('[CompletionProvider] 補完処理でエラーが発生しました:', error);
+          resolve([]);
+        }
+      }, 150);
+    });
+  }
+
+  /**
+   * 補完アイテムを生成
+   */
+  private async generateCompletionItems(
+    document: vscode.TextDocument,
+    position: vscode.Position,
     context: vscode.CompletionContext
   ): Promise<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
     const text = document.getText();
@@ -61,7 +92,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
         this.lastSchemaLoad = now;
       }
       
-      const items = this.generateCompletionItems(linePrefix, position, currentWord, this.schemaCache, isTemplate);
+      const items = this.generateCompletionItemsFromSchema(linePrefix, position, currentWord, this.schemaCache, isTemplate);
       
       // キャッシュを更新
       this.completionCache.set(cacheKey, {
@@ -95,7 +126,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
   /**
    * スキーマに基づく補完アイテムを生成
    */
-  private generateCompletionItems(
+  private generateCompletionItemsFromSchema(
     linePrefix: string,
     position: vscode.Position,
     currentWord: string,

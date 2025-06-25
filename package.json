@@ -142,21 +142,21 @@
         },
         "textui-designer.performance.webviewDebounceDelay": {
           "type": "number",
-          "default": 500,
+          "default": 300,
           "minimum": 0,
           "maximum": 2000,
           "description": "WebView更新のデバウンス時間（ミリ秒）"
         },
         "textui-designer.performance.diagnosticDebounceDelay": {
           "type": "number",
-          "default": 800,
+          "default": 500,
           "minimum": 0,
           "maximum": 2000,
           "description": "診断のデバウンス時間（ミリ秒）"
         },
         "textui-designer.performance.completionDebounceDelay": {
           "type": "number",
-          "default": 300,
+          "default": 200,
           "minimum": 0,
           "maximum": 1000,
           "description": "補完のデバウンス時間（ミリ秒）"
@@ -177,7 +177,7 @@
         },
         "textui-designer.performance.memoryMonitorInterval": {
           "type": "number",
-          "default": 60000,
+          "default": 30000,
           "minimum": 10000,
           "maximum": 300000,
           "description": "メモリ使用量の監視間隔（ミリ秒、開発時のみ）"
@@ -189,7 +189,7 @@
         },
         "textui-designer.performance.minUpdateInterval": {
           "type": "number",
-          "default": 200,
+          "default": 100,
           "minimum": 50,
           "maximum": 1000,
           "description": "最小更新間隔（ミリ秒）"
@@ -198,7 +198,7 @@
           "type": "number",
           "default": 2,
           "minimum": 1,
-          "maximum": 10,
+          "maximum": 5,
           "description": "最大同時処理数"
         }
       }

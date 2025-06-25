@@ -13,12 +13,6 @@ export class ConfigManager {
     try {
       const config = vscode.workspace.getConfiguration(this.CONFIG_SECTION);
       const value = config.get<T>(key, defaultValue);
-      
-      // autoPreview.enabledの読み込み時のみログを出力
-      if (key === 'autoPreview.enabled') {
-        console.log(`[ConfigManager] autoPreview.enabled を読み込み: ${value}`);
-      }
-      
       return value;
     } catch (error) {
       console.error(`[ConfigManager] 設定取得エラー: ${key}`, error);
@@ -46,7 +40,6 @@ export class ConfigManager {
    */
   static isAutoPreviewEnabled(): boolean {
     const value = this.get('autoPreview.enabled', false);
-    console.log(`[ConfigManager] autoPreview.enabled = ${value}`);
     return value;
   }
 
@@ -116,24 +109,24 @@ export class ConfigManager {
    */
   static getPerformanceSettings() {
     return {
-      // WebView更新のデバウンス時間（ミリ秒）- より長くして安定性を向上
-      webviewDebounceDelay: this.get('performance.webviewDebounceDelay', 800),
-      // 診断のデバウンス時間（ミリ秒）- より長くして安定性を向上
-      diagnosticDebounceDelay: this.get('performance.diagnosticDebounceDelay', 1000),
+      // WebView更新のデバウンス時間（ミリ秒）- よりリアルタイムに近い更新
+      webviewDebounceDelay: this.get('performance.webviewDebounceDelay', 300),
+      // 診断のデバウンス時間（ミリ秒）- よりリアルタイムに近い更新
+      diagnosticDebounceDelay: this.get('performance.diagnosticDebounceDelay', 500),
       // 補完のデバウンス時間（ミリ秒）
-      completionDebounceDelay: this.get('performance.completionDebounceDelay', 500),
-      // キャッシュの有効期限（ミリ秒）- より長くしてパフォーマンスを向上
-      cacheTTL: this.get('performance.cacheTTL', 60000),
+      completionDebounceDelay: this.get('performance.completionDebounceDelay', 200),
+      // キャッシュの有効期限（ミリ秒）- より短くしてリアルタイム性を向上
+      cacheTTL: this.get('performance.cacheTTL', 30000),
       // スキーマキャッシュの有効期限（ミリ秒）
-      schemaCacheTTL: this.get('performance.schemaCacheTTL', 120000),
+      schemaCacheTTL: this.get('performance.schemaCacheTTL', 60000),
       // メモリ使用量の監視間隔（ミリ秒、開発時のみ）
       memoryMonitorInterval: this.get('performance.memoryMonitorInterval', 30000),
       // パフォーマンスログの有効化
       enablePerformanceLogs: this.get('performance.enablePerformanceLogs', true),
-      // 最小更新間隔（ミリ秒）- より長くして安定性を向上
-      minUpdateInterval: this.get('performance.minUpdateInterval', 300),
-      // 最大同時処理数 - より少なくして安定性を向上
-      maxConcurrentOperations: this.get('performance.maxConcurrentOperations', 1)
+      // 最小更新間隔（ミリ秒）- より短くしてリアルタイム性を向上
+      minUpdateInterval: this.get('performance.minUpdateInterval', 100),
+      // 最大同時処理数 - より多くしてレスポンス性を向上
+      maxConcurrentOperations: this.get('performance.maxConcurrentOperations', 2)
     };
   }
 
@@ -269,27 +262,27 @@ export class ConfigManager {
         },
         'performance.webviewDebounceDelay': {
           type: 'number',
-          default: 800,
+          default: 300,
           description: 'WebView更新のデバウンス時間（ミリ秒）'
         },
         'performance.diagnosticDebounceDelay': {
           type: 'number',
-          default: 1000,
+          default: 500,
           description: '診断のデバウンス時間（ミリ秒）'
         },
         'performance.completionDebounceDelay': {
           type: 'number',
-          default: 500,
+          default: 200,
           description: '補完のデバウンス時間（ミリ秒）'
         },
         'performance.cacheTTL': {
           type: 'number',
-          default: 60000,
+          default: 30000,
           description: 'キャッシュの有効期限（ミリ秒）'
         },
         'performance.schemaCacheTTL': {
           type: 'number',
-          default: 120000,
+          default: 60000,
           description: 'スキーマキャッシュの有効期限（ミリ秒）'
         },
         'performance.memoryMonitorInterval': {
@@ -304,12 +297,12 @@ export class ConfigManager {
         },
         'performance.minUpdateInterval': {
           type: 'number',
-          default: 300,
+          default: 100,
           description: '最小更新間隔（ミリ秒）'
         },
         'performance.maxConcurrentOperations': {
           type: 'number',
-          default: 1,
+          default: 2,
           description: '最大同時処理数'
         }
       }
