@@ -31,7 +31,7 @@ describe('CommandManager 統合テスト', () => {
     fs.writeFileSync(testFilePath, testFile, 'utf-8');
 
     // CommandManagerをインポートしてテスト用インスタンスを作成
-    const { CommandManager } = require('../../src/services/command-manager');
+    const { CommandManager } = require('../../out/services/command-manager');
     commandManager = new CommandManager();
   });
 

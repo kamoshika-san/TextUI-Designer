@@ -19,8 +19,9 @@
 		// "noUnusedParameters": true,  /* Report errors on unused parameters. */
 	},
 	"exclude": ["node_modules", ".vscode-test", "out/test"],
-	"include": [
-		"src/**/*.ts",
-		"src/test/runTest.ts"
-	]
+        "include": [
+                "src/**/*.ts",
+                "src/**/*.tsx",
+                "src/test/runTest.ts"
+        ]
 }
