@@ -37,7 +37,10 @@
           "items": {
             "type": "string"
           },
-          "default": [".tui.yml", ".tui.yaml"],
+          "default": [
+            ".tui.yml",
+            ".tui.yaml"
+          ],
           "description": "サポートするファイル拡張子"
         },
         "textui-designer.autoPreview.enabled": {
@@ -57,7 +60,11 @@
         },
         "textui-designer.webview.theme": {
           "type": "string",
-          "enum": ["auto", "light", "dark"],
+          "enum": [
+            "auto",
+            "light",
+            "dark"
+          ],
           "default": "auto",
           "description": "WebViewのテーマ"
         },
@@ -68,7 +75,11 @@
         },
         "textui-designer.export.defaultFormat": {
           "type": "string",
-          "enum": ["html", "react", "pug"],
+          "enum": [
+            "html",
+            "react",
+            "pug"
+          ],
           "default": "html",
           "description": "デフォルトのエクスポート形式"
         },
@@ -135,7 +146,10 @@
                 "description": "テンプレートの説明"
               }
             },
-            "required": ["name", "path"]
+            "required": [
+              "name",
+              "path"
+            ]
           },
           "default": [],
           "description": "カスタムテンプレートの設定"
@@ -286,9 +300,18 @@
       }
     ],
     "yaml.schemas": {
-      "./schemas/schema.json": ["*.tui.yml", "*.tui.yaml"],
-      "./schemas/template-schema.json": ["*.template.yml", "*.template.yaml"],
-      "./schemas/theme-schema.json": ["textui-theme.yml", "textui-theme.yaml"]
+      "./schemas/schema.json": [
+        "*.tui.yml",
+        "*.tui.yaml"
+      ],
+      "./schemas/template-schema.json": [
+        "*.template.yml",
+        "*.template.yaml"
+      ],
+      "./schemas/theme-schema.json": [
+        "textui-theme.yml",
+        "textui-theme.yaml"
+      ]
     }
   },
   "scripts": {
@@ -317,12 +340,13 @@
     "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
-    "@vscode/test-electron": "^2.3.8",
     "@vitejs/plugin-react": "^4.2.0",
+    "@vscode/test-electron": "^2.3.8",
     "eslint": "^8.56.0",
     "glob": "^10.3.10",
     "mocha": "^10.2.0",
     "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
     "vite": "^6.3.5",
     "webpack": "^5.89.0",
