@@ -4,6 +4,9 @@
  * WebViewの管理機能に関連する処理をテストします
  */
 
+const Module = require('module');
+let originalRequire = Module.prototype.require;
+
 // VS Code APIのモック
 const mockVscode = {
   window: {
@@ -46,16 +49,6 @@ const mockVscode = {
   }
 };
 
-// vscodeモジュールをモック
-const Module = require('module');
-const originalRequire = Module.prototype.require;
-Module.prototype.require = function(id) {
-  if (id === 'vscode') {
-    return mockVscode;
-  }
-  return originalRequire.apply(this, arguments);
-};
-
 // グローバルにモックを設定
 global.vscode = mockVscode;
 
@@ -70,6 +63,14 @@ describe('WebViewManager 単体テスト', () => {
   let mockContext;
 
   before(async () => {
+    originalRequire = Module.prototype.require;
+    Module.prototype.require = function(id) {
+      if (id === 'vscode') {
+        return mockVscode;
+      }
+      return originalRequire.apply(this, arguments);
+    };
+
     // テスト用の.tui.ymlファイルを作成
     testFile = `page:
   id: webview-test
@@ -104,6 +105,15 @@ describe('WebViewManager 単体テスト', () => {
     if (webviewManager) {
       webviewManager.dispose();
     }
+
+    // PerformanceMonitorのインスタンスをクリーンアップ
+    const { PerformanceMonitor } = require('../../dist/utils/performance-monitor');
+    const performanceMonitor = PerformanceMonitor.getInstance();
+    if (performanceMonitor && typeof performanceMonitor.dispose === 'function') {
+      performanceMonitor.dispose();
+    }
+
+    Module.prototype.require = originalRequire;
   });
 
   describe('lastTuiFile の管理', () => {

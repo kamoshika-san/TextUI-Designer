@@ -100,6 +100,17 @@ describe('ExportService 単体テスト', () => {
     }
   });
 
+  after(() => {
+    // PerformanceMonitorのインスタンスをクリーンアップ
+    const { PerformanceMonitor } = require('../../dist/utils/performance-monitor');
+    const performanceMonitor = PerformanceMonitor.getInstance();
+    if (performanceMonitor && typeof performanceMonitor.dispose === 'function') {
+      performanceMonitor.dispose();
+    }
+    
+    Module.prototype.require = originalRequire;
+  });
+
   describe('ファイル拡張子の検証', () => {
     it('サポートされているファイル拡張子を正しく認識する', () => {
       const supportedExtensions = ['.tui.yml', '.tui.yaml'];
