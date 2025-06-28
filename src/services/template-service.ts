@@ -12,11 +12,17 @@ interface TemplateTypeOption extends vscode.QuickPickItem {
  * テンプレート管理を担当するサービス
  */
 export class TemplateService {
+  private errorHandler: typeof ErrorHandler;
+
+  constructor(errorHandler: typeof ErrorHandler = ErrorHandler) {
+    this.errorHandler = errorHandler;
+  }
+
   /**
    * 新規テンプレート作成処理
    */
   async createTemplate(): Promise<void> {
-    const result = await ErrorHandler.executeSafely(async () => {
+    const result = await this.errorHandler.executeSafely(async () => {
       const templateType = await this.selectTemplateType();
       if (!templateType) return;
 
@@ -26,7 +32,7 @@ export class TemplateService {
       const templateContent = this.generateTemplateContent(templateType.value);
       await this.createTemplateFile(uri, templateContent);
 
-      ErrorHandler.showInfo('テンプレートファイルを作成しました。');
+      this.errorHandler.showInfo('テンプレートファイルを作成しました。');
     }, 'テンプレート作成に失敗しました');
 
     if (!result) {
@@ -39,10 +45,10 @@ export class TemplateService {
    * テンプレート挿入処理
    */
   async insertTemplate(): Promise<void> {
-    const result = await ErrorHandler.executeSafely(async () => {
+    const result = await this.errorHandler.executeSafely(async () => {
       const activeEditor = vscode.window.activeTextEditor;
       if (!activeEditor) {
-        ErrorHandler.showError('アクティブなエディタがありません。');
+        this.errorHandler.showError('アクティブなエディタがありません。');
         return;
       }
 
@@ -52,7 +58,7 @@ export class TemplateService {
       const templateContent = await this.loadTemplateContent(templateUri);
       await this.insertTemplateContent(activeEditor, templateContent);
 
-      ErrorHandler.showInfo('テンプレートを挿入しました。');
+      this.errorHandler.showInfo('テンプレートを挿入しました。');
     }, 'テンプレート挿入に失敗しました');
 
     if (!result) {
@@ -205,7 +211,14 @@ export class TemplateService {
    * 空テンプレート
    */
   private getEmptyTemplate(): string {
-    return `# 空のテンプレート
-# ここにコンポーネントを追加してください`;
+    return `- Container:
+    layout: vertical
+    components:
+      - Text:
+          variant: h1
+          value: "タイトル"
+      - Text:
+          variant: p
+          value: "コンテンツをここに追加してください"`;
   }
 } 
