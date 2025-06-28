@@ -46,6 +46,16 @@ const mockVscode = {
   }
 };
 
+// vscodeモジュールをモック
+const Module = require('module');
+const originalRequire = Module.prototype.require;
+Module.prototype.require = function(id) {
+  if (id === 'vscode') {
+    return mockVscode;
+  }
+  return originalRequire.apply(this, arguments);
+};
+
 // グローバルにモックを設定
 global.vscode = mockVscode;
 
@@ -80,7 +90,7 @@ describe('WebViewManager 単体テスト', () => {
     };
 
     // WebViewManagerをインポートしてテスト用インスタンスを作成
-    const { WebViewManager } = require('../../out/services/webview-manager');
+    const { WebViewManager } = require('../../dist/services/webview-manager');
     webviewManager = new WebViewManager(mockContext);
   });
 

@@ -38,6 +38,16 @@ const mockVscode = {
   }
 };
 
+// vscodeモジュールをモック
+const Module = require('module');
+const originalRequire = Module.prototype.require;
+Module.prototype.require = function(id) {
+  if (id === 'vscode') {
+    return mockVscode;
+  }
+  return originalRequire.apply(this, arguments);
+};
+
 // グローバルにモックを設定
 global.vscode = mockVscode;
 
@@ -79,7 +89,7 @@ describe('ExportService 単体テスト', () => {
     };
 
     // ExportServiceをインポートしてテスト用インスタンスを作成
-    const { ExportService } = require('../../out/services/export-service');
+    const { ExportService } = require('../../dist/services/export-service');
     exportService = new ExportService(mockExportManager);
   });
 

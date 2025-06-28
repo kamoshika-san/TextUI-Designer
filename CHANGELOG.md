@@ -4,7 +4,14 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [0.0.10] - 2024-12-20
+## [0.0.11]
+### メモリリーク問題対応
+- 診断マネージャーの改善
+- 拡張機能のクリーンアップ改善
+- メモリ監視の強化
+- タイマー管理の改善
+
+## [0.0.10]
 
 ### 🔄 ライブプレビュー根本改善
 - **ファイル切り替え即座反映**: tui.ymlタブを切り替えた時にライブプレビューが即座に新しいファイルの内容に切り替わるように修正
@@ -31,7 +38,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - **更新タイミング可視化**: 各更新処理の実行タイミングを明確に記録
 - **キャッシュ状態監視**: キャッシュのクリアと使用状況を詳細にログ出力
 
-## [0.0.9] - 2024-12-20
+## [0.0.9]
 
 ### 🔄 ライブプレビュー改善
 - **ファイル切り替え対応**: tui.ymlファイルを切り替えた時にライブプレビューが正しく更新されるように修正
@@ -51,7 +58,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - **ファイル切り替えログ**: アクティブエディタの変更とファイル切り替えの詳細ログ
 - **キャッシュ状態の可視化**: キャッシュのクリアと使用状況をログで確認可能
 
-## [0.0.8] - 2024-12-19
+## [0.0.8]
 
 ### 🚀 パフォーマンス改善
 - **大量編集時の安定性向上**: コピー＆ペーストによる大量編集時のVSCodeフリーズ問題を解決
@@ -89,7 +96,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - **パフォーマンス最適化ガイド**: 大量編集時の推奨設定を追加
 - **トラブルシューティング**: メモリ不足時の対処法を記載
 
-## [0.0.7] - 2024-12-18
+## [0.0.7]
 
 ### 🎨 新機能
 - **テーマシステム**: カスタムテーマのサポートを追加
@@ -105,7 +112,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - **メモリリーク**: WebViewパネル閉じ時のリソースクリーンアップ
 - **テーマ適用**: 初期テーマ変数の適用タイミング
 
-## [0.0.6] - 2024-12-17
+## [0.0.6]
 
 ### 🚀 新機能
 - **エクスポート機能**: HTML、React、Pug形式でのエクスポート
@@ -121,7 +128,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - **スキーマ検証**: YAML構文エラーの正確な検出
 - **WebView更新**: プレビューの同期問題
 
-## [0.0.5] - 2024-12-16
+## [0.0.5]
 
 ### 🎯 新機能
 - **自動プレビュー**: ファイル保存時の自動プレビュー更新
@@ -137,7 +144,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - **メモリ管理**: リソースの適切な解放
 - **設定読み込み**: 設定値の正確な反映
 
-## [0.0.4] - 2024-12-15
+## [0.0.4]
 
 ### 🎨 UI改善
 - **モダンなデザイン**: Tailwind CSSを使用した美しいUI
@@ -153,7 +160,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - **レンダリング**: コンポーネントの表示問題
 - **スタイル適用**: CSS変数の適用タイミング
 
-## [0.0.3] - 2024-12-14
+## [0.0.3]
 
 ### 🚀 新機能
 - **WebViewプレビュー**: リアルタイムプレビュー機能
@@ -169,7 +176,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - **スキーマ読み込み**: スキーマファイルの読み込みエラー
 - **WebView通信**: メッセージ送受信の問題
 
-## [0.0.2] - 2024-12-13
+## [0.0.2]
 
 ### 🎯 新機能
 - **基本コンポーネント**: Text、Button、Input、Formコンポーネント
@@ -185,7 +192,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - **初期化**: 拡張機能の起動問題
 - **ファイル処理**: YAMLファイルの読み込みエラー
 
-## [0.0.1] - 2024-12-12
+## [0.0.1]
 
 ### 🎉 初回リリース
 - **TextUI Designer**: マークダウンに親和性の高いYAML/JSON DSLでUIを設計
