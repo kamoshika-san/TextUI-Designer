@@ -3,6 +3,18 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 /**
+ * HTMLエスケープ関数
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
  * WebViewのHTMLコンテンツを生成
  */
 export function getWebviewContent(context: vscode.ExtensionContext, panel?: vscode.WebviewPanel): string {
@@ -125,10 +137,11 @@ export function getWebviewContent(context: vscode.ExtensionContext, panel?: vsco
  * エラーメッセージ用のHTMLを生成
  */
 export function getErrorHtml(message: string): string {
+  const safeMessage = escapeHtml(message);
   return `
     <div style="padding: 2rem; text-align: center;">
       <h2 style="color: #ef4444;">エラーが発生しました</h2>
-      <p style="color: #fca5a5; margin: 1rem 0;">${message}</p>
+      <p style="color: #fca5a5; margin: 1rem 0;">${safeMessage}</p>
       <p style="color: #9ca3af; font-size: 0.875rem;">
         YAMLファイルの構文を確認してください。
       </p>

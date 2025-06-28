@@ -83,22 +83,21 @@ describe('WebViewUtils', () => {
     it('特殊文字が正しくエスケープされる', () => {
       const dangerousMessage = '<script>alert("XSS")</script>';
       const errorHtml = getErrorHtml(dangerousMessage);
-      
-      // スクリプトタグがエスケープされている
-      assert.ok(errorHtml.includes(dangerousMessage));
-      // HTMLとして解釈されないように確認
+      // エスケープ後の文字列が含まれている
+      assert.ok(errorHtml.includes('&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;'));
+      // <script>タグがそのまま含まれていない
       assert.ok(!errorHtml.includes('<script>'));
       assert.ok(!errorHtml.includes('</script>'));
     });
 
-    it('HTMLタグが正しく処理される', () => {
+    it('HTMLタグが正しくエスケープされる', () => {
       const htmlMessage = '<div>Test</div><span>Content</span>';
       const errorHtml = getErrorHtml(htmlMessage);
-      
-      // メッセージが含まれている
-      assert.ok(errorHtml.includes(htmlMessage));
-      // エラーメッセージの構造が保持されている
-      assert.ok(errorHtml.includes('エラーが発生しました'));
+      // エスケープ後の文字列が含まれている
+      assert.ok(errorHtml.includes('&lt;div&gt;Test&lt;/div&gt;&lt;span&gt;Content&lt;/span&gt;'));
+      // タグがそのまま含まれていない
+      assert.ok(!errorHtml.includes('<div>'));
+      assert.ok(!errorHtml.includes('<span>'));
     });
   });
 
