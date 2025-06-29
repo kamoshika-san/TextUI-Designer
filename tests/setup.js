@@ -164,6 +164,21 @@ global.cleanupMocks = () => {
       console.warn('PerformanceMonitor factory setup failed:', error.message);
     }
     
+    // DiagnosticManagerファクトリをグローバルに設定
+    try {
+      const diagnosticFactoryPath = path.resolve(__dirname, 'mocks', 'diagnostic-manager-factory.js');
+      delete require.cache[diagnosticFactoryPath];
+      const diagnosticFactoryModule = originalRequire.call(this, diagnosticFactoryPath);
+      
+      if (!diagnosticFactoryModule || !diagnosticFactoryModule.DiagnosticManagerFactory) {
+        throw new Error('DiagnosticManagerFactory not found in module exports');
+      }
+      
+      global.DiagnosticManagerFactory = diagnosticFactoryModule.DiagnosticManagerFactory;
+    } catch (error) {
+      console.warn('DiagnosticManager factory setup failed:', error.message);
+    }
+    
   } finally {
     // Module requireフックを復元
     Module.prototype.require = tempRequire;
