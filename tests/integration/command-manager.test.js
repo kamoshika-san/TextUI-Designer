@@ -8,6 +8,21 @@ const assert = require('assert');
 const path = require('path');
 const fs = require('fs');
 
+// VSCodeモックを設定
+const mockVscode = require('../mocks/vscode-mock');
+global.vscode = mockVscode;
+
+// Module requireをフックしてVSCodeモジュールをモック化
+const Module = require('module');
+const originalRequire = Module.prototype.require;
+
+Module.prototype.require = function(id) {
+  if (id === 'vscode') {
+    return mockVscode;
+  }
+  return originalRequire.apply(this, arguments);
+};
+
 describe('CommandManager 統合テスト', () => {
   let commandManager;
   let testFile;
@@ -30,9 +45,49 @@ describe('CommandManager 統合テスト', () => {
     testFilePath = path.join(__dirname, 'command-test.tui.yml');
     fs.writeFileSync(testFilePath, testFile, 'utf-8');
 
+    // モックコンテキストを作成
+    const mockContext = {
+      subscriptions: [],
+      extensionUri: mockVscode.Uri.file(__dirname),
+      extensionPath: __dirname
+    };
+
+    // モックサービスを作成
+    const mockWebViewManager = {
+      openPreview: () => Promise.resolve(),
+      openDevTools: () => Promise.resolve()
+    };
+
+    const mockExportService = {
+      executeExport: (filePath) => Promise.resolve()
+    };
+
+    const mockTemplateService = {
+      createTemplate: () => Promise.resolve(),
+      insertTemplate: () => Promise.resolve()
+    };
+
+    const mockSettingsService = {
+      openSettings: () => Promise.resolve(),
+      resetSettings: () => Promise.resolve(),
+      showAutoPreviewSetting: () => Promise.resolve()
+    };
+
+    const mockSchemaManager = {
+      reinitialize: () => Promise.resolve(),
+      debugSchemas: () => Promise.resolve()
+    };
+
     // CommandManagerをインポートしてテスト用インスタンスを作成
-    const { CommandManager } = require('../../src/services/command-manager');
-    commandManager = new CommandManager();
+    const { CommandManager } = require('../../out/services/command-manager');
+    commandManager = new CommandManager(
+      mockContext,
+      mockWebViewManager,
+      mockExportService,
+      mockTemplateService,
+      mockSettingsService,
+      mockSchemaManager
+    );
   });
 
   after(async () => {
@@ -42,9 +97,12 @@ describe('CommandManager 統合テスト', () => {
     }
 
     // CommandManagerをクリーンアップ
-    if (commandManager) {
+    if (commandManager && typeof commandManager.dispose === 'function') {
       commandManager.dispose();
     }
+    
+    // Module requireを復元
+    Module.prototype.require = originalRequire;
   });
 
   describe('エクスポートコマンドの処理', () => {
@@ -55,7 +113,7 @@ describe('CommandManager 統合テスト', () => {
 
       // ファイルパス付きエクスポートコマンドを実行
       try {
-        await commandManager.executeExportCommand(testFilePath);
+        await vscode.commands.executeCommand('textui-designer.export', testFilePath);
         assert.ok(true, 'ファイルパス付きエクスポートコマンドが正常に実行されました');
       } catch (error) {
         console.error('ファイルパス付きエクスポートエラー:', error);
@@ -70,7 +128,7 @@ describe('CommandManager 統合テスト', () => {
 
       // パラメータなしエクスポートコマンドを実行
       try {
-        await commandManager.executeExportCommand();
+        await vscode.commands.executeCommand('textui-designer.export');
         assert.ok(true, 'パラメータなしエクスポートコマンドが正常に実行されました');
       } catch (error) {
         console.error('パラメータなしエクスポートエラー:', error);
@@ -91,7 +149,7 @@ describe('CommandManager 統合テスト', () => {
 
       // エクスポートコマンドを実行
       try {
-        await commandManager.executeExportCommand();
+        await vscode.commands.executeCommand('textui-designer.export');
         assert.ok(true, 'プレビュー画面後のエクスポートコマンドが正常に実行されました');
       } catch (error) {
         console.error('プレビュー画面後のエクスポートエラー:', error);
@@ -123,7 +181,7 @@ describe('CommandManager 統合テスト', () => {
 
       // エクスポートコマンドを実行
       try {
-        await commandManager.executeExportCommand();
+        await vscode.commands.executeCommand('textui-designer.export');
         assert.ok(true, 'WebViewアクティブ状態でのエクスポートコマンドが正常に実行されました');
       } catch (error) {
         console.error('WebViewアクティブ状態でのエクスポートエラー:', error);
@@ -162,7 +220,7 @@ describe('CommandManager 統合テスト', () => {
 
       // エクスポートコマンドを実行
       try {
-        await commandManager.executeExportCommand();
+        await vscode.commands.executeCommand('textui-designer.export');
         assert.ok(true, '連続コマンド実行が正常に動作しました');
       } catch (error) {
         console.error('連続コマンド実行エラー:', error);
@@ -176,7 +234,7 @@ describe('CommandManager 統合テスト', () => {
       const nonExistentPath = path.join(__dirname, 'non-existent-file.tui.yml');
 
       try {
-        await commandManager.executeExportCommand(nonExistentPath);
+        await vscode.commands.executeCommand('textui-designer.export', nonExistentPath);
         assert.fail('存在しないファイルパスでエラーが発生すべきでした');
       } catch (error) {
         // エラーが発生することを確認
@@ -195,7 +253,7 @@ describe('CommandManager 統合テスト', () => {
         await vscode.window.showTextDocument(document);
 
         // エクスポートコマンドを実行（エラーが発生することを期待）
-        await commandManager.executeExportCommand();
+        await vscode.commands.executeCommand('textui-designer.export');
         assert.fail('非.tui.ymlファイルでエラーが発生すべきでした');
       } catch (error) {
         // エラーが発生することを確認
@@ -210,8 +268,8 @@ describe('CommandManager 統合テスト', () => {
 
     it('無効なパラメータでエクスポートコマンドを実行した場合、適切にエラーが処理される', async () => {
       try {
-        // 無効なパラメータを渡す
-        await commandManager.executeExportCommand(null);
+        // 無効なパラメータを渡す（空文字列）
+        await vscode.commands.executeCommand('textui-designer.export', '');
         // エラーが発生しない場合でも、適切に処理されることを確認
         assert.ok(true, '無効なパラメータが適切に処理されました');
       } catch (error) {
@@ -230,7 +288,7 @@ describe('CommandManager 統合テスト', () => {
       // 複数回エクスポートコマンドを実行
       for (let i = 0; i < 3; i++) {
         try {
-          await commandManager.executeExportCommand();
+          await vscode.commands.executeCommand('textui-designer.export');
           console.log(`エクスポートコマンド ${i + 1} 回目が正常に実行されました`);
         } catch (error) {
           console.error(`エクスポートコマンド ${i + 1} 回目でエラー:`, error);
@@ -259,7 +317,7 @@ describe('CommandManager 統合テスト', () => {
           await new Promise(resolve => setTimeout(resolve, 1000));
 
           // エクスポートコマンドを実行
-          await commandManager.executeExportCommand();
+          await vscode.commands.executeCommand('textui-designer.export');
           
           console.log(`連続実行 ${i + 1} 回目が正常に完了しました`);
         } catch (error) {

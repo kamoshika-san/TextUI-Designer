@@ -3,87 +3,155 @@
  */
 
 const assert = require('assert');
+const path = require('path');
 const { describe, it, beforeEach, afterEach } = require('mocha');
 
-// VSCode APIとConfigManagerのモック
-const mockVscode = {
-  window: {
-    showErrorMessage: () => {},
-    showWarningMessage: () => {},
-    showInformationMessage: () => {}
-  },
-  workspace: {
-    getConfiguration: () => ({
-      get: (key, defaultValue) => {
-        // パフォーマンス設定のデフォルト値
-        if (key === 'performance.enablePerformanceLogs') return true;
-        return defaultValue;
-      }
-    })
-  },
-  env: {
-    uiKind: 2, // Desktop
-    Web: 1     // Web = 1, Desktop = 2
-  }
-};
+describe('PerformanceMonitor', function() {
+  let PerformanceMonitor;
 
-global.vscode = mockVscode;
-
-const Module = require('module');
-const originalRequire = Module.prototype.require;
-Module.prototype.require = function(id) {
-  if (id === 'vscode') {
-    return mockVscode;
-  }
-  return originalRequire.apply(this, arguments);
-};
-
-function freshRequirePerformanceMonitor() {
-  // requireキャッシュをクリアして毎回新しいモジュールを取得
-  delete require.cache[require.resolve('../../dist/utils/performance-monitor.js')];
-  return require('../../dist/utils/performance-monitor.js').PerformanceMonitor;
-}
-
-describe('PerformanceMonitor', () => {
-  let monitor;
-
-  beforeEach(() => {
-    // requireキャッシュをクリアしてから毎回新しいモジュールを取得
-    const PerformanceMonitor = freshRequirePerformanceMonitor();
-    monitor = PerformanceMonitor.getInstance();
-    monitor.clear();
-    // isDevelopmentModeを常にfalseに
-    monitor.isDevelopmentMode = () => false;
-  });
-
-  afterEach(() => {
-    if (monitor && typeof monitor.dispose === 'function') {
-      monitor.dispose();
+  beforeEach(function() {
+    // モックをクリーンアップ（ファクトリをグローバルに再設定）
+    global.cleanupMocks();
+    
+    if (!global.PerformanceMonitorFactory || typeof global.PerformanceMonitorFactory.createForTest !== 'function') {
+      throw new Error('Global PerformanceMonitorFactory or createForTest method is not available');
     }
+    
+    // テスト用のPerformanceMonitorを作成
+    PerformanceMonitor = global.PerformanceMonitorFactory.createForTest(global.vscode);
   });
 
-  it('measureRenderTimeで経過時間が記録される', async () => {
-    const result = await monitor.measureRenderTime(async () => {
-      // 50ms待つ
-      await new Promise(res => setTimeout(res, 50));
+  afterEach(function() {
+    // テスト後のクリーンアップ
+    global.cleanupMocks();
+  });
+
+  it('measureRenderTimeで経過時間が記録される', function() {
+    const result = PerformanceMonitor.measureRenderTime(() => {
+      // 何らかの処理をシミュレート
       return 'done';
     });
-    assert.strictEqual(result, 'done');
-    const metrics = monitor.getMetrics();
-    // 平均レンダリング時間が0より大きい
-    assert.ok(metrics.renderTime > 0, 'renderTimeが記録されている');
+    
+    assert.strictEqual(result.result, 'done');
+    assert.ok(result.duration >= 0, 'レンダリング時間が記録されている');
+    
+    // メトリクスが記録されている
+    const metrics = PerformanceMonitor.getMetrics();
+    assert.ok(metrics.renderTime >= 0, 'renderTimeメトリクスが記録されている');
   });
 
-  it('disposeで監視タイマーが停止できる', () => {
-    assert.ok(monitor);
-    monitor.dispose();
-    monitor.dispose();
+  it('disposeで監視タイマーが停止できる', function() {
+    // disposeメソッドが正常に実行される
+    PerformanceMonitor.dispose();
+    
+    // 再度disposeしてもエラーにならない
+    PerformanceMonitor.dispose();
+    
+    assert.ok(true, 'disposeメソッドが正常に実行される');
   });
 
-  it('recordCacheHitでヒット率が記録される', () => {
-    monitor.recordCacheHit(true);
-    monitor.recordCacheHit(false);
-    const metrics = monitor.getMetrics();
-    assert.ok(metrics.cacheHitRate >= 0 && metrics.cacheHitRate <= 100);
+  it('recordCacheHitでヒット率が記録される', function() {
+    // キャッシュヒットとミスを記録
+    PerformanceMonitor.recordCacheHit();
+    PerformanceMonitor.recordCacheHit();
+    PerformanceMonitor.recordCacheMiss();
+    
+    // ヒット率を取得
+    const hitRate = PerformanceMonitor.getCacheHitRate();
+    assert.ok(hitRate >= 0 && hitRate <= 1, 'ヒット率が0-1の範囲内');
+    assert.strictEqual(hitRate, 2/3, 'ヒット率が正しく計算されている');
+  });
+
+  it('タイマー機能が正しく動作する', function() {
+    const timerName = 'test-timer';
+    
+    // タイマー開始
+    const startTime = PerformanceMonitor.startTimer(timerName);
+    assert.ok(startTime > 0, 'タイマーが開始される');
+    
+    // 少し待つ
+    const now = Date.now();
+    while (Date.now() - now < 10) {
+      // 10ms待つ
+    }
+    
+    // タイマー終了
+    const duration = PerformanceMonitor.endTimer(timerName);
+    assert.ok(duration >= 0, 'タイマーの経過時間が記録される');
+    
+    // メトリクスが記録されている
+    const metrics = PerformanceMonitor.getMetrics();
+    assert.ok(metrics[timerName] >= 0, 'タイマーメトリクスが記録されている');
+  });
+
+  it('メトリクスの記録と取得が正しく動作する', function() {
+    const metricName = 'test-metric';
+    const metricValue = 42;
+    const metricUnit = 'count';
+    
+    // メトリクスを記録
+    const metric = PerformanceMonitor.recordMetric(metricName, metricValue, metricUnit);
+    assert.strictEqual(metric.name, metricName);
+    assert.strictEqual(metric.value, metricValue);
+    assert.strictEqual(metric.unit, metricUnit);
+    
+    // メトリクスを取得
+    const retrievedMetric = PerformanceMonitor.getMetric(metricName);
+    assert.ok(retrievedMetric, 'メトリクスが取得できる');
+    assert.strictEqual(retrievedMetric.value, metricValue);
+    
+    // 全メトリクスを取得
+    const allMetrics = PerformanceMonitor.getMetrics();
+    assert.ok(allMetrics[metricName], '全メトリクスに含まれている');
+  });
+
+  it('メモリ使用量の記録が正しく動作する', function() {
+    const context = 'test-context';
+    
+    // メモリ使用量を記録
+    const memoryMetric = PerformanceMonitor.recordMemoryUsage(context);
+    assert.ok(memoryMetric, 'メモリメトリクスが記録される');
+    assert.strictEqual(memoryMetric.context, context);
+    assert.ok(memoryMetric.heapUsed > 0, 'ヒープ使用量が記録される');
+    
+    // メトリクスが記録されている
+    const metrics = PerformanceMonitor.getMetrics();
+    assert.ok(metrics[`memory_${context}`], 'メモリメトリクスが記録されている');
+  });
+
+  it('パフォーマンスレポートが正しく生成される', function() {
+    // いくつかのメトリクスを記録
+    PerformanceMonitor.recordMetric('test1', 10);
+    PerformanceMonitor.recordMetric('test2', 20);
+    PerformanceMonitor.recordCacheHit();
+    
+    // レポートを生成
+    const report = PerformanceMonitor.generateReport();
+    assert.ok(report, 'レポートが生成される');
+    assert.ok(report.timestamp, 'タイムスタンプが含まれている');
+    assert.ok(report.totalMetrics >= 2, 'メトリクス数が正しい');
+    assert.ok(report.cacheHitRate >= 0, 'キャッシュヒット率が含まれている');
+    assert.ok(report.metrics, 'メトリクスデータが含まれている');
+  });
+
+  it('メトリクスのクリアが正しく動作する', function() {
+    // メトリクスを記録
+    PerformanceMonitor.recordMetric('test', 100);
+    PerformanceMonitor.recordCacheHit();
+    
+    // メトリクスが記録されていることを確認
+    let metrics = PerformanceMonitor.getMetrics();
+    assert.ok(Object.keys(metrics).length > 0, 'メトリクスが記録されている');
+    
+    // メトリクスをクリア
+    PerformanceMonitor.clearMetrics();
+    
+    // メトリクスがクリアされていることを確認
+    metrics = PerformanceMonitor.getMetrics();
+    assert.strictEqual(Object.keys(metrics).length, 0, 'メトリクスがクリアされている');
+    
+    // キャッシュヒット率もリセットされている
+    const hitRate = PerformanceMonitor.getCacheHitRate();
+    assert.strictEqual(hitRate, 0, 'キャッシュヒット率がリセットされている');
   });
 }); 

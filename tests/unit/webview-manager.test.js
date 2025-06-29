@@ -91,7 +91,7 @@ describe('WebViewManager 単体テスト', () => {
     };
 
     // WebViewManagerをインポートしてテスト用インスタンスを作成
-    const { WebViewManager } = require('../../dist/services/webview-manager');
+    const { WebViewManager } = require('../../out/services/webview-manager');
     webviewManager = new WebViewManager(mockContext);
   });
 
@@ -107,7 +107,7 @@ describe('WebViewManager 単体テスト', () => {
     }
 
     // PerformanceMonitorのインスタンスをクリーンアップ
-    const { PerformanceMonitor } = require('../../dist/utils/performance-monitor');
+    const { PerformanceMonitor } = require('../../out/utils/performance-monitor');
     const performanceMonitor = PerformanceMonitor.getInstance();
     if (performanceMonitor && typeof performanceMonitor.dispose === 'function') {
       performanceMonitor.dispose();

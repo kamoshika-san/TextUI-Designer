@@ -43,7 +43,7 @@ Module.prototype.require = function(id) {
   return originalRequire.apply(this, arguments);
 };
 
-const ThemeManager = require('../../dist/services/theme-manager.js').ThemeManager;
+const ThemeManager = require('../../out/services/theme-manager.js').ThemeManager;
 
 describe('ThemeManager', () => {
   let themeManager;

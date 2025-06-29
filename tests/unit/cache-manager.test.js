@@ -30,7 +30,7 @@ Module.prototype.require = function(id) {
 
 // テスト対象のモジュールを読み込み
 const path = require('path');
-const CacheManager = require('../../dist/utils/cache-manager.js').CacheManager;
+const CacheManager = require('../../out/utils/cache-manager.js').CacheManager;
 
 describe('CacheManager', () => {
   let cacheManager;

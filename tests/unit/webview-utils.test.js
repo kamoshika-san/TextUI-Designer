@@ -35,7 +35,7 @@ Module.prototype.require = function(id) {
   return originalRequire.apply(this, arguments);
 };
 
-const { getWebviewContent, getErrorHtml } = require('../../dist/utils/webview-utils.js');
+const { getWebviewContent, getErrorHtml } = require('../../out/utils/webview-utils.js');
 
 describe('WebViewUtils', () => {
   describe('postMessage用データの整形', () => {

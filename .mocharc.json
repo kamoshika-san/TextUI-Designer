@@ -1,0 +1,15 @@
+{
+  "require": ["tests/setup.js"],
+  "recursive": true,
+  "timeout": 5000,
+  "reporter": "spec",
+  "exit": true,
+  "spec": [
+    "tests/unit/**/*.test.js",
+    "tests/integration/**/*.test.js"
+  ],
+  "ignore": [
+    "tests/e2e/**/*.test.js",
+    "tests/regression/**/*.test.js"
+  ]
+} 

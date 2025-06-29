@@ -354,7 +354,7 @@ function runRefactoringTests() {
   
   // PerformanceMonitorのインスタンスをクリーンアップ
   try {
-    const { PerformanceMonitor } = require('../../dist/utils/performance-monitor');
+    const { PerformanceMonitor } = require('../../out/utils/performance-monitor');
     const performanceMonitor = PerformanceMonitor.getInstance();
     if (performanceMonitor && typeof performanceMonitor.dispose === 'function') {
       performanceMonitor.dispose();

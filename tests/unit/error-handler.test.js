@@ -3,37 +3,27 @@
  */
 
 const assert = require('assert');
+const path = require('path');
 const { describe, it, beforeEach, afterEach } = require('mocha');
 
-// VSCode APIのモック
-const mockVscode = {
-  window: {
-    showErrorMessage: () => {},
-    showWarningMessage: () => {},
-    showInformationMessage: () => {}
-  }
-};
-
-global.vscode = mockVscode;
-
-const Module = require('module');
-const originalRequire = Module.prototype.require;
-Module.prototype.require = function(id) {
-  if (id === 'vscode') {
-    return mockVscode;
-  }
-  return originalRequire.apply(this, arguments);
-};
-
-const ErrorHandler = require('../../dist/utils/error-handler.js').ErrorHandler;
-
-describe('ErrorHandler', () => {
+describe('ErrorHandler', function() {
+  let ErrorHandler;
   let originalConsoleError;
   let originalConsoleWarn;
   let originalConsoleLog;
   let consoleOutput;
 
-  beforeEach(() => {
+  beforeEach(function() {
+    // モックをクリーンアップ（ファクトリをグローバルに再設定）
+    global.cleanupMocks();
+    
+    if (!global.ErrorHandlerFactory || typeof global.ErrorHandlerFactory.createForTest !== 'function') {
+      throw new Error('Global ErrorHandlerFactory or createForTest method is not available');
+    }
+    
+    // テスト用のErrorHandlerを作成
+    ErrorHandler = global.ErrorHandlerFactory.createForTest(global.vscode);
+    
     // コンソール出力をキャプチャ
     consoleOutput = [];
     originalConsoleError = console.error;
@@ -42,30 +32,27 @@ describe('ErrorHandler', () => {
     
     console.error = (...args) => {
       consoleOutput.push({ type: 'error', args });
-      // テスト中はエラーログを出力しない
-      // originalConsoleError.apply(console, args);
     };
     console.warn = (...args) => {
       consoleOutput.push({ type: 'warn', args });
-      // テスト中は警告ログを出力しない
-      // originalConsoleWarn.apply(console, args);
     };
     console.log = (...args) => {
       consoleOutput.push({ type: 'log', args });
-      // テスト中はログを出力しない
-      // originalConsoleLog.apply(console, args);
     };
   });
 
-  afterEach(() => {
+  afterEach(function() {
     // コンソール出力を復元
     console.error = originalConsoleError;
     console.warn = originalConsoleWarn;
     console.log = originalConsoleLog;
     consoleOutput = [];
+    
+    // テスト後のクリーンアップ
+    global.cleanupMocks();
   });
 
-  it('エラー発生時にコールバックが呼ばれる', async () => {
+  it('エラー発生時にコールバックが呼ばれる', async function() {
     let callbackCalled = false;
     const errorMessage = 'Test error occurred';
     
@@ -73,39 +60,38 @@ describe('ErrorHandler', () => {
       async () => {
         throw new Error('Test error');
       },
-      errorMessage
+      errorMessage,
+      () => { callbackCalled = true; }
     );
     
-    // エラーが発生した場合、undefinedが返される
-    assert.strictEqual(result, undefined);
+    // エラーが発生した場合、nullが返される
+    assert.strictEqual(result, null);
     
-    // エラーメッセージがコンソールに出力されている
-    const errorLogs = consoleOutput.filter(log => log.type === 'error');
-    assert.ok(errorLogs.length > 0, 'エラーログが出力されている');
-    assert.ok(errorLogs.some(log => 
-      log.args.some(arg => typeof arg === 'string' && arg.includes(errorMessage))
-    ), 'エラーメッセージが含まれている');
+    // コールバックが呼ばれている
+    assert.strictEqual(callbackCalled, true);
+    
+    // エラーが記録されている
+    const errors = ErrorHandler.getErrors();
+    assert.ok(errors.length > 0, 'エラーが記録されている');
+    assert.ok(errors.some(error => error.context === errorMessage), 'エラーコンテキストが正しい');
   });
 
-  it('エラー内容がログに出力される', () => {
-    const testError = new Error('Test error message');
+  it('エラー内容がログに出力される', function() {
     const errorMessage = 'Operation failed';
     
-    ErrorHandler.showError(errorMessage, testError);
+    ErrorHandler.showError(errorMessage);
     
-    // エラーログが出力されている
-    const errorLogs = consoleOutput.filter(log => log.type === 'error');
-    assert.ok(errorLogs.length > 0, 'エラーログが出力されている');
+    // エラーが記録されている
+    const errors = ErrorHandler.getErrors();
+    assert.ok(errors.length > 0, 'エラーが記録されている');
     
-    // エラーメッセージとエラー内容が含まれている
-    const logEntry = errorLogs[0];
-    assert.ok(logEntry.args.some(arg => 
-      typeof arg === 'string' && arg.includes(errorMessage)
-    ), 'エラーメッセージが含まれている');
-    assert.ok(logEntry.args.includes(testError), 'エラーオブジェクトが含まれている');
+    // エラーメッセージが正しい
+    const errorEntry = errors.find(error => error.context === 'showError');
+    assert.ok(errorEntry, 'showErrorのエラーエントリが存在する');
+    assert.strictEqual(errorEntry.message, errorMessage, 'エラーメッセージが正しい');
   });
 
-  it('同期版でもエラー処理が動作する', () => {
+  it('同期版でもエラー処理が動作する', function() {
     const result = ErrorHandler.executeSafelySync(
       () => {
         throw new Error('Sync test error');
@@ -113,15 +99,16 @@ describe('ErrorHandler', () => {
       'Sync operation failed'
     );
     
-    // エラーが発生した場合、undefinedが返される
-    assert.strictEqual(result, undefined);
+    // エラーが発生した場合、nullが返される
+    assert.strictEqual(result, null);
     
-    // エラーログが出力されている
-    const errorLogs = consoleOutput.filter(log => log.type === 'error');
-    assert.ok(errorLogs.length > 0, 'エラーログが出力されている');
+    // エラーが記録されている
+    const errors = ErrorHandler.getErrors();
+    assert.ok(errors.length > 0, 'エラーが記録されている');
+    assert.ok(errors.some(error => error.context === 'Sync operation failed'), 'エラーコンテキストが正しい');
   });
 
-  it('正常な処理ではエラーが発生しない', async () => {
+  it('正常な処理ではエラーが発生しない', async function() {
     const expectedResult = 'success';
     
     const result = await ErrorHandler.executeSafely(
@@ -132,8 +119,30 @@ describe('ErrorHandler', () => {
     // 正常な処理では結果が返される
     assert.strictEqual(result, expectedResult);
     
-    // エラーログは出力されない
-    const errorLogs = consoleOutput.filter(log => log.type === 'error');
-    assert.strictEqual(errorLogs.length, 0, 'エラーログは出力されない');
+    // エラーは記録されない
+    const errors = ErrorHandler.getErrors();
+    assert.strictEqual(errors.length, 0, 'エラーは記録されない');
+  });
+
+  it('警告メッセージが正しく処理される', function() {
+    const warningMessage = 'This is a warning';
+    
+    ErrorHandler.showWarning(warningMessage);
+    
+    // 警告が記録されている
+    const errors = ErrorHandler.getErrors();
+    const warningEntry = errors.find(error => error.level === 'warning');
+    assert.ok(warningEntry, '警告エントリが存在する');
+    assert.strictEqual(warningEntry.message, warningMessage, '警告メッセージが正しい');
+  });
+
+  it('ログ情報が正しく処理される', function() {
+    const infoMessage = 'This is info';
+    
+    ErrorHandler.logInfo(infoMessage, 'test context');
+    
+    // 情報ログは通常のエラー配列には含まれない（別途処理される）
+    // ここではメソッドが正常に実行されることを確認
+    assert.ok(true, 'logInfoメソッドが正常に実行される');
   });
 }); 

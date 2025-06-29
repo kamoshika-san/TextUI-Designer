@@ -5,7 +5,7 @@
 const assert = require('assert');
 const { describe, it, beforeEach } = require('mocha');
 
-const DiffManager = require('../../dist/utils/diff-manager.js').DiffManager;
+const DiffManager = require('../../out/utils/diff-manager.js').DiffManager;
 
 describe('DiffManager', () => {
   let diffManager;

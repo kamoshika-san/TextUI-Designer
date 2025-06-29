@@ -89,7 +89,7 @@ describe('ExportService 単体テスト', () => {
     };
 
     // ExportServiceをインポートしてテスト用インスタンスを作成
-    const { ExportService } = require('../../dist/services/export-service');
+    const { ExportService } = require('../../out/services/export-service');
     exportService = new ExportService(mockExportManager);
   });
 
@@ -102,7 +102,7 @@ describe('ExportService 単体テスト', () => {
 
   after(() => {
     // PerformanceMonitorのインスタンスをクリーンアップ
-    const { PerformanceMonitor } = require('../../dist/utils/performance-monitor');
+    const { PerformanceMonitor } = require('../../out/utils/performance-monitor');
     const performanceMonitor = PerformanceMonitor.getInstance();
     if (performanceMonitor && typeof performanceMonitor.dispose === 'function') {
       performanceMonitor.dispose();

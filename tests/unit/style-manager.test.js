@@ -5,7 +5,7 @@
 const assert = require('assert');
 const { describe, it } = require('mocha');
 
-const StyleManager = require('../../dist/utils/style-manager.js').StyleManager;
+const StyleManager = require('../../out/utils/style-manager.js').StyleManager;
 
 describe('StyleManager', () => {
   describe('CSSオブジェクト→文字列変換', () => {

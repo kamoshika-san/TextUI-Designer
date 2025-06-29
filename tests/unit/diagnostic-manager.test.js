@@ -76,7 +76,7 @@ Module.prototype.require = function(id) {
 };
 
 // テスト対象のモジュールを読み込み
-const DiagnosticManager = require('../../dist/services/diagnostic-manager.js').DiagnosticManager;
+const DiagnosticManager = require('../../out/services/diagnostic-manager.js').DiagnosticManager;
 
 describe('DiagnosticManager', () => {
   let diagnosticManager;
