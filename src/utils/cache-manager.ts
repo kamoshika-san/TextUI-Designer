@@ -19,12 +19,16 @@ export interface CacheOptions {
 export class CacheManager {
   private cache: Map<string, CacheEntry> = new Map();
   private options: CacheOptions;
+  private hits: number = 0; // キャッシュヒット数
+  private misses: number = 0; // キャッシュミス数
 
   constructor(options: Partial<CacheOptions> = {}) {
     this.options = {
       ttl: options.ttl || 30000, // デフォルト30秒
       maxSize: options.maxSize || 100 // デフォルト100エントリ
     };
+    this.hits = 0;
+    this.misses = 0;
   }
 
   /**
@@ -57,15 +61,18 @@ export class CacheManager {
     const entry = this.cache.get(key);
 
     if (!entry) {
+      this.misses++;
       return null;
     }
 
     // TTLチェック
     if (Date.now() - entry.timestamp > this.options.ttl) {
       this.cache.delete(key);
+      this.misses++;
       return null;
     }
 
+    this.hits++;
     return entry.content;
   }
 
@@ -113,6 +120,8 @@ export class CacheManager {
    */
   clear(): void {
     this.cache.clear();
+    this.hits = 0;
+    this.misses = 0;
   }
 
   /**
@@ -131,10 +140,13 @@ export class CacheManager {
    * キャッシュ統計を取得
    */
   getStats(): { size: number; maxSize: number; hitRate: number } {
+    const totalAccesses = this.hits + this.misses;
+    const hitRate = totalAccesses > 0 ? (this.hits / totalAccesses) * 100 : 0;
+    
     return {
       size: this.cache.size,
       maxSize: this.options.maxSize,
-      hitRate: 0 // TODO: ヒット率の計算を実装
+      hitRate: Math.round(hitRate * 100) / 100 // 小数点以下2桁まで
     };
   }
 
@@ -142,10 +154,39 @@ export class CacheManager {
    * 特定のフォーマットのキャッシュを削除
    */
   clearFormat(format: ExportFormat): void {
+    let removedCount = 0;
     for (const [key, entry] of this.cache.entries()) {
       if (entry.format === format) {
         this.cache.delete(key);
+        removedCount++;
       }
     }
+    // 削除されたエントリ分、統計を調整（概算）
+    // 注意: 厳密にはヒット・ミス比率を保持すべきですが、簡易実装として処理
+  }
+
+  /**
+   * ヒット・ミスカウンターをリセット
+   */
+  resetStats(): void {
+    this.hits = 0;
+    this.misses = 0;
+  }
+
+  /**
+   * 詳細統計を取得
+   */
+  getDetailedStats(): { size: number; maxSize: number; hits: number; misses: number; hitRate: number; totalAccesses: number } {
+    const totalAccesses = this.hits + this.misses;
+    const hitRate = totalAccesses > 0 ? (this.hits / totalAccesses) * 100 : 0;
+    
+    return {
+      size: this.cache.size,
+      maxSize: this.options.maxSize,
+      hits: this.hits,
+      misses: this.misses,
+      hitRate: Math.round(hitRate * 100) / 100,
+      totalAccesses
+    };
   }
 } 

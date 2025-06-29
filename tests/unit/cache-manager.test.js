@@ -164,6 +164,135 @@ describe('CacheManager', () => {
       stats = cacheManager.getStats();
       assert.strictEqual(stats.size, 0);
     });
+
+    it('ヒット率が正しく計算される', () => {
+      const testDsl1 = { type: 'container', children: [] };
+      const testDsl2 = { type: 'text', content: 'test' };
+      const content1 = '<div>test1</div>';
+
+      // 初期状態：アクセスなしの場合はヒット率0
+      let stats = cacheManager.getStats();
+      assert.strictEqual(stats.hitRate, 0);
+
+      // 値をセット
+      cacheManager.set(testDsl1, 'html', content1);
+
+      // 存在しないキーでアクセス（ミス）
+      cacheManager.get(testDsl2, 'html');
+      stats = cacheManager.getStats();
+      assert.strictEqual(stats.hitRate, 0); // 0ヒット / 1アクセス = 0%
+
+      // 存在するキーでアクセス（ヒット）
+      cacheManager.get(testDsl1, 'html');
+      stats = cacheManager.getStats();
+      assert.strictEqual(stats.hitRate, 50); // 1ヒット / 2アクセス = 50%
+
+      // もう一度ヒット
+      cacheManager.get(testDsl1, 'html');
+      stats = cacheManager.getStats();
+      assert.strictEqual(stats.hitRate, 66.67); // 2ヒット / 3アクセス = 66.67%
+    });
+
+    it('詳細統計が正しく取得できる', () => {
+      const testDsl = { type: 'container', children: [] };
+      const content = '<div>test</div>';
+
+      // 値をセット
+      cacheManager.set(testDsl, 'html', content);
+
+      // ミス
+      cacheManager.get({ type: 'text', content: 'nonexistent' }, 'html');
+      
+      // ヒット
+      cacheManager.get(testDsl, 'html');
+      cacheManager.get(testDsl, 'html');
+
+      const detailedStats = cacheManager.getDetailedStats();
+
+      assert.ok(detailedStats.hasOwnProperty('size'));
+      assert.ok(detailedStats.hasOwnProperty('maxSize'));
+      assert.ok(detailedStats.hasOwnProperty('hits'));
+      assert.ok(detailedStats.hasOwnProperty('misses'));
+      assert.ok(detailedStats.hasOwnProperty('hitRate'));
+      assert.ok(detailedStats.hasOwnProperty('totalAccesses'));
+
+      assert.strictEqual(detailedStats.hits, 2);
+      assert.strictEqual(detailedStats.misses, 1);
+      assert.strictEqual(detailedStats.totalAccesses, 3);
+      assert.strictEqual(detailedStats.hitRate, 66.67); // 2/3 * 100 = 66.67%
+    });
+
+    it('統計リセットが正しく動作する', () => {
+      const testDsl = { type: 'container', children: [] };
+      const content = '<div>test</div>';
+
+      // 値をセットしてアクセス
+      cacheManager.set(testDsl, 'html', content);
+      cacheManager.get(testDsl, 'html'); // ヒット
+
+      // 統計確認
+      let stats = cacheManager.getDetailedStats();
+      assert.strictEqual(stats.hits, 1);
+      assert.strictEqual(stats.misses, 0);
+
+      // 統計リセット
+      cacheManager.resetStats();
+
+      // リセット後の統計確認
+      stats = cacheManager.getDetailedStats();
+      assert.strictEqual(stats.hits, 0);
+      assert.strictEqual(stats.misses, 0);
+      assert.strictEqual(stats.hitRate, 0);
+      assert.strictEqual(stats.totalAccesses, 0);
+    });
+
+    it('clear()でヒット率統計もリセットされる', () => {
+      const testDsl = { type: 'container', children: [] };
+      const content = '<div>test</div>';
+
+      // 値をセットしてアクセス
+      cacheManager.set(testDsl, 'html', content);
+      cacheManager.get(testDsl, 'html'); // ヒット
+
+      // clear()実行
+      cacheManager.clear();
+
+      // 統計確認
+      const stats = cacheManager.getDetailedStats();
+      assert.strictEqual(stats.size, 0);
+      assert.strictEqual(stats.hits, 0);
+      assert.strictEqual(stats.misses, 0);
+      assert.strictEqual(stats.hitRate, 0);
+    });
+
+    it('TTL期限切れでミスとしてカウントされる', (done) => {
+      // TTLを短く設定したキャッシュマネージャーを作成
+      const shortTtlCacheManager = new CacheManager({ ttl: 50 }); // 50ms
+
+      const testDsl = { type: 'container', children: [] };
+      const content = '<div>test</div>';
+
+      // 値をセット
+      shortTtlCacheManager.set(testDsl, 'html', content);
+
+      // 期限切れ前のアクセス（ヒット）
+      let result = shortTtlCacheManager.get(testDsl, 'html');
+      assert.strictEqual(result, content);
+
+      setTimeout(() => {
+        // 期限切れ後のアクセス（ミス）
+        result = shortTtlCacheManager.get(testDsl, 'html');
+        assert.strictEqual(result, null);
+
+        // 統計確認
+        const stats = shortTtlCacheManager.getDetailedStats();
+        assert.strictEqual(stats.hits, 1);
+        assert.strictEqual(stats.misses, 1);
+        assert.strictEqual(stats.hitRate, 50); // 1/2 * 100 = 50%
+
+        done();
+      }, 100); // TTLより長く待機
+    });
   });
 
   describe('オプション設定', () => {
