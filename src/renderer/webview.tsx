@@ -11,6 +11,7 @@ import { Select } from './components/Select';
 import { Divider } from './components/Divider';
 import { Alert } from './components/Alert';
 import { ThemeToggle } from './components/ThemeToggle';
+import { CustomThemeSelector } from './components/CustomThemeSelector';
 import type { TextUIDSL, ComponentDef, FormComponent, FormField, FormAction } from './types';
 
 // HTMLテンプレートで既に取得されているvscodeオブジェクトを使用
@@ -525,6 +526,9 @@ const App: React.FC = () => {
     <div style={{ padding: 24, position: 'relative' }}>
       {/* テーマ切り替えスイッチ */}
       <ThemeToggle />
+      
+      {/* カスタムテーマセレクター */}
+      <CustomThemeSelector />
       
       {/* エクスポートボタン */}
       <button 

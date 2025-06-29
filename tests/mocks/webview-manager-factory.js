@@ -15,22 +15,47 @@ class WebViewManagerFactory {
       ...options
     };
 
-    // WebView パネルのモック
+    // WebView パネルのモック（堅牢化）
     const mockWebviewPanel = {
       webview: {
         html: '',
-        postMessage: () => Promise.resolve(),
-        onDidReceiveMessage: () => ({ dispose: () => {} }),
+        postMessage: (message) => {
+          console.log('[モック] WebView postMessage:', message?.type || 'unknown');
+          return Promise.resolve();
+        },
+        onDidReceiveMessage: (callback) => {
+          // メッセージハンドラーを格納してテストで使用できるようにする
+          mockWebviewPanel._messageHandler = callback;
+          return { dispose: () => {} };
+        },
         asWebviewUri: (uri) => uri,
         cspSource: 'vscode-webview:'
       },
-      onDidDispose: () => ({ dispose: () => {} }),
-      reveal: () => {},
-      dispose: () => {},
+      onDidDispose: (callback) => {
+        mockWebviewPanel._disposeHandler = callback;
+        return { dispose: () => {} };
+      },
+      reveal: () => {
+        console.log('[モック] WebView reveal called');
+      },
+      dispose: () => {
+        console.log('[モック] WebView dispose called');
+        // disposeハンドラーが設定されている場合は呼び出す
+        if (mockWebviewPanel._disposeHandler) {
+          try {
+            mockWebviewPanel._disposeHandler();
+          } catch (error) {
+            console.warn('[モック] dispose handler error:', error.message);
+          }
+        }
+      },
       title: 'TextUI Preview',
       viewType: 'textui-preview',
       visible: true,
-      active: true
+      active: true,
+      // メッセージハンドラーへの参照（テスト用）
+      _messageHandler: null,
+      _disposeHandler: null
     };
 
     // 拡張VSCode APIモック

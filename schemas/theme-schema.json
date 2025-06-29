@@ -34,7 +34,7 @@
           "type": "object",
           "description": "デザイントークン - カラー・スペーシング・タイポグラフィなどの基本設計要素",
           "properties": {
-            "color": {
+            "color": { 
               "type": "object",
               "description": "カラーパレット - ブランドカラーや状態色などの色定義",
               "properties": {
@@ -163,7 +163,7 @@
               },
               "additionalProperties": true
             },
-            "spacing": {
+            "spacing": { 
               "type": "object",
               "description": "スペーシングスケール - マージン・パディングなどの余白定義",
               "properties": {
@@ -212,7 +212,7 @@
               },
               "additionalProperties": true
             },
-            "typography": {
+            "typography": { 
               "type": "object",
               "description": "タイポグラフィ設定 - フォント・サイズ・ウェイトなどの文字定義",
               "properties": {
@@ -362,7 +362,7 @@
               },
               "additionalProperties": true
             },
-            "borderRadius": {
+            "borderRadius": { 
               "type": "object",
               "description": "ボーダー半径設定 - 角丸の定義",
               "properties": {
@@ -411,7 +411,7 @@
               },
               "additionalProperties": true
             },
-            "shadows": {
+            "shadows": { 
               "type": "object",
               "description": "シャドウ設定 - 奥行き表現の定義",
               "properties": {
@@ -672,9 +672,9 @@
               "additionalProperties": true
             },
             "container": {
-              "type": "object",
+                  "type": "object",
               "description": "コンテナコンポーネントのスタイル",
-              "properties": {
+                  "properties": {
                 "base": {
                   "$ref": "#/definitions/componentStyle",
                   "description": "基本コンテナのスタイル"
@@ -691,8 +691,8 @@
                   "$ref": "#/definitions/componentStyle",
                   "description": "カードスタイル"
                 }
-              },
-              "additionalProperties": true
+                  },
+                  "additionalProperties": true
             },
             "form": {
               "type": "object",
