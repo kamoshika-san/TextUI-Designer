@@ -1,0 +1,340 @@
+# TextUI Designer - テーマシステムデモンストレーション
+# sample-theme.yml と組み合わせて使用するサンプルファイル
+# 
+# 使用方法:
+# 1. sample-theme.yml をプロジェクトルートに `textui-theme.yml` としてコピー
+# 2. このファイルでプレビューを開く
+# 3. textui-theme.yml を編集して、リアルタイムでテーマ変更を確認
+
+page:
+  id: theme-demo
+  title: "テーマシステムデモンストレーション"
+  description: "Modern Blue Theme を使用したすべてのコンポーネントの表示例"
+  layout: vertical
+  
+  components:
+    # ヘッダーセクション
+    - Text:
+        variant: h1
+        value: "🎨 TextUI Designer テーマシステム"
+        
+    - Text:
+        variant: p
+        value: "このデモでは、すべてのコンポーネントがテーマシステムによって統一されたデザインで表示されます。"
+        
+    - Alert:
+        variant: info
+        message: "💡 テーマファイル（textui-theme.yml）を編集すると、このプレビューがリアルタイムで更新されます！"
+        
+    - Divider:
+        orientation: horizontal
+        
+    # テキストコンポーネント群
+    - Text:
+        variant: h2
+        value: "📝 テキストコンポーネント"
+        
+    - Container:
+        layout: vertical
+        components:
+          - Text:
+              variant: h3
+              value: "見出し3（H3）"
+          - Text:
+              variant: p
+              value: "これは段落テキストです。テーマのタイポグラフィ設定により、フォントファミリー・サイズ・行間が統一されています。"
+          - Text:
+              variant: small
+              value: "小さなテキストです。補助的な情報表示に使用されます。"
+          - Text:
+              variant: caption
+              value: "キャプションテキストです。最も小さなテキストサイズで表示されます。"
+              
+    - Divider:
+        orientation: horizontal
+        
+    # アラートコンポーネント群
+    - Text:
+        variant: h2
+        value: "🚨 アラートコンポーネント"
+        
+    - Container:
+        layout: vertical
+        components:
+          - Alert:
+              variant: success
+              message: "✅ 成功メッセージ - 操作が正常に完了しました"
+          - Alert:
+              variant: warning
+              message: "⚠️ 警告メッセージ - 注意が必要な状況です"
+          - Alert:
+              variant: error
+              message: "❌ エラーメッセージ - 問題が発生しました"
+          - Alert:
+              variant: info
+              message: "ℹ️ 情報メッセージ - 追加の情報をお知らせします"
+              
+    - Divider:
+        orientation: horizontal
+        
+    # フォーム入力コンポーネント群
+    - Text:
+        variant: h2
+        value: "📋 フォーム入力コンポーネント"
+        
+    - Container:
+        layout: vertical
+        components:
+          - Input:
+              label: "名前"
+              name: "name"
+              type: text
+              placeholder: "山田太郎"
+              required: true
+              
+          - Input:
+              label: "メールアドレス"
+              name: "email"
+              type: email
+              placeholder: "example@example.com"
+              required: true
+              
+          - Input:
+              label: "パスワード"
+              name: "password"
+              type: password
+              placeholder: "8文字以上で入力してください"
+              required: true
+              
+          - Select:
+              label: "都道府県"
+              name: "prefecture"
+              options:
+                - label: "選択してください"
+                  value: ""
+                - label: "東京都"
+                  value: "tokyo"
+                - label: "大阪府"
+                  value: "osaka"
+                - label: "愛知県"
+                  value: "aichi"
+                - label: "神奈川県"
+                  value: "kanagawa"
+                  
+          - Checkbox:
+              label: "利用規約に同意します"
+              name: "agree"
+              required: true
+              
+          - Radio:
+              label: "性別"
+              name: "gender"
+              options:
+                - label: "男性"
+                  value: "male"
+                - label: "女性"
+                  value: "female"
+                - label: "その他"
+                  value: "other"
+                - label: "回答しない"
+                  value: "no-answer"
+                  
+    - Divider:
+        orientation: horizontal
+        
+    # ボタンコンポーネント群
+    - Text:
+        variant: h2
+        value: "🔘 ボタンコンポーネント"
+        
+    - Container:
+        layout: horizontal
+        components:
+          - Button:
+              kind: primary
+              label: "プライマリボタン"
+              
+          - Button:
+              kind: secondary
+              label: "セカンダリボタン"
+              
+          - Button:
+              kind: primary
+              label: "送信ボタン"
+              submit: true
+              
+    - Divider:
+        orientation: horizontal
+        
+    # レイアウトコンポーネント群
+    - Text:
+        variant: h2
+        value: "📐 レイアウトコンポーネント"
+        
+    - Text:
+        variant: h3
+        value: "水平レイアウト"
+        
+    - Container:
+        layout: horizontal
+        components:
+          - Container:
+              layout: vertical
+              components:
+                - Text:
+                    variant: p
+                    value: "左側のコンテンツ"
+                - Input:
+                    label: "左側の入力"
+                    name: "left-input"
+                    type: text
+                    
+          - Divider:
+              orientation: vertical
+              
+          - Container:
+              layout: vertical
+              components:
+                - Text:
+                    variant: p
+                    value: "右側のコンテンツ"
+                - Input:
+                    label: "右側の入力"
+                    name: "right-input"
+                    type: text
+                    
+    - Text:
+        variant: h3
+        value: "垂直レイアウト"
+        
+    - Container:
+        layout: vertical
+        components:
+          - Text:
+              variant: p
+              value: "上部のコンテンツ"
+          - Divider:
+              orientation: horizontal
+          - Text:
+              variant: p
+              value: "下部のコンテンツ"
+              
+    - Divider:
+        orientation: horizontal
+        
+    # フォーム統合例
+    - Text:
+        variant: h2
+        value: "📝 統合フォーム例"
+        
+    - Form:
+        id: theme-demo-form
+        fields:
+          - Text:
+              variant: h3
+              value: "ユーザー登録フォーム"
+              
+          - Input:
+              label: "ユーザー名"
+              name: "username"
+              type: text
+              placeholder: "半角英数字で入力"
+              required: true
+              
+          - Input:
+              label: "メールアドレス"
+              name: "email"
+              type: email
+              placeholder: "example@domain.com"
+              required: true
+              
+          - Input:
+              label: "パスワード"
+              name: "password"
+              type: password
+              placeholder: "8文字以上"
+              required: true
+              
+          - Select:
+              label: "職業"
+              name: "occupation"
+              options:
+                - label: "選択してください"
+                  value: ""
+                - label: "会社員"
+                  value: "employee"
+                - label: "フリーランス"
+                  value: "freelance"
+                - label: "学生"
+                  value: "student"
+                - label: "その他"
+                  value: "other"
+                  
+          - Radio:
+              label: "利用目的"
+              name: "purpose"
+              options:
+                - label: "個人利用"
+                  value: "personal"
+                - label: "商用利用"
+                  value: "commercial"
+                - label: "学習目的"
+                  value: "learning"
+                  
+          - Checkbox:
+              label: "メールマガジンの配信を希望する"
+              name: "newsletter"
+              
+          - Checkbox:
+              label: "利用規約・プライバシーポリシーに同意する"
+              name: "agree-terms"
+              required: true
+              
+        actions:
+          - Button:
+              kind: primary
+              label: "登録する"
+              submit: true
+              
+          - Button:
+              kind: secondary
+              label: "リセット"
+              
+    - Divider:
+        orientation: horizontal
+        
+    # テーマカスタマイズガイド
+    - Text:
+        variant: h2
+        value: "🎨 テーマカスタマイズガイド"
+        
+    - Alert:
+        variant: info
+        message: "テーマをカスタマイズするには、textui-theme.yml を編集してください。変更は即座にこのプレビューに反映されます。"
+        
+    - Container:
+        layout: vertical
+        components:
+          - Text:
+              variant: h3
+              value: "カスタマイズ例"
+              
+          - Text:
+              variant: p
+              value: "1. カラーパレットの変更: tokens.color.primary を '#FF6B6B' に変更すると、すべてのプライマリ要素が赤系になります。"
+              
+          - Text:
+              variant: p
+              value: "2. スペーシングの調整: tokens.spacing.md を '2rem' に変更すると、コンポーネント間の余白が大きくなります。"
+              
+          - Text:
+              variant: p
+              value: "3. フォントの変更: tokens.typography.fontFamily.primary を 'Georgia, serif' に変更すると、セリフ体になります。"
+              
+          - Text:
+              variant: p
+              value: "4. ボーダー半径の調整: tokens.borderRadius.md を '1rem' に変更すると、角丸が大きくなります。"
+              
+    - Alert:
+        variant: success
+        message: "🎉 テーマシステムにより、一つのファイルを編集するだけで、すべてのコンポーネントのデザインが統一されて変更されます！" 

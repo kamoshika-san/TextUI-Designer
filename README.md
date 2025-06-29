@@ -221,6 +221,187 @@ components:
 
 ---
 
+## 🎨 テーマシステム（スタイルトークンベース）
+
+TextUI Designerは、デザイントークンベースの強力なテーマシステムを搭載しています。`textui-theme.yml`ファイルでカラー・スペーシング・タイポグラフィを一元管理し、すべてのコンポーネントに一貫したデザインを適用できます。
+
+### 🚀 主な特徴
+
+- **🎯 デザイントークン**: カラー・スペーシング・タイポグラフィの一元管理
+- **⚡ ライブプレビュー**: テーマファイル保存時の即座反映
+- **🔧 型安全性**: JSON Schemaによる完全なIntelliSense・バリデーション
+- **📱 コンポーネント統合**: すべてのコンポーネントで自動適用
+- **🎨 CSS変数自動生成**: デザイントークンがCSS変数に自動変換
+
+### 📁 テーマファイルの配置
+
+プロジェクトルートに `textui-theme.yml` ファイルを作成してください：
+
+```
+your-project/
+├── textui-theme.yml    ← ここに配置
+├── sample.tui.yml
+└── other-files...
+```
+
+### 🎨 基本的なテーマファイル構造
+
+```yaml
+# textui-theme.yml
+theme:
+  name: "my-custom-theme"
+  version: "1.0.0"
+  description: "カスタムテーマ"
+  
+  # デザイントークン
+  tokens:
+    # カラーパレット
+    color:
+      primary: "#3B82F6"        # メインブランドカラー
+      secondary: "#6B7280"      # セカンダリカラー
+      success: "#10B981"        # 成功・完了
+      warning: "#F59E0B"        # 警告・注意
+      error: "#EF4444"          # エラー・危険
+      surface: "#F9FAFB"        # メイン背景
+      background: "#FFFFFF"     # 表面背景
+      text:
+        primary: "#111827"      # 主要テキスト
+        secondary: "#6B7280"    # セカンダリテキスト
+        muted: "#9CA3AF"        # 控えめなテキスト
+    
+    # スペーシング
+    spacing:
+      xs: "0.25rem"    # 4px
+      sm: "0.5rem"     # 8px
+      md: "1rem"       # 16px
+      lg: "1.5rem"     # 24px
+      xl: "2rem"       # 32px
+    
+    # タイポグラフィ
+    typography:
+      fontFamily: "'Inter', 'Helvetica Neue', sans-serif"
+      fontSize:
+        xs: "0.75rem"    # 12px
+        sm: "0.875rem"   # 14px
+        base: "1rem"     # 16px
+        lg: "1.125rem"   # 18px
+        xl: "1.25rem"    # 20px
+        "2xl": "1.5rem"  # 24px
+    
+    # ボーダー半径
+    borderRadius:
+      sm: "0.25rem"    # 4px
+      md: "0.375rem"   # 6px
+      lg: "0.5rem"     # 8px
+      xl: "0.75rem"    # 12px
+  
+  # コンポーネント固有のスタイル
+  components:
+    button:
+      primary:
+        backgroundColor: "var(--color-primary)"
+        color: "var(--color-text-primary)"
+        padding: "var(--spacing-sm) var(--spacing-md)"
+        borderRadius: "var(--borderRadius-md)"
+        fontFamily: "var(--typography-fontFamily)"
+        fontSize: "var(--typography-fontSize-sm)"
+      secondary:
+        backgroundColor: "var(--color-secondary)"
+        color: "var(--color-background)"
+        padding: "var(--spacing-sm) var(--spacing-md)"
+        borderRadius: "var(--borderRadius-md)"
+    
+    input:
+      label:
+        color: "var(--color-text-secondary)"
+        fontSize: "var(--typography-fontSize-sm)"
+      field:
+        borderRadius: "var(--borderRadius-md)"
+        padding: "var(--spacing-sm)"
+        border: "1px solid var(--color-secondary)"
+      focus:
+        borderColor: "var(--color-primary)"
+        boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)"
+```
+
+### 🎯 デザイントークンの活用
+
+#### **カラーパレット**
+- **ブランドカラー**: `primary`、`secondary` でブランド統一
+- **状態カラー**: `success`、`warning`、`error` で直感的なUI
+- **テキストカラー**: `text.primary`、`text.secondary`、`text.muted` で階層表現
+
+#### **スペーシング**
+- **一貫性**: `xs`〜`xl` の5段階で統一されたスペーシング
+- **レスポンシブ**: デバイスサイズに関係なく一貫した比率
+
+#### **タイポグラフィ**
+- **フォントファミリー**: プロジェクト全体で統一されたフォント
+- **フォントサイズ**: `xs`〜`4xl` の階層的なサイズ設定
+
+### 🔄 ライブテーマ更新
+
+テーマファイルを保存すると、開いているプレビューが**即座に更新**されます：
+
+1. `textui-theme.yml` を編集
+2. `Ctrl+S` で保存
+3. プレビューが自動で新しいテーマを反映 ✨
+
+### 🧠 IntelliSense・型安全性
+
+テーマファイル編集時も完全なIntelliSenseがサポートされています：
+
+- **プロパティ名の補完**: `color.`と入力すると候補が表示
+- **値の検証**: 不正な値は赤波線で警告
+- **ツールチップヘルプ**: 各プロパティの説明を表示
+- **型チェック**: カラーコード・サイズ値の形式を自動検証
+
+### 🎨 コンポーネントとの連携
+
+すべてのTUIコンポーネントでテーマが自動適用されます：
+
+```yaml
+# sample.tui.yml - テーマが自動適用される
+components:
+  - Button:
+      kind: primary        # → theme.components.button.primary のスタイル
+      label: "送信"
+  - Input:
+      label: "名前"        # → theme.components.input のスタイル
+      type: text
+  - Alert:
+      variant: success     # → theme.tokens.color.success のカラー
+      message: "成功しました"
+```
+
+### 🎭 テーマの切り替え
+
+複数のテーマファイルを作成して、用途に応じて切り替えることも可能です：
+
+```
+your-project/
+├── textui-theme.yml           # 本番用テーマ
+├── textui-theme-dark.yml      # ダークテーマ
+├── textui-theme-debug.yml     # デバッグ用（目立つ色）
+└── sample.tui.yml
+```
+
+### 💡 テーマ作成のベストプラクティス
+
+1. **デザイントークンを最初に定義**: カラー・スペーシングから開始
+2. **CSS変数を活用**: `var(--color-primary)` でトークンを参照
+3. **段階的な適用**: 基本トークン → コンポーネントスタイルの順で構築
+4. **一貫性を保つ**: 同じスペーシング・カラーを異なるコンポーネントで再利用
+5. **テスト**: デバッグ用テーマで変更箇所を確認
+
+### 📊 パフォーマンス
+
+- **効率的なCSS変数生成**: 必要な変数のみを生成
+- **キャッシュ機能**: テーマ解析結果をキャッシュし、高速適用
+- **差分更新**: 変更されたスタイルのみを更新
+
+---
+
 ## コマンドパレットからの新規テンプレート作成
 
 TextUI Designerでは、コマンドパレットから簡単にテンプレートファイル（フォーム・一覧・空など）を新規作成できます。
