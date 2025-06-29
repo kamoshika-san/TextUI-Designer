@@ -4,53 +4,8 @@
  * WebViewの管理機能に関連する処理をテストします
  */
 
-const Module = require('module');
-let originalRequire = Module.prototype.require;
-
-// VS Code APIのモック
-const mockVscode = {
-  window: {
-    activeTextEditor: null,
-    createWebviewPanel: () => ({
-      webview: {
-        html: '',
-        postMessage: () => {},
-        onDidReceiveMessage: () => ({ dispose: () => {} })
-      },
-      onDidDispose: () => ({ dispose: () => {} }),
-      reveal: () => {},
-      dispose: () => {}
-    })
-  },
-  workspace: {
-    getConfiguration: () => ({
-      get: (key, defaultValue) => {
-        // パフォーマンス設定のデフォルト値を返す
-        const defaults = {
-          'textui.performance.enabled': true,
-          'textui.performance.cacheTTL': 300000,
-          'textui.performance.maxCacheSize': 100,
-          'textui.performance.monitoringEnabled': true,
-          'textui.performance.forceEnabled': false
-        };
-        return defaults[key] !== undefined ? defaults[key] : defaultValue;
-      }
-    }),
-    openTextDocument: () => Promise.resolve({
-      getText: () => 'test content'
-    })
-  },
-  ViewColumn: {
-    One: 1,
-    Two: 2
-  },
-  Uri: {
-    file: (path) => ({ fsPath: path })
-  }
-};
-
 // グローバルにモックを設定
-global.vscode = mockVscode;
+global.vscode = global.vscode || {};
 
 const assert = require('assert');
 const path = require('path');
@@ -58,62 +13,50 @@ const fs = require('fs');
 
 describe('WebViewManager 単体テスト', () => {
   let webviewManager;
-  let testFile;
   let testFilePath;
-  let mockContext;
 
-  before(async () => {
-    originalRequire = Module.prototype.require;
-    Module.prototype.require = function(id) {
-      if (id === 'vscode') {
-        return mockVscode;
-      }
-      return originalRequire.apply(this, arguments);
-    };
+  beforeEach(async () => {
+    // ファクトリからWebViewManagerを作成
+    global.cleanupMocks();
+    
+    if (!global.WebViewManagerFactory || typeof global.WebViewManagerFactory.createForTest !== 'function') {
+      const path = require('path');
+      const factoryPath = path.resolve(__dirname, '../mocks/webview-manager-factory.js');
+      const { WebViewManagerFactory } = require(factoryPath);
+      global.WebViewManagerFactory = WebViewManagerFactory;
+    }
+    
+    webviewManager = global.WebViewManagerFactory.createForTest(global.vscode, {
+      enablePerformance: true,
+      cacheTTL: 300000,
+      maxCacheSize: 100
+    });
 
-    // テスト用の.tui.ymlファイルを作成
-    testFile = `page:
+    // テスト用ファイルを作成
+    testFilePath = webviewManager._testHelpers.createTestFile(`page:
   id: webview-test
   title: "WebViewテスト"
   layout: vertical
   components:
     - Text:
         variant: h1
-        value: "WebViewテストタイトル"`;
-
-    testFilePath = path.join(__dirname, 'webview-test.tui.yml');
-    fs.writeFileSync(testFilePath, testFile, 'utf-8');
-
-    // Mock contextを作成
-    mockContext = {
-      extensionUri: { fsPath: __dirname },
-      subscriptions: []
-    };
-
-    // WebViewManagerをインポートしてテスト用インスタンスを作成
-    const { WebViewManager } = require('../../out/services/webview-manager');
-    webviewManager = new WebViewManager(mockContext);
+        value: "WebViewテストタイトル"`);
   });
 
-  after(async () => {
+  afterEach(async () => {
     // テストファイルを削除
-    if (fs.existsSync(testFilePath)) {
-      fs.unlinkSync(testFilePath);
+    if (webviewManager && webviewManager._testHelpers) {
+      webviewManager._testHelpers.cleanupTestFile(testFilePath);
+      webviewManager._testHelpers.resetAllMocks();
+      webviewManager._testHelpers.restoreRequire();
     }
 
     // WebViewManagerをクリーンアップ
-    if (webviewManager) {
+    if (webviewManager && typeof webviewManager.dispose === 'function') {
       webviewManager.dispose();
     }
 
-    // PerformanceMonitorのインスタンスをクリーンアップ
-    const { PerformanceMonitor } = require('../../out/utils/performance-monitor');
-    const performanceMonitor = PerformanceMonitor.getInstance();
-    if (performanceMonitor && typeof performanceMonitor.dispose === 'function') {
-      performanceMonitor.dispose();
-    }
-
-    Module.prototype.require = originalRequire;
+    global.cleanupMocks();
   });
 
   describe('lastTuiFile の管理', () => {

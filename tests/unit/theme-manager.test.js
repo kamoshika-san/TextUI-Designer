@@ -4,62 +4,43 @@
 
 const assert = require('assert');
 const { describe, it, beforeEach, afterEach } = require('mocha');
-const fs = require('fs');
-const path = require('path');
 
-// VSCode APIのモック
-const mockVscode = {
-  ExtensionContext: class {
-    constructor() {
-      this.subscriptions = [];
-      this.extensionPath = __dirname + '/../../';
-    }
-  },
-  workspace: {
-    workspaceFolders: [{
-      uri: {
-        fsPath: __dirname + '/../../'
-      }
-    }]
-  },
-  FileSystemWatcher: class {
-    constructor() {
-      this.onDidChange = () => {};
-      this.onDidCreate = () => {};
-      this.onDidDelete = () => {};
-    }
-    dispose() {}
-  }
-};
-
-global.vscode = mockVscode;
-
-const Module = require('module');
-const originalRequire = Module.prototype.require;
-Module.prototype.require = function(id) {
-  if (id === 'vscode') {
-    return mockVscode;
-  }
-  return originalRequire.apply(this, arguments);
-};
-
-const ThemeManager = require('../../out/services/theme-manager.js').ThemeManager;
+// グローバルにモックを設定
+global.vscode = global.vscode || {};
 
 describe('ThemeManager', () => {
   let themeManager;
   let testThemePath;
 
   beforeEach(() => {
-    const context = new mockVscode.ExtensionContext();
-    themeManager = new ThemeManager(context);
-    testThemePath = path.join(__dirname, '../../textui-theme.yml');
+    // ファクトリからThemeManagerを作成
+    global.cleanupMocks();
+    
+    if (!global.ThemeManagerFactory || typeof global.ThemeManagerFactory.createForTest !== 'function') {
+      const path = require('path');
+      const factoryPath = path.resolve(__dirname, '../mocks/theme-manager-factory.js');
+      const { ThemeManagerFactory } = require(factoryPath);
+      global.ThemeManagerFactory = ThemeManagerFactory;
+    }
+    
+    themeManager = global.ThemeManagerFactory.createForTest(global.vscode, {
+      extensionPath: __dirname + '/../../',
+      workspacePath: __dirname + '/../../'
+    });
   });
 
   afterEach(() => {
     // テスト用テーマファイルを削除
-    if (fs.existsSync(testThemePath)) {
-      fs.unlinkSync(testThemePath);
+    if (themeManager && themeManager._testHelpers && testThemePath) {
+      themeManager._testHelpers.cleanupTestFile(testThemePath);
     }
+    
+    if (themeManager && themeManager._testHelpers) {
+      themeManager._testHelpers.resetAllMocks();
+      themeManager._testHelpers.restoreRequire();
+    }
+    
+    global.cleanupMocks();
   });
 
   it('デフォルトテーマが正しく設定される', async () => {
@@ -99,7 +80,7 @@ describe('ThemeManager', () => {
       }
     };
     
-    fs.writeFileSync(testThemePath, JSON.stringify(testTheme, null, 2));
+    testThemePath = themeManager._testHelpers.createTestThemeFile(testTheme);
     
     await themeManager.loadTheme();
     const cssVariables = themeManager.generateCSSVariables();
@@ -131,7 +112,7 @@ describe('ThemeManager', () => {
       }
     };
     
-    fs.writeFileSync(testThemePath, JSON.stringify(customTheme, null, 2));
+    testThemePath = themeManager._testHelpers.createTestThemeFile(customTheme);
     
     await themeManager.loadTheme();
     const cssVariables = themeManager.generateCSSVariables();
@@ -146,6 +127,9 @@ describe('ThemeManager', () => {
 
   it('無効なテーマファイルでデフォルトテーマが使用される', async () => {
     // 無効なテーマファイルを作成
+    const fs = require('fs');
+    const path = require('path');
+    testThemePath = path.join(__dirname, '../../textui-theme.yml');
     fs.writeFileSync(testThemePath, 'invalid yaml content');
     
     await themeManager.loadTheme();
@@ -164,5 +148,28 @@ describe('ThemeManager', () => {
     // デフォルトテーマが使用されている
     assert.ok(cssVariables.includes('--colors-primary'));
     assert.ok(cssVariables.includes('--spacing-md'));
+  });
+
+  describe('ファクトリパターンの検証', () => {
+    it('mockContextが正しく設定されている', () => {
+      assert.ok(themeManager._testHelpers.mockContext);
+      assert.ok(typeof themeManager._testHelpers.mockContext.extensionPath === 'string');
+      assert.ok(Array.isArray(themeManager._testHelpers.mockContext.subscriptions));
+    });
+
+    it('extendedVscodeが正しく設定されている', () => {
+      const extendedVscode = themeManager._testHelpers.extendedVscode;
+      assert.ok(extendedVscode);
+      assert.ok(extendedVscode.workspace);
+      assert.ok(Array.isArray(extendedVscode.workspace.workspaceFolders));
+      assert.ok(typeof extendedVscode.workspace.getConfiguration === 'function');
+    });
+
+    it('ヘルパーメソッドが正しく設定されている', () => {
+      assert.ok(typeof themeManager._testHelpers.createTestThemeFile === 'function');
+      assert.ok(typeof themeManager._testHelpers.cleanupTestFile === 'function');
+      assert.ok(typeof themeManager._testHelpers.resetAllMocks === 'function');
+      assert.ok(typeof themeManager._testHelpers.restoreRequire === 'function');
+    });
   });
 }); 

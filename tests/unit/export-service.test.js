@@ -4,121 +4,84 @@
  * プレビュー画面からのエクスポート機能に関連する処理をテストします
  */
 
-// VS Code APIのモック
-const mockVscode = {
-  window: {
-    activeTextEditor: null,
-    showQuickPick: () => Promise.resolve('html'),
-    showSaveDialog: () => Promise.resolve({ fsPath: '/test/output.html' })
-  },
-  workspace: {
-    getConfiguration: () => ({
-      get: (key, defaultValue) => {
-        // パフォーマンス設定のデフォルト値を返す
-        const defaults = {
-          'textui.performance.enabled': true,
-          'textui.performance.cacheTTL': 300000,
-          'textui.performance.maxCacheSize': 100,
-          'textui.performance.monitoringEnabled': true,
-          'textui.performance.forceEnabled': false
-        };
-        return defaults[key] !== undefined ? defaults[key] : defaultValue;
-      }
-    }),
-    fs: {
-      writeFile: () => Promise.resolve()
-    }
-  },
-  ViewColumn: {
-    One: 1,
-    Two: 2
-  },
-  Uri: {
-    file: (path) => ({ fsPath: path })
-  }
-};
-
-// vscodeモジュールをモック
-const Module = require('module');
-const originalRequire = Module.prototype.require;
-Module.prototype.require = function(id) {
-  if (id === 'vscode') {
-    return mockVscode;
-  }
-  return originalRequire.apply(this, arguments);
-};
-
 // グローバルにモックを設定
-global.vscode = mockVscode;
+global.vscode = global.vscode || {};
 
 const assert = require('assert');
-const path = require('path');
-const fs = require('fs');
 
 describe('ExportService 単体テスト', () => {
   let exportService;
-  let mockExportManager;
-  let testFile;
   let testFilePath;
 
-  before(async () => {
-    // テスト用の.tui.ymlファイルを作成
-    testFile = `page:
+  beforeEach(async () => {
+    // ファクトリからExportServiceを作成
+    global.cleanupMocks();
+    
+    if (!global.ExportServiceFactory || typeof global.ExportServiceFactory.createForTest !== 'function') {
+      const path = require('path');
+      const factoryPath = path.resolve(__dirname, '../mocks/export-service-factory.js');
+      const { ExportServiceFactory } = require(factoryPath);
+      global.ExportServiceFactory = ExportServiceFactory;
+    }
+    
+    exportService = global.ExportServiceFactory.createForTest(global.vscode, {
+      enablePerformance: true,
+      cacheTTL: 300000,
+      maxCacheSize: 100
+    });
+
+    // テスト用ファイルを作成
+    testFilePath = exportService._testHelpers.createTestFile(`page:
   id: unit-test
   title: "単体テスト"
   layout: vertical
   components:
     - Text:
         variant: h1
-        value: "単体テストタイトル"`;
-
-    testFilePath = path.join(__dirname, 'unit-test.tui.yml');
-    fs.writeFileSync(testFilePath, testFile, 'utf-8');
-
-    // Mock ExportManagerを作成
-    mockExportManager = {
-      getSupportedFormats: () => ['html', 'react', 'pug'],
-      getFileExtension: (format) => {
-        const extensions = { html: '.html', react: '.jsx', pug: '.pug' };
-        return extensions[format] || '.txt';
-      },
-      exportFromFile: async (filePath, options) => {
-        // モックの実装
-        return `<!-- Exported from ${filePath} -->\n<div>Mock export for ${options.format}</div>`;
-      }
-    };
-
-    // ExportServiceをインポートしてテスト用インスタンスを作成
-    const { ExportService } = require('../../out/services/export-service');
-    exportService = new ExportService(mockExportManager);
+        value: "単体テストタイトル"`);
   });
 
-  after(async () => {
+  afterEach(async () => {
     // テストファイルを削除
-    if (fs.existsSync(testFilePath)) {
-      fs.unlinkSync(testFilePath);
+    if (exportService && exportService._testHelpers) {
+      exportService._testHelpers.cleanupTestFile(testFilePath);
+      exportService._testHelpers.resetAllMocks();
+      exportService._testHelpers.restoreRequire();
     }
+
+    global.cleanupMocks();
   });
 
-  after(() => {
-    // PerformanceMonitorのインスタンスをクリーンアップ
-    const { PerformanceMonitor } = require('../../out/utils/performance-monitor');
-    const performanceMonitor = PerformanceMonitor.getInstance();
-    if (performanceMonitor && typeof performanceMonitor.dispose === 'function') {
-      performanceMonitor.dispose();
-    }
-    
-    Module.prototype.require = originalRequire;
+  describe('ExportManager の基本機能', () => {
+    it('getSupportedFormatsが正しく動作する', () => {
+      const formats = exportService._testHelpers.mockExportManager.getSupportedFormats();
+      assert.deepStrictEqual(formats, ['html', 'react', 'pug']);
+    });
+
+    it('getFileExtensionが正しく動作する', () => {
+      const mockExportManager = exportService._testHelpers.mockExportManager;
+      assert.strictEqual(mockExportManager.getFileExtension('html'), '.html');
+      assert.strictEqual(mockExportManager.getFileExtension('react'), '.jsx');
+      assert.strictEqual(mockExportManager.getFileExtension('pug'), '.pug');
+      assert.strictEqual(mockExportManager.getFileExtension('unknown'), '.txt');
+    });
+
+    it('exportFromFileが正しく動作する', async () => {
+      const mockExportManager = exportService._testHelpers.mockExportManager;
+      const result = await mockExportManager.exportFromFile(testFilePath, { format: 'html' });
+      assert.ok(result.includes('Exported from'));
+      assert.ok(result.includes('Mock export for html'));
+    });
   });
 
   describe('ファイル拡張子の検証', () => {
     it('サポートされているファイル拡張子を正しく認識する', () => {
+      const fs = require('fs');
+      const path = require('path');
       const supportedExtensions = ['.tui.yml', '.tui.yaml'];
       
       supportedExtensions.forEach(ext => {
         const testFileName = `test${ext}`;
-        // プライベートメソッドのテストは難しいため、
-        // 実際のファイルでテスト
         const testFile = path.join(__dirname, testFileName);
         fs.writeFileSync(testFile, 'test content', 'utf-8');
         
@@ -135,6 +98,8 @@ describe('ExportService 単体テスト', () => {
     });
 
     it('サポートされていないファイル拡張子を正しく除外する', () => {
+      const fs = require('fs');
+      const path = require('path');
       const unsupportedExtensions = ['.txt', '.md', '.json'];
       
       unsupportedExtensions.forEach(ext => {
@@ -155,23 +120,34 @@ describe('ExportService 単体テスト', () => {
     });
   });
 
-  describe('Mock ExportManager のテスト', () => {
-    it('getSupportedFormatsが正しく動作する', () => {
-      const formats = mockExportManager.getSupportedFormats();
-      assert.deepStrictEqual(formats, ['html', 'react', 'pug']);
+  describe('VSCode API モックの検証', () => {
+    it('window.showQuickPickが正しく設定されている', () => {
+      const extendedVscode = exportService._testHelpers.extendedVscode;
+      assert.ok(typeof extendedVscode.window.showQuickPick === 'function');
     });
 
-    it('getFileExtensionが正しく動作する', () => {
-      assert.strictEqual(mockExportManager.getFileExtension('html'), '.html');
-      assert.strictEqual(mockExportManager.getFileExtension('react'), '.jsx');
-      assert.strictEqual(mockExportManager.getFileExtension('pug'), '.pug');
-      assert.strictEqual(mockExportManager.getFileExtension('unknown'), '.txt');
+    it('window.showSaveDialogが正しく設定されている', () => {
+      const extendedVscode = exportService._testHelpers.extendedVscode;
+      assert.ok(typeof extendedVscode.window.showSaveDialog === 'function');
     });
 
-    it('exportFromFileが正しく動作する', async () => {
-      const result = await mockExportManager.exportFromFile(testFilePath, { format: 'html' });
-      assert.ok(result.includes('Exported from'));
-      assert.ok(result.includes('Mock export for html'));
+    it('workspace.fsが正しく設定されている', () => {
+      const extendedVscode = exportService._testHelpers.extendedVscode;
+      assert.ok(typeof extendedVscode.workspace.fs.writeFile === 'function');
+    });
+  });
+
+  describe('テストファイルの操作', () => {
+    it('テストファイルが正しく作成される', () => {
+      const fs = require('fs');
+      assert.ok(fs.existsSync(testFilePath), 'テストファイルが正しく作成されました');
+    });
+
+    it('テストファイルの内容が正しい', () => {
+      const fs = require('fs');
+      const content = fs.readFileSync(testFilePath, 'utf-8');
+      assert.ok(content.includes('unit-test'), 'ファイル内容にIDが含まれています');
+      assert.ok(content.includes('単体テスト'), 'ファイル内容にタイトルが含まれています');
     });
   });
 }); 
