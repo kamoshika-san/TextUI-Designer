@@ -9,6 +9,8 @@ on:
 jobs:
   test:
     name: Test Suite
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     
     strategy:
