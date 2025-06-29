@@ -367,7 +367,7 @@ export class WebViewManager {
    * WebViewにメッセージを送信
    */
   private sendMessageToWebView(data: any, fileName: string): void {
-    if (!this.currentPanel) return;
+    if (!this.currentPanel) {return;}
 
     const message = {
       type: 'update',

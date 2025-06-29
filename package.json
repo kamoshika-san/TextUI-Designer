@@ -3,7 +3,7 @@
   "displayName": "TextUI Designer",
   "description": "YAML/JSON DSLでUIを設計するVS Code拡張",
   "publisher": "kamoshika-san",
-  "version": "0.0.11",
+  "version": "0.0.12-dev",
   "license": "MIT",
   "engines": {
     "vscode": "^1.85.0"
@@ -326,7 +326,7 @@
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "lint": "eslint src",
-    "test": "mocha tests/unit/**/*.js",
+    "test": "mocha --require ./tests/setup.js tests/unit/**/*.js",
     "vscode-test": "node ./out/test/runTest.js",
     "test:regression": "mocha ./tests/regression/export-regression-suite.js",
     "test:unit": "mocha tests/unit/**/*.js",
@@ -342,7 +342,8 @@
     "@typescript-eslint/parser": "^6.15.0",
     "@vitejs/plugin-react": "^4.2.0",
     "@vscode/test-electron": "^2.3.8",
-    "chai": "^5.2.0",
+    "chai": "^4.3.10",
+    "chai-as-promised": "^8.0.1",
     "eslint": "^8.56.0",
     "glob": "^10.3.10",
     "mocha": "^10.2.0",

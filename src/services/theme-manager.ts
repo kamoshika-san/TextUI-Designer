@@ -229,7 +229,7 @@ export class ThemeManager {
 
   private flattenTokens(obj: any, prefix = ''): Record<string, string> {
     let result: Record<string, string> = {};
-    if (!obj) return result;
+    if (!obj) {return result;}
     for (const [key, value] of Object.entries(obj)) {
       const newKey = prefix ? `${prefix}-${key}` : key;
       if (value && typeof value === 'object' && 'value' in (value as any)) {
@@ -278,7 +278,7 @@ export class ThemeManager {
   }
 
   watchThemeFile(callback: (css: string) => void): void {
-    if (!this.themePath) return;
+    if (!this.themePath) {return;}
     const pattern = new vscode.RelativePattern(path.dirname(this.themePath), path.basename(this.themePath));
     this.watcher = vscode.workspace.createFileSystemWatcher(pattern);
     const reload = async () => {

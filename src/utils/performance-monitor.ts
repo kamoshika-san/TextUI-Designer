@@ -59,7 +59,7 @@ export class PerformanceMonitor {
    * パフォーマンスイベントを記録
    */
   recordEvent(type: PerformanceEvent['type'], duration: number, metadata?: Record<string, any>): void {
-    if (!this.isEnabled) return;
+    if (!this.isEnabled) {return;}
 
     const event: PerformanceEvent = {
       type,
@@ -164,7 +164,7 @@ export class PerformanceMonitor {
    */
   private calculateAverageRenderTime(): number {
     const renderEvents = this.events.filter(e => e.type === 'render');
-    if (renderEvents.length === 0) return 0;
+    if (renderEvents.length === 0) {return 0;}
 
     const totalTime = renderEvents.reduce((sum, event) => sum + event.duration, 0);
     return totalTime / renderEvents.length;
@@ -175,7 +175,7 @@ export class PerformanceMonitor {
    */
   private calculateCacheHitRate(): number {
     const cacheEvents = this.events.filter(e => e.type === 'cache');
-    if (cacheEvents.length === 0) return 0;
+    if (cacheEvents.length === 0) {return 0;}
 
     const hits = cacheEvents.filter(e => e.metadata?.hit).length;
     return (hits / cacheEvents.length) * 100;

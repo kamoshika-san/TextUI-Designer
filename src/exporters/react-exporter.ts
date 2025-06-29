@@ -169,15 +169,15 @@ ${childrenCode}
     const { id, fields = [], actions = [] } = props;
     
     const fieldsCode = fields.map((field: FormField, index: number) => {
-      if (field.Input) return this.renderInput(field.Input, index);
-      if (field.Checkbox) return this.renderCheckbox(field.Checkbox, index);
-      if (field.Radio) return this.renderRadio(field.Radio, index);
-      if (field.Select) return this.renderSelect(field.Select, index);
+      if (field.Input) {return this.renderInput(field.Input, index);}
+      if (field.Checkbox) {return this.renderCheckbox(field.Checkbox, index);}
+      if (field.Radio) {return this.renderRadio(field.Radio, index);}
+      if (field.Select) {return this.renderSelect(field.Select, index);}
       return '';
     }).join('\n');
     
     const actionsCode = actions.map((action: FormAction, index: number) => {
-      if (action.Button) return this.renderButton(action.Button, index);
+      if (action.Button) {return this.renderButton(action.Button, index);}
       return '';
     }).join('\n');
     

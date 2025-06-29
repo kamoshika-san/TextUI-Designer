@@ -230,7 +230,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     // プロパティ行や空白行の場合、currentIndexから上に遡って最初のコンポーネント行を返す
     for (let i = currentIndex - 1; i >= 0; i--) {
       const line = lines[i];
-      if (line.trim() === '') continue;
+      if (line.trim() === '') {continue;}
       const match = line.match(/^\s*-?\s*(\w+):\s*$/);
       if (match && match[1] !== 'components' && match[1] !== 'page') {
         return match[1];
@@ -269,7 +269,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
    * コンポーネントのプロパティ補完候補を取得
    */
   private getComponentPropertyCompletions(componentName?: string): vscode.CompletionItem[] {
-    if (!componentName) return [];
+    if (!componentName) {return [];}
 
     const properties = this.getComponentProperties(componentName);
     
@@ -286,7 +286,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
    * プロパティの値補完候補を取得
    */
   private getPropertyValueCompletions(propertyName?: string, componentName?: string): vscode.CompletionItem[] {
-    if (!propertyName || !componentName) return [];
+    if (!propertyName || !componentName) {return [];}
 
     const values = this.getPropertyValues(propertyName, componentName);
     

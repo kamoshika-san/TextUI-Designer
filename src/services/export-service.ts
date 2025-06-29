@@ -23,13 +23,13 @@ export class ExportService {
   async executeExport(lastTuiFile?: string): Promise<void> {
     const result = await ErrorHandler.executeSafely(async () => {
       const filePath = await this.getTargetFilePath(lastTuiFile);
-      if (!filePath) return;
+      if (!filePath) {return;}
 
       const format = await this.selectExportFormat();
-      if (!format) return;
+      if (!format) {return;}
 
       const outputUri = await this.selectOutputPath(format);
-      if (!outputUri) return;
+      if (!outputUri) {return;}
 
       await this.performExport(filePath, format, outputUri);
       
@@ -69,8 +69,8 @@ export class ExportService {
     
     // デフォルト形式が利用可能な場合は最初に表示
     const sortedFormats = formats.sort((a, b) => {
-      if (a === settings.defaultFormat) return -1;
-      if (b === settings.defaultFormat) return 1;
+      if (a === settings.defaultFormat) {return -1;}
+      if (b === settings.defaultFormat) {return 1;}
       return 0;
     });
 

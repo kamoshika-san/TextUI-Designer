@@ -24,10 +24,10 @@ export class TemplateService {
   async createTemplate(): Promise<void> {
     const result = await this.errorHandler.executeSafely(async () => {
       const templateType = await this.selectTemplateType();
-      if (!templateType) return;
+      if (!templateType) {return;}
 
       const uri = await this.selectSaveLocation();
-      if (!uri) return;
+      if (!uri) {return;}
 
       const templateContent = this.generateTemplateContent(templateType.value);
       await this.createTemplateFile(uri, templateContent);
@@ -53,7 +53,7 @@ export class TemplateService {
       }
 
       const templateUri = await this.selectTemplateFile();
-      if (!templateUri) return;
+      if (!templateUri) {return;}
 
       const templateContent = await this.loadTemplateContent(templateUri);
       await this.insertTemplateContent(activeEditor, templateContent);
