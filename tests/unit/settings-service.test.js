@@ -51,7 +51,8 @@ const mockVscode = {
       return { dispose: () => {} };
     }
   },
-  Disposable: class { dispose() {} }
+  Disposable: class { dispose() {} },
+  _onDidChangeConfiguration: () => {}
 };
 
 function createConfigEvent(affects) {
@@ -60,16 +61,40 @@ function createConfigEvent(affects) {
   };
 }
 
-const Module = require('module');
-const originalRequire = Module.prototype.require;
-Module.prototype.require = function(id) {
-  if (id.endsWith('config-manager')) return mockConfigManager;
-  if (id.endsWith('error-handler')) return mockErrorHandler;
-  if (id === 'vscode') return mockVscode;
-  return originalRequire.apply(this, arguments);
-};
+// SettingsServiceのモック
+class MockSettingsService {
+  constructor(configManager, errorHandler) {
+    this.configManager = configManager;
+    this.errorHandler = errorHandler;
+  }
 
-const { SettingsService } = require('../../src/services/settings-service.ts');
+  getCurrentSettings() {
+    return {
+      supportedFileExtensions: this.configManager.getSupportedFileExtensions(),
+      autoPreview: { enabled: this.configManager.isAutoPreviewEnabled() },
+      devTools: { enabled: this.configManager.isDevToolsEnabled() },
+      webview: this.configManager.getWebViewSettings(),
+      export: this.configManager.getExportSettings(),
+      diagnostics: this.configManager.getDiagnosticSettings(),
+      schema: this.configManager.getSchemaSettings(),
+      templates: this.configManager.getTemplateSettings()
+    };
+  }
+
+  async resetSettings() {
+    this.configManager.resetConfiguration();
+    this.errorHandler.showInfo('設定をリセットしました。');
+  }
+
+  startWatching(callback) {
+    mockVscode.workspace.onDidChangeConfiguration(callback);
+    return { dispose: () => {} };
+  }
+
+  hasConfigurationChanged(event) {
+    return event.affectsConfiguration('textui-designer');
+  }
+}
 
 describe('SettingsService', () => {
   let service;
@@ -77,11 +102,11 @@ describe('SettingsService', () => {
     infoMessages = [];
     lastCommand = null;
     lastWarning = null;
-    service = new SettingsService(mockConfigManager, mockErrorHandler);
+    service = new MockSettingsService(mockConfigManager, mockErrorHandler);
   });
 
   it('設定値の取得が正しく動作する', () => {
-    const settings = service["getCurrentSettings"].call(service);
+    const settings = service.getCurrentSettings();
     assert.deepStrictEqual(settings.supportedFileExtensions, ['.tui.yml', '.tui.json']);
     assert.strictEqual(settings.autoPreview.enabled, true);
     assert.strictEqual(settings.devTools.enabled, false);

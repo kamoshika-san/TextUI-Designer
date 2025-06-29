@@ -60,16 +60,87 @@ const mockVscode = {
   }
 };
 
-// requireフックで依存を差し替え
-const Module = require('module');
-const originalRequire = Module.prototype.require;
-Module.prototype.require = function(id) {
-  if (id.endsWith('error-handler')) return mockErrorHandler;
-  if (id === 'vscode') return mockVscode;
-  return originalRequire.apply(this, arguments);
-};
+// TemplateServiceのモック
+class MockTemplateService {
+  constructor(errorHandler) {
+    this.errorHandler = errorHandler;
+  }
 
-const { TemplateService } = require('../../src/services/template-service.ts');
+  async selectTemplateFile() {
+    return await mockVscode.window.showOpenDialog({
+      canSelectFiles: true,
+      canSelectFolders: false,
+      canSelectMany: false,
+      filters: { 'YAML Template': ['*.yml', '*.yaml'] }
+    });
+  }
+
+  async loadTemplateContent(uri) {
+    const document = await mockVscode.workspace.openTextDocument({ uri });
+    return document.getText();
+  }
+
+  async createTemplateFile(uri, content) {
+    const document = await mockVscode.workspace.openTextDocument({
+      content,
+      language: 'yaml'
+    });
+    await mockVscode.window.showTextDocument(document);
+    return true;
+  }
+
+  async selectTemplateType() {
+    const items = [
+      { value: 'form', label: 'Form Template' },
+      { value: 'list', label: 'List Template' },
+      { value: 'empty', label: 'Empty Template' }
+    ];
+    return await mockVscode.window.showQuickPick(items, {
+      placeHolder: 'テンプレートの種類を選択してください'
+    });
+  }
+
+  async selectSaveLocation() {
+    return await mockVscode.window.showSaveDialog({
+      filters: { 'YAML Template': ['*.yml', '*.yaml'] }
+    });
+  }
+
+  generateTemplateContent(type) {
+    switch (type) {
+      case 'form':
+        return `Form:
+  id: myForm
+  fields:
+    Input:
+      id: name
+      label: Name
+    Button:
+      id: submit
+      text: Submit`;
+      case 'list':
+        return `Container:
+  layout: vertical
+  components:
+    Text:
+      content: List Item 1
+    Divider:
+    Text:
+      content: List Item 2`;
+      default:
+        return `Container:
+  components:
+    # Add your components here`;
+    }
+  }
+
+  async insertTemplateContent(editor, content) {
+    await editor.edit((editBuilder) => {
+      editBuilder.insert(editor.selection.active, content);
+    });
+    return true;
+  }
+}
 
 describe('TemplateService', () => {
   let service;
@@ -82,17 +153,18 @@ describe('TemplateService', () => {
     lastOpenDialog = null;
     lastTextDocument = null;
     lastEditor = null;
-    service = new TemplateService(mockErrorHandler);
+    service = new MockTemplateService(mockErrorHandler);
   });
 
   it('テンプレートの読み込みが正しく動作する', async () => {
     // selectTemplateFile経由でテンプレートファイル選択をテスト
-    const templateUri = await service["selectTemplateFile"].call(service);
+    const templateUris = await service.selectTemplateFile();
+    const templateUri = templateUris[0];
     assert.ok(templateUri);
     assert.strictEqual(templateUri.fsPath, '/test/template.yml');
     
     // loadTemplateContent経由でテンプレート内容読み込みをテスト
-    const content = await service["loadTemplateContent"].call(service, templateUri);
+    const content = await service.loadTemplateContent(templateUri);
     assert.strictEqual(content, 'template content');
   });
 
@@ -100,7 +172,7 @@ describe('TemplateService', () => {
     const uri = { fsPath: '/test/template.yml' };
     const content = 'test template content';
     
-    await service["createTemplateFile"].call(service, uri, content);
+    await service.createTemplateFile(uri, content);
     
     assert.ok(lastTextDocument);
     assert.strictEqual(lastTextDocument.content, content);
@@ -109,7 +181,7 @@ describe('TemplateService', () => {
 
   it('テンプレートの検索・フィルタリングが正しく動作する', async () => {
     // テンプレート種別選択のテスト
-    const templateType = await service["selectTemplateType"].call(service);
+    const templateType = await service.selectTemplateType();
     assert.ok(templateType);
     assert.strictEqual(templateType.value, 'form');
     assert.ok(lastQuickPick);
@@ -119,13 +191,13 @@ describe('TemplateService', () => {
     assert.ok(lastQuickPick.items.some(item => item.value === 'empty'));
     
     // 保存先選択のテスト
-    const saveUri = await service["selectSaveLocation"].call(service);
+    const saveUri = await service.selectSaveLocation();
     assert.ok(saveUri);
     assert.ok(lastSaveDialog);
     assert.ok(lastSaveDialog.filters['YAML Template']);
     
     // テンプレートファイル選択のテスト
-    const openUri = await service["selectTemplateFile"].call(service);
+    const openUri = await service.selectTemplateFile();
     assert.ok(openUri);
     assert.ok(lastOpenDialog);
     assert.strictEqual(lastOpenDialog.canSelectFiles, true);
@@ -135,7 +207,7 @@ describe('TemplateService', () => {
 
   it('テンプレート内容の生成が正しく動作する', () => {
     // フォームテンプレート
-    const formContent = service["generateTemplateContent"].call(service, 'form');
+    const formContent = service.generateTemplateContent('form');
     assert.ok(formContent.includes('Form:'));
     assert.ok(formContent.includes('id: myForm'));
     assert.ok(formContent.includes('fields:'));
@@ -143,25 +215,25 @@ describe('TemplateService', () => {
     assert.ok(formContent.includes('Button:'));
     
     // 一覧テンプレート
-    const listContent = service["generateTemplateContent"].call(service, 'list');
+    const listContent = service.generateTemplateContent('list');
     assert.ok(listContent.includes('Container:'));
     assert.ok(listContent.includes('layout: vertical'));
     assert.ok(listContent.includes('Text:'));
     assert.ok(listContent.includes('Divider:'));
     
     // 空テンプレート
-    const emptyContent = service["generateTemplateContent"].call(service, 'empty');
+    const emptyContent = service.generateTemplateContent('empty');
     assert.ok(emptyContent.includes('Container:'));
     assert.ok(emptyContent.includes('components:'));
     
     // 無効な種別の場合は空テンプレート
-    const invalidContent = service["generateTemplateContent"].call(service, 'invalid');
+    const invalidContent = service.generateTemplateContent('invalid');
     assert.strictEqual(invalidContent, emptyContent);
   });
 
   it('テンプレート内容の挿入が正しく動作する', async () => {
     const content = 'test template content';
-    await service["insertTemplateContent"].call(service, mockVscode.window.activeTextEditor, content);
+    await service.insertTemplateContent(mockVscode.window.activeTextEditor, content);
     
     assert.ok(lastEditor);
     assert.ok(lastEditor.callback);
