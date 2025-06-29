@@ -54,6 +54,8 @@ jobs:
 
   lint:
     name: Lint & Format Check
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     
     steps:
