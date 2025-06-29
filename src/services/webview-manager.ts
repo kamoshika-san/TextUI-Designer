@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import * as YAML from 'yaml';
+import * as path from 'path';
+import * as fs from 'fs';
 import { getWebviewContent } from '../utils/webview-utils';
 import { PerformanceMonitor } from '../utils/performance-monitor';
 import { ThemeManager } from './theme-manager';
@@ -94,6 +96,9 @@ export class WebViewManager {
               this.applyThemeVariables(this.themeManager.generateCSSVariables());
             }
             
+            // 利用可能なテーマ一覧を送信
+            await this.sendAvailableThemes();
+            
             // WebView初期化完了後にフォーカスを戻す
             if (shouldReturnFocus && activeEditor) {
               setTimeout(async () => {
@@ -105,6 +110,12 @@ export class WebViewManager {
                 }
               }, 300);
             }
+          } else if (message.type === 'theme-switch') {
+            console.log('[WebViewManager] テーマ切り替えメッセージを受信:', message.themePath);
+            await this.switchTheme(message.themePath);
+          } else if (message.type === 'get-themes') {
+            console.log('[WebViewManager] テーマ一覧リクエストを受信');
+            await this.sendAvailableThemes();
           }
         },
         undefined,
@@ -819,5 +830,182 @@ export class WebViewManager {
       type: 'theme-change',
       theme: theme
     });
+  }
+
+  /**
+   * 利用可能なテーマファイル一覧を検出して送信
+   */
+  private async sendAvailableThemes(): Promise<void> {
+    if (!this.currentPanel || !this.currentPanel.webview) {
+      return;
+    }
+
+    try {
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders) {
+        console.log('[WebViewManager] ワークスペースフォルダが見つかりません');
+        return;
+      }
+
+      const themes: { name: string; path: string; isActive: boolean; description?: string }[] = [];
+      
+      // 現在のアクティブテーマパスを取得
+      const currentThemePath = this.themeManager ? (this.themeManager as any).themePath : '';
+      const isDefaultThemeActive = !currentThemePath;
+      
+      console.log('[WebViewManager] 現在のテーマパス:', currentThemePath);
+      console.log('[WebViewManager] デフォルトテーマがアクティブ:', isDefaultThemeActive);
+      
+      // 各ワークスペースフォルダでテーマファイルを検索
+      for (const folder of workspaceFolders) {
+        const folderPath = folder.uri.fsPath;
+        
+        // サンプルフォルダとルートディレクトリでテーマファイルを検索
+        const searchPaths = [
+          path.join(folderPath, 'sample'),
+          path.join(folderPath, 'textui-designer', 'sample'),
+          folderPath
+        ];
+
+        for (const searchPath of searchPaths) {
+          if (!fs.existsSync(searchPath)) {
+            continue;
+          }
+
+          const files = fs.readdirSync(searchPath);
+          const themeFiles = files.filter(file => 
+            file.endsWith('-theme.yml') || 
+            file.endsWith('_theme.yml') || 
+            file === 'textui-theme.yml'
+          );
+
+          for (const file of themeFiles) {
+            const filePath = path.join(searchPath, file);
+            const relativePath = path.relative(folderPath, filePath);
+            
+            // テーマファイルの内容を読み取って名前と説明を取得
+            try {
+              const content = fs.readFileSync(filePath, 'utf8');
+              const themeData = YAML.parse(content);
+              
+              const themeName = themeData?.theme?.name || file.replace(/(-theme|_theme)\.yml$/, '').replace(/\.yml$/, '');
+              const themeDescription = themeData?.theme?.description;
+              
+              // 現在のアクティブテーマかどうかを判定（パスの正規化で比較）
+              const isActive = currentThemePath && 
+                path.resolve(currentThemePath) === path.resolve(filePath);
+
+              themes.push({
+                name: themeName,
+                path: relativePath,
+                isActive,
+                description: themeDescription
+              });
+            } catch (error) {
+              console.log(`[WebViewManager] テーマファイル読み取りエラー: ${filePath}`, error);
+              // エラーの場合はファイル名のみで追加
+              themes.push({
+                name: file.replace(/(-theme|_theme)\.yml$/, '').replace(/\.yml$/, ''),
+                path: relativePath,
+                isActive: false
+              });
+            }
+          }
+        }
+      }
+
+      // デフォルトテーマを追加（常に先頭に配置）
+      themes.unshift({
+        name: 'デフォルト',
+        path: '',
+        isActive: isDefaultThemeActive,
+        description: 'システムデフォルトテーマ'
+      });
+
+      console.log('[WebViewManager] 検出されたテーマ:', themes);
+
+      // WebViewに送信
+      this.currentPanel.webview.postMessage({
+        type: 'available-themes',
+        themes: themes
+      });
+    } catch (error) {
+      console.error('[WebViewManager] テーマ一覧取得エラー:', error);
+    }
+  }
+
+  /**
+   * テーマを切り替え
+   */
+  private async switchTheme(themePath: string): Promise<void> {
+    if (!this.themeManager) {
+      console.log('[WebViewManager] ThemeManagerが初期化されていません');
+      return;
+    }
+
+    try {
+      if (!themePath) {
+        // デフォルトテーマに切り替え
+        console.log('[WebViewManager] デフォルトテーマに切り替え');
+        
+        // ThemeManagerの状態をクリア
+        (this.themeManager as any).themePath = '';
+        
+        // デフォルトスタイルを適用（空文字でリセット）
+        this.applyThemeVariables('');
+        
+        // テーマ一覧を更新
+        await this.sendAvailableThemes();
+        
+        // プレビュー内容を強制更新してテーマ変更を即座に反映
+        await this.sendYamlToWebview(true);
+        
+        vscode.window.showInformationMessage('デフォルトテーマに切り替えました');
+        return;
+      }
+
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders) {
+        console.log('[WebViewManager] ワークスペースフォルダが見つかりません');
+        return;
+      }
+
+      // 相対パスから絶対パスを構築
+      let fullThemePath = '';
+      for (const folder of workspaceFolders) {
+        const candidatePath = path.join(folder.uri.fsPath, themePath);
+        if (fs.existsSync(candidatePath)) {
+          fullThemePath = candidatePath;
+          break;
+        }
+      }
+
+      if (!fullThemePath) {
+        console.log('[WebViewManager] テーマファイルが見つかりません:', themePath);
+        vscode.window.showErrorMessage(`テーマファイルが見つかりません: ${themePath}`);
+        return;
+      }
+
+      console.log('[WebViewManager] テーマを切り替え:', fullThemePath);
+      
+      // ThemeManagerのテーマパスを更新して読み込み
+      (this.themeManager as any).themePath = fullThemePath;
+      await this.themeManager.loadTheme();
+      const cssVariables = this.themeManager.generateCSSVariables();
+      
+      // WebViewにCSS変数を適用
+      this.applyThemeVariables(cssVariables);
+      
+      // テーマ一覧を更新（アクティブ状態を反映）
+      await this.sendAvailableThemes();
+      
+      // プレビュー内容を強制更新してテーマ変更を即座に反映
+      await this.sendYamlToWebview(true);
+      
+      vscode.window.showInformationMessage(`テーマを切り替えました: ${path.basename(themePath)}`);
+    } catch (error) {
+      console.error('[WebViewManager] テーマ切り替えエラー:', error);
+      vscode.window.showErrorMessage(`テーマ切り替えに失敗しました: ${error}`);
+    }
   }
 } 
