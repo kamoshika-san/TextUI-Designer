@@ -1,0 +1,411 @@
+# TextUI Designer - サンプルテーマファイル
+# このファイルをプロジェクトルートにコピーして使用してください
+# 
+# 使用方法:
+# 1. このファイルをプロジェクトルートに `textui-theme.yml` としてコピー
+# 2. 必要に応じてカラー・スペーシング・タイポグラフィをカスタマイズ
+# 3. ファイル保存で即座にプレビューに反映されます
+
+theme:
+  name: "Modern Blue Theme"
+  version: "1.0.0"
+  description: "モダンでクリーンなブルーベーステーマ - 実用的なデザイン"
+  author: "TextUI Designer Team"
+  
+  # ====================
+  # デザイントークン
+  # ====================
+  tokens:
+    # カラーパレット - モダンなブルーベースデザイン
+    color:
+      # ブランドカラー
+      primary: "#3B82F6"        # 鮮やかなブルー（メインアクション）
+      secondary: "#6B7280"      # ニュートラルグレー（セカンダリ要素）
+      
+      # 状態カラー - 直感的な色使い
+      success: "#10B981"        # グリーン（成功・完了）
+      warning: "#F59E0B"        # オレンジ（警告・注意）
+      error: "#EF4444"          # レッド（エラー・危険）
+      info: "#3B82F6"           # ブルー（情報・ヒント）
+      
+      # 背景カラー - 階層を明確に
+      surface: "#F9FAFB"        # ライトグレー（メイン背景）
+      background: "#FFFFFF"     # ホワイト（カード・コンテナ背景）
+      overlay: "rgba(0, 0, 0, 0.5)"  # オーバーレイ
+      
+      # テキストカラー - 可読性重視
+      text:
+        primary: "#111827"      # ダークグレー（メインテキスト）
+        secondary: "#6B7280"    # ミディアムグレー（サブテキスト）
+        muted: "#9CA3AF"        # ライトグレー（補助テキスト）
+        inverse: "#FFFFFF"      # ホワイト（ダーク背景用）
+        link: "#3B82F6"         # ブルー（リンク）
+      
+      # ボーダー・区切り線
+      border:
+        default: "#E5E7EB"      # ライトグレー（デフォルトボーダー）
+        focus: "#3B82F6"        # ブルー（フォーカス時）
+        error: "#EF4444"        # レッド（エラー時）
+    
+    # スペーシング - 8pxベースのスケール
+    spacing:
+      xs: "0.25rem"      # 4px  - 最小マージン
+      sm: "0.5rem"       # 8px  - 小さなパディング
+      md: "1rem"         # 16px - 標準スペーシング
+      lg: "1.5rem"       # 24px - セクション間
+      xl: "2rem"         # 32px - 大きなセクション間
+      "2xl": "3rem"      # 48px - ページレベル
+      "3xl": "4rem"      # 64px - 大きな区切り
+    
+    # タイポグラフィ - 読みやすさ重視
+    typography:
+      fontFamily: 
+        primary: "'Inter', 'Helvetica Neue', 'Arial', sans-serif"
+        monospace: "'JetBrains Mono', 'Consolas', monospace"
+      
+      fontSize:
+        xs: "0.75rem"      # 12px - キャプション
+        sm: "0.875rem"     # 14px - 小テキスト
+        base: "1rem"       # 16px - 標準テキスト
+        lg: "1.125rem"     # 18px - 強調テキスト
+        xl: "1.25rem"      # 20px - 小見出し
+        "2xl": "1.5rem"    # 24px - 中見出し
+        "3xl": "1.875rem"  # 30px - 大見出し
+        "4xl": "2.25rem"   # 36px - タイトル
+      
+      fontWeight:
+        normal: "400"
+        medium: "500"
+        semibold: "600"
+        bold: "700"
+      
+      lineHeight:
+        tight: "1.25"
+        normal: "1.5"
+        relaxed: "1.75"
+    
+    # ボーダー半径 - 統一された角丸
+    borderRadius:
+      none: "0"
+      sm: "0.25rem"      # 4px  - 小要素
+      md: "0.375rem"     # 6px  - 標準要素
+      lg: "0.5rem"       # 8px  - カード等
+      xl: "0.75rem"      # 12px - 大きなカード
+      "2xl": "1rem"      # 16px - モーダル等
+      full: "9999px"     # 完全な円形
+    
+    # シャドウ - 奥行き表現
+    shadows:
+      sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)"
+      md: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+      lg: "0 10px 15px -3px rgba(0, 0, 0, 0.1)"
+      xl: "0 20px 25px -5px rgba(0, 0, 0, 0.1)"
+    
+    # トランジション - スムーズなアニメーション
+    transition:
+      fast: "150ms ease-in-out"
+      normal: "200ms ease-in-out"
+      slow: "300ms ease-in-out"
+  
+  # ====================
+  # コンポーネント固有スタイル
+  # ====================
+  components:
+    # ボタンコンポーネント
+    button:
+      # プライマリボタン - メインアクション
+      primary:
+        backgroundColor: "var(--color-primary)"
+        color: "var(--color-text-inverse)"
+        padding: "var(--spacing-sm) var(--spacing-lg)"
+        borderRadius: "var(--borderRadius-md)"
+        fontFamily: "var(--typography-fontFamily-primary)"
+        fontSize: "var(--typography-fontSize-sm)"
+        fontWeight: "var(--typography-fontWeight-medium)"
+        border: "none"
+        cursor: "pointer"
+        transition: "var(--transition-normal)"
+        boxShadow: "var(--shadows-sm)"
+        
+      # セカンダリボタン - サブアクション
+      secondary:
+        backgroundColor: "var(--color-background)"
+        color: "var(--color-text-primary)"
+        padding: "var(--spacing-sm) var(--spacing-lg)"
+        borderRadius: "var(--borderRadius-md)"
+        fontFamily: "var(--typography-fontFamily-primary)"
+        fontSize: "var(--typography-fontSize-sm)"
+        fontWeight: "var(--typography-fontWeight-medium)"
+        border: "1px solid var(--color-border-default)"
+        cursor: "pointer"
+        transition: "var(--transition-normal)"
+        
+      # ホバー状態
+      hover:
+        primary:
+          backgroundColor: "#2563EB"  # より濃いブルー
+          boxShadow: "var(--shadows-md)"
+        secondary:
+          backgroundColor: "var(--color-surface)"
+          borderColor: "var(--color-primary)"
+    
+    # 入力フィールド
+    input:
+      # ラベル
+      label:
+        color: "var(--color-text-primary)"
+        fontSize: "var(--typography-fontSize-sm)"
+        fontFamily: "var(--typography-fontFamily-primary)"
+        fontWeight: "var(--typography-fontWeight-medium)"
+        marginBottom: "var(--spacing-xs)"
+        display: "block"
+        
+      # 入力フィールド本体
+      field:
+        backgroundColor: "var(--color-background)"
+        color: "var(--color-text-primary)"
+        border: "1px solid var(--color-border-default)"
+        borderRadius: "var(--borderRadius-md)"
+        padding: "var(--spacing-sm) var(--spacing-md)"
+        fontSize: "var(--typography-fontSize-base)"
+        fontFamily: "var(--typography-fontFamily-primary)"
+        lineHeight: "var(--typography-lineHeight-normal)"
+        transition: "var(--transition-fast)"
+        width: "100%"
+        
+      # フォーカス状態
+      focus:
+        borderColor: "var(--color-border-focus)"
+        boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)"
+        outline: "none"
+        
+      # プレースホルダー
+      placeholder:
+        color: "var(--color-text-muted)"
+        
+      # エラー状態
+      error:
+        borderColor: "var(--color-border-error)"
+        boxShadow: "0 0 0 3px rgba(239, 68, 68, 0.1)"
+    
+    # 選択コンポーネント
+    select:
+      label:
+        color: "var(--color-text-primary)"
+        fontSize: "var(--typography-fontSize-sm)"
+        fontFamily: "var(--typography-fontFamily-primary)"
+        fontWeight: "var(--typography-fontWeight-medium)"
+        marginBottom: "var(--spacing-xs)"
+        
+      field:
+        backgroundColor: "var(--color-background)"
+        color: "var(--color-text-primary)"
+        border: "1px solid var(--color-border-default)"
+        borderRadius: "var(--borderRadius-md)"
+        padding: "var(--spacing-sm) var(--spacing-md)"
+        fontSize: "var(--typography-fontSize-base)"
+        fontFamily: "var(--typography-fontFamily-primary)"
+        cursor: "pointer"
+        transition: "var(--transition-fast)"
+        
+      focus:
+        borderColor: "var(--color-border-focus)"
+        boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)"
+    
+    # チェックボックス
+    checkbox:
+      field:
+        accentColor: "var(--color-primary)"
+        width: "1rem"
+        height: "1rem"
+        cursor: "pointer"
+        
+      label:
+        color: "var(--color-text-primary)"
+        fontSize: "var(--typography-fontSize-sm)"
+        fontFamily: "var(--typography-fontFamily-primary)"
+        marginLeft: "var(--spacing-sm)"
+        cursor: "pointer"
+        
+      group:
+        display: "flex"
+        alignItems: "center"
+        gap: "var(--spacing-sm)"
+    
+    # ラジオボタン
+    radio:
+      groupLabel:
+        color: "var(--color-text-primary)"
+        fontSize: "var(--typography-fontSize-sm)"
+        fontFamily: "var(--typography-fontFamily-primary)"
+        fontWeight: "var(--typography-fontWeight-medium)"
+        marginBottom: "var(--spacing-sm)"
+        
+      group:
+        display: "flex"
+        flexDirection: "column"
+        gap: "var(--spacing-sm)"
+        
+      option:
+        display: "flex"
+        alignItems: "center"
+        gap: "var(--spacing-sm)"
+        
+      field:
+        accentColor: "var(--color-primary)"
+        cursor: "pointer"
+        
+      label:
+        color: "var(--color-text-primary)"
+        fontSize: "var(--typography-fontSize-sm)"
+        fontFamily: "var(--typography-fontFamily-primary)"
+        cursor: "pointer"
+    
+    # 区切り線
+    divider:
+      horizontal:
+        borderTop: "1px solid var(--color-border-default)"
+        margin: "var(--spacing-lg) 0"
+        width: "100%"
+        
+      vertical:
+        borderLeft: "1px solid var(--color-border-default)"
+        margin: "0 var(--spacing-lg)"
+        height: "auto"
+        minHeight: "2rem"
+    
+    # アラート
+    alert:
+      base:
+        padding: "var(--spacing-md)"
+        borderRadius: "var(--borderRadius-lg)"
+        fontSize: "var(--typography-fontSize-sm)"
+        fontFamily: "var(--typography-fontFamily-primary)"
+        lineHeight: "var(--typography-lineHeight-normal)"
+        
+      info:
+        backgroundColor: "rgba(59, 130, 246, 0.1)"
+        color: "var(--color-primary)"
+        border: "1px solid rgba(59, 130, 246, 0.2)"
+        
+      success:
+        backgroundColor: "rgba(16, 185, 129, 0.1)"
+        color: "var(--color-success)"
+        border: "1px solid rgba(16, 185, 129, 0.2)"
+        
+      warning:
+        backgroundColor: "rgba(245, 158, 11, 0.1)"
+        color: "var(--color-warning)"
+        border: "1px solid rgba(245, 158, 11, 0.2)"
+        
+      error:
+        backgroundColor: "rgba(239, 68, 68, 0.1)"
+        color: "var(--color-error)"
+        border: "1px solid rgba(239, 68, 68, 0.2)"
+    
+    # テキスト
+    text:
+      h1:
+        fontSize: "var(--typography-fontSize-4xl)"
+        fontWeight: "var(--typography-fontWeight-bold)"
+        color: "var(--color-text-primary)"
+        lineHeight: "var(--typography-lineHeight-tight)"
+        marginBottom: "var(--spacing-lg)"
+        
+      h2:
+        fontSize: "var(--typography-fontSize-3xl)"
+        fontWeight: "var(--typography-fontWeight-bold)"
+        color: "var(--color-text-primary)"
+        lineHeight: "var(--typography-lineHeight-tight)"
+        marginBottom: "var(--spacing-md)"
+        
+      h3:
+        fontSize: "var(--typography-fontSize-2xl)"
+        fontWeight: "var(--typography-fontWeight-semibold)"
+        color: "var(--color-text-primary)"
+        lineHeight: "var(--typography-lineHeight-tight)"
+        marginBottom: "var(--spacing-md)"
+        
+      p:
+        fontSize: "var(--typography-fontSize-base)"
+        color: "var(--color-text-primary)"
+        lineHeight: "var(--typography-lineHeight-normal)"
+        marginBottom: "var(--spacing-md)"
+        
+      small:
+        fontSize: "var(--typography-fontSize-sm)"
+        color: "var(--color-text-secondary)"
+        lineHeight: "var(--typography-lineHeight-normal)"
+        
+      caption:
+        fontSize: "var(--typography-fontSize-xs)"
+        color: "var(--color-text-muted)"
+        lineHeight: "var(--typography-lineHeight-normal)"
+    
+    # コンテナ
+    container:
+      base:
+        padding: "var(--spacing-md)"
+        
+      horizontal:
+        display: "flex"
+        flexDirection: "row"
+        gap: "var(--spacing-md)"
+        alignItems: "center"
+        
+      vertical:
+        display: "flex"
+        flexDirection: "column"
+        gap: "var(--spacing-md)"
+        
+      card:
+        backgroundColor: "var(--color-background)"
+        borderRadius: "var(--borderRadius-lg)"
+        boxShadow: "var(--shadows-sm)"
+        border: "1px solid var(--color-border-default)"
+    
+    # フォーム
+    form:
+      container:
+        backgroundColor: "var(--color-background)"
+        padding: "var(--spacing-xl)"
+        borderRadius: "var(--borderRadius-xl)"
+        boxShadow: "var(--shadows-md)"
+        border: "1px solid var(--color-border-default)"
+        
+      fieldset:
+        border: "none"
+        padding: "0"
+        margin: "0 0 var(--spacing-lg) 0"
+        
+      actions:
+        display: "flex"
+        gap: "var(--spacing-md)"
+        justifyContent: "flex-end"
+        paddingTop: "var(--spacing-lg)"
+        borderTop: "1px solid var(--color-border-default)"
+        marginTop: "var(--spacing-lg)"
+
+# ====================
+# テーマ使用例・カスタマイズガイド
+# ====================
+
+# このテーマをカスタマイズするには：
+#
+# 1. カラーパレットの変更:
+#    - tokens.color.primary を希望の色に変更
+#    - tokens.color.secondary でアクセントカラーを調整
+#
+# 2. スペーシングの調整:
+#    - tokens.spacing の値を変更してレイアウトを調整
+#
+# 3. タイポグラフィのカスタマイズ:
+#    - tokens.typography.fontFamily でフォントを変更
+#    - tokens.typography.fontSize でサイズスケールを調整
+#
+# 4. コンポーネント固有の微調整:
+#    - components下の各コンポーネントスタイルを個別調整
+
+# 使用例:
+# sample.tui.yml と組み合わせて使用することで、
+# 統一されたデザインのUIを簡単に構築できます。 
