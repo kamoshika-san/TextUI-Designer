@@ -163,7 +163,7 @@ function loadModule(modulePath) {
   try {
     // 必ず.js拡張子を付与
     const jsPath = modulePath.endsWith('.js') ? modulePath : modulePath + '.js';
-    const fullPath = path.join(__dirname, '..', '..', 'dist', jsPath);
+    const fullPath = path.join(__dirname, '..', '..', 'out', jsPath);
     console.log(`[loadModule] modulePath: ${modulePath}`);
     console.log(`[loadModule] jsPath: ${jsPath}`);
     console.log(`[loadModule] fullPath: ${fullPath}`);
