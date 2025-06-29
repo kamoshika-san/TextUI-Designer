@@ -310,6 +310,10 @@
         "*.template.yaml"
       ],
       "./schemas/theme-schema.json": [
+        "*-theme.yml",
+        "*-theme.yaml",
+        "*_theme.yml", 
+        "*_theme.yaml",
         "textui-theme.yml",
         "textui-theme.yaml"
       ]

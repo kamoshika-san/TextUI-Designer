@@ -39,11 +39,20 @@ Module.prototype.require = function(id) {
 // テスト用の最小限schema.json
 const testSchemaPath = path.join(__dirname, 'schemas', 'schema.json');
 const testTemplateSchemaPath = path.join(__dirname, 'schemas', 'template-schema.json');
+const testThemeSchemaPath = path.join(__dirname, 'schemas', 'theme-schema.json');
 const testSchemaContent = {
   $id: 'test-schema',
   type: 'object',
   definitions: {
     component: { type: 'object', properties: { foo: { type: 'string' } } }
+  }
+};
+const testThemeSchemaContent = {
+  $id: 'test-theme-schema',
+  type: 'object',
+  properties: {
+    theme: { type: 'object' },
+    tokens: { type: 'object' }
   }
 };
 
@@ -59,6 +68,7 @@ describe('SchemaManager', () => {
     // テスト用schema.jsonを作成
     fs.mkdirSync(path.dirname(testSchemaPath), { recursive: true });
     fs.writeFileSync(testSchemaPath, JSON.stringify(testSchemaContent, null, 2), 'utf-8');
+    fs.writeFileSync(testThemeSchemaPath, JSON.stringify(testThemeSchemaContent, null, 2), 'utf-8');
     // template-schema.jsonはテストで自動生成される
   });
 
@@ -66,6 +76,7 @@ describe('SchemaManager', () => {
     // テスト用ファイル削除
     if (fs.existsSync(testSchemaPath)) fs.unlinkSync(testSchemaPath);
     if (fs.existsSync(testTemplateSchemaPath)) fs.unlinkSync(testTemplateSchemaPath);
+    if (fs.existsSync(testThemeSchemaPath)) fs.unlinkSync(testThemeSchemaPath);
     if (fs.existsSync(path.dirname(testSchemaPath))) fs.rmdirSync(path.dirname(testSchemaPath));
     // モックを復元
     Module.prototype.require = originalRequire;
@@ -95,6 +106,7 @@ describe('SchemaManager', () => {
     // テスト用パスを強制上書き
     schemaManager.schemaPath = testSchemaPath;
     schemaManager.templateSchemaPath = testTemplateSchemaPath;
+    schemaManager.themeSchemaPath = testThemeSchemaPath;
   });
 
   afterEach(() => {
@@ -132,6 +144,13 @@ describe('SchemaManager', () => {
     expect(templateSchema).to.have.property('type', 'array');
   });
 
+  it('loadThemeSchema()でテーマスキーマを読み込める', async () => {
+    const themeSchema = await schemaManager.loadThemeSchema();
+    expect(themeSchema).to.have.property('properties');
+    expect(themeSchema.properties).to.have.property('theme');
+    expect(themeSchema.properties).to.have.property('tokens');
+  });
+
   it('createTemplateSchema()でテンプレートスキーマが生成される', async () => {
     if (fs.existsSync(testTemplateSchemaPath)) fs.unlinkSync(testTemplateSchemaPath);
     await schemaManager.createTemplateSchema();
@@ -161,6 +180,7 @@ describe('SchemaManager', () => {
     const manager = new SchemaManager(mockContext);
     expect(manager.getSchemaPath()).to.include('schema.json');
     expect(manager.getTemplateSchemaPath()).to.include('template-schema.json');
+    expect(manager.getThemeSchemaPath()).to.include('theme-schema.json');
   });
 
   it('スキーマファイルが存在しない場合はエラー', async () => {
@@ -180,6 +200,16 @@ describe('SchemaManager', () => {
       expect.fail('エラーが発生すべきでした');
     } catch (error) {
       expect(error.message).to.include('テンプレートスキーマファイルの読み込みに失敗しました');
+    }
+  });
+
+  it('テーマスキーマファイルが存在しない場合はエラー', async () => {
+    schemaManager.themeSchemaPath = '/not/exist/theme-schema.json';
+    try {
+      await schemaManager.loadThemeSchema();
+      expect.fail('エラーが発生すべきでした');
+    } catch (error) {
+      expect(error.message).to.include('テーマスキーマファイルの読み込みに失敗しました');
     }
   });
 
