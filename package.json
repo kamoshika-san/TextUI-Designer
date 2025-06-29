@@ -17,9 +17,9 @@
     "onCommand:textui-designer.checkAutoPreviewSetting",
     "onLanguage:yaml"
   ],
-  "main": "./dist/extension.js",
+  "main": "./out/extension.js",
   "files": [
-    "dist/**/*",
+    "out/**/*",
     "schemas/**/*",
     "media/**/*",
     "snippets/**/*",
