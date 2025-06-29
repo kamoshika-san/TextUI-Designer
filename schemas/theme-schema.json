@@ -1,89 +1,469 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://example.com/textui/theme-schema.json",
-  "title": "TextUI Theme Schema",
+  "$id": "https://textui-designer.com/schemas/theme-schema.json",
+  "title": "TextUI Designer Theme Schema",
+  "description": "TextUI Designer テーマファイルのスキーマ定義。デザイントークンとコンポーネントスタイルを定義します。",
   "type": "object",
   "properties": {
     "theme": {
       "type": "object",
+      "description": "テーマのメイン設定オブジェクト",
       "properties": {
-        "name": { "type": "string" },
-        "version": { "type": "string" },
-        "description": { "type": "string" },
+        "name": {
+          "type": "string",
+          "description": "テーマの名前",
+          "examples": ["Modern Blue Theme", "Corporate Theme", "Dark Mode"]
+        },
+        "version": {
+          "type": "string",
+          "description": "テーマのバージョン",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "examples": ["1.0.0", "2.1.3"]
+        },
+        "description": {
+          "type": "string",
+          "description": "テーマの説明",
+          "examples": ["モダンでクリーンなブルーベーステーマ"]
+        },
+        "author": {
+          "type": "string",
+          "description": "テーマの作成者",
+          "examples": ["TextUI Designer Team", "Your Name"]
+        },
         "tokens": {
           "type": "object",
+          "description": "デザイントークン - カラー・スペーシング・タイポグラフィなどの基本設計要素",
           "properties": {
-            "color": { 
+            "color": {
               "type": "object",
+              "description": "カラーパレット - ブランドカラーや状態色などの色定義",
               "properties": {
-                "primary": { "type": "string" },
-                "secondary": { "type": "string" },
-                "success": { "type": "string" },
-                "warning": { "type": "string" },
-                "error": { "type": "string" },
-                "surface": { "type": "string" },
-                "background": { "type": "string" },
+                "primary": {
+                  "type": "string",
+                  "description": "メインブランドカラー - ボタンやリンクなどの主要要素で使用",
+                  "pattern": "^#[0-9A-Fa-f]{6}$|^rgba?\\(|^hsl\\(",
+                  "examples": ["#3B82F6", "#1E40AF", "rgb(59, 130, 246)"]
+                },
+                "secondary": {
+                  "type": "string",
+                  "description": "セカンダリカラー - 補助的な要素で使用",
+                  "pattern": "^#[0-9A-Fa-f]{6}$|^rgba?\\(|^hsl\\(",
+                  "examples": ["#6B7280", "#64748B"]
+                },
+                "success": {
+                  "type": "string",
+                  "description": "成功状態を表すカラー",
+                  "pattern": "^#[0-9A-Fa-f]{6}$|^rgba?\\(|^hsl\\(",
+                  "examples": ["#10B981", "#059669"]
+                },
+                "warning": {
+                  "type": "string",
+                  "description": "警告状態を表すカラー",
+                  "pattern": "^#[0-9A-Fa-f]{6}$|^rgba?\\(|^hsl\\(",
+                  "examples": ["#F59E0B", "#D97706"]
+                },
+                "error": {
+                  "type": "string",
+                  "description": "エラー状態を表すカラー",
+                  "pattern": "^#[0-9A-Fa-f]{6}$|^rgba?\\(|^hsl\\(",
+                  "examples": ["#EF4444", "#DC2626"]
+                },
+                "info": {
+                  "type": "string",
+                  "description": "情報表示用カラー",
+                  "pattern": "^#[0-9A-Fa-f]{6}$|^rgba?\\(|^hsl\\(",
+                  "examples": ["#3B82F6", "#2563EB"]
+                },
+                "surface": {
+                  "type": "string",
+                  "description": "メイン背景カラー",
+                  "pattern": "^#[0-9A-Fa-f]{6}$|^rgba?\\(|^hsl\\(",
+                  "examples": ["#F9FAFB", "#1F2937"]
+                },
+                "background": {
+                  "type": "string",
+                  "description": "カード・コンテナの背景カラー",
+                  "pattern": "^#[0-9A-Fa-f]{6}$|^rgba?\\(|^hsl\\(",
+                  "examples": ["#FFFFFF", "#111827"]
+                },
+                "overlay": {
+                  "type": "string",
+                  "description": "オーバーレイ用カラー",
+                  "pattern": "^rgba\\(|^hsla\\(",
+                  "examples": ["rgba(0, 0, 0, 0.5)", "rgba(255, 255, 255, 0.8)"]
+                },
                 "text": {
                   "type": "object",
+                  "description": "テキストカラーのバリエーション",
                   "properties": {
-                    "primary": { "type": "string" },
-                    "secondary": { "type": "string" },
-                    "muted": { "type": "string" },
-                    "dark": { "type": "string" }
+                    "primary": {
+                      "type": "string",
+                      "description": "主要テキストカラー",
+                      "pattern": "^#[0-9A-Fa-f]{6}$|^rgba?\\(|^hsl\\(",
+                      "examples": ["#111827", "#F9FAFB"]
+                    },
+                    "secondary": {
+                      "type": "string",
+                      "description": "セカンダリテキストカラー",
+                      "pattern": "^#[0-9A-Fa-f]{6}$|^rgba?\\(|^hsl\\(",
+                      "examples": ["#6B7280", "#D1D5DB"]
+                    },
+                    "muted": {
+                      "type": "string",
+                      "description": "控えめなテキストカラー",
+                      "pattern": "^#[0-9A-Fa-f]{6}$|^rgba?\\(|^hsl\\(",
+                      "examples": ["#9CA3AF", "#6B7280"]
+                    },
+                    "inverse": {
+                      "type": "string",
+                      "description": "反転テキストカラー（ダーク背景用）",
+                      "pattern": "^#[0-9A-Fa-f]{6}$|^rgba?\\(|^hsl\\(",
+                      "examples": ["#FFFFFF", "#111827"]
+                    },
+                    "link": {
+                      "type": "string",
+                      "description": "リンクテキストカラー",
+                      "pattern": "^#[0-9A-Fa-f]{6}$|^rgba?\\(|^hsl\\(",
+                      "examples": ["#3B82F6", "#2563EB"]
+                    },
+                    "dark": {
+                      "type": "string",
+                      "description": "ダークテキストカラー",
+                      "pattern": "^#[0-9A-Fa-f]{6}$|^rgba?\\(|^hsl\\(",
+                      "examples": ["#000000", "#111827"]
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "border": {
+                  "type": "object",
+                  "description": "ボーダー・区切り線のカラー",
+                  "properties": {
+                    "default": {
+                      "type": "string",
+                      "description": "デフォルトボーダーカラー",
+                      "pattern": "^#[0-9A-Fa-f]{6}$|^rgba?\\(|^hsl\\(",
+                      "examples": ["#E5E7EB", "#374151"]
+                    },
+                    "focus": {
+                      "type": "string",
+                      "description": "フォーカス時のボーダーカラー",
+                      "pattern": "^#[0-9A-Fa-f]{6}$|^rgba?\\(|^hsl\\(",
+                      "examples": ["#3B82F6", "#2563EB"]
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "エラー時のボーダーカラー",
+                      "pattern": "^#[0-9A-Fa-f]{6}$|^rgba?\\(|^hsl\\(",
+                      "examples": ["#EF4444", "#DC2626"]
+                    }
                   },
                   "additionalProperties": true
                 }
               },
               "additionalProperties": true
             },
-            "spacing": { 
+            "spacing": {
               "type": "object",
+              "description": "スペーシングスケール - マージン・パディングなどの余白定義",
               "properties": {
-                "xs": { "type": "string" },
-                "sm": { "type": "string" },
-                "md": { "type": "string" },
-                "lg": { "type": "string" },
-                "xl": { "type": "string" }
+                "xs": {
+                  "type": "string",
+                  "description": "最小スペーシング（推奨: 4px）",
+                  "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                  "examples": ["0.25rem", "4px"]
+                },
+                "sm": {
+                  "type": "string",
+                  "description": "小スペーシング（推奨: 8px）",
+                  "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                  "examples": ["0.5rem", "8px"]
+                },
+                "md": {
+                  "type": "string",
+                  "description": "標準スペーシング（推奨: 16px）",
+                  "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                  "examples": ["1rem", "16px"]
+                },
+                "lg": {
+                  "type": "string",
+                  "description": "大スペーシング（推奨: 24px）",
+                  "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                  "examples": ["1.5rem", "24px"]
+                },
+                "xl": {
+                  "type": "string",
+                  "description": "最大スペーシング（推奨: 32px）",
+                  "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                  "examples": ["2rem", "32px"]
+                },
+                "2xl": {
+                  "type": "string",
+                  "description": "特大スペーシング（推奨: 48px）",
+                  "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                  "examples": ["3rem", "48px"]
+                },
+                "3xl": {
+                  "type": "string",
+                  "description": "超大スペーシング（推奨: 64px）",
+                  "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                  "examples": ["4rem", "64px"]
+                }
               },
               "additionalProperties": true
             },
-            "typography": { 
+            "typography": {
               "type": "object",
+              "description": "タイポグラフィ設定 - フォント・サイズ・ウェイトなどの文字定義",
               "properties": {
-                "fontFamily": { "type": "string" },
+                "fontFamily": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "description": "メインフォントファミリー",
+                      "examples": ["'Inter', 'Helvetica Neue', sans-serif", "'Roboto', Arial, sans-serif"]
+                    },
+                    {
+                      "type": "object",
+                      "description": "複数のフォントファミリー定義",
+                      "properties": {
+                        "primary": {
+                          "type": "string",
+                          "description": "メインフォント",
+                          "examples": ["'Inter', 'Helvetica Neue', sans-serif"]
+                        },
+                        "monospace": {
+                          "type": "string",
+                          "description": "等幅フォント",
+                          "examples": ["'JetBrains Mono', 'Consolas', monospace"]
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  ]
+                },
                 "fontSize": {
                   "type": "object",
+                  "description": "フォントサイズスケール",
                   "properties": {
-                    "xs": { "type": "string" },
-                    "sm": { "type": "string" },
-                    "base": { "type": "string" },
-                    "lg": { "type": "string" },
-                    "xl": { "type": "string" },
-                    "2xl": { "type": "string" },
-                    "3xl": { "type": "string" },
-                    "4xl": { "type": "string" }
+                    "xs": {
+                      "type": "string",
+                      "description": "最小フォントサイズ（推奨: 12px）",
+                      "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                      "examples": ["0.75rem", "12px"]
+                    },
+                    "sm": {
+                      "type": "string",
+                      "description": "小フォントサイズ（推奨: 14px）",
+                      "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                      "examples": ["0.875rem", "14px"]
+                    },
+                    "base": {
+                      "type": "string",
+                      "description": "標準フォントサイズ（推奨: 16px）",
+                      "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                      "examples": ["1rem", "16px"]
+                    },
+                    "lg": {
+                      "type": "string",
+                      "description": "大フォントサイズ（推奨: 18px）",
+                      "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                      "examples": ["1.125rem", "18px"]
+                    },
+                    "xl": {
+                      "type": "string",
+                      "description": "特大フォントサイズ（推奨: 20px）",
+                      "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                      "examples": ["1.25rem", "20px"]
+                    },
+                    "2xl": {
+                      "type": "string",
+                      "description": "2倍大フォントサイズ（推奨: 24px）",
+                      "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                      "examples": ["1.5rem", "24px"]
+                    },
+                    "3xl": {
+                      "type": "string",
+                      "description": "3倍大フォントサイズ（推奨: 30px）",
+                      "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                      "examples": ["1.875rem", "30px"]
+                    },
+                    "4xl": {
+                      "type": "string",
+                      "description": "4倍大フォントサイズ（推奨: 36px）",
+                      "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                      "examples": ["2.25rem", "36px"]
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "fontWeight": {
+                  "type": "object",
+                  "description": "フォントウェイト定義",
+                  "properties": {
+                    "light": {
+                      "type": "string",
+                      "description": "軽いフォントウェイト",
+                      "pattern": "^(light|[1-9]00)$",
+                      "examples": ["300", "light"]
+                    },
+                    "normal": {
+                      "type": "string",
+                      "description": "標準フォントウェイト",
+                      "pattern": "^(normal|[1-9]00)$",
+                      "examples": ["400", "normal"]
+                    },
+                    "medium": {
+                      "type": "string",
+                      "description": "中フォントウェイト",
+                      "pattern": "^(medium|[1-9]00)$",
+                      "examples": ["500", "medium"]
+                    },
+                    "semibold": {
+                      "type": "string",
+                      "description": "セミボールドフォントウェイト",
+                      "pattern": "^(semibold|[1-9]00)$",
+                      "examples": ["600", "semibold"]
+                    },
+                    "bold": {
+                      "type": "string",
+                      "description": "ボールドフォントウェイト",
+                      "pattern": "^(bold|[1-9]00)$",
+                      "examples": ["700", "bold"]
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "lineHeight": {
+                  "type": "object",
+                  "description": "行間定義",
+                  "properties": {
+                    "tight": {
+                      "type": "string",
+                      "description": "狭い行間",
+                      "pattern": "^\\d+(\\.\\d+)?$",
+                      "examples": ["1.25", "1.2"]
+                    },
+                    "normal": {
+                      "type": "string",
+                      "description": "標準行間",
+                      "pattern": "^\\d+(\\.\\d+)?$",
+                      "examples": ["1.5", "1.4"]
+                    },
+                    "relaxed": {
+                      "type": "string",
+                      "description": "広い行間",
+                      "pattern": "^\\d+(\\.\\d+)?$",
+                      "examples": ["1.75", "1.8"]
+                    }
                   },
                   "additionalProperties": true
                 }
               },
               "additionalProperties": true
             },
-            "borderRadius": { 
+            "borderRadius": {
               "type": "object",
+              "description": "ボーダー半径設定 - 角丸の定義",
               "properties": {
-                "sm": { "type": "string" },
-                "md": { "type": "string" },
-                "lg": { "type": "string" },
-                "xl": { "type": "string" }
+                "none": {
+                  "type": "string",
+                  "description": "角丸なし",
+                  "pattern": "^0$",
+                  "examples": ["0"]
+                },
+                "sm": {
+                  "type": "string",
+                  "description": "小角丸（推奨: 4px）",
+                  "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                  "examples": ["0.25rem", "4px"]
+                },
+                "md": {
+                  "type": "string",
+                  "description": "標準角丸（推奨: 6px）",
+                  "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                  "examples": ["0.375rem", "6px"]
+                },
+                "lg": {
+                  "type": "string",
+                  "description": "大角丸（推奨: 8px）",
+                  "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                  "examples": ["0.5rem", "8px"]
+                },
+                "xl": {
+                  "type": "string",
+                  "description": "特大角丸（推奨: 12px）",
+                  "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                  "examples": ["0.75rem", "12px"]
+                },
+                "2xl": {
+                  "type": "string",
+                  "description": "2倍大角丸（推奨: 16px）",
+                  "pattern": "^\\d+(\\.\\d+)?(px|rem|em|%)$",
+                  "examples": ["1rem", "16px"]
+                },
+                "full": {
+                  "type": "string",
+                  "description": "完全な円形",
+                  "pattern": "^(9999px|50%|100%)$",
+                  "examples": ["9999px", "50%"]
+                }
               },
               "additionalProperties": true
             },
-            "shadows": { 
+            "shadows": {
               "type": "object",
+              "description": "シャドウ設定 - 奥行き表現の定義",
               "properties": {
-                "sm": { "type": "string" },
-                "md": { "type": "string" },
-                "lg": { "type": "string" }
+                "sm": {
+                  "type": "string",
+                  "description": "小シャドウ",
+                  "pattern": "^\\d+",
+                  "examples": ["0 1px 2px 0 rgba(0, 0, 0, 0.05)"]
+                },
+                "md": {
+                  "type": "string",
+                  "description": "標準シャドウ",
+                  "pattern": "^\\d+",
+                  "examples": ["0 4px 6px -1px rgba(0, 0, 0, 0.1)"]
+                },
+                "lg": {
+                  "type": "string",
+                  "description": "大シャドウ",
+                  "pattern": "^\\d+",
+                  "examples": ["0 10px 15px -3px rgba(0, 0, 0, 0.1)"]
+                },
+                "xl": {
+                  "type": "string",
+                  "description": "特大シャドウ",
+                  "pattern": "^\\d+",
+                  "examples": ["0 20px 25px -5px rgba(0, 0, 0, 0.1)"]
+                }
+              },
+              "additionalProperties": true
+            },
+            "transition": {
+              "type": "object",
+              "description": "トランジション設定 - アニメーション効果の定義",
+              "properties": {
+                "fast": {
+                  "type": "string",
+                  "description": "高速トランジション",
+                  "pattern": "^\\d+ms",
+                  "examples": ["150ms ease-in-out", "100ms ease"]
+                },
+                "normal": {
+                  "type": "string",
+                  "description": "標準トランジション",
+                  "pattern": "^\\d+ms",
+                  "examples": ["200ms ease-in-out", "250ms ease"]
+                },
+                "slow": {
+                  "type": "string",
+                  "description": "低速トランジション",
+                  "pattern": "^\\d+ms",
+                  "examples": ["300ms ease-in-out", "400ms ease"]
+                }
               },
               "additionalProperties": true
             }
@@ -92,133 +472,243 @@
         },
         "components": {
           "type": "object",
+          "description": "コンポーネント固有のスタイル定義",
           "properties": {
             "button": {
               "type": "object",
+              "description": "ボタンコンポーネントのスタイル",
               "properties": {
                 "primary": {
-                  "type": "object",
-                  "properties": {
-                    "backgroundColor": { "type": "string" },
-                    "color": { "type": "string" },
-                    "padding": { "type": "string" },
-                    "borderRadius": { "type": "string" },
-                    "border": { "type": "string" },
-                    "cursor": { "type": "string" },
-                    "fontSize": { "type": "string" },
-                    "fontWeight": { "type": "string" },
-                    "transition": { "type": "string" },
-                    "boxShadow": { "type": "string" },
-                    "textTransform": { "type": "string" },
-                    "letterSpacing": { "type": "string" }
-                  },
-                  "additionalProperties": true
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "プライマリボタンのスタイル"
                 },
                 "secondary": {
-                  "type": "object",
-                  "properties": {
-                    "backgroundColor": { "type": "string" },
-                    "color": { "type": "string" },
-                    "padding": { "type": "string" },
-                    "borderRadius": { "type": "string" },
-                    "border": { "type": "string" },
-                    "cursor": { "type": "string" },
-                    "fontSize": { "type": "string" },
-                    "fontWeight": { "type": "string" },
-                    "transition": { "type": "string" },
-                    "boxShadow": { "type": "string" },
-                    "textTransform": { "type": "string" },
-                    "letterSpacing": { "type": "string" }
-                  },
-                  "additionalProperties": true
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "セカンダリボタンのスタイル"
                 },
-                "submit": {
+                "hover": {
                   "type": "object",
+                  "description": "ホバー状態のスタイル",
                   "properties": {
-                    "backgroundColor": { "type": "string" },
-                    "color": { "type": "string" },
-                    "padding": { "type": "string" },
-                    "borderRadius": { "type": "string" },
-                    "border": { "type": "string" },
-                    "cursor": { "type": "string" },
-                    "fontSize": { "type": "string" },
-                    "fontWeight": { "type": "string" },
-                    "transition": { "type": "string" },
-                    "boxShadow": { "type": "string" },
-                    "textTransform": { "type": "string" },
-                    "letterSpacing": { "type": "string" }
+                    "primary": {
+                      "$ref": "#/definitions/componentStyle"
+                    },
+                    "secondary": {
+                      "$ref": "#/definitions/componentStyle"
+                    }
                   },
                   "additionalProperties": true
                 }
               },
               "additionalProperties": true
             },
-            "alert": {
+            "input": {
               "type": "object",
+              "description": "入力フィールドコンポーネントのスタイル",
               "properties": {
-                "info": {
-                  "type": "object",
-                  "properties": {
-                    "backgroundColor": { "type": "string" },
-                    "borderColor": { "type": "string" },
-                    "color": { "type": "string" },
-                    "borderWidth": { "type": "string" },
-                    "borderRadius": { "type": "string" },
-                    "padding": { "type": "string" },
-                    "fontSize": { "type": "string" },
-                    "fontWeight": { "type": "string" },
-                    "textAlign": { "type": "string" },
-                    "boxShadow": { "type": "string" }
-                  },
-                  "additionalProperties": true
+                "label": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "ラベルのスタイル"
                 },
-                "success": {
-                  "type": "object",
-                  "properties": {
-                    "backgroundColor": { "type": "string" },
-                    "borderColor": { "type": "string" },
-                    "color": { "type": "string" },
-                    "borderWidth": { "type": "string" },
-                    "borderRadius": { "type": "string" },
-                    "padding": { "type": "string" },
-                    "fontSize": { "type": "string" },
-                    "fontWeight": { "type": "string" },
-                    "textAlign": { "type": "string" },
-                    "boxShadow": { "type": "string" }
-                  },
-                  "additionalProperties": true
+                "field": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "入力フィールドのスタイル"
                 },
-                "warning": {
-                  "type": "object",
-                  "properties": {
-                    "backgroundColor": { "type": "string" },
-                    "borderColor": { "type": "string" },
-                    "color": { "type": "string" },
-                    "borderWidth": { "type": "string" },
-                    "borderRadius": { "type": "string" },
-                    "padding": { "type": "string" },
-                    "fontSize": { "type": "string" },
-                    "fontWeight": { "type": "string" },
-                    "textAlign": { "type": "string" },
-                    "boxShadow": { "type": "string" }
-                  },
-                  "additionalProperties": true
+                "focus": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "フォーカス時のスタイル"
+                },
+                "placeholder": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "プレースホルダーのスタイル"
                 },
                 "error": {
-                  "type": "object",
-                  "properties": {
-                    "backgroundColor": { "type": "string" },
-                    "borderColor": { "type": "string" },
-                    "color": { "type": "string" },
-                    "borderWidth": { "type": "string" },
-                    "borderRadius": { "type": "string" },
-                    "padding": { "type": "string" },
-                    "fontSize": { "type": "string" },
-                    "fontWeight": { "type": "string" },
-                    "textAlign": { "type": "string" },
-                    "boxShadow": { "type": "string" }
-                  },
-                  "additionalProperties": true
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "エラー時のスタイル"
+                }
+              },
+              "additionalProperties": true
+            },
+            "select": {
+              "type": "object",
+              "description": "セレクトコンポーネントのスタイル",
+              "properties": {
+                "label": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "ラベルのスタイル"
+                },
+                "field": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "セレクトフィールドのスタイル"
+                },
+                "focus": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "フォーカス時のスタイル"
+                }
+              },
+              "additionalProperties": true
+            },
+            "checkbox": {
+              "type": "object",
+              "description": "チェックボックスコンポーネントのスタイル",
+              "properties": {
+                "field": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "チェックボックスフィールドのスタイル"
+                },
+                "label": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "ラベルのスタイル"
+                },
+                "group": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "グループのスタイル"
+                },
+                "checked": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "チェック時のスタイル"
+                }
+              },
+              "additionalProperties": true
+            },
+            "radio": {
+              "type": "object",
+              "description": "ラジオボタンコンポーネントのスタイル",
+              "properties": {
+                "groupLabel": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "グループラベルのスタイル"
+                },
+                "group": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "グループのスタイル"
+                },
+                "option": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "オプションのスタイル"
+                },
+                "field": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "ラジオフィールドのスタイル"
+                },
+                "label": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "ラベルのスタイル"
+                }
+              },
+              "additionalProperties": true
+            },
+            "divider": {
+              "type": "object",
+              "description": "区切り線コンポーネントのスタイル",
+              "properties": {
+                "horizontal": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "水平区切り線のスタイル"
+                },
+                "vertical": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "垂直区切り線のスタイル"
+                }
+              },
+              "additionalProperties": true
+            },
+            "alert": {
+              "type": "object",
+              "description": "アラートコンポーネントのスタイル",
+              "properties": {
+                "base": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "基本アラートのスタイル"
+                },
+                "info": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "情報アラートのスタイル"
+                },
+                "success": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "成功アラートのスタイル"
+                },
+                "warning": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "警告アラートのスタイル"
+                },
+                "error": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "エラーアラートのスタイル"
+                }
+              },
+              "additionalProperties": true
+            },
+            "text": {
+              "type": "object",
+              "description": "テキストコンポーネントのスタイル",
+              "properties": {
+                "h1": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "見出し1のスタイル"
+                },
+                "h2": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "見出し2のスタイル"
+                },
+                "h3": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "見出し3のスタイル"
+                },
+                "p": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "段落のスタイル"
+                },
+                "small": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "小テキストのスタイル"
+                },
+                "caption": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "キャプションのスタイル"
+                }
+              },
+              "additionalProperties": true
+            },
+            "container": {
+              "type": "object",
+              "description": "コンテナコンポーネントのスタイル",
+              "properties": {
+                "base": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "基本コンテナのスタイル"
+                },
+                "horizontal": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "水平レイアウトのスタイル"
+                },
+                "vertical": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "垂直レイアウトのスタイル"
+                },
+                "card": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "カードスタイル"
+                }
+              },
+              "additionalProperties": true
+            },
+            "form": {
+              "type": "object",
+              "description": "フォームコンポーネントのスタイル",
+              "properties": {
+                "container": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "フォームコンテナのスタイル"
+                },
+                "fieldset": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "フィールドセットのスタイル"
+                },
+                "actions": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "アクションエリアのスタイル"
                 }
               },
               "additionalProperties": true
@@ -232,5 +722,213 @@
     }
   },
   "required": ["theme"],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "definitions": {
+    "componentStyle": {
+      "type": "object",
+      "description": "コンポーネントスタイルの定義",
+      "properties": {
+        "backgroundColor": {
+          "type": "string",
+          "description": "背景色",
+          "examples": ["var(--color-primary)", "#FFFFFF", "rgba(255, 255, 255, 0.8)"]
+        },
+        "color": {
+          "type": "string",
+          "description": "文字色",
+          "examples": ["var(--color-text-primary)", "#000000", "var(--color-text-inverse)"]
+        },
+        "padding": {
+          "type": "string",
+          "description": "パディング",
+          "examples": ["var(--spacing-md)", "16px", "1rem 2rem"]
+        },
+        "margin": {
+          "type": "string",
+          "description": "マージン",
+          "examples": ["var(--spacing-md)", "16px", "1rem 0"]
+        },
+        "border": {
+          "type": "string",
+          "description": "ボーダー",
+          "examples": ["1px solid var(--color-border-default)", "none", "2px solid #ccc"]
+        },
+        "borderRadius": {
+          "type": "string",
+          "description": "ボーダー半径",
+          "examples": ["var(--borderRadius-md)", "8px", "50%"]
+        },
+        "borderColor": {
+          "type": "string",
+          "description": "ボーダー色",
+          "examples": ["var(--color-border-default)", "#E5E7EB"]
+        },
+        "borderWidth": {
+          "type": "string",
+          "description": "ボーダー幅",
+          "examples": ["1px", "2px", "0"]
+        },
+        "boxShadow": {
+          "type": "string",
+          "description": "ボックスシャドウ",
+          "examples": ["var(--shadows-md)", "0 4px 6px rgba(0,0,0,0.1)", "none"]
+        },
+        "fontSize": {
+          "type": "string",
+          "description": "フォントサイズ",
+          "examples": ["var(--typography-fontSize-base)", "16px", "1rem"]
+        },
+        "fontFamily": {
+          "type": "string",
+          "description": "フォントファミリー",
+          "examples": ["var(--typography-fontFamily-primary)", "Arial, sans-serif"]
+        },
+        "fontWeight": {
+          "type": "string",
+          "description": "フォントウェイト",
+          "examples": ["var(--typography-fontWeight-medium)", "bold", "400"]
+        },
+        "lineHeight": {
+          "type": "string",
+          "description": "行間",
+          "examples": ["var(--typography-lineHeight-normal)", "1.5", "24px"]
+        },
+        "textAlign": {
+          "type": "string",
+          "description": "テキスト配置",
+          "enum": ["left", "center", "right", "justify"],
+          "examples": ["left", "center", "right"]
+        },
+        "cursor": {
+          "type": "string",
+          "description": "カーソル",
+          "examples": ["pointer", "default", "text"]
+        },
+        "transition": {
+          "type": "string",
+          "description": "トランジション",
+          "examples": ["var(--transition-normal)", "all 0.2s ease", "color 0.15s ease-in-out"]
+        },
+        "display": {
+          "type": "string",
+          "description": "表示タイプ",
+          "examples": ["flex", "block", "inline-block", "none"]
+        },
+        "flexDirection": {
+          "type": "string",
+          "description": "フレックス方向",
+          "enum": ["row", "column", "row-reverse", "column-reverse"],
+          "examples": ["row", "column"]
+        },
+        "alignItems": {
+          "type": "string",
+          "description": "アイテム配置",
+          "examples": ["center", "flex-start", "flex-end", "stretch"]
+        },
+        "justifyContent": {
+          "type": "string",
+          "description": "コンテンツ配置",
+          "examples": ["center", "flex-start", "flex-end", "space-between"]
+        },
+        "gap": {
+          "type": "string",
+          "description": "ギャップ",
+          "examples": ["var(--spacing-md)", "16px", "1rem"]
+        },
+        "width": {
+          "type": "string",
+          "description": "幅",
+          "examples": ["100%", "200px", "auto"]
+        },
+        "height": {
+          "type": "string",
+          "description": "高さ",
+          "examples": ["auto", "100px", "2rem"]
+        },
+        "minHeight": {
+          "type": "string",
+          "description": "最小高さ",
+          "examples": ["2rem", "50px", "auto"]
+        },
+        "maxWidth": {
+          "type": "string",
+          "description": "最大幅",
+          "examples": ["100%", "500px", "none"]
+        },
+        "marginTop": {
+          "type": "string",
+          "description": "上マージン",
+          "examples": ["var(--spacing-lg)", "24px", "0"]
+        },
+        "marginBottom": {
+          "type": "string",
+          "description": "下マージン",
+          "examples": ["var(--spacing-lg)", "24px", "0"]
+        },
+        "marginLeft": {
+          "type": "string",
+          "description": "左マージン",
+          "examples": ["var(--spacing-sm)", "8px", "auto"]
+        },
+        "marginRight": {
+          "type": "string",
+          "description": "右マージン",
+          "examples": ["var(--spacing-sm)", "8px", "auto"]
+        },
+        "paddingTop": {
+          "type": "string",
+          "description": "上パディング",
+          "examples": ["var(--spacing-lg)", "24px", "0"]
+        },
+        "paddingBottom": {
+          "type": "string",
+          "description": "下パディング",
+          "examples": ["var(--spacing-lg)", "24px", "0"]
+        },
+        "paddingLeft": {
+          "type": "string",
+          "description": "左パディング",
+          "examples": ["var(--spacing-sm)", "8px", "0"]
+        },
+        "paddingRight": {
+          "type": "string",
+          "description": "右パディング",
+          "examples": ["var(--spacing-sm)", "8px", "0"]
+        },
+        "accentColor": {
+          "type": "string",
+          "description": "アクセントカラー（チェックボックス・ラジオボタン用）",
+          "examples": ["var(--color-primary)", "#3B82F6"]
+        },
+        "opacity": {
+          "type": "string",
+          "description": "透明度",
+          "pattern": "^(0|0\\.[0-9]+|1)$",
+          "examples": ["1", "0.8", "0.5"]
+        },
+        "textTransform": {
+          "type": "string",
+          "description": "テキスト変換",
+          "enum": ["none", "uppercase", "lowercase", "capitalize"],
+          "examples": ["none", "uppercase", "lowercase"]
+        },
+        "letterSpacing": {
+          "type": "string",
+          "description": "文字間隔",
+          "examples": ["0.1em", "1px", "normal"]
+        },
+        "textDecoration": {
+          "type": "string",
+          "description": "テキスト装飾",
+          "examples": ["none", "underline", "line-through"]
+        },
+        "outline": {
+          "type": "string",
+          "description": "アウトライン",
+          "examples": ["none", "1px solid blue", "2px dotted red"]
+        }
+      },
+      "additionalProperties": true
+    }
+  }
 }

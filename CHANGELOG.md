@@ -4,7 +4,47 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [0.1.2] - 2025-01-14
+## [0.1.3] - 2025-06-29
+
+### 🎨 カスタムテーマのIntelliSense対応大幅強化
+- **包括的テーマスキーマ完全改良**: VS Codeでのテーマファイル編集体験を劇的に向上
+  - 詳細な日本語説明付きプロパティ補完（100+ プロパティ）
+  - 全デザイントークン完全対応（color、spacing、typography、borderRadius、shadows、transition）
+  - 全10種類コンポーネント完全対応（button、input、select、checkbox、radio、divider、alert、text、container、form）
+  - CSS変数パターンの自動提案（`var(--color-primary)`形式）
+  - 厳密な型チェック・バリデーション（パターンマッチング、enum制約）
+  - 実用的なコード例示（examples）による学習支援
+- **新規デザイントークンサポート**: 
+  - `color.border`（フォーカス・エラー状態のボーダーカラー）
+  - `typography.fontWeight`（light、normal、medium、semibold、bold）
+  - `typography.lineHeight`（tight、normal、relaxed）
+  - `transition`（fast、normal、slow アニメーション設定）
+- **高度なコンポーネントスタイル定義**: 
+  - ホバー・フォーカス・エラー状態の個別スタイル対応
+  - Flexbox・Grid レイアウトプロパティ完全サポート
+  - アクセシビリティ対応（accentColor、opacity、outline）
+  - CSS全プロパティ（backgroundColor、border、padding、margin、boxShadow等）
+
+### 🔍 型安全性・開発体験向上
+- **リアルタイムエラー検出**: 不正な値・構文を即座に赤波線で警告
+- **インテリジェントな補完**: コンテキストに応じた適切なプロパティ・値候補を表示
+- **ツールチップヘルプ**: ホバー時の詳細説明でプロパティの用途を即座確認
+- **パターンマッチング**: カラーコード（#RRGGBB）、単位付き数値（px、rem、em）の形式チェック
+- **CSS変数インテリジェンス**: デザイントークン参照の自動補完・検証
+
+### 🎯 ユーザー体験改善
+- **学習コスト削減**: 豊富な例示とヘルプによる直感的なテーマ作成
+- **ミスの大幅削減**: 型チェックによるタイポ・構文エラーの事前防止
+- **効率的な開発**: 自動補完により手作業でのプロパティ名入力が不要
+- **プロフェッショナル品質**: 企業級テーマシステムの開発が可能
+
+### 🔧 技術的実装
+- **JSON Schema Draft-07 準拠**: 標準的なスキーマ定義による高い互換性
+- **$ref による再利用**: `componentStyle` 定義の効率的な共通化
+- **additionalProperties サポート**: 将来の拡張性を確保した柔軟な設計
+- **177テスト全てパス**: 新スキーマと既存機能の完全互換性確認
+
+## [0.1.2] - 2025-06-29
 
 ### 🚀 新機能
 - **Cache Manager ヒット率計算機能**: パフォーマンス監視機能を完全実装
