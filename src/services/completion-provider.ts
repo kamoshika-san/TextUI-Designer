@@ -174,40 +174,44 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     const lines = linePrefix.split('\n');
     const currentLine = lines[lines.length - 1];
     const indentLevel = this.getIndentLevel(currentLine);
-    
+
     // ハイフンの後（コンポーネントリスト）
     if (currentLine.trim().endsWith('-') || currentLine.trim() === '-') {
       return { type: 'component-list' };
     }
-    
+
     // ルートレベル
     if (indentLevel === 0) {
       return { type: 'root-level' };
     }
-    
-    // コンポーネント名の行
-    const componentMatch = currentLine.match(/^\s*(\w+):\s*$/);
-    if (componentMatch) {
-      return { type: 'component-properties', componentName: componentMatch[1] };
-    }
-    
-    // プロパティの行
-    const propertyMatch = currentLine.match(/^\s*(\w+):\s*$/);
+
+    // プロパティ値の行（例: variant: ...）を先に判定
+    const propertyMatch = currentLine.match(/^\s*(\w+):\s*(.*)$/);
     if (propertyMatch) {
+      const propertyName = propertyMatch[1];
       const componentName = this.findParentComponent(lines, lines.length - 1);
-      return { 
-        type: 'property-value', 
-        propertyName: propertyMatch[1], 
-        componentName 
-      };
+      if (componentName) {
+        return { type: 'property-value', propertyName, componentName };
+      }
     }
-    
-    // プロパティ名の入力中
-    if (indentLevel > 0 && !currentLine.includes(':')) {
+
+    // コンポーネント名の行（- Text: も含む）
+    const componentMatch = currentLine.match(/^-?\s*(\w+):\s*$/);
+    if (componentMatch) {
       const componentName = this.findParentComponent(lines, lines.length - 1);
+      if (componentName) {
+        return { type: 'property-value', propertyName: componentMatch[1], componentName };
+      } else {
+        return { type: 'component-properties', componentName: componentMatch[1] };
+      }
+    }
+
+    // 空白行やその他の行で、親コンポーネントのプロパティ入力中
+    const componentName = this.findParentComponent(lines, lines.length - 1);
+    if (componentName) {
       return { type: 'component-properties', componentName };
     }
-    
+
     return { type: 'root-level' };
   }
 
@@ -223,20 +227,15 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
    * 親コンポーネント名を取得
    */
   private findParentComponent(lines: string[], currentIndex: number): string | undefined {
-    const currentIndent = this.getIndentLevel(lines[currentIndex]);
-    
+    // プロパティ行や空白行の場合、currentIndexから上に遡って最初のコンポーネント行を返す
     for (let i = currentIndex - 1; i >= 0; i--) {
       const line = lines[i];
-      const indent = this.getIndentLevel(line);
-      
-      if (indent < currentIndent) {
-        const match = line.match(/^\s*(\w+):\s*$/);
-        if (match) {
-          return match[1];
-        }
+      if (line.trim() === '') continue;
+      const match = line.match(/^\s*-?\s*(\w+):\s*$/);
+      if (match && match[1] !== 'components' && match[1] !== 'page') {
+        return match[1];
       }
     }
-    
     return undefined;
   }
 
