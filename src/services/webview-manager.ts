@@ -38,8 +38,23 @@ export class WebViewManager {
   async openPreview(): Promise<void> {
     const columnToShowIn = vscode.ViewColumn.Two;
 
+    // 現在のアクティブエディタを記録（プレビュー後にフォーカスを戻すため）
+    const activeEditor = vscode.window.activeTextEditor;
+    const shouldReturnFocus = activeEditor && activeEditor.document.fileName.endsWith('.tui.yml');
+
     if (this.currentPanel) {
       this.currentPanel.reveal(columnToShowIn);
+      // 既存のプレビューの場合も、フォーカスを戻す
+      if (shouldReturnFocus && activeEditor) {
+        setTimeout(async () => {
+          try {
+            await vscode.window.showTextDocument(activeEditor.document, vscode.ViewColumn.One);
+            console.log('[WebViewManager] プレビュー表示後にtui.ymlファイルにフォーカスを戻しました');
+          } catch (error) {
+            console.log('[WebViewManager] フォーカスを戻すことができませんでした:', error);
+          }
+        }, 200);
+      }
     } else {
       this.currentPanel = vscode.window.createWebviewPanel(
         'textuiPreview',
@@ -77,6 +92,18 @@ export class WebViewManager {
             await this.sendYamlToWebview(true);
             if (this.themeManager) {
               this.applyThemeVariables(this.themeManager.generateCSSVariables());
+            }
+            
+            // WebView初期化完了後にフォーカスを戻す
+            if (shouldReturnFocus && activeEditor) {
+              setTimeout(async () => {
+                try {
+                  await vscode.window.showTextDocument(activeEditor.document, vscode.ViewColumn.One);
+                  console.log('[WebViewManager] WebView初期化完了後にtui.ymlファイルにフォーカスを戻しました');
+                } catch (error) {
+                  console.log('[WebViewManager] フォーカスを戻すことができませんでした:', error);
+                }
+              }, 300);
             }
           }
         },
