@@ -99,7 +99,7 @@ export class WebViewManager {
   /**
    * プレビューを更新（デバウンス付き）
    */
-  async updatePreview(): Promise<void> {
+  async updatePreview(forceUpdate: boolean = false): Promise<void> {
     if (this.currentPanel) {
       // プレビュー画面が開かれている場合は常に更新
       // 既存のタイマーをクリア
@@ -107,10 +107,16 @@ export class WebViewManager {
         clearTimeout(this.updateTimeout);
       }
 
-      // より短いデバウンス時間（200ms）でリアルタイム性を向上
-      this.updateTimeout = setTimeout(async () => {
+      // 強制更新の場合は即座に実行、そうでなければデバウンス
+      if (forceUpdate) {
+        console.log('[WebViewManager] 強制更新を実行');
         await this.queueUpdate(() => this.sendYamlToWebview(true));
-      }, 200);
+      } else {
+        // より短いデバウンス時間（200ms）でリアルタイム性を向上
+        this.updateTimeout = setTimeout(async () => {
+          await this.queueUpdate(() => this.sendYamlToWebview(true));
+        }, 200);
+      }
     } else {
       // プレビューが開かれていない場合は自動プレビュー設定をチェック
       const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
@@ -260,6 +266,10 @@ export class WebViewManager {
           if (this.lastTuiFile !== fileName) {
             console.log(`[WebViewManager] アクティブエディタのファイルが変更されました: ${this.lastTuiFile} -> ${fileName}`);
             this.clearCache();
+            // ファイル切り替え時にエラー状態もクリア
+            this.clearErrorState();
+            // ファイル切り替え時は強制更新を実行
+            forceUpdate = true;
           }
           
           this.setLastTuiFile(fileName);
@@ -320,14 +330,49 @@ export class WebViewManager {
           });
         } catch (parseError) {
           console.error('[WebViewManager] YAMLパースエラー:', parseError);
+          
+          // エラー時にキャッシュを確実にクリア
+          this.clearCache();
+          
+          // 詳細なエラー情報を作成
+          const errorDetails = this.createDetailedErrorInfo(parseError, yamlContent, fileName);
+          
+          // 詳細エラーメッセージを送信
           this.currentPanel.webview.postMessage({
-            type: 'error',
-            message: `YAMLの解析に失敗しました: ${parseError}`
+            type: 'parseError',
+            error: errorDetails,
+            fileName: fileName,
+            content: yamlContent
           });
           return;
         }
 
-        console.log(`[WebViewManager] YAML解析成功、WebViewに送信: ${fileName}`);
+        console.log(`[WebViewManager] YAML解析成功、スキーマバリデーションを実行: ${fileName}`);
+        
+        // スキーマバリデーションを実行
+        const validationResult = await this.validateYamlSchema(yaml, yamlContent, fileName);
+        
+        if (validationResult.hasErrors) {
+          console.log('[WebViewManager] スキーマバリデーションエラーが検出されました');
+          console.log('[WebViewManager] エラー詳細:', validationResult.errorDetails);
+          
+          // エラー時にキャッシュを確実にクリア
+          this.clearCache();
+          
+          // 詳細スキーマエラー情報を送信
+          const message = {
+            type: 'schemaError',
+            error: validationResult.errorDetails,
+            fileName: fileName,
+            content: yamlContent
+          };
+          console.log('[WebViewManager] WebViewにスキーマエラーメッセージを送信:', message);
+          this.currentPanel.webview.postMessage(message);
+          return;
+        }
+        
+        // 正常な解析時はエラー状態をクリア
+        this.clearErrorState();
         
         // キャッシュを更新（メモリ制限付き）
         this.lastYamlContent = yamlContent;
@@ -390,6 +435,302 @@ export class WebViewManager {
     }
     this.updateQueue = [];
     this.isProcessingQueue = false;
+  }
+
+  /**
+   * エラー状態をクリア
+   */
+  private clearErrorState(): void {
+    if (this.currentPanel) {
+      // 正常な状態に戻った際に、エラー表示をクリア
+      this.currentPanel.webview.postMessage({
+        type: 'clearError'
+      });
+    }
+  }
+
+  /**
+   * 詳細なエラー情報を作成
+   */
+  private createDetailedErrorInfo(error: any, yamlContent: string, fileName: string) {
+    const lines = yamlContent.split('\n');
+    let lineNumber = 1;
+    let columnNumber = 1;
+    let errorContext = '';
+    let suggestions: string[] = [];
+
+    // YAMLパースエラーから行番号と列番号を抽出
+    if (error && typeof error.message === 'string') {
+      const lineMatch = error.message.match(/at line (\d+)/i);
+      const columnMatch = error.message.match(/column (\d+)/i);
+      
+      if (lineMatch) {
+        lineNumber = parseInt(lineMatch[1], 10);
+      }
+      if (columnMatch) {
+        columnNumber = parseInt(columnMatch[1], 10);
+      }
+
+      // エラー位置の前後の行を取得してコンテキストを作成
+      const startLine = Math.max(0, lineNumber - 3);
+      const endLine = Math.min(lines.length, lineNumber + 2);
+      
+      errorContext = lines.slice(startLine, endLine)
+        .map((line, index) => {
+          const actualLineNumber = startLine + index + 1;
+          const isErrorLine = actualLineNumber === lineNumber;
+          const prefix = isErrorLine ? '→ ' : '  ';
+          const lineNumStr = actualLineNumber.toString().padStart(3, ' ');
+          
+          if (isErrorLine) {
+            // エラー行の場合、問題箇所を強調
+            const pointer = ' '.repeat(columnNumber + 5) + '^';
+            return `${prefix}${lineNumStr}| ${line}\n${pointer}`;
+          }
+          return `${prefix}${lineNumStr}| ${line}`;
+        })
+        .join('\n');
+
+      // エラータイプに基づく修正提案
+      suggestions = this.generateErrorSuggestions(error.message, lines[lineNumber - 1]);
+    }
+
+    return {
+      message: error.message || 'YAMLパースエラーが発生しました',
+      lineNumber,
+      columnNumber,
+      errorContext,
+      suggestions,
+      fileName: fileName.split(/[/\\]/).pop() || fileName, // ファイル名のみ取得
+      fullPath: fileName
+    };
+  }
+
+  /**
+   * エラータイプに基づく修正提案を生成
+   */
+  private generateErrorSuggestions(errorMessage: string, errorLine: string): string[] {
+    const suggestions: string[] = [];
+
+    if (errorMessage.includes('duplicate key') || errorMessage.includes('重複')) {
+      suggestions.push('❌ 同じキーが重複しています。キー名を確認してください。');
+    }
+    
+    if (errorMessage.includes('unexpected') || errorMessage.includes('expected')) {
+      suggestions.push('❌ YAML構文エラーです。インデント（スペース）を確認してください。');
+      suggestions.push('💡 TABではなくスペースを使用してください。');
+    }
+    
+    if (errorMessage.includes('mapping') || errorMessage.includes('sequence')) {
+      suggestions.push('❌ オブジェクト構造が正しくありません。');
+      suggestions.push('💡 コロン(:)の後にスペースが必要です。');
+    }
+
+    if (errorLine) {
+      // 一般的なYAMLエラーパターンをチェック
+      if (errorLine.includes('\t')) {
+        suggestions.push('❌ TAB文字が検出されました。スペースに置き換えてください。');
+      }
+      
+      if (errorLine.match(/:\s*\[.*[^\\]\]$/) && !errorLine.includes(']:')) {
+        suggestions.push('❌ 配列の閉じ括弧が不正です。');
+      }
+      
+      if (errorLine.includes('{{') || errorLine.includes('}}')) {
+        suggestions.push('❌ テンプレート構文は使用できません。');
+      }
+    }
+
+    // デフォルトの提案
+    if (suggestions.length === 0) {
+      suggestions.push('💡 YAML構文を確認してください。');
+      suggestions.push('💡 インデントはスペース2個で統一してください。');
+      suggestions.push('💡 文字列に特殊文字が含まれる場合は引用符で囲んでください。');
+    }
+
+    return suggestions;
+  }
+
+  /**
+   * スキーマバリデーションを実行
+   */
+  private async validateYamlSchema(yaml: any, yamlContent: string, fileName: string) {
+    try {
+      console.log('[WebViewManager] スキーマバリデーション開始');
+      
+      // SchemaManagerインスタンスを取得（グローバル変数から）
+      const schemaManager = (global as any).globalSchemaManager;
+      if (!schemaManager) {
+        console.log('[WebViewManager] SchemaManagerが見つからないため、バリデーションをスキップします');
+        return { hasErrors: false };
+      }
+      console.log('[WebViewManager] SchemaManagerを取得しました');
+
+      // スキーマをロード
+      const schema = await schemaManager.loadSchema();
+      if (!schema) {
+        console.log('[WebViewManager] スキーマが見つからないため、バリデーションをスキップします');
+        return { hasErrors: false };
+      }
+      console.log('[WebViewManager] スキーマをロードしました');
+
+      // Ajvでバリデーション実行
+      const Ajv = require('ajv');
+      const ajv = new Ajv({ allErrors: true, allowUnionTypes: true });
+      const validate = ajv.compile(schema);
+      const valid = validate(yaml);
+
+      console.log('[WebViewManager] バリデーション結果:', valid);
+      if (!valid && validate.errors) {
+        console.log('[WebViewManager] バリデーションエラー詳細:', validate.errors);
+        const errorDetails = this.createSchemaErrorDetails(validate.errors, yamlContent, fileName);
+        console.log('[WebViewManager] エラー詳細を作成しました:', errorDetails);
+        return {
+          hasErrors: true,
+          errorDetails
+        };
+      }
+
+      console.log('[WebViewManager] スキーマバリデーション成功');
+      return { hasErrors: false };
+    } catch (error) {
+      console.error('[WebViewManager] スキーマバリデーション中にエラーが発生:', error);
+      return { hasErrors: false }; // バリデーションエラーの場合はスキップ
+    }
+  }
+
+  /**
+   * スキーマエラーの詳細情報を作成
+   */
+  private createSchemaErrorDetails(errors: any[], yamlContent: string, fileName: string) {
+    const lines = yamlContent.split('\n');
+    const primaryError = errors[0]; // 最初のエラーを主要エラーとして扱う
+    
+    let lineNumber = 1;
+    let columnNumber = 1;
+    let errorContext = '';
+    let suggestions: string[] = [];
+
+    // エラーパスから該当する行を特定
+    const errorPath = primaryError.instancePath || primaryError.dataPath || '';
+    const errorField = errorPath.split('/').filter(Boolean).pop() || primaryError.params?.missingProperty;
+    
+    if (errorField) {
+      // フィールド名から行を検索
+      const fieldRegex = new RegExp(`^\\s*${errorField}\\s*:`, 'm');
+      const match = yamlContent.match(fieldRegex);
+      
+      if (match) {
+        const matchIndex = yamlContent.indexOf(match[0]);
+        lineNumber = yamlContent.substring(0, matchIndex).split('\n').length;
+        columnNumber = match[0].length;
+
+        // エラー位置の前後の行を取得
+        const startLine = Math.max(0, lineNumber - 3);
+        const endLine = Math.min(lines.length, lineNumber + 2);
+        
+        errorContext = lines.slice(startLine, endLine)
+          .map((line, index) => {
+            const actualLineNumber = startLine + index + 1;
+            const isErrorLine = actualLineNumber === lineNumber;
+            const prefix = isErrorLine ? '→ ' : '  ';
+            const lineNumStr = actualLineNumber.toString().padStart(3, ' ');
+            
+            if (isErrorLine) {
+              const pointer = ' '.repeat(columnNumber + 5) + '^';
+              return `${prefix}${lineNumStr}| ${line}\n${pointer}`;
+            }
+            return `${prefix}${lineNumStr}| ${line}`;
+          })
+          .join('\n');
+      }
+    }
+
+    // スキーマエラータイプに基づく修正提案
+    suggestions = this.generateSchemaErrorSuggestions(primaryError, errors);
+
+    return {
+      message: this.formatSchemaErrorMessage(primaryError),
+      lineNumber,
+      columnNumber,
+      errorContext,
+      suggestions,
+      fileName: fileName.split(/[/\\]/).pop() || fileName,
+      fullPath: fileName,
+      allErrors: errors.map(err => ({
+        path: err.instancePath || err.dataPath || '',
+        message: err.message,
+        allowedValues: err.params?.allowedValues
+      }))
+    };
+  }
+
+  /**
+   * スキーマエラーメッセージをフォーマット
+   */
+  private formatSchemaErrorMessage(error: any): string {
+    const path = error.instancePath || error.dataPath || '';
+    const field = path.split('/').filter(Boolean).pop() || error.params?.missingProperty || 'フィールド';
+    
+    switch (error.keyword) {
+      case 'required':
+        return `必須フィールド "${error.params?.missingProperty}" が不足しています`;
+      case 'enum':
+        return `"${field}" の値が無効です。許可される値: ${error.params?.allowedValues?.join(', ')}`;
+      case 'type':
+        return `"${field}" の型が正しくありません。期待される型: ${error.params?.type}`;
+      case 'minLength':
+        return `"${field}" の値が短すぎます。最小文字数: ${error.params?.limit}`;
+      case 'maxLength':
+        return `"${field}" の値が長すぎます。最大文字数: ${error.params?.limit}`;
+      default:
+        return error.message || `"${field}" でスキーマエラーが発生しました`;
+    }
+  }
+
+  /**
+   * スキーマエラータイプに基づく修正提案を生成
+   */
+  private generateSchemaErrorSuggestions(primaryError: any, allErrors: any[]): string[] {
+    const suggestions: string[] = [];
+    
+    switch (primaryError.keyword) {
+      case 'required':
+        suggestions.push(`❌ 必須フィールド "${primaryError.params?.missingProperty}" を追加してください。`);
+        suggestions.push('💡 YAML の構造を確認し、不足しているプロパティを追加してください。');
+        break;
+        
+      case 'enum':
+        const allowedValues = primaryError.params?.allowedValues || [];
+        suggestions.push(`❌ 許可されていない値です。使用可能な値: ${allowedValues.join(', ')}`);
+        suggestions.push('💡 大文字・小文字も確認してください。');
+        break;
+        
+      case 'type':
+        const expectedType = primaryError.params?.type;
+        suggestions.push(`❌ 値の型が正しくありません。期待される型: ${expectedType}`);
+        if (expectedType === 'string') {
+          suggestions.push('💡 文字列値は引用符で囲んでください。');
+        }
+        break;
+        
+      default:
+        suggestions.push('❌ スキーマ定義に従って値を修正してください。');
+        break;
+    }
+
+    // 空の値の場合の特別な提案
+    const errorPath = primaryError.instancePath || primaryError.dataPath || '';
+    if (primaryError.keyword === 'type' && !primaryError.data) {
+      suggestions.push('❌ 値が空です。適切な値を設定してください。');
+      suggestions.push('💡 コロン(:)の後に値を記述してください。');
+    }
+
+    // 一般的な提案
+    suggestions.push('💡 JSON Schema 定義を確認してください。');
+    suggestions.push('💡 サンプルファイルを参考にしてください。');
+    
+    return suggestions;
   }
 
   /**

@@ -39,6 +39,8 @@ export class CommandManager {
    * コマンドを登録
    */
   registerCommands(): void {
+    console.log('[CommandManager] コマンド登録を開始');
+    
     // プレビュー関連
     this.registerCommand('textui-designer.openPreview', () => this.openPreviewWithCheck());
     this.registerCommand('textui-designer.openDevTools', () => this.webViewManager.openDevTools());
@@ -66,6 +68,8 @@ export class CommandManager {
     this.registerCommand('textui-designer.togglePerformanceMonitoring', () => this.togglePerformanceMonitoring());
     this.registerCommand('textui-designer.enablePerformanceMonitoring', () => this.enablePerformanceMonitoring());
     this.registerCommand('textui-designer.generateSampleEvents', () => this.generateSampleEvents());
+    
+    console.log('[CommandManager] コマンド登録完了');
   }
 
   /**
@@ -196,15 +200,26 @@ export class CommandManager {
    * コマンドを登録
    */
   private registerCommand(command: string, callback: (...args: any[]) => void): void {
+    console.log(`[CommandManager] コマンドを登録: ${command}`);
     const disposable = vscode.commands.registerCommand(command, callback);
     this.context.subscriptions.push(disposable);
+    console.log(`[CommandManager] コマンド登録成功: ${command}`);
   }
 
   /**
    * プレビューを開く（ユーザーの明示的な指示による実行）
    */
   private async openPreviewWithCheck(): Promise<void> {
-    // ユーザーが明示的にコマンドを実行した場合は、Auto Preview設定に関係なくプレビューを開く
-    await this.webViewManager.openPreview();
+    console.log('[CommandManager] openPreviewWithCheck が呼び出されました');
+    try {
+      console.log('[CommandManager] WebViewManager.openPreview を呼び出します');
+      // ユーザーが明示的にコマンドを実行した場合は、Auto Preview設定に関係なくプレビューを開く
+      await this.webViewManager.openPreview();
+      console.log('[CommandManager] WebViewManager.openPreview が完了しました');
+    } catch (error) {
+      console.error('[CommandManager] プレビュー表示エラー:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      vscode.window.showErrorMessage(`プレビューの表示に失敗しました: ${errorMessage}`);
+    }
   }
 } 

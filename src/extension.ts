@@ -30,6 +30,7 @@ function isSupportedFile(fileName: string): boolean {
  */
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "textui-designer" is now active!');
+  console.log('[Extension] アクティベーション開始');
 
   // パフォーマンス監視の開始
   const startTime = Date.now();
@@ -42,46 +43,79 @@ export function activate(context: vscode.ExtensionContext) {
   const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
 
   // 開発モードではパフォーマンス監視を有効化
-  if (process.env.NODE_ENV === 'development') {
-    performanceMonitor.setEnabled(true);
-  }
+  // if (process.env.NODE_ENV === 'development') {
+  //   performanceMonitor.setEnabled(true);
+  // }
   
   // パフォーマンス監視を強制的に有効化（デバッグ用）
   performanceMonitor.forceEnable();
 
   // サービスの初期化
-  const schemaManager = new SchemaManager(context);
-  globalSchemaManager = schemaManager; // グローバルに保存
+  try {
+    console.log('[Extension] SchemaManager を作成します');
+    const schemaManager = new SchemaManager(context);
+    globalSchemaManager = schemaManager; // グローバルに保存
+    
+    // SchemaManagerをグローバル変数として保存（WebViewManagerからアクセス可能にする）
+    (global as any).globalSchemaManager = schemaManager;
+    console.log('[Extension] SchemaManager 作成完了');
+    
+    console.log('[Extension] ThemeManager を作成します');
+    const themeManager = new ThemeManager(context);
+    themeManagerInstance = themeManager;
+    console.log('[Extension] ThemeManager 作成完了');
+    
+    console.log('[Extension] WebViewManager を作成します');
+    const webViewManager = new WebViewManager(context, themeManager);
+    console.log('[Extension] WebViewManager 作成完了');
   
-  const themeManager = new ThemeManager(context);
-  themeManagerInstance = themeManager;
-  const webViewManager = new WebViewManager(context, themeManager);
+  console.log('[Extension] ExportManager を作成します');
   const exportManager = new ExportManager();
   const exportService = new ExportService(exportManager);
+  console.log('[Extension] ExportManager 作成完了');
+  
+  console.log('[Extension] TemplateService を作成します');
   const templateService = new TemplateService();
+  console.log('[Extension] TemplateService 作成完了');
+  
+  console.log('[Extension] SettingsService を作成します');
   const settingsService = new SettingsService();
+  console.log('[Extension] SettingsService 作成完了');
+  
+  console.log('[Extension] DiagnosticManager を作成します');
   const diagnosticManager = new DiagnosticManager(schemaManager);
   globalDiagnosticManager = diagnosticManager;
+  console.log('[Extension] DiagnosticManager 作成完了');
+  
+  console.log('[Extension] CompletionProvider を作成します');
   const completionProvider = new TextUICompletionProvider(schemaManager);
-  const commandManager = new CommandManager(
-    context, 
-    webViewManager, 
-    exportService, 
-    templateService,
-    settingsService,
-    schemaManager
-  );
-
-  // スキーマの初期化
-  schemaManager.initialize().catch(error => {
-    console.error('スキーマの初期化に失敗しました:', error);
-    ErrorHandler.showWarning(
-      'TextUI Designer: スキーマの初期化に失敗しました。IntelliSense機能が制限される可能性があります。'
+  console.log('[Extension] CompletionProvider 作成完了');
+  
+    console.log('[Extension] CommandManager を作成します');
+    const commandManager = new CommandManager(
+      context, 
+      webViewManager, 
+      exportService, 
+      templateService,
+      settingsService,
+      schemaManager
     );
-  });
+    console.log('[Extension] CommandManager 作成完了');
 
-  // コマンドの登録
-  commandManager.registerCommands();
+    // スキーマの初期化
+    console.log('[Extension] スキーマ初期化を開始します');
+    schemaManager.initialize().catch(error => {
+      console.error('スキーマの初期化に失敗しました:', error);
+      ErrorHandler.showWarning(
+        'TextUI Designer: スキーマの初期化に失敗しました。IntelliSense機能が制限される可能性があります。'
+      );
+    });
+    console.log('[Extension] スキーマ初期化完了');
+
+    // コマンドの登録
+    console.log('[Extension] CommandManager.registerCommands を呼び出します');
+    commandManager.registerCommands();
+    console.log('[Extension] CommandManager.registerCommands が完了しました');
 
   // テーマ読み込み
   themeManager.loadTheme().then(() => {
@@ -321,16 +355,26 @@ export function activate(context: vscode.ExtensionContext) {
   performanceMonitor.recordEvent('export', activationTime, { type: 'activation' });
 
   // メモリ使用量の監視（開発時のみ）
-  if (process.env.NODE_ENV === 'development') {
-    setInterval(() => {
-      const memUsage = process.memoryUsage();
-      
-      // メモリ使用量が大きすぎる場合は警告
-      if (memUsage.heapUsed > 150 * 1024 * 1024) { // 150MB以上
-        console.warn(`[Performance] メモリ使用量が大きすぎます: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`);
-        vscode.window.showWarningMessage(`メモリ使用量が大きすぎます（${Math.round(memUsage.heapUsed / 1024 / 1024)}MB）。VSCodeを再起動することをお勧めします。`);
-      }
-    }, 30000); // 30秒ごと（適切な間隔に戻す）
+  // if (process.env.NODE_ENV === 'development') {
+  //   setInterval(() => {
+  //     const memUsage = process.memoryUsage();
+  //     
+  //     // メモリ使用量が大きすぎる場合は警告
+  //     if (memUsage.heapUsed > 150 * 1024 * 1024) { // 150MB以上
+  //       console.warn(`[Performance] メモリ使用量が大きすぎます: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`);
+  //       vscode.window.showWarningMessage(`メモリ使用量が大きすぎます（${Math.round(memUsage.heapUsed / 1024 / 1024)}MB）。VSCodeを再起動することをお勧めします。`);
+  //     }
+  //   }, 30000); // 30秒ごと（適切な間隔に戻す）
+  // }
+
+  } catch (error) {
+    console.error('[Extension] サービス初期化中にエラーが発生しました:', error);
+    console.error('[Extension] エラー詳細:', error);
+    if (error instanceof Error) {
+      console.error('[Extension] スタックトレース:', error.stack);
+    }
+    vscode.window.showErrorMessage(`TextUI Designer拡張の初期化に失敗しました: ${error}`);
+    throw error; // エラーを再スローして拡張の起動を失敗させる
   }
 }
 

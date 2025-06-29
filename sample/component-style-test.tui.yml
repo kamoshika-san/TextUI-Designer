@@ -160,6 +160,6 @@ page:
             variant: error
             message: "メッセージはここに表示されます"
     - Checkbox:
-        label: "test"
-        name: "テスト"
-        required: false
+        label: "Bbb"
+        name: "bbb"
+        
