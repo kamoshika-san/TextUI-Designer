@@ -10,10 +10,13 @@ export class SchemaManager {
   private context: vscode.ExtensionContext;
   private schemaPath: string;
   private templateSchemaPath: string;
+  private themeSchemaPath: string;
   private schemaCache: any = null;
   private templateSchemaCache: any = null;
+  private themeSchemaCache: any = null;
   private lastSchemaLoad: number = 0;
   private lastTemplateSchemaLoad: number = 0;
+  private lastThemeSchemaLoad: number = 0;
   private readonly CACHE_TTL = 30000; // 30秒
 
   constructor(context: vscode.ExtensionContext) {
@@ -45,10 +48,12 @@ export class SchemaManager {
     }
     
     this.templateSchemaPath = path.join(path.dirname(this.schemaPath), 'template-schema.json');
+    this.themeSchemaPath = path.join(path.dirname(this.schemaPath), 'theme-schema.json');
     
     console.log('[SchemaManager] 初期化完了');
     console.log('[SchemaManager] スキーマパス:', this.schemaPath);
     console.log('[SchemaManager] テンプレートスキーマパス:', this.templateSchemaPath);
+    console.log('[SchemaManager] テーマスキーマパス:', this.themeSchemaPath);
   }
 
   /**
@@ -95,12 +100,15 @@ export class SchemaManager {
       
       const schemaUri = vscode.Uri.file(this.schemaPath).toString();
       const templateSchemaUri = vscode.Uri.file(this.templateSchemaPath).toString();
+      const themeSchemaUri = vscode.Uri.file(this.themeSchemaPath).toString();
 
       console.log('[SchemaManager] スキーマ登録を開始');
       console.log('[SchemaManager] スキーマURI:', schemaUri);
       console.log('[SchemaManager] テンプレートスキーマURI:', templateSchemaUri);
+      console.log('[SchemaManager] テーマスキーマURI:', themeSchemaUri);
       console.log('[SchemaManager] スキーマファイル存在確認:', fs.existsSync(this.schemaPath));
       console.log('[SchemaManager] テンプレートスキーマファイル存在確認:', fs.existsSync(this.templateSchemaPath));
+      console.log('[SchemaManager] テーマスキーマファイル存在確認:', fs.existsSync(this.themeSchemaPath));
 
       // YAML拡張（redhat.vscode-yaml）向け
       try {
@@ -145,7 +153,8 @@ export class SchemaManager {
         const newSchemas = {
           ...filteredSchemas,
           [schemaUri]: ['*.tui.yml', '*.tui.yaml'],
-          [templateSchemaUri]: ['*.template.yml', '*.template.yaml']
+          [templateSchemaUri]: ['*.template.yml', '*.template.yaml'],
+          [themeSchemaUri]: ['*-theme.yml', '*-theme.yaml', '*_theme.yml', '*_theme.yaml', 'textui-theme.yml', 'textui-theme.yaml']
         };
         
         await yamlConfig.update('schemas', newSchemas, vscode.ConfigurationTarget.Global);
@@ -176,6 +185,7 @@ export class SchemaManager {
         
         const schemaContent = JSON.parse(fs.readFileSync(this.schemaPath, 'utf-8'));
         const templateSchemaContent = JSON.parse(fs.readFileSync(this.templateSchemaPath, 'utf-8'));
+        const themeSchemaContent = JSON.parse(fs.readFileSync(this.themeSchemaPath, 'utf-8'));
         
         const newSchemas = [
           ...filteredSchemas,
@@ -186,6 +196,10 @@ export class SchemaManager {
           {
             fileMatch: ['*.template.json'],
             schema: templateSchemaContent
+          },
+          {
+            fileMatch: ['*-theme.json', '*_theme.json', 'textui-theme.json'],
+            schema: themeSchemaContent
           }
         ];
         
@@ -215,6 +229,13 @@ export class SchemaManager {
    */
   getTemplateSchemaPath(): string {
     return this.templateSchemaPath;
+  }
+
+  /**
+   * テーマスキーマファイルのパスを取得
+   */
+  getThemeSchemaPath(): string {
+    return this.themeSchemaPath;
   }
 
   /**
@@ -264,6 +285,29 @@ export class SchemaManager {
   }
 
   /**
+   * テーマスキーマの内容を読み込み（キャッシュ付き）
+   */
+  async loadThemeSchema(): Promise<any> {
+    const now = Date.now();
+    
+    // キャッシュチェック
+    if (this.themeSchemaCache && (now - this.lastThemeSchemaLoad) < this.CACHE_TTL) {
+      console.log('[SchemaManager] キャッシュされたテーマスキーマを使用');
+      return this.themeSchemaCache;
+    }
+
+    try {
+      const content = fs.readFileSync(this.themeSchemaPath, 'utf-8');
+      this.themeSchemaCache = JSON.parse(content);
+      this.lastThemeSchemaLoad = now;
+      console.log('[SchemaManager] テーマスキーマをキャッシュに保存');
+      return this.themeSchemaCache;
+    } catch (error) {
+      throw new Error(`テーマスキーマファイルの読み込みに失敗しました: ${error}`);
+    }
+  }
+
+  /**
    * スキーマをクリーンアップ（拡張非アクティブ化時に呼び出し）
    */
   async cleanup(): Promise<void> {
@@ -278,10 +322,11 @@ export class SchemaManager {
         Object.entries(currentSchemas).filter(([uri, patterns]) => {
           const isTextUIDesignerSchema = uri.includes('textui-designer') || 
                                        uri.includes('schema.json') || 
-                                       uri.includes('template-schema.json');
+                                       uri.includes('template-schema.json') ||
+                                       uri.includes('theme-schema.json');
           
           const hasTextUIPatterns = patterns.some(pattern => 
-            pattern.includes('tui') || pattern.includes('template')
+            pattern.includes('tui') || pattern.includes('template') || pattern.includes('theme')
           );
           
           return !isTextUIDesignerSchema && !hasTextUIPatterns;
@@ -297,7 +342,7 @@ export class SchemaManager {
       
       const filteredJsonSchemas = currentJsonSchemas.filter(schema => {
         const hasTextUIMatch = schema.fileMatch?.some((match: string) => 
-          match.includes('tui') || match.includes('template')
+          match.includes('tui') || match.includes('template') || match.includes('theme')
         );
         
         const isTextUISchema = schema.schema?.$id?.includes('textui') ||
@@ -332,10 +377,13 @@ export class SchemaManager {
     console.log('[SchemaManager] スキーマデバッグ情報:');
     console.log('- スキーマパス:', this.schemaPath);
     console.log('- テンプレートスキーマパス:', this.templateSchemaPath);
+    console.log('- テーマスキーマパス:', this.themeSchemaPath);
     console.log('- スキーマキャッシュ:', this.schemaCache ? '有効' : '無効');
     console.log('- テンプレートスキーマキャッシュ:', this.templateSchemaCache ? '有効' : '無効');
+    console.log('- テーマスキーマキャッシュ:', this.themeSchemaCache ? '有効' : '無効');
     console.log('- 最終スキーマ読み込み:', new Date(this.lastSchemaLoad).toISOString());
     console.log('- 最終テンプレートスキーマ読み込み:', new Date(this.lastTemplateSchemaLoad).toISOString());
+    console.log('- 最終テーマスキーマ読み込み:', new Date(this.lastThemeSchemaLoad).toISOString());
   }
 
   /**
@@ -344,8 +392,10 @@ export class SchemaManager {
   clearCache(): void {
     this.schemaCache = null;
     this.templateSchemaCache = null;
+    this.themeSchemaCache = null;
     this.lastSchemaLoad = 0;
     this.lastTemplateSchemaLoad = 0;
+    this.lastThemeSchemaLoad = 0;
     console.log('[SchemaManager] スキーマキャッシュをクリアしました');
   }
 } 
