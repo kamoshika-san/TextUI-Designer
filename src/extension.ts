@@ -11,6 +11,7 @@ import { ExportManager } from './exporters';
 import { ErrorHandler } from './utils/error-handler';
 import { ConfigManager } from './utils/config-manager';
 import { PerformanceMonitor } from './utils/performance-monitor';
+import { TextUIMemoryTracker } from './utils/textui-memory-tracker';
 import { ThemeManager } from './services/theme-manager';
 
 // グローバル変数としてSchemaManagerを保存
@@ -49,6 +50,10 @@ export function activate(context: vscode.ExtensionContext) {
   
   // パフォーマンス監視を強制的に有効化（デバッグ用）
   performanceMonitor.forceEnable();
+
+  // メモリ追跡システムの初期化
+  const memoryTracker = TextUIMemoryTracker.getInstance();
+  console.log('[Extension] メモリ追跡システムを初期化しました');
 
   // サービスの初期化
   try {
@@ -415,6 +420,11 @@ export function deactivate() {
   // パフォーマンスモニターのクリーンアップ
   const performanceMonitor = PerformanceMonitor.getInstance();
   performanceMonitor.dispose();
+
+  // メモリ追跡システムのクリーンアップ
+  const memoryTracker = TextUIMemoryTracker.getInstance();
+  memoryTracker.dispose();
+  console.log('[Extension] メモリ追跡システムをクリーンアップしました');
 
   // スキーマのクリーンアップ
   console.log('TextUI Designer拡張を非アクティブ化中...');

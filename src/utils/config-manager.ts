@@ -126,7 +126,13 @@ export class ConfigManager {
       // 最小更新間隔（ミリ秒）- より短くしてリアルタイム性を向上
       minUpdateInterval: this.get('performance.minUpdateInterval', 100),
       // 最大同時処理数 - より多くしてレスポンス性を向上
-      maxConcurrentOperations: this.get('performance.maxConcurrentOperations', 2)
+      maxConcurrentOperations: this.get('performance.maxConcurrentOperations', 2),
+      // メモリ追跡の有効化
+      enableMemoryTracking: this.get('performance.enableMemoryTracking', false),
+      // メモリ測定間隔（ミリ秒）
+      memoryMeasurementInterval: this.get('performance.memoryMeasurementInterval', 5000),
+      // メモリクリーンアップ間隔（ミリ秒）
+      memoryCleanupInterval: this.get('performance.memoryCleanupInterval', 30000)
     };
   }
 
@@ -161,6 +167,9 @@ export class ConfigManager {
     await config.update('performance.enablePerformanceLogs', undefined);
     await config.update('performance.minUpdateInterval', undefined);
     await config.update('performance.maxConcurrentOperations', undefined);
+    await config.update('performance.enableMemoryTracking', undefined);
+    await config.update('performance.memoryMeasurementInterval', undefined);
+    await config.update('performance.memoryCleanupInterval', undefined);
   }
 
   /**

@@ -1,5 +1,6 @@
 import type { TextUIDSL, ComponentDef } from '../renderer/types';
 import type { ExportFormat } from './style-manager';
+import { TextUIMemoryTracker } from './textui-memory-tracker';
 
 export interface CacheEntry {
   content: string;
@@ -21,6 +22,7 @@ export class CacheManager {
   private options: CacheOptions;
   private hits: number = 0; // キャッシュヒット数
   private misses: number = 0; // キャッシュミス数
+  private memoryTracker: TextUIMemoryTracker;
 
   constructor(options: Partial<CacheOptions> = {}) {
     this.options = {
@@ -29,6 +31,7 @@ export class CacheManager {
     };
     this.hits = 0;
     this.misses = 0;
+    this.memoryTracker = TextUIMemoryTracker.getInstance();
   }
 
   /**
@@ -88,11 +91,21 @@ export class CacheManager {
       this.evictOldest();
     }
 
-    this.cache.set(key, {
+    const entry: CacheEntry = {
       content,
       timestamp: Date.now(),
       hash,
       format
+    };
+
+    this.cache.set(key, entry);
+
+    // キャッシュエントリのメモリ追跡
+    const entrySize = this.estimateCacheEntrySize(entry);
+    this.memoryTracker.trackRenderCacheObject(entry, entrySize, {
+      key,
+      format,
+      contentSize: content.length
     });
   }
 
@@ -188,5 +201,27 @@ export class CacheManager {
       hitRate: Math.round(hitRate * 100) / 100,
       totalAccesses
     };
+  }
+
+  /**
+   * キャッシュエントリのメモリサイズを推定
+   */
+  private estimateCacheEntrySize(entry: CacheEntry): number {
+    // content文字列のサイズ（UTF-16想定）
+    const contentSize = entry.content.length * 2;
+    
+    // hash文字列のサイズ
+    const hashSize = entry.hash.length * 2;
+    
+    // formatの文字列サイズ
+    const formatSize = entry.format.length * 2;
+    
+    // timestampの数値サイズ（8バイト）
+    const timestampSize = 8;
+    
+    // オブジェクトのオーバーヘッド（推定値）
+    const objectOverhead = 32;
+    
+    return contentSize + hashSize + formatSize + timestampSize + objectOverhead;
   }
 } 

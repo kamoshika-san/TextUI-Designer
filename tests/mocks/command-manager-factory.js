@@ -73,12 +73,18 @@ class CommandManagerFactory {
     // ConfigManagerのモック
     const mockConfigManager = {
       isAutoPreviewEnabled: sinon.stub().returns(defaultOptions.enableAutoPreview),
-      getPerformanceSettings: sinon.stub().returns(defaultOptions.performanceSettings),
+      getPerformanceSettings: sinon.stub().returns({
+        ...defaultOptions.performanceSettings,
+        enableMemoryTracking: false,
+        memoryMeasurementInterval: 5000,
+        memoryCleanupInterval: 30000
+      }),
       set: sinon.stub().resolves(),
       get: sinon.stub().callsFake((key, defaultValue) => {
         const settings = {
           'textui.autoPreview': defaultOptions.enableAutoPreview,
-          'textui.performance.enabled': defaultOptions.performanceSettings.enablePerformanceLogs
+          'textui.performance.enabled': defaultOptions.performanceSettings.enablePerformanceLogs,
+          'textui.performance.enableMemoryTracking': false
         };
         return settings[key] !== undefined ? settings[key] : defaultValue;
       })
@@ -100,6 +106,23 @@ class CommandManagerFactory {
       })
     };
 
+    // TextUIMemoryTrackerのモック
+    const mockTextUIMemoryTracker = {
+      getInstance: sinon.stub().returns({
+        generateMemoryReport: sinon.stub().returns('# Memory Report\nMock memory report'),
+        getMetrics: sinon.stub().returns({
+          webviewMemory: 0,
+          yamlCacheMemory: 0,
+          diagnosticsMemory: 0,
+          renderCacheMemory: 0,
+          totalTrackedMemory: 0,
+          lastMeasured: Date.now()
+        }),
+        setEnabled: sinon.stub(),
+        dispose: sinon.stub()
+      })
+    };
+
     // Module requireフックを設定
     const Module = require('module');
     const originalRequire = Module.prototype.require;
@@ -116,6 +139,9 @@ class CommandManagerFactory {
       }
       if (id.includes('performance-monitor')) {
         return { PerformanceMonitor: mockPerformanceMonitor };
+      }
+      if (id.includes('textui-memory-tracker')) {
+        return { TextUIMemoryTracker: mockTextUIMemoryTracker };
       }
       return originalRequire.apply(this, arguments);
     };
@@ -149,6 +175,7 @@ class CommandManagerFactory {
       mockErrorHandler,
       mockConfigManager,
       mockPerformanceMonitor,
+      mockTextUIMemoryTracker,
       mockContext,
       resetAllMocks: () => {
         sinon.resetHistory();
@@ -172,6 +199,9 @@ class CommandManagerFactory {
           if (typeof stub.resetHistory === 'function') stub.resetHistory();
         });
         Object.values(mockConfigManager).forEach(stub => {
+          if (typeof stub.resetHistory === 'function') stub.resetHistory();
+        });
+        Object.values(mockTextUIMemoryTracker).forEach(stub => {
           if (typeof stub.resetHistory === 'function') stub.resetHistory();
         });
       },
