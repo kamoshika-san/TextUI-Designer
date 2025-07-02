@@ -3,6 +3,7 @@ import { ThemeManager } from './theme-manager';
 import { WebViewLifecycleManager } from './webview/webview-lifecycle-manager';
 import { WebViewUpdateManager } from './webview/webview-update-manager';
 import { WebViewMessageHandler } from './webview/webview-message-handler';
+import { TextUIDSL } from '../renderer/types';
 
 /**
  * WebViewManager（ファサード）
@@ -171,11 +172,11 @@ export class WebViewManager {
     this.updateManager.lastYamlContent = val;
   }
 
-  get lastParsedData(): any {
+  get lastParsedData(): TextUIDSL | null {
     // @ts-ignore
     return this.updateManager.lastParsedData;
   }
-  set lastParsedData(val: any) {
+  set lastParsedData(val: TextUIDSL | null) {
     // @ts-ignore
     this.updateManager.lastParsedData = val;
   }

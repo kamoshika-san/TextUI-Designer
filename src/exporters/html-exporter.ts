@@ -1,4 +1,4 @@
-import type { TextUIDSL, ComponentDef, FormComponent, FormField, FormAction } from '../renderer/types';
+import type { TextUIDSL, ComponentDef, FormComponent, FormField, FormAction, TextComponent, InputComponent } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
 import { StyleManager } from '../utils/style-manager';
@@ -95,7 +95,7 @@ ${componentCode}
     return '.html';
   }
 
-  protected renderText(props: any, key: number): string {
+  protected renderText(props: TextComponent, key: number): string {
     const { value, variant = 'p', size = 'base', weight = 'normal', color = 'text-gray-300' } = props;
     
     // StyleManagerを使用してスタイルを取得
@@ -119,7 +119,7 @@ ${componentCode}
     return `    <${tag} class="${className}">${value}</${tag}>`;
   }
 
-  protected renderInput(props: any, key: number): string {
+  protected renderInput(props: InputComponent, key: number): string {
     const { label, placeholder, type = 'text', required = false, disabled = false } = props;
     const disabledClass = this.getDisabledClass(disabled);
     const requiredAttr = required ? ' required' : '';

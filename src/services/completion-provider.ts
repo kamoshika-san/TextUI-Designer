@@ -1,19 +1,20 @@
 import * as vscode from 'vscode';
 import * as YAML from 'yaml';
+import { ISchemaManager, SchemaDefinition } from '../types';
 
 /**
  * 補完プロバイダー
  * YAML/JSONファイルのIntelliSense機能を提供
  */
 export class TextUICompletionProvider implements vscode.CompletionItemProvider {
-  private schemaManager: any; // SchemaManagerの型を後で定義
-  private schemaCache: any = null;
+  private schemaManager: ISchemaManager;
+  private schemaCache: SchemaDefinition | null = null;
   private lastSchemaLoad: number = 0;
   private completionCache: Map<string, { items: vscode.CompletionItem[]; timestamp: number }> = new Map();
   private readonly CACHE_TTL = 10000; // 10秒
   private completionTimeout: NodeJS.Timeout | null = null;
 
-  constructor(schemaManager: any) {
+  constructor(schemaManager: ISchemaManager) {
     this.schemaManager = schemaManager;
   }
 
@@ -88,7 +89,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
       
       // スキーマキャッシュの更新チェック
       if (!this.schemaCache || (now - this.lastSchemaLoad) > this.CACHE_TTL) {
-        this.schemaCache = this.schemaManager.loadSchema();
+        this.schemaCache = await this.schemaManager.loadSchema();
         this.lastSchemaLoad = now;
       }
       
@@ -130,7 +131,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     linePrefix: string,
     position: vscode.Position,
     currentWord: string,
-    schema: any,
+    schema: SchemaDefinition,
     isTemplate: boolean
   ): vscode.CompletionItem[] {
     const items: vscode.CompletionItem[] = [];

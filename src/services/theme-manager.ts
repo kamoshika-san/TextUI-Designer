@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
 import Ajv from 'ajv';
+import { IThemeManager, ThemeTokens, ThemeComponents, ThemeDefinition } from '../types';
 
 export class ThemeManager {
   private context: vscode.ExtensionContext;

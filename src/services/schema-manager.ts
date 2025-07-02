@@ -1,19 +1,25 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import { 
+  ISchemaManager, 
+  SchemaDefinition, 
+  SchemaValidationResult, 
+  SchemaValidationError 
+} from '../types';
 
 /**
  * スキーマ管理サービス
  * YAML/JSONスキーマの設定と管理を担当
  */
-export class SchemaManager {
+export class SchemaManager implements ISchemaManager {
   private context: vscode.ExtensionContext;
   private schemaPath: string;
   private templateSchemaPath: string;
   private themeSchemaPath: string;
-  private schemaCache: any = null;
-  private templateSchemaCache: any = null;
-  private themeSchemaCache: any = null;
+  private schemaCache: SchemaDefinition | null = null;
+  private templateSchemaCache: SchemaDefinition | null = null;
+  private themeSchemaCache: SchemaDefinition | null = null;
   private lastSchemaLoad: number = 0;
   private lastTemplateSchemaLoad: number = 0;
   private lastThemeSchemaLoad: number = 0;
@@ -241,7 +247,7 @@ export class SchemaManager {
   /**
    * スキーマの内容を読み込み（キャッシュ付き）
    */
-  async loadSchema(): Promise<any> {
+  async loadSchema(): Promise<SchemaDefinition> {
     const now = Date.now();
     
     // キャッシュチェック
@@ -252,10 +258,11 @@ export class SchemaManager {
 
     try {
       const content = fs.readFileSync(this.schemaPath, 'utf-8');
-      this.schemaCache = JSON.parse(content);
+      const parsedSchema = JSON.parse(content) as SchemaDefinition;
+      this.schemaCache = parsedSchema;
       this.lastSchemaLoad = now;
       console.log('[SchemaManager] スキーマをキャッシュに保存');
-      return this.schemaCache;
+      return parsedSchema;
     } catch (error) {
       throw new Error(`スキーマファイルの読み込みに失敗しました: ${error}`);
     }
@@ -264,7 +271,7 @@ export class SchemaManager {
   /**
    * テンプレートスキーマの内容を読み込み（キャッシュ付き）
    */
-  async loadTemplateSchema(): Promise<any> {
+  async loadTemplateSchema(): Promise<SchemaDefinition> {
     const now = Date.now();
     
     // キャッシュチェック
@@ -275,10 +282,11 @@ export class SchemaManager {
 
     try {
       const content = fs.readFileSync(this.templateSchemaPath, 'utf-8');
-      this.templateSchemaCache = JSON.parse(content);
+      const parsedSchema = JSON.parse(content) as SchemaDefinition;
+      this.templateSchemaCache = parsedSchema;
       this.lastTemplateSchemaLoad = now;
       console.log('[SchemaManager] テンプレートスキーマをキャッシュに保存');
-      return this.templateSchemaCache;
+      return parsedSchema;
     } catch (error) {
       throw new Error(`テンプレートスキーマファイルの読み込みに失敗しました: ${error}`);
     }
@@ -287,7 +295,7 @@ export class SchemaManager {
   /**
    * テーマスキーマの内容を読み込み（キャッシュ付き）
    */
-  async loadThemeSchema(): Promise<any> {
+  async loadThemeSchema(): Promise<SchemaDefinition> {
     const now = Date.now();
     
     // キャッシュチェック
@@ -298,10 +306,11 @@ export class SchemaManager {
 
     try {
       const content = fs.readFileSync(this.themeSchemaPath, 'utf-8');
-      this.themeSchemaCache = JSON.parse(content);
+      const parsedSchema = JSON.parse(content) as SchemaDefinition;
+      this.themeSchemaCache = parsedSchema;
       this.lastThemeSchemaLoad = now;
       console.log('[SchemaManager] テーマスキーマをキャッシュに保存');
-      return this.themeSchemaCache;
+      return parsedSchema;
     } catch (error) {
       throw new Error(`テーマスキーマファイルの読み込みに失敗しました: ${error}`);
     }
@@ -397,5 +406,83 @@ export class SchemaManager {
     this.lastTemplateSchemaLoad = 0;
     this.lastThemeSchemaLoad = 0;
     console.log('[SchemaManager] スキーマキャッシュをクリアしました');
+  }
+
+  /**
+   * スキーマの検証
+   */
+  validateSchema(data: unknown, schema: SchemaDefinition): SchemaValidationResult {
+    try {
+      const Ajv = require('ajv');
+      const ajv = new Ajv({ allErrors: true, allowUnionTypes: true });
+      const validate = ajv.compile(schema);
+      const valid = validate(data);
+      
+      return {
+        valid,
+        errors: valid ? undefined : validate.errors?.map((error: any) => ({
+          keyword: error.keyword,
+          dataPath: error.instancePath || '',
+          schemaPath: error.schemaPath || '',
+          params: error.params || {},
+          message: error.message || 'スキーマエラー',
+          data: error.data
+        })) || []
+      };
+    } catch (error: unknown) {
+      return {
+        valid: false,
+        errors: [{
+          keyword: 'validation_error',
+          dataPath: '',
+          schemaPath: '',
+          params: {},
+          message: `スキーマ検証中にエラーが発生しました: ${error instanceof Error ? error.message : String(error)}`,
+          data: data
+        }]
+      };
+    }
+  }
+
+  /**
+   * スキーマの登録
+   */
+  async registerSchema(filePattern: string, schemaPath: string): Promise<void> {
+    try {
+      const yamlConfig = vscode.workspace.getConfiguration('yaml');
+      const currentSchemas = yamlConfig.get('schemas') as Record<string, string[]> || {};
+      
+      const schemaUri = vscode.Uri.file(schemaPath).toString();
+      currentSchemas[schemaUri] = [filePattern];
+      
+      await yamlConfig.update('schemas', currentSchemas, vscode.ConfigurationTarget.Global);
+      console.log(`[SchemaManager] スキーマを登録しました: ${filePattern} -> ${schemaPath}`);
+    } catch (error: unknown) {
+      console.error(`[SchemaManager] スキーマ登録に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
+  }
+
+  /**
+   * スキーマの登録解除
+   */
+  async unregisterSchema(filePattern: string): Promise<void> {
+    try {
+      const yamlConfig = vscode.workspace.getConfiguration('yaml');
+      const currentSchemas = yamlConfig.get('schemas') as Record<string, string[]> || {};
+      
+      // 指定されたパターンに一致するスキーマを削除
+      const filteredSchemas = Object.fromEntries(
+        Object.entries(currentSchemas).filter(([uri, patterns]) => 
+          !patterns.includes(filePattern)
+        )
+      );
+      
+      await yamlConfig.update('schemas', filteredSchemas, vscode.ConfigurationTarget.Global);
+      console.log(`[SchemaManager] スキーマを登録解除しました: ${filePattern}`);
+    } catch (error: unknown) {
+      console.error(`[SchemaManager] スキーマ登録解除に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
   }
 } 

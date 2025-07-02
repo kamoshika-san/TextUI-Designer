@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as YAML from 'yaml';
 import Ajv from 'ajv';
 import { TextUIMemoryTracker } from '../utils/textui-memory-tracker';
+import { ISchemaManager, SchemaDefinition, SchemaValidationError } from '../types';
 
 /**
  * 診断管理サービス
@@ -9,11 +10,11 @@ import { TextUIMemoryTracker } from '../utils/textui-memory-tracker';
  */
 export class DiagnosticManager {
   private diagnosticCollection: vscode.DiagnosticCollection;
-  private schemaManager: any; // SchemaManagerの型を後で定義
+  private schemaManager: ISchemaManager;
   private validationCache: Map<string, { content: string; diagnostics: vscode.Diagnostic[]; timestamp: number }> = new Map();
   private validationTimeouts: Map<string, NodeJS.Timeout> = new Map();
   private ajvInstance: Ajv | null = null;
-  private schemaCache: any = null;
+  private schemaCache: SchemaDefinition | null = null;
   private lastSchemaLoad: number = 0;
   private readonly CACHE_TTL = 5000; // 5秒
   private readonly DEBOUNCE_DELAY = 500; // 500ms
@@ -22,7 +23,7 @@ export class DiagnosticManager {
   private readonly MAX_CACHE_AGE = 30000; // 30秒でキャッシュをクリア
   private memoryTracker: TextUIMemoryTracker;
 
-  constructor(schemaManager: any) {
+  constructor(schemaManager: ISchemaManager) {
     this.diagnosticCollection = vscode.languages.createDiagnosticCollection('textui-designer');
     this.schemaManager = schemaManager;
     this.memoryTracker = TextUIMemoryTracker.getInstance();
@@ -131,13 +132,19 @@ export class DiagnosticManager {
       let validate;
       if (isTemplate) {
         // テンプレート用: ルートがコンポーネント配列でもOKなスキーマを動的生成
+        if (!this.schemaCache) {
+          throw new Error('スキーマキャッシュが初期化されていません');
+        }
         const templateSchema = {
           ...this.schemaCache,
           type: 'array',
-          items: this.schemaCache.definitions.component
+          items: this.schemaCache.definitions?.component
         };
         validate = this.ajvInstance.compile(templateSchema);
       } else {
+        if (!this.schemaCache) {
+          throw new Error('スキーマキャッシュが初期化されていません');
+        }
         validate = this.ajvInstance.compile(this.schemaCache);
       }
 
@@ -186,7 +193,7 @@ export class DiagnosticManager {
     const diagnostics: vscode.Diagnostic[] = [];
 
     for (const err of errors) {
-      const key = err.instancePath.split('/').filter(Boolean).pop();
+      const key = err.instancePath?.split('/').filter(Boolean).pop();
       if (key) {
         const regex = new RegExp(`^\\s*${key}:`, 'm');
         const match = text.match(regex);
