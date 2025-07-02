@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { getWebviewContent } from '../utils/webview-utils';
 import { PerformanceMonitor } from '../utils/performance-monitor';
+import { TextUIMemoryTracker } from '../utils/textui-memory-tracker';
 import { ThemeManager } from './theme-manager';
 import { ConfigManager } from '../utils/config-manager';
 
@@ -20,6 +21,7 @@ export class WebViewManager {
   private lastParsedData: any = null;
   private isUpdating: boolean = false;
   private performanceMonitor: PerformanceMonitor;
+  private memoryTracker: TextUIMemoryTracker;
   private themeManager: ThemeManager | undefined;
   private updateQueue: (() => Promise<void>)[] = [];
   private isProcessingQueue: boolean = false;
@@ -32,6 +34,7 @@ export class WebViewManager {
     this.context = context;
     this.themeManager = themeManager;
     this.performanceMonitor = PerformanceMonitor.getInstance();
+    this.memoryTracker = TextUIMemoryTracker.getInstance();
   }
 
   /**
@@ -75,6 +78,13 @@ export class WebViewManager {
 
       // WebViewのHTMLをセット
       this.currentPanel.webview.html = getWebviewContent(this.context, this.currentPanel);
+
+      // WebViewパネルのメモリ使用量を追跡開始
+      const webviewSize = this.estimateWebviewSize(this.currentPanel.webview.html);
+      this.memoryTracker.trackWebviewObject(this.currentPanel, webviewSize, {
+        title: 'TextUI Preview',
+        column: columnToShowIn
+      });
 
       // WebViewからのメッセージを処理
       this.currentPanel.webview.onDidReceiveMessage(
@@ -415,6 +425,14 @@ export class WebViewManager {
         // キャッシュを更新（メモリ制限付き）
         this.lastYamlContent = yamlContent;
         this.lastParsedData = yaml;
+
+        // YAMLデータのメモリ追跡
+        const yamlDataSize = this.estimateYamlDataSize(yamlContent, yaml);
+        this.memoryTracker.trackYamlCacheObject(
+          { yamlContent, parsedData: yaml },
+          yamlDataSize,
+          { fileName, fileSize: yamlContent.length }
+        );
         
         // メモリ使用量に応じた段階的キャッシュ管理
         const memUsage = process.memoryUsage();
@@ -1008,6 +1026,40 @@ export class WebViewManager {
       console.error('[WebViewManager] テーマ切り替えエラー:', error);
       vscode.window.showErrorMessage(`テーマ切り替えに失敗しました: ${error}`);
     }
+  }
+
+  /**
+   * WebViewのメモリサイズを推定
+   */
+  private estimateWebviewSize(html: string): number {
+    // HTMLサイズ（文字列の長さ × 2バイト、UTF-16想定）
+    const htmlSize = html.length * 2;
+    
+    // WebViewパネル自体のオーバーヘッド（推定値）
+    const webviewOverhead = 50000; // 約50KB
+    
+    return htmlSize + webviewOverhead;
+  }
+
+  /**
+   * YAMLデータのメモリサイズを推定
+   */
+  private estimateYamlDataSize(yamlContent: string, parsedData?: any): number {
+    // YAML文字列のサイズ
+    const yamlSize = yamlContent.length * 2;
+    
+    // パースされたデータのサイズ（JSON文字列化してサイズ推定）
+    let parsedSize = 0;
+    if (parsedData) {
+      try {
+        parsedSize = JSON.stringify(parsedData).length * 2;
+      } catch (error) {
+        // パースエラーの場合は元のサイズを使用
+        parsedSize = yamlSize;
+      }
+    }
+    
+    return yamlSize + parsedSize;
   }
 
   /**

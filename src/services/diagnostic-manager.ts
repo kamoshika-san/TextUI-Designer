@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as YAML from 'yaml';
 import Ajv from 'ajv';
+import { TextUIMemoryTracker } from '../utils/textui-memory-tracker';
 
 /**
  * 診断管理サービス
@@ -19,10 +20,12 @@ export class DiagnosticManager {
   private diagnosticTimeout: NodeJS.Timeout | null = null;
   private readonly MAX_CACHE_SIZE = 100; // キャッシュサイズ制限
   private readonly MAX_CACHE_AGE = 30000; // 30秒でキャッシュをクリア
+  private memoryTracker: TextUIMemoryTracker;
 
   constructor(schemaManager: any) {
     this.diagnosticCollection = vscode.languages.createDiagnosticCollection('textui-designer');
     this.schemaManager = schemaManager;
+    this.memoryTracker = TextUIMemoryTracker.getInstance();
   }
 
   /**
@@ -153,10 +156,20 @@ export class DiagnosticManager {
     }
 
     // キャッシュを更新
-    this.validationCache.set(uri, {
+    const cacheEntry = {
       content: text,
       timestamp: now,
       diagnostics: diagnostics
+    };
+    
+    this.validationCache.set(uri, cacheEntry);
+
+    // 診断キャッシュエントリのメモリ追跡
+    const entrySize = this.estimateDiagnosticCacheSize(cacheEntry);
+    this.memoryTracker.trackDiagnosticsObject(cacheEntry, entrySize, {
+      uri,
+      contentSize: text.length,
+      diagnosticCount: diagnostics.length
     });
 
     this.diagnosticCollection.set(document.uri, diagnostics);
@@ -277,5 +290,36 @@ export class DiagnosticManager {
     for (const key of oldCache) {
       this.validationCache.delete(key);
     }
+  }
+
+  /**
+   * 診断キャッシュエントリのメモリサイズを推定
+   */
+  private estimateDiagnosticCacheSize(entry: { content: string; diagnostics: vscode.Diagnostic[]; timestamp: number }): number {
+    // content文字列のサイズ（UTF-16想定）
+    const contentSize = entry.content.length * 2;
+    
+    // timestamp数値のサイズ（8バイト）
+    const timestampSize = 8;
+    
+    // diagnostics配列のサイズを推定
+    let diagnosticsSize = 16; // 配列のベースサイズ
+    for (const diagnostic of entry.diagnostics) {
+      // 各診断メッセージのサイズ
+      const messageSize = diagnostic.message.length * 2;
+      
+      // Range情報のサイズ（Position × 2 × 2プロパティ）
+      const rangeSize = 16; // line, character プロパティ × 2 × 2
+      
+      // その他のプロパティのオーバーヘッド
+      const diagnosticOverhead = 32;
+      
+      diagnosticsSize += messageSize + rangeSize + diagnosticOverhead;
+    }
+    
+    // オブジェクトのオーバーヘッド
+    const objectOverhead = 48;
+    
+    return contentSize + timestampSize + diagnosticsSize + objectOverhead;
   }
 } 

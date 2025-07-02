@@ -3,7 +3,7 @@
   "displayName": "TextUI Designer",
   "description": "YAML/JSON DSLでUIを設計するVS Code拡張",
   "publisher": "kamoshika-san",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "license": "MIT",
   "engines": {
     "vscode": "^1.85.0"
@@ -215,6 +215,25 @@
           "minimum": 1,
           "maximum": 5,
           "description": "最大同時処理数"
+        },
+        "textui-designer.performance.enableMemoryTracking": {
+          "type": "boolean",
+          "default": false,
+          "description": "TextUI Designer専用のメモリ追跡を有効化"
+        },
+        "textui-designer.performance.memoryMeasurementInterval": {
+          "type": "number",
+          "default": 5000,
+          "minimum": 1000,
+          "maximum": 30000,
+          "description": "メモリ測定間隔（ミリ秒）"
+        },
+        "textui-designer.performance.memoryCleanupInterval": {
+          "type": "number",
+          "default": 30000,
+          "minimum": 10000,
+          "maximum": 300000,
+          "description": "メモリクリーンアップ間隔（ミリ秒）"
         }
       }
     },
@@ -274,6 +293,18 @@
       {
         "command": "textui-designer.checkAutoPreviewSetting",
         "title": "TextUI: 自動プレビュー設定を確認"
+      },
+      {
+        "command": "textui-designer.showMemoryReport",
+        "title": "TextUI: メモリレポートを表示"
+      },
+      {
+        "command": "textui-designer.toggleMemoryTracking",
+        "title": "TextUI: メモリ追跡の切り替え"
+      },
+      {
+        "command": "textui-designer.enableMemoryTracking",
+        "title": "TextUI: メモリ追跡を有効化"
       }
     ],
     "menus": {

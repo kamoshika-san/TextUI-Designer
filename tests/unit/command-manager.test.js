@@ -55,18 +55,18 @@ describe('CommandManager', () => {
       const initialSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
       commandManager.registerCommands();
 
-      // 期待されるコマンド数を確認（実際の登録数に合わせて修正）
+      // 期待されるコマンド数を確認（メモリ追跡コマンド3個を含む）
       const finalSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
-      expect(finalSubscriptions - initialSubscriptions).to.equal(16);
+      expect(finalSubscriptions - initialSubscriptions).to.equal(19);
     });
 
     it('登録されたコマンドがcontextのsubscriptionsに追加される', () => {
       const initialSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
       commandManager.registerCommands();
 
-      // 登録されたコマンドの数だけsubscriptionsに追加されていることを確認
+      // 登録されたコマンドの数だけsubscriptionsに追加されていることを確認（メモリ追跡コマンド3個を含む）
       const finalSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
-      expect(finalSubscriptions - initialSubscriptions).to.equal(16);
+      expect(finalSubscriptions - initialSubscriptions).to.equal(19);
     });
   });
 
@@ -136,6 +136,30 @@ describe('CommandManager', () => {
       
       // メソッドの実行が例外を投げないことを確認
       expect(() => commandManager.openPreviewWithCheck()).to.not.throw();
+    });
+  });
+
+  describe('メモリ追跡関連コマンド', () => {
+    it('メモリ追跡コマンドが正しく登録されている', () => {
+      const initialSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
+      commandManager.registerCommands();
+
+      // メモリ追跡コマンドが登録されていることを確認（3個追加）
+      const finalSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
+      expect(finalSubscriptions - initialSubscriptions).to.equal(19);
+    });
+
+    it('TextUIMemoryTrackerのモックが正しく設定されている', () => {
+      // TextUIMemoryTrackerは動的インポートで使用されるため、
+      // ファクトリのモックが正しく設定されていることを確認
+      expect(commandManager._testHelpers.mockTextUIMemoryTracker).to.exist;
+      expect(typeof commandManager._testHelpers.mockTextUIMemoryTracker.getInstance).to.equal('function');
+      
+      // モックのインスタンスメソッドが正しく設定されていることを確認
+      const mockInstance = commandManager._testHelpers.mockTextUIMemoryTracker.getInstance();
+      expect(typeof mockInstance.generateMemoryReport).to.equal('function');
+      expect(typeof mockInstance.getMetrics).to.equal('function');
+      expect(typeof mockInstance.setEnabled).to.equal('function');
     });
   });
 }); 
