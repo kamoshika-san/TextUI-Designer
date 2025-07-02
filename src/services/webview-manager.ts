@@ -416,19 +416,20 @@ export class WebViewManager {
         this.lastYamlContent = yamlContent;
         this.lastParsedData = yaml;
         
-        // メモリ使用量が大きい場合は古いキャッシュをクリア
+        // メモリ使用量に応じた段階的キャッシュ管理
         const memUsage = process.memoryUsage();
-        if (memUsage.heapUsed > 100 * 1024 * 1024) { // 100MB以上
-          console.log('[WebViewManager] メモリ使用量が大きいため、古いキャッシュをクリアします');
-          this.lastYamlContent = '';
-          this.lastParsedData = null;
-        }
+        const memUsageMB = Math.round(memUsage.heapUsed / 1024 / 1024);
         
-        // 定期的なキャッシュクリーンアップ（50MB以上で実行）
-        if (memUsage.heapUsed > 50 * 1024 * 1024) {
-          console.log('[WebViewManager] メモリ使用量が50MBを超えたため、キャッシュをクリアします');
+        if (memUsage.heapUsed > 150 * 1024 * 1024) { // 150MB以上 - 強制キャッシュクリア
+          console.warn(`[WebViewManager] メモリ使用量が多いため、キャッシュを強制クリアします: ${memUsageMB}MB`);
           this.lastYamlContent = '';
           this.lastParsedData = null;
+        } else if (memUsage.heapUsed > 100 * 1024 * 1024) { // 100MB以上 - 予防的キャッシュクリア
+          console.log(`[WebViewManager] メモリ使用量が多めのため、キャッシュをクリアします: ${memUsageMB}MB`);
+          this.lastYamlContent = '';
+          this.lastParsedData = null;
+        } else if (memUsage.heapUsed > 50 * 1024 * 1024) { // 50MB以上 - 情報ログのみ
+          console.log(`[WebViewManager] メモリ使用量: ${memUsageMB}MB（キャッシュ保持中）`);
         }
         
         this.sendMessageToWebView(yaml, fileName);
@@ -1006,6 +1007,27 @@ export class WebViewManager {
     } catch (error) {
       console.error('[WebViewManager] テーマ切り替えエラー:', error);
       vscode.window.showErrorMessage(`テーマ切り替えに失敗しました: ${error}`);
+    }
+  }
+
+  /**
+   * テスト用: メモリ使用量に応じたキャッシュ管理を直接実行
+   */
+  _testMemoryManagement(): void {
+    // メモリ使用量に応じた段階的キャッシュ管理
+    const memUsage = process.memoryUsage();
+    const memUsageMB = Math.round(memUsage.heapUsed / 1024 / 1024);
+    
+    if (memUsage.heapUsed > 150 * 1024 * 1024) { // 150MB以上 - 強制キャッシュクリア
+      console.warn(`[WebViewManager] メモリ使用量が多いため、キャッシュを強制クリアします: ${memUsageMB}MB`);
+      this.lastYamlContent = '';
+      this.lastParsedData = null;
+    } else if (memUsage.heapUsed > 100 * 1024 * 1024) { // 100MB以上 - 予防的キャッシュクリア
+      console.log(`[WebViewManager] メモリ使用量が多めのため、キャッシュをクリアします: ${memUsageMB}MB`);
+      this.lastYamlContent = '';
+      this.lastParsedData = null;
+    } else if (memUsage.heapUsed > 50 * 1024 * 1024) { // 50MB以上 - 情報ログのみ
+      console.log(`[WebViewManager] メモリ使用量: ${memUsageMB}MB（キャッシュ保持中）`);
     }
   }
 } 

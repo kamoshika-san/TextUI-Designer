@@ -244,8 +244,10 @@ ${this.generateRecommendations(metrics)}
       recommendations.push('- 差分更新効率が低いため、コンポーネントの変更頻度を確認してください');
     }
 
-    if (metrics.memoryUsage > 100) {
+    if (metrics.memoryUsage > 150) {
       recommendations.push('- メモリ使用量が多いため、不要なオブジェクトの解放を検討してください');
+    } else if (metrics.memoryUsage > 100) {
+      recommendations.push('- メモリ使用量がやや多めです。大きなファイルを扱う場合は注意してください');
     }
 
     return recommendations.length > 0 ? recommendations.join('\n') : '- 現在のパフォーマンスは良好です';
@@ -341,5 +343,19 @@ ${this.generateRecommendations(metrics)}
       clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
     }
+  }
+
+  /**
+   * テスト用: メトリクスを直接設定する
+   */
+  _setTestMetrics(metrics: PerformanceMetrics): void {
+    this.metrics = { ...metrics };
+  }
+
+  /**
+   * テスト用: 推奨事項を取得する
+   */
+  _getRecommendations(metrics?: PerformanceMetrics): string {
+    return this.generateRecommendations(metrics || this.metrics);
   }
 } 

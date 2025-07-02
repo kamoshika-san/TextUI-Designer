@@ -289,12 +289,34 @@ export function activate(context: vscode.ExtensionContext) {
         // より短いデバウンス処理（300ms）でリアルタイム性を向上
         documentChangeTimeout = setTimeout(async () => {
           try {
-            // メモリ使用量を監視
+            // メモリ使用量を段階的に監視
             const memUsage = process.memoryUsage();
-            if (memUsage.heapUsed > 200 * 1024 * 1024) { // 200MB以上
-              console.warn(`[Extension] メモリ使用量が大きすぎます: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`);
-              vscode.window.showWarningMessage('メモリ使用量が大きすぎます。VSCodeを再起動してください。');
+            const memUsageMB = Math.round(memUsage.heapUsed / 1024 / 1024);
+            
+            // 段階的警告システム
+            if (memUsage.heapUsed > 800 * 1024 * 1024) { // 800MB以上 - CRITICAL
+              console.error(`[Extension] メモリ使用量が危険レベルです: ${memUsageMB}MB`);
+              vscode.window.showErrorMessage(
+                `メモリ使用量が危険レベルです（${memUsageMB}MB）。すぐにVS Codeを再起動してください。`,
+                '今すぐ再起動', 'しばらく様子を見る'
+              ).then(selection => {
+                if (selection === '今すぐ再起動') {
+                  vscode.commands.executeCommand('workbench.action.reloadWindow');
+                }
+              });
               return;
+            } else if (memUsage.heapUsed > 600 * 1024 * 1024) { // 600MB以上 - WARN
+              console.warn(`[Extension] メモリ使用量が多めです: ${memUsageMB}MB（Extension Host全体、他拡張含む）`);
+              vscode.window.showWarningMessage(
+                `メモリ使用量が多めです（${memUsageMB}MB）。他の拡張機能も含めた使用量です。`,
+                'VS Code再起動', '無視'
+              ).then(selection => {
+                if (selection === 'VS Code再起動') {
+                  vscode.commands.executeCommand('workbench.action.reloadWindow');
+                }
+              });
+            } else if (memUsage.heapUsed > 400 * 1024 * 1024) { // 400MB以上 - INFO
+              console.log(`[Extension] メモリ使用量: ${memUsageMB}MB（Extension Host全体）`);
             }
 
             // プレビュー画面が開かれている場合は常に更新
@@ -354,18 +376,26 @@ export function activate(context: vscode.ExtensionContext) {
   console.log(`[Performance] 拡張機能のアクティベーション完了: ${activationTime}ms`);
   performanceMonitor.recordEvent('export', activationTime, { type: 'activation' });
 
-  // メモリ使用量の監視（開発時のみ）
-  // if (process.env.NODE_ENV === 'development') {
-  //   setInterval(() => {
-  //     const memUsage = process.memoryUsage();
-  //     
-  //     // メモリ使用量が大きすぎる場合は警告
-  //     if (memUsage.heapUsed > 150 * 1024 * 1024) { // 150MB以上
-  //       console.warn(`[Performance] メモリ使用量が大きすぎます: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`);
-  //       vscode.window.showWarningMessage(`メモリ使用量が大きすぎます（${Math.round(memUsage.heapUsed / 1024 / 1024)}MB）。VSCodeを再起動することをお勧めします。`);
-  //     }
-  //   }, 30000); // 30秒ごと（適切な間隔に戻す）
-  // }
+  // メモリ使用量の定期監視
+  setInterval(() => {
+    const memUsage = process.memoryUsage();
+    const memUsageMB = Math.round(memUsage.heapUsed / 1024 / 1024);
+    
+    // 段階的監視（定期監視は警告レベルのみ）
+    if (memUsage.heapUsed > 700 * 1024 * 1024) { // 700MB以上 - 定期監視での警告
+      console.warn(`[Performance] 定期監視: メモリ使用量が多めです: ${memUsageMB}MB（Extension Host全体）`);
+      vscode.window.showWarningMessage(
+        `定期監視: メモリ使用量が多めです（${memUsageMB}MB）。VS Codeの再起動を検討してください。`,
+        '再起動', '無視'
+      ).then(selection => {
+        if (selection === '再起動') {
+          vscode.commands.executeCommand('workbench.action.reloadWindow');
+        }
+      });
+    } else if (memUsage.heapUsed > 500 * 1024 * 1024) { // 500MB以上 - 情報ログ
+      console.log(`[Performance] 定期監視: メモリ使用量 ${memUsageMB}MB（Extension Host全体）`);
+    }
+  }, 60000); // 60秒ごと（適切な間隔に調整）
 
   } catch (error) {
     console.error('[Extension] サービス初期化中にエラーが発生しました:', error);

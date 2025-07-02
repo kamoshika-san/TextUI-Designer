@@ -324,4 +324,106 @@ describe('WebViewManager 単体テスト', () => {
       assert.ok(true, 'ThemeManager未設定時のエラーハンドリングが正しく動作した');
     });
   });
+
+  describe('メモリ管理機能のテスト', () => {
+    let originalProcessMemoryUsage;
+
+    beforeEach(() => {
+      // process.memoryUsageをモック
+      originalProcessMemoryUsage = process.memoryUsage;
+    });
+
+    afterEach(() => {
+      // process.memoryUsageを復元
+      process.memoryUsage = originalProcessMemoryUsage;
+    });
+
+         it('150MB以上でキャッシュが強制クリアされる', async () => {
+       // 150MB以上のメモリ使用量をシミュレート
+       process.memoryUsage = () => ({
+         heapUsed: 160 * 1024 * 1024, // 160MB
+         heapTotal: 200 * 1024 * 1024,
+         external: 10 * 1024 * 1024,
+         rss: 200 * 1024 * 1024
+       });
+
+       // キャッシュにデータを設定
+       webviewManager.lastYamlContent = 'test content';
+       webviewManager.lastParsedData = { test: 'data' };
+
+       // テスト用メソッドを直接実行
+       webviewManager._testMemoryManagement();
+
+       // キャッシュがクリアされていることを確認
+       assert.strictEqual(webviewManager.lastYamlContent, '', 'YAMLキャッシュがクリアされた');
+       assert.strictEqual(webviewManager.lastParsedData, null, '解析データキャッシュがクリアされた');
+     });
+
+         it('100-150MBでキャッシュが予防的にクリアされる', async () => {
+       // 100-150MBのメモリ使用量をシミュレート
+       process.memoryUsage = () => ({
+         heapUsed: 120 * 1024 * 1024, // 120MB
+         heapTotal: 150 * 1024 * 1024,
+         external: 10 * 1024 * 1024,
+         rss: 150 * 1024 * 1024
+       });
+
+       // キャッシュにデータを設定
+       webviewManager.lastYamlContent = 'test content';
+       webviewManager.lastParsedData = { test: 'data' };
+
+       // テスト用メソッドを直接実行
+       webviewManager._testMemoryManagement();
+
+       // キャッシュがクリアされていることを確認
+       assert.strictEqual(webviewManager.lastYamlContent, '', 'YAMLキャッシュがクリアされた');
+       assert.strictEqual(webviewManager.lastParsedData, null, '解析データキャッシュがクリアされた');
+     });
+
+         it('50-100MBではキャッシュが保持される', async () => {
+       // 50-100MBのメモリ使用量をシミュレート
+       process.memoryUsage = () => ({
+         heapUsed: 70 * 1024 * 1024, // 70MB
+         heapTotal: 100 * 1024 * 1024,
+         external: 10 * 1024 * 1024,
+         rss: 100 * 1024 * 1024
+       });
+
+       // キャッシュにデータを設定
+       const testContent = 'test content';
+       const testData = { test: 'data' };
+       webviewManager.lastYamlContent = testContent;
+       webviewManager.lastParsedData = testData;
+
+       // テスト用メソッドを直接実行
+       webviewManager._testMemoryManagement();
+
+       // キャッシュが保持されていることを確認
+       assert.strictEqual(webviewManager.lastYamlContent, testContent, 'YAMLキャッシュが保持されている');
+       assert.strictEqual(webviewManager.lastParsedData, testData, '解析データキャッシュが保持されている');
+     });
+
+         it('50MB未満ではキャッシュが完全に保持される', async () => {
+       // 50MB未満のメモリ使用量をシミュレート
+       process.memoryUsage = () => ({
+         heapUsed: 30 * 1024 * 1024, // 30MB
+         heapTotal: 50 * 1024 * 1024,
+         external: 5 * 1024 * 1024,
+         rss: 50 * 1024 * 1024
+       });
+
+       // キャッシュにデータを設定
+       const testContent = 'test content';
+       const testData = { test: 'data' };
+       webviewManager.lastYamlContent = testContent;
+       webviewManager.lastParsedData = testData;
+
+       // テスト用メソッドを直接実行
+       webviewManager._testMemoryManagement();
+
+       // キャッシュが完全に保持されていることを確認
+       assert.strictEqual(webviewManager.lastYamlContent, testContent, 'YAMLキャッシュが完全に保持されている');
+       assert.strictEqual(webviewManager.lastParsedData, testData, '解析データキャッシュが完全に保持されている');
+     });
+  });
 }); 

@@ -154,4 +154,84 @@ describe('PerformanceMonitor', function() {
     const hitRate = PerformanceMonitor.getCacheHitRate();
     assert.strictEqual(hitRate, 0, 'キャッシュヒット率がリセットされている');
   });
+
+  describe('メモリ制限値のテスト', function() {
+    it('メモリ使用量が100MB以下では良好メッセージが表示される', function() {
+      // 100MB以下のメモリ使用量をシミュレート
+      const mockMetrics = {
+        renderTime: 50,
+        cacheHitRate: 80,
+        diffEfficiency: 90,
+        memoryUsage: 80, // 80MB (100MB以下)
+        totalOperations: 10
+      };
+      
+      // メトリクスを設定
+      PerformanceMonitor._setTestMetrics(mockMetrics);
+      
+      // 推奨事項を取得
+      const recommendations = PerformanceMonitor._getRecommendations();
+      assert.ok(recommendations, '推奨事項が生成される');
+      
+      // メモリに関する推奨事項が含まれていないことを確認
+      assert.ok(!recommendations.includes('メモリ使用量が多い'), 
+        'メモリ使用量が100MB以下では強い警告が表示されない');
+      assert.ok(!recommendations.includes('やや多め'), 
+        'メモリ使用量が100MB以下では軽い警告が表示されない');
+      assert.ok(recommendations.includes('良好'), 
+        '100MB以下では良好メッセージが表示される');
+    });
+
+    it('メモリ使用量が100-150MBの範囲では軽い推奨事項が表示される', function() {
+      // 100-150MBの範囲のメモリ使用量をシミュレート
+      const mockMetrics = {
+        renderTime: 50,
+        cacheHitRate: 80,
+        diffEfficiency: 90,
+        memoryUsage: 130, // 130MB
+        totalOperations: 10
+      };
+      
+      // メトリクスを設定
+      PerformanceMonitor._setTestMetrics(mockMetrics);
+      
+      // 推奨事項を取得
+      const recommendations = PerformanceMonitor._getRecommendations();
+      assert.ok(recommendations, '推奨事項が生成される');
+      
+      // 軽い推奨事項が含まれていることを確認
+      assert.ok(recommendations.includes('やや多め'), 
+        '100-150MBの範囲では軽い推奨事項が表示される');
+      
+      // 強い警告は表示されないことを確認
+      assert.ok(!recommendations.includes('不要なオブジェクトの解放'), 
+        '100-150MBの範囲では強い警告は表示されない');
+      
+      // 良好メッセージは表示されないことを確認
+      assert.ok(!recommendations.includes('良好'), 
+        '100-150MBの範囲では良好メッセージは表示されない');
+    });
+
+    it('メモリ使用量が150MB以上では強い推奨事項が表示される', function() {
+      // 150MB以上のメモリ使用量をシミュレート
+      const mockMetrics = {
+        renderTime: 50,
+        cacheHitRate: 80,
+        diffEfficiency: 90,
+        memoryUsage: 180, // 180MB
+        totalOperations: 10
+      };
+      
+      // メトリクスを設定
+      PerformanceMonitor._setTestMetrics(mockMetrics);
+      
+      // 推奨事項を取得
+      const recommendations = PerformanceMonitor._getRecommendations();
+      assert.ok(recommendations, '推奨事項が生成される');
+      
+      // 強い推奨事項が含まれていることを確認
+      assert.ok(recommendations.includes('不要なオブジェクトの解放'), 
+        '150MB以上では強い推奨事項が表示される');
+    });
+  });
 }); 

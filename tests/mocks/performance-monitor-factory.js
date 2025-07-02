@@ -235,6 +235,55 @@ class TestPerformanceMonitor {
   static _setInstance(instance) {
     TestPerformanceMonitor._instance = instance;
   }
+
+  /**
+   * テスト用: メトリクスを直接設定する
+   */
+  static _setTestMetrics(metrics) {
+    const instance = TestPerformanceMonitor._getInstance();
+    // テスト用メトリクスを内部ストレージに保存
+    instance._testMetrics = { ...metrics };
+    instance.outputChannel.appendLine(`[PERF] Test metrics set: ${JSON.stringify(metrics)}`);
+  }
+
+  /**
+   * テスト用: 推奨事項を取得する
+   */
+  static _getRecommendations(metrics) {
+    const instance = TestPerformanceMonitor._getInstance();
+    const metricsToUse = metrics || instance._testMetrics || {
+      renderTime: 0,
+      cacheHitRate: 0,
+      diffEfficiency: 0,
+      memoryUsage: 0,
+      totalOperations: 0
+    };
+
+    const recommendations = [];
+
+    if (metricsToUse.renderTime > 100) {
+      recommendations.push('- レンダリング時間が長いため、コンポーネントの最適化を検討してください');
+    }
+
+    if (metricsToUse.cacheHitRate < 50) {
+      recommendations.push('- キャッシュヒット率が低いため、キャッシュ戦略の見直しを検討してください');
+    }
+
+    if (metricsToUse.diffEfficiency < 80) {
+      recommendations.push('- 差分更新効率が低いため、コンポーネントの変更頻度を確認してください');
+    }
+
+    if (metricsToUse.memoryUsage > 150) {
+      recommendations.push('- メモリ使用量が多いため、不要なオブジェクトの解放を検討してください');
+    } else if (metricsToUse.memoryUsage > 100) {
+      recommendations.push('- メモリ使用量がやや多めです。大きなファイルを扱う場合は注意してください');
+    }
+
+    const result = recommendations.length > 0 ? recommendations.join('\n') : '- 現在のパフォーマンスは良好です';
+    instance.outputChannel.appendLine(`[PERF] Recommendations generated: ${result}`);
+    
+    return result;
+  }
 }
 
 TestPerformanceMonitor._instance = null;
