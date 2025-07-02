@@ -152,6 +152,14 @@ export class WebViewManager {
   }
 
   /**
+   * テスト用: YAMLキャッシュ内容を設定
+   */
+  _setYamlCacheContent(content: string): void {
+    // @ts-ignore
+    this.updateManager._setYamlCacheContent(content);
+  }
+
+  /**
    * テスト用: YAMLキャッシュ内容を取得/設定
    */
   get lastYamlContent(): string {

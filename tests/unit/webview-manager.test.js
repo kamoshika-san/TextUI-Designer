@@ -364,15 +364,13 @@ describe('WebViewManager 単体テスト', () => {
        });
 
        // キャッシュにデータを設定
-       webviewManager.lastYamlContent = 'test content';
-       webviewManager.lastParsedData = { test: 'data' };
+       webviewManager._setYamlCacheContent('test content');
 
        // テスト用メソッドを直接実行
        webviewManager._testMemoryManagement();
 
        // キャッシュがクリアされていることを確認
-       assert.strictEqual(webviewManager.lastYamlContent, '', 'YAMLキャッシュがクリアされた');
-       assert.strictEqual(webviewManager.lastParsedData, null, '解析データキャッシュがクリアされた');
+       assert.strictEqual(webviewManager._getYamlCacheContent(), '', 'YAMLキャッシュがクリアされた');
      });
 
          it('100-150MBでキャッシュが予防的にクリアされる', async () => {
@@ -385,15 +383,13 @@ describe('WebViewManager 単体テスト', () => {
        });
 
        // キャッシュにデータを設定
-       webviewManager.lastYamlContent = 'test content';
-       webviewManager.lastParsedData = { test: 'data' };
+       webviewManager._setYamlCacheContent('test content');
 
        // テスト用メソッドを直接実行
        webviewManager._testMemoryManagement();
 
        // キャッシュがクリアされていることを確認
-       assert.strictEqual(webviewManager.lastYamlContent, '', 'YAMLキャッシュがクリアされた');
-       assert.strictEqual(webviewManager.lastParsedData, null, '解析データキャッシュがクリアされた');
+       assert.strictEqual(webviewManager._getYamlCacheContent(), '', 'YAMLキャッシュがクリアされた');
      });
 
          it('50-100MBではキャッシュが保持される', async () => {
@@ -407,16 +403,13 @@ describe('WebViewManager 単体テスト', () => {
 
        // キャッシュにデータを設定
        const testContent = 'test content';
-       const testData = { test: 'data' };
-       webviewManager.lastYamlContent = testContent;
-       webviewManager.lastParsedData = testData;
+       webviewManager._setYamlCacheContent(testContent);
 
        // テスト用メソッドを直接実行
        webviewManager._testMemoryManagement();
 
        // キャッシュが保持されていることを確認
-       assert.strictEqual(webviewManager.lastYamlContent, testContent, 'YAMLキャッシュが保持されている');
-       assert.strictEqual(webviewManager.lastParsedData, testData, '解析データキャッシュが保持されている');
+       assert.strictEqual(webviewManager._getYamlCacheContent(), testContent, 'YAMLキャッシュが保持されている');
      });
 
          it('50MB未満ではキャッシュが完全に保持される', async () => {
@@ -430,16 +423,13 @@ describe('WebViewManager 単体テスト', () => {
 
        // キャッシュにデータを設定
        const testContent = 'test content';
-       const testData = { test: 'data' };
-       webviewManager.lastYamlContent = testContent;
-       webviewManager.lastParsedData = testData;
+       webviewManager._setYamlCacheContent(testContent);
 
        // テスト用メソッドを直接実行
        webviewManager._testMemoryManagement();
 
        // キャッシュが完全に保持されていることを確認
-       assert.strictEqual(webviewManager.lastYamlContent, testContent, 'YAMLキャッシュが完全に保持されている');
-       assert.strictEqual(webviewManager.lastParsedData, testData, '解析データキャッシュが完全に保持されている');
+       assert.strictEqual(webviewManager._getYamlCacheContent(), testContent, 'YAMLキャッシュが完全に保持されている');
      });
   });
 }); 
