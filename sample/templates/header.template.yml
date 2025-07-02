@@ -1,0 +1,11 @@
+- Container:
+    id: header
+    layout: horizontal
+    components:
+      - Text:
+          variant: h1
+          value: "{{ $params.title }}"
+      - Button:
+          kind: primary
+          label: "{{ $params.buttonLabel }}" 
+          submit: true

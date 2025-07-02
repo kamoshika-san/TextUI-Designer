@@ -153,14 +153,12 @@ export class ThemeManager {
 
   async loadTheme(): Promise<void> {
     if (!this.themePath || !fs.existsSync(this.themePath)) {
-      console.log('[ThemeManager] theme file not found, using default theme');
       this.tokens = this.defaultTokens;
       this.components = this.defaultComponents;
       return;
     }
     try {
       const content = fs.readFileSync(this.themePath, 'utf-8');
-      console.log('[ThemeManager] theme file content length:', content.length);
       
       // YAMLパース処理を非同期で実行（ブロッキングを防ぐ）
       const data = await new Promise<any>((resolve, reject) => {
@@ -174,15 +172,10 @@ export class ThemeManager {
         });
       });
       
-      console.log('[ThemeManager] parsed theme data:', JSON.stringify(data, null, 2));
       await this.validateTheme(data);
       this.tokens = data.theme?.tokens || this.defaultTokens;
       this.components = data.theme?.components || this.defaultComponents;
-      console.log('[ThemeManager] extracted tokens:', JSON.stringify(this.tokens, null, 2));
-      console.log('[ThemeManager] extracted components:', JSON.stringify(this.components, null, 2));
-      console.log('[ThemeManager] theme loaded');
     } catch (err) {
-      console.error('[ThemeManager] failed to load theme, using default theme', err);
       this.tokens = this.defaultTokens;
       this.components = this.defaultComponents;
     }
@@ -192,39 +185,12 @@ export class ThemeManager {
     const flat = this.flattenTokens(this.tokens);
     const componentVars = this.generateComponentVariables();
     
-    console.log('[ThemeManager] flattened tokens:', JSON.stringify(flat, null, 2));
-    console.log('[ThemeManager] component variables:', JSON.stringify(componentVars, null, 2));
-    
-    // spacing変数のデバッグ
-    console.log('[ThemeManager] spacing-md value:', flat['spacing-md']);
-    console.log('[ThemeManager] spacing variables:', {
-      'spacing-xs': flat['spacing-xs'],
-      'spacing-sm': flat['spacing-sm'],
-      'spacing-md': flat['spacing-md'],
-      'spacing-lg': flat['spacing-lg'],
-      'spacing-xl': flat['spacing-xl']
-    });
-    
-    // typography変数のデバッグ
-    console.log('[ThemeManager] typography variables:', {
-      'typography-fontFamily': flat['typography-fontFamily'],
-      'typography-fontSize-xs': flat['typography-fontSize-xs'],
-      'typography-fontSize-sm': flat['typography-fontSize-sm'],
-      'typography-fontSize-base': flat['typography-fontSize-base'],
-      'typography-fontSize-lg': flat['typography-fontSize-lg'],
-      'typography-fontSize-xl': flat['typography-fontSize-xl'],
-      'typography-fontSize-2xl': flat['typography-fontSize-2xl'],
-      'typography-fontSize-3xl': flat['typography-fontSize-3xl'],
-      'typography-fontSize-4xl': flat['typography-fontSize-4xl']
-    });
-    
     // すべての変数を結合
     const allVars = { ...flat, ...componentVars };
     const lines = Object.entries(allVars).map(([k, v]) => `  --${k}: ${v} !important;`);
     
     // 複数のセレクターでCSS変数を定義し、最高の優先度を確保
     const css = `html body :root {\n${lines.join('\n')}\n}\nhtml :root {\n${lines.join('\n')}\n}\n:root {\n${lines.join('\n')}\n}\nbody {\n${lines.join('\n')}\n}\n#root {\n${lines.join('\n')}\n}`;
-    console.log('[ThemeManager] generated CSS:', css);
     return css;
   }
 
@@ -283,16 +249,13 @@ export class ThemeManager {
     const pattern = new vscode.RelativePattern(path.dirname(this.themePath), path.basename(this.themePath));
     this.watcher = vscode.workspace.createFileSystemWatcher(pattern);
     const reload = async () => {
-      console.log('[ThemeManager] theme file changed, reloading...');
       await this.loadTheme();
       const css = this.generateCSSVariables();
-      console.log('[ThemeManager] calling callback with CSS');
       callback(css);
     };
     this.watcher.onDidChange(reload);
     this.watcher.onDidCreate(reload);
     this.watcher.onDidDelete(async () => {
-      console.log('[ThemeManager] theme file deleted, using default theme');
       this.tokens = this.defaultTokens;
       this.components = this.defaultComponents;
       const css = this.generateCSSVariables();

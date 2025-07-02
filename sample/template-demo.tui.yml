@@ -1,0 +1,34 @@
+page:
+  id: template-demo
+  title: "テンプレート参照デモ"
+  layout: vertical
+  components:
+    - $include:
+        template: "./templates/header.template.yml"
+        params:
+          title: "ユーザー登録"
+          buttonLabel: "新規作成"
+    
+    - Divider:
+        orientation: horizontal
+    
+    - $include:
+        template: "./templates/form.template.yml"
+        params:
+          formId: "user-registration"
+          nameLabel: "お名前"
+          namePlaceholder: "山田太郎"
+          emailLabel: "メールアドレス"
+          emailPlaceholder: "yamada@example.com"
+          agreeLabel: "利用規約に同意する"
+          submitLabel: "登録する"
+    
+    - Container:
+        layout: vertical
+        components:
+          - Text:
+              variant: p
+              value: "テンプレート参照機能により、UIを複数のファイルに分割して管理できます。"
+          - Text:
+              variant: small
+              value: "再利用可能なコンポーネントとして、ヘッダーやフォームをテンプレート化しています。" 

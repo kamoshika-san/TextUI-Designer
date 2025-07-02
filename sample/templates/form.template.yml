@@ -1,0 +1,24 @@
+- Form:
+    id: "{{ $params.formId }}"
+    fields:
+      - Input:
+          label: "{{ $params.nameLabel }}"
+          name: name
+          type: text
+          required: true
+          placeholder: "{{ $params.namePlaceholder }}"
+      - Input:
+          label: "{{ $params.emailLabel }}"
+          name: email
+          type: email
+          required: true
+          placeholder: "{{ $params.emailPlaceholder }}"
+      - Checkbox:
+          label: "{{ $params.agreeLabel }}"
+          name: agree
+          required: true
+    actions:
+      - Button:
+          kind: submit
+          label: "{{ $params.submitLabel }}"
+          submit: true 

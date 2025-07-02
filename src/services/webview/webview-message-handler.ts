@@ -264,7 +264,6 @@ export class WebViewMessageHandler {
    */
   private async switchTheme(themePath: string): Promise<void> {
     if (!this.themeManager) {
-      console.log('[WebViewMessageHandler] ThemeManagerが初期化されていません');
       return;
     }
 

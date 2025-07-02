@@ -1,84 +1,86 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://example.com/textui/v0/schema.json",
-  "title": "TextUI Designer DSL(template) v0",
-  "description": "Minimum viable component set for TextUI Designer (v0).",
+  "$id": "https://example.com/textui/v0/template-schema.json",
+  "title": "TextUI Designer Template DSL v0",
+  "description": "Template definition for TextUI Designer with parameterization support",
   "type": "array",
-  "properties": {
-    "page": {
-      "type": "object",
-      "description": "Page-level metadataとトップレベルのUI要素",
-      "required": [
-        "components"
-      ],
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "title": {
-          "type": "string"
-        },
-        "layout": {
-          "type": "string",
-          "enum": [
-            "vertical",
-            "horizontal",
-            "flex",
-            "grid"
-          ]
-        },
-        "components": {
-          "$ref": "#/definitions/componentArray"
-        }
-      }
-    },
-    "components": {
-      "$ref": "#/definitions/componentArray"
-    }
-  },
+  "items": { "$ref": "#/definitions/templateComponent" },
   "definitions": {
-    "componentArray": {
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/component"
-      }
-    },
-    "component": {
+    "templateComponent": {
       "type": "object",
-      "description": "Tagged union of all v0 components",
+      "description": "Template component with parameterization support",
       "oneOf": [
-        {
-          "$ref": "#/definitions/Text"
-        },
-        {
-          "$ref": "#/definitions/Input"
-        },
-        {
-          "$ref": "#/definitions/Button"
-        },
-        {
-          "$ref": "#/definitions/Form"
-        },
-        {
-          "$ref": "#/definitions/Checkbox"
-        },
-        {
-          "$ref": "#/definitions/Radio"
-        },
-        {
-          "$ref": "#/definitions/Select"
-        },
-        {
-          "$ref": "#/definitions/Divider"
-        },
-        {
-          "$ref": "#/definitions/Container"
-        },
-        {
-          "$ref": "#/definitions/Alert"
-        }
+        { "$ref": "#/definitions/Text" },
+        { "$ref": "#/definitions/Input" },
+        { "$ref": "#/definitions/Button" },
+        { "$ref": "#/definitions/Form" },
+        { "$ref": "#/definitions/Checkbox" },
+        { "$ref": "#/definitions/Radio" },
+        { "$ref": "#/definitions/Select" },
+        { "$ref": "#/definitions/Divider" },
+        { "$ref": "#/definitions/Container" },
+        { "$ref": "#/definitions/Alert" },
+        { "$ref": "#/definitions/Conditional" },
+        { "$ref": "#/definitions/Loop" }
       ]
     },
+
+    "Conditional": {
+      "type": "object",
+      "required": ["$if"],
+      "properties": {
+        "$if": {
+          "type": "object",
+          "required": ["condition", "template"],
+          "properties": {
+            "condition": {
+              "type": "string",
+              "description": "条件式（例: $params.showHeader）"
+            },
+            "template": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/templateComponent" },
+              "description": "条件が真の場合に表示するテンプレート"
+            }
+          },
+          "additionalProperties": false,
+          "description": "条件分岐を実現する構文。\n利用可能な属性: condition, template"
+        }
+      },
+      "additionalProperties": false,
+      "description": "条件分岐コンポーネント。"
+    },
+
+    "Loop": {
+      "type": "object",
+      "required": ["$foreach"],
+      "properties": {
+        "$foreach": {
+          "type": "object",
+          "required": ["items", "as", "template"],
+          "properties": {
+            "items": {
+              "type": "string",
+              "description": "ループ対象の配列（例: $params.items）"
+            },
+            "as": {
+              "type": "string",
+              "description": "ループ変数名（例: item）"
+            },
+            "template": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/templateComponent" },
+              "description": "各アイテムに対して適用するテンプレート"
+            }
+          },
+          "additionalProperties": false,
+          "description": "配列ループ処理を実現する構文。\n利用可能な属性: items, as, template"
+        }
+      },
+      "additionalProperties": false,
+      "description": "ループ処理コンポーネント。"
+    },
+
     "Text": {
       "type": "object",
       "required": [

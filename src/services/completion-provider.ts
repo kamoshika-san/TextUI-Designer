@@ -93,7 +93,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
         this.lastSchemaLoad = now;
       }
       
-      const items = this.generateCompletionItemsFromSchema(linePrefix, position, currentWord, this.schemaCache, isTemplate);
+      const items = this.generateCompletionItemsFromSchema(linePrefix, position, currentWord, this.schemaCache, isTemplate, document);
       
       // キャッシュを更新
       this.completionCache.set(cacheKey, {
@@ -132,7 +132,8 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     position: vscode.Position,
     currentWord: string,
     schema: SchemaDefinition,
-    isTemplate: boolean
+    isTemplate: boolean,
+    document?: vscode.TextDocument
   ): vscode.CompletionItem[] {
     const items: vscode.CompletionItem[] = [];
 
@@ -142,7 +143,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     switch (context.type) {
       case 'component-list':
         // コンポーネントリスト（ハイフンの後）
-        items.push(...this.getComponentCompletions());
+        items.push(...this.getComponentCompletions(document));
         break;
       
       case 'component-properties':
@@ -243,7 +244,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
   /**
    * コンポーネントの補完候補を取得
    */
-  private getComponentCompletions(): vscode.CompletionItem[] {
+  private getComponentCompletions(document?: vscode.TextDocument): vscode.CompletionItem[] {
     const components = [
       { name: 'Text', description: 'テキストコンポーネント' },
       { name: 'Input', description: '入力フィールド' },
@@ -257,13 +258,25 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
       { name: 'Form', description: 'フォーム' }
     ];
 
-    return components.map(comp => {
+    const items = components.map(comp => {
       const item = new vscode.CompletionItem(comp.name, vscode.CompletionItemKind.Class);
       item.detail = comp.description;
       item.insertText = `${comp.name}:\n    `;
       item.sortText = `0${comp.name}`;
       return item;
     });
+
+    // テンプレートファイルでない場合のみ$includeを追加
+    if (document && !/\.template\.(ya?ml|json)$/.test(document.uri.fsPath)) {
+      const includeItem = new vscode.CompletionItem('$include', vscode.CompletionItemKind.Module);
+      includeItem.detail = 'テンプレート参照';
+      includeItem.documentation = 'テンプレートファイルをインクルードする';
+      includeItem.insertText = new vscode.SnippetString('$include:\n  template: "${1:./templates/example.template.yml}"\n  params:\n    ${2:paramName}: ${3:paramValue}');
+      includeItem.sortText = '0$include';
+      items.push(includeItem);
+    }
+
+    return items;
   }
 
   /**

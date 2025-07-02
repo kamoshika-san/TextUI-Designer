@@ -24,7 +24,12 @@
     "definitions": {
       "componentArray": {
         "type": "array",
-        "items": { "$ref": "#/definitions/component" }
+        "items": { 
+          "oneOf": [
+            { "$ref": "#/definitions/component" },
+            { "$ref": "#/definitions/Include" }
+          ]
+        }
       },
       "component": {
         "type": "object",
@@ -298,6 +303,32 @@
         },
         "additionalProperties": false,
         "description": "フォームコンポーネント。"
+      },
+  
+      "Include": {
+        "type": "object",
+        "required": ["$include"],
+        "properties": {
+          "$include": {
+            "type": "object",
+            "required": ["template"],
+            "properties": {
+              "template": {
+                "type": "string",
+                "description": "テンプレートファイルのパス（.template.ymlファイル）"
+              },
+              "params": {
+                "type": "object",
+                "description": "テンプレートに渡すパラメータ",
+                "additionalProperties": true
+              }
+            },
+            "additionalProperties": false,
+            "description": "テンプレートファイルをインクルードするための構文。\n利用可能な属性: template, params"
+          }
+        },
+        "additionalProperties": false,
+        "description": "テンプレートファイルをインクルードするコンポーネント。"
       }
     },
     "additionalProperties": false

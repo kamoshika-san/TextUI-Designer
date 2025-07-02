@@ -40,52 +40,33 @@ export class ServiceInitializer {
    * 全サービスの初期化
    */
   async initialize(): Promise<ExtensionServices> {
-    console.log('[ServiceInitializer] サービス初期化開始');
-
     try {
       // SchemaManagerの初期化
-      console.log('[ServiceInitializer] SchemaManager を作成します');
       const schemaManager = new SchemaManager(this.context);
-      console.log('[ServiceInitializer] SchemaManager 作成完了');
 
       // ThemeManagerの初期化
-      console.log('[ServiceInitializer] ThemeManager を作成します');
       const themeManager = new ThemeManager(this.context);
-      console.log('[ServiceInitializer] ThemeManager 作成完了');
 
       // WebViewManagerの初期化
-      console.log('[ServiceInitializer] WebViewManager を作成します');
       const webViewManager = new WebViewManager(this.context, themeManager);
-      console.log('[ServiceInitializer] WebViewManager 作成完了');
 
       // ExportManagerの初期化
-      console.log('[ServiceInitializer] ExportManager を作成します');
       const exportManager = new ExportManager();
       const exportService = new ExportService(exportManager);
-      console.log('[ServiceInitializer] ExportManager 作成完了');
 
       // TemplateServiceの初期化
-      console.log('[ServiceInitializer] TemplateService を作成します');
       const templateService = new TemplateService();
-      console.log('[ServiceInitializer] TemplateService 作成完了');
 
       // SettingsServiceの初期化
-      console.log('[ServiceInitializer] SettingsService を作成します');
       const settingsService = new SettingsService();
-      console.log('[ServiceInitializer] SettingsService 作成完了');
 
       // DiagnosticManagerの初期化
-      console.log('[ServiceInitializer] DiagnosticManager を作成します');
       const diagnosticManager = new DiagnosticManager(schemaManager);
-      console.log('[ServiceInitializer] DiagnosticManager 作成完了');
 
       // CompletionProviderの初期化
-      console.log('[ServiceInitializer] CompletionProvider を作成します');
       const completionProvider = new TextUICompletionProvider(schemaManager);
-      console.log('[ServiceInitializer] CompletionProvider 作成完了');
 
       // CommandManagerの初期化
-      console.log('[ServiceInitializer] CommandManager を作成します');
       const commandManager = new CommandManager(
         this.context,
         webViewManager,
@@ -94,17 +75,12 @@ export class ServiceInitializer {
         settingsService,
         schemaManager
       );
-      console.log('[ServiceInitializer] CommandManager 作成完了');
 
       // スキーマの初期化
-      console.log('[ServiceInitializer] スキーマ初期化を開始します');
       await schemaManager.initialize();
-      console.log('[ServiceInitializer] スキーマ初期化完了');
 
       // コマンドの登録
-      console.log('[ServiceInitializer] CommandManager.registerCommands を呼び出します');
       commandManager.registerCommands();
-      console.log('[ServiceInitializer] CommandManager.registerCommands が完了しました');
 
       // テーマ読み込み
       await themeManager.loadTheme();
@@ -130,11 +106,9 @@ export class ServiceInitializer {
         commandManager
       };
 
-      console.log('[ServiceInitializer] 全サービス初期化完了');
       return this.services;
 
     } catch (error) {
-      console.error('[ServiceInitializer] サービス初期化中にエラーが発生しました:', error);
       throw error;
     }
   }
@@ -143,8 +117,6 @@ export class ServiceInitializer {
    * 全サービスのクリーンアップ
    */
   async cleanup(): Promise<void> {
-    console.log('[ServiceInitializer] サービスクリーンアップ開始');
-
     try {
       if (this.services) {
         // スキーマのクリーンアップ
@@ -162,11 +134,8 @@ export class ServiceInitializer {
 
         this.services = null;
       }
-
-      console.log('[ServiceInitializer] サービスクリーンアップ完了');
-
     } catch (error) {
-      console.error('[ServiceInitializer] サービスクリーンアップ中にエラーが発生しました:', error);
+      // エラーは静かに処理
     }
   }
 
