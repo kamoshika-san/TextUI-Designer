@@ -227,6 +227,7 @@ const mockVscode = {
   languages: {
     registerCompletionItemProvider: () => ({ dispose: () => {} }),
     registerHoverProvider: () => ({ dispose: () => {} }),
+    registerDefinitionProvider: () => ({ dispose: () => {} }),
     createDiagnosticCollection: () => ({
       set: () => {},
       delete: () => {},

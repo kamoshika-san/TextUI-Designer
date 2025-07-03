@@ -3,6 +3,7 @@ import { SchemaManager } from './schema-manager';
 import { WebViewManager } from './webview-manager';
 import { DiagnosticManager } from './diagnostic-manager';
 import { TextUICompletionProvider } from './completion-provider';
+import { TextUIDefinitionProvider } from './definition-provider';
 import { CommandManager } from './command-manager';
 import { ExportService } from './export-service';
 import { TemplateService } from './template-service';
@@ -21,6 +22,7 @@ export interface ExtensionServices {
   settingsService: SettingsService;
   diagnosticManager: DiagnosticManager;
   completionProvider: TextUICompletionProvider;
+  definitionProvider: TextUIDefinitionProvider;
   commandManager: CommandManager;
 }
 
@@ -66,6 +68,9 @@ export class ServiceInitializer {
       // CompletionProviderの初期化
       const completionProvider = new TextUICompletionProvider(schemaManager);
 
+      // DefinitionProviderの初期化
+      const definitionProvider = new TextUIDefinitionProvider();
+
       // CommandManagerの初期化
       const commandManager = new CommandManager(
         this.context,
@@ -73,7 +78,8 @@ export class ServiceInitializer {
         exportService,
         templateService,
         settingsService,
-        schemaManager
+        schemaManager,
+        definitionProvider
       );
 
       // スキーマの初期化
@@ -103,6 +109,7 @@ export class ServiceInitializer {
         settingsService,
         diagnosticManager,
         completionProvider,
+        definitionProvider,
         commandManager
       };
 

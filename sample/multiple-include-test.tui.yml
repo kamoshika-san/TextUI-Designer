@@ -1,0 +1,27 @@
+# 同じテンプレートを複数回使用するテスト
+page:
+  id: multiple-include-test
+  title: "複数回インクルードテスト"
+  layout: vertical
+  
+  components:
+    # 1回目のボタンテンプレート使用
+    - $include:
+        template: "./templates/button.template.yml"
+        params:
+          label: "OK"
+          kind: "primary"
+    
+    # 2回目のボタンテンプレート使用（同じテンプレートを再利用）
+    - $include:
+        template: "./templates/button.template.yml"
+        params:
+          label: "Cancel"
+          kind: "secondary"
+    
+    # 3回目のボタンテンプレート使用
+    - $include:
+        template: "./templates/button.template.yml"
+        params:
+          label: "Submit"
+          kind: "submit" 

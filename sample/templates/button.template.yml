@@ -1,0 +1,5 @@
+# ボタンテンプレート
+- Button:
+    label: "{{ $params.label }}"
+    kind: "{{ $params.kind }}"
+    submit: "{{ $params.kind === 'submit' }}" 

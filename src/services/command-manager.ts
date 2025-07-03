@@ -4,6 +4,7 @@ import { ExportService } from './export-service';
 import { TemplateService } from './template-service';
 import { SettingsService } from './settings-service';
 import { SchemaManager } from './schema-manager';
+import { TextUIDefinitionProvider } from './definition-provider';
 import { ErrorHandler } from '../utils/error-handler';
 import { ConfigManager } from '../utils/config-manager';
 import { TextUIMemoryTracker } from '../utils/textui-memory-tracker';
@@ -19,6 +20,7 @@ export class CommandManager {
   private templateService: TemplateService;
   private settingsService: SettingsService;
   private schemaManager: SchemaManager;
+  private definitionProvider: TextUIDefinitionProvider;
 
   constructor(
     context: vscode.ExtensionContext,
@@ -26,7 +28,8 @@ export class CommandManager {
     exportService: ExportService,
     templateService: TemplateService,
     settingsService: SettingsService,
-    schemaManager: SchemaManager
+    schemaManager: SchemaManager,
+    definitionProvider: TextUIDefinitionProvider
   ) {
     this.context = context;
     this.webViewManager = webViewManager;
@@ -34,6 +37,20 @@ export class CommandManager {
     this.templateService = templateService;
     this.settingsService = settingsService;
     this.schemaManager = schemaManager;
+    this.definitionProvider = definitionProvider;
+  }
+
+  /**
+   * 言語機能を登録
+   */
+  private registerLanguageFeatures(): void {
+    // DefinitionProviderを登録
+    const definitionProvider = vscode.languages.registerDefinitionProvider(
+      { scheme: 'file', pattern: '**/*.tui.yml' },
+      this.definitionProvider
+    );
+    
+    this.context.subscriptions.push(definitionProvider);
   }
 
   /**
@@ -41,6 +58,9 @@ export class CommandManager {
    */
   registerCommands(): void {
     console.log('[CommandManager] コマンド登録を開始');
+    
+    // 言語機能の登録
+    this.registerLanguageFeatures();
     
     // プレビュー関連
     this.registerCommand('textui-designer.openPreview', () => this.openPreviewWithCheck());

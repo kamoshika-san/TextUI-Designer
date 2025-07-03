@@ -44,7 +44,6 @@ interface IncludeReference {
  */
 export class TemplateParser {
   private errorHandler: typeof ErrorHandler;
-  private visitedFiles: Set<string> = new Set();
   private maxDepth: number = 10;
 
   constructor(errorHandler: typeof ErrorHandler = ErrorHandler) {
@@ -56,7 +55,7 @@ export class TemplateParser {
    */
   async parseWithTemplates(text: string, basePath: string): Promise<any> {
     try {
-      this.visitedFiles.clear();
+      const visitedFiles = new Set<string>();
       const parsed = yaml.parse(text);
       
       // $include構文が存在するかチェック
@@ -66,7 +65,7 @@ export class TemplateParser {
         return parsed;
       }
       
-      const result = await this.resolveTemplates(parsed, basePath, 0);
+      const result = await this.resolveTemplates(parsed, basePath, 0, visitedFiles);
       
       // 返り値が配列の場合は1階層だけflat化
       if (Array.isArray(result)) {
@@ -104,7 +103,8 @@ export class TemplateParser {
   private async resolveTemplates(
     data: any,
     basePath: string,
-    depth: number
+    depth: number,
+    visitedFiles: Set<string>
   ): Promise<any> {
     if (depth > this.maxDepth) {
       throw new TemplateException(
@@ -114,21 +114,25 @@ export class TemplateParser {
     }
 
     if (Array.isArray(data)) {
-      return await Promise.all(
-        data.map(item => this.resolveTemplates(item, basePath, depth + 1))
-      );
+      // 並列処理ではなく順次処理に変更
+      const results = [];
+      for (const item of data) {
+        const result = await this.resolveTemplates(item, basePath, depth + 1, visitedFiles);
+        results.push(result);
+      }
+      return results;
     }
 
     if (typeof data === 'object' && data !== null) {
       // $include構文の処理
       if ('$include' in data) {
-        return await this.processInclude(data.$include, basePath, depth);
+        return await this.processInclude(data.$include, basePath, depth, visitedFiles);
       }
 
       // 再帰的にオブジェクトの各プロパティを処理
       const result: any = {};
       for (const [key, value] of Object.entries(data)) {
-        result[key] = await this.resolveTemplates(value, basePath, depth + 1);
+        result[key] = await this.resolveTemplates(value, basePath, depth + 1, visitedFiles);
       }
       return result;
     }
@@ -142,19 +146,26 @@ export class TemplateParser {
   private async processInclude(
     includeRef: IncludeReference,
     basePath: string,
-    depth: number
+    depth: number,
+    visitedFiles: Set<string>
   ): Promise<any> {
     const templatePath = this.resolveTemplatePath(includeRef.template, basePath);
     
+    console.log(`[TemplateParser] processInclude開始: ${templatePath}`);
+    console.log(`[TemplateParser] visitedFiles:`, Array.from(visitedFiles));
+    console.log(`[TemplateParser] depth: ${depth}`);
+    
     // 循環参照チェック
-    if (this.visitedFiles.has(templatePath)) {
+    if (visitedFiles.has(templatePath)) {
+      console.log(`[TemplateParser] 循環参照検出: ${templatePath}`);
       throw new TemplateException(
         TemplateError.CIRCULAR_REFERENCE,
         templatePath
       );
     }
 
-    this.visitedFiles.add(templatePath);
+    console.log(`[TemplateParser] visitedFilesに追加: ${templatePath}`);
+    visitedFiles.add(templatePath);
 
     try {
       // テンプレートファイルを読み込み
@@ -171,13 +182,16 @@ export class TemplateParser {
       const result = await this.resolveTemplates(
         resolvedTemplate,
         templatePath,
-        depth + 1
+        depth + 1,
+        visitedFiles
       );
 
-      this.visitedFiles.delete(templatePath);
+      console.log(`[TemplateParser] visitedFilesから削除: ${templatePath}`);
+      visitedFiles.delete(templatePath);
       return result;
     } catch (error) {
-      this.visitedFiles.delete(templatePath);
+      console.log(`[TemplateParser] エラー発生、visitedFilesから削除: ${templatePath}`);
+      visitedFiles.delete(templatePath);
       throw error;
     }
   }
