@@ -516,6 +516,11 @@ export class DiagnosticManager {
       clearTimeout(this.diagnosticTimeout);
       this.diagnosticTimeout = null;
     }
+
+    // Template Parserを破棄
+    if (this.templateParser) {
+      this.templateParser.dispose();
+    }
     
     this.diagnosticCollection.dispose();
   }
@@ -632,5 +637,26 @@ export class DiagnosticManager {
     const objectOverhead = 48;
     
     return contentSize + timestampSize + diagnosticsSize + objectOverhead;
+  }
+
+  /**
+   * テンプレートキャッシュを無効化
+   */
+  invalidateTemplateCache(filePath: string): void {
+    this.templateParser.invalidateTemplateCache(filePath);
+  }
+
+  /**
+   * テンプレートキャッシュの統計情報を取得
+   */
+  getTemplateCacheStats() {
+    return this.templateParser.getCacheStats();
+  }
+
+  /**
+   * テンプレートキャッシュをクリア
+   */
+  clearTemplateCache(): void {
+    this.templateParser.clearCache();
   }
 } 

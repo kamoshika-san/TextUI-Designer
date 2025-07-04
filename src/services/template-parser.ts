@@ -3,6 +3,7 @@ import * as yaml from 'yaml';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ErrorHandler } from '../utils/error-handler';
+import { TemplateCacheService, CachedTemplate } from './template-cache';
 
 /**
  * テンプレート参照エラーの種類
@@ -62,9 +63,41 @@ interface ForeachReference {
 export class TemplateParser {
   private errorHandler: typeof ErrorHandler;
   private maxDepth: number = 15;
+  private templateCacheService: TemplateCacheService;
 
   constructor(errorHandler: typeof ErrorHandler = ErrorHandler) {
     this.errorHandler = errorHandler;
+    this.templateCacheService = new TemplateCacheService();
+  }
+
+  /**
+   * テンプレートパーサーを破棄
+   */
+  dispose(): void {
+    if (this.templateCacheService) {
+      this.templateCacheService.dispose();
+    }
+  }
+
+  /**
+   * キャッシュ統計情報を取得
+   */
+  getCacheStats() {
+    return this.templateCacheService.getStats();
+  }
+
+  /**
+   * 特定のテンプレートファイルのキャッシュを無効化
+   */
+  invalidateTemplateCache(filePath: string): void {
+    this.templateCacheService.invalidateTemplate(filePath);
+  }
+
+  /**
+   * キャッシュを完全にクリア
+   */
+  clearCache(): void {
+    this.templateCacheService.clear();
   }
 
   /**
@@ -530,8 +563,9 @@ export class TemplateParser {
    */
   private async loadTemplateFile(templatePath: string): Promise<string> {
     try {
-      const content = await fs.promises.readFile(templatePath, 'utf-8');
-      return content;
+      // キャッシュサービスを使用してテンプレートを取得
+      const cachedTemplate = await this.templateCacheService.getTemplate(templatePath);
+      return cachedTemplate.content;
     } catch (error) {
       throw new TemplateException(
         TemplateError.FILE_NOT_FOUND,

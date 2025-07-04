@@ -58,7 +58,7 @@ export class FileWatcher {
    */
   private watchActiveEditorChange(): void {
     const activeEditorDisposable = vscode.window.onDidChangeActiveTextEditor(editor => {
-      if (editor && this.isSupportedFile(editor.document.fileName)) {
+      if (editor && this.isWatchedFile(editor.document.fileName)) {
         // 既存のタイマーをクリア
         if (this.activeEditorTimeout) {
           clearTimeout(this.activeEditorTimeout);
@@ -66,7 +66,13 @@ export class FileWatcher {
 
         // デバウンス処理（100ms）
         this.activeEditorTimeout = setTimeout(() => {
-          this.handleActiveEditorChange(editor);
+          if (this.isSupportedFile(editor.document.fileName)) {
+            // UIファイルの場合は従来の処理
+            this.handleActiveEditorChange(editor);
+          } else if (this.isTemplateFile(editor.document.fileName)) {
+            // テンプレートファイルの場合は特別な処理は不要（編集のみ）
+            console.log(`[FileWatcher] テンプレートファイルを開きました: ${editor.document.fileName}`);
+          }
         }, 100);
       }
     });
@@ -79,8 +85,14 @@ export class FileWatcher {
    */
   private watchDocumentSave(): void {
     const saveDisposable = vscode.workspace.onDidSaveTextDocument(document => {
-      if (this.isSupportedFile(document.fileName)) {
-        this.handleDocumentSave(document);
+      if (this.isWatchedFile(document.fileName)) {
+        if (this.isSupportedFile(document.fileName)) {
+          // UIファイルの場合は従来の処理
+          this.handleDocumentSave(document);
+        } else if (this.isTemplateFile(document.fileName)) {
+          // テンプレートファイルの場合はキャッシュ無効化
+          this.handleTemplateSave(document);
+        }
       }
     });
     
@@ -92,8 +104,14 @@ export class FileWatcher {
    */
   private watchDocumentChange(): void {
     const changeDisposable = vscode.workspace.onDidChangeTextDocument(event => {
-      if (this.isSupportedFile(event.document.fileName)) {
-        this.handleDocumentChange(event);
+      if (this.isWatchedFile(event.document.fileName)) {
+        if (this.isSupportedFile(event.document.fileName)) {
+          // UIファイルの場合は従来の処理
+          this.handleDocumentChange(event);
+        } else if (this.isTemplateFile(event.document.fileName)) {
+          // テンプレートファイルの場合はリアルタイム監視は行わない
+          // （保存時のみキャッシュ無効化）
+        }
       }
     });
     
@@ -237,10 +255,46 @@ export class FileWatcher {
   }
 
   /**
+   * テンプレートファイル保存時のキャッシュ無効化処理
+   */
+  private handleTemplateSave(document: vscode.TextDocument): void {
+    if (!this.services) {return;}
+
+    console.log(`[FileWatcher] テンプレートファイルを保存しました: ${document.fileName}`);
+    
+    try {
+      // DiagnosticManager経由でTemplate Parserのキャッシュを無効化
+      this.services.diagnosticManager.invalidateTemplateCache(document.fileName);
+      
+      // テンプレートファイル変更時は、プレビューも更新
+      if (this.services.webViewManager.hasPanel()) {
+        console.log('[FileWatcher] テンプレートファイル変更によりプレビューを更新します');
+        this.services.webViewManager.updatePreview();
+      }
+    } catch (error) {
+      console.error('[FileWatcher] テンプレートファイル保存処理でエラーが発生しました:', error);
+    }
+  }
+
+  /**
    * サポートされているファイルかチェック
    */
   private isSupportedFile(fileName: string): boolean {
     return fileName.endsWith('.tui.yml') || fileName.endsWith('.tui.yaml');
+  }
+
+  /**
+   * テンプレートファイルかチェック
+   */
+  private isTemplateFile(fileName: string): boolean {
+    return fileName.endsWith('.template.yml') || fileName.endsWith('.template.yaml');
+  }
+
+  /**
+   * 監視対象のファイルかチェック（UIファイルまたはテンプレートファイル）
+   */
+  private isWatchedFile(fileName: string): boolean {
+    return this.isSupportedFile(fileName) || this.isTemplateFile(fileName);
   }
 
   /**
