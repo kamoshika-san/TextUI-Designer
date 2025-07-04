@@ -47,12 +47,21 @@ interface ConditionalReference {
 }
 
 /**
+ * ループ処理情報
+ */
+interface ForeachReference {
+  items: string;
+  as: string;
+  template: any[];
+}
+
+/**
  * テンプレートパーサーサービス
  * テンプレート参照機能を担当
  */
 export class TemplateParser {
   private errorHandler: typeof ErrorHandler;
-  private maxDepth: number = 10;
+  private maxDepth: number = 15;
 
   constructor(errorHandler: typeof ErrorHandler = ErrorHandler) {
     this.errorHandler = errorHandler;
@@ -73,11 +82,19 @@ export class TemplateParser {
         return parsed;
       }
       
-      const result = await this.resolveTemplates(parsed, basePath, 0, visitedFiles);
+      // mainのparamsを抽出
+      let mainParams = {};
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].$include && parsed[0].$include.params) {
+        mainParams = parsed[0].$include.params;
+      }
+      
+      const result = await this.resolveTemplates(parsed, basePath, 0, visitedFiles, mainParams);
       
       // 返り値が配列の場合は1階層だけflat化
       if (Array.isArray(result)) {
-        return result.flat();
+        const flattened = result.flat();
+        // 最終的に全体にパラメータ補間を適用
+        return this.applyParameters(flattened, mainParams);
       }
       
       // page.componentsが配列なら再帰的にflat化
@@ -96,7 +113,8 @@ export class TemplateParser {
         result.page.components = this.deepFlat(result.page.components);
       }
       
-      return result;
+      // 最終的に全体にパラメータ補間を適用
+      return this.applyParameters(result, mainParams);
     } catch (error) {
       if (error instanceof TemplateException) {
         throw error;
@@ -112,8 +130,10 @@ export class TemplateParser {
     data: any,
     basePath: string,
     depth: number,
-    visitedFiles: Set<string>
+    visitedFiles: Set<string>,
+    params: Record<string, any> = {}
   ): Promise<any> {
+    // 深度チェック（無限再帰防止）
     if (depth > this.maxDepth) {
       throw new TemplateException(
         TemplateError.CIRCULAR_REFERENCE,
@@ -122,34 +142,70 @@ export class TemplateParser {
     }
 
     if (Array.isArray(data)) {
-      // 並列処理ではなく順次処理に変更
       const results = [];
       for (const item of data) {
-        const result = await this.resolveTemplates(item, basePath, depth + 1, visitedFiles);
-        results.push(result);
+        const result = await this.resolveTemplates(item, basePath, depth + 1, visitedFiles, params);
+        if (Array.isArray(result)) {
+          results.push(...result);
+        } else {
+          results.push(result);
+        }
       }
-      return results;
+      return this.applyParameters(results, params);
     }
 
     if (typeof data === 'object' && data !== null) {
       // $include構文の処理
       if ('$include' in data) {
-        return await this.processInclude(data.$include, basePath, depth, visitedFiles);
+        return this.applyParameters(await this.processInclude(data.$include, basePath, depth, visitedFiles, params), params);
       }
-
       // $if構文の処理
       if ('$if' in data) {
-        return await this.processConditional(data.$if, basePath, depth, visitedFiles);
+        // $if構文の詳細検証
+        if (!data.$if || typeof data.$if !== 'object' || 
+            !('condition' in data.$if) || !('template' in data.$if) ||
+            typeof data.$if.condition !== 'string' || 
+            !Array.isArray(data.$if.template)) {
+          throw new TemplateException(TemplateError.SYNTAX_ERROR, basePath);
+        }
+        return this.applyParameters(await this.processConditional(data.$if, basePath, depth, visitedFiles, params), params);
+      }
+      // $foreach構文の処理
+      if ('$foreach' in data) {
+        // $foreach構文の詳細検証
+        if (!data.$foreach || typeof data.$foreach !== 'object' ||
+            !('items' in data.$foreach) || !('as' in data.$foreach) || !('template' in data.$foreach) ||
+            typeof data.$foreach.items !== 'string' || 
+            typeof data.$foreach.as !== 'string' ||
+            !Array.isArray(data.$foreach.template)) {
+          throw new TemplateException(TemplateError.SYNTAX_ERROR, basePath);
+        }
+        return this.applyParameters(await this.processForeach(data.$foreach, basePath, depth, visitedFiles, params), params);
+      }
+      // 不正な構文のチェック
+      const specialKeys = Object.keys(data).filter(key => key.startsWith('$'));
+      if (specialKeys.length > 0) {
+        const validSpecialKeys = ['$if', '$foreach', '$include'];
+        const invalidKeys = specialKeys.filter(key => !validSpecialKeys.includes(key));
+        if (invalidKeys.length > 0) {
+          throw new TemplateException(TemplateError.SYNTAX_ERROR, basePath);
+        }
       }
 
       // 再帰的にオブジェクトの各プロパティを処理
       const result: any = {};
       for (const [key, value] of Object.entries(data)) {
-        result[key] = await this.resolveTemplates(value, basePath, depth + 1, visitedFiles);
+        result[key] = await this.resolveTemplates(value, basePath, depth + 1, visitedFiles, params);
       }
-      return result;
+      return this.applyParameters(result, params);
     }
 
+    // 文字列の場合は文字列補間を適用
+    if (typeof data === 'string') {
+      return this.interpolateString(data, params);
+    }
+
+    // プリミティブ型の場合はそのまま返す
     return data;
   }
 
@@ -160,11 +216,12 @@ export class TemplateParser {
     includeRef: IncludeReference,
     basePath: string,
     depth: number,
-    visitedFiles: Set<string>
+    visitedFiles: Set<string>,
+    parentParams: Record<string, any> = {}
   ): Promise<any> {
     const templatePath = this.resolveTemplatePath(includeRef.template, basePath);
     
-    // 循環参照チェック
+    // 循環参照チェック（$includeのみ）
     if (visitedFiles.has(templatePath)) {
       throw new TemplateException(
         TemplateError.CIRCULAR_REFERENCE,
@@ -179,25 +236,17 @@ export class TemplateParser {
       const templateContent = await this.loadTemplateFile(templatePath);
       const templateData = yaml.parse(templateContent);
 
-      // パラメータを適用
-      const resolvedTemplate = this.applyParameters(
-        templateData,
-        includeRef.params || {}
-      );
+      // includeRef.paramsと親paramsをマージ
+      const mergedParams = { ...parentParams, ...(includeRef.params || {}) };
 
-      // テンプレートファイルに$includeが含まれている場合のみ再帰的に解決
-      const hasIncludeInTemplate = this.hasIncludeSyntax(resolvedTemplate);
-      let result;
-      if (hasIncludeInTemplate) {
-        result = await this.resolveTemplates(
-          resolvedTemplate,
-          templatePath,
-          depth + 1,
-          visitedFiles
-        );
-      } else {
-        result = resolvedTemplate;
-      }
+      // テンプレートを解決（$include、$if、$foreachを含む）
+      const result = await this.resolveTemplates(
+        templateData,
+        templatePath,
+        depth + 1,
+        visitedFiles,
+        mergedParams
+      );
 
       visitedFiles.delete(templatePath);
       return result;
@@ -214,24 +263,64 @@ export class TemplateParser {
     conditionalRef: ConditionalReference,
     basePath: string,
     depth: number,
-    visitedFiles: Set<string>
+    visitedFiles: Set<string>,
+    params: Record<string, any>
   ): Promise<any> {
     // 条件式を評価
-    const isConditionTrue = this.evaluateCondition(conditionalRef.condition);
+    const isConditionTrue = this.evaluateConditionWithParams(conditionalRef.condition, params);
     
     if (isConditionTrue) {
       // 条件が真の場合、テンプレートを処理
-      // $if構文は循環参照を引き起こさないため、深さ制限をリセット
       const results = [];
       for (const templateItem of conditionalRef.template) {
-        const result = await this.resolveTemplates(templateItem, basePath, 0, visitedFiles);
-        results.push(result);
+        const result = await this.resolveTemplates(templateItem, basePath, depth + 1, visitedFiles, params);
+        if (Array.isArray(result)) {
+          results.push(...result);
+        } else {
+          results.push(result);
+        }
       }
       return results;
     } else {
       // 条件が偽の場合、空の配列を返す
       return [];
     }
+  }
+
+  /**
+   * $foreach構文を処理
+   */
+  private async processForeach(
+    foreachRef: ForeachReference,
+    basePath: string,
+    depth: number,
+    visitedFiles: Set<string>,
+    params: Record<string, any>
+  ): Promise<any> {
+    // 配列アイテムを取得（パラメータコンテキストから）
+    const items = this.getArrayFromParams(foreachRef.items, params);
+    const results = [];
+
+    // 各アイテムに対してテンプレートを適用
+    for (const item of items) {
+      // アイテムをループ変数として設定
+      const loopParams = {
+        ...params,
+        [foreachRef.as]: item
+      };
+
+      // テンプレートを各アイテムに適用
+      for (const templateItem of foreachRef.template) {
+        const result = await this.resolveTemplates(templateItem, basePath, depth + 1, visitedFiles, loopParams);
+        if (Array.isArray(result)) {
+          results.push(...result);
+        } else {
+          results.push(result);
+        }
+      }
+    }
+
+    return results;
   }
 
   /**
@@ -250,8 +339,12 @@ export class TemplateParser {
       }
       
       // 真偽値の直接指定
-      if (trimmedCondition === 'true') return true;
-      if (trimmedCondition === 'false') return false;
+      if (trimmedCondition === 'true') {
+        return true;
+      }
+      if (trimmedCondition === 'false') {
+        return false;
+      }
       
       // 数値の比較
       const numberMatch = trimmedCondition.match(/^(\d+)$/);
@@ -273,29 +366,25 @@ export class TemplateParser {
   }
 
   /**
-   * パラメータをテンプレートに適用（条件分岐対応版）
+   * パラメータをテンプレートに適用（条件分岐・ループ対応版）
    */
   private applyParameters(templateData: any, params: Record<string, any>): any {
     try {
       if (Array.isArray(templateData)) {
-        return templateData.map(item => this.applyParameters(item, params));
+        const results = [];
+        for (const item of templateData) {
+          const result = this.applyParameters(item, params);
+          if (Array.isArray(result)) {
+            results.push(...result);
+          } else {
+            results.push(result);
+          }
+        }
+        return results;
       }
 
       if (typeof templateData === 'object' && templateData !== null) {
-        // $if構文の処理
-        if ('$if' in templateData) {
-          const condition = templateData.$if.condition;
-          const isConditionTrue = this.evaluateConditionWithParams(condition, params);
-          
-          if (isConditionTrue) {
-            // 条件が真の場合、テンプレートを適用
-            return this.applyParameters(templateData.$if.template, params);
-          } else {
-            // 条件が偽の場合、空の配列を返す
-            return [];
-          }
-        }
-
+        // $if/$foreachはresolveTemplatesで処理済みのため、ここでは再帰的に各プロパティを補間のみ
         const result: any = {};
         for (const [key, value] of Object.entries(templateData)) {
           result[key] = this.applyParameters(value, params);
@@ -303,11 +392,12 @@ export class TemplateParser {
         return result;
       }
 
+      // 文字列の場合のみ補間処理を行う
       if (typeof templateData === 'string') {
-        const result = this.interpolateString(templateData, params);
-        return result;
+        return this.interpolateString(templateData, params);
       }
 
+      // プリミティブ型（数値、真偽値）はそのまま返す
       return templateData;
     } catch (error) {
       throw error;
@@ -342,10 +432,77 @@ export class TemplateParser {
         }
       }
       
+      // {{ xxx }} 形式の文字列補間を処理
+      if (trimmedCondition.includes('{{') && trimmedCondition.includes('}}')) {
+        const interpolatedCondition = this.interpolateString(trimmedCondition, params);
+        // 補間後の値を評価
+        if (typeof interpolatedCondition === 'boolean') {
+          return interpolatedCondition;
+        } else if (typeof interpolatedCondition === 'string') {
+          return interpolatedCondition.length > 0 && interpolatedCondition.toLowerCase() !== 'false';
+        } else if (typeof interpolatedCondition === 'number') {
+          return interpolatedCondition !== 0;
+        } else if (Array.isArray(interpolatedCondition)) {
+          return (interpolatedCondition as any[]).length > 0;
+        } else if (interpolatedCondition === null || interpolatedCondition === undefined) {
+          return false;
+        } else {
+          return true;
+        }
+      }
+      
       // その他の条件式は既存のevaluateConditionを使用
       return this.evaluateCondition(condition);
     } catch (error) {
       return false;
+    }
+  }
+
+  /**
+   * パラメータから配列を取得
+   */
+  private getArrayFromParams(itemsPath: string, params: Record<string, any>): any[] {
+    try {
+      const trimmedPath = itemsPath.trim();
+      
+      // $params.xxx 形式の変数参照
+      if (trimmedPath.startsWith('$params.')) {
+        const paramPath = trimmedPath.substring(8); // '$params.' を除去
+        const value = this.getNestedValue(params, paramPath);
+        
+        if (Array.isArray(value)) {
+          return value;
+        } else {
+          return []; // 配列でない場合は空配列を返す
+        }
+      }
+      
+      // {{ xxx }} 形式の文字列補間を処理
+      if (trimmedPath.includes('{{') && trimmedPath.includes('}}')) {
+        const interpolatedPath = this.interpolateString(trimmedPath, params);
+        if (Array.isArray(interpolatedPath)) {
+          return interpolatedPath;
+        }
+        // 補間後の値が文字列の場合、パラメータから取得を試行
+        if (typeof interpolatedPath === 'string') {
+          const value = this.getNestedValue(params, interpolatedPath);
+          return Array.isArray(value) ? value : [];
+        }
+        return [];
+      }
+      
+      // 直接の配列指定（例: "[1, 2, 3]"）
+      if (trimmedPath.startsWith('[') && trimmedPath.endsWith(']')) {
+        try {
+          return JSON.parse(trimmedPath);
+        } catch {
+          return [];
+        }
+      }
+      
+      return [];
+    } catch (error) {
+      return [];
     }
   }
 
@@ -392,12 +549,50 @@ export class TemplateParser {
   /**
    * 文字列内の変数を展開
    */
-  private interpolateString(str: string, params: Record<string, any>): string {
-    const result = str.replace(/\{\{\s*\$params\.([^}]+)\s*\}\}/g, (match, paramPath) => {
+  private interpolateString(str: string, params: Record<string, any>): any {
+    // 非文字列の場合はそのまま返す
+    if (typeof str !== 'string') {
+      return str;
+    }
+
+    // 文字列全体が{{ xxx }}で囲まれている場合、値を直接返す
+    const fullMatch = str.match(/^\{\{\s*([^}]+)\s*\}\}$/);
+    if (fullMatch) {
+      const varPath = fullMatch[1].trim();
+      
+      // $params.xxx 形式の変数参照を処理
+      if (varPath.startsWith('$params.')) {
+        const paramPath = varPath.substring(8); // '$params.' を除去
+        const value = this.getNestedValue(params, paramPath);
+        return value !== undefined ? value : str;
+      }
+      
+      // 通常の変数参照を処理
+      const value = this.getNestedValue(params, varPath);
+      return value !== undefined ? value : str;
+    }
+
+    // 部分的な文字列置換を行う
+    let result = str;
+    
+    // $params.xxx 形式の変数参照を処理
+    result = result.replace(/\{\{\s*\$params\.([^}]+)\s*\}\}/g, (match, paramPath) => {
       const trimmedPath = paramPath.trim();
       const value = this.getNestedValue(params, trimmedPath);
       return value !== undefined ? String(value) : match;
     });
+
+    // {{ item.name }} 形式の変数参照を処理
+    result = result.replace(/\{\{\s*([^}]+)\s*\}\}/g, (match, varPath) => {
+      const trimmedPath = varPath.trim();
+      // $params.で始まる場合は既に処理済みなのでスキップ
+      if (trimmedPath.startsWith('$params.')) {
+        return match;
+      }
+      const value = this.getNestedValue(params, trimmedPath);
+      return value !== undefined ? String(value) : match;
+    });
+
     return result;
   }
 
@@ -484,9 +679,9 @@ export class TemplateParser {
         return true;
       }
 
-      // 再帰的に各プロパティをチェック（$ifは循環参照対象外）
+      // 再帰的に各プロパティをチェック（$ifと$foreachは循環参照対象外）
       for (const [key, value] of Object.entries(data)) {
-        if (key !== '$if') {
+        if (key !== '$if' && key !== '$foreach') {
           if (this.hasIncludeSyntax(value)) {
             return true;
           }

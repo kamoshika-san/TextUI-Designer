@@ -276,7 +276,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
       items.push(includeItem);
     }
 
-    // テンプレートファイルの場合のみ$ifを追加
+    // テンプレートファイルの場合のみ$ifと$foreachを追加
     if (document && /\.template\.(ya?ml|json)$/.test(document.uri.fsPath)) {
       const ifItem = new vscode.CompletionItem('$if', vscode.CompletionItemKind.Keyword);
       ifItem.detail = '条件分岐';
@@ -284,6 +284,13 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
       ifItem.insertText = new vscode.SnippetString('$if:\n  condition: "${1:$params.showHeader}"\n  template:\n    - ${2:Text}:\n        value: "${3:条件付きテキスト}"');
       ifItem.sortText = '0$if';
       items.push(ifItem);
+
+      const foreachItem = new vscode.CompletionItem('$foreach', vscode.CompletionItemKind.Keyword);
+      foreachItem.detail = '配列ループ';
+      foreachItem.documentation = '配列の各要素に対してテンプレートを繰り返し適用する';
+      foreachItem.insertText = new vscode.SnippetString('$foreach:\n  items: "${1:$params.items}"\n  as: "${2:item}"\n  template:\n    - ${3:Text}:\n        value: "{{ ${2:item}.name }}"');
+      foreachItem.sortText = '0$foreach';
+      items.push(foreachItem);
     }
 
     return items;

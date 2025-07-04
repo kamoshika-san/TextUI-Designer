@@ -290,8 +290,9 @@ export class DiagnosticManager {
         }
       }
 
-      // $if構文の検証（テンプレートファイルの場合のみ）
+      // $if構文と$foreach構文の検証（テンプレートファイルの場合のみ）
       if (document.fileName.endsWith('.template.yml') || document.fileName.endsWith('.template.yaml')) {
+        // $if構文の検証
         const ifMatches = text.match(/\$if:\s*\n\s*condition:\s*["']?([^"\n]+)["']?/g);
         if (ifMatches) {
           for (const match of ifMatches) {
@@ -305,6 +306,42 @@ export class DiagnosticManager {
                 const diag = new vscode.Diagnostic(
                   new vscode.Range(lineNumber, 0, lineNumber, match.length),
                   `無効な条件式です: ${condition}`,
+                  vscode.DiagnosticSeverity.Warning
+                );
+                diagnostics.push(diag);
+              }
+            }
+          }
+        }
+
+        // $foreach構文の検証
+        const foreachMatches = text.match(/\$foreach:\s*\n\s*items:\s*["']?([^"\n]+)["']?\s*\n\s*as:\s*["']?([^"\n]+)["']?/g);
+        if (foreachMatches) {
+          for (const match of foreachMatches) {
+            const itemsMatch = match.match(/items:\s*["']?([^"\n]+)["']?/);
+            const asMatch = match.match(/as:\s*["']?([^"\n]+)["']?/);
+            
+            if (itemsMatch && asMatch) {
+              const items = itemsMatch[1];
+              const as = asMatch[1];
+              
+              // items式の基本的な検証
+              if (!this.isValidItemsExpression(items)) {
+                const lineNumber = this.findLineNumber(text, match);
+                const diag = new vscode.Diagnostic(
+                  new vscode.Range(lineNumber, 0, lineNumber, match.length),
+                  `無効なitems式です: ${items}`,
+                  vscode.DiagnosticSeverity.Warning
+                );
+                diagnostics.push(diag);
+              }
+              
+              // as変数名の基本的な検証
+              if (!this.isValidVariableName(as)) {
+                const lineNumber = this.findLineNumber(text, match);
+                const diag = new vscode.Diagnostic(
+                  new vscode.Range(lineNumber, 0, lineNumber, match.length),
+                  `無効な変数名です: ${as}`,
                   vscode.DiagnosticSeverity.Warning
                 );
                 diagnostics.push(diag);
@@ -361,6 +398,40 @@ export class DiagnosticManager {
     }
     
     return false;
+  }
+
+  /**
+   * items式が有効かチェック
+   */
+  private isValidItemsExpression(items: string): boolean {
+    const trimmed = items.trim();
+    
+    // $params.xxx 形式
+    if (trimmed.startsWith('$params.')) {
+      return /^$params\.[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*$/.test(trimmed);
+    }
+    
+    // 配列リテラル
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        JSON.parse(trimmed);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    
+    return false;
+  }
+
+  /**
+   * 変数名が有効かチェック
+   */
+  private isValidVariableName(name: string): boolean {
+    const trimmed = name.trim();
+    
+    // JavaScriptの変数名規則に従う
+    return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(trimmed);
   }
 
   /**

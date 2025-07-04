@@ -1,0 +1,32 @@
+# 配列ループ処理テスト用テンプレート
+- $foreach:
+    items: "$params.items"
+    as: "item"
+    template:
+      - Container:
+          id: "item-{{ item.id }}"
+          components:
+            - Text:
+                variant: h3
+                value: "{{ item.name }}"
+            - Text:
+                variant: body
+                value: "{{ item.description }}"
+            - Button:
+                label: "{{ item.buttonLabel }}"
+                kind: "{{ item.buttonKind || 'primary' }}"
+
+- $foreach:
+    items: "$params.categories"
+    as: "category"
+    template:
+      - Text:
+          variant: h2
+          value: "{{ category.name }}"
+      - $foreach:
+          items: "{{ category.items }}"
+          as: "subItem"
+          template:
+            - Text:
+                variant: body
+                value: "{{ subItem.name }}" 
