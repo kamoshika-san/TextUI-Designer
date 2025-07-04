@@ -104,7 +104,7 @@ export class FileWatcher {
    * アクティブエディタ変更の処理
    */
   private handleActiveEditorChange(editor: vscode.TextEditor): void {
-    if (!this.services) return;
+    if (!this.services) {return;}
 
     const previousFile = this.services.webViewManager.getLastTuiFile();
     
@@ -137,7 +137,7 @@ export class FileWatcher {
    * ドキュメント保存の処理
    */
   private handleDocumentSave(document: vscode.TextDocument): void {
-    if (!this.services) return;
+    if (!this.services) {return;}
 
     const now = Date.now();
     this.lastSaveTime = now;
@@ -173,7 +173,7 @@ export class FileWatcher {
    * ドキュメント変更の処理
    */
   private handleDocumentChange(event: vscode.TextDocumentChangeEvent): void {
-    if (!this.services) return;
+    if (!this.services) {return;}
 
     const now = Date.now();
     

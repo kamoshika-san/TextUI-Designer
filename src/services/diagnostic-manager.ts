@@ -256,15 +256,17 @@ export class DiagnosticManager {
     const diagnostics: vscode.Diagnostic[] = [];
     
     try {
-      // 循環参照を検出
-      const circularRefs = this.templateParser.detectCircularReferences(text, document.fileName);
-      for (const ref of circularRefs) {
-        const diag = new vscode.Diagnostic(
-          new vscode.Range(0, 0, 0, 1),
-          `循環参照が検出されました: ${ref}`,
-          vscode.DiagnosticSeverity.Error
-        );
-        diagnostics.push(diag);
+      // $include構文が含まれている場合のみ循環参照を検出
+      if (text.includes('$include:')) {
+        const circularRefs = this.templateParser.detectCircularReferences(text, document.fileName);
+        for (const ref of circularRefs) {
+          const diag = new vscode.Diagnostic(
+            new vscode.Range(0, 0, 0, 1),
+            `循環参照が検出されました: ${ref}`,
+            vscode.DiagnosticSeverity.Error
+          );
+          diagnostics.push(diag);
+        }
       }
 
       // $include構文を検索してテンプレートファイルの存在確認
@@ -287,6 +289,30 @@ export class DiagnosticManager {
           }
         }
       }
+
+      // $if構文の検証（テンプレートファイルの場合のみ）
+      if (document.fileName.endsWith('.template.yml') || document.fileName.endsWith('.template.yaml')) {
+        const ifMatches = text.match(/\$if:\s*\n\s*condition:\s*["']?([^"\n]+)["']?/g);
+        if (ifMatches) {
+          for (const match of ifMatches) {
+            const conditionMatch = match.match(/condition:\s*["']?([^"\n]+)["']?/);
+            if (conditionMatch) {
+              const condition = conditionMatch[1];
+              
+              // 条件式の基本的な検証
+              if (!this.isValidConditionExpression(condition)) {
+                const lineNumber = this.findLineNumber(text, match);
+                const diag = new vscode.Diagnostic(
+                  new vscode.Range(lineNumber, 0, lineNumber, match.length),
+                  `無効な条件式です: ${condition}`,
+                  vscode.DiagnosticSeverity.Warning
+                );
+                diagnostics.push(diag);
+              }
+            }
+          }
+        }
+      }
     } catch (error) {
       console.error('[DiagnosticManager] テンプレート参照検証でエラーが発生しました:', error);
     }
@@ -305,6 +331,36 @@ export class DiagnosticManager {
       }
     }
     return 0;
+  }
+
+  /**
+   * 条件式が有効かどうかを検証
+   */
+  private isValidConditionExpression(condition: string): boolean {
+    const trimmedCondition = condition.trim();
+    
+    // $params.xxx 形式の変数参照
+    if (trimmedCondition.startsWith('$params.')) {
+      return true;
+    }
+    
+    // 真偽値の直接指定
+    if (trimmedCondition === 'true' || trimmedCondition === 'false') {
+      return true;
+    }
+    
+    // 数値
+    if (/^\d+$/.test(trimmedCondition)) {
+      return true;
+    }
+    
+    // 文字列（引用符で囲まれている）
+    if ((trimmedCondition.startsWith('"') && trimmedCondition.endsWith('"')) ||
+        (trimmedCondition.startsWith("'") && trimmedCondition.endsWith("'"))) {
+      return true;
+    }
+    
+    return false;
   }
 
   /**

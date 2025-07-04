@@ -117,9 +117,9 @@ export class WebViewErrorHandler {
     let sizeErrors = 0;
 
     for (const [, errorInfo] of this.errorState.entries()) {
-      if (errorInfo.type === 'parse') parseErrors++;
-      else if (errorInfo.type === 'schema') schemaErrors++;
-      else if (errorInfo.type === 'size') sizeErrors++;
+      if (errorInfo.type === 'parse') {parseErrors++;}
+      else if (errorInfo.type === 'schema') {schemaErrors++;}
+      else if (errorInfo.type === 'size') {sizeErrors++;}
     }
 
     return {

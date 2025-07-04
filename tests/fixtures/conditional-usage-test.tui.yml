@@ -1,0 +1,50 @@
+# 条件分岐機能テスト
+page:
+  id: conditional-test
+  title: "条件分岐テスト"
+  layout: vertical
+  
+  components:
+    # ヘッダーとフォームを表示するケース
+    - $include:
+        template: "./conditional-test.template.yml"
+        params:
+          showHeader: true
+          title: "ユーザー登録フォーム"
+          showDescription: true
+          description: "新しいユーザーを登録してください"
+          showForm: true
+          formId: "user-registration"
+          nameLabel: "お名前"
+          namePlaceholder: "山田太郎"
+          emailLabel: "メールアドレス"
+          emailPlaceholder: "yamada@example.com"
+          submitLabel: "登録"
+          showFooter: true
+          footerText: "© 2024 TextUI Designer"
+
+    # ヘッダーのみ表示するケース
+    - $include:
+        template: "./conditional-test.template.yml"
+        params:
+          showHeader: true
+          title: "シンプルなページ"
+          showDescription: false
+          showForm: false
+          showFooter: false
+
+    # フォームのみ表示するケース
+    - $include:
+        template: "./conditional-test.template.yml"
+        params:
+          showHeader: false
+          showDescription: false
+          showForm: true
+          formId: "contact-form"
+          nameLabel: "氏名"
+          namePlaceholder: "田中花子"
+          emailLabel: "連絡先メール"
+          emailPlaceholder: "tanaka@example.com"
+          submitLabel: "送信"
+          showFooter: true
+          footerText: "お問い合わせありがとうございます" 

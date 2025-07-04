@@ -62,6 +62,11 @@ export class YamlParser {
         fileName = 'sample.tui.yml';
       }
 
+      console.log(`[YamlParser] 解析対象ファイル: ${fileName}`);
+      console.log(`[YamlParser] ファイル拡張子: ${fileName.split('.').pop()}`);
+      console.log(`[YamlParser] $include含む: ${yamlContent.includes('$include:')}`);
+      console.log(`[YamlParser] $if含む: ${yamlContent.includes('$if:')}`);
+
       // ファイルサイズ制限をチェック
       this.validateFileSize(yamlContent, fileName);
 
@@ -107,11 +112,33 @@ export class YamlParser {
    */
   private async resolveTemplates(data: any, fileName: string): Promise<any> {
     try {
-      return await this.templateParser.parseWithTemplates(
-        YAML.stringify(data),
-        fileName
-      );
+      console.log(`[YamlParser] resolveTemplates開始: ${fileName}`);
+      
+      // テンプレートファイル（.template.yml）の場合は循環参照チェックをスキップ
+      if (fileName.endsWith('.template.yml') || fileName.endsWith('.template.yaml')) {
+        console.log(`[YamlParser] テンプレートファイルのため、循環参照チェックをスキップ: ${fileName}`);
+        return data;
+      }
+      
+      // $include構文が含まれている場合のみテンプレート解析を実行
+      const yamlString = YAML.stringify(data);
+      const hasInclude = yamlString.includes('$include:');
+      
+      console.log(`[YamlParser] $include含む: ${hasInclude}`);
+      
+      if (hasInclude) {
+        console.log(`[YamlParser] テンプレート解析を実行: ${fileName}`);
+        return await this.templateParser.parseWithTemplates(
+          yamlString,
+          fileName
+        );
+      } else {
+        // $includeが含まれていない場合は、そのまま返す
+        console.log(`[YamlParser] $includeが含まれていないため、そのまま返す: ${fileName}`);
+        return data;
+      }
     } catch (error) {
+      console.error(`[YamlParser] resolveTemplatesでエラー: ${fileName}`, error);
       if (error instanceof TemplateException) {
         throw this.createTemplateError(error, fileName);
       }

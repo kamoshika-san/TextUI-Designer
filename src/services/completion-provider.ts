@@ -276,6 +276,16 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
       items.push(includeItem);
     }
 
+    // テンプレートファイルの場合のみ$ifを追加
+    if (document && /\.template\.(ya?ml|json)$/.test(document.uri.fsPath)) {
+      const ifItem = new vscode.CompletionItem('$if', vscode.CompletionItemKind.Keyword);
+      ifItem.detail = '条件分岐';
+      ifItem.documentation = '条件に基づいてテンプレートを表示/非表示にする';
+      ifItem.insertText = new vscode.SnippetString('$if:\n  condition: "${1:$params.showHeader}"\n  template:\n    - ${2:Text}:\n        value: "${3:条件付きテキスト}"');
+      ifItem.sortText = '0$if';
+      items.push(ifItem);
+    }
+
     return items;
   }
 
