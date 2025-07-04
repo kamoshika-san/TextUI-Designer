@@ -70,56 +70,13 @@ export class TemplateParser {
   /**
    * DSLテキストをテンプレート展開付きでパース
    */
-  async parseWithTemplates(text: string, basePath: string): Promise<any> {
+  async parseWithTemplates(yamlContent: string, basePath: string): Promise<any> {
     try {
-      const visitedFiles = new Set<string>();
-      const parsed = yaml.parse(text);
-      
-      // $include構文が存在するかチェック
-      const hasInclude = this.hasIncludeSyntax(parsed);
-      
-      if (!hasInclude) {
-        return parsed;
-      }
-      
-      // mainのparamsを抽出
-      let mainParams = {};
-      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].$include && parsed[0].$include.params) {
-        mainParams = parsed[0].$include.params;
-      }
-      
-      const result = await this.resolveTemplates(parsed, basePath, 0, visitedFiles, mainParams);
-      
-      // 返り値が配列の場合は1階層だけflat化
-      if (Array.isArray(result)) {
-        const flattened = result.flat();
-        // 最終的に全体にパラメータ補間を適用
-        return this.applyParameters(flattened, mainParams);
-      }
-      
-      // page.componentsが配列なら再帰的にflat化
-      if (result && typeof result === 'object' && result.page && Array.isArray(result.page.components)) {
-        result.page.components = this.deepFlat(result.page.components);
-        
-        // 各コンポーネントが正しい構造になっているかチェック
-        result.page.components.forEach((comp: any, index: number) => {
-          if (Array.isArray(comp)) {
-            // 配列の場合は最初の要素を取得
-            result.page.components[index] = comp[0];
-          }
-        });
-        
-        // 最終的なflat化を再度実行
-        result.page.components = this.deepFlat(result.page.components);
-      }
-      
-      // 最終的に全体にパラメータ補間を適用
-      return this.applyParameters(result, mainParams);
+      const yamlData = yaml.parse(yamlContent);
+      const result = await this.resolveTemplates(yamlData, basePath, 0, new Set());
+      return result;
     } catch (error) {
-      if (error instanceof TemplateException) {
-        throw error;
-      }
-      throw new TemplateException(TemplateError.SYNTAX_ERROR, basePath);
+      throw error;
     }
   }
 
@@ -192,11 +149,48 @@ export class TemplateParser {
         }
       }
 
-      // 再帰的にオブジェクトの各プロパティを処理
+      // 通常のオブジェクト処理
       const result: any = {};
       for (const [key, value] of Object.entries(data)) {
         result[key] = await this.resolveTemplates(value, basePath, depth + 1, visitedFiles, params);
       }
+      
+      // 不正な特殊キーをチェック
+      const objectSpecialKeys = Object.keys(result).filter(key => key.startsWith('$'));
+      if (objectSpecialKeys.length > 0) {
+        const validSpecialKeys = ['$if', '$foreach', '$include'];
+        const invalidKeys = objectSpecialKeys.filter(key => !validSpecialKeys.includes(key));
+        
+        // 有効な特殊キーでも構造が不正な場合のチェック
+        if (objectSpecialKeys.some(key => validSpecialKeys.includes(key))) {
+          for (const key of objectSpecialKeys) {
+            if (key === '$if') {
+              const ifData = result[key];
+              if (!ifData || typeof ifData !== 'object' || 
+                  !('condition' in ifData) || !('template' in ifData) ||
+                  typeof ifData.condition !== 'string' || 
+                  !Array.isArray(ifData.template)) {
+                throw new TemplateException(TemplateError.SYNTAX_ERROR, basePath);
+              }
+            } else if (key === '$foreach') {
+              const foreachData = result[key];
+              if (!foreachData || typeof foreachData !== 'object' ||
+                  !('items' in foreachData) || !('as' in foreachData) || !('template' in foreachData) ||
+                  typeof foreachData.items !== 'string' || 
+                  typeof foreachData.as !== 'string' || 
+                  !Array.isArray(foreachData.template)) {
+                throw new TemplateException(TemplateError.SYNTAX_ERROR, basePath);
+              }
+            }
+          }
+        }
+        
+        // 無効な特殊キーが存在する場合
+        if (invalidKeys.length > 0) {
+          throw new TemplateException(TemplateError.SYNTAX_ERROR, basePath);
+        }
+      }
+      
       return this.applyParameters(result, params);
     }
 
