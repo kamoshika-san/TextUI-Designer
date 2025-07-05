@@ -42,7 +42,7 @@ export function SafeCommand(options: CommandOptions = {}) {
         fallback
       } = options;
 
-      const result = await ErrorHandler.executeSafely(async () => {
+      const result = await ErrorHandler.withErrorHandling(async () => {
         return await method.apply(this, args);
       }, errorMessage);
 
@@ -92,7 +92,7 @@ export class CommandExecutor {
       fallback
     } = options;
 
-    const result = await ErrorHandler.executeSafely(operation, errorMessage);
+    const result = await ErrorHandler.withErrorHandling(operation, errorMessage);
 
     if (!result && fallback) {
       try {

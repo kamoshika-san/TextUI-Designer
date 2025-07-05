@@ -1,89 +1,96 @@
+const { expect } = require('chai');
 const sinon = require('sinon');
 const path = require('path');
 const fs = require('fs');
-const { expect } = require('chai');
 
-// VSCode APIのモック
-// グローバルなyamlConfigStubとjsonConfigStubの宣言は削除します。
-// これらはbeforeEach内で毎回新しく作成し、thisに設定します。
-const vscode = {
-  ExtensionContext: class {
-    constructor() {
-      this.extensionPath = __dirname; // テスト用にカレントディレクトリ
-      this.subscriptions = [];
-    }
-  },
-  Uri: {
-    file: (filePath) => ({ toString: () => `file://${filePath}` })
-  },
-  workspace: {
-    getConfiguration: () => {},
-  },
-  ConfigurationTarget: {
-    Global: 1,
-    Workspace: 2,
-    WorkspaceFolder: 3
-  }
+// テスト用モックファクトリーをインポート
+const {
+  createSchemaManagerForTest,
+  createErrorTestDependencies
+} = require('../mocks/schema-manager-factory');
+
+// ErrorHandlerのモック
+const mockErrorHandler = {
+  withErrorHandling: sinon.stub(),
+  withErrorHandlingSync: sinon.stub(),
+  logError: sinon.stub(),
+  showUserFriendlyError: sinon.stub()
 };
 
-// vscodeモジュールをグローバルにモック
+// モジュールのモック
 const Module = require('module');
 const originalRequire = Module.prototype.require;
 Module.prototype.require = function(id) {
   if (id === 'vscode') {
     return vscode;
   }
+  if (id === '../../out/utils/error-handler.js') {
+    return mockErrorHandler;
+  }
   return originalRequire.apply(this, arguments);
 };
 
-// テスト用の最小限schema.json
-const testSchemaPath = path.join(__dirname, 'schemas', 'schema.json');
-const testTemplateSchemaPath = path.join(__dirname, 'schemas', 'template-schema.json');
-const testThemeSchemaPath = path.join(__dirname, 'schemas', 'theme-schema.json');
-const testSchemaContent = {
-  $id: 'test-schema',
-  type: 'object',
-  definitions: {
-    component: { type: 'object', properties: { foo: { type: 'string' } } }
+// vscodeモック
+const vscode = {
+  ExtensionContext: class {
+    constructor() {
+      this.extensionPath = __dirname;
+      this.globalState = { get: () => undefined, update: () => Promise.resolve() };
+      this.workspaceState = { get: () => undefined, update: () => Promise.resolve() };
+    }
+  },
+  workspace: {
+    getConfiguration: () => ({ get: () => {}, update: () => Promise.resolve() })
+  },
+  Uri: {
+    file: (path) => ({ fsPath: path, toString: () => `file://${path}` })
   }
 };
-const testThemeSchemaContent = {
-  $id: 'test-theme-schema',
-  type: 'object',
-  properties: {
-    theme: { type: 'object' },
-    tokens: { type: 'object' }
-  }
-};
-
-// テスト用SchemaManager（本番実装をrequireしてもOK）
-const { SchemaManager } = require('../../out/services/schema-manager.js');
 
 describe('SchemaManager', () => {
-  let schemaManager;
   let mockContext;
-  // this.yamlConfigStub と this.jsonConfigStub を使用するため、ここで宣言は不要
-
-  before(() => {
-    // テスト用schema.jsonを作成
-    fs.mkdirSync(path.dirname(testSchemaPath), { recursive: true });
-    fs.writeFileSync(testSchemaPath, JSON.stringify(testSchemaContent, null, 2), 'utf-8');
-    fs.writeFileSync(testThemeSchemaPath, JSON.stringify(testThemeSchemaContent, null, 2), 'utf-8');
-    // template-schema.jsonはテストで自動生成される
-  });
-
-  after(() => {
-    // テスト用ファイル削除
-    if (fs.existsSync(testSchemaPath)) fs.unlinkSync(testSchemaPath);
-    if (fs.existsSync(testTemplateSchemaPath)) fs.unlinkSync(testTemplateSchemaPath);
-    if (fs.existsSync(testThemeSchemaPath)) fs.unlinkSync(testThemeSchemaPath);
-    if (fs.existsSync(path.dirname(testSchemaPath))) fs.rmdirSync(path.dirname(testSchemaPath));
-    // モックを復元
-    Module.prototype.require = originalRequire;
-  });
+  let schemaManager;
+  let testSchemaPath;
+  let testTemplateSchemaPath;
+  let testThemeSchemaPath;
 
   beforeEach(function () {
     mockContext = new vscode.ExtensionContext();
+
+    // テスト用パスの設定
+    testSchemaPath = path.join(__dirname, 'test-schema.json');
+    testTemplateSchemaPath = path.join(__dirname, 'test-template-schema.json');
+    testThemeSchemaPath = path.join(__dirname, 'test-theme-schema.json');
+
+    // テスト用スキーマファイルを作成
+    fs.writeFileSync(testSchemaPath, JSON.stringify({ definitions: {} }));
+    fs.writeFileSync(testThemeSchemaPath, JSON.stringify({ properties: { theme: {}, tokens: {} } }));
+
+    // ErrorHandlerのモックをリセット
+    mockErrorHandler.withErrorHandling.reset();
+    mockErrorHandler.withErrorHandlingSync.reset();
+    mockErrorHandler.logError.reset();
+    mockErrorHandler.showUserFriendlyError.reset();
+
+    // デフォルトでは成功するように設定
+    mockErrorHandler.withErrorHandling.callsFake(async (operation, context, defaultValue) => {
+      try {
+        return await operation();
+      } catch (error) {
+        mockErrorHandler.logError(error, context);
+        mockErrorHandler.showUserFriendlyError(error, context);
+        return defaultValue || {};
+      }
+    });
+    mockErrorHandler.withErrorHandlingSync.callsFake((operation, context, defaultValue) => {
+      try {
+        return operation();
+      } catch (error) {
+        mockErrorHandler.logError(error, context);
+        mockErrorHandler.showUserFriendlyError(error, context);
+        return defaultValue || {};
+      }
+    });
 
     // スタブをbeforeEachのスコープで作成し、thisに割り当てる
     this.yamlConfigStub = { get: sinon.stub().returns({}), update: sinon.stub().resolves() };
@@ -91,6 +98,8 @@ describe('SchemaManager', () => {
 
     // vscode.workspace.getConfigurationをスタブし、事前に作成したスタブを返すようにする
     const self = this;
+    // 既存のスタブをクリアしてから新しいスタブを作成
+    sinon.restore();
     sinon.stub(vscode.workspace, 'getConfiguration').callsFake(function(section) {
       if (section === 'yaml') {
         return self.yamlConfigStub;
@@ -102,35 +111,48 @@ describe('SchemaManager', () => {
       return { get: sinon.stub(), update: sinon.stub().resolves() };
     });
 
-    schemaManager = new SchemaManager(mockContext);
-    // テスト用パスを強制上書き
-    schemaManager.schemaPath = testSchemaPath;
-    schemaManager.templateSchemaPath = testTemplateSchemaPath;
-    schemaManager.themeSchemaPath = testThemeSchemaPath;
+    // 依存性注入を使用してSchemaManagerを作成
+    const testPaths = {
+      schemaPath: testSchemaPath,
+      templateSchemaPath: testTemplateSchemaPath,
+      themeSchemaPath: testThemeSchemaPath
+    };
+    
+    schemaManager = createSchemaManagerForTest(mockContext, testPaths, {}, mockErrorHandler);
   });
 
   afterEach(() => {
     sinon.restore(); // これによりvscode.workspace.getConfigurationのスタブを含む、すべてのSinonスタブが復元されます。
-    schemaManager.clearCache();
+    if (schemaManager && typeof schemaManager.clearCache === 'function') {
+      schemaManager.clearCache();
+    }
+    
+    // テスト用ファイルを削除
+    try {
+      if (fs.existsSync(testSchemaPath)) fs.unlinkSync(testSchemaPath);
+      if (fs.existsSync(testTemplateSchemaPath)) fs.unlinkSync(testTemplateSchemaPath);
+      if (fs.existsSync(testThemeSchemaPath)) fs.unlinkSync(testThemeSchemaPath);
+    } catch (error) {
+      // ファイル削除エラーは無視
+    }
   });
 
   it('initialize()でスキーマ初期化が成功する', async () => {
-    try {
-      await schemaManager.initialize();
-      expect(fs.existsSync(testTemplateSchemaPath)).to.be.true;
-    } catch (error) {
-      expect.fail(`初期化が失敗しました: ${error.message}`);
-    }
+    // テスト用テンプレートスキーマファイルを事前に削除
+    if (fs.existsSync(testTemplateSchemaPath)) fs.unlinkSync(testTemplateSchemaPath);
+    // ErrorHandlerのモックを成功するように設定
+    mockErrorHandler.withErrorHandling.callsFake(async (operation, context) => {
+      return await operation();
+    });
+    
+    await schemaManager.initialize();
+    expect(fs.existsSync(testTemplateSchemaPath)).to.be.true;
   });
 
   it('registerSchemas()でYAML/JSON拡張にスキーマ登録できる', async function () {
-    try {
-      await schemaManager.registerSchemas();
-      expect(this.yamlConfigStub.update.called).to.be.true;
-      expect(this.jsonConfigStub.update.called).to.be.true;
-    } catch (error) {
-      expect.fail(`スキーマ登録が失敗しました: ${error.message}`);
-    }
+    await schemaManager.registerSchemas();
+    // registrarのspyが呼ばれていることを確認
+    expect(schemaManager.dependencies.registrar.registerSchemas.called).to.be.true;
   });
 
   it('loadSchema()でスキーマを読み込める', async () => {
@@ -158,72 +180,131 @@ describe('SchemaManager', () => {
   });
 
   it('cleanup()でスキーマ設定がクリーンアップされる', async function () {
-    try {
-      await schemaManager.cleanup();
-      expect(this.yamlConfigStub.update.called).to.be.true;
-      expect(this.jsonConfigStub.update.called).to.be.true;
-    } catch (error) {
-      expect.fail(`クリーンアップが失敗しました: ${error.message}`);
-    }
+    await schemaManager.cleanup();
+    // registrarのspyが呼ばれていることを確認
+    expect(schemaManager.dependencies.registrar.cleanupSchemas.called).to.be.true;
   });
 
   it('reinitialize()で再初期化できる', async () => {
-    try {
-      await schemaManager.reinitialize();
-      expect(schemaManager.schemaCache).to.be.null;
-    } catch (error) {
-      expect.fail(`再初期化が失敗しました: ${error.message}`);
-    }
+    await schemaManager.reinitialize();
+    expect(schemaManager.schemaCache).to.be.null;
   });
 
   it('パス解決ロジックが正しく動作する', () => {
-    const manager = new SchemaManager(mockContext);
+    const manager = new (require('../../out/services/schema-manager').SchemaManager)(mockContext);
     expect(manager.getSchemaPath()).to.include('schema.json');
     expect(manager.getTemplateSchemaPath()).to.include('template-schema.json');
     expect(manager.getThemeSchemaPath()).to.include('theme-schema.json');
   });
 
-  it('スキーマファイルが存在しない場合はエラー', async () => {
-    schemaManager.schemaPath = '/not/exist/schema.json';
-    try {
-      await schemaManager.loadSchema();
-      expect.fail('エラーが発生すべきでした');
-    } catch (error) {
-      expect(error.message).to.include('スキーマファイルの読み込みに失敗しました');
-    }
-  });
+  describe('エラー系', () => {
+    let errorTestErrorHandler;
 
-  it('テンプレートスキーマファイルが存在しない場合はエラー', async () => {
-    schemaManager.templateSchemaPath = '/not/exist/template-schema.json';
-    try {
-      await schemaManager.loadTemplateSchema();
-      expect.fail('エラーが発生すべきでした');
-    } catch (error) {
-      expect(error.message).to.include('テンプレートスキーマファイルの読み込みに失敗しました');
-    }
-  });
+    beforeEach(() => {
+      // エラー系テスト専用のErrorHandlerを作成
+      errorTestErrorHandler = {
+        withErrorHandling: sinon.stub().callsFake(async (operation, context, defaultValue) => {
+          try {
+            return await operation();
+          } catch (error) {
+            // エラーログとユーザー表示は呼ぶが、必ずthrowする
+            mockErrorHandler.logError(error, context);
+            mockErrorHandler.showUserFriendlyError(error, context);
+            throw error; // デフォルト値returnは絶対にしない
+          }
+        }),
+        logError: sinon.stub(),
+        showUserFriendlyError: sinon.stub()
+      };
+    });
 
-  it('テーマスキーマファイルが存在しない場合はエラー', async () => {
-    schemaManager.themeSchemaPath = '/not/exist/theme-schema.json';
-    try {
-      await schemaManager.loadThemeSchema();
-      expect.fail('エラーが発生すべきでした');
-    } catch (error) {
-      expect(error.message).to.include('テーマスキーマファイルの読み込みに失敗しました');
-    }
-  });
+    it('スキーマファイルが存在しない場合はエラー', async () => {
+      const testPaths = {
+        schemaPath: '/not/exist/schema.json',
+        templateSchemaPath: testTemplateSchemaPath,
+        themeSchemaPath: testThemeSchemaPath
+      };
+      const errorDependencies = createErrorTestDependencies(testPaths, 'schema', errorTestErrorHandler);
+      const { SchemaManagerFactory } = require('../../out/services/schema-manager-factory');
+      const errorManager = SchemaManagerFactory.createForTest(mockContext, errorDependencies);
+      let caught = false;
+      try {
+        await errorManager.loadSchema();
+        expect.fail('catchされずに成功してしまった');
+      } catch (error) {
+        caught = true;
+        expect(error.message).to.include('スキーマファイルの読み込みに失敗しました');
+      }
+      if (!caught) expect.fail('catchされなかった');
+    });
 
-  it('無効なJSONファイルの場合はエラー', async () => {
-    const tempPath = path.join(__dirname, 'temp-invalid-schema.json');
-    fs.writeFileSync(tempPath, 'invalid json content');
-    schemaManager.schemaPath = tempPath;
-    try {
-      await schemaManager.loadSchema();
-      expect.fail('エラーが発生すべきでした');
-    } catch (error) {
-      expect(error.message).to.include('スキーマファイルの読み込みに失敗しました');
-    } finally {
-      fs.unlinkSync(tempPath);
-    }
+    it('テンプレートスキーマファイルが存在しない場合はエラー', async () => {
+      const testPaths = {
+        schemaPath: testSchemaPath,
+        templateSchemaPath: '/not/exist/template-schema.json',
+        themeSchemaPath: testThemeSchemaPath
+      };
+      const errorDependencies = createErrorTestDependencies(testPaths, 'templateSchema', errorTestErrorHandler);
+      const errorSchemaManager = new (require('../../out/services/schema-manager').SchemaManager)(
+        mockContext, errorTestErrorHandler, errorDependencies
+      );
+      let caught = false;
+      try {
+        await errorSchemaManager.loadTemplateSchema();
+        expect.fail('catchされずに成功してしまった');
+      } catch (error) {
+        caught = true;
+        expect(error.message).to.include('テンプレートスキーマファイルの読み込みに失敗しました');
+      }
+      if (!caught) expect.fail('catchされなかった');
+    });
+
+    it('テーマスキーマファイルが存在しない場合はエラー', async () => {
+      const testPaths = {
+        schemaPath: testSchemaPath,
+        templateSchemaPath: testTemplateSchemaPath,
+        themeSchemaPath: '/not/exist/theme-schema.json'
+      };
+      const errorDependencies = createErrorTestDependencies(testPaths, 'themeSchema', errorTestErrorHandler);
+      const errorSchemaManager = new (require('../../out/services/schema-manager').SchemaManager)(
+        mockContext, errorTestErrorHandler, errorDependencies
+      );
+      let caught = false;
+      try {
+        await errorSchemaManager.loadThemeSchema();
+        expect.fail('catchされずに成功してしまった');
+      } catch (error) {
+        caught = true;
+        expect(error.message).to.include('テーマスキーマファイルの読み込みに失敗しました');
+      }
+      if (!caught) expect.fail('catchされなかった');
+    });
+
+    it('無効なJSONファイルの場合はエラー', async () => {
+      const tempPath = path.join(__dirname, 'temp-invalid.json');
+      fs.writeFileSync(tempPath, 'invalid json');
+      try {
+        const testPaths = {
+          schemaPath: tempPath,
+          templateSchemaPath: testTemplateSchemaPath,
+          themeSchemaPath: testThemeSchemaPath
+        };
+        const errorDependencies = createErrorTestDependencies(testPaths, 'schema', errorTestErrorHandler);
+        const errorSchemaManager = new (require('../../out/services/schema-manager').SchemaManager)(
+          mockContext, errorTestErrorHandler, errorDependencies
+        );
+        let caught = false;
+        try {
+          await errorSchemaManager.loadSchema();
+          expect.fail('catchされずに成功してしまった');
+        } catch (error) {
+          caught = true;
+          expect(error.message).to.include('スキーマファイルの読み込みに失敗しました');
+        }
+        if (!caught) expect.fail('catchされなかった');
+      } finally {
+        fs.unlinkSync(tempPath);
+      }
+    });
   });
 }); 

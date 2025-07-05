@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ExtensionServices } from './service-initializer';
 import { ConfigManager } from '../utils/config-manager';
 import { MemoryMonitor } from './memory-monitor';
+import { ErrorHandler } from '../utils/error-handler';
 
 /**
  * ファイル監視・デバウンス処理
@@ -165,31 +166,20 @@ export class FileWatcher {
 
     const now = Date.now();
     this.lastSaveTime = now;
-    
-    // 保存中フラグを設定
     this.isSaving = true;
-    
-    // 既存のタイマーをクリア
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
       this.saveTimeout = undefined;
     }
-
-    // 保存処理をデバウンス（100ms）
     this.saveTimeout = setTimeout(() => {
-      try {
+      ErrorHandler.withErrorHandling(async () => {
         const diagnosticSettings = ConfigManager.getDiagnosticSettings();
         if (diagnosticSettings.enabled && diagnosticSettings.validateOnSave) {
-          this.services!.diagnosticManager.validateAndReportDiagnostics(document);
+          await this.services!.diagnosticManager.validateAndReportDiagnostics(document);
         }
-      } catch (error) {
-        console.error('[FileWatcher] ドキュメント保存処理でエラーが発生しました:', error);
-      } finally {
-        // 保存処理完了後、少し遅延してからフラグをリセット
-        setTimeout(() => {
-          this.isSaving = false;
-        }, 500);
-      }
+      }, 'FileWatcher: ドキュメント保存処理').finally(() => {
+        setTimeout(() => { this.isSaving = false; }, 500);
+      });
     }, 100);
   }
 
@@ -198,65 +188,31 @@ export class FileWatcher {
    */
   private handleDocumentChange(event: vscode.TextDocumentChangeEvent): void {
     if (!this.services) {return;}
-
     const now = Date.now();
-    
-    // 保存直後（1秒以内）は変更処理をスキップ
-    if (now - this.lastSaveTime < 1000) {
-      return;
-    }
-    
-    // 保存中は変更処理をスキップ
-    if (this.isSaving) {
-      return;
-    }
-
-    // 変更回数制限をチェック
+    if (now - this.lastSaveTime < 1000) return;
+    if (this.isSaving) return;
     this.changeCount++;
-    if (this.changeCount > this.MAX_CHANGES_PER_SECOND) {
-      return;
-    }
-
-    // 1秒後にカウンターをリセット
-    setTimeout(() => {
-      this.changeCount = 0;
-    }, 1000);
-
-    // 最小変更間隔をチェック
-    if (now - this.lastChangeTime < this.MIN_CHANGE_INTERVAL) {
-      return;
-    }
+    if (this.changeCount > this.MAX_CHANGES_PER_SECOND) return;
+    setTimeout(() => { this.changeCount = 0; }, 1000);
+    if (now - this.lastChangeTime < this.MIN_CHANGE_INTERVAL) return;
     this.lastChangeTime = now;
-
-    // ドキュメントサイズをチェック
     const documentSize = event.document.getText().length;
-    if (documentSize > 1024 * 1024) { // 1MB以上
-      console.log(`[FileWatcher] ドキュメントサイズが大きすぎます: ${Math.round(documentSize / 1024)}KB`);
+    if (documentSize > 1024 * 1024) {
       vscode.window.showWarningMessage(`ドキュメントサイズが大きすぎます（${Math.round(documentSize / 1024)}KB）。1MB以下にしてください。`);
       return;
     }
-
-    // 既存のタイマーをクリア
     if (this.documentChangeTimeout) {
       clearTimeout(this.documentChangeTimeout);
     }
-
-    // デバウンス処理（150ms）
-    this.documentChangeTimeout = setTimeout(async () => {
-      try {
-        // メモリ使用量を段階的に監視
+    this.documentChangeTimeout = setTimeout(() => {
+      ErrorHandler.withErrorHandling(async () => {
         this.memoryMonitor.checkMemoryUsageRealTime();
-        
-        // プレビュー画面が開かれている場合は常に更新
         await this.services!.webViewManager.updatePreview();
-        
         const diagnosticSettings = ConfigManager.getDiagnosticSettings();
         if (diagnosticSettings.enabled && diagnosticSettings.validateOnChange) {
-          this.services!.diagnosticManager.validateAndReportDiagnostics(event.document);
+          await this.services!.diagnosticManager.validateAndReportDiagnostics(event.document);
         }
-      } catch (error) {
-        console.error('[FileWatcher] ドキュメント変更処理でエラーが発生しました:', error);
-      }
+      }, 'FileWatcher: ドキュメント変更処理');
     }, 150);
   }
 
@@ -265,18 +221,12 @@ export class FileWatcher {
    */
   private handleTemplateSave(document: vscode.TextDocument): void {
     if (!this.services) {return;}
-
-    try {
-      // DiagnosticManager経由でTemplate Parserのキャッシュを無効化
-      this.services.diagnosticManager.invalidateTemplateCache(document.fileName);
-      
-      // テンプレートファイル変更時は、プレビューも更新
-      if (this.services.webViewManager.hasPanel()) {
-        this.services.webViewManager.updatePreview();
+    ErrorHandler.withErrorHandling(async () => {
+      this.services!.diagnosticManager.invalidateTemplateCache(document.fileName);
+      if (this.services!.webViewManager.hasPanel()) {
+        await this.services!.webViewManager.updatePreview();
       }
-    } catch (error) {
-      console.error('[FileWatcher] テンプレートファイル保存処理でエラーが発生しました:', error);
-    }
+    }, 'FileWatcher: テンプレートファイル保存処理');
   }
 
   /**

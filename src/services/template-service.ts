@@ -22,7 +22,7 @@ export class TemplateService {
    * 新規テンプレート作成処理
    */
   async createTemplate(): Promise<void> {
-    const result = await this.errorHandler.executeSafely(async () => {
+    await this.errorHandler.withErrorHandling(async () => {
       const templateType = await this.selectTemplateType();
       if (!templateType) {return;}
 
@@ -34,18 +34,13 @@ export class TemplateService {
 
       this.errorHandler.showInfo('テンプレートファイルを作成しました。');
     }, 'テンプレート作成に失敗しました');
-
-    if (!result) {
-      // エラーハンドリングは既にErrorHandlerで処理済み
-      return;
-    }
   }
 
   /**
    * テンプレート挿入処理
    */
   async insertTemplate(): Promise<void> {
-    const result = await this.errorHandler.executeSafely(async () => {
+    await this.errorHandler.withErrorHandling(async () => {
       const activeEditor = vscode.window.activeTextEditor;
       if (!activeEditor) {
         this.errorHandler.showError('アクティブなエディタがありません。');
@@ -60,11 +55,6 @@ export class TemplateService {
 
       this.errorHandler.showInfo('テンプレートを挿入しました。');
     }, 'テンプレート挿入に失敗しました');
-
-    if (!result) {
-      // エラーハンドリングは既にErrorHandlerで処理済み
-      return;
-    }
   }
 
   /**

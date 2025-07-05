@@ -21,7 +21,7 @@ export class ExportService {
    * エクスポート処理を実行
    */
   async executeExport(lastTuiFile?: string): Promise<void> {
-    const result = await ErrorHandler.executeSafely(async () => {
+    await ErrorHandler.withErrorHandling(async () => {
       const filePath = await this.getTargetFilePath(lastTuiFile);
       if (!filePath) {return;}
 
@@ -35,11 +35,6 @@ export class ExportService {
       
       ErrorHandler.showInfo(`${format.toUpperCase()}ファイルをエクスポートしました: ${outputUri.fsPath}`);
     }, 'エクスポートに失敗しました');
-
-    if (!result) {
-      // エラーハンドリングは既にErrorHandlerで処理済み
-      return;
-    }
   }
 
   /**

@@ -21,21 +21,16 @@ export class SettingsService {
    * 設定画面を開く
    */
   async openSettings(): Promise<void> {
-    const result = await this.errorHandler.executeSafely(async () => {
+    await this.errorHandler.withErrorHandling(async () => {
       await vscode.commands.executeCommand('workbench.action.openSettings', 'textui-designer');
     }, '設定画面を開けませんでした');
-
-    if (!result) {
-      // エラーハンドリングは既にErrorHandlerで処理済み
-      return;
-    }
   }
 
   /**
    * 設定をリセット
    */
   async resetSettings(): Promise<void> {
-    const result = await this.errorHandler.executeSafely(async () => {
+    await this.errorHandler.withErrorHandling(async () => {
       const confirmed = await vscode.window.showWarningMessage(
         'すべての設定をデフォルト値にリセットしますか？',
         { modal: true },
@@ -47,18 +42,13 @@ export class SettingsService {
         this.errorHandler.showInfo('設定をリセットしました。');
       }
     }, '設定のリセットに失敗しました');
-
-    if (!result) {
-      // エラーハンドリングは既にErrorHandlerで処理済み
-      return;
-    }
   }
 
   /**
    * 現在の設定を表示
    */
   async showSettings(): Promise<void> {
-    const result = await this.errorHandler.executeSafely(async () => {
+    await this.errorHandler.withErrorHandling(async () => {
       const settings = this.getCurrentSettings();
       const content = this.formatSettings(settings);
       
@@ -69,28 +59,18 @@ export class SettingsService {
 
       await vscode.window.showTextDocument(document);
     }, '設定の表示に失敗しました');
-
-    if (!result) {
-      // エラーハンドリングは既にErrorHandlerで処理済み
-      return;
-    }
   }
 
   /**
    * 自動プレビュー設定を通知で表示
    */
   async showAutoPreviewSetting(): Promise<void> {
-    const result = await this.errorHandler.executeSafely(async () => {
+    await this.errorHandler.withErrorHandling(async () => {
       const autoPreviewEnabled = this.configManager.isAutoPreviewEnabled();
       const message = `自動プレビュー設定: ${autoPreviewEnabled ? 'ON' : 'OFF'}`;
       console.log(`[SettingsService] ${message}`);
       this.errorHandler.showInfo(message);
     }, '自動プレビュー設定の表示に失敗しました');
-
-    if (!result) {
-      // エラーハンドリングは既にErrorHandlerで処理済み
-      return;
-    }
   }
 
   /**

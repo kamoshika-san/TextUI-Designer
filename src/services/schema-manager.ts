@@ -13,6 +13,20 @@ import {
   SchemaLoaderConfig,
   SchemaRegistrationConfig
 } from './schema-loaders';
+import { ErrorHandler } from '../utils/error-handler';
+
+/**
+ * スキーマ管理サービスの依存関係インターフェース
+ */
+export interface ISchemaManagerDependencies {
+  templateSchemaCreator?: TemplateSchemaCreator;
+  pathResolver?: SchemaPathResolver;
+  schemaLoader?: CachedSchemaLoader<SchemaDefinition>;
+  templateSchemaLoader?: CachedSchemaLoader<SchemaDefinition>;
+  themeSchemaLoader?: CachedSchemaLoader<SchemaDefinition>;
+  registrar?: SchemaRegistrar;
+  errorHandler: typeof ErrorHandler;
+}
 
 /**
  * スキーマ管理サービス
@@ -26,25 +40,30 @@ export class SchemaManager implements ISchemaManager {
   private themeSchemaLoader: CachedSchemaLoader<SchemaDefinition>;
   private registrar: SchemaRegistrar;
   private templateSchemaCreator: TemplateSchemaCreator;
+  private errorHandler: typeof ErrorHandler;
 
-  constructor(context: vscode.ExtensionContext, loaderConfig?: SchemaLoaderConfig) {
+  constructor(
+    context: vscode.ExtensionContext, 
+    loaderConfig?: SchemaLoaderConfig,
+    dependencies?: ISchemaManagerDependencies
+  ) {
     this.context = context;
     
-    // 各コンポーネントの初期化
-    this.pathResolver = new SchemaPathResolver(context);
-    this.schemaLoader = new CachedSchemaLoader<SchemaDefinition>(loaderConfig);
-    this.templateSchemaLoader = new CachedSchemaLoader<SchemaDefinition>(loaderConfig);
-    this.themeSchemaLoader = new CachedSchemaLoader<SchemaDefinition>(loaderConfig);
-    this.registrar = new SchemaRegistrar();
-    this.templateSchemaCreator = new TemplateSchemaCreator();
-    
+    // 依存関係を注入またはデフォルトで初期化
+    this.pathResolver = dependencies?.pathResolver || new SchemaPathResolver(context);
+    this.schemaLoader = dependencies?.schemaLoader || new CachedSchemaLoader<SchemaDefinition>(loaderConfig);
+    this.templateSchemaLoader = dependencies?.templateSchemaLoader || new CachedSchemaLoader<SchemaDefinition>(loaderConfig);
+    this.themeSchemaLoader = dependencies?.themeSchemaLoader || new CachedSchemaLoader<SchemaDefinition>(loaderConfig);
+    this.registrar = dependencies?.registrar || new SchemaRegistrar();
+    this.templateSchemaCreator = dependencies?.templateSchemaCreator || new TemplateSchemaCreator();
+    this.errorHandler = dependencies?.errorHandler || ErrorHandler;
   }
 
   /**
    * スキーマを初期化し、VS Codeの設定に登録
    */
   async initialize(): Promise<void> {
-    try {
+    await this.errorHandler.withErrorHandling(async () => {
       const paths = this.pathResolver.resolvePaths();
       
       // テンプレートスキーマの生成
@@ -56,10 +75,7 @@ export class SchemaManager implements ISchemaManager {
       // スキーマの登録
       await this.registerSchemas();
       
-    } catch (error) {
-      console.error('[SchemaManager] 初期化に失敗しました:', error);
-      throw error;
-    }
+    }, 'SchemaManager: initialize');
   }
 
   /**
@@ -108,24 +124,30 @@ export class SchemaManager implements ISchemaManager {
    * スキーマの内容を読み込み（キャッシュ付き）
    */
   async loadSchema(): Promise<SchemaDefinition> {
-    const schemaPath = this.pathResolver.resolvePaths().schemaPath;
-    return await this.schemaLoader.load(schemaPath);
+    return await this.errorHandler.withErrorHandling(async () => {
+      const schemaPath = this.pathResolver.resolvePaths().schemaPath;
+      return await this.schemaLoader.load(schemaPath);
+    }, 'SchemaManager: loadSchema');
   }
 
   /**
    * テンプレートスキーマの内容を読み込み（キャッシュ付き）
    */
   async loadTemplateSchema(): Promise<SchemaDefinition> {
-    const templateSchemaPath = this.pathResolver.resolvePaths().templateSchemaPath;
-    return await this.templateSchemaLoader.load(templateSchemaPath);
+    return await this.errorHandler.withErrorHandling(async () => {
+      const templateSchemaPath = this.pathResolver.resolvePaths().templateSchemaPath;
+      return await this.templateSchemaLoader.load(templateSchemaPath);
+    }, 'SchemaManager: loadTemplateSchema');
   }
 
   /**
    * テーマスキーマの内容を読み込み（キャッシュ付き）
    */
   async loadThemeSchema(): Promise<SchemaDefinition> {
-    const themeSchemaPath = this.pathResolver.resolvePaths().themeSchemaPath;
-    return await this.themeSchemaLoader.load(themeSchemaPath);
+    return await this.errorHandler.withErrorHandling(async () => {
+      const themeSchemaPath = this.pathResolver.resolvePaths().themeSchemaPath;
+      return await this.themeSchemaLoader.load(themeSchemaPath);
+    }, 'SchemaManager: loadThemeSchema');
   }
 
   /**
@@ -145,9 +167,10 @@ export class SchemaManager implements ISchemaManager {
    */
   async reinitialize(): Promise<void> {
     
-    this.clearCache();
-    await this.cleanup();
-    await this.initialize();
+    this.errorHandler.withErrorHandlingSync(() => {
+      this.clearCache();
+      this.initialize();
+    }, 'SchemaManager: reinitialize');
     
   }
 
@@ -176,9 +199,11 @@ export class SchemaManager implements ISchemaManager {
    * キャッシュをクリア
    */
   clearCache(): void {
-    this.schemaLoader.clearCache();
-    this.templateSchemaLoader.clearCache();
-    this.themeSchemaLoader.clearCache();
+    this.errorHandler.withErrorHandlingSync(() => {
+      this.schemaLoader.clearCache();
+      this.templateSchemaLoader.clearCache();
+      this.themeSchemaLoader.clearCache();
+    }, 'SchemaManager: clearCache');
   }
 
   /**
