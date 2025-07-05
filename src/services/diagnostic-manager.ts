@@ -23,7 +23,7 @@ export class DiagnosticManager {
   private templateParser: TemplateParser;
   private diagnosticTimeout: NodeJS.Timeout | null = null;
   private readonly DEBOUNCE_DELAY = 300; // 300ms
-  
+
   constructor(schemaManager: ISchemaManager) {
     this.diagnosticCollection = vscode.languages.createDiagnosticCollection('textui-designer');
     this.templateParser = new TemplateParser();
