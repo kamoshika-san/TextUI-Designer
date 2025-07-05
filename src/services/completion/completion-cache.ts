@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { OptimizedPerformanceMonitor } from '../../utils/performance-monitor';
 
 interface CachedCompletion {
   items: vscode.CompletionItem[];
@@ -13,10 +14,12 @@ export class CompletionCache {
   private cache = new Map<string, CachedCompletion>();
   private readonly ttl: number;
   private readonly maxSize: number;
+  private performanceMonitor: OptimizedPerformanceMonitor;
 
   constructor(ttl: number = 10000, maxSize: number = 100) {
     this.ttl = ttl;
     this.maxSize = maxSize;
+    this.performanceMonitor = OptimizedPerformanceMonitor.getInstance();
   }
 
   /**
@@ -24,14 +27,22 @@ export class CompletionCache {
    */
   get(key: string): vscode.CompletionItem[] | null {
     const cached = this.cache.get(key);
-    if (!cached) return null;
+    if (!cached) {
+      // キャッシュミスを記録
+      this.performanceMonitor.recordCacheHit(false);
+      return null;
+    }
 
     const now = Date.now();
     if (now - cached.timestamp > this.ttl) {
       this.cache.delete(key);
+      // 期限切れもキャッシュミスとして記録
+      this.performanceMonitor.recordCacheHit(false);
       return null;
     }
 
+    // キャッシュヒットを記録
+    this.performanceMonitor.recordCacheHit(true);
     return cached.items;
   }
 
@@ -111,10 +122,13 @@ export class CompletionCache {
    * キャッシュ統計を取得
    */
   getStats(): { size: number; maxSize: number; hitRate: number } {
+    // PerformanceMonitorからキャッシュヒット率を取得
+    const metrics = this.performanceMonitor.getMetrics();
+    
     return {
       size: this.cache.size,
       maxSize: this.maxSize,
-      hitRate: 0 // TODO: ヒット率の計算を実装
+      hitRate: metrics.cacheHitRate
     };
   }
 } 
