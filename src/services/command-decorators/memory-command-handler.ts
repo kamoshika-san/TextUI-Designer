@@ -20,8 +20,9 @@ export class MemoryCommandHandler {
     const report = memoryTracker.generateMemoryReport();
     
     // 新しいドキュメントでレポートを表示
+    const reportContent = this.formatMemoryReport(report);
     const doc = await vscode.workspace.openTextDocument({
-      content: report,
+      content: reportContent,
       language: 'markdown'
     });
     await vscode.window.showTextDocument(doc);
@@ -65,5 +66,46 @@ export class MemoryCommandHandler {
     
     // メモリトラッカーを有効化
     memoryTracker.setEnabled(true);
+  }
+
+  /**
+   * メモリレポートをMarkdown形式にフォーマット
+   */
+  private formatMemoryReport(report: any): string {
+    const { metrics, recommendations, details }: {
+      metrics: any;
+      recommendations: string[];
+      details: Record<string, { objectCount: number; totalSizeMB: number; averageSizeKB: number }>;
+    } = report;
+    
+    let content = '# TextUI Designer メモリレポート\n\n';
+    
+    // メトリクス
+    content += '## メモリ使用量\n\n';
+    content += `- **総メモリ使用量**: ${metrics.totalTrackedMemory.toFixed(2)} MB\n`;
+    content += `- **WebView**: ${metrics.webviewMemory.toFixed(2)} MB\n`;
+    content += `- **YAMLキャッシュ**: ${metrics.yamlCacheMemory.toFixed(2)} MB\n`;
+    content += `- **診断システム**: ${metrics.diagnosticsMemory.toFixed(2)} MB\n`;
+    content += `- **レンダリングキャッシュ**: ${metrics.renderCacheMemory.toFixed(2)} MB\n`;
+    content += `- **測定オーバーヘッド**: ${metrics.measurementOverhead.toFixed(2)} ms\n\n`;
+    
+    // 詳細情報
+    content += '## 詳細情報\n\n';
+    Object.entries(details).forEach(([category, detail]) => {
+      content += `### ${category}\n`;
+      content += `- オブジェクト数: ${detail.objectCount}\n`;
+      content += `- 総サイズ: ${detail.totalSizeMB.toFixed(2)} MB\n`;
+      content += `- 平均サイズ: ${detail.averageSizeKB.toFixed(2)} KB\n\n`;
+    });
+    
+    // 推奨事項
+    if (recommendations.length > 0) {
+      content += '## 推奨事項\n\n';
+      recommendations.forEach((rec: string) => {
+        content += `- ${rec}\n`;
+      });
+    }
+    
+    return content;
   }
 } 
