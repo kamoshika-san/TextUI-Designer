@@ -1,214 +1,113 @@
 import * as vscode from 'vscode';
 import { ErrorHandler } from '../utils/error-handler';
+import { RefactoredTemplateParser } from './template-parser/refactored-template-parser';
+import { logger } from '../utils/logger';
 
 /**
- * テンプレート種別の選択肢
- */
-interface TemplateTypeOption extends vscode.QuickPickItem {
-  value: string;
-}
-
-/**
- * テンプレート管理を担当するサービス
+ * テンプレートサービス
+ * テンプレートパーサーの管理とテンプレート処理を担当
  */
 export class TemplateService {
-  private errorHandler: typeof ErrorHandler;
+  private parser: RefactoredTemplateParser;
+  private isInitialized: boolean = false;
 
-  constructor(errorHandler: typeof ErrorHandler = ErrorHandler) {
-    this.errorHandler = errorHandler;
+  constructor() {
+    this.parser = new RefactoredTemplateParser();
   }
 
   /**
-   * 新規テンプレート作成処理
+   * サービスを初期化
    */
-  async createTemplate(): Promise<void> {
-    await this.errorHandler.withErrorHandling(async () => {
-      const templateType = await this.selectTemplateType();
-      if (!templateType) {return;}
+  async initialize(): Promise<void> {
+    if (this.isInitialized) {
+      return;
+    }
 
-      const uri = await this.selectSaveLocation();
-      if (!uri) {return;}
-
-      const templateContent = this.generateTemplateContent(templateType.value);
-      await this.createTemplateFile(uri, templateContent);
-
-      this.errorHandler.showInfo('テンプレートファイルを作成しました。');
-    }, 'テンプレート作成に失敗しました');
-  }
-
-  /**
-   * テンプレート挿入処理
-   */
-  async insertTemplate(): Promise<void> {
-    await this.errorHandler.withErrorHandling(async () => {
-      const activeEditor = vscode.window.activeTextEditor;
-      if (!activeEditor) {
-        this.errorHandler.showError('アクティブなエディタがありません。');
-        return;
-      }
-
-      const templateUri = await this.selectTemplateFile();
-      if (!templateUri) {return;}
-
-      const templateContent = await this.loadTemplateContent(templateUri);
-      await this.insertTemplateContent(activeEditor, templateContent);
-
-      this.errorHandler.showInfo('テンプレートを挿入しました。');
-    }, 'テンプレート挿入に失敗しました');
-  }
-
-  /**
-   * テンプレート種別を選択
-   */
-  private async selectTemplateType(): Promise<TemplateTypeOption | undefined> {
-    return await vscode.window.showQuickPick([
-      { label: 'フォーム', value: 'form' },
-      { label: '一覧', value: 'list' },
-      { label: '空', value: 'empty' }
-    ], {
-      placeHolder: 'テンプレート種別を選択してください'
-    });
-  }
-
-  /**
-   * 保存先を選択
-   */
-  private async selectSaveLocation(): Promise<vscode.Uri | undefined> {
-    return await vscode.window.showSaveDialog({
-      filters: {
-        'YAML Template': ['template.yml', 'template.yaml']
-      }
-    });
-  }
-
-  /**
-   * テンプレートファイルを選択
-   */
-  private async selectTemplateFile(): Promise<vscode.Uri | undefined> {
-    const uris = await vscode.window.showOpenDialog({
-      canSelectFiles: true,
-      canSelectFolders: false,
-      canSelectMany: false,
-      filters: {
-        'YAML Template': ['template.yml', 'template.yaml']
-      }
-    });
-
-    return uris && uris.length > 0 ? uris[0] : undefined;
-  }
-
-  /**
-   * テンプレートファイルを作成
-   */
-  private async createTemplateFile(uri: vscode.Uri, content: string): Promise<void> {
-    const document = await vscode.workspace.openTextDocument({
-      content,
-      language: 'yaml'
-    });
-
-    await vscode.window.showTextDocument(document);
-    await document.save();
-  }
-
-  /**
-   * テンプレート内容を読み込み
-   */
-  private async loadTemplateContent(uri: vscode.Uri): Promise<string> {
-    const document = await vscode.workspace.openTextDocument(uri);
-    return document.getText();
-  }
-
-  /**
-   * テンプレート内容を挿入
-   */
-  private async insertTemplateContent(
-    editor: vscode.TextEditor, 
-    content: string
-  ): Promise<void> {
-    await editor.edit(editBuilder => {
-      const position = editor.selection.active;
-      editBuilder.insert(position, content);
-    });
-  }
-
-  /**
-   * テンプレート内容を生成
-   */
-  private generateTemplateContent(type: string): string {
-    switch (type) {
-      case 'form':
-        return this.getFormTemplate();
-      case 'list':
-        return this.getListTemplate();
-      case 'empty':
-      default:
-        return this.getEmptyTemplate();
+    try {
+      logger.debug('TemplateServiceを初期化中...');
+      // 初期化処理（必要に応じて追加）
+      this.isInitialized = true;
+      logger.debug('TemplateServiceの初期化完了');
+    } catch (error) {
+      logger.error('TemplateServiceの初期化に失敗しました:', error);
+      throw error;
     }
   }
 
   /**
-   * フォームテンプレート
+   * YAMLコンテンツをテンプレート展開付きでパース
    */
-  private getFormTemplate(): string {
-    return `- Form:
-    id: myForm
-    fields:
-      - Input:
-          label: ユーザー名
-          name: username
-          type: text
-          required: true
-      - Input:
-          label: メールアドレス
-          name: email
-          type: email
-          required: true
-      - Checkbox:
-          label: 利用規約に同意する
-          name: agree
-          required: true
-    actions:
-      - Button:
-          kind: submit
-          label: 送信
-          submit: true`;
+  async parseWithTemplates(yamlContent: string, basePath: string): Promise<any> {
+    return await ErrorHandler.withErrorHandling(async () => {
+      return await this.parser.parseWithTemplates(yamlContent, basePath);
+    }, 'テンプレート処理');
   }
 
   /**
-   * 一覧テンプレート
+   * キャッシュ統計を取得
    */
-  private getListTemplate(): string {
-    return `- Container:
-    layout: vertical
-    components:
-      - Text:
-          variant: h2
-          value: "一覧"
-      - Divider:
-          orientation: horizontal
-      - Text:
-          variant: p
-          value: "リストアイテム1"
-      - Text:
-          variant: p
-          value: "リストアイテム2"
-      - Text:
-          variant: p
-          value: "リストアイテム3"`;
+  getCacheStats(): any {
+    return this.parser.getCacheStats();
   }
 
   /**
-   * 空テンプレート
+   * 特定のテンプレートファイルのキャッシュを無効化
    */
-  private getEmptyTemplate(): string {
-    return `- Container:
-    layout: vertical
-    components:
-      - Text:
-          variant: h1
-          value: "タイトル"
-      - Text:
-          variant: p
-          value: "コンテンツをここに追加してください"`;
+  invalidateTemplateCache(filePath: string): void {
+    this.parser.invalidateTemplateCache(filePath);
+  }
+
+  /**
+   * キャッシュを完全にクリア
+   */
+  clearCache(): void {
+    this.parser.clearCache();
+  }
+
+  /**
+   * テンプレートパスが有効かどうかを検証
+   */
+  async validateTemplatePath(templatePath: string, basePath: string): Promise<boolean> {
+    return await this.parser.validateTemplatePath(templatePath, basePath);
+  }
+
+  /**
+   * 循環参照を検出
+   */
+  detectCircularReferences(content: string, basePath: string): string[] {
+    return this.parser.detectCircularReferences(content, basePath);
+  }
+
+  /**
+   * テンプレートを作成（コマンド用）
+   */
+  async createTemplate(): Promise<void> {
+    return await ErrorHandler.withErrorHandling(async () => {
+      // テンプレート作成の実装
+      logger.info('テンプレート作成機能は未実装です');
+      vscode.window.showInformationMessage('テンプレート作成機能は開発中です');
+    }, 'テンプレート作成');
+  }
+
+  /**
+   * テンプレートを挿入（コマンド用）
+   */
+  async insertTemplate(): Promise<void> {
+    return await ErrorHandler.withErrorHandling(async () => {
+      // テンプレート挿入の実装
+      logger.info('テンプレート挿入機能は未実装です');
+      vscode.window.showInformationMessage('テンプレート挿入機能は開発中です');
+    }, 'テンプレート挿入');
+  }
+
+  /**
+   * サービスを破棄
+   */
+  dispose(): void {
+    if (this.parser) {
+      this.parser.dispose();
+    }
+    this.isInitialized = false;
+    logger.debug('TemplateServiceを破棄しました');
   }
 } 
