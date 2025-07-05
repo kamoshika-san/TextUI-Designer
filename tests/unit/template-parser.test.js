@@ -41,6 +41,7 @@ const expect = chai.expect;
 const template_parser_1 = require("../../out/src/services/template-parser.js");
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
+const { removeDirectoryRecursive } = require('../utils/test-utils');
 (0, mocha_1.describe)('TemplateParser', () => {
     const baseDir = path.resolve(__dirname, '../fixtures');
     const parser = new template_parser_1.TemplateParser();

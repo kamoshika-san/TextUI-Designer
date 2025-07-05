@@ -7,6 +7,7 @@
 const assert = require('assert');
 const path = require('path');
 const fs = require('fs');
+const { removeDirectoryRecursive } = require('../utils/test-utils');
 
 describe('テーマ切り替え機能 結合テスト', () => {
   let webviewManager;
@@ -99,20 +100,7 @@ describe('テーマ切り替え機能 結合テスト', () => {
     if (fs.existsSync(testWorkspaceDir)) {
       try {
         // 再帰的にディレクトリを削除
-        const rimraf = (dir) => {
-          if (fs.existsSync(dir)) {
-            fs.readdirSync(dir).forEach((file) => {
-              const curPath = path.join(dir, file);
-              if (fs.lstatSync(curPath).isDirectory()) {
-                rimraf(curPath);
-              } else {
-                fs.unlinkSync(curPath);
-              }
-            });
-            fs.rmdirSync(dir);
-          }
-        };
-        rimraf(testWorkspaceDir);
+        removeDirectoryRecursive(testWorkspaceDir);
       } catch (error) {
         console.warn('テストディレクトリ削除に失敗:', error.message);
       }

@@ -3,6 +3,7 @@ const { describe, it, beforeEach, afterEach } = require('mocha');
 const fs = require('fs');
 const path = require('path');
 const { TemplateCacheService } = require('../../out/services/template-cache');
+const { removeDirectoryRecursive } = require('../utils/test-utils');
 
 describe('TemplateCacheService', () => {
   let cacheService;
@@ -72,19 +73,8 @@ describe('TemplateCacheService', () => {
       cacheService.dispose();
     }
 
-    // テストファイルを削除
-    try {
-      for (const file of Object.values(testFiles)) {
-        if (fs.existsSync(file)) {
-          fs.unlinkSync(file);
-        }
-      }
-      if (fs.existsSync(testDir)) {
-        fs.rmdirSync(testDir);
-      }
-    } catch (error) {
-      console.warn('テストファイルの削除に失敗しました:', error);
-    }
+    // テストディレクトリを再帰的に削除（堅牢な削除関数を使用）
+    removeDirectoryRecursive(testDir);
   });
 
   describe('基本的なキャッシュ機能', () => {

@@ -3,13 +3,18 @@
  */
 
 class TestPerformanceMonitor {
-  constructor(mockVscode) {
-    this.vscode = mockVscode;
+  constructor() {
+    this.outputChannel = (global.vscode && global.vscode.window && global.vscode.window.createOutputChannel)
+      ? global.vscode.window.createOutputChannel('TextUI Designer')
+      : {
+          appendLine: () => {},
+          show: () => {},
+          clear: () => {}
+        };
     this.metrics = new Map();
     this.timers = new Map();
     this.cacheHits = 0;
     this.cacheMisses = 0;
-    this.outputChannel = mockVscode.window.createOutputChannel('TextUI Designer Performance');
     this.disposed = false;
   }
 
@@ -216,8 +221,7 @@ class TestPerformanceMonitor {
    */
   static _getInstance() {
     if (!TestPerformanceMonitor._instance) {
-      const mockVscode = require('./vscode-mock');
-      TestPerformanceMonitor._instance = new TestPerformanceMonitor(mockVscode);
+      TestPerformanceMonitor._instance = new TestPerformanceMonitor();
     }
     return TestPerformanceMonitor._instance;
   }

@@ -14,6 +14,22 @@ class CommandManagerFactory {
       ...options
     };
 
+    // VS Code APIのモックを拡張
+    const mockVscode = {
+      ...vscode,
+      languages: {
+        registerDefinitionProvider: sinon.stub().returns({ dispose: () => {} }),
+        registerCompletionItemProvider: sinon.stub().returns({ dispose: () => {} }),
+        registerHoverProvider: sinon.stub().returns({ dispose: () => {} })
+      }
+    };
+
+    // DefinitionProviderのモック
+    const mockDefinitionProvider = {
+      provideDefinition: sinon.stub().returns([]),
+      dispose: sinon.stub()
+    };
+
     // WebViewManagerのモック
     const mockWebViewManager = {
       openPreview: sinon.stub().resolves(),
@@ -123,29 +139,8 @@ class CommandManagerFactory {
       })
     };
 
-    // Module requireフックを設定
-    const Module = require('module');
-    const originalRequire = Module.prototype.require;
+    // setup.jsで設定されたglobal.vscodeを使用（Module requireフックは削除）
     
-    Module.prototype.require = function(id) {
-      if (id === 'vscode') {
-        return vscode;
-      }
-      if (id.includes('error-handler')) {
-        return { ErrorHandler: mockErrorHandler };
-      }
-      if (id.includes('config-manager')) {
-        return { ConfigManager: mockConfigManager };
-      }
-      if (id.includes('performance-monitor')) {
-        return { PerformanceMonitor: mockPerformanceMonitor };
-      }
-      if (id.includes('textui-memory-tracker')) {
-        return { TextUIMemoryTracker: mockTextUIMemoryTracker };
-      }
-      return originalRequire.apply(this, arguments);
-    };
-
     // CommandManagerを作成
     const { CommandManager } = require('../../out/services/command-manager.js');
     
@@ -162,7 +157,8 @@ class CommandManagerFactory {
       mockExportService,
       mockTemplateService,
       mockSettingsService,
-      mockSchemaManager
+      mockSchemaManager,
+      mockDefinitionProvider
     );
 
     // テスト用のヘルパーメソッドを追加
@@ -172,11 +168,13 @@ class CommandManagerFactory {
       mockTemplateService,
       mockSettingsService,
       mockSchemaManager,
+      mockDefinitionProvider,
       mockErrorHandler,
       mockConfigManager,
       mockPerformanceMonitor,
       mockTextUIMemoryTracker,
       mockContext,
+      mockVscode,
       resetAllMocks: () => {
         sinon.resetHistory();
         // 各モックのリセット
@@ -195,18 +193,28 @@ class CommandManagerFactory {
         Object.values(mockSchemaManager).forEach(stub => {
           if (typeof stub.resetHistory === 'function') stub.resetHistory();
         });
+        Object.values(mockDefinitionProvider).forEach(stub => {
+          if (typeof stub.resetHistory === 'function') stub.resetHistory();
+        });
         Object.values(mockErrorHandler).forEach(stub => {
           if (typeof stub.resetHistory === 'function') stub.resetHistory();
         });
         Object.values(mockConfigManager).forEach(stub => {
           if (typeof stub.resetHistory === 'function') stub.resetHistory();
         });
+        Object.values(mockPerformanceMonitor).forEach(stub => {
+          if (typeof stub.resetHistory === 'function') stub.resetHistory();
+        });
         Object.values(mockTextUIMemoryTracker).forEach(stub => {
+          if (typeof stub.resetHistory === 'function') stub.resetHistory();
+        });
+        // languages APIのリセット
+        Object.values(mockVscode.languages).forEach(stub => {
           if (typeof stub.resetHistory === 'function') stub.resetHistory();
         });
       },
       restoreRequire: () => {
-        Module.prototype.require = originalRequire;
+        // Module.prototype.require = originalRequire; // This line is removed
       }
     };
 

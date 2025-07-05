@@ -3,10 +3,17 @@
  */
 
 class TestErrorHandler {
-  constructor(mockVscode) {
-    this.vscode = mockVscode;
+  constructor() {
     this.errors = [];
-    this.outputChannel = mockVscode.window.createOutputChannel('TextUI Designer');
+    this.outputChannel = (global.vscode && global.vscode.window && global.vscode.window.createOutputChannel)
+      ? global.vscode.window.createOutputChannel('TextUI Designer')
+      : {
+          appendLine: () => {},
+          show: () => {},
+          showErrorMessage: () => {},
+          showWarningMessage: () => {},
+          clear: () => {}
+        };
   }
 
   /**
@@ -67,7 +74,7 @@ class TestErrorHandler {
    */
   static showError(message, actions = []) {
     const instance = TestErrorHandler._getInstance();
-    instance.vscode.window.showErrorMessage(message, ...actions);
+    instance.outputChannel.showErrorMessage(message, ...actions);
     return TestErrorHandler.logError(new Error(message), 'showError');
   }
 
@@ -76,7 +83,7 @@ class TestErrorHandler {
    */
   static showWarning(message, actions = []) {
     const instance = TestErrorHandler._getInstance();
-    instance.vscode.window.showWarningMessage(message, ...actions);
+    instance.outputChannel.showWarningMessage(message, ...actions);
     return TestErrorHandler.logWarning(message, 'showWarning');
   }
 
@@ -132,8 +139,7 @@ class TestErrorHandler {
    */
   static _getInstance() {
     if (!TestErrorHandler._instance) {
-      const mockVscode = require('./vscode-mock');
-      TestErrorHandler._instance = new TestErrorHandler(mockVscode);
+      TestErrorHandler._instance = new TestErrorHandler();
     }
     return TestErrorHandler._instance;
   }

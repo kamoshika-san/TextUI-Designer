@@ -530,10 +530,143 @@ function validateHtml(html, expectedPatterns = [], unexpectedPatterns = []) {
   }
 }
 
+/**
+ * テスト用のユーティリティ関数
+ */
+
+/**
+ * ディレクトリとその内容を再帰的に削除する
+ * Windows環境でのファイルハンドル解放の遅延に対応
+ */
+function removeDirectoryRecursive(dirPath, maxRetries = 3, retryDelay = 100) {
+  if (!fs.existsSync(dirPath)) {
+    return;
+  }
+
+  function removeWithRetry(currentPath, retriesLeft) {
+    try {
+      const stats = fs.statSync(currentPath);
+      
+      if (stats.isDirectory()) {
+        // ディレクトリの場合は、まず内容を削除
+        const files = fs.readdirSync(currentPath);
+        for (const file of files) {
+          const filePath = path.join(currentPath, file);
+          removeWithRetry(filePath, retriesLeft);
+        }
+        
+        // 空になったディレクトリを削除
+        fs.rmdirSync(currentPath);
+      } else {
+        // ファイルの場合は直接削除
+        fs.unlinkSync(currentPath);
+      }
+    } catch (error) {
+      if (retriesLeft > 0 && (error.code === 'ENOTEMPTY' || error.code === 'EBUSY' || error.code === 'EACCES')) {
+        // リトライ可能なエラーの場合、少し待ってから再試行
+        setTimeout(() => {
+          removeWithRetry(currentPath, retriesLeft - 1);
+        }, retryDelay);
+      } else {
+        // リトライ回数が尽きたか、リトライ不可能なエラーの場合
+        console.warn(`ファイル/ディレクトリの削除に失敗しました: ${currentPath}`, error.message);
+      }
+    }
+  }
+
+  removeWithRetry(dirPath, maxRetries);
+}
+
+/**
+ * テスト用ディレクトリを作成し、クリーンアップ関数を返す
+ */
+function createTestDirectory(baseDir, dirName) {
+  const testDir = path.join(baseDir, dirName);
+  
+  if (!fs.existsSync(testDir)) {
+    fs.mkdirSync(testDir, { recursive: true });
+  }
+  
+  return {
+    path: testDir,
+    cleanup: () => removeDirectoryRecursive(testDir)
+  };
+}
+
+/**
+ * テスト用ファイルを作成
+ */
+function createTestFile(filePath, content) {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  fs.writeFileSync(filePath, content);
+}
+
+/**
+ * テスト用ファイルを削除
+ */
+function removeTestFile(filePath) {
+  if (fs.existsSync(filePath)) {
+    try {
+      fs.unlinkSync(filePath);
+    } catch (error) {
+      console.warn(`テストファイルの削除に失敗しました: ${filePath}`, error.message);
+    }
+  }
+}
+
+/**
+ * テスト用の一時ファイルを作成し、クリーンアップ関数を返す
+ */
+function createTempFile(dir, filename, content) {
+  const filePath = path.join(dir, filename);
+  createTestFile(filePath, content);
+  
+  return {
+    path: filePath,
+    cleanup: () => removeTestFile(filePath)
+  };
+}
+
+/**
+ * テスト環境かどうかを判定
+ */
+function isTestEnvironment() {
+  return process.env.NODE_ENV === 'test' || 
+         process.env.MOCHA_RUNNING === 'true' ||
+         process.argv.some(arg => arg.includes('mocha') || arg.includes('test'));
+}
+
+/**
+ * テスト用のモックオブジェクトを作成
+ */
+function createMockObject(methods = {}) {
+  return new Proxy({}, {
+    get(target, prop) {
+      if (prop in methods) {
+        return methods[prop];
+      }
+      if (typeof prop === 'string' && !prop.startsWith('_')) {
+        return () => Promise.resolve();
+      }
+      return undefined;
+    }
+  });
+}
+
 module.exports = {
   TestHtmlExporter,
   loadYamlFile,
   saveHtmlFile,
   containsPattern,
-  validateHtml
+  validateHtml,
+  removeDirectoryRecursive,
+  createTestDirectory,
+  createTestFile,
+  removeTestFile,
+  createTempFile,
+  isTestEnvironment,
+  createMockObject
 }; 

@@ -10,6 +10,7 @@ global.vscode = global.vscode || {};
 const assert = require('assert');
 const path = require('path');
 const fs = require('fs');
+const { removeDirectoryRecursive } = require('../utils/test-utils');
 
 describe('WebViewManager 単体テスト', () => {
   let webviewManager;
@@ -216,7 +217,7 @@ describe('WebViewManager 単体テスト', () => {
          try {
            if (fs.existsSync(themeFile1)) fs.unlinkSync(themeFile1);
            if (fs.existsSync(themeFile2)) fs.unlinkSync(themeFile2);
-           if (fs.existsSync(themeDir)) fs.rmdirSync(themeDir);
+           if (fs.existsSync(themeDir)) removeDirectoryRecursive(themeDir);
          } catch (error) {
            // クリーンアップエラーは無視
          }

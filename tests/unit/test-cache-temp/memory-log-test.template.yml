@@ -1,4 +1,0 @@
-name: test
-components:
-  - type: text
-    text: "Memory Log Test"

@@ -6,6 +6,7 @@ const expect: any = chai.expect;
 import { TemplateParser, TemplateException } from '../../src/services/template-parser';
 import * as fs from 'fs';
 import * as path from 'path';
+import { removeDirectoryRecursive } from '../utils/test-utils';
 
 describe('TemplateParser', () => {
   const baseDir = path.resolve(__dirname, '../fixtures');
@@ -14,9 +15,9 @@ describe('TemplateParser', () => {
   before(() => {
     console.log('TemplateParser test setup - creating test files');
     // テスト用テンプレートファイルを作成
-    fs.writeFileSync(path.join(baseDir, 'simple.template.yml'), `- Text:\\n    variant: h1\\n    value: \"{{ $params.title }}\"`);
-    fs.writeFileSync(path.join(baseDir, 'circular1.template.yml'), `- $include:\\n    template: \"circular2.template.yml\"`);
-    fs.writeFileSync(path.join(baseDir, 'circular2.template.yml'), `- $include:\\n    template: \"circular1.template.yml\"`);
+    fs.writeFileSync(path.join(baseDir, 'simple.template.yml'), `- Text:\n    variant: h1\n    value: "{{ $params.title }}"`);
+    fs.writeFileSync(path.join(baseDir, 'circular1.template.yml'), `- $include:\n    template: "circular2.template.yml"`);
+    fs.writeFileSync(path.join(baseDir, 'circular2.template.yml'), `- $include:\n    template: "circular1.template.yml"`);
     
     // テスト用のtemplatesディレクトリを作成
     const templatesDir = path.join(baseDir, 'templates');
@@ -25,7 +26,7 @@ describe('TemplateParser', () => {
     }
     
     // form.template.ymlを作成
-    fs.writeFileSync(path.join(templatesDir, 'form.template.yml'), `- Form:\\n    id: \"{{ $params.formId }}\"\\n    fields:\\n      - Input:\\n          label: \"{{ $params.nameLabel }}\"\\n          name: name\\n          type: text\\n          required: true\\n          placeholder: \"{{ $params.namePlaceholder }}\"\\n      - Input:\\n          label: \"{{ $params.emailLabel }}\"\\n          name: email\\n          type: email\\n          required: true\\n          placeholder: \"{{ $params.emailPlaceholder }}\"\\n      - Checkbox:\\n          label: \"{{ $params.agreeLabel }}\"\\n          name: agree\\n          required: true\\n    actions:\\n      - Button:\\n          kind: submit\\n          label: \"{{ $params.submitLabel }}\"\\n          submit: true`);
+    fs.writeFileSync(path.join(templatesDir, 'form.template.yml'), `- Form:\n    id: "{{ $params.formId }}"\n    fields:\n      - Input:\n          label: "{{ $params.nameLabel }}"\n          name: name\n          type: text\n          required: true\n          placeholder: "{{ $params.namePlaceholder }}"\n      - Input:\n          label: "{{ $params.emailLabel }}"\n          name: email\n          type: email\n          required: true\n          placeholder: "{{ $params.emailPlaceholder }}"\n      - Checkbox:\n          label: "{{ $params.agreeLabel }}"\n          name: agree\n          required: true\n    actions:\n      - Button:\n          kind: submit\n          label: "{{ $params.submitLabel }}"\n          submit: true`);
     
     console.log('TemplateParser test setup - test files created');
   });
@@ -37,6 +38,10 @@ describe('TemplateParser', () => {
       fs.unlinkSync(path.join(baseDir, 'simple.template.yml'));
       fs.unlinkSync(path.join(baseDir, 'circular1.template.yml'));
       fs.unlinkSync(path.join(baseDir, 'circular2.template.yml'));
+      
+      // templatesディレクトリを再帰的に削除
+      const templatesDir = path.join(baseDir, 'templates');
+      removeDirectoryRecursive(templatesDir);
     } catch (error) {
       console.log('Error during cleanup:', error);
     }
