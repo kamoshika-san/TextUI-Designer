@@ -20,9 +20,6 @@ export class OptimizedPerformanceMonitor {
     this.metricsCollector = new PerformanceMetricsCollector(this.bufferSize);
     
     this.startPeriodicTasks();
-    
-    // デバッグ用ログ
-    console.log(`[OptimizedPerformanceMonitor] 初期化完了 - 有効: ${this.isEnabled}, バッファサイズ: ${this.bufferSize}`);
   }
 
   static getInstance(): OptimizedPerformanceMonitor {
@@ -55,7 +52,7 @@ export class OptimizedPerformanceMonitor {
 
     // 開発モードではコンソールにログ出力
     if (this.isDevelopmentMode()) {
-      console.log(`[Performance] ${type}: ${duration}ms`, metadata);
+      // デバッグログを削除
     }
   }
 
@@ -241,7 +238,6 @@ ${this.generateRecommendations(metrics)}
    */
   setEnabled(enabled: boolean): void {
     this.isEnabled = enabled;
-    console.log(`[OptimizedPerformanceMonitor] パフォーマンス監視を${enabled ? '有効' : '無効'}にしました`);
   }
 
   /**
@@ -249,7 +245,6 @@ ${this.generateRecommendations(metrics)}
    */
   forceEnable(): void {
     this.isEnabled = true;
-    console.log('[OptimizedPerformanceMonitor] パフォーマンス監視を強制的に有効化しました');
   }
 
   /**
@@ -258,15 +253,12 @@ ${this.generateRecommendations(metrics)}
   adjustBufferSize(newSize: number): void {
     this.bufferSize = newSize;
     this.metricsCollector.adjustBufferSize(newSize);
-    console.log(`[OptimizedPerformanceMonitor] バッファーサイズを${newSize}に調整しました`);
   }
 
   /**
    * テスト用のサンプルイベントを生成
    */
   generateSampleEvents(): void {
-    console.log('[OptimizedPerformanceMonitor] サンプルイベントを生成中...');
-    
     // レンダリングイベント
     this.metricsCollector.recordRenderEvent(150, { component: 'Button' });
     this.metricsCollector.recordRenderEvent(200, { component: 'Form' });
@@ -286,13 +278,6 @@ ${this.generateRecommendations(metrics)}
     // エクスポートイベント
     this.metricsCollector.recordExportEvent(500, { format: 'html' });
     this.metricsCollector.recordExportEvent(300, { format: 'react' });
-    
-    const stats = this.getDetailedStats();
-    console.log('[OptimizedPerformanceMonitor] サンプルイベント生成完了');
-    console.log(`- レンダリング回数: ${stats.render.count}`);
-    console.log(`- エクスポート回数: ${stats.export.count}`);
-    console.log(`- キャッシュアクセス: ${stats.cache.total}`);
-    console.log(`- 総操作数: ${stats.operations.total}`);
   }
 
   /**
@@ -344,7 +329,6 @@ ${this.generateRecommendations(metrics)}
   _setTestMetrics(metrics: PerformanceMetrics): void {
     // テスト用のメトリクス設定は新しいアーキテクチャでは不要
     // 実際のデータ投入でテストを行う
-    console.warn('[OptimizedPerformanceMonitor] _setTestMetrics は非推奨です。実際のデータ投入でテストしてください。');
   }
 
   /**

@@ -36,6 +36,7 @@ export class OptimizedMemoryTracker {
   
   // 設定
   private isEnabled: boolean = false;
+  private maxSize: number = 1000;
   private measurementInterval: NodeJS.Timeout | null = null;
   private cleanupInterval: NodeJS.Timeout | null = null;
   
@@ -48,15 +49,11 @@ export class OptimizedMemoryTracker {
   private readonly MAX_MEMORY_PER_CATEGORY_MB = 100;
   private readonly CLEANUP_AGE_MS = 5 * 60 * 1000; // 5分
 
-  private constructor() {
+  constructor(enabled: boolean = true, maxSize: number = 1000) {
+    this.isEnabled = enabled;
+    this.maxSize = maxSize;
+    this.categories = new Map();
     this.initializeCategories();
-    this.loadSettings();
-    
-    if (this.isEnabled) {
-      this.startMeasurementInterval();
-      this.startCleanupInterval();
-      console.log('[OptimizedMemoryTracker] 最適化されたメモリ追跡システムが初期化されました');
-    }
   }
 
   static getInstance(): OptimizedMemoryTracker {

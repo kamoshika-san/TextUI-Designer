@@ -53,7 +53,6 @@ export class TypedConfigManager {
     try {
       const config = vscode.workspace.getConfiguration(this.CONFIG_SECTION);
       await config.update(key, value, vscode.ConfigurationTarget.Global);
-      console.log(`[TypedConfigManager] 設定更新: ${key} = ${JSON.stringify(value)}`);
     } catch (error) {
       console.error(`[TypedConfigManager] 設定更新エラー: ${key}`, error);
       throw error;
@@ -161,8 +160,6 @@ export class TypedConfigManager {
     for (const key of Object.keys(CONFIG_DEFAULTS) as (keyof ConfigSchema)[]) {
       await config.update(key, undefined, vscode.ConfigurationTarget.Global);
     }
-    
-    console.log('[TypedConfigManager] 全設定をリセットしました');
   }
 
   /**
@@ -179,8 +176,6 @@ export class TypedConfigManager {
         await config.update(key, undefined, vscode.ConfigurationTarget.Global);
       }
     }
-    
-    console.log(`[TypedConfigManager] ${category}カテゴリーの設定をリセットしました`);
   }
 
   /**
@@ -221,8 +216,6 @@ export class TypedConfigManager {
    * 注意: 型安全性のため、個別設定メソッドの使用を推奨
    */
   static async importConfiguration(settings: Partial<ConfigSchema>): Promise<void> {
-    console.log('[TypedConfigManager] 設定インポートを開始します');
-    
     // 型安全性を保つため、設定の存在チェックのみ実行
     const validKeys = Object.keys(settings).filter(key => key in CONFIG_DEFAULTS);
     const invalidKeys = Object.keys(settings).filter(key => !(key in CONFIG_DEFAULTS));
@@ -230,9 +223,6 @@ export class TypedConfigManager {
     if (invalidKeys.length > 0) {
       console.warn(`[TypedConfigManager] 不明な設定キー:`, invalidKeys);
     }
-    
-    console.log(`[TypedConfigManager] 有効な設定項目: ${validKeys.length}個`);
-    console.log('[TypedConfigManager] 型安全性のため、個別にTypedConfigManager.set()を使用してください');
   }
 
   /**

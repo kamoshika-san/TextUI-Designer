@@ -17,10 +17,7 @@ export class TextUIMemoryTracker {
   private optimizedTracker: OptimizedMemoryTracker;
 
   private constructor() {
-    this.optimizedTracker = OptimizedMemoryTracker.getInstance();
-    
-    // 互換性のためのメッセージ
-    console.log('[TextUIMemoryTracker] 最適化されたメモリ追跡システムを使用しています');
+    this.optimizedTracker = new OptimizedMemoryTracker();
   }
 
   static getInstance(): TextUIMemoryTracker {

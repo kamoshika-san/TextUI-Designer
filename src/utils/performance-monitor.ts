@@ -18,9 +18,6 @@ export class PerformanceMonitor {
 
   private constructor() {
     this.optimizedMonitor = OptimizedPerformanceMonitor.getInstance();
-    
-    // 互換性のためのメッセージ
-    console.log('[PerformanceMonitor] 最適化されたパフォーマンスモニターを使用しています');
   }
 
   static getInstance(): PerformanceMonitor {

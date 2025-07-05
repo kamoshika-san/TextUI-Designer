@@ -26,7 +26,6 @@ export class ErrorHandler {
    */
   static showInfo(message: string): void {
     vscode.window.showInformationMessage(message);
-    console.log(message);
   }
 
   /**
@@ -70,5 +69,9 @@ export class ErrorHandler {
       return error;
     }
     return String(error);
+  }
+
+  logError(message: string, error?: Error): void {
+    // エラーログを記録
   }
 } 

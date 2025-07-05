@@ -38,7 +38,6 @@ export class SchemaManager implements ISchemaManager {
     this.registrar = new SchemaRegistrar();
     this.templateSchemaCreator = new TemplateSchemaCreator();
     
-    console.log('[SchemaManager] 初期化完了');
   }
 
   /**
@@ -57,7 +56,6 @@ export class SchemaManager implements ISchemaManager {
       // スキーマの登録
       await this.registerSchemas();
       
-      console.log('[SchemaManager] 初期化完了');
     } catch (error) {
       console.error('[SchemaManager] 初期化に失敗しました:', error);
       throw error;
@@ -134,11 +132,9 @@ export class SchemaManager implements ISchemaManager {
    * スキーマをクリーンアップ（拡張非アクティブ化時に呼び出し）
    */
   async cleanup(): Promise<void> {
-    console.log('[SchemaManager] スキーマクリーンアップを開始');
     
     try {
       await this.registrar.cleanupSchemas();
-      console.log('[SchemaManager] スキーマクリーンアップ完了');
     } catch (error) {
       console.error('[SchemaManager] スキーマクリーンアップ中にエラーが発生しました:', error);
     }
@@ -148,20 +144,17 @@ export class SchemaManager implements ISchemaManager {
    * スキーマの再登録（設定変更時などに呼び出し）
    */
   async reinitialize(): Promise<void> {
-    console.log('[SchemaManager] スキーマ再初期化を開始');
     
     this.clearCache();
     await this.cleanup();
     await this.initialize();
     
-    console.log('[SchemaManager] スキーマ再初期化完了');
   }
 
   /**
    * スキーマのデバッグ情報を出力
    */
   async debugSchemas(): Promise<void> {
-    console.log('[SchemaManager] スキーマデバッグ情報:');
     
     // パス情報
     this.pathResolver.debugPaths();
@@ -186,8 +179,6 @@ export class SchemaManager implements ISchemaManager {
     this.schemaLoader.clearCache();
     this.templateSchemaLoader.clearCache();
     this.themeSchemaLoader.clearCache();
-    this.pathResolver.clearCache();
-    console.log('[SchemaManager] 全キャッシュをクリアしました');
   }
 
   /**

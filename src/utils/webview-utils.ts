@@ -89,7 +89,9 @@ export function getWebviewContent(context: vscode.ExtensionContext, panel?: vsco
       console.error('[WebView] VS Code APIの取得に失敗:', error);
       // エラーが発生した場合はダミーオブジェクトを作成
       vscode = {
-        postMessage: (message) => console.log('[WebView] ダミーpostMessage:', message)
+        postMessage: (message) => {
+          // ダミーpostMessage（テスト用）
+        }
       };
       window.vscode = vscode;
     }
@@ -98,22 +100,17 @@ export function getWebviewContent(context: vscode.ExtensionContext, panel?: vsco
     window.addEventListener('message', event => {
       const message = event.data;
       
-      console.log('[WebView] メッセージを受信:', message);
-      
       switch (message.type) {
         case 'update':
           // Reactアプリにデータを送信
-          console.log('[WebView] updateメッセージを処理:', message.data);
           window.postMessage({ type: 'json', json: message.data }, '*');
           break;
         case 'error':
           // エラーメッセージを表示
-          console.log('[WebView] errorメッセージを処理:', message.message);
           window.postMessage({ type: 'error', error: message.message }, '*');
           break;
         case 'schema-error':
           // スキーマエラーメッセージを表示
-          console.log('[WebView] schema-errorメッセージを処理:', message.errors);
           window.postMessage({ type: 'schema-error', errors: message.errors }, '*');
           break;
         case 'openDevTools':
@@ -123,7 +120,8 @@ export function getWebviewContent(context: vscode.ExtensionContext, panel?: vsco
           }
           break;
         default:
-          console.log('[WebView] 未対応のメッセージタイプ:', message.type);
+          // 未対応のメッセージタイプ
+          break;
       }
     });
   </script>

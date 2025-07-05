@@ -12,7 +12,10 @@ export class FileWatcher {
   private services: ExtensionServices | null = null;
   private disposables: vscode.Disposable[] = [];
   private memoryMonitor: MemoryMonitor;
-  
+  private watcher: vscode.FileSystemWatcher | null = null;
+  private editorChangeDisposable: vscode.Disposable | null = null;
+  private documentSaveDisposable: vscode.Disposable | null = null;
+
   // デバウンス用タイマー
   private activeEditorTimeout: NodeJS.Timeout | undefined;
   private saveTimeout: NodeJS.Timeout | undefined;
@@ -37,20 +40,29 @@ export class FileWatcher {
    * ファイル監視の開始
    */
   startWatching(services: ExtensionServices): void {
-    console.log('[FileWatcher] ファイル監視開始');
+    this.stopWatching();
     
-    this.services = services;
+    // ワークスペースフォルダを監視
+    if (vscode.workspace.workspaceFolders) {
+      for (const folder of vscode.workspace.workspaceFolders) {
+        const pattern = new vscode.RelativePattern(folder, '**/*.tui.{yml,yaml}');
+        this.watcher = vscode.workspace.createFileSystemWatcher(pattern);
+        
+        this.watcher.onDidChange(this.handleFileChange.bind(this));
+        this.watcher.onDidCreate(this.handleFileChange.bind(this));
+        this.watcher.onDidDelete(this.handleFileDelete.bind(this));
+      }
+    }
     
-    // アクティブエディタ変更の監視
-    this.watchActiveEditorChange();
+    // エディタ変更の監視
+    this.editorChangeDisposable = vscode.window.onDidChangeActiveTextEditor(
+      this.handleEditorChange.bind(this)
+    );
     
     // ドキュメント保存の監視
-    this.watchDocumentSave();
-    
-    // ドキュメント変更の監視
-    this.watchDocumentChange();
-    
-    console.log('[FileWatcher] ファイル監視設定完了');
+    this.documentSaveDisposable = vscode.workspace.onDidSaveTextDocument(
+      this.handleDocumentSave.bind(this)
+    );
   }
 
   /**
@@ -128,20 +140,14 @@ export class FileWatcher {
     
     // ファイルが変更された場合は常にプレビューを更新
     if (previousFile !== editor.document.fileName) {
-      console.log('[FileWatcher] ファイルが変更されたため、プレビューを更新します');
-      
       // ファイル変更時に即座のプレビュー更新を有効にしてsetLastTuiFileを呼び出し
       this.services.webViewManager.setLastTuiFile(editor.document.fileName, true);
       
       // 自動プレビュー設定をチェック
       const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
-      console.log(`[FileWatcher] アクティブエディタ変更時の設定値: ${autoPreviewEnabled ? 'ON' : 'OFF'}, パネル存在: ${this.services.webViewManager.hasPanel()}`);
-      console.log(`[FileWatcher] ファイル: ${editor.document.fileName}`);
-      console.log(`[FileWatcher] 前のファイル: ${previousFile}`);
       
       if (autoPreviewEnabled) {
         if (!this.services.webViewManager.hasPanel()) {
-          console.log('[FileWatcher] 自動プレビューを開きます');
           this.services.webViewManager.openPreview();
         }
       }
@@ -260,19 +266,39 @@ export class FileWatcher {
   private handleTemplateSave(document: vscode.TextDocument): void {
     if (!this.services) {return;}
 
-    console.log(`[FileWatcher] テンプレートファイルを保存しました: ${document.fileName}`);
-    
     try {
       // DiagnosticManager経由でTemplate Parserのキャッシュを無効化
       this.services.diagnosticManager.invalidateTemplateCache(document.fileName);
       
       // テンプレートファイル変更時は、プレビューも更新
       if (this.services.webViewManager.hasPanel()) {
-        console.log('[FileWatcher] テンプレートファイル変更によりプレビューを更新します');
         this.services.webViewManager.updatePreview();
       }
     } catch (error) {
       console.error('[FileWatcher] テンプレートファイル保存処理でエラーが発生しました:', error);
+    }
+  }
+
+  /**
+   * ファイル変更の処理
+   */
+  private handleFileChange(uri: vscode.Uri): void {
+    // ファイル変更時の処理
+  }
+
+  /**
+   * ファイル削除の処理
+   */
+  private handleFileDelete(uri: vscode.Uri): void {
+    // ファイル削除時の処理
+  }
+
+  /**
+   * エディタ変更の処理
+   */
+  private handleEditorChange(editor: vscode.TextEditor | undefined): void {
+    if (editor && this.isWatchedFile(editor.document.fileName)) {
+      this.handleActiveEditorChange(editor);
     }
   }
 
@@ -301,8 +327,6 @@ export class FileWatcher {
    * ファイル監視の停止
    */
   stopWatching(): void {
-    console.log('[FileWatcher] ファイル監視停止');
-    
     // タイマーをクリア
     if (this.activeEditorTimeout) {
       clearTimeout(this.activeEditorTimeout);
