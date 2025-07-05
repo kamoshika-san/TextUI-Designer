@@ -36,6 +36,10 @@ TextUI Designerは、YAML/JSONベースのDSLでフロントエンドUIを宣言
   - リアルタイムパフォーマンスメトリクス
   - キャッシュヒット率・差分更新効率の可視化
   - メモリ使用量の監視
+- **🔧 開発者向け機能**
+  - 環境に応じた自動ログレベル制御
+  - デバッグコマンド（開発環境でのみ有効）
+  - パフォーマンス・メモリ監視ツール
 
 ## サンプルDSL（sample.tui.yml）
 
@@ -553,3 +557,63 @@ MIT License - 商用利用・改変・再配布自由
 
 **TextUI Designer** で、テキストだけで美しいUIを構築しましょう！  
 ご意見・ご要望は [GitHub Issues](https://github.com/your-repo/textui-designer/issues) までお寄せください。
+
+### 例（tui:form）
+```yaml
+- Form:
+    id: myForm
+    fields:
+      - Input:
+          label: ユーザー名
+          name: username
+          type: text
+    actions:
+```
+
+---
+
+## 🔧 開発者向け設定
+
+### ログレベル設定
+
+TextUI Designerは環境に応じて自動的にログレベルを調整します：
+
+- **本番環境**: WARNレベル（警告とエラーのみ）
+- **開発環境**: DEBUGレベル（詳細なデバッグ情報を含む）
+
+#### 手動設定
+
+VS Codeの設定でログレベルを変更できます：
+
+```json
+{
+  "textui-designer.logging.level": "debug",  // error, warn, info, debug, trace
+  "textui-designer.logging.enableDebugCommands": true  // デバッグコマンドの有効化
+}
+```
+
+#### 環境変数
+
+環境変数でもログレベルを制御できます：
+
+```bash
+export TEXTUI_LOG_LEVEL=debug
+export TEXTUI_DEBUG=true
+```
+
+### デバッグコマンド
+
+開発環境または設定で有効にした場合、以下のデバッグコマンドが利用可能です：
+
+- `TextUI: スキーマ状態をデバッグ` - スキーマの読み込み状態とキャッシュ情報を表示
+- `TextUI: パフォーマンスレポートを表示` - パフォーマンスメトリクスを表示
+- `TextUI: メモリレポートを表示` - メモリ使用量とキャッシュ統計を表示
+
+### パフォーマンス監視
+
+開発環境では以下の機能が自動的に有効になります：
+
+- リアルタイムパフォーマンス測定
+- メモリ使用量の監視
+- キャッシュ効率の分析
+- 差分更新の統計情報

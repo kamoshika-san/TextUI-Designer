@@ -10,6 +10,7 @@ import {
   MemoryCommandHandler, 
   SettingsCommandHandler 
 } from './command-decorators';
+import { logger } from '../utils/logger';
 
 /**
  * コマンド管理サービス
@@ -71,7 +72,7 @@ export class CommandManager {
    * コマンドを登録
    */
   registerCommands(): void {
-    console.log('[CommandManager] コマンド登録を開始');
+    logger.info('コマンド登録を開始');
     
     // 言語機能の登録
     this.registerLanguageFeatures();
@@ -96,7 +97,12 @@ export class CommandManager {
 
     // スキーマ関連
     this.registerCommand('textui-designer.reinitializeSchemas', () => this.schemaManager.reinitialize());
-    this.registerCommand('textui-designer.debugSchemas', () => this.schemaManager.debugSchemas());
+    
+    // デバッグコマンド（開発環境または設定で有効な場合のみ登録）
+    if (logger.isDebugCommandsEnabled()) {
+      this.registerCommand('textui-designer.debugSchemas', () => this.schemaManager.debugSchemas());
+      logger.debug('デバッグコマンドを登録しました');
+    }
 
     // パフォーマンス関連（新しいハンドラーに委譲）
     this.registerCommand('textui-designer.showPerformanceReport', () => this.performanceHandler.showPerformanceReport());
@@ -110,31 +116,31 @@ export class CommandManager {
     this.registerCommand('textui-designer.toggleMemoryTracking', () => this.memoryHandler.toggleMemoryTracking());
     this.registerCommand('textui-designer.enableMemoryTracking', () => this.memoryHandler.enableMemoryTracking());
     
-    console.log('[CommandManager] コマンド登録完了');
+    logger.info('コマンド登録完了');
   }
 
   /**
    * コマンドを登録
    */
   private registerCommand(command: string, callback: (...args: any[]) => void): void {
-    console.log(`[CommandManager] コマンドを登録: ${command}`);
+    logger.debug(`コマンドを登録: ${command}`);
     const disposable = vscode.commands.registerCommand(command, callback);
     this.context.subscriptions.push(disposable);
-    console.log(`[CommandManager] コマンド登録成功: ${command}`);
+    logger.debug(`コマンド登録成功: ${command}`);
   }
 
   /**
    * プレビューを開く（ユーザーの明示的な指示による実行）
    */
   private async openPreviewWithCheck(): Promise<void> {
-    console.log('[CommandManager] openPreviewWithCheck が呼び出されました');
+    logger.debug('openPreviewWithCheck が呼び出されました');
     try {
-      console.log('[CommandManager] WebViewManager.openPreview を呼び出します');
+      logger.debug('WebViewManager.openPreview を呼び出します');
       // ユーザーが明示的にコマンドを実行した場合は、Auto Preview設定に関係なくプレビューを開く
       await this.webViewManager.openPreview();
-      console.log('[CommandManager] WebViewManager.openPreview が完了しました');
+      logger.debug('WebViewManager.openPreview が完了しました');
     } catch (error) {
-      console.error('[CommandManager] プレビュー表示エラー:', error);
+      logger.error('プレビュー表示エラー:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       vscode.window.showErrorMessage(`プレビューの表示に失敗しました: ${errorMessage}`);
     }

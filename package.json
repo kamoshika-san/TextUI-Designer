@@ -234,6 +234,23 @@
           "minimum": 10000,
           "maximum": 300000,
           "description": "メモリクリーンアップ間隔（ミリ秒）"
+        },
+        "textui-designer.logging.level": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warn",
+            "info",
+            "debug",
+            "trace"
+          ],
+          "default": "warn",
+          "description": "ログレベル（開発環境では自動的にdebugに設定されます）"
+        },
+        "textui-designer.logging.enableDebugCommands": {
+          "type": "boolean",
+          "default": false,
+          "description": "デバッグコマンドの有効化（開発環境でのみ推奨）"
         }
       }
     },

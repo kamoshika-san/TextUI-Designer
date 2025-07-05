@@ -14,6 +14,7 @@ import {
   SchemaRegistrationConfig
 } from './schema-loaders';
 import { ErrorHandler } from '../utils/error-handler';
+import { logger } from '../utils/logger';
 
 /**
  * スキーマ管理サービスの依存関係インターフェース
@@ -158,7 +159,7 @@ export class SchemaManager implements ISchemaManager {
     try {
       await this.registrar.cleanupSchemas();
     } catch (error) {
-      console.error('[SchemaManager] スキーマクリーンアップ中にエラーが発生しました:', error);
+      logger.error('スキーマクリーンアップ中にエラーが発生しました:', error);
     }
   }
 
@@ -175,23 +176,27 @@ export class SchemaManager implements ISchemaManager {
   }
 
   /**
-   * スキーマのデバッグ情報を出力
+   * スキーマのデバッグ情報を出力（開発環境でのみ有効）
    */
   async debugSchemas(): Promise<void> {
+    if (!logger.isDevMode()) {
+      logger.warn('デバッグ機能は開発環境でのみ利用可能です');
+      return;
+    }
     
     // パス情報
     this.pathResolver.debugPaths();
     
     // キャッシュ統計
-    console.log('- メインスキーマキャッシュ:', this.schemaLoader.getCacheStats());
-    console.log('- テンプレートスキーマキャッシュ:', this.templateSchemaLoader.getCacheStats());
-    console.log('- テーマスキーマキャッシュ:', this.themeSchemaLoader.getCacheStats());
+    logger.schema('メインスキーマキャッシュ:', this.schemaLoader.getCacheStats());
+    logger.schema('テンプレートスキーマキャッシュ:', this.templateSchemaLoader.getCacheStats());
+    logger.schema('テーマスキーマキャッシュ:', this.themeSchemaLoader.getCacheStats());
     
     // パス検証
     const validation = this.pathResolver.validatePaths();
-    console.log('- パス検証結果:', validation.valid ? '正常' : '異常');
+    logger.schema('パス検証結果:', validation.valid ? '正常' : '異常');
     if (!validation.valid) {
-      console.log('- 見つからないファイル:', validation.missing);
+      logger.schema('見つからないファイル:', validation.missing);
     }
   }
 
@@ -199,11 +204,11 @@ export class SchemaManager implements ISchemaManager {
    * キャッシュをクリア
    */
   clearCache(): void {
-    this.errorHandler.withErrorHandlingSync(() => {
-      this.schemaLoader.clearCache();
-      this.templateSchemaLoader.clearCache();
-      this.themeSchemaLoader.clearCache();
-    }, 'SchemaManager: clearCache');
+    this.schemaLoader.clearCache();
+    this.templateSchemaLoader.clearCache();
+    this.themeSchemaLoader.clearCache();
+    this.pathResolver.clearCache();
+    logger.debug('スキーマキャッシュをクリアしました');
   }
 
   /**

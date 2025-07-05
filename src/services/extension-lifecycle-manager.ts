@@ -5,6 +5,7 @@ import { FileWatcher } from './file-watcher';
 import { MemoryMonitor } from './memory-monitor';
 import { PerformanceTracker } from './performance-tracker';
 import { ErrorHandler } from '../utils/error-handler';
+import { logger } from '../utils/logger';
 
 /**
  * 拡張機能のライフサイクル管理
@@ -31,7 +32,7 @@ export class ExtensionLifecycleManager {
    * 拡張機能をアクティベート
    */
   async activate(): Promise<void> {
-    console.log('[ExtensionLifecycleManager] アクティベーション開始');
+    logger.info('アクティベーション開始');
     
     try {
       // パフォーマンス追跡開始
@@ -52,10 +53,10 @@ export class ExtensionLifecycleManager {
       // パフォーマンス追跡完了
       this.performanceTracker.completeActivation();
 
-      console.log('[ExtensionLifecycleManager] アクティベーション完了');
+      logger.info('アクティベーション完了');
 
     } catch (error) {
-      console.error('[ExtensionLifecycleManager] アクティベーション中にエラーが発生しました:', error);
+      logger.error('アクティベーション中にエラーが発生しました:', error);
       ErrorHandler.showError('TextUI Designer拡張の初期化に失敗しました', error);
       throw error;
     }
@@ -65,7 +66,7 @@ export class ExtensionLifecycleManager {
    * 拡張機能を非アクティベート
    */
   async deactivate(): Promise<void> {
-    console.log('[ExtensionLifecycleManager] 非アクティベーション開始');
+    logger.info('非アクティベーション開始');
 
     try {
       // パフォーマンス追跡のクリーンアップ
@@ -83,10 +84,10 @@ export class ExtensionLifecycleManager {
       // サービスのクリーンアップ
       await this.serviceInitializer.cleanup();
 
-      console.log('[ExtensionLifecycleManager] 非アクティベーション完了');
+      logger.info('非アクティベーション完了');
 
     } catch (error) {
-      console.error('[ExtensionLifecycleManager] 非アクティベーション中にエラーが発生しました:', error);
+      logger.error('非アクティベーション中にエラーが発生しました:', error);
     }
   }
 

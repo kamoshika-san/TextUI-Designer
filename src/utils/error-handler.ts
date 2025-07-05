@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { logger } from './logger';
 
 /**
  * エラーハンドリングユーティリティ
@@ -36,9 +37,9 @@ export class ErrorHandler {
   static logError(error: unknown, context?: string): void {
     const msg = context ? `[${context}]` : '';
     if (error instanceof Error) {
-      console.error(`${msg} ${error.message}`, error.stack);
+      logger.error(`${msg} ${error.message}`, error.stack);
     } else {
-      console.error(`${msg} ${String(error)}`);
+      logger.error(`${msg} ${String(error)}`);
     }
   }
 
@@ -72,7 +73,7 @@ export class ErrorHandler {
    */
   static showWarning(message: string): void {
     vscode.window.showWarningMessage(message);
-    console.warn(message);
+    logger.warn(message);
   }
 
   /**

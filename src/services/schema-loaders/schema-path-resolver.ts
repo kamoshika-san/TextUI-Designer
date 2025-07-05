@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import { logger } from '../../utils/logger';
 
 /**
  * 解決されたスキーマパス情報
@@ -42,10 +43,10 @@ export class SchemaPathResolver {
       themeSchemaPath: path.join(schemaDir, 'theme-schema.json')
     };
 
-    console.log('[SchemaPathResolver] パス解決完了');
-    console.log('[SchemaPathResolver] スキーマパス:', this.resolvedPaths.schemaPath);
-    console.log('[SchemaPathResolver] テンプレートスキーマパス:', this.resolvedPaths.templateSchemaPath);
-    console.log('[SchemaPathResolver] テーマスキーマパス:', this.resolvedPaths.themeSchemaPath);
+    logger.debug('パス解決完了');
+    logger.debug('スキーマパス:', this.resolvedPaths.schemaPath);
+    logger.debug('テンプレートスキーマパス:', this.resolvedPaths.templateSchemaPath);
+    logger.debug('テーマスキーマパス:', this.resolvedPaths.themeSchemaPath);
 
     return this.resolvedPaths;
   }
@@ -59,16 +60,16 @@ export class SchemaPathResolver {
     // 最初に存在するパスを使用
     for (const schemaPath of possiblePaths) {
       if (fs.existsSync(schemaPath)) {
-        console.log('[SchemaPathResolver] スキーマパスを設定:', schemaPath);
+        logger.debug('スキーマパスを設定:', schemaPath);
         return schemaPath;
       }
     }
     
-    console.error('[SchemaPathResolver] スキーマファイルが見つかりません。検索したパス:', possiblePaths);
+    logger.error('スキーマファイルが見つかりません。検索したパス:', possiblePaths);
     
     // フォールバックとしてデフォルトパスを使用
     const fallbackPath = path.join(this.context.extensionPath, 'schemas', 'schema.json');
-    console.warn('[SchemaPathResolver] フォールバックパスを使用:', fallbackPath);
+    logger.warn('フォールバックパスを使用:', fallbackPath);
     return fallbackPath;
   }
 
@@ -131,23 +132,28 @@ export class SchemaPathResolver {
   }
 
   /**
-   * デバッグ情報を出力
+   * デバッグ情報を出力（開発環境でのみ有効）
    */
   debugPaths(): void {
+    if (!logger.isDevMode()) {
+      logger.warn('デバッグ機能は開発環境でのみ利用可能です');
+      return;
+    }
+
     const paths = this.resolvePaths();
     const validation = this.validatePaths();
     
-    console.log('[SchemaPathResolver] デバッグ情報:');
-    console.log('- スキーマパス:', paths.schemaPath);
-    console.log('- テンプレートスキーマパス:', paths.templateSchemaPath);
-    console.log('- テーマスキーマパス:', paths.themeSchemaPath);
-    console.log('- パス検証結果:', validation.valid ? '正常' : '異常');
+    logger.schema('デバッグ情報:');
+    logger.schema('- スキーマパス:', paths.schemaPath);
+    logger.schema('- テンプレートスキーマパス:', paths.templateSchemaPath);
+    logger.schema('- テーマスキーマパス:', paths.themeSchemaPath);
+    logger.schema('- パス検証結果:', validation.valid ? '正常' : '異常');
     
     if (!validation.valid) {
-      console.log('- 見つからないファイル:', validation.missing);
+      logger.schema('- 見つからないファイル:', validation.missing);
     }
     
-    console.log('- 検索パス候補:', this.generatePossiblePaths());
+    logger.schema('- 検索パス候補:', this.generatePossiblePaths());
   }
 
   /**
@@ -155,6 +161,6 @@ export class SchemaPathResolver {
    */
   clearCache(): void {
     this.resolvedPaths = null;
-    console.log('[SchemaPathResolver] パスキャッシュをクリア');
+    logger.debug('パスキャッシュをクリア');
   }
 } 
