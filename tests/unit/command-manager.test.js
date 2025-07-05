@@ -55,18 +55,18 @@ describe('CommandManager', () => {
       const initialSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
       commandManager.registerCommands();
 
-      // 期待されるコマンド数を確認（メモリ追跡コマンド3個 + DefinitionProvider1個を含む）
+      // 期待されるコマンド数を確認（メモリ追跡コマンド3個 + showSettingsOverview1個 + DefinitionProvider1個を含む）
       const finalSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
-      expect(finalSubscriptions - initialSubscriptions).to.equal(20);
+      expect(finalSubscriptions - initialSubscriptions).to.equal(21);
     });
 
     it('登録されたコマンドがcontextのsubscriptionsに追加される', () => {
       const initialSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
       commandManager.registerCommands();
 
-      // 登録されたコマンドの数だけsubscriptionsに追加されていることを確認（メモリ追跡コマンド3個 + DefinitionProvider1個を含む）
+      // 登録されたコマンドの数だけsubscriptionsに追加されていることを確認（メモリ追跡コマンド3個 + showSettingsOverview1個 + DefinitionProvider1個を含む）
       const finalSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
-      expect(finalSubscriptions - initialSubscriptions).to.equal(20);
+      expect(finalSubscriptions - initialSubscriptions).to.equal(21);
     });
   });
 
@@ -144,9 +144,9 @@ describe('CommandManager', () => {
       const initialSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
       commandManager.registerCommands();
 
-      // メモリ追跡コマンドが登録されていることを確認（3個 + DefinitionProvider1個追加）
+      // メモリ追跡コマンドが登録されていることを確認（3個 + showSettingsOverview1個 + DefinitionProvider1個追加）
       const finalSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
-      expect(finalSubscriptions - initialSubscriptions).to.equal(20);
+      expect(finalSubscriptions - initialSubscriptions).to.equal(21);
     });
 
     it('TextUIMemoryTrackerのモックが正しく設定されている', () => {
