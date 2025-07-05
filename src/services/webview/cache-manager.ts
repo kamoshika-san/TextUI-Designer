@@ -1,4 +1,5 @@
 import { PerformanceMonitor } from '../../utils/performance-monitor';
+import { ICacheManagerTest } from '../../types';
 
 export interface CacheEntry {
   content: string;
@@ -12,7 +13,7 @@ export interface CacheEntry {
  * キャッシュ管理専用クラス
  * YAMLコンテンツのキャッシュ、メモリ管理、キャッシュヒット率の追跡を担当
  */
-export class CacheManager {
+export class CacheManager implements ICacheManagerTest {
   private cache: Map<string, CacheEntry> = new Map();
   private performanceMonitor: PerformanceMonitor;
   private readonly MAX_CACHE_SIZE: number = 50 * 1024 * 1024; // 50MB制限
@@ -240,7 +241,7 @@ export class CacheManager {
   }
 
   /**
-   * テスト用: キャッシュ内容を取得
+   * テスト用: キャッシュ内容を取得（ICacheManagerTestインターフェース実装）
    */
   _getCacheContent(fileName: string): string | null {
     for (const [, entry] of this.cache.entries()) {
@@ -252,7 +253,7 @@ export class CacheManager {
   }
 
   /**
-   * テスト用: キャッシュをクリア
+   * テスト用: キャッシュをクリア（ICacheManagerTestインターフェース実装）
    */
   _clearCache(): void {
     this.clearCache();

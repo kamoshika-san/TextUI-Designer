@@ -2,12 +2,13 @@ import * as vscode from 'vscode';
 import { WebViewLifecycleManager } from './webview-lifecycle-manager';
 import { WebViewUpdateManager } from './webview-update-manager';
 import { ThemeManager } from '../theme-manager';
+import { IWebViewMessageHandlerTest } from '../../types';
 
 /**
  * WebViewとのメッセージ通信を担当
  * メッセージの受信・送信・ルーティングを一元化
  */
-export class WebViewMessageHandler {
+export class WebViewMessageHandler implements IWebViewMessageHandlerTest {
   private lifecycleManager: WebViewLifecycleManager;
   private updateManager: WebViewUpdateManager;
   private themeManager: ThemeManager | undefined;
@@ -149,9 +150,9 @@ export class WebViewMessageHandler {
   }
 
   /**
-   * 利用可能なテーマファイル一覧を検出して送信
+   * 利用可能なテーマファイル一覧を検出して送信（IWebViewMessageHandlerTestインターフェース実装）
    */
-  private async sendAvailableThemes(): Promise<void> {
+  async sendAvailableThemes(): Promise<void> {
     const panel = this.lifecycleManager.getPanel();
     if (!panel || !panel.webview) {
       return;
@@ -260,9 +261,9 @@ export class WebViewMessageHandler {
   }
 
   /**
-   * テーマを切り替え
+   * テーマを切り替え（IWebViewMessageHandlerTestインターフェース実装）
    */
-  private async switchTheme(themePath: string): Promise<void> {
+  async switchTheme(themePath: string): Promise<void> {
     if (!this.themeManager) {
       return;
     }

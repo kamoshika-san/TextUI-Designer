@@ -5,12 +5,13 @@ import { CacheManager } from './cache-manager';
 import { WebViewErrorHandler } from './webview-error-handler';
 import { ConfigManager } from '../../utils/config-manager';
 import { ErrorHandler } from '../../utils/error-handler';
+import { IWebViewUpdateManagerTest, TextUIDSL } from '../../types';
 
 /**
  * リファクタリングされたWebViewUpdateManager
  * 各専用クラスに処理を委譲し、ファサードパターンで統一インターフェースを提供
  */
-export class WebViewUpdateManager {
+export class WebViewUpdateManager implements IWebViewUpdateManagerTest {
   private lifecycleManager: WebViewLifecycleManager;
   private yamlParser: YamlParser;
   private updateQueueManager: UpdateQueueManager;
@@ -18,6 +19,8 @@ export class WebViewUpdateManager {
   private errorHandler: WebViewErrorHandler;
   private lastTuiFile: string | undefined = undefined;
   private isUpdating: boolean = false;
+  private _lastYamlContent: string = '';
+  private _lastParsedData: TextUIDSL | null = null;
 
   constructor(lifecycleManager: WebViewLifecycleManager) {
     this.lifecycleManager = lifecycleManager;
@@ -187,7 +190,7 @@ export class WebViewUpdateManager {
   }
 
   /**
-   * テスト用メモリ管理メソッド
+   * テスト用メモリ管理メソッド（IWebViewUpdateManagerTestインターフェース実装）
    */
   _testMemoryManagement(): void {
     console.log('[WebViewUpdateManager] テスト用メモリ管理を実行');
@@ -195,26 +198,46 @@ export class WebViewUpdateManager {
   }
 
   /**
-   * テスト用: YAMLキャッシュ内容を取得
+   * テスト用: YAMLキャッシュ内容を取得（IWebViewUpdateManagerTestインターフェース実装）
    */
   _getYamlCacheContent(): string {
     return this.cacheManager._getCacheContent(this.lastTuiFile || '') || '';
   }
 
   /**
-   * テスト用: YAMLキャッシュをクリア
+   * テスト用: YAMLキャッシュをクリア（IWebViewUpdateManagerTestインターフェース実装）
    */
   _clearYamlCache(): void {
     this.cacheManager._clearCache();
   }
 
   /**
-   * テスト用: YAMLキャッシュ内容を設定
+   * テスト用: YAMLキャッシュ内容を設定（IWebViewUpdateManagerTestインターフェース実装）
    */
   _setYamlCacheContent(content: string): void {
     // テスト用のダミーデータをキャッシュに設定
     this.lastTuiFile = 'test.tui.yml';
     this.cacheManager.setCachedData('test.tui.yml', content, content);
+  }
+
+  /**
+   * テスト用: YAMLキャッシュ内容を取得/設定（IWebViewUpdateManagerTestインターフェース実装）
+   */
+  get lastYamlContent(): string {
+    return this._lastYamlContent;
+  }
+  
+  set lastYamlContent(val: string) {
+    this._lastYamlContent = val;
+    this._setYamlCacheContent(val);
+  }
+
+  get lastParsedData(): TextUIDSL | null {
+    return this._lastParsedData;
+  }
+  
+  set lastParsedData(val: TextUIDSL | null) {
+    this._lastParsedData = val;
   }
 
   /**

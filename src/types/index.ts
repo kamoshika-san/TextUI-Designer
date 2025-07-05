@@ -4,6 +4,9 @@
 import * as vscode from 'vscode';
 import { TextUIDSL } from '../renderer/types';
 
+// TextUIDSL型を再エクスポート
+export { TextUIDSL } from '../renderer/types';
+
 // ============================================================================
 // スキーマ関連の型定義
 // ============================================================================
@@ -287,4 +290,58 @@ export function isWebViewMessage(obj: unknown): obj is WebViewMessage {
 
 export function isCacheEntry<T>(obj: unknown): obj is CacheEntry<T> {
   return typeof obj === 'object' && obj !== null && 'data' in obj && 'timestamp' in obj;
+}
+
+/**
+ * WebViewManagerのテスト用インターフェース
+ * テスト環境でのみ使用されるメソッドを定義
+ */
+export interface IWebViewManagerTest {
+  _testMemoryManagement(): void;
+  _getYamlCacheContent(): string;
+  _clearYamlCache(): void;
+  _setYamlCacheContent(content: string): void;
+  get lastYamlContent(): string;
+  set lastYamlContent(val: string);
+  get lastParsedData(): TextUIDSL | null;
+  set lastParsedData(val: TextUIDSL | null);
+}
+
+/**
+ * WebViewManagerの旧API互換インターフェース
+ * 後方互換性のためのメソッドを定義
+ */
+export interface IWebViewManagerLegacy {
+  switchTheme(themePath: string): Promise<void>;
+  sendAvailableThemes(): Promise<void>;
+}
+
+/**
+ * WebViewMessageHandlerのテスト用インターフェース
+ */
+export interface IWebViewMessageHandlerTest {
+  switchTheme(themePath: string): Promise<void>;
+  sendAvailableThemes(): Promise<void>;
+}
+
+/**
+ * WebViewUpdateManagerのテスト用インターフェース
+ */
+export interface IWebViewUpdateManagerTest {
+  _testMemoryManagement(): void;
+  _getYamlCacheContent(): string;
+  _clearYamlCache(): void;
+  _setYamlCacheContent(content: string): void;
+  get lastYamlContent(): string;
+  set lastYamlContent(val: string);
+  get lastParsedData(): TextUIDSL | null;
+  set lastParsedData(val: TextUIDSL | null);
+}
+
+/**
+ * CacheManagerのテスト用インターフェース
+ */
+export interface ICacheManagerTest {
+  _getCacheContent(fileName: string): string | null;
+  _clearCache(): void;
 } 

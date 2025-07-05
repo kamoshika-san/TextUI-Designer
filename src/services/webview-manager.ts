@@ -4,12 +4,13 @@ import { WebViewLifecycleManager } from './webview/webview-lifecycle-manager';
 import { WebViewUpdateManager } from './webview/webview-update-manager';
 import { WebViewMessageHandler } from './webview/webview-message-handler';
 import { TextUIDSL } from '../renderer/types';
+import { IWebViewManagerTest, IWebViewManagerLegacy } from '../types';
 
 /**
  * WebViewManager（ファサード）
  * 各専用クラスに処理を委譲する
  */
-export class WebViewManager {
+export class WebViewManager implements IWebViewManagerTest, IWebViewManagerLegacy {
   private lifecycleManager: WebViewLifecycleManager;
   private updateManager: WebViewUpdateManager;
   private messageHandler: WebViewMessageHandler;
@@ -112,72 +113,63 @@ export class WebViewManager {
   }
 
   /**
-   * テスト用メモリ管理
+   * テスト用メモリ管理（IWebViewManagerTestインターフェース実装）
    */
   _testMemoryManagement(): void {
     this.updateManager._testMemoryManagement();
   }
 
   /**
-   * テーマを切り替え（旧API互換）
+   * テーマを切り替え（IWebViewManagerLegacyインターフェース実装）
    */
   async switchTheme(themePath: string): Promise<void> {
-    // messageHandlerの内部メソッドを呼び出し
-    // 本来privateだが、テスト互換のためpublic化
-    // @ts-ignore
     return await this.messageHandler.switchTheme(themePath);
   }
 
   /**
-   * テーマ一覧を送信（旧API互換）
+   * テーマ一覧を送信（IWebViewManagerLegacyインターフェース実装）
    */
   async sendAvailableThemes(): Promise<void> {
-    // @ts-ignore
     return await this.messageHandler.sendAvailableThemes();
   }
 
   /**
-   * テスト用: YAMLキャッシュ内容を取得
+   * テスト用: YAMLキャッシュ内容を取得（IWebViewManagerTestインターフェース実装）
    */
   _getYamlCacheContent(): string {
-    // @ts-ignore
     return this.updateManager._getYamlCacheContent();
   }
 
   /**
-   * テスト用: YAMLキャッシュをクリア
+   * テスト用: YAMLキャッシュをクリア（IWebViewManagerTestインターフェース実装）
    */
   _clearYamlCache(): void {
-    // @ts-ignore
     this.updateManager._clearYamlCache();
   }
 
   /**
-   * テスト用: YAMLキャッシュ内容を設定
+   * テスト用: YAMLキャッシュ内容を設定（IWebViewManagerTestインターフェース実装）
    */
   _setYamlCacheContent(content: string): void {
-    // @ts-ignore
     this.updateManager._setYamlCacheContent(content);
   }
 
   /**
-   * テスト用: YAMLキャッシュ内容を取得/設定
+   * テスト用: YAMLキャッシュ内容を取得/設定（IWebViewManagerTestインターフェース実装）
    */
   get lastYamlContent(): string {
-    // @ts-ignore
-    return this.updateManager._getYamlCacheContent();
+    return this.updateManager.lastYamlContent;
   }
+  
   set lastYamlContent(val: string) {
-    // @ts-ignore
     this.updateManager.lastYamlContent = val;
   }
 
   get lastParsedData(): TextUIDSL | null {
-    // @ts-ignore
     return this.updateManager.lastParsedData;
   }
+  
   set lastParsedData(val: TextUIDSL | null) {
-    // @ts-ignore
     this.updateManager.lastParsedData = val;
   }
 } 
