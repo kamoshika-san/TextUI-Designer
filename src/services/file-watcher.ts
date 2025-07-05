@@ -42,6 +42,7 @@ export class FileWatcher {
    */
   startWatching(services: ExtensionServices): void {
     this.stopWatching();
+    this.services = services;
     
     // ワークスペースフォルダを監視
     if (vscode.workspace.workspaceFolders) {
@@ -233,14 +234,28 @@ export class FileWatcher {
    * ファイル変更の処理
    */
   private handleFileChange(uri: vscode.Uri): void {
-    // ファイル変更時の処理
+    if (!this.services) { return; }
+    const fileName = uri.fsPath;
+    if (this.isSupportedFile(fileName)) {
+      if (this.services.webViewManager.hasPanel()) {
+        this.services.webViewManager.updatePreview();
+      }
+    }
   }
 
   /**
    * ファイル削除の処理
    */
   private handleFileDelete(uri: vscode.Uri): void {
-    // ファイル削除時の処理
+    if (!this.services) { return; }
+    const fileName = uri.fsPath;
+    if (this.services.webViewManager.getLastTuiFile() === fileName) {
+      this.services.webViewManager.closePreview();
+    } else if (this.isSupportedFile(fileName)) {
+      if (this.services.webViewManager.hasPanel()) {
+        this.services.webViewManager.updatePreview();
+      }
+    }
   }
 
   /**
