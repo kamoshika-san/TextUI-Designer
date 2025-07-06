@@ -1,0 +1,11 @@
+# 条件分岐テスト用パラメータ
+params:
+  showWelcome: true
+  showAdvanced: false
+  userRole: "user"
+  welcomeMessage: "ようこそ！"
+
+# テンプレート変数
+userRole: "admin"
+showWelcome: true
+showAdvanced: true 

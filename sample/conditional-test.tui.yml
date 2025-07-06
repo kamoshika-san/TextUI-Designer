@@ -1,0 +1,84 @@
+page:
+  id: conditional-test
+  title: 条件分岐テスト
+  layout: vertical
+  components:
+    - type: Text
+      variant: h1
+      value: "条件分岐テスト"
+    
+    # 基本的な条件分岐テスト
+    - type: Text
+      variant: h2
+      value: "基本的な条件分岐"
+    
+    - $if:
+        condition: "true"
+        template:
+          - type: Alert
+            variant: success
+            message: "条件が真の場合に表示されます"
+    
+    - $if:
+        condition: "false"
+        template:
+          - type: Alert
+            variant: error
+            message: "このメッセージは表示されません"
+    
+    # パラメータベースの条件分岐テスト
+    - type: Text
+      variant: h2
+      value: "パラメータベースの条件分岐"
+    
+    - $if:
+        condition: "$params.showWelcome"
+        template:
+          - type: Alert
+            variant: info
+            message: "{{ welcomeMessage }}"
+    
+    # 文字列補間を使った条件分岐テスト
+    - type: Text
+      variant: h2
+      value: "文字列補間を使った条件分岐"
+    
+    - $if:
+        condition: "userRole === 'admin'"
+        template:
+          - type: Alert
+            variant: warning
+            message: "管理者向けメッセージ"
+
+    - $if:
+        condition: "userRole === 'user'"
+        template:
+          - type: Alert
+            variant: success
+            message: "一般ユーザー向けメッセージ"
+    - $if:
+        condition: "userRole === 'guest'"
+        template: 
+          - type: Include
+            template: "./templates/new-button.template.yml"
+            params:
+              label: "インクルードボタン"
+              kind: "primary"
+
+    
+    # 複数のコンポーネントを含む条件分岐
+    - type: Text
+      variant: h2
+      value: "複数コンポーネントの条件分岐"
+    
+    - $if:
+        condition: "$params.showAdvanced"
+        template:
+          - type: Text
+            variant: p
+            value: "高度な機能が有効です"
+          - type: Button
+            label: "詳細設定"
+            kind: primary
+          - type: Divider
+            orientation: horizontal 

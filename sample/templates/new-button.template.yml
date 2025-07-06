@@ -1,0 +1,7 @@
+template:
+  id: button-template
+  title: ボタンテンプレート
+  components:
+    - type: Button
+      label: "{{ label }}"
+      kind: "{{ kind }}"

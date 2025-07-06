@@ -1,6 +1,7 @@
 import { TemplateResolver } from './template-resolver';
 import { TemplateValidator } from './template-validator';
 import { TemplateError, TemplateException } from '../template-parser';
+import type { ComponentDef } from '../../renderer/types';
 
 /**
  * テンプレート解決のコーディネーター
@@ -23,7 +24,7 @@ export class TemplateCoordinator {
     depth: number = 0,
     visitedFiles: Set<string> = new Set(),
     params: Record<string, any> = {}
-  ): Promise<any> {
+  ): Promise<ComponentDef | ComponentDef[]> {
     // 深度チェック（無限再帰防止）
     if (depth > this.maxDepth) {
       throw new TemplateException(
@@ -44,7 +45,7 @@ export class TemplateCoordinator {
 
     // 文字列の処理
     if (typeof data === 'string') {
-      return this.resolver.interpolateString(data, params);
+      return this.resolver.interpolateString(data, params) as any;
     }
 
     // プリミティブ型の場合はそのまま返す
@@ -60,14 +61,14 @@ export class TemplateCoordinator {
     depth: number,
     visitedFiles: Set<string>,
     params: Record<string, any>
-  ): Promise<any[]> {
-    const results = [];
+  ): Promise<ComponentDef[]> {
+    const results: ComponentDef[] = [];
     for (const item of data) {
       const result = await this.resolveTemplates(item, basePath, depth + 1, visitedFiles, params);
       if (Array.isArray(result)) {
-        results.push(...result);
+        results.push(...(result as ComponentDef[]));
       } else {
-        results.push(result);
+        results.push(result as ComponentDef);
       }
     }
     return this.resolver.applyParameters(results, params);
@@ -88,6 +89,16 @@ export class TemplateCoordinator {
       return await this.resolver.processInclude(
         data.$include, basePath, depth, visitedFiles, params, this.resolveTemplates.bind(this)
       );
+    }
+    
+    // type: Includeの処理
+    if (data.type === 'Include') {
+      console.log('[TemplateCoordinator] type: Includeを検出:', data);
+      const result = await this.resolver.processInclude(
+        data, basePath, depth, visitedFiles, params, this.resolveTemplates.bind(this)
+      );
+      console.log('[TemplateCoordinator] Include展開結果:', result);
+      return result;
     }
     
     // $if構文の処理

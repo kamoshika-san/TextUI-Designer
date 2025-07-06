@@ -4,9 +4,10 @@ type ThemeMode = 'light' | 'dark' | 'auto';
 
 interface ThemeToggleProps {
   className?: string;
+  onThemeChange?: () => void;
 }
 
-export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
+export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '', onThemeChange }) => {
   const [themeMode, setThemeMode] = useState<ThemeMode>('auto');
   const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('dark');
 
@@ -95,40 +96,31 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
   };
 
   return (
-    <button
-      onClick={handleThemeChange}
-      className={`theme-toggle ${className}`}
-      title={`テーマ: ${getThemeLabel()} (クリックで切り替え)`}
-      style={{
-        position: 'fixed',
-        top: '1rem',
-        right: '6rem', // Exportボタンとの間隔を広げる
-        backgroundColor: 'rgba(75, 85, 99, 0.8)',
-        color: '#d1d5db',
-        border: '1px solid rgba(107, 114, 128, 0.5)',
-        padding: '0.5rem 0.75rem',
-        borderRadius: '0.375rem',
-        fontSize: '0.875rem',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        zIndex: 1000,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '2.5rem', // Exportボタンと同じ高さ
-        minWidth: '3rem',
-        width: '3rem' // 幅を固定
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(55, 65, 81, 0.9)';
-        e.currentTarget.style.borderColor = 'rgba(75, 85, 99, 0.7)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(75, 85, 99, 0.8)';
-        e.currentTarget.style.borderColor = 'rgba(107, 114, 128, 0.5)';
-      }}
-    >
-      <span style={{ fontSize: '1rem' }}>{getThemeIcon()}</span>
-    </button>
+    <div className="flex gap-2">
+      <button
+        onClick={() => { setThemeMode('light'); onThemeChange && onThemeChange(); }}
+        className={`w-8 h-8 flex items-center justify-center rounded border text-lg transition-colors
+          ${themeMode === 'light' ? 'bg-yellow-100 border-yellow-400 text-yellow-700 shadow' : 'bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-300 hover:bg-yellow-50 dark:hover:bg-gray-600'}`}
+        title="ライトモード"
+      >
+        ☀️
+      </button>
+      <button
+        onClick={() => { setThemeMode('dark'); onThemeChange && onThemeChange(); }}
+        className={`w-8 h-8 flex items-center justify-center rounded border text-lg transition-colors
+          ${themeMode === 'dark' ? 'bg-blue-900 border-blue-400 text-blue-100 shadow' : 'bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-300 hover:bg-blue-900/30 dark:hover:bg-gray-600'}`}
+        title="ダークモード"
+      >
+        🌙
+      </button>
+      <button
+        onClick={() => { setThemeMode('auto'); onThemeChange && onThemeChange(); }}
+        className={`w-8 h-8 flex items-center justify-center rounded border text-lg transition-colors
+          ${themeMode === 'auto' ? 'bg-green-100 border-green-400 text-green-700 shadow' : 'bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-gray-600'}`}
+        title="システム設定に合わせる"
+      >
+        🖥️
+      </button>
+    </div>
   );
 }; 

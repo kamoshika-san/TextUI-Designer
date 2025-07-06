@@ -63,18 +63,25 @@ export class TemplateResolver {
     parentParams: Record<string, any>,
     resolveTemplates: TemplateResolverFunction
   ): Promise<any> {
+    console.log('[TemplateResolver] processInclude開始:', includeRef);
     const includeResult = await this.includeProcessor.process(
       includeRef, basePath, depth, visitedFiles, parentParams
     );
+    console.log('[TemplateResolver] includeProcessor結果:', includeResult);
 
-    // includeProcessorから返される情報を使って再帰的に解決
-    return await resolveTemplates(
+    // 展開結果をInclude型でラップして返す
+    const resolved = await resolveTemplates(
       includeResult.templateData,
       includeResult.templatePath,
       includeResult.depth,
       visitedFiles,
       includeResult.mergedParams
     );
+    console.log('[TemplateResolver] resolveTemplates結果:', resolved);
+    
+    const result = { type: 'Include', components: Array.isArray(resolved) ? resolved : [resolved] };
+    console.log('[TemplateResolver] 最終結果:', result);
+    return result;
   }
 
   /**

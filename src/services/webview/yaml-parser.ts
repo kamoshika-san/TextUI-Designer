@@ -85,6 +85,49 @@ export class YamlParser {
   }
 
   /**
+   * パラメータ付きでYAMLファイルを解析
+   */
+  async parseYamlFileWithParameters(filePath?: string, parameters: Record<string, any> = {}): Promise<ParsedYamlResult> {
+    return this.performanceMonitor.measureRenderTime(async () => {
+      const activeEditor = vscode.window.activeTextEditor;
+      let yamlContent = '';
+      let fileName = '';
+
+      if (activeEditor && activeEditor.document.fileName.endsWith('.tui.yml')) {
+        yamlContent = activeEditor.document.getText();
+        fileName = activeEditor.document.fileName;
+      } else if (filePath) {
+        // 指定されたファイルを使用
+        const document = await vscode.workspace.openTextDocument(filePath);
+        yamlContent = document.getText();
+        fileName = filePath;
+      } else {
+        // デフォルトのサンプルデータ
+        yamlContent = this.getDefaultSampleYaml();
+        fileName = 'sample.tui.yml';
+      }
+
+      console.log(`[YamlParser] パラメータ付き解析対象ファイル: ${fileName}`);
+      console.log(`[YamlParser] パラメータ:`, parameters);
+
+      // ファイルサイズ制限をチェック
+      this.validateFileSize(yamlContent, fileName);
+
+      // YAMLパース処理を非同期で実行（パラメータ付き）
+      const yaml = await this.parseYamlContentWithParameters(yamlContent, fileName, parameters);
+
+      // スキーマバリデーションを実行
+      await this.validateYamlSchema(yaml, yamlContent, fileName);
+
+      return {
+        data: yaml,
+        fileName: fileName,
+        content: yamlContent
+      };
+    });
+  }
+
+  /**
    * YAMLコンテンツをパース
    */
   private async parseYamlContent(yamlContent: string, fileName: string): Promise<any> {
@@ -96,6 +139,29 @@ export class YamlParser {
             
             // テンプレート参照を解決
             const resolvedData = await this.resolveTemplates(parsed, fileName);
+            resolve(resolvedData);
+          } catch (error) {
+            reject(error);
+          }
+        });
+      });
+    } catch (parseError) {
+      throw this.createParseError(parseError, yamlContent, fileName);
+    }
+  }
+
+  /**
+   * パラメータ付きでYAMLコンテンツをパース
+   */
+  private async parseYamlContentWithParameters(yamlContent: string, fileName: string, parameters: Record<string, any>): Promise<any> {
+    try {
+      return await new Promise((resolve, reject) => {
+        setImmediate(async () => {
+          try {
+            const parsed = YAML.parse(yamlContent);
+            
+            // テンプレート参照を解決（パラメータ付き）
+            const resolvedData = await this.resolveTemplatesWithParameters(parsed, fileName, parameters);
             resolve(resolvedData);
           } catch (error) {
             reject(error);
@@ -120,25 +186,70 @@ export class YamlParser {
         return data;
       }
       
-      // $include構文が含まれている場合のみテンプレート解析を実行
+      // $include構文またはtype: Include/Ifが含まれている場合のみテンプレート解析を実行
       const yamlString = YAML.stringify(data);
-      const hasInclude = yamlString.includes('$include:');
+      const hasInclude = yamlString.includes('$include:') || this.hasTemplateComponent(data, 'Include');
+      const hasIf = yamlString.includes('$if:') || this.hasTemplateComponent(data, 'If');
       
       console.log(`[YamlParser] $include含む: ${hasInclude}`);
+      console.log(`[YamlParser] $if含む: ${hasIf}`);
       
-      if (hasInclude) {
+      if (hasInclude || hasIf) {
         console.log(`[YamlParser] テンプレート解析を実行: ${fileName}`);
         return await this.templateParser.parseWithTemplates(
           yamlString,
           fileName
         );
       } else {
-        // $includeが含まれていない場合は、そのまま返す
-        console.log(`[YamlParser] $includeが含まれていないため、そのまま返す: ${fileName}`);
+        // $includeや$ifが含まれていない場合は、そのまま返す
+        console.log(`[YamlParser] $includeや$ifが含まれていないため、そのまま返す: ${fileName}`);
         return data;
       }
     } catch (error) {
       console.error(`[YamlParser] resolveTemplatesでエラー: ${fileName}`, error);
+      if (error instanceof TemplateException) {
+        throw this.createTemplateError(error, fileName);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * パラメータ付きでテンプレート参照を解決
+   */
+  private async resolveTemplatesWithParameters(data: any, fileName: string, parameters: Record<string, any>): Promise<any> {
+    try {
+      console.log(`[YamlParser] resolveTemplatesWithParameters開始: ${fileName}`);
+      console.log(`[YamlParser] パラメータ:`, parameters);
+      
+      // テンプレートファイル（.template.yml）の場合は循環参照チェックをスキップ
+      if (fileName.endsWith('.template.yml') || fileName.endsWith('.template.yaml')) {
+        console.log(`[YamlParser] テンプレートファイルのため、循環参照チェックをスキップ: ${fileName}`);
+        return data;
+      }
+      
+      // $include構文またはtype: Include/Ifが含まれている場合のみテンプレート解析を実行
+      const yamlString = YAML.stringify(data);
+      const hasInclude = yamlString.includes('$include:') || this.hasTemplateComponent(data, 'Include');
+      const hasIf = yamlString.includes('$if:') || this.hasTemplateComponent(data, 'If');
+      
+      console.log(`[YamlParser] $include含む: ${hasInclude}`);
+      console.log(`[YamlParser] $if含む: ${hasIf}`);
+      
+      if (hasInclude || hasIf) {
+        console.log(`[YamlParser] パラメータ付きテンプレート解析を実行: ${fileName}`);
+        return await this.templateParser.parseWithTemplatesAndParameters(
+          yamlString,
+          fileName,
+          parameters
+        );
+      } else {
+        // $includeや$ifが含まれていない場合は、そのまま返す
+        console.log(`[YamlParser] $includeや$ifが含まれていないため、そのまま返す: ${fileName}`);
+        return data;
+      }
+    } catch (error) {
+      console.error(`[YamlParser] resolveTemplatesWithParametersでエラー: ${fileName}`, error);
       if (error instanceof TemplateException) {
         throw this.createTemplateError(error, fileName);
       }
@@ -459,22 +570,20 @@ export class YamlParser {
             return;
           }
 
-          const compKeys = Object.keys(comp);
-          if (compKeys.length !== 1) {
+          // 新しいtypeベースのバリデーション
+          if (!comp.type || typeof comp.type !== 'string') {
             errors.push({
               instancePath: `/page/components/${index}`,
-              message: 'コンポーネントは正確に1つのキーを持つ必要があります'
+              message: 'コンポーネントはtypeフィールド（文字列）が必須です'
             });
             return;
           }
 
-          const componentType = compKeys[0];
-          const validTypes = ['Text', 'Input', 'Button', 'Form', 'Checkbox', 'Radio', 'Select', 'Divider', 'Container', 'Alert'];
-          
-          if (!validTypes.includes(componentType)) {
+          const validTypes = ['Text', 'Input', 'Button', 'Form', 'Checkbox', 'Radio', 'Select', 'Divider', 'Container', 'Alert', 'Include'];
+          if (!validTypes.includes(comp.type)) {
             errors.push({
               instancePath: `/page/components/${index}`,
-              message: `無効なコンポーネントタイプ: ${componentType}`
+              message: `無効なコンポーネントタイプ: ${comp.type}`
             });
           }
         });
@@ -493,11 +602,38 @@ export class YamlParser {
   title: "サンプル"
   layout: vertical
   components:
-    - Text:
-        variant: h1
-        value: "TextUI Designer"
-    - Text:
-        variant: p
-        value: "プレビューが表示されています"`;
+    - type: Text
+      variant: h1
+      value: "TextUI Designer"
+    - type: Text
+      variant: p
+      value: "プレビューが表示されています"`;
+  }
+
+  /**
+   * コンポーネントに$include構文またはtype: Include/Ifが含まれているかチェック
+   */
+  private hasTemplateComponent(data: any, componentType: string): boolean {
+    if (!data || typeof data !== 'object') {
+      return false;
+    }
+
+    // コンポーネントがIncludeタイプまたはIfタイプであるかチェック
+    if (data.type === componentType) {
+      return true;
+    }
+
+    // コンポーネントがオブジェクトであり、その中に$include構文が含まれているかチェック
+    if (typeof data === 'object' && data !== null) {
+      for (const key in data) {
+        if (typeof data[key] === 'object' && data[key] !== null) {
+          if (this.hasTemplateComponent(data[key], componentType)) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
   }
 } 

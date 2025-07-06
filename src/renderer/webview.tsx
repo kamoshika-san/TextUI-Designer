@@ -10,88 +10,86 @@ import { Radio } from './components/Radio';
 import { Select } from './components/Select';
 import { Divider } from './components/Divider';
 import { Alert } from './components/Alert';
-import { ThemeToggle } from './components/ThemeToggle';
-import { CustomThemeSelector } from './components/CustomThemeSelector';
+import { ControlPanel } from './components/ControlPanel';
 import type { TextUIDSL, ComponentDef, FormComponent, FormField, FormAction } from './types';
+import { isInputComponent } from './types';
 
 // HTMLテンプレートで既に取得されているvscodeオブジェクトを使用
 const vscode = (window as any).vscode;
 
-function renderComponent(comp: ComponentDef, key: number): React.ReactNode {
-  if ('Text' in comp) {
-    return <Text key={key} {...comp.Text} />;
-  }
-  if ('Input' in comp) {
-    return <Input key={key} {...comp.Input} />;
-  }
-  if ('Button' in comp) {
-    return <Button key={key} {...comp.Button} />;
-  }
-  if ('Checkbox' in comp) {
-    return <Checkbox key={key} {...comp.Checkbox} />;
-  }
-  if ('Radio' in comp) {
-    return <Radio key={key} {...comp.Radio} />;
-  }
-  if ('Select' in comp) {
-    return <Select key={key} {...comp.Select} />;
-  }
-  if ('Divider' in comp) {
-    return <Divider key={key} {...comp.Divider} />;
-  }
-  if ('Alert' in comp) {
-    return <Alert key={key} {...comp.Alert} />;
-  }
-  if ('Container' in comp) {
-    // Containerのchildrenを再帰的に描画（仮: childrenプロパティがcomponents配列である前提）
-    const children = (comp as any).Container.components as ComponentDef[] | undefined;
-    return (
-      <Container key={key} layout={(comp as any).Container.layout || 'vertical'}>
-        {children ? children.map((child, i) => renderComponent(child, i)) : null}
-      </Container>
-    );
-  }
-  if ('Form' in comp) {
-    const form: FormComponent = comp.Form;
-    // fields, actionsを再帰的に描画
-    return (
-      <Form
-        key={key}
-        id={form.id || ''}
-        fields={form.fields || []}
-        actions={form.actions || []}
-        onSubmit={data => {
-          // ここで何かアクションを追加可能
-          console.log('Form submit:', data);
-        }}
-      >
-        {/* fields, actionsを再帰的に描画 */}
-        {(form.fields || []).map((field: FormField, i: number) => {
-          if (field.Input) return <Input key={i} {...field.Input} />;
-          if (field.Checkbox) return <Checkbox key={i} {...field.Checkbox} />;
-          if (field.Radio) return <Radio key={i} {...field.Radio} />;
-          if (field.Select) return <Select key={i} {...field.Select} />;
-          if (field.Text) return <Text key={i} {...field.Text} />;
-          if (field.Divider) return <Divider key={i} {...field.Divider} />;
-          if (field.Alert) return <Alert key={i} {...field.Alert} />;
-          if (field.Container) return <Container key={i} {...field.Container} />;
-          return null;
-        })}
-        <div style={{ display: 'flex', gap: 8 }}>
-          {(form.actions || []).map((action: FormAction, i: number) => {
-            if (action.Button) return <Button key={i} {...action.Button} />;
-            return null;
-          })}
+function renderComponent(comp: any, key: number): React.ReactNode {
+  switch (comp.type) {
+    case 'Text':
+      return <Text key={key} variant={comp.variant} value={comp.value} size={comp.size} weight={comp.weight} color={comp.color} />;
+    case 'Input':
+      return <Input key={key} label={comp.label} name={comp.name} type={comp.type} placeholder={comp.placeholder} required={comp.required} disabled={comp.disabled} multiline={comp.multiline} />;
+    case 'Button':
+      return <Button key={key} kind={comp.kind} label={comp.label} submit={comp.submit} disabled={comp.disabled} size={comp.size} />;
+    case 'Checkbox':
+      return <Checkbox key={key} label={comp.label} name={comp.name} checked={comp.checked} disabled={comp.disabled} />;
+    case 'Radio':
+      return <Radio key={key} label={comp.label} name={comp.name} value={comp.value} checked={comp.checked} disabled={comp.disabled} options={comp.options} />;
+    case 'Select':
+      return <Select key={key} label={comp.label} name={comp.name} options={comp.options} placeholder={comp.placeholder} disabled={comp.disabled} multiple={comp.multiple} />;
+    case 'Divider':
+      return <Divider key={key} orientation={comp.orientation} spacing={comp.spacing} />;
+    case 'Alert':
+      return <Alert key={key} variant={comp.variant} message={comp.message} title={comp.title} />;
+    case 'Container':
+      return (
+        <Container key={key} layout={comp.layout || 'vertical'}>
+          {(comp.components || []).map((child, i) => renderComponent(child as ComponentDef, i))}
+        </Container>
+      );
+    case 'Form':
+      return (
+        <Form
+          key={key}
+          id={comp.id || ''}
+          fields={comp.fields || []}
+          actions={comp.actions || []}
+          onSubmit={data => { console.log('Form submit:', data); }}
+        >
+          {(comp.fields || []).map((field: FormField, i: number) => renderComponent(field as ComponentDef, i))}
+          <div style={{ display: 'flex', gap: 8 }}>
+            {(comp.actions || []).map((action: FormAction, i: number) => renderComponent(action as ComponentDef, i))}
+          </div>
+        </Form>
+      );
+    case 'Include':
+      // 展開済みcomponentsが配列で渡ってくる前提
+      if (Array.isArray(comp.components)) {
+        return (
+          <React.Fragment key={key}>
+            {comp.components.map((child, i) => renderComponent(child as ComponentDef, i))}
+          </React.Fragment>
+        );
+      }
+      // 展開失敗や未展開時のフォールバック
+      return (
+        <div key={key} style={{ color: 'orange' }}>
+          Includeテンプレートが展開できませんでした
         </div>
-      </Form>
-    );
+      );
+    case 'If':
+      // 条件分岐の結果がcomponentsとして渡ってくる前提
+      if (Array.isArray(comp.components)) {
+        return (
+          <React.Fragment key={key}>
+            {comp.components.map((child, i) => renderComponent(child as ComponentDef, i))}
+          </React.Fragment>
+        );
+      }
+      // 条件が偽の場合や展開失敗時のフォールバック
+      return null;
+    // Include等も必要に応じて追加
+    default:
+      return (
+        <div key={key} style={{ color: 'orange' }}>
+          未対応コンポーネント: {comp.type}
+        </div>
+      );
   }
-  // 未対応コンポーネントは警告表示
-  return (
-    <div key={key} style={{ color: 'orange' }}>
-      未対応コンポーネント: {Object.keys(comp)[0]}
-    </div>
-  );
 }
 
 // エラー情報の型定義
@@ -119,6 +117,23 @@ interface ErrorInfo {
 const App: React.FC = () => {
   const [json, setJson] = useState<TextUIDSL | null>(null);
   const [error, setError] = useState<ErrorInfo | string | null>(null);
+  const [parameters, setParameters] = useState<Record<string, any>>({
+    showWelcome: true,
+    showAdvanced: false,
+    userRole: 'user',
+    welcomeMessage: 'ようこそ！'
+  });
+
+  const handleParameterChange = (newParams: Record<string, any>) => {
+    setParameters(newParams);
+    // パラメータ変更をVS Code拡張に通知
+    if (vscode && vscode.postMessage) {
+      vscode.postMessage({ 
+        type: 'parameter-change', 
+        parameters: newParams 
+      });
+    }
+  };
 
   useEffect(() => {
     // WebView準備完了メッセージを送信
@@ -524,49 +539,18 @@ const App: React.FC = () => {
   const components: ComponentDef[] = json.page?.components || [];
   return (
     <div style={{ padding: 24, position: 'relative' }}>
-      {/* テーマ切り替えスイッチ */}
-      <ThemeToggle />
-      
-      {/* カスタムテーマセレクター */}
-      <CustomThemeSelector />
-      
-      {/* エクスポートボタン */}
-      <button 
-        onClick={handleExport}
-        className="export-button"
-        style={{
-          position: 'fixed',
-          top: '1rem',
-          right: '1rem',
-          backgroundColor: 'rgba(75, 85, 99, 0.8)',
-          color: '#d1d5db',
-          border: '1px solid rgba(107, 114, 128, 0.5)',
-          padding: '0.5rem 1rem',
-          borderRadius: '0.375rem',
-          fontSize: '0.875rem',
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-          zIndex: 1000,
-          height: '2.5rem', // 高さを固定
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minWidth: '4.5rem' // 最小幅を設定
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = 'rgba(55, 65, 81, 0.9)';
-          e.currentTarget.style.borderColor = 'rgba(75, 85, 99, 0.7)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = 'rgba(75, 85, 99, 0.8)';
-          e.currentTarget.style.borderColor = 'rgba(107, 114, 128, 0.5)';
-        }}
-      >
-        Export
-      </button>
+      {/* 統合コントロールパネル */}
+      <ControlPanel 
+        onExport={handleExport}
+        onParameterChange={handleParameterChange}
+      />
       
       {/* プレビューコンテンツ */}
-      {components.map((comp, i) => renderComponent(comp, i))}
+      {json && json.page && json.page.components && (
+        Array.isArray(json.page.components)
+          ? json.page.components.map((comp, i) => renderComponent(comp, i))
+          : renderComponent(json.page.components, 0)
+      )}
     </div>
   );
 };

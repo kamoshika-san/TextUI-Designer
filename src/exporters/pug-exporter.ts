@@ -1,4 +1,11 @@
 import type { TextUIDSL, ComponentDef, FormComponent, FormField, FormAction } from '../renderer/types';
+import { 
+  isInputField,
+  isCheckboxField,
+  isRadioField,
+  isSelectField,
+  isButtonAction
+} from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
 import { StyleManager } from '../utils/style-manager';
@@ -157,26 +164,26 @@ ${componentCode}`;
     return code;
   }
 
-  protected renderForm(props: FormComponent, key: number): string {
+  protected renderForm(props: { type: 'Form' } & FormComponent, key: number): string {
     const { id, fields = [], actions = [] } = props;
     
     let code = `      form(id="${id}" class="space-y-4")`;
     
     fields.forEach((field: FormField, index: number) => {
-      if (field.Input) {
-        const fieldCode = this.renderInput(field.Input, index);
+      if (isInputField(field)) {
+        const fieldCode = this.renderInput(field, index);
         const indentedCode = fieldCode.split('\n').map(line => `  ${line}`).join('\n');
         code += `\n${indentedCode}`;
-      } else if (field.Checkbox) {
-        const fieldCode = this.renderCheckbox(field.Checkbox, index);
+      } else if (isCheckboxField(field)) {
+        const fieldCode = this.renderCheckbox(field, index);
         const indentedCode = fieldCode.split('\n').map(line => `  ${line}`).join('\n');
         code += `\n${indentedCode}`;
-      } else if (field.Radio) {
-        const fieldCode = this.renderRadio(field.Radio, index);
+      } else if (isRadioField(field)) {
+        const fieldCode = this.renderRadio(field, index);
         const indentedCode = fieldCode.split('\n').map(line => `  ${line}`).join('\n');
         code += `\n${indentedCode}`;
-      } else if (field.Select) {
-        const fieldCode = this.renderSelect(field.Select, index);
+      } else if (isSelectField(field)) {
+        const fieldCode = this.renderSelect(field, index);
         const indentedCode = fieldCode.split('\n').map(line => `  ${line}`).join('\n');
         code += `\n${indentedCode}`;
       }
@@ -184,8 +191,8 @@ ${componentCode}`;
     
     code += `\n        .flex.space-x-4`;
     actions.forEach((action: FormAction, index: number) => {
-      if (action.Button) {
-        const actionCode = this.renderButton(action.Button, index);
+      if (isButtonAction(action)) {
+        const actionCode = this.renderButton(action, index);
         const indentedCode = actionCode.split('\n').map(line => `  ${line}`).join('\n');
         code += `\n${indentedCode}`;
       }

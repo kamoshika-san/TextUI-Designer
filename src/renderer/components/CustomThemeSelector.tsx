@@ -76,17 +76,23 @@ export const CustomThemeSelector: React.FC<CustomThemeSelectorProps> = ({ classN
     return null; // テーマがない場合は非表示
   }
 
+  // パネル内用: position: static, 右上固定用: position: fixed
+  const isFixed = className.includes('fixed') || className.includes('absolute');
+
   return (
-    <div className={`custom-theme-selector ${className}`}>
+    <div className={`custom-theme-selector ${className}`} style={{ position: isFixed ? 'fixed' : 'static' }}>
       {/* メインボタン */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isLoading}
         title={`現在のテーマ: ${activeTheme?.name || 'デフォルト'}`}
-        style={{
+        className={isFixed
+          ? ''
+          : 'w-full min-w-[160px] h-10 px-4 py-2 bg-gray-700 text-white rounded-md shadow-sm flex items-center gap-2 transition-colors hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60'}
+        style={isFixed ? {
           position: 'fixed',
           top: '1rem',
-          right: '10rem', // ExportボタンとThemeToggleボタンの間
+          right: '10rem',
           backgroundColor: 'rgba(75, 85, 99, 0.8)',
           color: '#d1d5db',
           border: '1px solid rgba(107, 114, 128, 0.5)',
@@ -102,36 +108,27 @@ export const CustomThemeSelector: React.FC<CustomThemeSelectorProps> = ({ classN
           height: '2.5rem',
           minWidth: '5rem',
           opacity: isLoading ? 0.7 : 1
-        }}
-        onMouseEnter={(e) => {
+        } : {}}
+        onMouseEnter={isFixed ? (e) => {
           if (!isLoading) {
             e.currentTarget.style.backgroundColor = 'rgba(55, 65, 81, 0.9)';
             e.currentTarget.style.borderColor = 'rgba(75, 85, 99, 0.7)';
           }
-        }}
-        onMouseLeave={(e) => {
+        } : undefined}
+        onMouseLeave={isFixed ? (e) => {
           if (!isLoading) {
             e.currentTarget.style.backgroundColor = 'rgba(75, 85, 99, 0.8)';
             e.currentTarget.style.borderColor = 'rgba(107, 114, 128, 0.5)';
           }
-        }}
+        } : undefined}
       >
-        <span style={{ marginRight: '0.25rem' }}>🎨</span>
+        <span className="mr-1">🎨</span>
         {isLoading ? (
-          <span style={{ fontSize: '0.75rem' }}>⏳</span>
+          <span className="text-xs">⏳</span>
         ) : (
           <>
-            <span style={{ 
-              maxWidth: '4rem', 
-              overflow: 'hidden', 
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}>
-              {activeTheme?.name || 'テーマ'}
-            </span>
-            <span style={{ marginLeft: '0.25rem', fontSize: '0.75rem' }}>
-              {isOpen ? '▲' : '▼'}
-            </span>
+            <span className="truncate max-w-[6rem]">{activeTheme?.name || 'テーマ'}</span>
+            <span className="ml-1 text-xs">{isOpen ? '▲' : '▼'}</span>
           </>
         )}
       </button>
@@ -139,7 +136,7 @@ export const CustomThemeSelector: React.FC<CustomThemeSelectorProps> = ({ classN
       {/* ドロップダウンメニュー */}
       {isOpen && (
         <div
-          style={{
+          style={isFixed ? {
             position: 'fixed',
             top: '4rem',
             right: '10rem',
@@ -150,6 +147,20 @@ export const CustomThemeSelector: React.FC<CustomThemeSelectorProps> = ({ classN
             zIndex: 1001,
             minWidth: '12rem',
             maxWidth: '20rem',
+            maxHeight: '20rem',
+            overflowY: 'auto',
+            backdropFilter: 'blur(10px)'
+          } : {
+            position: 'absolute',
+            top: '2.8rem',
+            left: 0,
+            backgroundColor: 'rgba(31, 41, 55, 0.95)',
+            border: '1px solid rgba(75, 85, 99, 0.7)',
+            borderRadius: '0.5rem',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+            zIndex: 10,
+            minWidth: '14rem',
+            maxWidth: '22rem',
             maxHeight: '20rem',
             overflowY: 'auto',
             backdropFilter: 'blur(10px)'

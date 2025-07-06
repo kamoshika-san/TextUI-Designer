@@ -1,530 +1,191 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://example.com/textui/v0/template-schema.json",
-  "title": "TextUI Designer Template DSL v0",
-  "description": "Template definition for TextUI Designer with parameterization support",
-  "type": "array",
-  "items": { "$ref": "#/definitions/templateComponent" },
-  "definitions": {
-    "templateComponent": {
+  "type": "object",
+  "properties": {
+    "template": {
       "type": "object",
-      "description": "Template component with parameterization support",
+      "required": ["components"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "components": { "$ref": "#/definitions/componentArray" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "definitions": {
+    "componentArray": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/component" }
+    },
+    "component": {
+      "type": "object",
       "oneOf": [
         { "$ref": "#/definitions/Text" },
-        { "$ref": "#/definitions/Input" },
-        { "$ref": "#/definitions/Button" },
-        { "$ref": "#/definitions/Form" },
-        { "$ref": "#/definitions/Checkbox" },
+        { "$ref": "#/definitions/Alert" },
         { "$ref": "#/definitions/Radio" },
         { "$ref": "#/definitions/Select" },
+        { "$ref": "#/definitions/Button" },
+        { "$ref": "#/definitions/Checkbox" },
         { "$ref": "#/definitions/Divider" },
         { "$ref": "#/definitions/Container" },
-        { "$ref": "#/definitions/Alert" },
-        { "$ref": "#/definitions/Conditional" },
-        { "$ref": "#/definitions/Loop" }
+        { "$ref": "#/definitions/Form" },
+        { "$ref": "#/definitions/Include" }
       ]
     },
-
-    "Conditional": {
-      "type": "object",
-      "required": ["$if"],
-      "properties": {
-        "$if": {
-          "type": "object",
-          "required": ["condition", "template"],
-          "properties": {
-            "condition": {
-              "type": "string",
-              "description": "条件式（例: $params.showHeader）"
-            },
-            "template": {
-              "type": "array",
-              "items": { "$ref": "#/definitions/templateComponent" },
-              "description": "条件が真の場合に表示するテンプレート"
-            }
-          },
-          "additionalProperties": false,
-          "description": "条件分岐を実現する構文。\n利用可能な属性: condition, template"
-        }
-      },
-      "additionalProperties": false,
-      "description": "条件分岐コンポーネント。"
-    },
-
-    "Loop": {
-      "type": "object",
-      "required": ["$foreach"],
-      "properties": {
-        "$foreach": {
-          "type": "object",
-          "required": ["items", "as", "template"],
-          "properties": {
-            "items": {
-              "type": "string",
-              "description": "ループ対象の配列（例: $params.items）"
-            },
-            "as": {
-              "type": "string",
-              "description": "ループ変数名（例: item）"
-            },
-            "template": {
-              "type": "array",
-              "items": { "$ref": "#/definitions/templateComponent" },
-              "description": "各アイテムに対して適用するテンプレート"
-            }
-          },
-          "additionalProperties": false,
-          "description": "配列ループ処理を実現する構文。\n利用可能な属性: items, as, template"
-        }
-      },
-      "additionalProperties": false,
-      "description": "ループ処理コンポーネント。"
-    },
-
     "Text": {
       "type": "object",
-      "required": [
-        "Text"
-      ],
+      "required": ["type", "variant", "value"],
       "properties": {
-        "Text": {
-          "type": "object",
-          "required": [
-            "variant",
-            "value"
-          ],
-          "properties": {
-            "variant": {
-              "type": "string",
-              "enum": [
-                "h1",
-                "h2",
-                "h3",
-                "p",
-                "small",
-                "caption"
-              ],
-              "description": "テキストの見た目（見出し・段落・注釈など）を指定します。"
-            },
-            "value": {
-              "type": "string",
-              "description": "表示するテキスト内容。"
-            }
-          },
-          "additionalProperties": false,
-          "description": "テキスト（見出し・段落など）を表示するコンポーネント。\n利用可能な属性: variant, value"
-        }
+        "type": { "const": "Text" },
+        "variant": {
+          "type": "string",
+          "enum": ["h1", "h2", "h3", "p", "small", "caption"]
+        },
+        "value": { "type": "string" }
       },
-      "additionalProperties": false,
-      "description": "テキスト（見出し・段落など）を表示するコンポーネント。"
-    },
-    "Input": {
-      "type": "object",
-      "required": [
-        "Input"
-      ],
-      "properties": {
-        "Input": {
-          "type": "object",
-          "required": [
-            "label",
-            "name",
-            "type"
-          ],
-          "properties": {
-            "label": {
-              "type": "string",
-              "description": "入力欄のラベル（表示名）。"
-            },
-            "name": {
-              "type": "string",
-              "description": "フォーム送信時のname属性。"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "text",
-                "email",
-                "password",
-                "number",
-                "multiline"
-              ],
-              "description": "入力欄の種類（テキスト・メール・パスワード・数値・複数行）。"
-            },
-            "required": {
-              "type": "boolean",
-              "default": false,
-              "description": "必須入力かどうか。trueで必須。"
-            }
-          },
-          "additionalProperties": false,
-          "description": "テキスト入力用コンポーネント。\n利用可能な属性: label, name, type, required"
-        }
-      },
-      "additionalProperties": false,
-      "description": "テキスト入力用コンポーネント。"
-    },
-    "Button": {
-      "type": "object",
-      "required": [
-        "Button"
-      ],
-      "properties": {
-        "Button": {
-          "type": "object",
-          "required": [
-            "label"
-          ],
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "primary",
-                "secondary",
-                "submit"
-              ],
-              "default": "primary",
-              "description": "ボタンの種類（主ボタン・副ボタン・送信ボタン）。"
-            },
-            "label": {
-              "type": "string",
-              "description": "ボタンに表示するテキスト。"
-            },
-            "submit": {
-              "type": "boolean",
-              "default": false,
-              "description": "フォーム送信ボタンかどうか。"
-            }
-          },
-          "additionalProperties": false,
-          "description": "ボタンコンポーネント。\n利用可能な属性: kind, label, submit"
-        }
-      },
-      "additionalProperties": false,
-      "description": "ボタンコンポーネント。"
-    },
-    "Checkbox": {
-      "type": "object",
-      "required": [
-        "Checkbox"
-      ],
-      "properties": {
-        "Checkbox": {
-          "type": "object",
-          "required": [
-            "label",
-            "name"
-          ],
-          "properties": {
-            "label": {
-              "type": "string",
-              "description": "チェックボックスのラベル。"
-            },
-            "name": {
-              "type": "string",
-              "description": "フォーム送信時のname属性。"
-            },
-            "required": {
-              "type": "boolean",
-              "default": false,
-              "description": "必須項目かどうか。"
-            }
-          },
-          "additionalProperties": false,
-          "description": "チェックボックスコンポーネント。\n利用可能な属性: label, name, required"
-        }
-      },
-      "additionalProperties": false,
-      "description": "チェックボックスコンポーネント。"
-    },
-    "Radio": {
-      "type": "object",
-      "required": [
-        "Radio"
-      ],
-      "properties": {
-        "Radio": {
-          "type": "object",
-          "required": [
-            "label",
-            "name",
-            "options"
-          ],
-          "properties": {
-            "label": {
-              "type": "string",
-              "description": "ラジオボタンのラベル。"
-            },
-            "name": {
-              "type": "string",
-              "description": "フォーム送信時のname属性。"
-            },
-            "options": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "required": [
-                  "label",
-                  "value"
-                ],
-                "properties": {
-                  "label": {
-                    "type": "string",
-                    "description": "選択肢の表示名。"
-                  },
-                  "value": {
-                    "type": [
-                      "string",
-                      "number",
-                      "boolean"
-                    ],
-                    "description": "選択肢の値。"
-                  }
-                },
-                "additionalProperties": false,
-                "description": "ラジオボタンの選択肢。"
-              },
-              "minItems": 1,
-              "description": "選択肢の配列。"
-            }
-          },
-          "additionalProperties": false,
-          "description": "ラジオボタンコンポーネント。\n利用可能な属性: label, name, options"
-        }
-      },
-      "additionalProperties": false,
-      "description": "ラジオボタンコンポーネント。"
-    },
-    "Select": {
-      "type": "object",
-      "required": [
-        "Select"
-      ],
-      "properties": {
-        "Select": {
-          "type": "object",
-          "required": [
-            "label",
-            "name",
-            "options"
-          ],
-          "properties": {
-            "label": {
-              "type": "string",
-              "description": "セレクトボックスのラベル。"
-            },
-            "name": {
-              "type": "string",
-              "description": "フォーム送信時のname属性。"
-            },
-            "options": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "required": [
-                  "label",
-                  "value"
-                ],
-                "properties": {
-                  "label": {
-                    "type": "string",
-                    "description": "選択肢の表示名。"
-                  },
-                  "value": {
-                    "type": [
-                      "string",
-                      "number",
-                      "boolean"
-                    ],
-                    "description": "選択肢の値。"
-                  }
-                },
-                "additionalProperties": false,
-                "description": "セレクトボックスの選択肢。"
-              },
-              "minItems": 1,
-              "description": "選択肢の配列。"
-            },
-            "multiple": {
-              "type": "boolean",
-              "default": false,
-              "description": "複数選択を許可するか。"
-            }
-          },
-          "additionalProperties": false,
-          "description": "セレクトボックスコンポーネント。\n利用可能な属性: label, name, options, multiple"
-        }
-      },
-      "additionalProperties": false,
-      "description": "セレクトボックスコンポーネント。"
-    },
-    "Divider": {
-      "type": "object",
-      "required": [
-        "Divider"
-      ],
-      "properties": {
-        "Divider": {
-          "type": "object",
-          "properties": {
-            "orientation": {
-              "type": "string",
-              "enum": [
-                "horizontal",
-                "vertical"
-              ],
-              "default": "horizontal",
-              "description": "区切り線の向き（横・縦）。"
-            }
-          },
-          "additionalProperties": false,
-          "description": "区切り線コンポーネント。\n利用可能な属性: orientation"
-        }
-      },
-      "additionalProperties": false,
-      "description": "区切り線コンポーネント。"
-    },
-    "Container": {
-      "type": "object",
-      "required": [
-        "Container"
-      ],
-      "properties": {
-        "Container": {
-          "type": "object",
-          "properties": {
-            "layout": {
-              "type": "string",
-              "enum": [
-                "vertical",
-                "horizontal",
-                "flex",
-                "grid"
-              ],
-              "description": "子コンポーネントの配置方法。"
-            },
-            "components": {
-              "$ref": "#/definitions/componentArray",
-              "description": "子コンポーネントの配列。"
-            }
-          },
-          "required": [
-            "components"
-          ],
-          "additionalProperties": false,
-          "description": "レイアウト用コンテナコンポーネント。\n利用可能な属性: layout, components"
-        }
-      },
-      "additionalProperties": false,
-      "description": "レイアウト用コンテナコンポーネント。"
+      "additionalProperties": false
     },
     "Alert": {
       "type": "object",
-      "required": [
-        "Alert"
-      ],
+      "required": ["type", "variant", "message"],
       "properties": {
-        "Alert": {
-          "type": "object",
-          "required": [
-            "variant",
-            "message"
-          ],
-          "properties": {
-            "variant": {
-              "type": "string",
-              "enum": [
-                "info",
-                "success",
-                "warning",
-                "error"
-              ],
-              "default": "info",
-              "description": "アラートの種類（情報・成功・警告・エラー）。"
+        "type": { "const": "Alert" },
+        "variant": {
+          "type": "string",
+          "enum": ["info", "success", "warning", "error"]
+        },
+        "message": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "Radio": {
+      "type": "object",
+      "required": ["type", "label", "name", "options"],
+      "properties": {
+        "type": { "const": "Radio" },
+        "label": { "type": "string" },
+        "name": { "type": "string" },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "value"],
+            "properties": {
+              "label": { "type": "string" },
+              "value": { "type": ["string", "number", "boolean"] }
             },
-            "message": {
-              "type": "string",
-              "description": "表示するメッセージ内容。"
-            }
+            "additionalProperties": false
           },
-          "additionalProperties": false,
-          "description": "アラートコンポーネント。\n利用可能な属性: variant, message"
+          "minItems": 1
         }
       },
-      "additionalProperties": false,
-      "description": "アラートコンポーネント。"
+      "additionalProperties": false
+    },
+    "Select": {
+      "type": "object",
+      "required": ["type", "label", "name", "options"],
+      "properties": {
+        "type": { "const": "Select" },
+        "label": { "type": "string" },
+        "name": { "type": "string" },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "value"],
+            "properties": {
+              "label": { "type": "string" },
+              "value": { "type": ["string", "number", "boolean"] }
+            },
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "multiple": { "type": "boolean", "default": false },
+        "placeholder": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "Button": {
+      "type": "object",
+      "required": ["type", "label"],
+      "properties": {
+        "type": { "const": "Button" },
+        "kind": {
+          "type": "string",
+          "enum": ["primary", "secondary", "submit"],
+          "default": "primary"
+        },
+        "label": { "type": "string" },
+        "submit": { "type": "boolean", "default": false }
+      },
+      "additionalProperties": false
+    },
+    "Checkbox": {
+      "type": "object",
+      "required": ["type", "label", "name"],
+      "properties": {
+        "type": { "const": "Checkbox" },
+        "label": { "type": "string" },
+        "name": { "type": "string" },
+        "required": { "type": "boolean", "default": false }
+      },
+      "additionalProperties": false
+    },
+    "Divider": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "Divider" },
+        "orientation": {
+          "type": "string",
+          "enum": ["horizontal", "vertical"],
+          "default": "horizontal"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Container": {
+      "type": "object",
+      "required": ["type", "components"],
+      "properties": {
+        "type": { "const": "Container" },
+        "layout": {
+          "type": "string",
+          "enum": ["vertical", "horizontal", "flex", "grid"]
+        },
+        "components": { "$ref": "#/definitions/componentArray" }
+      },
+      "additionalProperties": false
     },
     "Form": {
       "type": "object",
-      "required": [
-        "Form"
-      ],
+      "required": ["type", "fields"],
       "properties": {
-        "Form": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "description": "フォームのID。"
-            },
-            "fields": {
-              "$ref": "#/definitions/componentArray",
-              "description": "フォーム内の入力フィールド群。"
-            },
-            "actions": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Button"
-              },
-              "description": "フォーム下部のボタン群。"
-            }
-          },
-          "required": [
-            "fields"
-          ],
-          "additionalProperties": false,
-          "description": "フォームコンポーネント。\n利用可能な属性: id, fields, actions"
+        "type": { "const": "Form" },
+        "id": { "type": "string" },
+        "fields": { "$ref": "#/definitions/componentArray" },
+        "actions": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Button" }
         }
       },
-      "additionalProperties": false,
-      "description": "フォームコンポーネント。"
+      "additionalProperties": false
+    },
+    "Include": {
+      "type": "object",
+      "required": ["type", "template"],
+      "properties": {
+        "type": { "const": "Include" },
+        "template": { "type": "string" },
+        "params": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
     }
   },
-  "additionalProperties": false,
-  "items": {
-    "type": "object",
-    "description": "Tagged union of all v0 components",
-    "oneOf": [
-      {
-        "$ref": "#/definitions/Text"
-      },
-      {
-        "$ref": "#/definitions/Input"
-      },
-      {
-        "$ref": "#/definitions/Button"
-      },
-      {
-        "$ref": "#/definitions/Form"
-      },
-      {
-        "$ref": "#/definitions/Checkbox"
-      },
-      {
-        "$ref": "#/definitions/Radio"
-      },
-      {
-        "$ref": "#/definitions/Select"
-      },
-      {
-        "$ref": "#/definitions/Divider"
-      },
-      {
-        "$ref": "#/definitions/Container"
-      },
-      {
-        "$ref": "#/definitions/Alert"
-      }
-    ]
-  }
+  "additionalProperties": false
 }

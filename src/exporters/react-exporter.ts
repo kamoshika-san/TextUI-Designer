@@ -1,4 +1,11 @@
 import type { TextUIDSL, ComponentDef, FormComponent, FormField, FormAction } from '../renderer/types';
+import { 
+  isInputField,
+  isCheckboxField,
+  isRadioField,
+  isSelectField,
+  isButtonAction
+} from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
 import { StyleManager } from '../utils/style-manager';
@@ -165,19 +172,19 @@ ${childrenCode}
       </div>`;
   }
 
-  protected renderForm(props: FormComponent, key: number): string {
+  protected renderForm(props: { type: 'Form' } & FormComponent, key: number): string {
     const { id, fields = [], actions = [] } = props;
     
     const fieldsCode = fields.map((field: FormField, index: number) => {
-      if (field.Input) {return this.renderInput(field.Input, index);}
-      if (field.Checkbox) {return this.renderCheckbox(field.Checkbox, index);}
-      if (field.Radio) {return this.renderRadio(field.Radio, index);}
-      if (field.Select) {return this.renderSelect(field.Select, index);}
+      if (isInputField(field)) {return this.renderInput(field, index);}
+      if (isCheckboxField(field)) {return this.renderCheckbox(field, index);}
+      if (isRadioField(field)) {return this.renderRadio(field, index);}
+      if (isSelectField(field)) {return this.renderSelect(field, index);}
       return '';
     }).join('\n');
     
     const actionsCode = actions.map((action: FormAction, index: number) => {
-      if (action.Button) {return this.renderButton(action.Button, index);}
+      if (isButtonAction(action)) {return this.renderButton(action, index);}
       return '';
     }).join('\n');
     

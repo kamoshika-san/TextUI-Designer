@@ -111,13 +111,10 @@ export class ParameterInterpolator extends BaseTemplateProcessor {
   evaluateCondition(condition: string, params: Record<string, any>): boolean {
     try {
       const trimmedCondition = condition.trim();
-      
       // $params.xxx 形式の変数参照
       if (trimmedCondition.startsWith('$params.')) {
         const paramPath = trimmedCondition.substring(8); // '$params.' を除去
         const value = this.getNestedValue(params, paramPath);
-        
-        // 値の型に基づいて評価
         if (typeof value === 'boolean') {
           return value;
         } else if (typeof value === 'string') {
@@ -132,26 +129,22 @@ export class ParameterInterpolator extends BaseTemplateProcessor {
           return true; // オブジェクトの場合は存在するのでtrue
         }
       }
-      
-      // {{ xxx }} 形式の文字列補間を処理
-      if (trimmedCondition.includes('{{') && trimmedCondition.includes('}}')) {
-        const interpolatedCondition = this.interpolateString(trimmedCondition, params);
-        // 補間後の値を評価
-        if (typeof interpolatedCondition === 'boolean') {
-          return interpolatedCondition;
-        } else if (typeof interpolatedCondition === 'string') {
-          return interpolatedCondition.length > 0 && interpolatedCondition.toLowerCase() !== 'false';
-        } else if (typeof interpolatedCondition === 'number') {
-          return interpolatedCondition !== 0;
-        } else if (Array.isArray(interpolatedCondition)) {
-          return (interpolatedCondition as any[]).length > 0;
-        } else if (interpolatedCondition === null || interpolatedCondition === undefined) {
-          return false;
-        } else {
-          return true;
+      // まずFunctionで式評価を試みる
+      try {
+        const paramKeys = Object.keys(params);
+        const paramValues = Object.values(params);
+        if (paramKeys.length > 0) {
+          console.log('[DEBUG] evaluateCondition:', { trimmedCondition, params });
+          // eslint-disable-next-line no-new-func
+          const fn = new Function(...paramKeys, 'return (' + trimmedCondition + ')');
+          const result = fn(...paramValues);
+          console.log('[DEBUG] Function result:', result);
+          return Boolean(result);
         }
+      } catch (e) {
+        console.error('[DEBUG] Function evaluation error:', e);
+        // 式評価に失敗した場合は従来通りの評価にフォールバック
       }
-      
       // その他の基本的な条件式
       return this.evaluateBasicCondition(condition);
     } catch (error) {

@@ -73,20 +73,20 @@ export interface SelectComponent {
   multiple?: boolean;
 }
 
-export interface FormField {
-  Input?: InputComponent;
-  Checkbox?: CheckboxComponent;
-  Radio?: RadioComponent;
-  Select?: SelectComponent;
-  Text?: TextComponent;
-  Divider?: DividerComponent;
-  Alert?: AlertComponent;
-  Container?: ContainerComponent;
-}
+export type FormField =
+  | ({ type: 'Input' } & InputComponent)
+  | ({ type: 'Checkbox' } & CheckboxComponent)
+  | ({ type: 'Radio' } & RadioComponent)
+  | ({ type: 'Select' } & SelectComponent)
+  | ({ type: 'Text' } & TextComponent)
+  | ({ type: 'Divider' } & DividerComponent)
+  | ({ type: 'Alert' } & AlertComponent)
+  | ({ type: 'Container' } & ContainerComponent)
+  | ({ type: 'Include'; components?: ComponentDef[]; [key: string]: any });
 
-export interface FormAction {
-  Button: ButtonComponent;
-}
+export type FormAction =
+  | ({ type: 'Button' } & ButtonComponent)
+  | ({ type: 'Include'; components?: ComponentDef[]; [key: string]: any });
 
 export interface FormComponent {
   id?: string;
@@ -117,17 +117,24 @@ export interface ContainerComponent {
   components?: ComponentDef[];
 }
 
+export interface IfComponent {
+  condition: string;
+  template: ComponentDef[];
+}
+
 export type ComponentDef =
-  | { Text: TextComponent }
-  | { Input: InputComponent }
-  | { Button: ButtonComponent }
-  | { Checkbox: CheckboxComponent }
-  | { Form: FormComponent }
-  | { Container: ContainerComponent }
-  | { Radio: RadioComponent }
-  | { Select: SelectComponent }
-  | { Divider: DividerComponent }
-  | { Alert: AlertComponent };
+  | ({ type: 'Text' } & TextComponent)
+  | ({ type: 'Input' } & InputComponent)
+  | ({ type: 'Button' } & ButtonComponent)
+  | ({ type: 'Checkbox' } & CheckboxComponent)
+  | ({ type: 'Form' } & FormComponent)
+  | ({ type: 'Container' } & ContainerComponent)
+  | ({ type: 'Radio' } & RadioComponent)
+  | ({ type: 'Select' } & SelectComponent)
+  | ({ type: 'Divider' } & DividerComponent)
+  | ({ type: 'Alert' } & AlertComponent)
+  | ({ type: 'Include'; components?: ComponentDef[]; [key: string]: any })
+  | ({ type: 'If' } & IfComponent);
 
 export interface PageDef {
   id: string;
@@ -145,43 +152,56 @@ export type ComponentType = keyof ComponentDef;
 
 export type ExtractComponentProps<T extends ComponentType> = ComponentDef[T];
 
-// 型ガード関数
-export function isTextComponent(comp: ComponentDef): comp is { Text: TextComponent } {
-  return 'Text' in comp;
+// 型ガード関数（typeベースに修正）
+export function isTextComponent(comp: ComponentDef): comp is ({ type: 'Text' } & TextComponent) {
+  return comp.type === 'Text';
+}
+export function isInputComponent(comp: any): comp is ({ type: 'Input' } & InputComponent) {
+  return comp.type === 'Input';
+}
+export function isButtonComponent(comp: ComponentDef): comp is ({ type: 'Button' } & ButtonComponent) {
+  return comp.type === 'Button';
+}
+export function isCheckboxComponent(comp: ComponentDef): comp is ({ type: 'Checkbox' } & CheckboxComponent) {
+  return comp.type === 'Checkbox';
+}
+export function isRadioComponent(comp: ComponentDef): comp is ({ type: 'Radio' } & RadioComponent) {
+  return comp.type === 'Radio';
+}
+export function isSelectComponent(comp: ComponentDef): comp is ({ type: 'Select' } & SelectComponent) {
+  return comp.type === 'Select';
+}
+export function isDividerComponent(comp: ComponentDef): comp is ({ type: 'Divider' } & DividerComponent) {
+  return comp.type === 'Divider';
+}
+export function isAlertComponent(comp: ComponentDef): comp is ({ type: 'Alert' } & AlertComponent) {
+  return comp.type === 'Alert';
+}
+export function isContainerComponent(comp: ComponentDef): comp is ({ type: 'Container' } & ContainerComponent) {
+  return comp.type === 'Container';
+}
+export function isFormComponent(comp: ComponentDef): comp is ({ type: 'Form' } & FormComponent) {
+  return comp.type === 'Form';
+}
+export function isIncludeComponent(comp: ComponentDef): comp is ({ type: 'Include'; components?: ComponentDef[] }) {
+  return comp.type === 'Include';
 }
 
-export function isInputComponent(comp: ComponentDef): comp is { Input: InputComponent } {
-  return 'Input' in comp;
+// FormField用の型ガード関数
+export function isInputField(field: FormField): field is ({ type: 'Input' } & InputComponent) {
+  return (field as any).type === 'Input';
+}
+export function isCheckboxField(field: FormField): field is ({ type: 'Checkbox' } & CheckboxComponent) {
+  return (field as any).type === 'Checkbox';
+}
+export function isRadioField(field: FormField): field is ({ type: 'Radio' } & RadioComponent) {
+  return (field as any).type === 'Radio';
+}
+export function isSelectField(field: FormField): field is ({ type: 'Select' } & SelectComponent) {
+  return (field as any).type === 'Select';
 }
 
-export function isButtonComponent(comp: ComponentDef): comp is { Button: ButtonComponent } {
-  return 'Button' in comp;
-}
-
-export function isCheckboxComponent(comp: ComponentDef): comp is { Checkbox: CheckboxComponent } {
-  return 'Checkbox' in comp;
-}
-
-export function isRadioComponent(comp: ComponentDef): comp is { Radio: RadioComponent } {
-  return 'Radio' in comp;
-}
-
-export function isSelectComponent(comp: ComponentDef): comp is { Select: SelectComponent } {
-  return 'Select' in comp;
-}
-
-export function isDividerComponent(comp: ComponentDef): comp is { Divider: DividerComponent } {
-  return 'Divider' in comp;
-}
-
-export function isAlertComponent(comp: ComponentDef): comp is { Alert: AlertComponent } {
-  return 'Alert' in comp;
-}
-
-export function isContainerComponent(comp: ComponentDef): comp is { Container: ContainerComponent } {
-  return 'Container' in comp;
-}
-
-export function isFormComponent(comp: ComponentDef): comp is { Form: FormComponent } {
-  return 'Form' in comp;
+// FormAction用の型ガード関数
+export function isButtonAction(action: FormAction): action is ({ type: 'Button' } & ButtonComponent) {
+  return action.type === 'Button';
 } 

@@ -57,34 +57,34 @@ export abstract class BaseComponentRenderer implements Exporter {
    */
   protected renderComponent(comp: ComponentDef, key: number): string {
     if (isTextComponent(comp)) {
-      return this.renderText(comp.Text, key);
+      return this.renderText(comp, key);
     }
     if (isInputComponent(comp)) {
-      return this.renderInput(comp.Input, key);
+      return this.renderInput(comp, key);
     }
     if (isButtonComponent(comp)) {
-      return this.renderButton(comp.Button, key);
+      return this.renderButton(comp, key);
     }
     if (isCheckboxComponent(comp)) {
-      return this.renderCheckbox(comp.Checkbox, key);
+      return this.renderCheckbox(comp, key);
     }
     if (isRadioComponent(comp)) {
-      return this.renderRadio(comp.Radio, key);
+      return this.renderRadio(comp, key);
     }
     if (isSelectComponent(comp)) {
-      return this.renderSelect(comp.Select, key);
+      return this.renderSelect(comp, key);
     }
     if (isDividerComponent(comp)) {
-      return this.renderDivider(comp.Divider, key);
+      return this.renderDivider(comp, key);
     }
     if (isAlertComponent(comp)) {
-      return this.renderAlert(comp.Alert, key);
+      return this.renderAlert(comp, key);
     }
     if (isContainerComponent(comp)) {
-      return this.renderContainer(comp.Container, key);
+      return this.renderContainer(comp, key);
     }
     if (isFormComponent(comp)) {
-      return this.renderForm(comp.Form, key);
+      return this.renderForm(comp, key);
     }
     
     return this.renderUnsupportedComponent(comp, key);
@@ -110,52 +110,52 @@ export abstract class BaseComponentRenderer implements Exporter {
   /**
    * テキストコンポーネントのレンダリング（抽象メソッド）
    */
-  protected abstract renderText(props: TextComponent, key: number): string;
+  protected abstract renderText(props: { type: 'Text' } & TextComponent, key: number): string;
 
   /**
    * 入力コンポーネントのレンダリング（抽象メソッド）
    */
-  protected abstract renderInput(props: InputComponent, key: number): string;
+  protected abstract renderInput(props: { type: 'Input' } & InputComponent, key: number): string;
 
   /**
    * ボタンコンポーネントのレンダリング（抽象メソッド）
    */
-  protected abstract renderButton(props: ButtonComponent, key: number): string;
+  protected abstract renderButton(props: { type: 'Button' } & ButtonComponent, key: number): string;
 
   /**
    * チェックボックスコンポーネントのレンダリング（抽象メソッド）
    */
-  protected abstract renderCheckbox(props: CheckboxComponent, key: number): string;
+  protected abstract renderCheckbox(props: { type: 'Checkbox' } & CheckboxComponent, key: number): string;
 
   /**
    * ラジオボタンコンポーネントのレンダリング（抽象メソッド）
    */
-  protected abstract renderRadio(props: RadioComponent, key: number): string;
+  protected abstract renderRadio(props: { type: 'Radio' } & RadioComponent, key: number): string;
 
   /**
    * セレクトコンポーネントのレンダリング（抽象メソッド）
    */
-  protected abstract renderSelect(props: SelectComponent, key: number): string;
+  protected abstract renderSelect(props: { type: 'Select' } & SelectComponent, key: number): string;
 
   /**
    * 区切り線コンポーネントのレンダリング（抽象メソッド）
    */
-  protected abstract renderDivider(props: DividerComponent, key: number): string;
+  protected abstract renderDivider(props: { type: 'Divider' } & DividerComponent, key: number): string;
 
   /**
    * アラートコンポーネントのレンダリング（抽象メソッド）
    */
-  protected abstract renderAlert(props: AlertComponent, key: number): string;
+  protected abstract renderAlert(props: { type: 'Alert' } & AlertComponent, key: number): string;
 
   /**
    * コンテナコンポーネントのレンダリング（抽象メソッド）
    */
-  protected abstract renderContainer(props: ContainerComponent, key: number): string;
+  protected abstract renderContainer(props: { type: 'Container' } & ContainerComponent, key: number): string;
 
   /**
    * フォームコンポーネントのレンダリング（抽象メソッド）
    */
-  protected abstract renderForm(props: FormComponent, key: number): string;
+  protected abstract renderForm(props: { type: 'Form' } & FormComponent, key: number): string;
 
   /**
    * スタイルマネージャーを取得

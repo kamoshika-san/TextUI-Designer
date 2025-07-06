@@ -21,6 +21,12 @@ export class WebViewUpdateManager implements IWebViewUpdateManagerTest {
   private isUpdating: boolean = false;
   private _lastYamlContent: string = '';
   private _lastParsedData: TextUIDSL | null = null;
+  private currentParameters: Record<string, any> = {
+    showWelcome: true,
+    showAdvanced: false,
+    userRole: 'user',
+    welcomeMessage: 'ようこそ！'
+  };
 
   constructor(lifecycleManager: WebViewLifecycleManager) {
     this.lifecycleManager = lifecycleManager;
@@ -155,6 +161,52 @@ export class WebViewUpdateManager implements IWebViewUpdateManagerTest {
       } else {
         ErrorHandler.showError('プレビューの更新に失敗しました', error);
       }
+    } finally {
+      this.isUpdating = false;
+    }
+  }
+
+  /**
+   * パラメータを更新してプレビューを再描画
+   */
+  updateParameters(parameters: Record<string, any>): void {
+    console.log('[WebViewUpdateManager] パラメータを更新:', parameters);
+    this.currentParameters = { ...this.currentParameters, ...parameters };
+    
+    // パラメータ変更によりプレビューを再描画
+    if (this.lifecycleManager.hasPanel()) {
+      this.updateQueueManager.queueUpdate(
+        () => this.sendYamlToWebviewWithParameters(true),
+        true,
+        5 // 高優先度
+      );
+    }
+  }
+
+  /**
+   * パラメータ付きでWebViewにYAMLデータを送信
+   */
+  private async sendYamlToWebviewWithParameters(forceUpdate: boolean = false): Promise<void> {
+    if (!this.lifecycleManager.hasPanel() || this.isUpdating) {
+      console.log('[WebViewUpdateManager] パネルが存在しないか、更新中です');
+      return;
+    }
+
+    this.isUpdating = true;
+
+    try {
+      // YAMLファイルを解析（パラメータ付き）
+      const parsedResult = await this.yamlParser.parseYamlFileWithParameters(
+        this.lastTuiFile, 
+        this.currentParameters
+      );
+      
+      // WebViewにデータを送信
+      this.sendMessageToWebView(parsedResult.data, parsedResult.fileName);
+
+    } catch (error: any) {
+      console.error('[WebViewUpdateManager] パラメータ付きYAML送信処理でエラーが発生しました:', error);
+      ErrorHandler.showError('パラメータ付きプレビューの更新に失敗しました', error);
     } finally {
       this.isUpdating = false;
     }

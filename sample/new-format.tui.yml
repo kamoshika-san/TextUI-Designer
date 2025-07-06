@@ -1,0 +1,16 @@
+page:
+  id: include-sample
+  title: インクルードサンプル
+  layout: vertical
+  components:
+    - type: Text
+      variant: h1
+      value: "インクルードテスト"
+    - type: Include
+      template: "./templates/new-button.template.yml"
+      params:
+        label: "インクルードボタン"
+        kind: "primary"
+    - type: Alert
+      variant: info
+      message: "インクルードの下にアラート"

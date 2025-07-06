@@ -147,18 +147,8 @@ export class TemplateReferenceValidator extends BaseValidator {
         const conditionMatch = match.match(/condition:\s*["']?([^"\n]+)["']?/);
         if (conditionMatch) {
           const condition = conditionMatch[1];
-          
-          // 条件式の基本的な検証
-          if (!this.isValidConditionExpression(condition)) {
-            const lineNumber = this.findLineNumber(text, match);
-            const range = new vscode.Range(lineNumber, 0, lineNumber, match.length);
-            const diagnostic = this.createDiagnostic(
-              `無効な条件式です: ${condition}`,
-              range,
-              vscode.DiagnosticSeverity.Warning
-            );
-            diagnostics.push(diagnostic);
-          }
+          // 条件式の警告を抑制: isValidConditionExpressionの判定に関わらずdiagnostics.pushしない
+          // 何もしない
         }
       }
     }

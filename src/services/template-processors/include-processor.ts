@@ -24,15 +24,30 @@ export class IncludeProcessor extends BaseTemplateProcessor {
   }
 
   async process(
-    includeRef: IncludeReference,
+    includeRef: IncludeReference | any,
     basePath: string,
     depth: number,
     visitedFiles: Set<string>,
     parentParams: Record<string, any> = {}
   ): Promise<any> {
+    console.log('[IncludeProcessor] process開始:', includeRef);
     this.checkDepth(depth, basePath);
 
-    const templatePath = this.resolveTemplatePath(includeRef.template, basePath);
+    // type: Includeフォーマットの場合の処理
+    let templatePath: string;
+    let params: Record<string, any> = {};
+
+    if (includeRef.type === 'Include') {
+      // type: Includeフォーマット
+      templatePath = this.resolveTemplatePath(includeRef.template, basePath);
+      params = includeRef.params || {};
+      console.log('[IncludeProcessor] type: Includeフォーマット - templatePath:', templatePath, 'params:', params);
+    } else {
+      // $include構文フォーマット
+      templatePath = this.resolveTemplatePath(includeRef.template, basePath);
+      params = includeRef.params || {};
+      console.log('[IncludeProcessor] $include構文フォーマット - templatePath:', templatePath, 'params:', params);
+    }
     
     // 循環参照チェック（$includeのみ）
     if (visitedFiles.has(templatePath)) {
@@ -47,23 +62,29 @@ export class IncludeProcessor extends BaseTemplateProcessor {
     try {
       // テンプレートファイルを読み込み
       const templateContent = await this.loadTemplateFile(templatePath);
+      console.log('[IncludeProcessor] テンプレートファイル内容:', templateContent);
       const templateData = yaml.parse(templateContent);
+      console.log('[IncludeProcessor] パースされたテンプレートデータ:', templateData);
 
       // includeRef.paramsと親paramsをマージ
-      const mergedParams = { ...parentParams, ...(includeRef.params || {}) };
+      const mergedParams = { ...parentParams, ...params };
+      console.log('[IncludeProcessor] マージされたパラメータ:', mergedParams);
 
       // テンプレートを解決（他のProcessorに委譲）
       // ここでは基本的な解決のみ行い、他の$include、$if、$foreachは
       // 上位のTemplateParserで処理される
       visitedFiles.delete(templatePath);
-      return { 
+      const result = { 
         templateData, 
         mergedParams, 
         templatePath,
         depth: depth + 1
       };
+      console.log('[IncludeProcessor] 処理結果:', result);
+      return result;
     } catch (error) {
       visitedFiles.delete(templatePath);
+      console.error('[IncludeProcessor] エラー:', error);
       throw error;
     }
   }

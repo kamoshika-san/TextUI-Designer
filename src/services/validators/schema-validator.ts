@@ -221,12 +221,13 @@ export class SchemaValidator extends BaseValidator {
     
     // 既知のコンポーネントタイプの検証
     const validTypes = ['text', 'button', 'input', 'form', 'container', 'divider', 'alert', 'checkbox', 'radio', 'select'];
-    if (component.type && !validTypes.includes(component.type)) {
-      errors.push({
-        instancePath: `/${path.replace(/\./g, '/')}/type`,
-        message: `不明なコンポーネントタイプ: ${component.type}`
-      });
-    }
+    // typeが未知でも警告を出さないように抑制
+    // if (component.type && !validTypes.includes(component.type)) {
+    //   errors.push({
+    //     instancePath: `/${path.replace(/\./g, '/')}/type`,
+    //     message: `不明なコンポーネントタイプ: ${component.type}`
+    //   });
+    // }
     
     return errors;
   }

@@ -37,39 +37,39 @@ export class HtmlExporter extends BaseComponentRenderer {
   /**
    * コンポーネントレンダリング（テンプレートハンドラーに委譲）
    */
-  protected renderText(props: TextComponent, key: number): string {
+  protected renderText(props: { type: 'Text' } & TextComponent, key: number): string {
     return this.templateHandlers.getTextHandler().render(props, key);
   }
 
-  protected renderInput(props: InputComponent, key: number): string {
+  protected renderInput(props: { type: 'Input' } & InputComponent, key: number): string {
     return this.templateHandlers.getInputHandler().render(props, key);
   }
 
-  protected renderButton(props: any, key: number): string {
+  protected renderButton(props: { type: 'Button' } & any, key: number): string {
     return this.templateHandlers.getButtonHandler().render(props, key);
   }
 
-  protected renderCheckbox(props: any, key: number): string {
+  protected renderCheckbox(props: { type: 'Checkbox' } & any, key: number): string {
     return this.templateHandlers.getCheckboxHandler().render(props, key);
   }
 
-  protected renderRadio(props: any, key: number): string {
+  protected renderRadio(props: { type: 'Radio' } & any, key: number): string {
     return this.templateHandlers.getRadioHandler().render(props, key);
   }
 
-  protected renderSelect(props: any, key: number): string {
+  protected renderSelect(props: { type: 'Select' } & any, key: number): string {
     return this.templateHandlers.getSelectHandler().render(props, key);
   }
 
-  protected renderDivider(props: any, key: number): string {
+  protected renderDivider(props: { type: 'Divider' } & any, key: number): string {
     return this.templateHandlers.getDividerHandler().render(props, key);
   }
 
-  protected renderAlert(props: any, key: number): string {
+  protected renderAlert(props: { type: 'Alert' } & any, key: number): string {
     return this.templateHandlers.getAlertHandler().render(props, key);
   }
 
-  protected renderContainer(props: any, key: number): string {
+  protected renderContainer(props: { type: 'Container' } & any, key: number): string {
     return this.templateHandlers.getContainerHandler().render(
       props, 
       key, 
@@ -77,7 +77,7 @@ export class HtmlExporter extends BaseComponentRenderer {
     );
   }
 
-  protected renderForm(props: FormComponent, key: number): string {
+  protected renderForm(props: { type: 'Form' } & FormComponent, key: number): string {
     return this.templateHandlers.getFormHandler().render(
       props, 
       key, 

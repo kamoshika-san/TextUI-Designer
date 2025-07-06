@@ -1,4 +1,11 @@
 import type { FormComponent, FormField, FormAction, TextComponent, InputComponent } from '../../renderer/types';
+import { 
+  isInputField,
+  isCheckboxField,
+  isRadioField,
+  isSelectField,
+  isButtonAction
+} from '../../renderer/types';
 import { HtmlTemplateRenderer, TemplateContext } from './html-template-renderer';
 
 /**
@@ -7,16 +14,15 @@ import { HtmlTemplateRenderer, TemplateContext } from './html-template-renderer'
 export class TextTemplateHandler {
   constructor(private renderer: HtmlTemplateRenderer) {}
 
-  render(props: TextComponent, key: number): string {
-    const { value, variant = 'p' } = props;
-    
-    // HTMLタグを決定
-    const tag = variant.startsWith('h') ? variant : 'p';
+  render(props: { type: 'Text' } & TextComponent, key: number): string {
+    const { value, variant = 'p', size = 'base', weight = 'normal', color = 'text-gray-900' } = props;
     
     const context: TemplateContext = {
-      tag,
       content: value,
-      variant
+      variant,
+      size,
+      weight,
+      color
     };
 
     return this.renderer.renderComponent('text', props, context);
@@ -29,7 +35,7 @@ export class TextTemplateHandler {
 export class InputTemplateHandler {
   constructor(private renderer: HtmlTemplateRenderer) {}
 
-  render(props: InputComponent, key: number): string {
+  render(props: { type: 'Input' } & InputComponent, key: number): string {
     const { type = 'text', placeholder = '', label } = props;
     
     const context: TemplateContext = {
@@ -48,12 +54,14 @@ export class InputTemplateHandler {
 export class ButtonTemplateHandler {
   constructor(private renderer: HtmlTemplateRenderer) {}
 
-  render(props: any, key: number): string {
-    const { label, kind = 'primary' } = props;
+  render(props: { type: 'Button' } & any, key: number): string {
+    const { label, kind = 'primary', size = 'md', disabled = false } = props;
     
     const context: TemplateContext = {
       content: label,
-      kind
+      kind,
+      size,
+      disabled
     };
 
     return this.renderer.renderComponent('button', props, context);
@@ -66,7 +74,7 @@ export class ButtonTemplateHandler {
 export class CheckboxTemplateHandler {
   constructor(private renderer: HtmlTemplateRenderer) {}
 
-  render(props: any, key: number): string {
+  render(props: { type: 'Checkbox' } & any, key: number): string {
     const { label } = props;
     
     const context: TemplateContext = {
@@ -83,7 +91,7 @@ export class CheckboxTemplateHandler {
 export class RadioTemplateHandler {
   constructor(private renderer: HtmlTemplateRenderer) {}
 
-  render(props: any, key: number): string {
+  render(props: { type: 'Radio' } & any, key: number): string {
     const { label, name, options = [] } = props;
     
     let childrenHtml = '';
@@ -125,7 +133,7 @@ export class RadioTemplateHandler {
 export class SelectTemplateHandler {
   constructor(private renderer: HtmlTemplateRenderer) {}
 
-  render(props: any, key: number): string {
+  render(props: { type: 'Select' } & any, key: number): string {
     const { label, options = [], placeholder, multiple = false } = props;
     
     // オプションHTMLを生成
@@ -156,7 +164,7 @@ export class SelectTemplateHandler {
 export class AlertTemplateHandler {
   constructor(private renderer: HtmlTemplateRenderer) {}
 
-  render(props: any, key: number): string {
+  render(props: { type: 'Alert' } & any, key: number): string {
     const { message, variant = 'info', title } = props;
     
     const context: TemplateContext = {
@@ -175,7 +183,7 @@ export class AlertTemplateHandler {
 export class ContainerTemplateHandler {
   constructor(private renderer: HtmlTemplateRenderer) {}
 
-  render(props: any, key: number, renderChildComponent: (comp: any, index: number) => string): string {
+  render(props: { type: 'Container' } & any, key: number, renderChildComponent: (comp: any, index: number) => string): string {
     const { layout = 'vertical', components = [] } = props;
     
     // 子コンポーネントをレンダリング
@@ -200,21 +208,21 @@ export class ContainerTemplateHandler {
 export class FormTemplateHandler {
   constructor(private renderer: HtmlTemplateRenderer) {}
 
-  render(props: FormComponent, key: number, renderChildComponent: (comp: any, index: number) => string): string {
+  render(props: { type: 'Form' } & FormComponent, key: number, renderChildComponent: (comp: any, index: number) => string): string {
     const { id, fields = [], actions = [] } = props;
     
     // フィールドをレンダリング
     const fieldsHtml = fields.map((field: FormField, index: number) => {
       let fieldCode = '';
       
-      if (field.Input) {
-        fieldCode = new InputTemplateHandler(this.renderer).render(field.Input, index);
-      } else if (field.Checkbox) {
-        fieldCode = new CheckboxTemplateHandler(this.renderer).render(field.Checkbox, index);
-      } else if (field.Radio) {
-        fieldCode = new RadioTemplateHandler(this.renderer).render(field.Radio, index);
-      } else if (field.Select) {
-        fieldCode = new SelectTemplateHandler(this.renderer).render(field.Select, index);
+      if (isInputField(field)) {
+        fieldCode = new InputTemplateHandler(this.renderer).render(field, index);
+      } else if (isCheckboxField(field)) {
+        fieldCode = new CheckboxTemplateHandler(this.renderer).render(field, index);
+      } else if (isRadioField(field)) {
+        fieldCode = new RadioTemplateHandler(this.renderer).render(field, index);
+      } else if (isSelectField(field)) {
+        fieldCode = new SelectTemplateHandler(this.renderer).render(field, index);
       }
       
       // インデントを調整
@@ -223,8 +231,8 @@ export class FormTemplateHandler {
     
     // アクションをレンダリング
     const actionsHtml = actions.map((action: FormAction, index: number) => {
-      if (action.Button) {
-        return new ButtonTemplateHandler(this.renderer).render(action.Button, index);
+      if (isButtonAction(action)) {
+        return new ButtonTemplateHandler(this.renderer).render(action, index);
       }
       return '';
     }).filter(Boolean).join('\n  ');
@@ -246,7 +254,7 @@ export class FormTemplateHandler {
 export class DividerTemplateHandler {
   constructor(private renderer: HtmlTemplateRenderer) {}
 
-  render(props: any, key: number): string {
+  render(props: { type: 'Divider' } & any, key: number): string {
     const { orientation = 'horizontal', spacing = 'md' } = props;
     
     const context: TemplateContext = {

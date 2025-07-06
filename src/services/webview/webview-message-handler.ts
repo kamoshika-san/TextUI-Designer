@@ -61,6 +61,9 @@ export class WebViewMessageHandler implements IWebViewMessageHandlerTest {
       case 'get-themes':
         await this.handleGetThemes();
         break;
+      case 'parameter-change':
+        await this.handleParameterChange(message.parameters);
+        break;
       default:
         console.warn('[WebViewMessageHandler] 未知のメッセージタイプ:', message.type);
     }
@@ -117,6 +120,15 @@ export class WebViewMessageHandler implements IWebViewMessageHandlerTest {
   private async handleGetThemes(): Promise<void> {
     console.log('[WebViewMessageHandler] テーマ一覧リクエストを受信');
     await this.sendAvailableThemes();
+  }
+
+  /**
+   * パラメータ変更メッセージを処理
+   */
+  private async handleParameterChange(parameters: any): Promise<void> {
+    console.log('[WebViewMessageHandler] パラメータ変更メッセージを受信:', parameters);
+    // updateManagerにパラメータ更新を委譲
+    this.updateManager.updateParameters(parameters);
   }
 
   /**

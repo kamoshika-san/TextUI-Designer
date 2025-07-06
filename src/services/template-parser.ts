@@ -132,6 +132,19 @@ export class TemplateParser {
   }
 
   /**
+   * パラメータ付きでDSLテキストをテンプレート展開付きでパース
+   */
+  async parseWithTemplatesAndParameters(yamlContent: string, basePath: string, parameters: Record<string, any>): Promise<any> {
+    try {
+      const yamlData = yaml.parse(yamlContent);
+      const result = await this.resolveTemplates(yamlData, basePath, 0, new Set(), parameters);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
    * テンプレート参照を再帰的に解決（主要なコーディネーター）
    */
   private async resolveTemplates(
@@ -171,16 +184,31 @@ export class TemplateParser {
         );
       }
       
+      // type: Includeの処理
+      if (data.type === 'Include') {
+        console.log('[TemplateParser] type: Includeを検出:', data);
+        return this.parameterInterpolator.applyParameters(
+          await this.processInclude(data, basePath, depth, visitedFiles, params), 
+          params
+        );
+      }
+      
+      // type: Ifの処理
+      if (data.type === 'If') {
+        console.log('[TemplateParser] type: Ifを検出:', data);
+        return this.parameterInterpolator.applyParameters(
+          await this.processConditional(data, basePath, depth, visitedFiles, params), 
+          params
+        );
+      }
+      
       // $if構文の処理
       if ('$if' in data) {
         if (!this.conditionalProcessor.validateConditionalSyntax(data, basePath)) {
           throw new TemplateException(TemplateError.SYNTAX_ERROR, basePath);
         }
         return this.parameterInterpolator.applyParameters(
-          await this.conditionalProcessor.processConditional(
-            data.$if, basePath, depth, visitedFiles, params, 
-            this.resolveTemplates.bind(this)
-          ), 
+          await this.processConditional(data.$if, basePath, depth, visitedFiles, params), 
           params
         );
       }
@@ -224,24 +252,85 @@ export class TemplateParser {
    * $include構文を処理（IncludeProcessorに委譲）
    */
   private async processInclude(
-    includeRef: IncludeReference,
+    includeRef: IncludeReference | any,
     basePath: string,
     depth: number,
     visitedFiles: Set<string>,
     parentParams: Record<string, any> = {}
   ): Promise<any> {
+    console.log('[TemplateParser] processInclude開始:', includeRef);
     const includeResult = await this.includeProcessor.process(
       includeRef, basePath, depth, visitedFiles, parentParams
     );
+    console.log('[TemplateParser] includeProcessor結果:', includeResult);
 
-    // includeProcessorから返される情報を使って再帰的に解決
-    return await this.resolveTemplates(
-      includeResult.templateData,
+    // テンプレートファイルのcomponents配列を取得
+    const templateData = includeResult.templateData;
+    let components = [];
+    
+    if (templateData.template && templateData.template.components) {
+      // テンプレートファイルの構造: template.components
+      components = templateData.template.components;
+    } else if (templateData.components) {
+      // 直接componentsがある場合
+      components = templateData.components;
+    } else {
+      // テンプレートデータ全体をcomponentsとして扱う
+      components = [templateData];
+    }
+    
+    console.log('[TemplateParser] 抽出されたcomponents:', components);
+
+    // components配列の各要素に対してパラメータ補間を適用
+    const resolvedComponents = await this.resolveTemplates(
+      components,
       includeResult.templatePath,
       includeResult.depth,
       visitedFiles,
       includeResult.mergedParams
     );
+    console.log('[TemplateParser] resolveTemplates結果:', resolvedComponents);
+    return resolvedComponents;
+  }
+
+  /**
+   * 条件分岐を処理（ConditionalProcessorに委譲）
+   */
+  private async processConditional(
+    conditionalRef: any,
+    basePath: string,
+    depth: number,
+    visitedFiles: Set<string>,
+    parentParams: Record<string, any> = {}
+  ): Promise<any> {
+    console.log('[TemplateParser] processConditional開始:', conditionalRef);
+    
+    // type: Ifフォーマットの場合の処理
+    let condition: string;
+    let template: any[];
+    
+    if (conditionalRef.type === 'If') {
+      // type: Ifフォーマット
+      condition = conditionalRef.condition;
+      template = conditionalRef.template;
+      console.log('[TemplateParser] type: Ifフォーマット - condition:', condition, 'template:', template);
+    } else {
+      // $if構文フォーマット
+      condition = conditionalRef.condition;
+      template = conditionalRef.template;
+      console.log('[TemplateParser] $if構文フォーマット - condition:', condition, 'template:', template);
+    }
+    
+    const result = await this.conditionalProcessor.processConditional(
+      { condition, template },
+      basePath,
+      depth,
+      visitedFiles,
+      parentParams,
+      this.resolveTemplates.bind(this)
+    );
+    console.log('[TemplateParser] processConditional結果:', result);
+    return result;
   }
 
   /**
