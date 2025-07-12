@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ExtensionLifecycleManager } from './services/extension-lifecycle-manager';
 import { TextUIMemoryTracker } from './utils/textui-memory-tracker';
 import { logger } from './utils/logger';
+import { ErrorHandler } from './utils/error-handler';
 
 // グローバル変数としてライフサイクルマネージャーを保存
 let lifecycleManager: ExtensionLifecycleManager | undefined;
@@ -9,14 +10,14 @@ let lifecycleManager: ExtensionLifecycleManager | undefined;
 /**
  * 拡張機能のアクティベーション
  */
-export async function activate(context: vscode.ExtensionContext) {
-  logger.info('TextUI Designer拡張をアクティブ化中...');
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  await ErrorHandler.withErrorHandling(async () => {
+    logger.info('TextUI Designer拡張をアクティブ化中...');
 
-  // メモリ追跡システムの初期化
-  const memoryTracker = TextUIMemoryTracker.getInstance();
-  logger.debug('メモリ追跡システムを初期化しました');
+    // メモリ追跡システムの初期化
+    const memoryTracker = TextUIMemoryTracker.getInstance();
+    logger.debug('メモリ追跡システムを初期化しました');
 
-  try {
     // ライフサイクルマネージャーの初期化
     lifecycleManager = new ExtensionLifecycleManager(context);
     
@@ -24,32 +25,29 @@ export async function activate(context: vscode.ExtensionContext) {
     await lifecycleManager.activate();
     
     logger.info('TextUI Designer拡張のアクティベーション完了');
-
-  } catch (error) {
-    logger.error('アクティベーション中にエラーが発生しました:', error);
-    vscode.window.showErrorMessage(`TextUI Designer拡張の初期化に失敗しました: ${error}`);
-    throw error; // エラーを再スローして拡張の起動を失敗させる
-  }
+  }, '拡張機能のアクティベーション');
 }
 
 /**
  * 拡張機能の非アクティベーション
  */
-export function deactivate() {
-  logger.info('TextUI Designer拡張を非アクティブ化中...');
+export function deactivate(): void {
+  ErrorHandler.withErrorHandlingSync(() => {
+    logger.info('TextUI Designer拡張を非アクティブ化中...');
 
-  // メモリ追跡システムのクリーンアップ
-  const memoryTracker = TextUIMemoryTracker.getInstance();
-  memoryTracker.dispose();
-  logger.debug('メモリ追跡システムをクリーンアップしました');
+    // メモリ追跡システムのクリーンアップ
+    const memoryTracker = TextUIMemoryTracker.getInstance();
+    memoryTracker.dispose();
+    logger.debug('メモリ追跡システムをクリーンアップしました');
 
-  // ライフサイクルマネージャーのクリーンアップ
-  if (lifecycleManager) {
-    lifecycleManager.deactivate().catch(error => {
-      logger.error('ライフサイクルマネージャーのクリーンアップに失敗しました:', error);
-    });
-    lifecycleManager = undefined;
-  }
+    // ライフサイクルマネージャーのクリーンアップ
+    if (lifecycleManager) {
+      lifecycleManager.deactivate().catch(error => {
+        logger.error('ライフサイクルマネージャーのクリーンアップに失敗しました:', error);
+      });
+      lifecycleManager = undefined;
+    }
 
-  logger.info('TextUI Designer拡張の非アクティベーション完了');
+    logger.info('TextUI Designer拡張の非アクティベーション完了');
+  }, '拡張機能の非アクティベーション');
 } 
