@@ -220,7 +220,7 @@ export class SchemaValidator extends BaseValidator {
     }
     
     // 既知のコンポーネントタイプの検証
-    const validTypes = ['text', 'button', 'input', 'form', 'container', 'divider', 'alert', 'checkbox', 'radio', 'select'];
+    const validTypes = ['Text', 'Input', 'Button', 'Form', 'Checkbox', 'Radio', 'Select', 'Divider', 'Container', 'Alert', 'Include'];
     // typeが未知でも警告を出さないように抑制
     // if (component.type && !validTypes.includes(component.type)) {
     //   errors.push({
