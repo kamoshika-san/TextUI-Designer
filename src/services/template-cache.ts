@@ -499,7 +499,7 @@ export class TemplateCacheService {
   /**
    * 定期クリーンアップ
    */
-  private performScheduledCleanup(): void {
+  private async performScheduledCleanup(): Promise<void> {
     const currentTime = Date.now();
     const templates = Array.from(this.cache.values());
     let removedCount = 0;
@@ -517,6 +517,9 @@ export class TemplateCacheService {
       this.updateStats();
       console.log(`[TemplateCache] 定期クリーンアップ: ${removedCount}個の期限切れエントリを削除`);
     }
+    
+    // メモリ圧迫状況をチェック
+    await this.checkMemoryPressure();
   }
 
   /**
@@ -541,7 +544,9 @@ export class TemplateCacheService {
    */
   private startCleanupTimer(): void {
     this.cleanupTimer = setInterval(() => {
-      this.performScheduledCleanup();
+      this.performScheduledCleanup().catch(error => {
+        console.error('[TemplateCache] 定期クリーンアップ中にエラーが発生しました:', error);
+      });
     }, this.config.cleanupInterval);
   }
 
