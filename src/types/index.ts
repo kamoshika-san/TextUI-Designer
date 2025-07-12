@@ -242,6 +242,10 @@ export interface WebViewMessage {
   [key: string]: unknown;
 }
 
+// ============================================================================
+// パース関連の型定義
+// ============================================================================
+
 export interface ParsedYamlResult {
   data: TextUIDSL;
   errors: YamlErrorInfo[];
@@ -289,59 +293,73 @@ export function isWebViewMessage(obj: unknown): obj is WebViewMessage {
 }
 
 export function isCacheEntry<T>(obj: unknown): obj is CacheEntry<T> {
-  return typeof obj === 'object' && obj !== null && 'data' in obj && 'timestamp' in obj;
+  return typeof obj === 'object' && obj !== null && 
+         'data' in obj && 'timestamp' in obj && 'size' in obj;
 }
 
-/**
- * WebViewManagerのテスト用インターフェース
- * テスト環境でのみ使用されるメソッドを定義
- */
-export interface IWebViewManagerTest {
-  _testMemoryManagement(): void;
-  _getYamlCacheContent(): string;
-  _clearYamlCache(): void;
-  _setYamlCacheContent(content: string): void;
-  get lastYamlContent(): string;
-  set lastYamlContent(val: string);
-  get lastParsedData(): TextUIDSL | null;
-  set lastParsedData(val: TextUIDSL | null);
+// ============================================================================
+// エラー関連の型定義
+// ============================================================================
+
+export interface ErrorInfo {
+  message: string;
+  code?: string;
+  details?: unknown;
+  timestamp: number;
+  context?: string;
 }
 
-/**
- * WebViewManagerの旧API互換インターフェース
- * 後方互換性のためのメソッドを定義
- */
-export interface IWebViewManagerLegacy {
-  switchTheme(themePath: string): Promise<void>;
-  sendAvailableThemes(): Promise<void>;
+export interface ErrorHandlingOptions {
+  errorMessage?: string;
+  successMessage?: string;
+  rethrow?: boolean;
+  fallback?: () => Promise<void> | void;
+  logLevel?: 'error' | 'warn' | 'info' | 'debug';
+  showToUser?: boolean;
+  errorCode?: string;
 }
 
-/**
- * WebViewMessageHandlerのテスト用インターフェース
- */
-export interface IWebViewMessageHandlerTest {
-  switchTheme(themePath: string): Promise<void>;
-  sendAvailableThemes(): Promise<void>;
+// ============================================================================
+// 設定関連の型定義
+// ============================================================================
+
+export interface ExtensionSettings {
+  autoPreview: boolean;
+  themePath?: string;
+  cacheSize: number;
+  logLevel: 'error' | 'warn' | 'info' | 'debug';
+  enableDebugCommands: boolean;
+  performanceMonitoring: boolean;
+  memoryTracking: boolean;
 }
 
-/**
- * WebViewUpdateManagerのテスト用インターフェース
- */
-export interface IWebViewUpdateManagerTest {
-  _testMemoryManagement(): void;
-  _getYamlCacheContent(): string;
-  _clearYamlCache(): void;
-  _setYamlCacheContent(content: string): void;
-  get lastYamlContent(): string;
-  set lastYamlContent(val: string);
-  get lastParsedData(): TextUIDSL | null;
-  set lastParsedData(val: TextUIDSL | null);
+// ============================================================================
+// イベント関連の型定義
+// ============================================================================
+
+export interface ExtensionEvent {
+  type: string;
+  timestamp: number;
+  data?: Record<string, unknown>;
+  source: string;
 }
 
-/**
- * CacheManagerのテスト用インターフェース
- */
-export interface ICacheManagerTest {
-  _getCacheContent(fileName: string): string | null;
-  _clearCache(): void;
+export interface EventHandler<T = unknown> {
+  (event: ExtensionEvent, data?: T): void | Promise<void>;
+}
+
+// ============================================================================
+// ライフサイクル関連の型定義
+// ============================================================================
+
+export interface LifecycleHook {
+  onActivate?(): Promise<void>;
+  onDeactivate?(): Promise<void>;
+  onError?(error: Error): void;
+}
+
+export interface ServiceLifecycle {
+  initialize(): Promise<void>;
+  cleanup(): Promise<void>;
+  dispose(): void;
 } 
