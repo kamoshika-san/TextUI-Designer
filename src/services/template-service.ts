@@ -11,8 +11,8 @@ export class TemplateService {
   private parser: RefactoredTemplateParser;
   private isInitialized: boolean = false;
 
-  constructor() {
-    this.parser = new RefactoredTemplateParser();
+  constructor(errorHandler: typeof ErrorHandler = ErrorHandler) {
+    this.parser = new RefactoredTemplateParser(errorHandler);
   }
 
   /**

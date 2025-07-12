@@ -102,11 +102,14 @@ export class ServiceInitializer {
    */
   private async registerServices(): Promise<void> {
     // 基本サービスの登録
-    this.container.register(ServiceTokens.ERROR_HANDLER, ErrorHandler);
+    this.container.registerFactory(ServiceTokens.ERROR_HANDLER, () => {
+      return ErrorHandler;
+    });
 
     // SchemaManagerの登録
     this.container.registerFactory(ServiceTokens.SCHEMA_MANAGER, () => {
-      return new SchemaManager(this.context);
+      const errorHandler = this.container.resolve<typeof ErrorHandler>(ServiceTokens.ERROR_HANDLER);
+      return new SchemaManager(this.context, undefined, { errorHandler });
     });
 
     // ThemeManagerの登録
@@ -133,12 +136,14 @@ export class ServiceInitializer {
 
     // TemplateServiceの登録
     this.container.registerFactory(ServiceTokens.TEMPLATE_SERVICE, () => {
-      return new TemplateService();
+      const errorHandler = this.container.resolve<typeof ErrorHandler>(ServiceTokens.ERROR_HANDLER);
+      return new TemplateService(errorHandler);
     });
 
     // SettingsServiceの登録
     this.container.registerFactory(ServiceTokens.SETTINGS_SERVICE, () => {
-      return new SettingsService();
+      const errorHandler = this.container.resolve<typeof ErrorHandler>(ServiceTokens.ERROR_HANDLER);
+      return new SettingsService(undefined, errorHandler);
     });
 
     // DiagnosticManagerの登録
