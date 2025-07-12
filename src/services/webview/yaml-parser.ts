@@ -433,7 +433,7 @@ export class YamlParser {
   /**
    * パースエラーを作成
    */
-  private createParseError(error: any, yamlContent: string, fileName: string): YamlErrorInfo {
+  private createParseError(error: any, yamlContent: string, fileName: string): never {
     const errorMessage = error.message || 'Unknown error';
     const lines = yamlContent.split('\n');
     
