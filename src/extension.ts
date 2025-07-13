@@ -25,7 +25,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     await lifecycleManager.activate();
     
     logger.info('TextUI Designer拡張のアクティベーション完了');
-  }, '拡張機能のアクティベーション');
+  }, '拡張機能のアクティベーション', {
+    rethrow: true, // 重要なエラーはVS Codeに伝播させる
+    showToUser: false, // VS Codeが自動的にエラーを表示するため、重複を避ける
+    logLevel: 'error'
+  });
 }
 
 /**

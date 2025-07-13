@@ -21,13 +21,67 @@ export class ErrorHandler {
   /**
    * 統一的な非同期エラーハンドリング
    */
-  static async withErrorHandling<T>(operation: () => Promise<T>, context: string, defaultValue?: T): Promise<T> {
+  static async withErrorHandling<T>(
+    operation: () => Promise<T>, 
+    context: string, 
+    defaultValueOrOptions?: T | ErrorHandlingOptions,
+    options?: ErrorHandlingOptions
+  ): Promise<T> {
+    // パラメータの正規化
+    let defaultValue: T | undefined;
+    let errorOptions: ErrorHandlingOptions = {};
+    
+    if (typeof defaultValueOrOptions === 'object' && defaultValueOrOptions !== null && 'rethrow' in defaultValueOrOptions) {
+      // 第3引数がオプションオブジェクトの場合
+      errorOptions = defaultValueOrOptions as ErrorHandlingOptions;
+    } else {
+      // 第3引数がデフォルト値の場合
+      defaultValue = defaultValueOrOptions as T;
+      errorOptions = options || {};
+    }
+
+    const {
+      errorMessage = context,
+      successMessage,
+      rethrow = false,
+      fallback,
+      logLevel = 'error',
+      showToUser = true,
+      errorCode
+    } = errorOptions;
+
     try {
-      return await operation();
+      const result = await operation();
+      
+      if (successMessage) {
+        logger.info(successMessage);
+      }
+      
+      return result;
     } catch (error) {
-      this.logError(error, context);
-      this.showUserFriendlyError(error, context);
-      return defaultValue as T;
+      // エラーログを記録
+      if (logLevel === 'error') {
+        this.logError(error, errorMessage);
+      } else if (logLevel === 'warn') {
+        logger.warn(`${errorMessage}: ${this.formatError(error)}`);
+      } else if (logLevel === 'info') {
+        logger.info(`${errorMessage}: ${this.formatError(error)}`);
+      } else if (logLevel === 'debug') {
+        logger.debug(`${errorMessage}: ${this.formatError(error)}`);
+      }
+
+      // ユーザーにエラーを表示
+      if (showToUser) {
+        this.showUserFriendlyError(error, errorMessage);
+      }
+
+      // 例外を再スローするかどうか
+      if (rethrow) {
+        throw error;
+      }
+
+      // フォールバック値を返す
+      return fallback !== undefined ? fallback : (defaultValue as T);
     }
   }
 
