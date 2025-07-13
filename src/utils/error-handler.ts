@@ -4,11 +4,11 @@ import { logger } from './logger';
 /**
  * エラーハンドリングオプション
  */
-interface ErrorHandlingOptions {
+interface ErrorHandlingOptions<T = any> {
   errorMessage?: string;
   successMessage?: string;
   rethrow?: boolean;
-  fallback?: any;
+  fallback?: T | null;
   logLevel?: 'error' | 'warn' | 'info' | 'debug';
   showToUser?: boolean;
   errorCode?: string;
@@ -21,7 +21,7 @@ export class ErrorHandler {
   /**
    * オプションオブジェクトかどうかを判定する型ガード
    */
-  private static isErrorHandlingOptions(value: any): value is ErrorHandlingOptions {
+  private static isErrorHandlingOptions<T>(value: any): value is ErrorHandlingOptions<T> {
     if (typeof value !== 'object' || value === null) {
       return false;
     }
@@ -37,14 +37,14 @@ export class ErrorHandler {
   static async withErrorHandling<T>(
     operation: () => Promise<T>, 
     context: string, 
-    defaultValueOrOptions?: T | ErrorHandlingOptions,
-    options?: ErrorHandlingOptions
+    defaultValueOrOptions?: T | ErrorHandlingOptions<T>,
+    options?: ErrorHandlingOptions<T>
   ): Promise<T> {
     // パラメータの正規化
     let defaultValue: T | undefined;
-    let errorOptions: ErrorHandlingOptions = {};
+    let errorOptions: ErrorHandlingOptions<T> = {};
     
-    if (this.isErrorHandlingOptions(defaultValueOrOptions)) {
+    if (this.isErrorHandlingOptions<T>(defaultValueOrOptions)) {
       // 第3引数がオプションオブジェクトの場合
       errorOptions = defaultValueOrOptions;
     } else {
@@ -94,7 +94,7 @@ export class ErrorHandler {
       }
 
       // フォールバック値を返す
-      return fallback !== undefined ? fallback : (defaultValue as T);
+      return fallback !== undefined ? fallback as T : (defaultValue as T);
     }
   }
 
@@ -104,14 +104,14 @@ export class ErrorHandler {
   static withErrorHandlingSync<T>(
     operation: () => T,
     context: string,
-    defaultValueOrOptions?: T | ErrorHandlingOptions,
-    options?: ErrorHandlingOptions
+    defaultValueOrOptions?: T | ErrorHandlingOptions<T>,
+    options?: ErrorHandlingOptions<T>
   ): T | null {
     // パラメータの正規化
     let defaultValue: T | undefined;
-    let errorOptions: ErrorHandlingOptions = {};
+    let errorOptions: ErrorHandlingOptions<T> = {};
     
-    if (this.isErrorHandlingOptions(defaultValueOrOptions)) {
+    if (this.isErrorHandlingOptions<T>(defaultValueOrOptions)) {
       // 第3引数がオプションオブジェクトの場合
       errorOptions = defaultValueOrOptions;
     } else {
@@ -161,7 +161,7 @@ export class ErrorHandler {
       }
 
       // フォールバック値を返す
-      return fallback !== undefined ? fallback : (defaultValue !== undefined ? defaultValue : null);
+      return fallback !== undefined ? fallback as T | null : (defaultValue !== undefined ? defaultValue : null);
     }
   }
 
