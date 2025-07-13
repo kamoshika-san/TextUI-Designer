@@ -226,7 +226,7 @@ export class ErrorHandler {
       }
 
       // フォールバック値を返す
-      return fallback !== undefined ? fallback as T : (defaultValue !== undefined ? defaultValue : null);
+      return fallback !== undefined ? fallback as T | null : (defaultValue !== undefined ? defaultValue : null);
     }
   }
 
