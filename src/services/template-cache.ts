@@ -88,7 +88,8 @@ export class TemplateCacheService {
   private config: CacheConfig;
   private cleanupTimer?: NodeJS.Timeout;
   private performanceMonitor: PerformanceMonitor;
-  private cleanupInProgress = false;
+  private isCleanupInProgress: boolean = false;
+
 
   constructor(config?: Partial<CacheConfig>) {
     this.config = {
@@ -501,13 +502,14 @@ export class TemplateCacheService {
    * 定期クリーンアップ
    */
   private async performScheduledCleanup(): Promise<void> {
-    // 既にクリーンアップが実行中の場合はスキップ
-    if (this.cleanupInProgress) {
-      console.log('[TemplateCache] クリーンアップが既に実行中のためスキップします');
+    // 既にクリーンアップが進行中の場合は早期終了
+    if (this.isCleanupInProgress) {
       return;
     }
 
     this.cleanupInProgress = true;
+    
+    this.isCleanupInProgress = true;
     
     try {
       const currentTime = Date.now();
@@ -530,11 +532,8 @@ export class TemplateCacheService {
       
       // メモリ圧迫状況をチェック
       await this.checkMemoryPressure();
-    } catch (error) {
-      console.error('[TemplateCache] クリーンアップ中にエラーが発生しました:', error);
     } finally {
-      // エラーが発生した場合でも必ずフラグをリセット
-      this.cleanupInProgress = false;
+      this.isCleanupInProgress = false;
     }
   }
 
@@ -581,6 +580,7 @@ export class TemplateCacheService {
    */
   clear(): void {
     this.cache.clear();
+    this.isCleanupInProgress = false;
     this.stats = {
       totalEntries: 0,
       totalSize: 0,
