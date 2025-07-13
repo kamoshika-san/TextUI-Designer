@@ -114,6 +114,7 @@ export class ErrorHandler {
       errorCode
     } = options;
 
+
     try {
       const result = operation();
       
