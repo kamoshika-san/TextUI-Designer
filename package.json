@@ -322,6 +322,26 @@
       {
         "command": "textui-designer.enableMemoryTracking",
         "title": "TextUI: メモリ追跡を有効化"
+      },
+      {
+        "command": "textui-designer.incrementCounter",
+        "title": "TextUI: Increment Counter"
+      },
+      {
+        "command": "textui-designer.showStatus",
+        "title": "TextUI: Show Status"
+      },
+      {
+        "command": "textui-designer.resetCounter",
+        "title": "TextUI: Reset Counter"
+      },
+      {
+        "command": "textui-designer.accessProperty",
+        "title": "TextUI: Access Property"
+      },
+      {
+        "command": "textui-designer.callInstanceMethod",
+        "title": "TextUI: Call Instance Method"
       }
     ],
     "menus": {
@@ -391,7 +411,7 @@
     "@types/chai": "^5.2.2",
     "@types/chai-as-promised": "^8.0.2",
     "@types/mocha": "^10.0.6",
-    "@types/node": "20.x",
+    "@types/node": "^24.0.13",
     "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
@@ -420,7 +440,7 @@
     "react-dom": "^18.2.0",
     "reflect-metadata": "^0.2.2",
     "tailwindcss": "^3.4.0",
-    "yaml": "^2.3.0"
+    "yaml": "^2.8.0"
   },
   "icon": "icon.png",
   "repository": {
