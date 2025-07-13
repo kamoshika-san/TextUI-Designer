@@ -322,6 +322,26 @@
       {
         "command": "textui-designer.enableMemoryTracking",
         "title": "TextUI: メモリ追跡を有効化"
+      },
+      {
+        "command": "textui-designer.incrementCounter",
+        "title": "TextUI: Increment Counter"
+      },
+      {
+        "command": "textui-designer.showStatus",
+        "title": "TextUI: Show Status"
+      },
+      {
+        "command": "textui-designer.resetCounter",
+        "title": "TextUI: Reset Counter"
+      },
+      {
+        "command": "textui-designer.accessProperty",
+        "title": "TextUI: Access Property"
+      },
+      {
+        "command": "textui-designer.callInstanceMethod",
+        "title": "TextUI: Call Instance Method"
       }
     ],
     "menus": {
