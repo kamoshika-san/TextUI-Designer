@@ -54,6 +54,7 @@ export function deactivate(): void {
 
     logger.info('TextUI Designer拡張の非アクティベーション完了');
   }, {
-    errorMessage: '拡張機能の非アクティベーション'
+    errorMessage: '拡張機能の非アクティベーション',
+    logLevel: 'warn'
   });
 } 
