@@ -83,7 +83,7 @@ export class SchemaManagerFactory {
   /**
    * コンテナーをクリア
    */
-  static clearContainer(): void {
-    this.container.clear();
+  static async clearContainer(): Promise<void> {
+    await this.container.cleanup();
   }
 } 

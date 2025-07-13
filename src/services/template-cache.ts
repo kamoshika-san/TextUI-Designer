@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as yaml from 'yaml';
+import * as YAML from 'yaml';
 import { PerformanceMonitor } from '../utils/performance-monitor';
 
 /**
@@ -88,7 +88,13 @@ export class TemplateCacheService {
   private config: CacheConfig;
   private cleanupTimer?: NodeJS.Timeout;
   private performanceMonitor: PerformanceMonitor;
-  // 以前の実装では並行実行フラグは不要だったため削除
+  /**
+   * フラグ: 定期クリーンアップが実行中かどうか
+   * setInterval で呼び出される performScheduledCleanup が非同期化されたことにより、
+   * 実行完了前に次の周期が開始されると、キャッシュや統計情報が同時に操作され
+   * 競合状態が発生する。これを防ぐために実行中フラグを追加する。
+   */
+  private isScheduledCleanupRunning = false;
   
   constructor(config?: Partial<CacheConfig>) {
     this.config = {
@@ -181,7 +187,7 @@ export class TemplateCacheService {
       const stat = await fs.promises.stat(filePath);
       let parsedData: any;
       try {
-        parsedData = yaml.parse(content);
+        parsedData = YAML.parse(content);
       } catch (error) {
         console.warn(`[TemplateCache] YAML パースエラー: ${filePath}`, error);
         parsedData = null;
@@ -210,7 +216,7 @@ export class TemplateCacheService {
     // YAMLをパース
     let parsedData: any;
     try {
-      parsedData = yaml.parse(content);
+      parsedData = YAML.parse(content);
     } catch (error) {
       console.warn(`[TemplateCache] YAML パースエラー: ${filePath}`, error);
       parsedData = null;
@@ -501,27 +507,39 @@ export class TemplateCacheService {
    * 定期クリーンアップ
    */
   private async performScheduledCleanup(): Promise<void> {
-    // クリーンアップ処理
-    const currentTime = Date.now();
-    const templates = Array.from(this.cache.values());
-    let removedCount = 0;
+    // 既に実行中の場合は早期リターン
+    if (this.isScheduledCleanupRunning) {
+      console.log('[TemplateCache] 定期クリーンアップが既に実行中のため、スキップします');
+      return;
+    }
+
+    this.isScheduledCleanupRunning = true;
     
-    for (const template of templates) {
-      // 期限切れのテンプレートを削除
-      if (currentTime - template.cachedAt > this.config.maxAge) {
-        this.removeDependencyReferences(template);
-        this.cache.delete(template.filePath);
-        removedCount++;
+    try {
+      const currentTime = Date.now();
+      const templates = Array.from(this.cache.values());
+      let removedCount = 0;
+      
+      for (const template of templates) {
+        // 期限切れのテンプレートを削除
+        if (currentTime - template.cachedAt > this.config.maxAge) {
+          this.removeDependencyReferences(template);
+          this.cache.delete(template.filePath);
+          removedCount++;
+        }
       }
+      
+      if (removedCount > 0) {
+        this.updateStats();
+        console.log(`[TemplateCache] 定期クリーンアップ: ${removedCount}個の期限切れエントリを削除`);
+      }
+      
+      // メモリ圧迫状況をチェック
+      await this.checkMemoryPressure();
+    } finally {
+      // フラグを解除して次回の実行を許可
+      this.isScheduledCleanupRunning = false;
     }
-    
-    if (removedCount > 0) {
-      this.updateStats();
-      console.log(`[TemplateCache] 定期クリーンアップ: ${removedCount}個の期限切れエントリを削除`);
-    }
-    
-    // メモリ圧迫状況をチェック
-    await this.checkMemoryPressure();
   }
 
   /**

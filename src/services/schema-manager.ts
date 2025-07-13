@@ -172,9 +172,9 @@ export class SchemaManager implements ISchemaManager {
    */
   async reinitialize(): Promise<void> {
     
-    this.errorHandler.withErrorHandlingSync(() => {
+    await this.errorHandler.withErrorHandling(async () => {
       this.clearCache();
-      this.initialize();
+      await this.initialize();
     }, 'SchemaManager: reinitialize');
     
   }

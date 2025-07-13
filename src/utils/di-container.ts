@@ -3,12 +3,23 @@
  * サービスの登録と解決を管理
  */
 export class DIContainer {
+  private static instance: DIContainer;
   private services = new Map<string, unknown>();
   private factories = new Map<string, () => unknown>();
   private singletons = new Map<string, unknown>();
   private lifecycleHooks = new Map<string, () => Promise<void>>();
 
   constructor() {}
+
+  /**
+   * シングルトンインスタンスを取得
+   */
+  static getInstance(): DIContainer {
+    if (!DIContainer.instance) {
+      DIContainer.instance = new DIContainer();
+    }
+    return DIContainer.instance;
+  }
 
   /**
    * サービスを登録
