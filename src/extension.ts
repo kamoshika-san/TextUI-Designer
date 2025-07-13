@@ -53,7 +53,7 @@ export function deactivate(): void {
     }
 
     logger.info('TextUI Designer拡張の非アクティベーション完了');
-  }, {
+  }, '拡張機能の非アクティベーション', {
     errorMessage: '拡張機能の非アクティベーションに失敗しました',
     errorCode: 'DEACTIVATION_FAILED',
     rethrow: false, // 非アクティベーションでは例外を再スローしない

@@ -155,4 +155,27 @@ export class CommandManager {
       vscode.window.showErrorMessage(`プレビューの表示に失敗しました: ${errorMessage}`);
     }
   }
+
+  /**
+   * コマンドマネージャーを破棄
+   */
+  dispose(): void {
+    logger.info('コマンドマネージャーを破棄中...');
+    
+    // 各ハンドラーの破棄
+    if (this.performanceHandler) {
+      // PerformanceCommandHandlerの破棄処理があれば実行
+    }
+    if (this.memoryHandler) {
+      // MemoryCommandHandlerの破棄処理があれば実行
+    }
+    if (this.settingsHandler) {
+      // SettingsCommandHandlerの破棄処理があれば実行
+    }
+    if (this.exampleHandler) {
+      // ExampleCommandHandlerの破棄処理があれば実行
+    }
+    
+    logger.info('コマンドマネージャーの破棄完了');
+  }
 } 

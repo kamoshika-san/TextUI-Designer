@@ -19,6 +19,19 @@ interface ErrorHandlingOptions {
  */
 export class ErrorHandler {
   /**
+   * オプションオブジェクトかどうかを判定する型ガード
+   */
+  private static isErrorHandlingOptions(value: any): value is ErrorHandlingOptions {
+    if (typeof value !== 'object' || value === null) {
+      return false;
+    }
+    
+    // ErrorHandlingOptionsの特定のプロパティが存在するかチェック
+    const optionKeys = ['errorMessage', 'successMessage', 'rethrow', 'fallback', 'logLevel', 'showToUser', 'errorCode'];
+    return optionKeys.some(key => key in value);
+  }
+
+  /**
    * 統一的な非同期エラーハンドリング
    */
   static async withErrorHandling<T>(
@@ -31,9 +44,9 @@ export class ErrorHandler {
     let defaultValue: T | undefined;
     let errorOptions: ErrorHandlingOptions = {};
     
-    if (typeof defaultValueOrOptions === 'object' && defaultValueOrOptions !== null && 'rethrow' in defaultValueOrOptions) {
+    if (this.isErrorHandlingOptions(defaultValueOrOptions)) {
       // 第3引数がオプションオブジェクトの場合
-      errorOptions = defaultValueOrOptions as ErrorHandlingOptions;
+      errorOptions = defaultValueOrOptions;
     } else {
       // 第3引数がデフォルト値の場合
       defaultValue = defaultValueOrOptions as T;
@@ -90,17 +103,32 @@ export class ErrorHandler {
    */
   static withErrorHandlingSync<T>(
     operation: () => T,
-    options: ErrorHandlingOptions = {}
+    context: string,
+    defaultValueOrOptions?: T | ErrorHandlingOptions,
+    options?: ErrorHandlingOptions
   ): T | null {
+    // パラメータの正規化
+    let defaultValue: T | undefined;
+    let errorOptions: ErrorHandlingOptions = {};
+    
+    if (this.isErrorHandlingOptions(defaultValueOrOptions)) {
+      // 第3引数がオプションオブジェクトの場合
+      errorOptions = defaultValueOrOptions;
+    } else {
+      // 第3引数がデフォルト値の場合
+      defaultValue = defaultValueOrOptions as T;
+      errorOptions = options || {};
+    }
+
     const {
-      errorMessage = '操作の実行に失敗しました',
+      errorMessage = context || '操作の実行に失敗しました',
       successMessage,
       rethrow = false,
       fallback,
       logLevel = 'error',
       showToUser = true,
       errorCode
-    } = options;
+    } = errorOptions;
 
     try {
       const result = operation();
@@ -133,7 +161,7 @@ export class ErrorHandler {
       }
 
       // フォールバック値を返す
-      return fallback !== undefined ? fallback : null;
+      return fallback !== undefined ? fallback : (defaultValue !== undefined ? defaultValue : null);
     }
   }
 

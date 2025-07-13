@@ -17,6 +17,19 @@ class TestErrorHandler {
   }
 
   /**
+   * オプションオブジェクトかどうかを判定する型ガード
+   */
+  static isErrorHandlingOptions(value) {
+    if (typeof value !== 'object' || value === null) {
+      return false;
+    }
+    
+    // ErrorHandlingOptionsの特定のプロパティが存在するかチェック
+    const optionKeys = ['errorMessage', 'successMessage', 'rethrow', 'fallback', 'logLevel', 'showToUser', 'errorCode'];
+    return optionKeys.some(key => key in value);
+  }
+
+  /**
    * エラーをログに記録
    */
   static logError(error, context = '') {
@@ -95,7 +108,7 @@ class TestErrorHandler {
     let defaultValue;
     let errorOptions = {};
     
-    if (typeof defaultValueOrOptions === 'object' && defaultValueOrOptions !== null && 'rethrow' in defaultValueOrOptions) {
+    if (TestErrorHandler.isErrorHandlingOptions(defaultValueOrOptions)) {
       // 第3引数がオプションオブジェクトの場合
       errorOptions = defaultValueOrOptions;
     } else {
@@ -149,15 +162,28 @@ class TestErrorHandler {
   /**
    * 統一的な同期エラーハンドリング
    */
-  static withErrorHandlingSync(operation, options = {}) {
+  static withErrorHandlingSync(operation, context, defaultValueOrOptions, options) {
+    // パラメータの正規化
+    let defaultValue;
+    let errorOptions = {};
+    
+    if (TestErrorHandler.isErrorHandlingOptions(defaultValueOrOptions)) {
+      // 第3引数がオプションオブジェクトの場合
+      errorOptions = defaultValueOrOptions;
+    } else {
+      // 第3引数がデフォルト値の場合
+      defaultValue = defaultValueOrOptions;
+      errorOptions = options || {};
+    }
+
     const {
-      errorMessage = '操作の実行に失敗しました',
+      errorMessage = context || '操作の実行に失敗しました',
       successMessage,
       rethrow = false,
       fallback,
       logLevel = 'error',
       showToUser = true
-    } = options;
+    } = errorOptions;
 
     try {
       const result = operation();
@@ -188,7 +214,7 @@ class TestErrorHandler {
       }
 
       // フォールバック値を返す
-      return fallback !== undefined ? fallback : null;
+      return fallback !== undefined ? fallback : (defaultValue !== undefined ? defaultValue : null);
     }
   }
 

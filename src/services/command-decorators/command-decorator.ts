@@ -5,6 +5,14 @@ import 'reflect-metadata';
  */
 const COMMAND_METADATA_KEY = Symbol('command:metadata');
 
+// Reflect APIの型定義を確認
+declare global {
+  namespace Reflect {
+    function getMetadata(metadataKey: any, target: any): any;
+    function defineMetadata(metadataKey: any, metadataValue: any, target: any): void;
+  }
+}
+
 /**
  * コマンドデコレーターのオプション
  */
