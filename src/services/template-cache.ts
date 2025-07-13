@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as yaml from 'yaml';
+import * as YAML from 'yaml';
 import { PerformanceMonitor } from '../utils/performance-monitor';
 
 /**
@@ -187,7 +187,7 @@ export class TemplateCacheService {
       const stat = await fs.promises.stat(filePath);
       let parsedData: any;
       try {
-        parsedData = yaml.parse(content);
+        parsedData = YAML.parse(content);
       } catch (error) {
         console.warn(`[TemplateCache] YAML パースエラー: ${filePath}`, error);
         parsedData = null;
@@ -216,7 +216,7 @@ export class TemplateCacheService {
     // YAMLをパース
     let parsedData: any;
     try {
-      parsedData = yaml.parse(content);
+      parsedData = YAML.parse(content);
     } catch (error) {
       console.warn(`[TemplateCache] YAML パースエラー: ${filePath}`, error);
       parsedData = null;
