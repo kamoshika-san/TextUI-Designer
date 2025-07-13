@@ -11,14 +11,13 @@ let lifecycleManager: ExtensionLifecycleManager | undefined;
  * 拡張機能のアクティベーション
  */
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-  // `rethrow: true` ensures that activation errors are propagated to VS Code
-  return (await ErrorHandler.withErrorHandling(async () => {
-    logger.info('TextUI Designer拡張をアクティブ化中...');
+  logger.info('TextUI Designer拡張をアクティブ化中...');
 
-    // メモリ追跡システムの初期化
-    const memoryTracker = TextUIMemoryTracker.getInstance();
-    logger.debug('メモリ追跡システムを初期化しました');
+  // メモリ追跡システムの初期化
+  const memoryTracker = TextUIMemoryTracker.getInstance();
+  logger.debug('メモリ追跡システムを初期化しました');
 
+  try {
     // ライフサイクルマネージャーの初期化
     lifecycleManager = new ExtensionLifecycleManager(context);
     
@@ -26,7 +25,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     await lifecycleManager.activate();
     
     logger.info('TextUI Designer拡張のアクティベーション完了');
-  }, { errorMessage: '拡張機能のアクティベーション' });
+
+  } catch (error) {
+    logger.error('アクティベーション中にエラーが発生しました:', error);
+    vscode.window.showErrorMessage(`TextUI Designer拡張の初期化に失敗しました: ${error}`);
+    // VS Code needs the error to bubble up so that the extension is marked as failed
+    // and deactivated correctly. Re-throw to avoid silent activation failures.
+    throw error; // エラーを再スローして拡張の起動を失敗させる
+  }
 }
 
 /**
