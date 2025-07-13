@@ -39,7 +39,7 @@ export class ErrorHandler {
     context: string, 
     defaultValueOrOptions?: T | ErrorHandlingOptions<T>,
     options?: ErrorHandlingOptions<T>
-  ): Promise<T> {
+  ): Promise<T | null> {
     // パラメータの正規化
     let defaultValue: T | undefined;
     let errorOptions: ErrorHandlingOptions<T> = {};
@@ -94,7 +94,7 @@ export class ErrorHandler {
       }
 
       // フォールバック値を返す
-      return fallback !== undefined ? fallback as T : (defaultValue as T);
+      return fallback !== undefined ? fallback as T : (defaultValue !== undefined ? defaultValue : null);
     }
   }
 
