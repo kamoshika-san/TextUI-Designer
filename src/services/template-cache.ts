@@ -507,10 +507,18 @@ export class TemplateCacheService {
    * 定期クリーンアップ
    */
   private async performScheduledCleanup(): Promise<void> {
-    // 他のスレッド(実際には Node.js のイベントループでの並行実行)による重複実行を防止
-    if (this.isScheduledCleanupRunning) {
-      // 既に実行中の場合はスキップ
-      return;
+    // クリーンアップ処理
+    const currentTime = Date.now();
+    const templates = Array.from(this.cache.values());
+    let removedCount = 0;
+    
+    for (const template of templates) {
+      // 期限切れのテンプレートを削除
+      if (currentTime - template.cachedAt > this.config.maxAge) {
+        this.removeDependencyReferences(template);
+        this.cache.delete(template.filePath);
+        removedCount++;
+      }
     }
     this.isScheduledCleanupRunning = true;
     try {
