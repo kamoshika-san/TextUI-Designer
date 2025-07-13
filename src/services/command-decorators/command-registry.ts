@@ -140,5 +140,6 @@ export class CommandRegistry {
    */
   public isCommandRegistered(commandId: string): boolean {
     return this.registeredCommands.has(commandId);
+
   }
 }
