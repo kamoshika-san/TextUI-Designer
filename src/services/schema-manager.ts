@@ -132,7 +132,10 @@ export class SchemaManager implements ISchemaManager {
     return await this.errorHandler.withErrorHandling(async () => {
       const schemaPath = this.pathResolver.resolvePaths().schemaPath;
       return await this.schemaLoader.load(schemaPath);
-    }, 'SchemaManager: loadSchema');
+    }, {
+      errorMessage: 'SchemaManager: loadSchema',
+      logLevel: 'warn'
+    });
   }
 
   /**
@@ -142,7 +145,10 @@ export class SchemaManager implements ISchemaManager {
     return await this.errorHandler.withErrorHandling(async () => {
       const templateSchemaPath = this.pathResolver.resolvePaths().templateSchemaPath;
       return await this.templateSchemaLoader.load(templateSchemaPath);
-    }, 'SchemaManager: loadTemplateSchema');
+    }, {
+      errorMessage: 'SchemaManager: loadTemplateSchema',
+      logLevel: 'warn'
+    });
   }
 
   /**
@@ -152,7 +158,10 @@ export class SchemaManager implements ISchemaManager {
     return await this.errorHandler.withErrorHandling(async () => {
       const themeSchemaPath = this.pathResolver.resolvePaths().themeSchemaPath;
       return await this.themeSchemaLoader.load(themeSchemaPath);
-    }, 'SchemaManager: loadThemeSchema');
+    }, {
+      errorMessage: 'SchemaManager: loadThemeSchema',
+      logLevel: 'warn'
+    });
   }
 
   /**
