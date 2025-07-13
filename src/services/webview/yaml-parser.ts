@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import * as YAML from 'yaml';
 import { PerformanceMonitor } from '../../utils/performance-monitor';
 import { TemplateParser, TemplateException, TemplateError } from '../template-parser';
+import { SchemaManager } from '../schema-manager';
+import { DIContainer, ServiceTokens } from '../../utils/di-container';
 
 export interface ParsedYamlResult {
   data: any;
@@ -32,11 +34,24 @@ export interface SchemaErrorInfo {
 export class YamlParser {
   private performanceMonitor: PerformanceMonitor;
   private templateParser: TemplateParser;
+  private schemaManager: SchemaManager;
   private readonly MAX_YAML_SIZE: number = 1024 * 1024; // 1MB制限
 
-  constructor() {
+  constructor(schemaManager?: SchemaManager) {
     this.performanceMonitor = PerformanceMonitor.getInstance();
     this.templateParser = new TemplateParser();
+    
+    // DIコンテナからSchemaManagerを取得、または引数で渡されたものを使用
+    if (schemaManager) {
+      this.schemaManager = schemaManager;
+    } else {
+      const container = DIContainer.getInstance();
+      if (container.has(ServiceTokens.SCHEMA_MANAGER)) {
+        this.schemaManager = container.resolve<SchemaManager>(ServiceTokens.SCHEMA_MANAGER);
+      } else {
+        throw new Error('SchemaManager not available in DI container');
+      }
+    }
   }
 
   /**
@@ -348,14 +363,13 @@ export class YamlParser {
    */
   private async validateYamlSchema(yaml: any, yamlContent: string, fileName: string): Promise<void> {
     try {
-      // グローバルスキーママネージャーを取得
-      const globalSchemaManager = (global as any).globalSchemaManager;
-      if (!globalSchemaManager) {
+      // DIコンテナからスキーママネージャーを取得
+      if (!this.schemaManager) {
         console.warn('[YamlParser] スキーママネージャーが見つかりません');
         return;
       }
 
-      const schema = await globalSchemaManager.loadSchema();
+      const schema = await this.schemaManager.loadSchema();
       if (!schema) {
         console.warn('[YamlParser] スキーマの読み込みに失敗しました');
         return;

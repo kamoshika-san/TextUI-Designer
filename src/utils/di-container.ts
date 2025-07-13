@@ -1,23 +1,14 @@
 /**
- * 依存性注入コンテナー
+ * 型安全な依存性注入コンテナー
  * サービスの登録と解決を管理
  */
 export class DIContainer {
-  private static instance: DIContainer;
-  private services = new Map<string, any>();
-  private factories = new Map<string, () => any>();
+  private services = new Map<string, unknown>();
+  private factories = new Map<string, () => unknown>();
+  private singletons = new Map<string, unknown>();
+  private lifecycleHooks = new Map<string, () => Promise<void>>();
 
-  private constructor() {}
-
-  /**
-   * シングルトンインスタンスを取得
-   */
-  static getInstance(): DIContainer {
-    if (!DIContainer.instance) {
-      DIContainer.instance = new DIContainer();
-    }
-    return DIContainer.instance;
-  }
+  constructor() {}
 
   /**
    * サービスを登録
@@ -34,12 +25,31 @@ export class DIContainer {
   }
 
   /**
+   * シングルトンを登録
+   */
+  registerSingleton<T>(token: string, factory: () => T): void {
+    this.factories.set(token, () => {
+      if (!this.singletons.has(token)) {
+        this.singletons.set(token, factory());
+      }
+      return this.singletons.get(token) as T;
+    });
+  }
+
+  /**
+   * ライフサイクルフックを登録
+   */
+  registerLifecycleHook(token: string, hook: () => Promise<void>): void {
+    this.lifecycleHooks.set(token, hook);
+  }
+
+  /**
    * サービスを解決
    */
   resolve<T>(token: string): T {
     // 既存のサービスインスタンスを返す
     if (this.services.has(token)) {
-      return this.services.get(token);
+      return this.services.get(token) as T;
     }
 
     // ファクトリーから新しいインスタンスを作成
@@ -48,7 +58,7 @@ export class DIContainer {
       if (factory) {
         const instance = factory();
         this.services.set(token, instance);
-        return instance;
+        return instance as T;
       }
     }
 
@@ -63,11 +73,24 @@ export class DIContainer {
   }
 
   /**
-   * すべてのサービスをクリア
+   * 全サービスの初期化
    */
-  clear(): void {
+  async initialize(): Promise<void> {
+    const hooks = Array.from(this.lifecycleHooks.values());
+    await Promise.all(hooks.map(hook => hook()));
+  }
+
+  /**
+   * 全サービスのクリーンアップ
+   */
+  async cleanup(): Promise<void> {
+    // シングルトンのクリーンアップ
+    this.singletons.clear();
+    
+    // サービスのクリーンアップ
     this.services.clear();
     this.factories.clear();
+    this.lifecycleHooks.clear();
   }
 
   /**
@@ -76,6 +99,25 @@ export class DIContainer {
   remove(token: string): void {
     this.services.delete(token);
     this.factories.delete(token);
+    this.singletons.delete(token);
+    this.lifecycleHooks.delete(token);
+  }
+
+  /**
+   * コンテナの状態を取得
+   */
+  getStatus(): {
+    services: number;
+    factories: number;
+    singletons: number;
+    hooks: number;
+  } {
+    return {
+      services: this.services.size,
+      factories: this.factories.size,
+      singletons: this.singletons.size,
+      hooks: this.lifecycleHooks.size
+    };
   }
 }
 
@@ -95,7 +137,11 @@ export const ServiceTokens = {
   WEBVIEW_MANAGER: 'WebViewManager',
   THEME_MANAGER: 'ThemeManager',
   EXPORT_SERVICE: 'ExportService',
+  EXPORT_MANAGER: 'ExportManager',
+  TEMPLATE_SERVICE: 'TemplateService',
+  SETTINGS_SERVICE: 'SettingsService',
   COMPLETION_PROVIDER: 'CompletionProvider',
+  DEFINITION_PROVIDER: 'DefinitionProvider',
   FILE_WATCHER: 'FileWatcher',
   CONFIG_MANAGER: 'ConfigManager',
   PERFORMANCE_MONITOR: 'PerformanceMonitor',
@@ -103,12 +149,15 @@ export const ServiceTokens = {
 } as const;
 
 /**
- * サービスインターフェースの定義
+ * サービスプロバイダーインターフェース
  */
 export interface IServiceProvider {
   getService<T>(token: string): T;
   registerService<T>(token: string, service: T): void;
   registerFactory<T>(token: string, factory: () => T): void;
+  registerSingleton<T>(token: string, factory: () => T): void;
+  initialize(): Promise<void>;
+  cleanup(): Promise<void>;
 }
 
 /**
@@ -117,8 +166,8 @@ export interface IServiceProvider {
 export class ServiceProvider implements IServiceProvider {
   private container: DIContainer;
 
-  constructor() {
-    this.container = DIContainer.getInstance();
+  constructor(container: DIContainer) {
+    this.container = container;
   }
 
   getService<T>(token: string): T {
@@ -131,5 +180,17 @@ export class ServiceProvider implements IServiceProvider {
 
   registerFactory<T>(token: string, factory: () => T): void {
     this.container.registerFactory(token, factory);
+  }
+
+  registerSingleton<T>(token: string, factory: () => T): void {
+    this.container.registerSingleton(token, factory);
+  }
+
+  async initialize(): Promise<void> {
+    await this.container.initialize();
+  }
+
+  async cleanup(): Promise<void> {
+    await this.container.cleanup();
   }
 } 
