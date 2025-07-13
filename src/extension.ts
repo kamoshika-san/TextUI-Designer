@@ -11,7 +11,8 @@ let lifecycleManager: ExtensionLifecycleManager | undefined;
  * 拡張機能のアクティベーション
  */
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-  await ErrorHandler.withErrorHandling(async () => {
+  // `rethrow: true` ensures that activation errors are propagated to VS Code
+  return (await ErrorHandler.withErrorHandling(async () => {
     logger.info('TextUI Designer拡張をアクティブ化中...');
 
     // メモリ追跡システムの初期化
