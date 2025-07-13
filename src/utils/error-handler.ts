@@ -2,18 +2,52 @@ import * as vscode from 'vscode';
 import { logger } from './logger';
 
 /**
+ * エラーハンドリング設定
+ */
+export interface ErrorHandlingConfig {
+  /** エラーを再スローするかどうか */
+  rethrow?: boolean;
+}
+
+/**
  * エラーハンドリングユーティリティ
  */
 export class ErrorHandler {
   /**
    * 統一的な非同期エラーハンドリング
    */
-  static async withErrorHandling<T>(operation: () => Promise<T>, context: string, defaultValue?: T): Promise<T> {
+  static async withErrorHandling<T>(
+    operation: () => Promise<T>, 
+    context: string, 
+    defaultValueOrConfig?: T | ErrorHandlingConfig,
+    config?: ErrorHandlingConfig
+  ): Promise<T> {
+    // 引数の解析: 第3引数が設定オブジェクトか、デフォルト値かを判定
+    let defaultValue: T | undefined;
+    let errorConfig: ErrorHandlingConfig = {};
+    
+    if (config !== undefined) {
+      // 4引数バージョン: defaultValue, config
+      defaultValue = defaultValueOrConfig as T;
+      errorConfig = config;
+    } else if (defaultValueOrConfig !== undefined && defaultValueOrConfig !== null && typeof defaultValueOrConfig === 'object' && 'rethrow' in defaultValueOrConfig) {
+      // 3引数バージョン: config のみ
+      errorConfig = defaultValueOrConfig as ErrorHandlingConfig;
+    } else {
+      // 3引数バージョン: defaultValue のみ
+      defaultValue = defaultValueOrConfig as T;
+    }
+
     try {
       return await operation();
     } catch (error) {
       this.logError(error, context);
       this.showUserFriendlyError(error, context);
+      
+      if (errorConfig.rethrow) {
+        throw error;
+      }
+      
       return defaultValue as T;
     }
   }
@@ -21,12 +55,38 @@ export class ErrorHandler {
   /**
    * 統一的な同期エラーハンドリング
    */
-  static withErrorHandlingSync<T>(operation: () => T, context: string, defaultValue?: T): T {
+  static withErrorHandlingSync<T>(
+    operation: () => T, 
+    context: string, 
+    defaultValueOrConfig?: T | ErrorHandlingConfig,
+    config?: ErrorHandlingConfig
+  ): T {
+    // 引数の解析: 第3引数が設定オブジェクトか、デフォルト値かを判定
+    let defaultValue: T | undefined;
+    let errorConfig: ErrorHandlingConfig = {};
+    
+    if (config !== undefined) {
+      // 4引数バージョン: defaultValue, config
+      defaultValue = defaultValueOrConfig as T;
+      errorConfig = config;
+    } else if (defaultValueOrConfig !== undefined && defaultValueOrConfig !== null && typeof defaultValueOrConfig === 'object' && 'rethrow' in defaultValueOrConfig) {
+      // 3引数バージョン: config のみ
+      errorConfig = defaultValueOrConfig as ErrorHandlingConfig;
+    } else {
+      // 3引数バージョン: defaultValue のみ
+      defaultValue = defaultValueOrConfig as T;
+    }
+
     try {
       return operation();
     } catch (error) {
       this.logError(error, context);
       this.showUserFriendlyError(error, context);
+      
+      if (errorConfig.rethrow) {
+        throw error;
+      }
+      
       return defaultValue as T;
     }
   }
