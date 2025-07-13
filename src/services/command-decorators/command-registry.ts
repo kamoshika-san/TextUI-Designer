@@ -2,83 +2,41 @@ import * as vscode from 'vscode';
 import { logger } from '../../utils/logger';
 
 /**
- * コマンド登録情報
+ * コマンド登録のオプション
  */
-export interface CommandRegistration {
-  command: string;
-  title?: string;
+export interface CommandRegistrationOptions {
+  /** コマンドID */
+  commandId: string;
+  /** コマンドの説明 */
+  description?: string;
+  /** コマンドのカテゴリー */
   category?: string;
-  handler: (...args: any[]) => any;
-  options?: {
-    when?: string;
-    enablement?: string;
-  };
 }
 
 /**
- * コマンドカテゴリー
+ * コマンドメタデータのインターフェース
  */
-export enum CommandCategory {
-  PREVIEW = 'preview',
-  EXPORT = 'export',
-  TEMPLATE = 'template',
-  SETTINGS = 'settings',
-  SCHEMA = 'schema',
-  DEBUG = 'debug',
-  PERFORMANCE = 'performance',
-  MEMORY = 'memory'
-}
-
-/**
- * コマンド登録デコレーター
- */
-export function Command(
-  command: string,
-  category: CommandCategory,
-  options?: {
-    title?: string;
-    when?: string;
-    enablement?: string;
-  }
-) {
-  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
-    const method = descriptor.value;
-    
-    // メタデータを保存
-    if (!target.constructor.commands) {
-      target.constructor.commands = new Map<string, CommandRegistration>();
-    }
-    
-    target.constructor.commands.set(command, {
-      command,
-      title: options?.title,
-      category,
-      handler: method.bind(target),
-      options: {
-        when: options?.when,
-        enablement: options?.enablement
-      }
-    });
-    
-    return descriptor;
-  };
+export interface CommandMetadata {
+  commandId: string;
+  methodName: string;
+  options?: CommandRegistrationOptions;
 }
 
 /**
  * コマンドレジストリ
- * デコレーターベースの自動コマンド登録を管理
+ * クラスからコマンドを自動登録し、適切なthisコンテキストを維持する
  */
 export class CommandRegistry {
   private static instance: CommandRegistry;
-  private registrations = new Map<string, CommandRegistration>();
-  private disposables: vscode.Disposable[] = [];
+  private registeredCommands: Map<string, vscode.Disposable> = new Map();
+  private commandMetadata: Map<string, CommandMetadata[]> = new Map();
 
   private constructor() {}
 
   /**
    * シングルトンインスタンスを取得
    */
-  static getInstance(): CommandRegistry {
+  public static getInstance(): CommandRegistry {
     if (!CommandRegistry.instance) {
       CommandRegistry.instance = new CommandRegistry();
     }
@@ -87,157 +45,101 @@ export class CommandRegistry {
 
   /**
    * クラスからコマンドを登録
+   * 各メソッドをインスタンスに適切にバインドする
+   * 
+   * @param instance コマンドハンドラーのインスタンス
+   * @param metadata コマンドメタデータの配列
    */
-  registerCommandsFromClass(instance: any): void {
-    const constructor = instance.constructor;
-    if (!constructor.commands) {
-      return;
-    }
+  public registerCommandsFromClass(instance: any, metadata: CommandMetadata[]): void {
+    const className = instance.constructor.name;
+    logger.debug(`[CommandRegistry] クラス ${className} からコマンドを登録開始`);
 
-    constructor.commands.forEach((registration: CommandRegistration) => {
-      this.registerCommand(registration);
-    });
-  }
+    // メタデータを保存
+    this.commandMetadata.set(className, metadata);
 
-  /**
-   * 個別のコマンドを登録
-   */
-  registerCommand(registration: CommandRegistration): void {
-    logger.debug(`コマンドを登録: ${registration.command}`);
-    
-    const disposable = vscode.commands.registerCommand(
-      registration.command,
-      registration.handler
-    );
-    
-    this.disposables.push(disposable);
-    this.registrations.set(registration.command, registration);
-    
-    logger.debug(`コマンド登録成功: ${registration.command}`);
-  }
-
-  /**
-   * カテゴリー別にコマンドを登録
-   */
-  registerCommandsByCategory(category: CommandCategory, commands: CommandRegistration[]): void {
-    commands.forEach(command => {
-      if (command.category === category) {
-        this.registerCommand(command);
+    // 各コマンドを登録
+    for (const cmd of metadata) {
+      const method = instance[cmd.methodName];
+      
+      if (typeof method !== 'function') {
+        logger.error(`[CommandRegistry] メソッド ${cmd.methodName} が ${className} に存在しません`);
+        continue;
       }
-    });
-  }
 
-  /**
-   * 全コマンドを登録
-   */
-  registerAllCommands(): void {
-    logger.info('全コマンドの登録を開始');
-    
-    this.registrations.forEach(registration => {
-      this.registerCommand(registration);
-    });
-    
-    logger.info(`全コマンドの登録完了: ${this.registrations.size}個`);
-  }
+      // 重要な修正: メソッドをインスタンスにバインドする
+      // 以前の実装: method.bind(target) - これは間違い
+      // 修正後: method.bind(instance) - これが正しい
+      const boundMethod = method.bind(instance);
 
-  /**
-   * コマンドを取得
-   */
-  getCommand(command: string): CommandRegistration | undefined {
-    return this.registrations.get(command);
-  }
-
-  /**
-   * カテゴリー別のコマンドを取得
-   */
-  getCommandsByCategory(category: CommandCategory): CommandRegistration[] {
-    return Array.from(this.registrations.values())
-      .filter(registration => registration.category === category);
-  }
-
-  /**
-   * 全コマンドを取得
-   */
-  getAllCommands(): CommandRegistration[] {
-    return Array.from(this.registrations.values());
-  }
-
-  /**
-   * コマンド統計を取得
-   */
-  getCommandStats(): {
-    totalCommands: number;
-    commandsByCategory: Record<string, number>;
-  } {
-    const commandsByCategory: Record<string, number> = {};
-    
-    this.registrations.forEach(registration => {
-      const category = registration.category || 'unknown';
-      commandsByCategory[category] = (commandsByCategory[category] || 0) + 1;
-    });
-
-    return {
-      totalCommands: this.registrations.size,
-      commandsByCategory
-    };
-  }
-
-  /**
-   * コマンドをクリア
-   */
-  clearCommands(): void {
-    this.registrations.clear();
-  }
-
-  /**
-   * 登録を破棄
-   */
-  dispose(): void {
-    this.disposables.forEach(disposable => disposable.dispose());
-    this.disposables = [];
-    this.registrations.clear();
-  }
-}
-
-/**
- * コマンドベースクラス
- * デコレーターベースのコマンド登録を簡素化
- */
-export abstract class CommandBase {
-  constructor() {
-    // クラスのコマンドを自動登録
-    CommandRegistry.getInstance().registerCommandsFromClass(this);
-  }
-
-  /**
-   * コマンドの前処理
-   */
-  protected async beforeCommand(command: string): Promise<void> {
-    logger.debug(`コマンド実行前処理: ${command}`);
-  }
-
-  /**
-   * コマンドの後処理
-   */
-  protected async afterCommand(command: string): Promise<void> {
-    logger.debug(`コマンド実行後処理: ${command}`);
-  }
-
-  /**
-   * コマンド実行のラッパー
-   */
-  protected async executeCommand<T>(
-    command: string,
-    operation: () => Promise<T>
-  ): Promise<T> {
-    await this.beforeCommand(command);
-    try {
-      const result = await operation();
-      await this.afterCommand(command);
-      return result;
-    } catch (error) {
-      logger.error(`コマンド実行エラー: ${command}`, error);
-      throw error;
+      try {
+        const disposable = vscode.commands.registerCommand(cmd.commandId, boundMethod);
+        this.registeredCommands.set(cmd.commandId, disposable);
+        
+        logger.debug(`[CommandRegistry] コマンド登録成功: ${cmd.commandId} -> ${className}.${cmd.methodName}`);
+      } catch (error) {
+        logger.error(`[CommandRegistry] コマンド登録失敗: ${cmd.commandId}`, error);
+      }
     }
+
+    logger.info(`[CommandRegistry] クラス ${className} から ${metadata.length} 個のコマンドを登録完了`);
+  }
+
+  /**
+   * 特定のコマンドを登録解除
+   * 
+   * @param commandId コマンドID
+   */
+  public unregisterCommand(commandId: string): void {
+    const disposable = this.registeredCommands.get(commandId);
+    if (disposable) {
+      disposable.dispose();
+      this.registeredCommands.delete(commandId);
+      logger.debug(`[CommandRegistry] コマンド登録解除: ${commandId}`);
+    }
+  }
+
+  /**
+   * クラスの全コマンドを登録解除
+   * 
+   * @param className クラス名
+   */
+  public unregisterCommandsFromClass(className: string): void {
+    const metadata = this.commandMetadata.get(className);
+    if (metadata) {
+      for (const cmd of metadata) {
+        this.unregisterCommand(cmd.commandId);
+      }
+      this.commandMetadata.delete(className);
+      logger.info(`[CommandRegistry] クラス ${className} の全コマンドを登録解除`);
+    }
+  }
+
+  /**
+   * 全コマンドを登録解除
+   */
+  public unregisterAllCommands(): void {
+    for (const [commandId, disposable] of this.registeredCommands) {
+      disposable.dispose();
+    }
+    this.registeredCommands.clear();
+    this.commandMetadata.clear();
+    logger.info('[CommandRegistry] 全コマンドを登録解除');
+  }
+
+  /**
+   * 登録済みコマンドの一覧を取得
+   */
+  public getRegisteredCommands(): string[] {
+    return Array.from(this.registeredCommands.keys());
+  }
+
+  /**
+   * コマンドが登録されているかチェック
+   * 
+   * @param commandId コマンドID
+   */
+  public isCommandRegistered(commandId: string): boolean {
+    return this.registeredCommands.has(commandId);
+
   }
 }

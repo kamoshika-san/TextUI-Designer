@@ -18,6 +18,22 @@ export class SettingsService {
   }
 
   /**
+   * 設定サービスを初期化
+   */
+  async initialize(): Promise<void> {
+    await this.errorHandler.withErrorHandling(async () => {
+      // 設定の初期化処理
+      console.log('[SettingsService] 設定サービスを初期化中...');
+      
+      // 設定の検証
+      const settings = this.getCurrentSettings();
+      console.log('[SettingsService] 現在の設定:', settings);
+      
+      console.log('[SettingsService] 設定サービスの初期化完了');
+    }, '設定サービスの初期化に失敗しました');
+  }
+
+  /**
    * 設定画面を開く
    */
   async openSettings(): Promise<void> {

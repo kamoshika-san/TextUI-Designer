@@ -4,266 +4,294 @@ import { logger } from './logger';
 /**
  * エラーハンドリングオプション
  */
-export interface ErrorHandlingOptions {
-  /** エラーメッセージ */
+interface ErrorHandlingOptions<T = any> {
   errorMessage?: string;
-  /** 成功メッセージ */
   successMessage?: string;
-  /** エラー時に例外を再スローするか */
   rethrow?: boolean;
-  /** エラー時のフォールバック処理 */
-  fallback?: () => Promise<void> | void;
-  /** ログレベル */
+  fallback?: T | null;
   logLevel?: 'error' | 'warn' | 'info' | 'debug';
-  /** ユーザーに通知するか */
   showToUser?: boolean;
-  /** エラーコード */
   errorCode?: string;
 }
 
 /**
- * エラー情報
- */
-export interface ErrorInfo {
-  message: string;
-  code?: string;
-  details?: unknown;
-  timestamp: number;
-  context?: string;
-}
-
-/**
- * 統一エラーハンドリングシステム
- * DRY原則に従ったエラー処理を提供
+ * エラーハンドリングユーティリティ (修正版)
  */
 export class ErrorHandler {
-  private static errorHistory: ErrorInfo[] = [];
-  private static maxHistorySize = 100;
+  /**
+   * オプションオブジェクトかどうかを判定する型ガード (簡素化版)
+   */
+  private static isErrorHandlingOptions<T>(value: any): value is ErrorHandlingOptions<T> {
+    if (typeof value !== 'object' || value === null) {
+      return false;
+    }
+    
+    // ErrorHandlingOptionsの特定のプロパティが存在するかチェック
+    const optionKeys = ['errorMessage', 'successMessage', 'rethrow', 'fallback', 'logLevel', 'showToUser', 'errorCode'];
+    
+    // 少なくとも1つのオプションキーが存在し、その値が適切な型であることを確認
+    const hasValidOption = optionKeys.some(key => {
+      if (!(key in value)) return false;
+      const optionValue = value[key];
+      
+      switch (key) {
+        case 'errorMessage':
+        case 'successMessage':
+        case 'errorCode':
+          return typeof optionValue === 'string' || optionValue === undefined;
+        case 'rethrow':
+        case 'showToUser':
+          return typeof optionValue === 'boolean' || optionValue === undefined;
+        case 'logLevel':
+          return ['error', 'warn', 'info', 'debug'].includes(optionValue) || optionValue === undefined;
+        case 'fallback':
+          return true; // fallbackは任意の型を許可
+        default:
+          return false;
+      }
+    });
+    
+    return hasValidOption;
+  }
 
   /**
-   * エラーハンドリング付きで非同期処理を実行
+   * 統一的な非同期エラーハンドリング (オーバーロード)
    */
+  // void型の場合のオーバーロード
+  static async withErrorHandling(
+    operation: () => Promise<void>,
+    context: string,
+    options?: ErrorHandlingOptions<void>
+  ): Promise<void | undefined>;
+  
+  // 非void型の場合のオーバーロード
   static async withErrorHandling<T>(
     operation: () => Promise<T>,
-    options: ErrorHandlingOptions = {}
+    context: string,
+    defaultValueOrOptions?: T | ErrorHandlingOptions<T>,
+    options?: ErrorHandlingOptions<T>
+  ): Promise<T | null>;
+  
+  // 実装
+  static async withErrorHandling<T>(
+    operation: () => Promise<T>,
+    context: string,
+    defaultValueOrOptions?: T | ErrorHandlingOptions<T>,
+    options?: ErrorHandlingOptions<T>
   ): Promise<T | null> {
+    // パラメータの正規化
+    let defaultValue: T | undefined;
+    let errorOptions: ErrorHandlingOptions<T> = {};
+    
+    if (this.isErrorHandlingOptions<T>(defaultValueOrOptions)) {
+      // 第3引数がオプションオブジェクトの場合
+      errorOptions = defaultValueOrOptions;
+    } else {
+      // 第3引数がデフォルト値の場合
+      defaultValue = defaultValueOrOptions as T;
+      errorOptions = options || {};
+    }
+
     const {
-      errorMessage = '操作の実行に失敗しました',
+      errorMessage = context,
       successMessage,
       rethrow = false,
       fallback,
       logLevel = 'error',
       showToUser = true,
       errorCode
-    } = options;
+    } = errorOptions;
 
     try {
       const result = await operation();
       
       if (successMessage) {
-        this.showInfo(successMessage);
+        logger.info(successMessage);
       }
       
       return result;
     } catch (error) {
-      const errorInfo: ErrorInfo = {
-        message: errorMessage,
-        code: errorCode,
-        details: error,
-        timestamp: Date.now(),
-        context: this.getCallerContext()
-      };
+      // エラーログを記録
+      if (logLevel === 'error') {
+        this.logError(error, errorMessage);
+      } else if (logLevel === 'warn') {
+        logger.warn(`${errorMessage}: ${this.formatError(error)}`);
+      } else if (logLevel === 'info') {
+        logger.info(`${errorMessage}: ${this.formatError(error)}`);
+      } else if (logLevel === 'debug') {
+        logger.debug(`${errorMessage}: ${this.formatError(error)}`);
+      }
 
-      this.logError(errorInfo, logLevel);
-      this.addToHistory(errorInfo);
-
+      // ユーザーにエラーを表示
       if (showToUser) {
-        this.showError(errorMessage, error);
+        this.showUserFriendlyError(error, errorMessage);
       }
 
-      if (fallback) {
-        try {
-          await fallback();
-        } catch (fallbackError) {
-          logger.error('フォールバック処理でエラーが発生しました:', fallbackError);
-        }
-      }
-
+      // 例外を再スローするかどうか
       if (rethrow) {
         throw error;
       }
 
-      return null;
+      // void型の場合はundefinedを返す（voidとして扱う）
+      if (fallback === undefined && defaultValue === undefined) {
+        return undefined as T | null;
+      }
+
+      // フォールバック値を返す
+      return fallback !== undefined ? fallback as T | null : (defaultValue !== undefined ? defaultValue : null);
     }
   }
 
   /**
-   * エラーハンドリング付きで同期処理を実行
+   * 統一的な同期エラーハンドリング (オーバーロード)
    */
+  // void型の場合のオーバーロード
+  static withErrorHandlingSync(
+    operation: () => void,
+    context: string,
+    options?: ErrorHandlingOptions<void>
+  ): void | undefined;
+  
+  // 非void型の場合のオーバーロード
   static withErrorHandlingSync<T>(
     operation: () => T,
-    options: ErrorHandlingOptions = {}
+    context: string,
+    defaultValueOrOptions?: T | ErrorHandlingOptions<T>,
+    options?: ErrorHandlingOptions<T>
+  ): T | null;
+  
+  // 実装
+  static withErrorHandlingSync<T>(
+    operation: () => T,
+    context: string,
+    defaultValueOrOptions?: T | ErrorHandlingOptions<T>,
+    options?: ErrorHandlingOptions<T>
   ): T | null {
+    // パラメータの正規化
+    let defaultValue: T | undefined;
+    let errorOptions: ErrorHandlingOptions<T> = {};
+    
+    if (this.isErrorHandlingOptions<T>(defaultValueOrOptions)) {
+      // 第3引数がオプションオブジェクトの場合
+      errorOptions = defaultValueOrOptions;
+    } else {
+      // 第3引数がデフォルト値の場合
+      defaultValue = defaultValueOrOptions as T;
+      errorOptions = options || {};
+    }
+
     const {
-      errorMessage = '操作の実行に失敗しました',
+      errorMessage = context || '操作の実行に失敗しました',
       successMessage,
       rethrow = false,
       fallback,
       logLevel = 'error',
       showToUser = true,
       errorCode
-    } = options;
+    } = errorOptions;
 
     try {
       const result = operation();
       
       if (successMessage) {
-        this.showInfo(successMessage);
+        logger.info(successMessage);
       }
       
       return result;
     } catch (error) {
-      const errorInfo: ErrorInfo = {
-        message: errorMessage,
-        code: errorCode,
-        details: error,
-        timestamp: Date.now(),
-        context: this.getCallerContext()
-      };
+      // エラーログを記録
+      if (logLevel === 'error') {
+        this.logError(error, errorMessage);
+      } else if (logLevel === 'warn') {
+        logger.warn(`${errorMessage}: ${this.formatError(error)}`);
+      } else if (logLevel === 'info') {
+        logger.info(`${errorMessage}: ${this.formatError(error)}`);
+      } else if (logLevel === 'debug') {
+        logger.debug(`${errorMessage}: ${this.formatError(error)}`);
+      }
 
-      this.logError(errorInfo, logLevel);
-      this.addToHistory(errorInfo);
-
+      // ユーザーにエラーを表示
       if (showToUser) {
-        this.showError(errorMessage, error);
+        this.showUserFriendlyError(error, errorMessage);
       }
 
-      if (fallback) {
-        try {
-          fallback();
-        } catch (fallbackError) {
-          logger.error('フォールバック処理でエラーが発生しました:', fallbackError);
-        }
-      }
-
+      // 例外を再スローするかどうか
       if (rethrow) {
         throw error;
       }
 
-      return null;
+      // void型の場合はundefinedを返す（voidとして扱う）
+      if (fallback === undefined && defaultValue === undefined) {
+        return undefined as T | null;
+      }
+
+      // フォールバック値を返す
+      return fallback !== undefined ? fallback as T | null : (defaultValue !== undefined ? defaultValue : null);
     }
   }
 
   /**
-   * エラーをログに記録
+   * エラーログを記録
    */
-  private static logError(errorInfo: ErrorInfo, level: string): void {
-    const logMessage = `[${errorInfo.code || 'ERROR'}] ${errorInfo.message}`;
-    const details = errorInfo.details instanceof Error 
-      ? `${errorInfo.details.message}\n${errorInfo.details.stack}`
-      : errorInfo.details;
-
-    switch (level) {
-      case 'error':
-        logger.error(logMessage, details);
-        break;
-      case 'warn':
-        logger.warn(logMessage, details);
-        break;
-      case 'info':
-        logger.info(logMessage, details);
-        break;
-      case 'debug':
-        logger.debug(logMessage, details);
-        break;
+  static logError(error: unknown, context?: string): void {
+    const msg = context ? `[${context}]` : '';
+    if (error instanceof Error) {
+      logger.error(`${msg} ${error.message}`, error.stack);
+    } else {
+      logger.error(`${msg} ${String(error)}`);
     }
   }
 
   /**
-   * エラー履歴に追加
+   * ユーザー向けエラーメッセージを表示
    */
-  private static addToHistory(errorInfo: ErrorInfo): void {
-    this.errorHistory.push(errorInfo);
-    
-    if (this.errorHistory.length > this.maxHistorySize) {
-      this.errorHistory.shift();
+  static showUserFriendlyError(error: unknown, context?: string): void {
+    const baseMsg = context ? `${context}` : 'エラーが発生しました';
+    let detail = '';
+    if (error instanceof Error) {
+      detail = error.message;
+    } else if (typeof error === 'string') {
+      detail = error;
+    } else {
+      detail = String(error);
     }
+    vscode.window.showErrorMessage(`${baseMsg}: ${detail}`);
   }
 
   /**
-   * エラーをユーザーに表示
+   * 既存API: エラーメッセージを表示
    */
   static showError(message: string, error?: unknown): void {
-    const fullMessage = error instanceof Error 
-      ? `${message}: ${error.message}`
-      : message;
-    
-    vscode.window.showErrorMessage(fullMessage);
+    const errorMessage = error ? `${message}: ${this.formatError(error)}` : message;
+    vscode.window.showErrorMessage(errorMessage);
+    this.logError(error, message);
   }
 
   /**
-   * 情報をユーザーに表示
+   * 既存API: 警告メッセージを表示
+   */
+  static showWarning(message: string): void {
+    vscode.window.showWarningMessage(message);
+    logger.warn(message);
+  }
+
+  /**
+   * 既存API: 情報メッセージを表示
    */
   static showInfo(message: string): void {
     vscode.window.showInformationMessage(message);
   }
 
   /**
-   * 警告をユーザーに表示
+   * エラーオブジェクトを文字列にフォーマット
    */
-  static showWarning(message: string): void {
-    vscode.window.showWarningMessage(message);
-  }
-
-  /**
-   * 呼び出し元のコンテキストを取得
-   */
-  private static getCallerContext(): string {
-    const stack = new Error().stack;
-    if (!stack) return 'unknown';
-    
-    const lines = stack.split('\n');
-    // 最初の3行をスキップ（Error, withErrorHandling, 呼び出し元）
-    const callerLine = lines[3];
-    return callerLine ? callerLine.trim() : 'unknown';
-  }
-
-  /**
-   * エラー履歴を取得
-   */
-  static getErrorHistory(): ErrorInfo[] {
-    return [...this.errorHistory];
-  }
-
-  /**
-   * エラー履歴をクリア
-   */
-  static clearErrorHistory(): void {
-    this.errorHistory = [];
-  }
-
-  /**
-   * エラー統計を取得
-   */
-  static getErrorStats(): {
-    totalErrors: number;
-    errorsByCode: Record<string, number>;
-    recentErrors: number;
-  } {
-    const errorsByCode: Record<string, number> = {};
-    const recentErrors = this.errorHistory.filter(
-      error => Date.now() - error.timestamp < 24 * 60 * 60 * 1000 // 24時間以内
-    ).length;
-
-    this.errorHistory.forEach(error => {
-      const code = error.code || 'unknown';
-      errorsByCode[code] = (errorsByCode[code] || 0) + 1;
-    });
-
-    return {
-      totalErrors: this.errorHistory.length,
-      errorsByCode,
-      recentErrors
-    };
+  private static formatError(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+    if (typeof error === 'string') {
+      return error;
+    }
+    return String(error);
   }
 } 

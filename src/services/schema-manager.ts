@@ -64,7 +64,7 @@ export class SchemaManager implements ISchemaManager {
    * スキーマを初期化し、VS Codeの設定に登録
    */
   async initialize(): Promise<void> {
-    await this.errorHandler.withErrorHandling(async () => {
+    try {
       const paths = this.pathResolver.resolvePaths();
       
       // テンプレートスキーマの生成
@@ -76,10 +76,11 @@ export class SchemaManager implements ISchemaManager {
       // スキーマの登録
       await this.registerSchemas();
       
-    }, {
-      errorMessage: 'SchemaManager: initialize',
-      logLevel: 'warn'
-    });
+    } catch (error) {
+      this.errorHandler.logError(error, 'SchemaManager: initialize');
+      this.errorHandler.showUserFriendlyError(error, 'SchemaManager: initialize');
+      throw error; // Re-throw to ensure activation errors propagate to VS Code
+    }
   }
 
   /**
@@ -180,13 +181,10 @@ export class SchemaManager implements ISchemaManager {
    */
   async reinitialize(): Promise<void> {
     
-    this.errorHandler.withErrorHandlingSync(() => {
+    await this.errorHandler.withErrorHandling(async () => {
       this.clearCache();
-      this.initialize();
-    }, {
-      errorMessage: 'SchemaManager: reinitialize',
-      logLevel: 'warn'
-    });
+      await this.initialize();
+    }, 'SchemaManager: reinitialize');
     
   }
 
