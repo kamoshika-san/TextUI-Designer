@@ -1,5 +1,4 @@
 import { Command } from './command-decorator';
-import { CommandRegistry } from './command-registry';
 import { SafeCommand } from './safe-command-decorator';
 import { ErrorHandler } from '../../utils/error-handler';
 
@@ -12,22 +11,8 @@ export class ExampleCommandHandler {
   private name: string = 'ExampleHandler';
 
   constructor() {
-    // CommandRegistryを使用してコマンドを自動登録
-    const registry = CommandRegistry.getInstance();
-    registry.registerCommandsFromClass(this, [
-      {
-        commandId: 'textui-designer.example.increment',
-        methodName: 'incrementCounter'
-      },
-      {
-        commandId: 'textui-designer.example.showStatus',
-        methodName: 'showStatus'
-      },
-      {
-        commandId: 'textui-designer.example.reset',
-        methodName: 'resetCounter'
-      }
-    ]);
+    // Commands are registered via @Command decorators
+    // No manual registration needed
   }
 
   /**
