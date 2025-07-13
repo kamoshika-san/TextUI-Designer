@@ -15,11 +15,11 @@ interface ErrorHandlingOptions<T = any> {
 }
 
 /**
- * エラーハンドリングユーティリティ (元のシンプル実装)
+ * エラーハンドリングユーティリティ (修正版)
  */
 export class ErrorHandler {
   /**
-   * オプションオブジェクトかどうかを判定する型ガード
+   * オプションオブジェクトかどうかを判定する型ガード (簡素化版)
    */
   private static isErrorHandlingOptions<T>(value: any): value is ErrorHandlingOptions<T> {
     if (typeof value !== 'object' || value === null) {
@@ -29,59 +29,53 @@ export class ErrorHandler {
     // ErrorHandlingOptionsの特定のプロパティが存在するかチェック
     const optionKeys = ['errorMessage', 'successMessage', 'rethrow', 'fallback', 'logLevel', 'showToUser', 'errorCode'];
     
-    // オプションキーが存在するかチェック
-    const hasOptionKey = optionKeys.some(key => key in value);
-    
-    if (!hasOptionKey) {
-      return false;
-    }
-    
-    // オプションオブジェクトの特徴的なパターンをチェック
-    const optionKeyCount = optionKeys.filter(key => key in value).length;
-    const allKeys = Object.keys(value);
-    const nonOptionKeys = allKeys.filter(key => !optionKeys.includes(key));
-    
-    // より厳密な判定:
-    // 1. 複数のオプションキーが存在する場合は確実にオプションオブジェクト
-    // 2. 単一のオプションキーの場合、非オプションキーが非常に少ない場合のみオプションオブジェクトと判定
-    // 3. オプションキーの値が適切な型であることを確認
-    if (optionKeyCount > 1) {
-      return true;
-    }
-    
-    if (optionKeyCount === 1 && nonOptionKeys.length <= 1) {
-      // 単一オプションキーの場合、値の型もチェック
-      const optionKey = optionKeys.find(key => key in value);
-      if (optionKey) {
-        const optionValue = value[optionKey];
-        // オプション値が適切な型であることを確認
-        switch (optionKey) {
-          case 'errorMessage':
-          case 'successMessage':
-          case 'errorCode':
-            return typeof optionValue === 'string' || optionValue === undefined;
-          case 'rethrow':
-          case 'showToUser':
-            return typeof optionValue === 'boolean' || optionValue === undefined;
-          case 'logLevel':
-            return ['error', 'warn', 'info', 'debug'].includes(optionValue) || optionValue === undefined;
-          case 'fallback':
-            return true; // fallbackは任意の型を許可
-          default:
-            return false;
-        }
+    // 少なくとも1つのオプションキーが存在し、その値が適切な型であることを確認
+    const hasValidOption = optionKeys.some(key => {
+      if (!(key in value)) return false;
+      const optionValue = value[key];
+      
+      switch (key) {
+        case 'errorMessage':
+        case 'successMessage':
+        case 'errorCode':
+          return typeof optionValue === 'string' || optionValue === undefined;
+        case 'rethrow':
+        case 'showToUser':
+          return typeof optionValue === 'boolean' || optionValue === undefined;
+        case 'logLevel':
+          return ['error', 'warn', 'info', 'debug'].includes(optionValue) || optionValue === undefined;
+        case 'fallback':
+          return true; // fallbackは任意の型を許可
+        default:
+          return false;
       }
-    }
+    });
     
-    return false;
+    return hasValidOption;
   }
 
   /**
-   * 統一的な非同期エラーハンドリング
+   * 統一的な非同期エラーハンドリング (オーバーロード)
    */
+  // void型の場合のオーバーロード
+  static async withErrorHandling(
+    operation: () => Promise<void>,
+    context: string,
+    options?: ErrorHandlingOptions<void>
+  ): Promise<void>;
+  
+  // 非void型の場合のオーバーロード
   static async withErrorHandling<T>(
-    operation: () => Promise<T>, 
-    context: string, 
+    operation: () => Promise<T>,
+    context: string,
+    defaultValueOrOptions?: T | ErrorHandlingOptions<T>,
+    options?: ErrorHandlingOptions<T>
+  ): Promise<T | null>;
+  
+  // 実装
+  static async withErrorHandling<T>(
+    operation: () => Promise<T>,
+    context: string,
     defaultValueOrOptions?: T | ErrorHandlingOptions<T>,
     options?: ErrorHandlingOptions<T>
   ): Promise<T | null> {
@@ -144,8 +138,24 @@ export class ErrorHandler {
   }
 
   /**
-   * 統一的な同期エラーハンドリング
+   * 統一的な同期エラーハンドリング (オーバーロード)
    */
+  // void型の場合のオーバーロード
+  static withErrorHandlingSync(
+    operation: () => void,
+    context: string,
+    options?: ErrorHandlingOptions<void>
+  ): void;
+  
+  // 非void型の場合のオーバーロード
+  static withErrorHandlingSync<T>(
+    operation: () => T,
+    context: string,
+    defaultValueOrOptions?: T | ErrorHandlingOptions<T>,
+    options?: ErrorHandlingOptions<T>
+  ): T | null;
+  
+  // 実装
   static withErrorHandlingSync<T>(
     operation: () => T,
     context: string,
@@ -206,7 +216,7 @@ export class ErrorHandler {
       }
 
       // フォールバック値を返す
-      return fallback !== undefined ? fallback as T | null : (defaultValue !== undefined ? defaultValue : null);
+      return fallback !== undefined ? fallback as T : (defaultValue !== undefined ? defaultValue : null);
     }
   }
 
