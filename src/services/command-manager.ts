@@ -8,7 +8,8 @@ import { TextUIDefinitionProvider } from './definition-provider';
 import { 
   PerformanceCommandHandler, 
   MemoryCommandHandler, 
-  SettingsCommandHandler 
+  SettingsCommandHandler,
+  ExampleCommandHandler
 } from './command-decorators';
 import { logger } from '../utils/logger';
 
@@ -31,6 +32,7 @@ export class CommandManager {
   private performanceHandler: PerformanceCommandHandler;
   private memoryHandler: MemoryCommandHandler;
   private settingsHandler: SettingsCommandHandler;
+  private exampleHandler: ExampleCommandHandler;
 
   constructor(
     context: vscode.ExtensionContext,
@@ -53,6 +55,7 @@ export class CommandManager {
     this.performanceHandler = new PerformanceCommandHandler();
     this.memoryHandler = new MemoryCommandHandler();
     this.settingsHandler = new SettingsCommandHandler();
+    this.exampleHandler = new ExampleCommandHandler();
   }
 
   /**
@@ -115,6 +118,13 @@ export class CommandManager {
     this.registerCommand('textui-designer.showMemoryReport', () => this.memoryHandler.showMemoryReport());
     this.registerCommand('textui-designer.toggleMemoryTracking', () => this.memoryHandler.toggleMemoryTracking());
     this.registerCommand('textui-designer.enableMemoryTracking', () => this.memoryHandler.enableMemoryTracking());
+    
+    // Example commands（新しいハンドラーに委譲）
+    this.registerCommand('textui-designer.incrementCounter', () => this.exampleHandler.incrementCounter());
+    this.registerCommand('textui-designer.showStatus', () => this.exampleHandler.showStatus());
+    this.registerCommand('textui-designer.resetCounter', () => this.exampleHandler.resetCounter());
+    this.registerCommand('textui-designer.accessProperty', () => this.exampleHandler.accessProperty());
+    this.registerCommand('textui-designer.callInstanceMethod', () => this.exampleHandler.callInstanceMethod());
     
     logger.info('コマンド登録完了');
   }

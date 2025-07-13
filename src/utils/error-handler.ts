@@ -2,157 +2,269 @@ import * as vscode from 'vscode';
 import { logger } from './logger';
 
 /**
- * エラーハンドリング設定
+ * エラーハンドリングオプション
  */
-export interface ErrorHandlingConfig {
-  /** エラーを再スローするかどうか */
+export interface ErrorHandlingOptions {
+  /** エラーメッセージ */
+  errorMessage?: string;
+  /** 成功メッセージ */
+  successMessage?: string;
+  /** エラー時に例外を再スローするか */
   rethrow?: boolean;
+  /** エラー時のフォールバック処理 */
+  fallback?: () => Promise<void> | void;
+  /** ログレベル */
+  logLevel?: 'error' | 'warn' | 'info' | 'debug';
+  /** ユーザーに通知するか */
+  showToUser?: boolean;
+  /** エラーコード */
+  errorCode?: string;
 }
 
 /**
- * エラーハンドリングユーティリティ
+ * エラー情報
+ */
+export interface ErrorInfo {
+  message: string;
+  code?: string;
+  details?: unknown;
+  timestamp: number;
+  context?: string;
+}
+
+/**
+ * 統一エラーハンドリングシステム
+ * DRY原則に従ったエラー処理を提供
  */
 export class ErrorHandler {
+  private static errorHistory: ErrorInfo[] = [];
+  private static maxHistorySize = 100;
+
   /**
-   * 統一的な非同期エラーハンドリング
+   * エラーハンドリング付きで非同期処理を実行
    */
   static async withErrorHandling<T>(
-    operation: () => Promise<T>, 
-    context: string, 
-    defaultValueOrConfig?: T | ErrorHandlingConfig,
-    config?: ErrorHandlingConfig
-  ): Promise<T> {
-    // 引数の解析: 第3引数が設定オブジェクトか、デフォルト値かを判定
-    let defaultValue: T | undefined;
-    let errorConfig: ErrorHandlingConfig = {};
-    
-    if (config !== undefined) {
-      // 4引数バージョン: defaultValue, config
-      defaultValue = defaultValueOrConfig as T;
-      errorConfig = config;
-    } else if (defaultValueOrConfig !== undefined && defaultValueOrConfig !== null && typeof defaultValueOrConfig === 'object' && 'rethrow' in defaultValueOrConfig) {
-      // 3引数バージョン: config のみ
-      errorConfig = defaultValueOrConfig as ErrorHandlingConfig;
-    } else {
-      // 3引数バージョン: defaultValue のみ
-      defaultValue = defaultValueOrConfig as T;
-    }
+    operation: () => Promise<T>,
+    options: ErrorHandlingOptions = {}
+  ): Promise<T | null> {
+    const {
+      errorMessage = '操作の実行に失敗しました',
+      successMessage,
+      rethrow = false,
+      fallback,
+      logLevel = 'error',
+      showToUser = true,
+      errorCode
+    } = options;
 
     try {
-      return await operation();
-    } catch (error) {
-      this.logError(error, context);
-      this.showUserFriendlyError(error, context);
+      const result = await operation();
       
-      if (errorConfig.rethrow) {
-        throw error;
+      if (successMessage) {
+        this.showInfo(successMessage);
       }
       
-      return defaultValue as T;
+      return result;
+    } catch (error) {
+      const errorInfo: ErrorInfo = {
+        message: errorMessage,
+        code: errorCode,
+        details: error,
+        timestamp: Date.now(),
+        context: this.getCallerContext()
+      };
+
+      this.logError(errorInfo, logLevel);
+      this.addToHistory(errorInfo);
+
+      if (showToUser) {
+        this.showError(errorMessage, error);
+      }
+
+      if (fallback) {
+        try {
+          await fallback();
+        } catch (fallbackError) {
+          logger.error('フォールバック処理でエラーが発生しました:', fallbackError);
+        }
+      }
+
+      if (rethrow) {
+        throw error;
+      }
+
+      return null;
     }
   }
 
   /**
-   * 統一的な同期エラーハンドリング
+   * エラーハンドリング付きで同期処理を実行
    */
   static withErrorHandlingSync<T>(
-    operation: () => T, 
-    context: string, 
-    defaultValueOrConfig?: T | ErrorHandlingConfig,
-    config?: ErrorHandlingConfig
-  ): T {
-    // 引数の解析: 第3引数が設定オブジェクトか、デフォルト値かを判定
-    let defaultValue: T | undefined;
-    let errorConfig: ErrorHandlingConfig = {};
-    
-    if (config !== undefined) {
-      // 4引数バージョン: defaultValue, config
-      defaultValue = defaultValueOrConfig as T;
-      errorConfig = config;
-    } else if (defaultValueOrConfig !== undefined && defaultValueOrConfig !== null && typeof defaultValueOrConfig === 'object' && 'rethrow' in defaultValueOrConfig) {
-      // 3引数バージョン: config のみ
-      errorConfig = defaultValueOrConfig as ErrorHandlingConfig;
-    } else {
-      // 3引数バージョン: defaultValue のみ
-      defaultValue = defaultValueOrConfig as T;
-    }
+    operation: () => T,
+    options: ErrorHandlingOptions = {}
+  ): T | null {
+    const {
+      errorMessage = '操作の実行に失敗しました',
+      successMessage,
+      rethrow = false,
+      fallback,
+      logLevel = 'error',
+      showToUser = true,
+      errorCode
+    } = options;
+
 
     try {
-      return operation();
-    } catch (error) {
-      this.logError(error, context);
-      this.showUserFriendlyError(error, context);
+      const result = operation();
       
-      if (errorConfig.rethrow) {
-        throw error;
+      if (successMessage) {
+        this.showInfo(successMessage);
       }
       
-      return defaultValue as T;
+      return result;
+    } catch (error) {
+      const errorInfo: ErrorInfo = {
+        message: errorMessage,
+        code: errorCode,
+        details: error,
+        timestamp: Date.now(),
+        context: this.getCallerContext()
+      };
+
+      this.logError(errorInfo, logLevel);
+      this.addToHistory(errorInfo);
+
+      if (showToUser) {
+        this.showError(errorMessage, error);
+      }
+
+      if (fallback) {
+        try {
+          fallback();
+        } catch (fallbackError) {
+          logger.error('フォールバック処理でエラーが発生しました:', fallbackError);
+        }
+      }
+
+      if (rethrow) {
+        throw error;
+      }
+
+      return null;
     }
   }
 
   /**
-   * エラーログを記録
+   * エラーをログに記録
    */
-  static logError(error: unknown, context?: string): void {
-    const msg = context ? `[${context}]` : '';
-    if (error instanceof Error) {
-      logger.error(`${msg} ${error.message}`, error.stack);
-    } else {
-      logger.error(`${msg} ${String(error)}`);
+  private static logError(errorInfo: ErrorInfo, level: string): void {
+    const logMessage = `[${errorInfo.code || 'ERROR'}] ${errorInfo.message}`;
+    const details = errorInfo.details instanceof Error 
+      ? `${errorInfo.details.message}\n${errorInfo.details.stack}`
+      : errorInfo.details;
+
+    switch (level) {
+      case 'error':
+        logger.error(logMessage, details);
+        break;
+      case 'warn':
+        logger.warn(logMessage, details);
+        break;
+      case 'info':
+        logger.info(logMessage, details);
+        break;
+      case 'debug':
+        logger.debug(logMessage, details);
+        break;
     }
   }
 
   /**
-   * ユーザー向けエラーメッセージを表示
+   * エラー履歴に追加
    */
-  static showUserFriendlyError(error: unknown, context?: string): void {
-    const baseMsg = context ? `${context}` : 'エラーが発生しました';
-    let detail = '';
-    if (error instanceof Error) {
-      detail = error.message;
-    } else if (typeof error === 'string') {
-      detail = error;
-    } else {
-      detail = String(error);
+  private static addToHistory(errorInfo: ErrorInfo): void {
+    this.errorHistory.push(errorInfo);
+    
+    if (this.errorHistory.length > this.maxHistorySize) {
+      this.errorHistory.shift();
     }
-    vscode.window.showErrorMessage(`${baseMsg}: ${detail}`);
   }
 
   /**
-   * 既存API: エラーメッセージを表示
+   * エラーをユーザーに表示
    */
   static showError(message: string, error?: unknown): void {
-    const errorMessage = error ? `${message}: ${this.formatError(error)}` : message;
-    vscode.window.showErrorMessage(errorMessage);
-    this.logError(error, message);
+    const fullMessage = error instanceof Error 
+      ? `${message}: ${error.message}`
+      : message;
+    
+    vscode.window.showErrorMessage(fullMessage);
   }
 
   /**
-   * 既存API: 警告メッセージを表示
-   */
-  static showWarning(message: string): void {
-    vscode.window.showWarningMessage(message);
-    logger.warn(message);
-  }
-
-  /**
-   * 既存API: 情報メッセージを表示
+   * 情報をユーザーに表示
    */
   static showInfo(message: string): void {
     vscode.window.showInformationMessage(message);
   }
 
   /**
-   * エラーオブジェクトを文字列にフォーマット
+   * 警告をユーザーに表示
    */
-  private static formatError(error: unknown): string {
-    if (error instanceof Error) {
-      return error.message;
-    }
-    if (typeof error === 'string') {
-      return error;
-    }
-    return String(error);
+  static showWarning(message: string): void {
+    vscode.window.showWarningMessage(message);
+  }
+
+  /**
+   * 呼び出し元のコンテキストを取得
+   */
+  private static getCallerContext(): string {
+    const stack = new Error().stack;
+    if (!stack) return 'unknown';
+    
+    const lines = stack.split('\n');
+    // 最初の3行をスキップ（Error, withErrorHandling, 呼び出し元）
+    const callerLine = lines[3];
+    return callerLine ? callerLine.trim() : 'unknown';
+  }
+
+  /**
+   * エラー履歴を取得
+   */
+  static getErrorHistory(): ErrorInfo[] {
+    return [...this.errorHistory];
+  }
+
+  /**
+   * エラー履歴をクリア
+   */
+  static clearErrorHistory(): void {
+    this.errorHistory = [];
+  }
+
+  /**
+   * エラー統計を取得
+   */
+  static getErrorStats(): {
+    totalErrors: number;
+    errorsByCode: Record<string, number>;
+    recentErrors: number;
+  } {
+    const errorsByCode: Record<string, number> = {};
+    const recentErrors = this.errorHistory.filter(
+      error => Date.now() - error.timestamp < 24 * 60 * 60 * 1000 // 24時間以内
+    ).length;
+
+    this.errorHistory.forEach(error => {
+      const code = error.code || 'unknown';
+      errorsByCode[code] = (errorsByCode[code] || 0) + 1;
+    });
+
+    return {
+      totalErrors: this.errorHistory.length,
+      errorsByCode,
+      recentErrors
+    };
   }
 } 
