@@ -78,5 +78,6 @@ export class ExampleCommandHandler {
    */
   private performCalculation(): number {
     return this.counter * 2 + 1;
+
   }
 }
