@@ -62,7 +62,7 @@ export class ErrorHandler {
     operation: () => Promise<void>,
     context: string,
     options?: ErrorHandlingOptions<void>
-  ): Promise<void>;
+  ): Promise<void | undefined>;
   
   // 非void型の場合のオーバーロード
   static async withErrorHandling<T>(
@@ -132,6 +132,11 @@ export class ErrorHandler {
         throw error;
       }
 
+      // void型の場合はundefinedを返す（voidとして扱う）
+      if (fallback === undefined && defaultValue === undefined) {
+        return undefined as T | null;
+      }
+
       // フォールバック値を返す
       return fallback !== undefined ? fallback as T | null : (defaultValue !== undefined ? defaultValue : null);
     }
@@ -145,7 +150,7 @@ export class ErrorHandler {
     operation: () => void,
     context: string,
     options?: ErrorHandlingOptions<void>
-  ): void;
+  ): void | undefined;
   
   // 非void型の場合のオーバーロード
   static withErrorHandlingSync<T>(
@@ -213,6 +218,11 @@ export class ErrorHandler {
       // 例外を再スローするかどうか
       if (rethrow) {
         throw error;
+      }
+
+      // void型の場合はundefinedを返す（voidとして扱う）
+      if (fallback === undefined && defaultValue === undefined) {
+        return undefined as T | null;
       }
 
       // フォールバック値を返す
