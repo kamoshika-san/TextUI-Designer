@@ -25,7 +25,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     await lifecycleManager.activate();
     
     logger.info('TextUI Designer拡張のアクティベーション完了');
-  }, '拡張機能のアクティベーション');
+  }, { errorMessage: '拡張機能のアクティベーション' });
 }
 
 /**
@@ -49,5 +49,5 @@ export function deactivate(): void {
     }
 
     logger.info('TextUI Designer拡張の非アクティベーション完了');
-  }, '拡張機能の非アクティベーション');
+  }, { errorMessage: '拡張機能の非アクティベーション', logLevel: 'warn' });
 } 
