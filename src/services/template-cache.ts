@@ -90,6 +90,7 @@ export class TemplateCacheService {
   private performanceMonitor: PerformanceMonitor;
   private isCleanupInProgress: boolean = false;
 
+
   constructor(config?: Partial<CacheConfig>) {
     this.config = {
       maxCacheSize: 50, // 50MB
@@ -505,6 +506,8 @@ export class TemplateCacheService {
     if (this.isCleanupInProgress) {
       return;
     }
+
+    this.cleanupInProgress = true;
     
     this.isCleanupInProgress = true;
     
