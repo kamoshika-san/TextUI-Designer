@@ -583,6 +583,7 @@ export class TemplateCacheService {
    */
   clear(): void {
     this.cache.clear();
+    this.isCleanupInProgress = false;
     this.stats = {
       totalEntries: 0,
       totalSize: 0,
