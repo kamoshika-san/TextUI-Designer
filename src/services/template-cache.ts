@@ -88,6 +88,7 @@ export class TemplateCacheService {
   private config: CacheConfig;
   private cleanupTimer?: NodeJS.Timeout;
   private performanceMonitor: PerformanceMonitor;
+  private cleanupInProgress = false;
 
   constructor(config?: Partial<CacheConfig>) {
     this.config = {
@@ -500,26 +501,41 @@ export class TemplateCacheService {
    * 定期クリーンアップ
    */
   private async performScheduledCleanup(): Promise<void> {
-    const currentTime = Date.now();
-    const templates = Array.from(this.cache.values());
-    let removedCount = 0;
+    // 既にクリーンアップが実行中の場合はスキップ
+    if (this.cleanupInProgress) {
+      console.log('[TemplateCache] クリーンアップが既に実行中のためスキップします');
+      return;
+    }
+
+    this.cleanupInProgress = true;
     
-    for (const template of templates) {
-      // 期限切れのテンプレートを削除
-      if (currentTime - template.cachedAt > this.config.maxAge) {
-        this.removeDependencyReferences(template);
-        this.cache.delete(template.filePath);
-        removedCount++;
+    try {
+      const currentTime = Date.now();
+      const templates = Array.from(this.cache.values());
+      let removedCount = 0;
+      
+      for (const template of templates) {
+        // 期限切れのテンプレートを削除
+        if (currentTime - template.cachedAt > this.config.maxAge) {
+          this.removeDependencyReferences(template);
+          this.cache.delete(template.filePath);
+          removedCount++;
+        }
       }
+      
+      if (removedCount > 0) {
+        this.updateStats();
+        console.log(`[TemplateCache] 定期クリーンアップ: ${removedCount}個の期限切れエントリを削除`);
+      }
+      
+      // メモリ圧迫状況をチェック
+      await this.checkMemoryPressure();
+    } catch (error) {
+      console.error('[TemplateCache] クリーンアップ中にエラーが発生しました:', error);
+    } finally {
+      // エラーが発生した場合でも必ずフラグをリセット
+      this.cleanupInProgress = false;
     }
-    
-    if (removedCount > 0) {
-      this.updateStats();
-      console.log(`[TemplateCache] 定期クリーンアップ: ${removedCount}個の期限切れエントリを削除`);
-    }
-    
-    // メモリ圧迫状況をチェック
-    await this.checkMemoryPressure();
   }
 
   /**
