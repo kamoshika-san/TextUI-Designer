@@ -507,20 +507,14 @@ export class TemplateCacheService {
    * 定期クリーンアップ
    */
   private async performScheduledCleanup(): Promise<void> {
-    // クリーンアップ処理
-    const currentTime = Date.now();
-    const templates = Array.from(this.cache.values());
-    let removedCount = 0;
-    
-    for (const template of templates) {
-      // 期限切れのテンプレートを削除
-      if (currentTime - template.cachedAt > this.config.maxAge) {
-        this.removeDependencyReferences(template);
-        this.cache.delete(template.filePath);
-        removedCount++;
-      }
+    // 既に実行中の場合は早期リターン
+    if (this.isScheduledCleanupRunning) {
+      console.log('[TemplateCache] 定期クリーンアップが既に実行中のため、スキップします');
+      return;
     }
+
     this.isScheduledCleanupRunning = true;
+    
     try {
       const currentTime = Date.now();
       const templates = Array.from(this.cache.values());

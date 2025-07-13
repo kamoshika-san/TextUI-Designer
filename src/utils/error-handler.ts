@@ -2,6 +2,19 @@ import * as vscode from 'vscode';
 import { logger } from './logger';
 
 /**
+ * エラーハンドリングオプション
+ */
+interface ErrorHandlingOptions {
+  errorMessage?: string;
+  successMessage?: string;
+  rethrow?: boolean;
+  fallback?: any;
+  logLevel?: 'error' | 'warn' | 'info' | 'debug';
+  showToUser?: boolean;
+  errorCode?: string;
+}
+
+/**
  * エラーハンドリングユーティリティ (元のシンプル実装)
  */
 export class ErrorHandler {
@@ -35,13 +48,38 @@ export class ErrorHandler {
       errorCode
     } = options;
 
-
     try {
-      return operation();
+      const result = operation();
+      
+      if (successMessage) {
+        logger.info(successMessage);
+      }
+      
+      return result;
     } catch (error) {
-      this.logError(error, context);
-      this.showUserFriendlyError(error, context);
-      return defaultValue as T;
+      // エラーログを記録
+      if (logLevel === 'error') {
+        this.logError(error, errorMessage);
+      } else if (logLevel === 'warn') {
+        logger.warn(`${errorMessage}: ${this.formatError(error)}`);
+      } else if (logLevel === 'info') {
+        logger.info(`${errorMessage}: ${this.formatError(error)}`);
+      } else if (logLevel === 'debug') {
+        logger.debug(`${errorMessage}: ${this.formatError(error)}`);
+      }
+
+      // ユーザーにエラーを表示
+      if (showToUser) {
+        this.showUserFriendlyError(error, errorMessage);
+      }
+
+      // 例外を再スローするかどうか
+      if (rethrow) {
+        throw error;
+      }
+
+      // フォールバック値を返す
+      return fallback !== undefined ? fallback : null;
     }
   }
 
