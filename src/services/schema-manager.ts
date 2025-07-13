@@ -171,7 +171,10 @@ export class SchemaManager implements ISchemaManager {
     this.errorHandler.withErrorHandlingSync(() => {
       this.clearCache();
       this.initialize();
-    }, 'SchemaManager: reinitialize');
+    }, {
+      errorMessage: 'SchemaManager: reinitialize',
+      logLevel: 'warn'
+    });
     
   }
 
