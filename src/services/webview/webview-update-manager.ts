@@ -239,6 +239,30 @@ export class WebViewUpdateManager {
   }
 
   /**
+   * テスト用: lastYamlContent へのアクセサ
+   */
+  get lastYamlContent(): string {
+    return this._getYamlCacheContent();
+  }
+  set lastYamlContent(content: string) {
+    this._setYamlCacheContent(content);
+  }
+
+  /**
+   * テスト用: lastParsedData へのアクセサ
+   * YAMLキャッシュの解析済みデータを取得/設定
+   */
+  get lastParsedData(): unknown {
+    return this.cacheManager._getCachedData(this.lastTuiFile || '') ?? null;
+  }
+  set lastParsedData(val: unknown) {
+    const fileName = this.lastTuiFile || '';
+    const content = this.cacheManager._getCacheContent(fileName) || '';
+    const normalizedValue = val === undefined ? null : val;
+    this.cacheManager.setCachedData(fileName, content, normalizedValue);
+  }
+
+  /**
    * リソースをクリーンアップ
    */
   dispose(): void {

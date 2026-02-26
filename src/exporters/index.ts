@@ -10,7 +10,7 @@ import { PerformanceMonitor } from '../utils/performance-monitor';
 import { ConfigManager } from '../utils/config-manager';
 
 export interface ExportOptions {
-  format: 'react' | 'pug' | 'html';
+  format: string;
   outputPath?: string;
   fileName?: string;
 }
@@ -31,25 +31,34 @@ export class ExportManager {
   private performanceMonitor: PerformanceMonitor;
 
   constructor() {
-    // エクスポーターを初期化
     this.exporters.set('react', new ReactExporter());
     this.exporters.set('pug', new PugExporter());
     this.exporters.set('html', new HtmlExporter());
 
-    // パフォーマンス設定を取得
     const settings = ConfigManager.getPerformanceSettings();
     
-    // キャッシュマネージャーを初期化
     this.cacheManager = new CacheManager({
       ttl: settings.cacheTTL,
       maxSize: 100
     });
 
-    // 差分マネージャーを初期化
     this.diffManager = new DiffManager();
-
-    // パフォーマンス監視を初期化
     this.performanceMonitor = PerformanceMonitor.getInstance();
+  }
+
+  /**
+   * カスタムエクスポーターを登録
+   * 外部から新しいエクスポートフォーマットを追加するための公開API
+   */
+  registerExporter(format: string, exporter: Exporter): void {
+    this.exporters.set(format, exporter);
+  }
+
+  /**
+   * エクスポーターを登録解除
+   */
+  unregisterExporter(format: string): boolean {
+    return this.exporters.delete(format);
   }
 
   /**
@@ -89,7 +98,7 @@ export class ExportManager {
    */
   private async exportWithOptimization(dsl: TextUIDSL, options: ExportOptions): Promise<string> {
     // 1. キャッシュから取得を試行
-    const cachedResult = this.cacheManager.get(dsl, options.format as any);
+    const cachedResult = this.cacheManager.get(dsl, options.format);
     if (cachedResult) {
       this.performanceMonitor.recordCacheHit(true);
       return cachedResult;
@@ -115,7 +124,7 @@ export class ExportManager {
     const result = await exporter.export(dsl, options);
 
     // 4. 結果をキャッシュに保存
-    this.cacheManager.set(dsl, options.format as any, result);
+    this.cacheManager.set(dsl, options.format, result);
 
     return result;
   }
@@ -132,7 +141,7 @@ export class ExportManager {
     
     if (!diffResult.hasChanges) {
       // 変更がない場合はキャッシュから取得
-      const cachedResult = this.cacheManager.get(dsl, options.format as any);
+      const cachedResult = this.cacheManager.get(dsl, options.format);
       if (cachedResult) {
         this.performanceMonitor.recordCacheHit(true);
         return {
@@ -208,7 +217,7 @@ export class ExportManager {
    */
   clearFormatCache(format: string): void {
     if (format) {
-      this.cacheManager.clearFormat(format as any);
+      this.cacheManager.clearFormat(format);
     }
   }
 

@@ -1,4 +1,9 @@
-import type { TextUIDSL, ComponentDef, FormComponent, FormField, FormAction } from '../renderer/types';
+import type {
+  TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
+  TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
+  RadioComponent, SelectComponent, SelectOption, DividerComponent,
+  AlertComponent, ContainerComponent
+} from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
 import { StyleManager } from '../utils/style-manager';
@@ -29,7 +34,7 @@ ${componentCode}`;
     return '.pug';
   }
 
-  protected renderText(props: any, key: number): string {
+  protected renderText(props: TextComponent, key: number): string {
     const { value, size = 'base', weight = 'normal', color = 'text-gray-900' } = props;
     const styleManager = this.getStyleManager();
     const sizeClasses = styleManager.getSizeClasses(this.format);
@@ -38,7 +43,7 @@ ${componentCode}`;
     return `      p(class="${sizeClasses[size as keyof typeof sizeClasses]} ${weightClasses[weight as keyof typeof weightClasses]} ${color}") ${value}`;
   }
 
-  protected renderInput(props: any, key: number): string {
+  protected renderInput(props: InputComponent, key: number): string {
     const { label, placeholder, type = 'text', required = false, disabled = false } = props;
     const disabledClass = this.getDisabledClass(disabled);
     const requiredAttr = required ? 'required' : '';
@@ -53,8 +58,8 @@ ${componentCode}`;
     return code;
   }
 
-  protected renderButton(props: any, key: number): string {
-    const { label, variant = 'primary', size = 'md', disabled = false } = props;
+  protected renderButton(props: ButtonComponent, key: number): string {
+    const { label, kind = 'primary', size = 'md', disabled = false } = props;
     const styleManager = this.getStyleManager();
     const variantClasses = styleManager.getKindClasses(this.format);
     const sizeClasses = {
@@ -65,10 +70,10 @@ ${componentCode}`;
     const disabledClass = this.getDisabledClass(disabled);
     const disabledAttr = disabled ? 'disabled' : '';
     
-    return `      button(class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${variantClasses[variant as keyof typeof variantClasses]} ${sizeClasses[size as keyof typeof sizeClasses]} ${disabledClass} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" ${disabledAttr}) ${label}`;
+    return `      button(class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${variantClasses[kind as keyof typeof variantClasses]} ${sizeClasses[size as keyof typeof sizeClasses]} ${disabledClass} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" ${disabledAttr}) ${label}`;
   }
 
-  protected renderCheckbox(props: any, key: number): string {
+  protected renderCheckbox(props: CheckboxComponent, key: number): string {
     const { label, checked = false, disabled = false } = props;
     const disabledClass = this.getDisabledClass(disabled);
     const checkedAttr = checked ? 'checked' : '';
@@ -79,7 +84,7 @@ ${componentCode}`;
         label.ml-2.block.text-sm.text-gray-900 ${label}`;
   }
 
-  protected renderRadio(props: any, key: number): string {
+  protected renderRadio(props: RadioComponent, key: number): string {
     const { label, value, name, checked = false, disabled = false } = props;
     const disabledClass = this.getDisabledClass(disabled);
     const checkedAttr = checked ? 'checked' : '';
@@ -90,7 +95,7 @@ ${componentCode}`;
         label.ml-2.block.text-sm.text-gray-900 ${label}`;
   }
 
-  protected renderSelect(props: any, key: number): string {
+  protected renderSelect(props: SelectComponent, key: number): string {
     const { label, options = [], placeholder, disabled = false } = props;
     const disabledClass = this.getDisabledClass(disabled);
     const disabledAttr = disabled ? 'disabled' : '';
@@ -105,14 +110,14 @@ ${componentCode}`;
       code += `\n          option(value="") ${placeholder}`;
     }
     
-    options.forEach((opt: any) => {
+    options.forEach((opt: SelectOption) => {
       code += `\n          option(value="${opt.value}") ${opt.label}`;
     });
     
     return code;
   }
 
-  protected renderDivider(props: any, key: number): string {
+  protected renderDivider(props: DividerComponent, key: number): string {
     const { orientation = 'horizontal', spacing = 'md' } = props;
     const styleManager = this.getStyleManager();
     const spacingClasses = styleManager.getSpacingClasses(this.format);
@@ -124,12 +129,12 @@ ${componentCode}`;
     return `      hr(class="border-gray-300 ${spacingClasses[spacing as keyof typeof spacingClasses]}")`;
   }
 
-  protected renderAlert(props: any, key: number): string {
-    const { message, type = 'info', title } = props;
+  protected renderAlert(props: AlertComponent, key: number): string {
+    const { message, variant = 'info', title } = props;
     const styleManager = this.getStyleManager();
-    const typeClasses = styleManager.getAlertVariantClasses(this.format);
+    const variantClasses = styleManager.getAlertVariantClasses(this.format);
     
-    let code = `      .p-4.border.rounded-md(class="${typeClasses[type as keyof typeof typeClasses]}")`;
+    let code = `      .p-4.border.rounded-md(class="${variantClasses[variant as keyof typeof variantClasses]}")`;
     if (title) {
       code += `\n        h3.text-sm.font-medium.mb-1 ${title}`;
     }
@@ -138,7 +143,7 @@ ${componentCode}`;
     return code;
   }
 
-  protected renderContainer(props: any, key: number): string {
+  protected renderContainer(props: ContainerComponent, key: number): string {
     const { layout = 'vertical', components = [] } = props;
     const layoutClasses = {
       'vertical': 'flex flex-col space-y-4',
@@ -147,9 +152,8 @@ ${componentCode}`;
     };
     
     let code = `      .${layoutClasses[layout as keyof typeof layoutClasses]}`;
-    components.forEach((child: ComponentDef, index: number) => {
+    (components || []).forEach((child: ComponentDef, index: number) => {
       const childCode = this.renderComponent(child, index);
-      // インデントを調整
       const indentedCode = childCode.split('\n').map(line => `  ${line}`).join('\n');
       code += `\n${indentedCode}`;
     });
@@ -163,20 +167,8 @@ ${componentCode}`;
     let code = `      form(id="${id}" class="space-y-4")`;
     
     fields.forEach((field: FormField, index: number) => {
-      if (field.Input) {
-        const fieldCode = this.renderInput(field.Input, index);
-        const indentedCode = fieldCode.split('\n').map(line => `  ${line}`).join('\n');
-        code += `\n${indentedCode}`;
-      } else if (field.Checkbox) {
-        const fieldCode = this.renderCheckbox(field.Checkbox, index);
-        const indentedCode = fieldCode.split('\n').map(line => `  ${line}`).join('\n');
-        code += `\n${indentedCode}`;
-      } else if (field.Radio) {
-        const fieldCode = this.renderRadio(field.Radio, index);
-        const indentedCode = fieldCode.split('\n').map(line => `  ${line}`).join('\n');
-        code += `\n${indentedCode}`;
-      } else if (field.Select) {
-        const fieldCode = this.renderSelect(field.Select, index);
+      const fieldCode = this.renderFormField(field, index);
+      if (fieldCode) {
         const indentedCode = fieldCode.split('\n').map(line => `  ${line}`).join('\n');
         code += `\n${indentedCode}`;
       }
@@ -184,8 +176,8 @@ ${componentCode}`;
     
     code += `\n        .flex.space-x-4`;
     actions.forEach((action: FormAction, index: number) => {
-      if (action.Button) {
-        const actionCode = this.renderButton(action.Button, index);
+      const actionCode = this.renderFormAction(action, index);
+      if (actionCode) {
         const indentedCode = actionCode.split('\n').map(line => `  ${line}`).join('\n');
         code += `\n${indentedCode}`;
       }
@@ -193,4 +185,4 @@ ${componentCode}`;
     
     return code;
   }
-} 
+}

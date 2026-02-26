@@ -101,7 +101,7 @@ export class ExportService {
   ): Promise<void> {
     return this.performanceMonitor.measureExportTime(async () => {
       const content = await this.exportManager.exportFromFile(filePath, {
-        format: format as 'react' | 'pug' | 'html',
+        format,
         outputPath: outputUri.fsPath,
         fileName: path.basename(outputUri.fsPath)
       });

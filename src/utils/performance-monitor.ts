@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { ConfigManager } from './config-manager';
 
-export interface PerformanceMetrics {
+export interface MonitorMetrics {
   renderTime: number;
   cacheHitRate: number;
   diffEfficiency: number;
@@ -9,11 +9,11 @@ export interface PerformanceMetrics {
   totalOperations: number;
 }
 
-export interface PerformanceEvent {
+export interface MonitorEvent {
   type: 'render' | 'cache' | 'diff' | 'export';
   duration: number;
   timestamp: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -21,8 +21,8 @@ export interface PerformanceEvent {
  */
 export class PerformanceMonitor {
   private static instance: PerformanceMonitor;
-  private events: PerformanceEvent[] = [];
-  private metrics: PerformanceMetrics = {
+  private events: MonitorEvent[] = [];
+  private metrics: MonitorMetrics = {
     renderTime: 0,
     cacheHitRate: 0,
     diffEfficiency: 0,
@@ -58,10 +58,10 @@ export class PerformanceMonitor {
   /**
    * パフォーマンスイベントを記録
    */
-  recordEvent(type: PerformanceEvent['type'], duration: number, metadata?: Record<string, any>): void {
+  recordEvent(type: MonitorEvent['type'], duration: number, metadata?: Record<string, any>): void {
     if (!this.isEnabled) {return;}
 
-    const event: PerformanceEvent = {
+    const event: MonitorEvent = {
       type,
       duration,
       timestamp: Date.now(),
@@ -138,7 +138,7 @@ export class PerformanceMonitor {
   /**
    * メトリクスを更新
    */
-  private updateMetrics(event: PerformanceEvent): void {
+  private updateMetrics(event: MonitorEvent): void {
     this.metrics.totalOperations++;
 
     switch (event.type) {
@@ -149,8 +149,8 @@ export class PerformanceMonitor {
         this.metrics.cacheHitRate = this.calculateCacheHitRate();
         break;
       case 'diff':
-        if (event.metadata?.efficiency) {
-          this.metrics.diffEfficiency = event.metadata.efficiency;
+        if (event.metadata?.efficiency !== undefined) {
+          this.metrics.diffEfficiency = event.metadata.efficiency as number;
         }
         break;
     }
@@ -195,7 +195,7 @@ export class PerformanceMonitor {
   /**
    * パフォーマンスメトリクスを取得
    */
-  getMetrics(): PerformanceMetrics {
+  getMetrics(): MonitorMetrics {
     return { ...this.metrics };
   }
 
@@ -229,7 +229,7 @@ ${this.generateRecommendations(metrics)}
   /**
    * パフォーマンス改善の推奨事項を生成
    */
-  private generateRecommendations(metrics: PerformanceMetrics): string {
+  private generateRecommendations(metrics: MonitorMetrics): string {
     const recommendations: string[] = [];
 
     if (metrics.renderTime > 100) {
@@ -348,14 +348,14 @@ ${this.generateRecommendations(metrics)}
   /**
    * テスト用: メトリクスを直接設定する
    */
-  _setTestMetrics(metrics: PerformanceMetrics): void {
+  _setTestMetrics(metrics: MonitorMetrics): void {
     this.metrics = { ...metrics };
   }
 
   /**
    * テスト用: 推奨事項を取得する
    */
-  _getRecommendations(metrics?: PerformanceMetrics): string {
+  _getRecommendations(metrics?: MonitorMetrics): string {
     return this.generateRecommendations(metrics || this.metrics);
   }
 } 

@@ -25,15 +25,35 @@ export interface ExtensionServices {
 }
 
 /**
+ * サービスファクトリーのオーバーライド
+ * テスト時やカスタム構成でサービスの生成を差し替えるための型
+ */
+export interface ServiceFactoryOverrides {
+  createSchemaManager?: (context: vscode.ExtensionContext) => SchemaManager;
+  createThemeManager?: (context: vscode.ExtensionContext) => ThemeManager;
+  createWebViewManager?: (
+    context: vscode.ExtensionContext,
+    themeManager: ThemeManager,
+    schemaManager: SchemaManager
+  ) => WebViewManager;
+  createExportManager?: () => ExportManager;
+  createTemplateService?: () => TemplateService;
+  createSettingsService?: () => SettingsService;
+}
+
+/**
  * サービスの初期化・管理
  * 各サービスの作成、初期化、クリーンアップを担当
+ * ファクトリーオーバーライドにより、テスト時のモック注入やカスタム構成が可能
  */
 export class ServiceInitializer {
   private context: vscode.ExtensionContext;
   private services: ExtensionServices | null = null;
+  private factoryOverrides: ServiceFactoryOverrides;
 
-  constructor(context: vscode.ExtensionContext) {
+  constructor(context: vscode.ExtensionContext, factoryOverrides?: ServiceFactoryOverrides) {
     this.context = context;
+    this.factoryOverrides = factoryOverrides || {};
   }
 
   /**
@@ -43,49 +63,35 @@ export class ServiceInitializer {
     console.log('[ServiceInitializer] サービス初期化開始');
 
     try {
-      // SchemaManagerの初期化
-      console.log('[ServiceInitializer] SchemaManager を作成します');
-      const schemaManager = new SchemaManager(this.context);
-      console.log('[ServiceInitializer] SchemaManager 作成完了');
+      const f = this.factoryOverrides;
 
-      // ThemeManagerの初期化
-      console.log('[ServiceInitializer] ThemeManager を作成します');
-      const themeManager = new ThemeManager(this.context);
-      console.log('[ServiceInitializer] ThemeManager 作成完了');
+      const schemaManager = f.createSchemaManager
+        ? f.createSchemaManager(this.context)
+        : new SchemaManager(this.context);
+      const themeManager = f.createThemeManager
+        ? f.createThemeManager(this.context)
+        : new ThemeManager(this.context);
 
-      // WebViewManagerの初期化
-      console.log('[ServiceInitializer] WebViewManager を作成します');
-      const webViewManager = new WebViewManager(this.context, themeManager, schemaManager);
-      console.log('[ServiceInitializer] WebViewManager 作成完了');
+      const webViewManager = f.createWebViewManager
+        ? f.createWebViewManager(this.context, themeManager, schemaManager)
+        : new WebViewManager(this.context, themeManager, schemaManager);
 
-      // ExportManagerの初期化
-      console.log('[ServiceInitializer] ExportManager を作成します');
-      const exportManager = new ExportManager();
+      const exportManager = f.createExportManager
+        ? f.createExportManager()
+        : new ExportManager();
       const exportService = new ExportService(exportManager);
-      console.log('[ServiceInitializer] ExportManager 作成完了');
 
-      // TemplateServiceの初期化
-      console.log('[ServiceInitializer] TemplateService を作成します');
-      const templateService = new TemplateService();
-      console.log('[ServiceInitializer] TemplateService 作成完了');
+      const templateService = f.createTemplateService
+        ? f.createTemplateService()
+        : new TemplateService();
 
-      // SettingsServiceの初期化
-      console.log('[ServiceInitializer] SettingsService を作成します');
-      const settingsService = new SettingsService();
-      console.log('[ServiceInitializer] SettingsService 作成完了');
+      const settingsService = f.createSettingsService
+        ? f.createSettingsService()
+        : new SettingsService();
 
-      // DiagnosticManagerの初期化
-      console.log('[ServiceInitializer] DiagnosticManager を作成します');
       const diagnosticManager = new DiagnosticManager(schemaManager);
-      console.log('[ServiceInitializer] DiagnosticManager 作成完了');
-
-      // CompletionProviderの初期化
-      console.log('[ServiceInitializer] CompletionProvider を作成します');
       const completionProvider = new TextUICompletionProvider(schemaManager);
-      console.log('[ServiceInitializer] CompletionProvider 作成完了');
 
-      // CommandManagerの初期化
-      console.log('[ServiceInitializer] CommandManager を作成します');
       const commandManager = new CommandManager(
         this.context,
         webViewManager,
@@ -94,26 +100,16 @@ export class ServiceInitializer {
         settingsService,
         schemaManager
       );
-      console.log('[ServiceInitializer] CommandManager 作成完了');
 
-      // スキーマの初期化
-      console.log('[ServiceInitializer] スキーマ初期化を開始します');
       await schemaManager.initialize();
-      console.log('[ServiceInitializer] スキーマ初期化完了');
-
-      // コマンドの登録
-      console.log('[ServiceInitializer] CommandManager.registerCommands を呼び出します');
       commandManager.registerCommands();
-      console.log('[ServiceInitializer] CommandManager.registerCommands が完了しました');
 
-      // テーマ読み込み
       await themeManager.loadTheme();
       webViewManager.applyThemeVariables(themeManager.generateCSSVariables());
       themeManager.watchThemeFile(css => {
         webViewManager.applyThemeVariables(css);
       });
 
-      // サービスオブジェクトを作成
       this.services = {
         schemaManager,
         themeManager,
@@ -144,14 +140,11 @@ export class ServiceInitializer {
 
     try {
       if (this.services) {
-        // スキーマのクリーンアップ
         await this.services.schemaManager.cleanup();
 
-        // 診断マネージャーのクリーンアップ
         this.services.diagnosticManager.clearCache();
         this.services.diagnosticManager.dispose();
 
-        // テーママネージャーのクリーンアップ
         this.services.themeManager?.dispose?.();
 
         this.services = null;

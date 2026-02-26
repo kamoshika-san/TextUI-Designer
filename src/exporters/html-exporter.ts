@@ -1,4 +1,9 @@
-import type { TextUIDSL, ComponentDef, FormComponent, FormField, FormAction, TextComponent, InputComponent } from '../renderer/types';
+import type {
+  TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
+  TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
+  RadioComponent, RadioOption, SelectComponent, SelectOption,
+  DividerComponent, AlertComponent, ContainerComponent
+} from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
 import { StyleManager } from '../utils/style-manager';
@@ -135,7 +140,7 @@ ${componentCode}
     return code;
   }
 
-  protected renderButton(props: any, key: number): string {
+  protected renderButton(props: ButtonComponent, key: number): string {
     const { label, kind = 'primary', disabled = false, submit = false } = props;
     const styleManager = this.getStyleManager();
     const kindClasses = styleManager.getKindClasses(this.format);
@@ -146,7 +151,7 @@ ${componentCode}
     return `    <button${typeAttr} class="${kindClasses[kind as keyof typeof kindClasses]} ${disabledClass}"${disabledAttr}>${label}</button>`;
   }
 
-  protected renderCheckbox(props: any, key: number): string {
+  protected renderCheckbox(props: CheckboxComponent, key: number): string {
     const { label, checked = false, disabled = false } = props;
     const disabledClass = this.getDisabledClass(disabled);
     const checkedAttr = checked ? ' checked' : '';
@@ -158,7 +163,7 @@ ${componentCode}
     </div>`;
   }
 
-  protected renderRadio(props: any, key: number): string {
+  protected renderRadio(props: RadioComponent, key: number): string {
     const { label, name, options = [], disabled = false } = props;
     const disabledClass = this.getDisabledClass(disabled);
     const disabledAttr = disabled ? ' disabled' : '';
@@ -170,7 +175,7 @@ ${componentCode}
     
     // options配列がある場合は、各オプションをラジオボタンとしてレンダリング
     if (options && options.length > 0) {
-      options.forEach((opt: any, index: number) => {
+      options.forEach((opt: RadioOption, index: number) => {
         const checkedAttr = opt.checked ? ' checked' : '';
         code += `\n      <div class="flex items-center mb-2">
         <input type="radio" name="${name || 'radio'}" value="${opt.value || ''}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 bg-gray-800 ${disabledClass}"${checkedAttr}${disabledAttr}>
@@ -191,7 +196,7 @@ ${componentCode}
     return code;
   }
 
-  protected renderSelect(props: any, key: number): string {
+  protected renderSelect(props: SelectComponent, key: number): string {
     const { label, options = [], placeholder, disabled = false, multiple = false } = props;
     const disabledClass = this.getDisabledClass(disabled);
     const disabledAttr = disabled ? ' disabled' : '';
@@ -212,7 +217,7 @@ ${componentCode}
       code += `\n        <option value="" class="bg-gray-800 text-gray-400">${placeholder}</option>`;
     }
     
-    options.forEach((opt: any) => {
+    options.forEach((opt: SelectOption) => {
       const selectedAttr = opt.selected ? ' selected' : '';
       code += `\n        <option value="${opt.value}" class="bg-gray-800 text-gray-400"${selectedAttr}>${opt.label}</option>`;
     });
@@ -223,7 +228,7 @@ ${componentCode}
     return code;
   }
 
-  protected renderDivider(props: any, key: number): string {
+  protected renderDivider(props: DividerComponent, key: number): string {
     const { orientation = 'horizontal', spacing = 'md' } = props;
     const styleManager = this.getStyleManager();
     const spacingClasses = styleManager.getSpacingClasses(this.format);
@@ -235,7 +240,7 @@ ${componentCode}
     return `    <hr class="border-gray-700 ${spacingClasses[spacing as keyof typeof spacingClasses]}">`;
   }
 
-  protected renderAlert(props: any, key: number): string {
+  protected renderAlert(props: AlertComponent, key: number): string {
     const { message, variant = 'info', title } = props;
     const styleManager = this.getStyleManager();
     const variantClasses = styleManager.getAlertVariantClasses(this.format);
@@ -250,7 +255,7 @@ ${componentCode}
     return code;
   }
 
-  protected renderContainer(props: any, key: number): string {
+  protected renderContainer(props: ContainerComponent, key: number): string {
     const { layout = 'vertical', components = [] } = props;
     const layoutClasses = {
       'vertical': 'textui-container flex flex-col space-y-4',
@@ -277,20 +282,8 @@ ${componentCode}
     let code = `    <form id="${id}" class="textui-container space-y-4">`;
     
     fields.forEach((field: FormField, index: number) => {
-      if (field.Input) {
-        const fieldCode = this.renderInput(field.Input, index);
-        const indentedCode = fieldCode.split('\n').map(line => `  ${line}`).join('\n');
-        code += `\n${indentedCode}`;
-      } else if (field.Checkbox) {
-        const fieldCode = this.renderCheckbox(field.Checkbox, index);
-        const indentedCode = fieldCode.split('\n').map(line => `  ${line}`).join('\n');
-        code += `\n${indentedCode}`;
-      } else if (field.Radio) {
-        const fieldCode = this.renderRadio(field.Radio, index);
-        const indentedCode = fieldCode.split('\n').map(line => `  ${line}`).join('\n');
-        code += `\n${indentedCode}`;
-      } else if (field.Select) {
-        const fieldCode = this.renderSelect(field.Select, index);
+      const fieldCode = this.renderFormField(field, index);
+      if (fieldCode) {
         const indentedCode = fieldCode.split('\n').map(line => `  ${line}`).join('\n');
         code += `\n${indentedCode}`;
       }
@@ -298,8 +291,8 @@ ${componentCode}
     
     code += `\n      <div class="flex space-x-4">`;
     actions.forEach((action: FormAction, index: number) => {
-      if (action.Button) {
-        const actionCode = this.renderButton(action.Button, index);
+      const actionCode = this.renderFormAction(action, index);
+      if (actionCode) {
         const indentedCode = actionCode.split('\n').map(line => `  ${line}`).join('\n');
         code += `\n${indentedCode}`;
       }

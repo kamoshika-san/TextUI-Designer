@@ -2,7 +2,7 @@ import type { TextUIDSL, ComponentDef } from '../renderer/types';
 import type { ExportFormat } from './style-manager';
 import { TextUIMemoryTracker } from './textui-memory-tracker';
 
-export interface CacheEntry {
+export interface ExportCacheEntry {
   content: string;
   timestamp: number;
   hash: string;
@@ -18,7 +18,7 @@ export interface CacheOptions {
  * レンダリング結果のキャッシュを管理するクラス
  */
 export class CacheManager {
-  private cache: Map<string, CacheEntry> = new Map();
+  private cache: Map<string, ExportCacheEntry> = new Map();
   private options: CacheOptions;
   private hits: number = 0; // キャッシュヒット数
   private misses: number = 0; // キャッシュミス数
@@ -91,7 +91,7 @@ export class CacheManager {
       this.evictOldest();
     }
 
-    const entry: CacheEntry = {
+    const entry: ExportCacheEntry = {
       content,
       timestamp: Date.now(),
       hash,
@@ -206,7 +206,7 @@ export class CacheManager {
   /**
    * キャッシュエントリのメモリサイズを推定
    */
-  private estimateCacheEntrySize(entry: CacheEntry): number {
+  private estimateCacheEntrySize(entry: ExportCacheEntry): number {
     // content文字列のサイズ（UTF-16想定）
     const contentSize = entry.content.length * 2;
     

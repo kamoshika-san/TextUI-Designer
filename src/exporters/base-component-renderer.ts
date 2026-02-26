@@ -14,87 +14,110 @@ import type {
   AlertComponent,
   ContainerComponent
 } from '../renderer/types';
-import { 
-  isTextComponent,
-  isInputComponent,
-  isButtonComponent,
-  isCheckboxComponent,
-  isRadioComponent,
-  isSelectComponent,
-  isDividerComponent,
-  isAlertComponent,
-  isContainerComponent,
-  isFormComponent
-} from '../renderer/types';
 import type { ExportOptions, Exporter } from './index';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';
+import { getComponentName, getComponentProps } from '../registry/component-registry';
+
+export type ComponentHandler = (props: any, key: number) => string;
 
 /**
  * コンポーネントレンダリングの基底クラス
- * 共通のレンダリングロジックを提供し、重複コードを削減
+ * Mapベースのディスパッチにより、新コンポーネント追加時の変更箇所を最小化
  */
 export abstract class BaseComponentRenderer implements Exporter {
   protected format: ExportFormat;
+  private componentHandlers: Map<string, ComponentHandler> = new Map();
 
   constructor(format: ExportFormat) {
     this.format = format;
+    this.initializeHandlers();
   }
 
   /**
-   * エクスポート処理の抽象メソッド
+   * 組み込みコンポーネントのハンドラーを登録
+   * サブクラスでオーバーライドして追加コンポーネントを登録可能
    */
-  abstract export(dsl: TextUIDSL, options: ExportOptions): Promise<string>;
+  protected initializeHandlers(): void {
+    this.componentHandlers.set('Text', (props, key) => this.renderText(props, key));
+    this.componentHandlers.set('Input', (props, key) => this.renderInput(props, key));
+    this.componentHandlers.set('Button', (props, key) => this.renderButton(props, key));
+    this.componentHandlers.set('Checkbox', (props, key) => this.renderCheckbox(props, key));
+    this.componentHandlers.set('Radio', (props, key) => this.renderRadio(props, key));
+    this.componentHandlers.set('Select', (props, key) => this.renderSelect(props, key));
+    this.componentHandlers.set('Divider', (props, key) => this.renderDivider(props, key));
+    this.componentHandlers.set('Alert', (props, key) => this.renderAlert(props, key));
+    this.componentHandlers.set('Container', (props, key) => this.renderContainer(props, key));
+    this.componentHandlers.set('Form', (props, key) => this.renderForm(props, key));
+  }
 
-  /**
-   * ファイル拡張子を取得する抽象メソッド
-   */
+  abstract export(dsl: TextUIDSL, options: ExportOptions): Promise<string>;
   abstract getFileExtension(): string;
 
   /**
-   * 共通のコンポーネントレンダリングロジック
-   * 各エクスポーターで重複していた条件分岐を一元化
-   * 型ガード関数を使用して型安全性を向上
+   * コンポーネントのレンダリング（Mapベースのディスパッチ）
+   * if-else連鎖を排除し、レジストリに登録されたハンドラーで処理
    */
   protected renderComponent(comp: ComponentDef, key: number): string {
-    if (isTextComponent(comp)) {
-      return this.renderText(comp.Text, key);
+    const name = getComponentName(comp as Record<string, unknown>);
+    const props = name ? (comp as any)[name] : undefined;
+
+    if (name && props !== undefined) {
+      const handler = this.componentHandlers.get(name);
+      if (handler) {
+        return handler(props, key);
+      }
     }
-    if (isInputComponent(comp)) {
-      return this.renderInput(comp.Input, key);
-    }
-    if (isButtonComponent(comp)) {
-      return this.renderButton(comp.Button, key);
-    }
-    if (isCheckboxComponent(comp)) {
-      return this.renderCheckbox(comp.Checkbox, key);
-    }
-    if (isRadioComponent(comp)) {
-      return this.renderRadio(comp.Radio, key);
-    }
-    if (isSelectComponent(comp)) {
-      return this.renderSelect(comp.Select, key);
-    }
-    if (isDividerComponent(comp)) {
-      return this.renderDivider(comp.Divider, key);
-    }
-    if (isAlertComponent(comp)) {
-      return this.renderAlert(comp.Alert, key);
-    }
-    if (isContainerComponent(comp)) {
-      return this.renderContainer(comp.Container, key);
-    }
-    if (isFormComponent(comp)) {
-      return this.renderForm(comp.Form, key);
-    }
-    
+
     return this.renderUnsupportedComponent(comp, key);
   }
 
   /**
-   * 未対応コンポーネントのレンダリング
+   * FormFieldのレンダリング（Mapベースのディスパッチ）
+   * FormField / FormAction も同じハンドラーMapで処理し、if-else連鎖を排除
    */
+  protected renderFormField(field: FormField, index: number): string {
+    const name = getComponentName(field as Record<string, unknown>);
+    const props = name ? (field as any)[name] : undefined;
+
+    if (name && props !== undefined) {
+      const handler = this.componentHandlers.get(name);
+      if (handler) {
+        return handler(props, index);
+      }
+    }
+    return '';
+  }
+
+  /**
+   * FormActionのレンダリング
+   */
+  protected renderFormAction(action: FormAction, index: number): string {
+    if (action.Button) {
+      const handler = this.componentHandlers.get('Button');
+      if (handler) {
+        return handler(action.Button, index);
+      }
+    }
+    return '';
+  }
+
+  /**
+   * カスタムコンポーネントハンドラーを登録
+   * 外部から新しいコンポーネントタイプを追加するための公開API
+   */
+  public registerComponentHandler(name: string, handler: ComponentHandler): void {
+    this.componentHandlers.set(name, handler);
+  }
+
+  /**
+   * 登録済みコンポーネント名の一覧を取得
+   */
+  public getRegisteredComponents(): string[] {
+    return Array.from(this.componentHandlers.keys());
+  }
+
   protected renderUnsupportedComponent(comp: ComponentDef, key: number): string {
-    const componentName = Object.keys(comp)[0];
+    const componentName = getComponentName(comp as Record<string, unknown>) || 'unknown';
     switch (this.format) {
       case 'html':
         return `    <!-- 未対応コンポーネント: ${componentName} -->`;
@@ -107,84 +130,33 @@ export abstract class BaseComponentRenderer implements Exporter {
     }
   }
 
-  /**
-   * テキストコンポーネントのレンダリング（抽象メソッド）
-   */
   protected abstract renderText(props: TextComponent, key: number): string;
-
-  /**
-   * 入力コンポーネントのレンダリング（抽象メソッド）
-   */
   protected abstract renderInput(props: InputComponent, key: number): string;
-
-  /**
-   * ボタンコンポーネントのレンダリング（抽象メソッド）
-   */
   protected abstract renderButton(props: ButtonComponent, key: number): string;
-
-  /**
-   * チェックボックスコンポーネントのレンダリング（抽象メソッド）
-   */
   protected abstract renderCheckbox(props: CheckboxComponent, key: number): string;
-
-  /**
-   * ラジオボタンコンポーネントのレンダリング（抽象メソッド）
-   */
   protected abstract renderRadio(props: RadioComponent, key: number): string;
-
-  /**
-   * セレクトコンポーネントのレンダリング（抽象メソッド）
-   */
   protected abstract renderSelect(props: SelectComponent, key: number): string;
-
-  /**
-   * 区切り線コンポーネントのレンダリング（抽象メソッド）
-   */
   protected abstract renderDivider(props: DividerComponent, key: number): string;
-
-  /**
-   * アラートコンポーネントのレンダリング（抽象メソッド）
-   */
   protected abstract renderAlert(props: AlertComponent, key: number): string;
-
-  /**
-   * コンテナコンポーネントのレンダリング（抽象メソッド）
-   */
   protected abstract renderContainer(props: ContainerComponent, key: number): string;
-
-  /**
-   * フォームコンポーネントのレンダリング（抽象メソッド）
-   */
   protected abstract renderForm(props: FormComponent, key: number): string;
 
-  /**
-   * スタイルマネージャーを取得
-   */
   protected getStyleManager(): typeof StyleManager {
     return StyleManager;
   }
 
-  /**
-   * 無効化クラスを取得
-   */
   protected getDisabledClass(disabled: boolean = false): string {
     return disabled ? 'opacity-50 cursor-not-allowed' : '';
   }
 
-  /**
-   * インデントを調整
-   */
   protected adjustIndentation(code: string, baseIndent: string = '    '): string {
     return code.split('\n').map(line => `${baseIndent}${line}`).join('\n');
   }
 
-  /**
-   * コンポーネントの子要素を再帰的にレンダリング
-   */
   protected renderChildren(children: ComponentDef[], baseIndent: string = '  '): string {
     return children.map((child, index) => {
       const childCode = this.renderComponent(child, index);
       return this.adjustIndentation(childCode, baseIndent);
     }).join('\n');
   }
-} 
+}
