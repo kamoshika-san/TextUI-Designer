@@ -152,8 +152,10 @@ class CommandManagerFactory {
       return originalRequire.apply(this, arguments);
     };
 
-    // CommandManagerを作成
-    const { CommandManager } = require('../../out/services/command-manager.js');
+    // CommandManagerを作成（モジュールキャッシュによるモック汚染を避ける）
+    const commandManagerPath = require.resolve('../../out/services/command-manager.js');
+    delete require.cache[commandManagerPath];
+    const { CommandManager } = require(commandManagerPath);
     
     // Mock contextを作成
     const mockContext = {
