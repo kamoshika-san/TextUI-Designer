@@ -1,8 +1,12 @@
-import type { TextUIDSL, ComponentDef, FormComponent, FormField, FormAction } from '../renderer/types';
+import type {
+  TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
+  TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
+  RadioComponent, SelectComponent, DividerComponent, AlertComponent,
+  ContainerComponent, SelectOption
+} from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
 import { StyleManager } from '../utils/style-manager';
-import { getComponentName } from '../registry/component-registry';
 
 export class ReactExporter extends BaseComponentRenderer {
   constructor() {
@@ -28,7 +32,7 @@ ${componentCode}
     return '.tsx';
   }
 
-  protected renderText(props: any, key: number): string {
+  protected renderText(props: TextComponent, key: number): string {
     const { value, variant = 'p' } = props;
     
     // StyleManagerを使用してスタイルを取得
@@ -38,7 +42,7 @@ ${componentCode}
     return `      <${config.element} key={${key}} className="${config.className}">${value}</${config.element}>`;
   }
 
-  protected renderInput(props: any, key: number): string {
+  protected renderInput(props: InputComponent, key: number): string {
     const { label, placeholder, type = 'text', required = false, disabled = false } = props;
     const disabledClass = this.getDisabledClass(disabled);
     
@@ -54,7 +58,7 @@ ${componentCode}
       </div>`;
   }
 
-  protected renderButton(props: any, key: number): string {
+  protected renderButton(props: ButtonComponent, key: number): string {
     const { label, kind = 'primary' } = props;
     
     // StyleManagerを使用してスタイルを取得
@@ -69,7 +73,7 @@ ${componentCode}
       </button>`;
   }
 
-  protected renderCheckbox(props: any, key: number): string {
+  protected renderCheckbox(props: CheckboxComponent, key: number): string {
     const { label, checked = false, disabled = false } = props;
     const disabledClass = this.getDisabledClass(disabled);
     
@@ -86,7 +90,7 @@ ${componentCode}
       </div>`;
   }
 
-  protected renderRadio(props: any, key: number): string {
+  protected renderRadio(props: RadioComponent, key: number): string {
     const { label, value, name, checked = false, disabled = false } = props;
     const disabledClass = this.getDisabledClass(disabled);
     
@@ -105,10 +109,10 @@ ${componentCode}
       </div>`;
   }
 
-  protected renderSelect(props: any, key: number): string {
+  protected renderSelect(props: SelectComponent, key: number): string {
     const { label, options = [], placeholder, disabled = false } = props;
     const disabledClass = this.getDisabledClass(disabled);
-    const optionsCode = options.map((opt: any) => 
+    const optionsCode = options.map((opt: SelectOption) => 
       `          <option key="${opt.value}" value="${opt.value}">${opt.label}</option>`
     ).join('\n');
     
@@ -124,7 +128,7 @@ ${optionsCode}
       </div>`;
   }
 
-  protected renderDivider(props: any, key: number): string {
+  protected renderDivider(props: DividerComponent, key: number): string {
     const { orientation = 'horizontal', spacing = 'md' } = props;
     const styleManager = this.getStyleManager();
     const spacingClasses = styleManager.getSpacingClasses(this.format);
@@ -136,7 +140,7 @@ ${optionsCode}
     return `      <hr key={${key}} className="border-gray-300 ${spacingClasses[spacing as keyof typeof spacingClasses]}" />`;
   }
 
-  protected renderAlert(props: any, key: number): string {
+  protected renderAlert(props: AlertComponent, key: number): string {
     const { message, variant = 'info' } = props;
     
     // StyleManagerを使用してスタイルを取得
@@ -149,7 +153,7 @@ ${optionsCode}
       </div>`;
   }
 
-  protected renderContainer(props: any, key: number): string {
+  protected renderContainer(props: ContainerComponent, key: number): string {
     const { layout = 'vertical', components = [] } = props;
     const layoutClasses = {
       'vertical': 'flex flex-col space-y-4',
