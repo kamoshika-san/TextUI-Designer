@@ -151,7 +151,7 @@ export class WebViewMessageHandler {
   /**
    * 利用可能なテーマファイル一覧を検出して送信
    */
-  private async sendAvailableThemes(): Promise<void> {
+  async sendAvailableThemes(): Promise<void> {
     const panel = this.lifecycleManager.getPanel();
     if (!panel || !panel.webview) {
       return;
@@ -262,7 +262,7 @@ export class WebViewMessageHandler {
   /**
    * テーマを切り替え
    */
-  private async switchTheme(themePath: string): Promise<void> {
+  async switchTheme(themePath: string): Promise<void> {
     if (!this.themeManager) {
       console.log('[WebViewMessageHandler] ThemeManagerが初期化されていません');
       return;
