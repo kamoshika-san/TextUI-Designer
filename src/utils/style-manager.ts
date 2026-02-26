@@ -1,6 +1,7 @@
 import type { TextVariant, ButtonKind } from '../renderer/types';
 
-export type ExportFormat = 'html' | 'react' | 'pug';
+export type BuiltInExportFormat = 'html' | 'react' | 'pug';
+export type ExportFormat = BuiltInExportFormat | (string & {});
 
 export interface StyleConfig {
   variantClasses: Record<string, string>;
@@ -138,10 +139,49 @@ export class StyleManager {
     }
   };
 
+  private static customStyles: Map<string, StyleConfig> = new Map();
+
+  /**
+   * カスタムフォーマットのスタイルを登録
+   * 新しいエクスポートフォーマット追加時に StyleManager を直接変更する必要がなくなる
+   */
+  static registerFormatStyles(format: string, styles: StyleConfig): void {
+    this.customStyles.set(format, styles);
+  }
+
+  /**
+   * 既存フォーマットのスタイルを部分上書き
+   * テーマ連携やプロジェクト固有のカスタマイズに使用
+   */
+  static overrideFormatStyles(format: ExportFormat, overrides: Partial<StyleConfig>): void {
+    const base = this.getStyles(format);
+    const merged: StyleConfig = {
+      variantClasses: { ...base.variantClasses, ...overrides.variantClasses },
+      kindClasses: { ...base.kindClasses, ...overrides.kindClasses },
+      sizeClasses: { ...base.sizeClasses, ...overrides.sizeClasses },
+      weightClasses: { ...base.weightClasses, ...overrides.weightClasses },
+      spacingClasses: { ...base.spacingClasses, ...overrides.spacingClasses },
+      alertVariantClasses: { ...base.alertVariantClasses, ...overrides.alertVariantClasses },
+    };
+    this.customStyles.set(format, merged);
+  }
+
+  /**
+   * カスタムフォーマットのスタイルを登録解除
+   */
+  static unregisterFormatStyles(format: string): boolean {
+    return this.customStyles.delete(format);
+  }
+
   /**
    * 指定されたフォーマットのスタイル設定を取得
    */
   static getStyles(format: ExportFormat): StyleConfig {
+    const custom = this.customStyles.get(format);
+    if (custom) {
+      return custom;
+    }
+
     switch (format) {
       case 'html':
         return this.HTML_STYLES;
