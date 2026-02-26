@@ -209,7 +209,8 @@ export interface MemoryTrackedObject {
 // エクスポート関連の型定義
 // ============================================================================
 
-export type ExportFormat = 'html' | 'react' | 'pug';
+export type BuiltInExportFormat = 'html' | 'react' | 'pug';
+export type ExportFormat = BuiltInExportFormat | (string & {});
 
 export interface ExportOptions {
   includeComments?: boolean;
