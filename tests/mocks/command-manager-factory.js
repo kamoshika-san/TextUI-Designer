@@ -4,9 +4,15 @@
  */
 
 const sinon = require('sinon');
+const fallbackVscode = require('./vscode-mock');
 
 class CommandManagerFactory {
   static createForTest(vscode, options = {}) {
+    const hasCommandApi = vscode &&
+      vscode.commands &&
+      typeof vscode.commands.registerCommand === 'function';
+    const effectiveVscode = hasCommandApi ? vscode : fallbackVscode;
+
     // デフォルト設定
     const defaultOptions = {
       enableAutoPreview: true,
@@ -129,7 +135,7 @@ class CommandManagerFactory {
     
     Module.prototype.require = function(id) {
       if (id === 'vscode') {
-        return vscode;
+        return effectiveVscode;
       }
       if (id.includes('error-handler')) {
         return { ErrorHandler: mockErrorHandler };
@@ -177,6 +183,7 @@ class CommandManagerFactory {
       mockPerformanceMonitor,
       mockTextUIMemoryTracker,
       mockContext,
+      effectiveVscode,
       resetAllMocks: () => {
         sinon.resetHistory();
         // 各モックのリセット
