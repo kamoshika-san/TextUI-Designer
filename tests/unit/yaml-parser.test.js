@@ -3,6 +3,8 @@ const { YamlParser } = require('../../out/services/webview/yaml-parser.js');
 const { PerformanceMonitor } = require('../../out/utils/performance-monitor.js');
 
 describe('YamlParser スキーマ検証', () => {
+  let vscodeApi;
+
   const schema = {
     type: 'object',
     required: ['page'],
@@ -18,7 +20,11 @@ describe('YamlParser スキーマ検証', () => {
   };
 
   const setActiveEditor = (content) => {
-    global.vscode.window.activeTextEditor = {
+    if (!vscodeApi.window) {
+      vscodeApi.window = {};
+    }
+
+    vscodeApi.window.activeTextEditor = {
       document: {
         fileName: '/tmp/test.tui.yml',
         getText: () => content
@@ -27,14 +33,30 @@ describe('YamlParser スキーマ検証', () => {
   };
 
   beforeEach(() => {
-    global.cleanupMocks();
-    global.vscode.env = { uiKind: 1 };
-    global.vscode.UIKind = { Web: 2 };
+    global.cleanupMocks?.();
+    vscodeApi = require('vscode');
+    global.vscode = vscodeApi;
+
+    if (!vscodeApi.window) {
+      vscodeApi.window = {};
+    }
+    if (!vscodeApi.env) {
+      vscodeApi.env = {};
+    }
+    if (!vscodeApi.UIKind) {
+      vscodeApi.UIKind = {};
+    }
+
+    vscodeApi.env.uiKind = 1;
+    vscodeApi.UIKind.Web = 2;
+
     delete global.globalSchemaManager;
   });
 
   afterEach(() => {
-    global.vscode.window.activeTextEditor = null;
+    if (vscodeApi?.window) {
+      vscodeApi.window.activeTextEditor = null;
+    }
     delete global.globalSchemaManager;
     PerformanceMonitor.getInstance().dispose();
   });
