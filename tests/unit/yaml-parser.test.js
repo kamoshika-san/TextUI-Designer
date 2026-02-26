@@ -28,6 +28,8 @@ describe('YamlParser スキーマ検証', () => {
 
   beforeEach(() => {
     global.cleanupMocks();
+    global.vscode.env = { uiKind: 1 };
+    global.vscode.UIKind = { Web: 2 };
     delete global.globalSchemaManager;
   });
 
@@ -56,6 +58,7 @@ describe('YamlParser スキーマ検証', () => {
   id: "sample-page"`);
 
     const parser = new YamlParser(schemaLoader);
+    PerformanceMonitor.getInstance().setEnabled(false);
     const result = await parser.parseYamlFile();
 
     assert.strictEqual(loadSchemaCallCount, 1);
@@ -71,6 +74,7 @@ describe('YamlParser スキーマ検証', () => {
   title: "missing-id"`);
 
     const parser = new YamlParser(schemaLoader);
+    PerformanceMonitor.getInstance().setEnabled(false);
 
     await assert.rejects(
       () => parser.parseYamlFile(),
