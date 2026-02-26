@@ -2,6 +2,7 @@ import type { TextUIDSL, ComponentDef, FormComponent, FormField, FormAction, Tex
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
 import { StyleManager } from '../utils/style-manager';
+import { getComponentName } from '../registry/component-registry';
 
 export class HtmlExporter extends BaseComponentRenderer {
   constructor() {
@@ -277,20 +278,8 @@ ${componentCode}
     let code = `    <form id="${id}" class="textui-container space-y-4">`;
     
     fields.forEach((field: FormField, index: number) => {
-      if (field.Input) {
-        const fieldCode = this.renderInput(field.Input, index);
-        const indentedCode = fieldCode.split('\n').map(line => `  ${line}`).join('\n');
-        code += `\n${indentedCode}`;
-      } else if (field.Checkbox) {
-        const fieldCode = this.renderCheckbox(field.Checkbox, index);
-        const indentedCode = fieldCode.split('\n').map(line => `  ${line}`).join('\n');
-        code += `\n${indentedCode}`;
-      } else if (field.Radio) {
-        const fieldCode = this.renderRadio(field.Radio, index);
-        const indentedCode = fieldCode.split('\n').map(line => `  ${line}`).join('\n');
-        code += `\n${indentedCode}`;
-      } else if (field.Select) {
-        const fieldCode = this.renderSelect(field.Select, index);
+      const fieldCode = this.renderFormField(field, index);
+      if (fieldCode) {
         const indentedCode = fieldCode.split('\n').map(line => `  ${line}`).join('\n');
         code += `\n${indentedCode}`;
       }
@@ -298,8 +287,8 @@ ${componentCode}
     
     code += `\n      <div class="flex space-x-4">`;
     actions.forEach((action: FormAction, index: number) => {
-      if (action.Button) {
-        const actionCode = this.renderButton(action.Button, index);
+      const actionCode = this.renderFormAction(action, index);
+      if (actionCode) {
         const indentedCode = actionCode.split('\n').map(line => `  ${line}`).join('\n');
         code += `\n${indentedCode}`;
       }

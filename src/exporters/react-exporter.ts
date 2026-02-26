@@ -2,6 +2,7 @@ import type { TextUIDSL, ComponentDef, FormComponent, FormField, FormAction } fr
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
 import { StyleManager } from '../utils/style-manager';
+import { getComponentName } from '../registry/component-registry';
 
 export class ReactExporter extends BaseComponentRenderer {
   constructor() {
@@ -168,18 +169,15 @@ ${childrenCode}
   protected renderForm(props: FormComponent, key: number): string {
     const { id, fields = [], actions = [] } = props;
     
-    const fieldsCode = fields.map((field: FormField, index: number) => {
-      if (field.Input) {return this.renderInput(field.Input, index);}
-      if (field.Checkbox) {return this.renderCheckbox(field.Checkbox, index);}
-      if (field.Radio) {return this.renderRadio(field.Radio, index);}
-      if (field.Select) {return this.renderSelect(field.Select, index);}
-      return '';
-    }).join('\n');
+    const fieldsCode = fields
+      .map((field: FormField, index: number) => this.renderFormField(field, index))
+      .filter(code => code !== '')
+      .join('\n');
     
-    const actionsCode = actions.map((action: FormAction, index: number) => {
-      if (action.Button) {return this.renderButton(action.Button, index);}
-      return '';
-    }).join('\n');
+    const actionsCode = actions
+      .map((action: FormAction, index: number) => this.renderFormAction(action, index))
+      .filter(code => code !== '')
+      .join('\n');
     
     return `      <form key={${key}} id="${id}" className="space-y-4">
 ${fieldsCode}
