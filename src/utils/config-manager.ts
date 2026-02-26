@@ -1,17 +1,48 @@
 import * as vscode from 'vscode';
 
+export type ConfigProvider = (section: string) => {
+  get<T>(key: string, defaultValue: T): T;
+  update(key: string, value: any, target?: any): Thenable<void>;
+};
+
 /**
  * 設定管理ユーティリティ
+ *
+ * テスト時は setConfigProvider() で vscode.workspace.getConfiguration を
+ * モックに差し替え可能。呼び出し側の static API は変更不要。
  */
 export class ConfigManager {
   static readonly CONFIG_SECTION = 'textui-designer';
+
+  private static configProvider: ConfigProvider | null = null;
+
+  /**
+   * 設定プロバイダーを差し替え（テスト・DI 用）
+   */
+  static setConfigProvider(provider: ConfigProvider): void {
+    this.configProvider = provider;
+  }
+
+  /**
+   * 設定プロバイダーをデフォルト（vscode.workspace.getConfiguration）に戻す
+   */
+  static resetConfigProvider(): void {
+    this.configProvider = null;
+  }
+
+  private static getConfig() {
+    if (this.configProvider) {
+      return this.configProvider(this.CONFIG_SECTION);
+    }
+    return vscode.workspace.getConfiguration(this.CONFIG_SECTION);
+  }
 
   /**
    * 設定値を取得
    */
   static get<T>(key: string, defaultValue: T): T {
     try {
-      const config = vscode.workspace.getConfiguration(this.CONFIG_SECTION);
+      const config = this.getConfig();
       const value = config.get<T>(key, defaultValue);
       return value;
     } catch (error) {
@@ -24,7 +55,7 @@ export class ConfigManager {
    * 設定値を設定
    */
   static async set(key: string, value: any): Promise<void> {
-    const config = vscode.workspace.getConfiguration(this.CONFIG_SECTION);
+    const config = this.getConfig();
     await config.update(key, value, vscode.ConfigurationTarget.Global);
   }
 
