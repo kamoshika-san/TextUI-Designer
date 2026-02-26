@@ -255,8 +255,11 @@ export class WebViewUpdateManager {
   get lastParsedData(): unknown {
     return this.cacheManager._getCachedData(this.lastTuiFile || '') ?? null;
   }
-  set lastParsedData(_val: unknown) {
-    // テスト互換: 実際のキャッシュ更新は _setYamlCacheContent 経由
+  set lastParsedData(val: unknown) {
+    const fileName = this.lastTuiFile || '';
+    const content = this.cacheManager._getCacheContent(fileName) || '';
+    const normalizedValue = val === undefined ? null : val;
+    this.cacheManager.setCachedData(fileName, content, normalizedValue);
   }
 
   /**

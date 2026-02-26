@@ -95,6 +95,29 @@ describe('WebViewManager 単体テスト', () => {
     });
   });
 
+  describe('lastParsedData の管理', () => {
+    it('setterで設定した値をgetterで取得できる', () => {
+      const testPath = '/path/to/parsed.tui.yml';
+      const parsedData = {
+        page: {
+          id: 'parsed-test-page',
+          title: 'Parsed Test',
+          layout: 'vertical',
+          components: []
+        }
+      };
+
+      webviewManager.setLastTuiFile(testPath);
+      webviewManager.lastParsedData = parsedData;
+
+      assert.deepStrictEqual(
+        webviewManager.lastParsedData,
+        parsedData,
+        'lastParsedData の read/write 契約が成立している'
+      );
+    });
+  });
+
   describe('WebViewの状態管理', () => {
     it('hasPanelが正しく動作する', () => {
       // 初期状態ではパネルが存在しない
