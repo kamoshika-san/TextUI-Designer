@@ -1,6 +1,7 @@
 /**
  * テスト専用ErrorHandlerファクトリ
  */
+const fallbackVscode = require('./vscode-mock');
 
 class TestErrorHandler {
   constructor(mockVscode) {
@@ -163,7 +164,12 @@ class ErrorHandlerFactory {
    * テスト用ErrorHandlerを作成
    */
   static createForTest(mockVscode) {
-    const instance = new TestErrorHandler(mockVscode);
+    const hasOutputChannelApi = mockVscode &&
+      mockVscode.window &&
+      typeof mockVscode.window.createOutputChannel === 'function';
+    const effectiveVscode = hasOutputChannelApi ? mockVscode : fallbackVscode;
+
+    const instance = new TestErrorHandler(effectiveVscode);
     TestErrorHandler._setInstance(instance);
     return TestErrorHandler;
   }
