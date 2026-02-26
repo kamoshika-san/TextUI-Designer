@@ -1,98 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Text } from './components/Text';
-import { Input } from './components/Input';
-import { Button } from './components/Button';
-import { Checkbox } from './components/Checkbox';
-import { Container } from './components/Container';
-import { Form } from './components/Form';
-import { Radio } from './components/Radio';
-import { Select } from './components/Select';
-import { Divider } from './components/Divider';
-import { Alert } from './components/Alert';
 import { ThemeToggle } from './components/ThemeToggle';
 import { CustomThemeSelector } from './components/CustomThemeSelector';
-import type { TextUIDSL, ComponentDef, FormComponent, FormField, FormAction } from './types';
+import { renderRegisteredComponent } from './component-map';
+import type { TextUIDSL, ComponentDef } from './types';
 
 // HTMLテンプレートで既に取得されているvscodeオブジェクトを使用
 const vscode = (window as any).vscode;
-
-function renderComponent(comp: ComponentDef, key: number): React.ReactNode {
-  if ('Text' in comp) {
-    return <Text key={key} {...comp.Text} />;
-  }
-  if ('Input' in comp) {
-    return <Input key={key} {...comp.Input} />;
-  }
-  if ('Button' in comp) {
-    return <Button key={key} {...comp.Button} />;
-  }
-  if ('Checkbox' in comp) {
-    return <Checkbox key={key} {...comp.Checkbox} />;
-  }
-  if ('Radio' in comp) {
-    return <Radio key={key} {...comp.Radio} />;
-  }
-  if ('Select' in comp) {
-    return <Select key={key} {...comp.Select} />;
-  }
-  if ('Divider' in comp) {
-    return <Divider key={key} {...comp.Divider} />;
-  }
-  if ('Alert' in comp) {
-    return <Alert key={key} {...comp.Alert} />;
-  }
-  if ('Container' in comp) {
-    // Containerのchildrenを再帰的に描画（仮: childrenプロパティがcomponents配列である前提）
-    const children = (comp as any).Container.components as ComponentDef[] | undefined;
-    return (
-      <Container key={key} layout={(comp as any).Container.layout || 'vertical'}>
-        {children ? children.map((child, i) => renderComponent(child, i)) : null}
-      </Container>
-    );
-  }
-  if ('Form' in comp) {
-    const form: FormComponent = comp.Form;
-    // fields, actionsを再帰的に描画
-    return (
-      <Form
-        key={key}
-        id={form.id || ''}
-        fields={form.fields || []}
-        actions={form.actions || []}
-        onSubmit={data => {
-          // ここで何かアクションを追加可能
-          console.log('Form submit:', data);
-        }}
-      >
-        {/* fields, actionsを再帰的に描画 */}
-        {(form.fields || []).map((field: FormField, i: number) => {
-          if (field.Input) return <Input key={i} {...field.Input} />;
-          if (field.Checkbox) return <Checkbox key={i} {...field.Checkbox} />;
-          if (field.Radio) return <Radio key={i} {...field.Radio} />;
-          if (field.Select) return <Select key={i} {...field.Select} />;
-          if (field.Text) return <Text key={i} {...field.Text} />;
-          if (field.Divider) return <Divider key={i} {...field.Divider} />;
-          if (field.Alert) return <Alert key={i} {...field.Alert} />;
-          if (field.Container) return <Container key={i} {...field.Container} />;
-          return null;
-        })}
-        <div style={{ display: 'flex', gap: 8 }}>
-          {(form.actions || []).map((action: FormAction, i: number) => {
-            if (action.Button) return <Button key={i} {...action.Button} />;
-            return null;
-          })}
-        </div>
-      </Form>
-    );
-  }
-  // 未対応コンポーネントは警告表示
-  return (
-    <div key={key} style={{ color: 'orange' }}>
-      未対応コンポーネント: {Object.keys(comp)[0]}
-    </div>
-  );
-}
 
 // エラー情報の型定義
 interface ErrorInfo {
@@ -566,7 +480,7 @@ const App: React.FC = () => {
       </button>
       
       {/* プレビューコンテンツ */}
-      {components.map((comp, i) => renderComponent(comp, i))}
+      {components.map((comp, i) => renderRegisteredComponent(comp, i))}
     </div>
   );
 };
