@@ -3,6 +3,7 @@ import { ThemeManager } from './theme-manager';
 import { WebViewLifecycleManager } from './webview/webview-lifecycle-manager';
 import { WebViewUpdateManager } from './webview/webview-update-manager';
 import { WebViewMessageHandler } from './webview/webview-message-handler';
+import type { YamlSchemaLoader } from './webview/yaml-parser';
 import { TextUIDSL } from '../renderer/types';
 
 /**
@@ -16,11 +17,11 @@ export class WebViewManager {
   private themeManager: ThemeManager | undefined;
   private context: vscode.ExtensionContext;
 
-  constructor(context: vscode.ExtensionContext, themeManager?: ThemeManager) {
+  constructor(context: vscode.ExtensionContext, themeManager?: ThemeManager, schemaLoader?: YamlSchemaLoader) {
     this.context = context;
     this.themeManager = themeManager;
     this.lifecycleManager = new WebViewLifecycleManager(context);
-    this.updateManager = new WebViewUpdateManager(this.lifecycleManager);
+    this.updateManager = new WebViewUpdateManager(this.lifecycleManager, schemaLoader);
     this.messageHandler = new WebViewMessageHandler(
       context,
       this.lifecycleManager,
