@@ -1,6 +1,7 @@
 /**
  * テスト専用PerformanceMonitorファクトリ
  */
+const fallbackVscode = require('./vscode-mock');
 
 class TestPerformanceMonitor {
   constructor(mockVscode) {
@@ -296,7 +297,12 @@ class PerformanceMonitorFactory {
    * テスト用PerformanceMonitorを作成
    */
   static createForTest(mockVscode) {
-    const instance = new TestPerformanceMonitor(mockVscode);
+    const hasOutputChannelApi = mockVscode &&
+      mockVscode.window &&
+      typeof mockVscode.window.createOutputChannel === 'function';
+    const effectiveVscode = hasOutputChannelApi ? mockVscode : fallbackVscode;
+
+    const instance = new TestPerformanceMonitor(effectiveVscode);
     TestPerformanceMonitor._setInstance(instance);
     return TestPerformanceMonitor;
   }
