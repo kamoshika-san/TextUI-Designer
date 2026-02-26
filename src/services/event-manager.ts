@@ -46,7 +46,9 @@ export class EventManager {
    * 補完プロバイダーの登録
    */
   private registerCompletionProvider(): void {
-    if (!this.services) return;
+    if (!this.services) {
+      return;
+    }
 
     const completionDisposable = vscode.languages.registerCompletionItemProvider(
       [
@@ -66,7 +68,9 @@ export class EventManager {
    * 設定変更の監視
    */
   private registerSettingsWatcher(): void {
-    if (!this.services) return;
+    if (!this.services) {
+      return;
+    }
 
     const settingsWatcher = this.services.settingsService.startWatching(() => {
       // Auto Preview設定の変更は、プレビュー画面の自動表示/非表示のみに影響
@@ -89,7 +93,9 @@ export class EventManager {
    * VSCodeテーマ変更の監視
    */
   private registerThemeChangeWatcher(): void {
-    if (!this.services) return;
+    if (!this.services) {
+      return;
+    }
 
     const themeChangeDisposable = vscode.window.onDidChangeActiveColorTheme(colorTheme => {
       // WebViewにテーマ変更を通知
@@ -120,7 +126,9 @@ export class EventManager {
    * ドキュメントを開いた時の診断
    */
   registerDocumentOpenHandler(): void {
-    if (!this.services) return;
+    if (!this.services) {
+      return;
+    }
 
     const documentOpenDisposable = vscode.workspace.onDidOpenTextDocument(document => {
       const diagnosticSettings = ConfigManager.getDiagnosticSettings();
@@ -137,7 +145,9 @@ export class EventManager {
    * ドキュメントを閉じた時の診断クリア
    */
   registerDocumentCloseHandler(): void {
-    if (!this.services) return;
+    if (!this.services) {
+      return;
+    }
 
     const documentCloseDisposable = vscode.workspace.onDidCloseTextDocument(document => {
       this.services!.diagnosticManager.clearDiagnosticsForUri(document.uri);

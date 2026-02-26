@@ -2,6 +2,10 @@ import * as vscode from 'vscode';
 import * as YAML from 'yaml';
 import { PerformanceMonitor } from '../../utils/performance-monitor';
 
+export interface YamlSchemaLoader {
+  loadSchema(): Promise<any>;
+}
+
 export interface ParsedYamlResult {
   data: any;
   fileName: string;
@@ -30,10 +34,12 @@ export interface SchemaErrorInfo {
  */
 export class YamlParser {
   private performanceMonitor: PerformanceMonitor;
+  private schemaLoader?: YamlSchemaLoader;
   private readonly MAX_YAML_SIZE: number = 1024 * 1024; // 1MB制限
 
-  constructor() {
+  constructor(schemaLoader?: YamlSchemaLoader) {
     this.performanceMonitor = PerformanceMonitor.getInstance();
+    this.schemaLoader = schemaLoader;
   }
 
   /**
@@ -114,14 +120,12 @@ export class YamlParser {
    */
   private async validateYamlSchema(yaml: any, yamlContent: string, fileName: string): Promise<void> {
     try {
-      // グローバルスキーママネージャーを取得
-      const globalSchemaManager = (global as any).globalSchemaManager;
-      if (!globalSchemaManager) {
-        console.warn('[YamlParser] スキーママネージャーが見つかりません');
+      if (!this.schemaLoader) {
+        console.warn('[YamlParser] スキーマローダーが未設定のため、スキーマ検証をスキップします');
         return;
       }
 
-      const schema = await globalSchemaManager.loadSchema();
+      const schema = await this.schemaLoader.loadSchema();
       if (!schema) {
         console.warn('[YamlParser] スキーマの読み込みに失敗しました');
         return;

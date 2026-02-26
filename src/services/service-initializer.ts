@@ -31,7 +31,11 @@ export interface ExtensionServices {
 export interface ServiceFactoryOverrides {
   createSchemaManager?: (context: vscode.ExtensionContext) => SchemaManager;
   createThemeManager?: (context: vscode.ExtensionContext) => ThemeManager;
-  createWebViewManager?: (context: vscode.ExtensionContext, themeManager: ThemeManager) => WebViewManager;
+  createWebViewManager?: (
+    context: vscode.ExtensionContext,
+    themeManager: ThemeManager,
+    schemaManager: SchemaManager
+  ) => WebViewManager;
   createExportManager?: () => ExportManager;
   createTemplateService?: () => TemplateService;
   createSettingsService?: () => SettingsService;
@@ -64,14 +68,13 @@ export class ServiceInitializer {
       const schemaManager = f.createSchemaManager
         ? f.createSchemaManager(this.context)
         : new SchemaManager(this.context);
-
       const themeManager = f.createThemeManager
         ? f.createThemeManager(this.context)
         : new ThemeManager(this.context);
 
       const webViewManager = f.createWebViewManager
-        ? f.createWebViewManager(this.context, themeManager)
-        : new WebViewManager(this.context, themeManager);
+        ? f.createWebViewManager(this.context, themeManager, schemaManager)
+        : new WebViewManager(this.context, themeManager, schemaManager);
 
       const exportManager = f.createExportManager
         ? f.createExportManager()

@@ -1,5 +1,5 @@
 import { WebViewLifecycleManager } from './webview-lifecycle-manager';
-import { YamlParser, ParsedYamlResult } from './yaml-parser';
+import { YamlParser, ParsedYamlResult, YamlSchemaLoader } from './yaml-parser';
 import { UpdateQueueManager } from './update-queue-manager';
 import { CacheManager } from './cache-manager';
 import { WebViewErrorHandler } from './webview-error-handler';
@@ -19,9 +19,9 @@ export class WebViewUpdateManager {
   private lastTuiFile: string | undefined = undefined;
   private isUpdating: boolean = false;
 
-  constructor(lifecycleManager: WebViewLifecycleManager) {
+  constructor(lifecycleManager: WebViewLifecycleManager, schemaLoader?: YamlSchemaLoader) {
     this.lifecycleManager = lifecycleManager;
-    this.yamlParser = new YamlParser();
+    this.yamlParser = new YamlParser(schemaLoader);
     this.updateQueueManager = new UpdateQueueManager();
     this.cacheManager = new CacheManager();
     this.errorHandler = new WebViewErrorHandler(lifecycleManager);
