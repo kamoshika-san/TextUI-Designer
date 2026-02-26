@@ -55,7 +55,7 @@ export class ServiceInitializer {
 
       // WebViewManagerの初期化
       console.log('[ServiceInitializer] WebViewManager を作成します');
-      const webViewManager = new WebViewManager(this.context, themeManager);
+      const webViewManager = new WebViewManager(this.context, themeManager, schemaManager);
       console.log('[ServiceInitializer] WebViewManager 作成完了');
 
       // ExportManagerの初期化
@@ -113,9 +113,6 @@ export class ServiceInitializer {
         webViewManager.applyThemeVariables(css);
       });
 
-      // グローバル変数として保存（後方互換性のため）
-      (global as any).globalSchemaManager = schemaManager;
-
       // サービスオブジェクトを作成
       this.services = {
         schemaManager,
@@ -156,9 +153,6 @@ export class ServiceInitializer {
 
         // テーママネージャーのクリーンアップ
         this.services.themeManager?.dispose?.();
-
-        // グローバル変数のクリア
-        (global as any).globalSchemaManager = undefined;
 
         this.services = null;
       }
