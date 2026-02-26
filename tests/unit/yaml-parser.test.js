@@ -1,8 +1,14 @@
 const assert = require('assert');
-const { YamlParser } = require('../../out/services/webview/yaml-parser.js');
-const { PerformanceMonitor } = require('../../out/utils/performance-monitor.js');
+const path = require('path');
+const Module = require('module');
 
 describe('YamlParser スキーマ検証', () => {
+  const yamlParserModulePath = path.resolve(__dirname, '../../out/services/webview/yaml-parser.js');
+  const performanceMonitorModulePath = path.resolve(__dirname, '../../out/utils/performance-monitor.js');
+
+  let YamlParser;
+  let PerformanceMonitor;
+  let previousRequireHook;
   let vscodeApi;
 
   const schema = {
@@ -34,11 +40,14 @@ describe('YamlParser スキーマ検証', () => {
 
   beforeEach(() => {
     global.cleanupMocks?.();
-    vscodeApi = require('vscode');
-    global.vscode = vscodeApi;
+
+    vscodeApi = global.vscode || require('../mocks/vscode-mock');
 
     if (!vscodeApi.window) {
       vscodeApi.window = {};
+    }
+    if (!vscodeApi.workspace) {
+      vscodeApi.workspace = {};
     }
     if (!vscodeApi.env) {
       vscodeApi.env = {};
@@ -49,6 +58,20 @@ describe('YamlParser スキーマ検証', () => {
 
     vscodeApi.env.uiKind = 1;
     vscodeApi.UIKind.Web = 2;
+    global.vscode = vscodeApi;
+
+    previousRequireHook = Module.prototype.require;
+    Module.prototype.require = function(id) {
+      if (id === 'vscode') {
+        return vscodeApi;
+      }
+      return previousRequireHook.apply(this, arguments);
+    };
+
+    delete require.cache[yamlParserModulePath];
+    delete require.cache[performanceMonitorModulePath];
+    ({ YamlParser } = require(yamlParserModulePath));
+    ({ PerformanceMonitor } = require(performanceMonitorModulePath));
 
     delete global.globalSchemaManager;
   });
@@ -59,6 +82,11 @@ describe('YamlParser スキーマ検証', () => {
     }
     delete global.globalSchemaManager;
     PerformanceMonitor.getInstance().dispose();
+
+    if (previousRequireHook) {
+      Module.prototype.require = previousRequireHook;
+      previousRequireHook = null;
+    }
   });
 
   it('global を参照せず注入された schemaLoader を使用する', async () => {
