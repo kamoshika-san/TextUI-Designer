@@ -5,37 +5,16 @@
 const { describe, it, beforeEach, afterEach } = require('mocha');
 const assert = require('assert');
 
-// VSCode APIのモック
-const mockVscode = {
-  ExtensionContext: class {
-    constructor() {
-      this.subscriptions = [];
-      this.extensionPath = __dirname + '/../../';
-    }
-  }
-};
-
-// グローバルにvscodeを設定
-global.vscode = mockVscode;
-
-// vscodeモジュールをモック
-const Module = require('module');
-const originalRequire = Module.prototype.require;
-Module.prototype.require = function(id) {
-  if (id === 'vscode') {
-    return mockVscode;
-  }
-  return originalRequire.apply(this, arguments);
-};
-
-// テスト対象のモジュールを読み込み
-const path = require('path');
+// tests/setup.js の共通VSCodeモックを利用する
 const CacheManager = require('../../out/utils/cache-manager.js').CacheManager;
 
 describe('CacheManager', () => {
   let cacheManager;
 
   beforeEach(() => {
+    if (typeof global.cleanupMocks === 'function') {
+      global.cleanupMocks();
+    }
     // 各テスト前に新しいCacheManagerインスタンスを作成
     cacheManager = new CacheManager();
   });

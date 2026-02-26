@@ -19,9 +19,6 @@ const vscode = {
   }
 };
 
-// グローバルにモックを設定
-global.vscode = vscode;
-
 describe('CommandManager', () => {
   let commandManager;
 
@@ -36,7 +33,7 @@ describe('CommandManager', () => {
       global.CommandManagerFactory = CommandManagerFactory;
     }
     
-    commandManager = global.CommandManagerFactory.createForTest(global.vscode, {
+    commandManager = global.CommandManagerFactory.createForTest(vscode, {
       enableAutoPreview: true,
       performanceSettings: { enablePerformanceLogs: false }
     });

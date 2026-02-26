@@ -349,7 +349,7 @@ describe('プレビュー画面からのエクスポート機能 E2Eテスト', 
 
     it('大量のコンポーネントを含むファイルでもエクスポートが正常に動作する', async () => {
       // 大量のコンポーネントを含むテストファイルを作成
-      const largeTestFile = `page:
+      let largeTestFile = `page:
   id: large-e2e-test
   title: "大量コンポーネント E2Eテスト"
   layout: vertical
