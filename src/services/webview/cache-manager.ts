@@ -1,8 +1,8 @@
 import { PerformanceMonitor } from '../../utils/performance-monitor';
 
-export interface CacheEntry {
+export interface WebViewCacheEntry {
   content: string;
-  data: any;
+  data: unknown;
   fileName: string;
   timestamp: number;
   size: number;
@@ -13,7 +13,7 @@ export interface CacheEntry {
  * YAMLコンテンツのキャッシュ、メモリ管理、キャッシュヒット率の追跡を担当
  */
 export class CacheManager {
-  private cache: Map<string, CacheEntry> = new Map();
+  private cache: Map<string, WebViewCacheEntry> = new Map();
   private performanceMonitor: PerformanceMonitor;
   private readonly MAX_CACHE_SIZE: number = 50 * 1024 * 1024; // 50MB制限
   private readonly MAX_CACHE_ENTRIES: number = 100; // 最大エントリ数
@@ -58,7 +58,7 @@ export class CacheManager {
       this.evictOldestEntry();
     }
 
-    const entry: CacheEntry = {
+    const entry: WebViewCacheEntry = {
       content: content,
       data: data,
       fileName: fileName,
@@ -256,6 +256,18 @@ export class CacheManager {
    */
   _clearCache(): void {
     this.clearCache();
+  }
+
+  /**
+   * テスト用: キャッシュされた解析済みデータを取得
+   */
+  _getCachedData(fileName: string): unknown {
+    for (const [, entry] of this.cache.entries()) {
+      if (entry.fileName === fileName) {
+        return entry.data;
+      }
+    }
+    return null;
   }
 
   /**
