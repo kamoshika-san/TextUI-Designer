@@ -110,7 +110,7 @@ describe('CommandManager 統合テスト', () => {
     Module.prototype.require = originalRequire;
   });
 
-  describe.skip('エクスポートコマンドの処理', () => {
+  describe('エクスポートコマンドの処理', () => {
     it('ファイルパス付きエクスポートコマンドが正常に実行される', async () => {
       // テストファイルを開く
       const document = await vscode.workspace.openTextDocument(testFilePath);
@@ -212,7 +212,7 @@ describe('CommandManager 統合テスト', () => {
       assert.ok(previewCommands.length > 0, 'プレビューコマンドが正しく登録されています');
     });
 
-    it.skip('複数のコマンドが連続して実行される', async () => {
+    it('複数のコマンドが連続して実行される', async () => {
       // テストファイルを開く
       const document = await vscode.workspace.openTextDocument(testFilePath);
       await vscode.window.showTextDocument(document);
@@ -284,7 +284,7 @@ describe('CommandManager 統合テスト', () => {
     });
   });
 
-  describe.skip('パフォーマンステスト', () => {
+  describe('パフォーマンステスト', () => {
     it('複数回のエクスポートコマンド実行が正常に動作する', async () => {
       // テストファイルを開く
       const document = await vscode.workspace.openTextDocument(testFilePath);

@@ -361,7 +361,7 @@
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
-    "lint": "eslint src",
+    "lint": "eslint src --max-warnings 0",
     "test": "mocha --no-config --require ./tests/setup.js --timeout 5000 --exit tests/unit/**/*.js",
     "vscode-test": "node ./out/test/runTest.js",
     "test:regression": "mocha --no-config --require ./tests/setup.js --timeout 20000 --exit ./tests/regression/export-regression-suite.js",
