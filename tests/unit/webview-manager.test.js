@@ -181,11 +181,9 @@ describe('WebViewManager 単体テスト', () => {
    description: "A custom theme"
    version: "1.0.0"`);
 
-        global.vscode.workspace = {
-          workspaceFolders: [{
-            uri: { fsPath: path.dirname(themeDir) }
-          }]
-        };
+        webviewManager._testHelpers.extendedVscode.workspace.workspaceFolders = [{
+          uri: { fsPath: path.dirname(themeDir) }
+        }];
 
         await webviewManager.openPreview();
         const panel = webviewManager.getPanel();
@@ -261,11 +259,9 @@ describe('WebViewManager 単体テスト', () => {
 
     it('無効なテーマパスでエラーハンドリングが正しく動作する', async () => {
       // ワークスペースフォルダーのモック設定
-      global.vscode.workspace = {
-        workspaceFolders: [{
-          uri: { fsPath: '/nonexistent/path' }
-        }]
-      };
+      webviewManager._testHelpers.extendedVscode.workspace.workspaceFolders = [{
+        uri: { fsPath: '/nonexistent/path' }
+      }];
 
       await webviewManager.openPreview();
       const panel = webviewManager.getPanel();
