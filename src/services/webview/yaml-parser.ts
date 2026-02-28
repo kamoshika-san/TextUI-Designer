@@ -1,13 +1,15 @@
 import * as vscode from 'vscode';
 import * as YAML from 'yaml';
+import Ajv, { ErrorObject } from 'ajv';
+import { SchemaDefinition } from '../../types';
 import { PerformanceMonitor } from '../../utils/performance-monitor';
 
 export interface YamlSchemaLoader {
-  loadSchema(): Promise<any>;
+  loadSchema(): Promise<SchemaDefinition>;
 }
 
 export interface ParsedYamlResult {
-  data: any;
+  data: unknown;
   fileName: string;
   content: string;
 }
@@ -23,7 +25,7 @@ export interface YamlErrorInfo {
 
 export interface SchemaErrorInfo {
   message: string;
-  errors: any[];
+  errors: ErrorObject[];
   suggestions: string[];
   fileName: string;
 }
@@ -86,7 +88,7 @@ export class YamlParser {
   /**
    * YAMLコンテンツをパース
    */
-  private async parseYamlContent(yamlContent: string, fileName: string): Promise<any> {
+  private async parseYamlContent(yamlContent: string, fileName: string): Promise<unknown> {
     try {
       return await new Promise((resolve, reject) => {
         setImmediate(() => {
@@ -118,7 +120,7 @@ export class YamlParser {
   /**
    * YAMLスキーマバリデーションを実行
    */
-  private async validateYamlSchema(yaml: any, yamlContent: string, fileName: string): Promise<void> {
+  private async validateYamlSchema(yaml: unknown, yamlContent: string, fileName: string): Promise<void> {
     try {
       if (!this.schemaLoader) {
         console.warn('[YamlParser] スキーマローダーが未設定のため、スキーマ検証をスキップします');
@@ -132,18 +134,18 @@ export class YamlParser {
       }
 
       // Ajvを使用してバリデーション
-      const Ajv = require('ajv');
       const ajv = new Ajv({ allErrors: true });
       const validate = ajv.compile(schema);
       
       const valid = validate(yaml);
       
       if (!valid) {
-        console.warn('[YamlParser] スキーマバリデーションエラー:', validate.errors);
-        throw this.createSchemaError(validate.errors || [], yamlContent, fileName);
+        const validationErrors = validate.errors ?? [];
+        console.warn('[YamlParser] スキーマバリデーションエラー:', validationErrors);
+        throw this.createSchemaError(validationErrors, yamlContent, fileName);
       }
-    } catch (error: any) {
-      if (error.name === 'SchemaValidationError') {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'SchemaValidationError') {
         throw error;
       }
       console.error('[YamlParser] スキーマバリデーションでエラーが発生しました:', error);
@@ -153,8 +155,8 @@ export class YamlParser {
   /**
    * パースエラーを作成
    */
-  private createParseError(error: any, yamlContent: string, fileName: string): YamlErrorInfo {
-    const errorMessage = error.message || 'Unknown error';
+  private createParseError(error: unknown, yamlContent: string, fileName: string): never {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     const lines = yamlContent.split('\n');
     
     // エラーメッセージから行番号を抽出
@@ -164,9 +166,9 @@ export class YamlParser {
     const errorLine = lines[lineNumber] || '';
     const suggestions = this.generateParseErrorSuggestions(errorMessage, errorLine);
     
-    const yamlError = new Error(errorMessage);
+    const yamlError = new Error(errorMessage) as Error & { details?: YamlErrorInfo };
     yamlError.name = 'YamlParseError';
-    (yamlError as any).details = {
+    yamlError.details = {
       message: errorMessage,
       line: lineNumber + 1,
       column: 0,
@@ -181,7 +183,7 @@ export class YamlParser {
   /**
    * スキーマエラーを作成
    */
-  private createSchemaError(errors: any[], yamlContent: string, fileName: string): Error {
+  private createSchemaError(errors: ErrorObject[], yamlContent: string, fileName: string): Error {
     if (errors.length === 0) {
       return new Error('Unknown schema error');
     }
@@ -190,9 +192,9 @@ export class YamlParser {
     const errorMessage = this.formatSchemaErrorMessage(primaryError);
     const suggestions = this.generateSchemaErrorSuggestions(primaryError, errors);
     
-    const schemaError = new Error(errorMessage);
+    const schemaError = new Error(errorMessage) as Error & { details?: SchemaErrorInfo };
     schemaError.name = 'SchemaValidationError';
-    (schemaError as any).details = {
+    schemaError.details = {
       message: errorMessage,
       errors: errors,
       suggestions: suggestions,
@@ -224,8 +226,8 @@ export class YamlParser {
   /**
    * スキーマエラーメッセージをフォーマット
    */
-  private formatSchemaErrorMessage(error: any): string {
-    const path = error.instancePath || error.dataPath || '';
+  private formatSchemaErrorMessage(error: ErrorObject): string {
+    const path = error.instancePath || '';
     const message = error.message || 'Unknown schema error';
     
     if (path) {
@@ -238,18 +240,24 @@ export class YamlParser {
   /**
    * スキーマエラー修正の提案を生成
    */
-  private generateSchemaErrorSuggestions(primaryError: any, allErrors: any[]): string[] {
+  private generateSchemaErrorSuggestions(primaryError: ErrorObject, _allErrors: ErrorObject[]): string[] {
     const suggestions: string[] = [];
     
     if (primaryError.keyword === 'required') {
-      const missingProperty = primaryError.params.missingProperty;
-      suggestions.push(`必須プロパティ "${missingProperty}" が不足しています。`);
+      const missingProperty = (primaryError.params as { missingProperty?: string }).missingProperty;
+      if (missingProperty) {
+        suggestions.push(`必須プロパティ "${missingProperty}" が不足しています。`);
+      }
     } else if (primaryError.keyword === 'type') {
-      const expectedType = primaryError.params.type;
-      suggestions.push(`プロパティの型が正しくありません。期待される型: ${expectedType}`);
+      const expectedType = (primaryError.params as { type?: string }).type;
+      if (expectedType) {
+        suggestions.push(`プロパティの型が正しくありません。期待される型: ${expectedType}`);
+      }
     } else if (primaryError.keyword === 'enum') {
-      const allowedValues = primaryError.params.allowedValues;
-      suggestions.push(`無効な値です。許可される値: ${allowedValues.join(', ')}`);
+      const allowedValues = (primaryError.params as { allowedValues?: unknown[] }).allowedValues;
+      if (allowedValues && allowedValues.length > 0) {
+        suggestions.push(`無効な値です。許可される値: ${allowedValues.join(', ')}`);
+      }
     }
     
     return suggestions;

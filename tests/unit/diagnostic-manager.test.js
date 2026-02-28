@@ -93,6 +93,28 @@ describe('DiagnosticManager', () => {
       // エラーが発生しないことを確認
       assert.ok(true, 'キャッシュクリアが正常に実行された');
     });
+
+    it('clearDiagnosticsForUriで旧形式のuri:hashキャッシュも削除される', () => {
+      const document = helpers.createTestDocument('page:\n  id: test\n  title: "テスト"', '/test/legacy-cache.tui.yml');
+      const uriString = document.uri.toString();
+      const legacyKey = `${uriString}:legacy-hash`;
+
+      diagnosticManager.validationCache.set(uriString, {
+        content: document.getText(),
+        diagnostics: [],
+        timestamp: Date.now()
+      });
+      diagnosticManager.validationCache.set(legacyKey, {
+        content: document.getText(),
+        diagnostics: [],
+        timestamp: Date.now()
+      });
+
+      diagnosticManager.clearDiagnosticsForUri(document.uri);
+
+      assert.strictEqual(diagnosticManager.validationCache.has(uriString), false, 'uriキーのキャッシュが削除される');
+      assert.strictEqual(diagnosticManager.validationCache.has(legacyKey), false, 'uri:hashキーのキャッシュが削除される');
+    });
   });
 
   describe('スキーママネージャーとの連携', () => {
