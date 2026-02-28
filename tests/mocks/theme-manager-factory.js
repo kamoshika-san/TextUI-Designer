@@ -87,7 +87,9 @@ class ThemeManagerFactory {
       return originalRequire.apply(this, arguments);
     };
 
-    // ThemeManagerを作成
+    // ThemeManagerを毎回モック済み環境で読み込み直す
+    const themeManagerPath = require.resolve('../../out/services/theme-manager.js');
+    delete require.cache[themeManagerPath];
     const { ThemeManager } = require('../../out/services/theme-manager.js');
     const themeManager = new ThemeManager(mockContext);
 
