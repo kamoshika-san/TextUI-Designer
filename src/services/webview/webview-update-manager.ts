@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import { WebViewLifecycleManager } from './webview-lifecycle-manager';
 import { YamlParser, ParsedYamlResult, YamlSchemaLoader } from './yaml-parser';
 import { UpdateQueueManager } from './update-queue-manager';
@@ -36,14 +37,14 @@ export class WebViewUpdateManager {
       if (forceUpdate) {
         console.log('[WebViewUpdateManager] 強制更新を実行');
         await this.updateQueueManager.queueUpdate(
-          () => this.sendYamlToWebview(true),
+          () => this.sendYamlToWebview(forceUpdate),
           true,
           10 // 高優先度
         );
       } else {
         // デバウンス付きで更新
         this.updateQueueManager.queueUpdateWithDebounce(
-          () => this.sendYamlToWebview(true),
+          () => this.sendYamlToWebview(forceUpdate),
           200
         );
       }
@@ -75,7 +76,7 @@ export class WebViewUpdateManager {
       if (updatePreview && this.lifecycleManager.hasPanel()) {
         console.log('[WebViewUpdateManager] ファイル変更による即座のプレビュー更新を実行します');
         this.updateQueueManager.queueUpdate(
-          () => this.sendYamlToWebview(true),
+          () => this.sendYamlToWebview(false),
           true,
           10 // 高優先度
         );
@@ -114,17 +115,20 @@ export class WebViewUpdateManager {
     this.isUpdating = true;
 
     try {
+      const currentYaml = await this.resolveCurrentYamlForCache();
+
       // キャッシュチェック（forceUpdateがtrueの場合はスキップ）
-      if (!forceUpdate) {
-        const cachedData = this.cacheManager.getCachedData(this.lastTuiFile || '', '');
+      if (!forceUpdate && currentYaml) {
+        const cachedData = this.cacheManager.getCachedData(currentYaml.fileName, currentYaml.content);
         if (cachedData) {
-          this.sendMessageToWebView(cachedData, this.lastTuiFile || '');
+          this.sendMessageToWebView(cachedData, currentYaml.fileName);
           return;
         }
       }
 
       // YAMLファイルを解析
-      const parsedResult = await this.yamlParser.parseYamlFile(this.lastTuiFile);
+      const parsedResult = await this.yamlParser.parseYamlFile(currentYaml?.fileName || this.lastTuiFile);
+      this.lastTuiFile = parsedResult.fileName;
       
       // キャッシュに保存
       this.cacheManager.setCachedData(
@@ -155,6 +159,44 @@ export class WebViewUpdateManager {
     } finally {
       this.isUpdating = false;
     }
+  }
+
+  /**
+   * キャッシュ参照に使う現在のYAML情報を取得
+   */
+  private async resolveCurrentYamlForCache(): Promise<{ fileName: string; content: string } | null> {
+    const activeEditor = vscode.window.activeTextEditor;
+    const activeFileName = activeEditor?.document.fileName;
+    const isSupportedActiveFile = Boolean(
+      activeFileName &&
+      (activeFileName.endsWith('.tui.yml') || activeFileName.endsWith('.tui.yaml'))
+    );
+
+    if (
+      activeEditor &&
+      activeFileName &&
+      isSupportedActiveFile &&
+      (!this.lastTuiFile || this.lastTuiFile === activeFileName)
+    ) {
+      return {
+        fileName: activeFileName,
+        content: activeEditor.document.getText()
+      };
+    }
+
+    if (this.lastTuiFile) {
+      try {
+        const document = await vscode.workspace.openTextDocument(this.lastTuiFile);
+        return {
+          fileName: this.lastTuiFile,
+          content: document.getText()
+        };
+      } catch (error) {
+        console.warn('[WebViewUpdateManager] キャッシュ用YAMLの読み込みに失敗しました:', error);
+      }
+    }
+
+    return null;
   }
 
   /**

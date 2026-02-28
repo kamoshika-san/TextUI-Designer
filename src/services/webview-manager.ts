@@ -72,6 +72,7 @@ export class WebViewManager {
   }
 
   dispose(): void {
+    this.updateManager.dispose();
     this.lifecycleManager.dispose();
   }
 

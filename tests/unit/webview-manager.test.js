@@ -144,185 +144,119 @@ describe('WebViewManager 単体テスト', () => {
 
   describe('テーマ切り替え機能のテスト', () => {
     let mockThemeManager;
+    const wait = (ms = 20) => new Promise(resolve => setTimeout(resolve, ms));
 
     beforeEach(() => {
       // ThemeManagerのモック作成
       mockThemeManager = {
-        themePath: null,
+        themePath: '',
         loadTheme: async () => {},
         generateCSSVariables: () => 'mock-css-variables'
       };
       
       // WebViewManagerにThemeManagerを設定
       webviewManager.themeManager = mockThemeManager;
-
-      // テスト用のモックWebViewパネルを明示的に設定
-      webviewManager.currentPanel = {
-        webview: {
-          postMessage: (message) => {
-            console.log('[テスト] postMessage called:', message?.type || 'unknown');
-          },
-          onDidReceiveMessage: (callback) => {
-            // メッセージハンドラーを格納
-            webviewManager.currentPanel._messageHandler = callback;
-            return { dispose: () => {} };
-          }
-        },
-        _messageHandler: null
-      };
+      if (webviewManager.messageHandler) {
+        webviewManager.messageHandler.themeManager = mockThemeManager;
+      }
     });
 
-         it('利用可能なテーマ一覧を正しく検出する', async () => {
-       // テスト用のテーマファイルを作成
-       const themeDir = path.join(__dirname, '../fixtures/themes');
-       const themeFile1 = path.join(themeDir, 'test-theme.yml');
-       const themeFile2 = path.join(themeDir, 'custom-theme.yml');
-       
-       try {
-         // テーマディレクトリが存在しない場合は作成
-         if (!fs.existsSync(themeDir)) {
-           fs.mkdirSync(themeDir, { recursive: true });
-         }
+    it('利用可能なテーマ一覧を正しく検出する', async () => {
+      const themeDir = path.join(__dirname, '../fixtures/themes');
+      const themeFile1 = path.join(themeDir, 'test-theme.yml');
+      const themeFile2 = path.join(themeDir, 'custom-theme.yml');
 
-         // テスト用テーマファイルを作成
-         fs.writeFileSync(themeFile1, `theme:
+      try {
+        if (!fs.existsSync(themeDir)) {
+          fs.mkdirSync(themeDir, { recursive: true });
+        }
+
+        fs.writeFileSync(themeFile1, `theme:
    name: "Test Theme"
    description: "A test theme"
    version: "1.0.0"`);
-         
-         fs.writeFileSync(themeFile2, `theme:
+
+        fs.writeFileSync(themeFile2, `theme:
    name: "Custom Theme"
    description: "A custom theme"
    version: "1.0.0"`);
 
-         // ワークスペースフォルダーのモック設定
-         global.vscode.workspace = {
-           workspaceFolders: [{
-             uri: { fsPath: path.dirname(themeDir) }
-           }]
-         };
+        global.vscode.workspace = {
+          workspaceFolders: [{
+            uri: { fsPath: path.dirname(themeDir) }
+          }]
+        };
 
-         // WebViewパネルを開く
-         await webviewManager.openPreview();
+        await webviewManager.openPreview();
+        const panel = webviewManager.getPanel();
+        assert.ok(panel, 'WebViewパネルが作成される');
 
-         // メッセージ処理をテスト
-         let sentMessage = null;
-         webviewManager.currentPanel.webview.postMessage = (message) => {
-           if (message.type === 'available-themes') {
-             sentMessage = message;
-           }
-         };
+        let sentMessage = null;
+        panel.webview.postMessage = (message) => {
+          if (message.type === 'available-themes') {
+            sentMessage = message;
+          }
+          return Promise.resolve(true);
+        };
 
-         // webview-readyメッセージをシミュレート（これがテーマ一覧送信をトリガーする）
-         const messageEvent = {
-           data: { type: 'webview-ready' }
-         };
+        const handler = panel._messageHandler;
+        assert.strictEqual(typeof handler, 'function', 'メッセージハンドラーが登録されている');
+        await handler({ type: 'webview-ready' });
+        await wait(50);
 
-         // WebViewManagerのメッセージ処理をテスト
-         if (webviewManager.currentPanel && webviewManager.currentPanel.webview.onDidReceiveMessage) {
-           // メッセージハンドラーを直接呼び出し
-           const messageHandler = webviewManager.currentPanel.webview.onDidReceiveMessage;
-           if (typeof messageHandler === 'function') {
-             await messageHandler(messageEvent.data);
-           }
-         }
+        assert.ok(sentMessage, 'available-themesメッセージが送信される');
+        assert.strictEqual(sentMessage.type, 'available-themes', 'メッセージタイプが正しい');
+        assert.ok(Array.isArray(sentMessage.themes), 'テーマ配列が含まれている');
 
-         // メッセージが正しく送信されたことを確認
-         if (sentMessage) {
-           assert.strictEqual(sentMessage.type, 'available-themes', 'メッセージタイプが正しい');
-           assert.ok(Array.isArray(sentMessage.themes), 'テーマ配列が含まれている');
-           console.log('検出されたテーマ:', sentMessage.themes);
-         }
+        const names = sentMessage.themes.map(theme => theme.name);
+        assert.ok(names.includes('デフォルト'), 'デフォルトテーマが含まれる');
+        assert.ok(names.includes('Test Theme'), '作成したテーマ1が含まれる');
+        assert.ok(names.includes('Custom Theme'), '作成したテーマ2が含まれる');
+      } finally {
+        if (fs.existsSync(themeFile1)) {fs.unlinkSync(themeFile1);}
+        if (fs.existsSync(themeFile2)) {fs.unlinkSync(themeFile2);}
+        if (fs.existsSync(themeDir)) {fs.rmSync(themeDir, { recursive: true, force: true });}
+      }
+    });
 
-       } finally {
-         // テストファイルをクリーンアップ
-         try {
-           if (fs.existsSync(themeFile1)) fs.unlinkSync(themeFile1);
-           if (fs.existsSync(themeFile2)) fs.unlinkSync(themeFile2);
-           if (fs.existsSync(themeDir)) fs.rmdirSync(themeDir);
-         } catch (error) {
-           // クリーンアップエラーは無視
-         }
-       }
-     });
+    it('テーマ切り替えメッセージ処理が正しく動作する', async () => {
+      await webviewManager.openPreview();
+      const panel = webviewManager.getPanel();
+      assert.ok(panel, 'WebViewパネルが作成される');
 
-         it('テーマ切り替えメッセージ処理が正しく動作する', async () => {
-       try {
-         // WebViewパネルを開く
-         await webviewManager.openPreview();
+      let appliedCSS = null;
+      panel.webview.postMessage = (message) => {
+        if (message.type === 'theme-variables') {
+          appliedCSS = message.css;
+        }
+        return Promise.resolve(true);
+      };
 
-         // メッセージ処理をテスト
-         let appliedCSS = null;
-         let updatedThemes = null;
-         
-         const originalPostMessage = webviewManager.currentPanel.webview.postMessage;
-         webviewManager.currentPanel.webview.postMessage = (message) => {
-           if (message.type === 'theme-variables') {
-             appliedCSS = message.css;
-           } else if (message.type === 'available-themes') {
-             updatedThemes = message.themes;
-           }
-           // 元のpostMessageも呼び出し
-           if (originalPostMessage) {
-             originalPostMessage(message);
-           }
-         };
+      const handler = panel._messageHandler;
+      assert.strictEqual(typeof handler, 'function', 'メッセージハンドラーが登録されている');
+      await handler({ type: 'theme-switch', themePath: '' });
+      await wait(20);
 
-         // theme-switchメッセージをシミュレート
-         const themeSwitchEvent = {
-           data: { 
-             type: 'theme-switch', 
-             themePath: '' // デフォルトテーマに切り替え
-           }
-         };
-
-         // WebViewManagerのメッセージハンドラーを呼び出し
-         if (webviewManager.currentPanel?.webview?.onDidReceiveMessage) {
-           await new Promise(resolve => {
-             setTimeout(async () => {
-               try {
-                 const messageHandler = webviewManager.currentPanel.webview.onDidReceiveMessage;
-                 if (typeof messageHandler === 'function') {
-                   await messageHandler(themeSwitchEvent.data);
-                 }
-               } catch (error) {
-                 console.log('テーマ切り替えエラー（期待される）:', error.message);
-               }
-               resolve();
-             }, 100);
-           });
-         }
-
-         // テーマ切り替えの結果を確認
-         console.log('CSS変数が適用されました:', appliedCSS !== null ? '適用済み' : '未適用');
-         
-         // エラーが適切に処理されることを確認
-         assert.ok(true, 'テーマ切り替えメッセージ処理が完了した');
-
-       } catch (error) {
-         console.log('期待されるエラー:', error.message);
-         assert.ok(true, 'エラーハンドリングが正しく動作した');
-       }
-     });
+      assert.strictEqual(appliedCSS, '', 'デフォルトテーマ切り替えでCSSがリセットされる');
+    });
 
     it('デフォルトテーマへの切り替えが正しく動作する', async () => {
       let appliedCSS = null;
-      webviewManager.currentPanel = {
-        webview: {
-          postMessage: (message) => {
-            if (message.type === 'theme-variables') {
-              appliedCSS = message.css;
-            }
-          }
+      await webviewManager.openPreview();
+      const panel = webviewManager.getPanel();
+      assert.ok(panel, 'WebViewパネルが作成される');
+      panel.webview.postMessage = (message) => {
+        if (message.type === 'theme-variables') {
+          appliedCSS = message.css;
         }
+        return Promise.resolve(true);
       };
 
       // 空文字でデフォルトテーマに切り替え
       await webviewManager.switchTheme('');
 
       // デフォルトテーマの場合は空文字列が適用されることを確認
-      // 実際の実装では、デフォルトテーマ切り替え時に空のCSSが送信される
-      assert.strictEqual(appliedCSS, null, 'デフォルトテーマのCSS変数が適用された');
+      assert.strictEqual(appliedCSS, '', 'デフォルトテーマのCSS変数がリセットされる');
     });
 
     it('無効なテーマパスでエラーハンドリングが正しく動作する', async () => {
@@ -333,34 +267,28 @@ describe('WebViewManager 単体テスト', () => {
         }]
       };
 
-      webviewManager.currentPanel = {
-        webview: {
-          postMessage: () => {}
-        }
-      };
+      await webviewManager.openPreview();
+      const panel = webviewManager.getPanel();
+      assert.ok(panel, 'WebViewパネルが作成される');
 
       // 存在しないテーマファイルで切り替えを試行
-      await webviewManager.switchTheme('nonexistent-theme.yml');
-
-      // エラーが適切に処理され、アプリケーションがクラッシュしないことを確認
-      assert.ok(true, 'エラーハンドリングが正しく動作した');
+      const result = await webviewManager.switchTheme('nonexistent-theme.yml');
+      assert.strictEqual(result, undefined, '無効なテーマパスでも例外を投げずに終了する');
     });
 
     it('ThemeManagerが未設定の場合のエラーハンドリング', async () => {
       // ThemeManagerを未設定にする
       webviewManager.themeManager = undefined;
-
-      webviewManager.currentPanel = {
-        webview: {
-          postMessage: () => {}
-        }
-      };
+      if (webviewManager.messageHandler) {
+        webviewManager.messageHandler.themeManager = undefined;
+      }
+      await webviewManager.openPreview();
+      const panel = webviewManager.getPanel();
+      assert.ok(panel, 'WebViewパネルが作成される');
 
       // テーマ切り替えを試行
-      await webviewManager.switchTheme('test-theme.yml');
-
-      // エラーが適切に処理され、アプリケーションがクラッシュしないことを確認
-      assert.ok(true, 'ThemeManager未設定時のエラーハンドリングが正しく動作した');
+      const result = await webviewManager.switchTheme('test-theme.yml');
+      assert.strictEqual(result, undefined, 'ThemeManager未設定でも例外を投げずに終了する');
     });
   });
 
