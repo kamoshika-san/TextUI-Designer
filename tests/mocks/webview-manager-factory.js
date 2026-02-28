@@ -142,6 +142,18 @@ class WebViewManagerFactory {
       return originalRequire.apply(this, arguments);
     };
 
+    // WebView関連モジュールを毎回モック済み環境で読み込み直す
+    const modulesToReload = [
+      '../../out/services/webview-manager.js',
+      '../../out/services/webview/webview-lifecycle-manager.js',
+      '../../out/services/webview/webview-message-handler.js',
+      '../../out/services/webview/webview-update-manager.js'
+    ];
+    for (const modulePath of modulesToReload) {
+      const resolvedPath = require.resolve(modulePath);
+      delete require.cache[resolvedPath];
+    }
+
     // WebViewManagerを作成
     const { WebViewManager } = require('../../out/services/webview-manager.js');
     const webviewManager = new WebViewManager(mockContext);
