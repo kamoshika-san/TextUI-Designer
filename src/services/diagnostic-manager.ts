@@ -1,8 +1,14 @@
 import * as vscode from 'vscode';
 import * as YAML from 'yaml';
-import Ajv from 'ajv';
+import Ajv, { ErrorObject } from 'ajv';
 import { TextUIMemoryTracker } from '../utils/textui-memory-tracker';
-import { ISchemaManager, SchemaDefinition, SchemaValidationError } from '../types';
+import { ISchemaManager, SchemaDefinition } from '../types';
+
+type DiagnosticCacheEntry = {
+  content: string;
+  diagnostics: vscode.Diagnostic[];
+  timestamp: number;
+};
 
 /**
  * 診断管理サービス
@@ -11,7 +17,7 @@ import { ISchemaManager, SchemaDefinition, SchemaValidationError } from '../type
 export class DiagnosticManager {
   private diagnosticCollection: vscode.DiagnosticCollection;
   private schemaManager: ISchemaManager;
-  private validationCache: Map<string, { content: string; diagnostics: vscode.Diagnostic[]; timestamp: number }> = new Map();
+  private validationCache: Map<string, DiagnosticCacheEntry> = new Map();
   private validationTimeouts: Map<string, NodeJS.Timeout> = new Map();
   private ajvInstance: Ajv | null = null;
   private schemaCache: SchemaDefinition | null = null;
@@ -65,22 +71,15 @@ export class DiagnosticManager {
     }
     
     // キャッシュをチェック
-    const cacheKey = `${uri}:${this.hashText(text)}`;
+    const cacheKey = uri;
     const cached = this.validationCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+    if (cached && cached.content === text && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      this.diagnosticCollection.set(document.uri, cached.diagnostics);
       return;
     }
 
     // 診断を実行
     await this.performValidation(document, text, false);
-    
-    // キャッシュに保存
-    const currentDiagnostics = this.diagnosticCollection.get(document.uri) || [];
-    this.validationCache.set(cacheKey, {
-      content: text,
-      timestamp: Date.now(),
-      diagnostics: [...currentDiagnostics] // 配列をコピー
-    });
   }
 
   /**
@@ -186,7 +185,7 @@ export class DiagnosticManager {
    * エラーから診断情報を作成
    */
   private createDiagnosticsFromErrors(
-    errors: any[],
+    errors: ErrorObject[],
     text: string,
     document: vscode.TextDocument
   ): vscode.Diagnostic[] {
@@ -228,13 +227,22 @@ export class DiagnosticManager {
    * 特定のURIの診断をクリア
    */
   clearDiagnosticsForUri(uri: vscode.Uri): void {
+    const uriString = uri.toString();
     this.diagnosticCollection.delete(uri);
-    this.validationCache.delete(uri.toString());
+    this.validationCache.delete(uriString);
+
+    // 旧実装で残る uri:hash 形式のキーも削除して不整合を防ぐ
+    const legacyKeyPrefix = `${uriString}:`;
+    for (const cacheKey of this.validationCache.keys()) {
+      if (cacheKey.startsWith(legacyKeyPrefix)) {
+        this.validationCache.delete(cacheKey);
+      }
+    }
     
-    const timeout = this.validationTimeouts.get(uri.toString());
+    const timeout = this.validationTimeouts.get(uriString);
     if (timeout) {
       clearTimeout(timeout);
-      this.validationTimeouts.delete(uri.toString());
+      this.validationTimeouts.delete(uriString);
     }
   }
 
@@ -266,19 +274,6 @@ export class DiagnosticManager {
     }
     
     this.diagnosticCollection.dispose();
-  }
-
-  /**
-   * テキストのハッシュを生成
-   */
-  private hashText(text: string): string {
-    let hash = 0;
-    for (let i = 0; i < text.length; i++) {
-      const char = text.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // 32bit整数に変換
-    }
-    return hash.toString();
   }
 
   /**
