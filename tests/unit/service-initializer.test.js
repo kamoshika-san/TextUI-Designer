@@ -1,0 +1,62 @@
+const assert = require('assert');
+
+describe('ServiceInitializer', () => {
+  it('cleanup()でWebViewManagerを含む各サービスを解放する', async () => {
+    const { ServiceInitializer } = require('../../out/services/service-initializer');
+
+    const context = {
+      subscriptions: [],
+      extensionPath: __dirname,
+      extensionUri: { fsPath: __dirname }
+    };
+
+    const initializer = new ServiceInitializer(context);
+
+    let schemaCleanupCalled = false;
+    let diagnosticClearCalled = false;
+    let diagnosticDisposeCalled = false;
+    let webviewDisposeCalled = false;
+    let themeDisposeCalled = false;
+
+    initializer.services = {
+      schemaManager: {
+        cleanup: async () => {
+          schemaCleanupCalled = true;
+        }
+      },
+      themeManager: {
+        dispose: () => {
+          themeDisposeCalled = true;
+        }
+      },
+      webViewManager: {
+        dispose: () => {
+          webviewDisposeCalled = true;
+        }
+      },
+      exportManager: {},
+      exportService: {},
+      templateService: {},
+      settingsService: {},
+      diagnosticManager: {
+        clearCache: () => {
+          diagnosticClearCalled = true;
+        },
+        dispose: () => {
+          diagnosticDisposeCalled = true;
+        }
+      },
+      completionProvider: {},
+      commandManager: {}
+    };
+
+    await initializer.cleanup();
+
+    assert.strictEqual(schemaCleanupCalled, true, 'SchemaManager.cleanup が呼ばれる');
+    assert.strictEqual(diagnosticClearCalled, true, 'DiagnosticManager.clearCache が呼ばれる');
+    assert.strictEqual(diagnosticDisposeCalled, true, 'DiagnosticManager.dispose が呼ばれる');
+    assert.strictEqual(webviewDisposeCalled, true, 'WebViewManager.dispose が呼ばれる');
+    assert.strictEqual(themeDisposeCalled, true, 'ThemeManager.dispose が呼ばれる');
+    assert.strictEqual(initializer.getServices(), null, 'cleanup後にservicesが解放される');
+  });
+});

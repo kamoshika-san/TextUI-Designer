@@ -47,6 +47,11 @@ export class WebViewMessageHandler {
    * メッセージを処理
    */
   private async handleMessage(message: any): Promise<void> {
+    if (!message || typeof message !== 'object' || typeof message.type !== 'string') {
+      console.warn('[WebViewMessageHandler] 無効なメッセージを受信しました');
+      return;
+    }
+
     switch (message.type) {
       case 'export':
         await this.handleExportMessage();
@@ -87,8 +92,8 @@ export class WebViewMessageHandler {
   private async handleWebViewReady(): Promise<void> {
     console.log('[WebViewMessageHandler] WebView準備完了メッセージを受信');
     
-    // YAMLデータを送信
-    await this.updateManager.sendYamlToWebview(true);
+    // YAMLデータを送信（通常更新でキャッシュ活用）
+    await this.updateManager.sendYamlToWebview(false);
     
     // テーマ変数を適用
     if (this.themeManager) {
@@ -282,8 +287,8 @@ export class WebViewMessageHandler {
         // テーマ一覧を更新
         await this.sendAvailableThemes();
         
-        // プレビュー内容を強制更新してテーマ変更を即座に反映
-        await this.updateManager.sendYamlToWebview(true);
+        // プレビュー内容を更新（キャッシュを活用）
+        await this.updateManager.sendYamlToWebview(false);
         
         vscode.window.showInformationMessage('デフォルトテーマに切り替えました');
         return;
@@ -324,8 +329,8 @@ export class WebViewMessageHandler {
       // テーマ一覧を更新（アクティブ状態を反映）
       await this.sendAvailableThemes();
       
-      // プレビュー内容を強制更新してテーマ変更を即座に反映
-      await this.updateManager.sendYamlToWebview(true);
+      // プレビュー内容を更新（キャッシュを活用）
+      await this.updateManager.sendYamlToWebview(false);
       
       vscode.window.showInformationMessage(`テーマを切り替えました: ${path.basename(themePath)}`);
     } catch (error) {
