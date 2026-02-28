@@ -162,7 +162,7 @@ describe('WebViewManager 単体テスト', () => {
     });
 
     it('利用可能なテーマ一覧を正しく検出する', async () => {
-      const themeDir = path.join(__dirname, '../fixtures/themes');
+      const themeDir = path.join(__dirname, '../fixtures/sample');
       const themeFile1 = path.join(themeDir, 'test-theme.yml');
       const themeFile2 = path.join(themeDir, 'custom-theme.yml');
 
