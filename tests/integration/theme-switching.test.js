@@ -72,20 +72,17 @@ describe('テーマ切り替え機能 結合テスト', () => {
     testThemeFiles = [theme1Path, theme2Path];
     emittedMessages.length = 0;
 
-    global.vscode.workspace = {
-      ...global.vscode.workspace,
-      workspaceFolders: [{
-        uri: { fsPath: testWorkspaceDir },
-        name: 'theme-integration-test',
-        index: 0
-      }]
-    };
-
     webviewManager = global.WebViewManagerFactory.createForTest(global.vscode, {
       enablePerformance: true,
       cacheTTL: 300000,
       maxCacheSize: 100
     });
+
+    webviewManager._testHelpers.extendedVscode.workspace.workspaceFolders = [{
+      uri: { fsPath: testWorkspaceDir },
+      name: 'theme-integration-test',
+      index: 0
+    }];
 
     // 本番と同じくMessageHandler側にもThemeManagerを設定
     webviewManager.themeManager = mockThemeManager;
