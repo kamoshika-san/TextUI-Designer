@@ -12,6 +12,14 @@ type DiagnosticCacheEntry = {
 
 type ValidationSchemaKind = 'main' | 'template' | 'theme';
 
+type DiagnosticMessageTemplate = {
+  code: string;
+  summary: string;
+  cause: string;
+  fix: string;
+  severity: vscode.DiagnosticSeverity;
+};
+
 /**
  * 診断管理サービス
  * YAML/JSONファイルのバリデーションとエラー表示を担当
@@ -236,25 +244,153 @@ export class DiagnosticManager {
     const diagnostics: vscode.Diagnostic[] = [];
 
     for (const err of errors) {
-      const key = err.instancePath?.split('/').filter(Boolean).pop();
-      if (key) {
-        const regex = new RegExp(`^\\s*${key}:`, 'm');
-        const match = text.match(regex);
-        if (match) {
-          const start = text.indexOf(match[0]);
-          const startPos = document.positionAt(start);
-          const endPos = document.positionAt(start + match[0].length);
-          const diag = new vscode.Diagnostic(
-            new vscode.Range(startPos, endPos),
-            err.message || 'スキーマエラー',
-            vscode.DiagnosticSeverity.Error
-          );
-          diagnostics.push(diag);
+      const range = this.resolveDiagnosticRange(err, text, document);
+      const location = this.resolveDiagnosticLocation(err);
+      const template = this.buildDiagnosticTemplate(err, location);
+      const message = [
+        `[${template.code}] ${template.summary}`,
+        `原因: ${template.cause}`,
+        `修正: ${template.fix}`,
+        `場所: ${location}`
+      ].join('\n');
+
+      const diag = new vscode.Diagnostic(
+        range,
+        message,
+        template.severity
+      );
+      diagnostics.push(diag);
+    }
+
+    return diagnostics;
+  }
+
+  private resolveDiagnosticRange(
+    error: ErrorObject,
+    text: string,
+    document: vscode.TextDocument
+  ): vscode.Range {
+    const pointerParts = (error.instancePath || '').split('/').filter(Boolean);
+    const fallbackRange = new vscode.Range(0, 0, 0, 1);
+
+    if (error.keyword === 'required') {
+      const missingProperty = (error.params as { missingProperty?: string }).missingProperty;
+      if (missingProperty) {
+        const existingPath = [...pointerParts, missingProperty];
+        const byPath = this.findRangeByPath(existingPath, text, document);
+        if (byPath) {
+          return byPath;
         }
       }
     }
 
-    return diagnostics;
+    if (error.keyword === 'additionalProperties') {
+      const additionalProperty = (error.params as { additionalProperty?: string }).additionalProperty;
+      if (additionalProperty) {
+        const additionalPath = [...pointerParts, additionalProperty];
+        const byPath = this.findRangeByPath(additionalPath, text, document);
+        if (byPath) {
+          return byPath;
+        }
+      }
+    }
+
+    const byInstancePath = this.findRangeByPath(pointerParts, text, document);
+    return byInstancePath || fallbackRange;
+  }
+
+  private findRangeByPath(pathParts: string[], text: string, document: vscode.TextDocument): vscode.Range | null {
+    for (let i = pathParts.length - 1; i >= 0; i -= 1) {
+      const key = pathParts[i];
+      if (!key || /^\d+$/.test(key)) {
+        continue;
+      }
+
+      const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`^\\s*${escapedKey}:`, 'm');
+      const match = text.match(regex);
+      if (!match) {
+        continue;
+      }
+
+      const start = match.index ?? text.indexOf(match[0]);
+      const startPos = document.positionAt(start);
+      const endPos = document.positionAt(start + match[0].length);
+      return new vscode.Range(startPos, endPos);
+    }
+
+    return null;
+  }
+
+  private resolveDiagnosticLocation(error: ErrorObject): string {
+    const path = error.instancePath && error.instancePath.length > 0 ? error.instancePath : '/';
+    if (error.keyword === 'required') {
+      const missingProperty = (error.params as { missingProperty?: string }).missingProperty;
+      if (missingProperty) {
+        return `${path}/${missingProperty}`.replace(/\/\//g, '/');
+      }
+    }
+    if (error.keyword === 'additionalProperties') {
+      const additionalProperty = (error.params as { additionalProperty?: string }).additionalProperty;
+      if (additionalProperty) {
+        return `${path}/${additionalProperty}`.replace(/\/\//g, '/');
+      }
+    }
+    return path;
+  }
+
+  private buildDiagnosticTemplate(error: ErrorObject, location: string): DiagnosticMessageTemplate {
+    switch (error.keyword) {
+      case 'required': {
+        const missingProperty = (error.params as { missingProperty?: string }).missingProperty || 'unknown';
+        return {
+          code: 'TUI001',
+          summary: `必須キー "${missingProperty}" が不足しています。`,
+          cause: `このオブジェクトでは "${missingProperty}" が必須ですが、定義されていません。`,
+          fix: `"${missingProperty}" キーを追加し、必要な値を設定してください。`,
+          severity: vscode.DiagnosticSeverity.Error
+        };
+      }
+      case 'type': {
+        const expectedType = (error.params as { type?: string }).type || 'unknown';
+        return {
+          code: 'TUI002',
+          summary: '値の型が一致していません。',
+          cause: `このキーには ${expectedType} 型が必要ですが、別の型が指定されています。`,
+          fix: `値を ${expectedType} 型に修正してください。`,
+          severity: vscode.DiagnosticSeverity.Error
+        };
+      }
+      case 'additionalProperties': {
+        const additionalProperty = (error.params as { additionalProperty?: string }).additionalProperty || 'unknown';
+        return {
+          code: 'TUI003',
+          summary: `未定義のキー "${additionalProperty}" が含まれています。`,
+          cause: 'スキーマで定義されていないキーが指定されています。',
+          fix: `キー名を見直すか、不要であれば "${additionalProperty}" を削除してください。`,
+          severity: vscode.DiagnosticSeverity.Warning
+        };
+      }
+      case 'enum': {
+        const allowedValues = (error.params as { allowedValues?: unknown[] }).allowedValues;
+        const allowed = Array.isArray(allowedValues) ? allowedValues.join(', ') : '定義済みの値';
+        return {
+          code: 'TUI004',
+          summary: '許可されていない値が指定されています。',
+          cause: `このキーには決められた値のみ指定できます（許可値: ${allowed}）。`,
+          fix: `値を次のいずれかに変更してください: ${allowed}。`,
+          severity: vscode.DiagnosticSeverity.Error
+        };
+      }
+      default:
+        return {
+          code: 'TUI999',
+          summary: 'DSLスキーマに一致しない記述があります。',
+          cause: error.message || 'スキーマ違反が検出されました。',
+          fix: '該当箇所をスキーマ定義に合わせて修正してください。',
+          severity: vscode.DiagnosticSeverity.Information
+        };
+    }
   }
 
   /**

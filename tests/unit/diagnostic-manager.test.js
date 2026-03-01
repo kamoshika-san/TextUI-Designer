@@ -185,13 +185,156 @@ describe('DiagnosticManager', () => {
       const document = helpers.createTestDocument(themeContent, '/test/base-theme.yml');
 
       await diagnosticManager.validateAndReportDiagnostics(document);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 700));
 
       const diagnostics = helpers.getDiagnostics(document.uri);
       assert.strictEqual(themeSchemaCallCount > 0, true, 'themeスキーマが読み込まれる');
       assert.strictEqual(diagnostics.length, 0, 'themeファイルで不適切なエラーが出ない');
     });
   });
+
+
+  describe('診断メッセージ改善', () => {
+    const invalidDslCases = [
+      {
+        name: 'トップレベルpage欠落',
+        content: `meta:
+  version: "1"`,
+        code: 'TUI001',
+        severity: 0,
+        location: '/page'
+      },
+      {
+        name: 'page.id欠落',
+        content: `page:
+  title: "テスト"
+  layout: vertical`,
+        code: 'TUI001',
+        severity: 0,
+        location: '/page/id'
+      },
+      {
+        name: 'page.title欠落',
+        content: `page:
+  id: test
+  layout: vertical`,
+        code: 'TUI001',
+        severity: 0,
+        location: '/page/title'
+      },
+      {
+        name: 'page.layout欠落',
+        content: `page:
+  id: test
+  title: "テスト"`,
+        code: 'TUI001',
+        severity: 0,
+        location: '/page/layout'
+      },
+      {
+        name: 'page.id型不一致',
+        content: `page:
+  id: 100
+  title: "テスト"
+  layout: vertical`,
+        code: 'TUI002',
+        severity: 0,
+        location: '/page/id'
+      },
+      {
+        name: 'page.title型不一致',
+        content: `page:
+  id: test
+  title: 123
+  layout: vertical`,
+        code: 'TUI002',
+        severity: 0,
+        location: '/page/title'
+      },
+      {
+        name: 'page.layout型不一致',
+        content: `page:
+  id: test
+  title: "テスト"
+  layout: 123`,
+        code: 'TUI002',
+        severity: 0,
+        location: '/page/layout'
+      },
+      {
+        name: 'トップレベル未知キー',
+        content: `page:
+  id: test
+  title: "テスト"
+  layout: vertical
+unknownRoot: true`,
+        code: 'TUI003',
+        severity: 1,
+        location: '/unknownRoot'
+      },
+      {
+        name: 'page配下未知キー',
+        content: `page:
+  id: test
+  title: "テスト"
+  layout: vertical
+  unknownField: true`,
+        code: 'TUI003',
+        severity: 1,
+        location: '/page/unknownField'
+      },
+      {
+        name: 'enum不一致',
+        content: `page:
+  id: test
+  title: "テスト"
+  layout: grid`,
+        code: 'TUI004',
+        severity: 0,
+        location: '/page/layout'
+      }
+    ];
+
+    invalidDslCases.forEach((testCase, index) => {
+      it(`不正DSLパターン${index + 1}: ${testCase.name}`, async () => {
+        const document = helpers.createTestDocument(testCase.content, `/test/invalid-case-${index + 1}.tui.yml`);
+
+        await diagnosticManager.validateAndReportDiagnostics(document);
+        await new Promise(resolve => setTimeout(resolve, 700));
+
+        const diagnostics = helpers.getDiagnostics(document.uri);
+        assert.ok(diagnostics.length > 0, '診断が1件以上生成される');
+
+        const targetDiagnostic = diagnostics.find(diagnostic => diagnostic.message.includes(`[${testCase.code}]`));
+        assert.ok(targetDiagnostic, `${testCase.code} の診断が生成される`);
+        assert.strictEqual(targetDiagnostic.severity, testCase.severity, 'severityが基準どおりに設定される');
+        assert.ok(targetDiagnostic.message.includes('原因:'), '原因が含まれる');
+        assert.ok(targetDiagnostic.message.includes('修正:'), '修正方法が含まれる');
+        assert.ok(targetDiagnostic.message.includes(`場所: ${testCase.location}`), '場所情報が含まれる');
+      });
+    });
+
+    it('診断フォーマットが統一される', async () => {
+      const document = helpers.createTestDocument(`page:
+  id: 1
+  title: "テスト"
+  layout: grid`, '/test/unified-format.tui.yml');
+
+      await diagnosticManager.validateAndReportDiagnostics(document);
+      await new Promise(resolve => setTimeout(resolve, 700));
+
+      const diagnostics = helpers.getDiagnostics(document.uri);
+      assert.ok(diagnostics.length > 0, '診断が生成される');
+
+      diagnostics.forEach(diagnostic => {
+        assert.ok(/^\[TUI\d{3}\]/.test(diagnostic.message), 'コード付きフォーマットで始まる');
+        assert.ok(diagnostic.message.includes('原因:'), '原因セクションを含む');
+        assert.ok(diagnostic.message.includes('修正:'), '修正セクションを含む');
+        assert.ok(diagnostic.message.includes('場所:'), '場所セクションを含む');
+      });
+    });
+  });
+
 
   describe('リソース管理', () => {
     it('disposeメソッドが正常に動作する', () => {
