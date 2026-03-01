@@ -117,7 +117,7 @@ function renderFormField(field: FormField, index: number): React.ReactNode {
  * ComponentDefをレンダリング（Mapベースのディスパッチ）
  * webview.tsx から呼び出されるメイン関数
  */
-export function renderRegisteredComponent(comp: ComponentDef, key: number): React.ReactNode {
+export function renderRegisteredComponent(comp: ComponentDef, key: React.Key): React.ReactNode {
   const componentRecord = comp as unknown as Record<string, unknown>;
   const name = getComponentName(componentRecord);
   const props = extractProps(componentRecord, name);

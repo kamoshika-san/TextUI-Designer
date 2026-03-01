@@ -5,6 +5,7 @@ import { CustomThemeSelector } from './components/CustomThemeSelector';
 import { renderRegisteredComponent } from './component-map';
 import type { TextUIDSL, ComponentDef } from './types';
 import { getVSCodeApi, type ElectronModule } from './vscode-api';
+import { createComponentKeys, hashString, mergeDslWithPrevious } from './preview-diff';
 
 // HTMLテンプレートで既に取得されているvscodeオブジェクトを使用
 const vscodeApi = getVSCodeApi();
@@ -19,6 +20,11 @@ const isElectronModule = (value: unknown): value is ElectronModule => {
   const remote = value.remote;
   return isRecord(remote) && typeof remote.getCurrentWindow === 'function';
 };
+
+const isDevelopmentMode = Boolean(
+  (typeof globalThis !== 'undefined' && (globalThis as { __TUI_DEV_MODE__?: boolean }).__TUI_DEV_MODE__) ||
+  window.location.search.includes('textui-dev=true')
+);
 
 function formatSchemaErrors(errors: unknown): string {
   if (!Array.isArray(errors)) {
@@ -60,6 +66,55 @@ const App: React.FC = () => {
   const [json, setJson] = useState<TextUIDSL | null>(null);
   const [error, setError] = useState<ErrorInfo | string | null>(null);
 
+  const applyDslUpdate = (incomingDsl: TextUIDSL) => {
+    const startedAt = performance.now();
+    const incomingHash = hashString(JSON.stringify(incomingDsl));
+
+    setJson(previousJson => {
+      if (!previousJson) {
+        if (isDevelopmentMode) {
+          const elapsed = performance.now() - startedAt;
+          console.debug('[React][diff-render] 初回描画を適用しました', {
+            elapsedMs: Number(elapsed.toFixed(2)),
+            changedCount: incomingDsl.page?.components?.length || 0,
+            skipped: false
+          });
+        }
+        return incomingDsl;
+      }
+
+      const previousHash = hashString(JSON.stringify(previousJson));
+      if (previousHash === incomingHash) {
+        if (isDevelopmentMode) {
+          const elapsed = performance.now() - startedAt;
+          console.debug('[React][diff-render] 変更がないため再描画をスキップしました', {
+            elapsedMs: Number(elapsed.toFixed(2)),
+            changedCount: 0,
+            skipped: true
+          });
+        }
+        return previousJson;
+      }
+
+      const mergedDsl = mergeDslWithPrevious(previousJson, incomingDsl);
+      const mergedComponents = mergedDsl.page?.components || [];
+      const previousComponents = previousJson.page?.components || [];
+      const changedCount = mergedComponents.reduce((count, component, index) =>
+        count + (component === previousComponents[index] ? 0 : 1), 0);
+
+      if (isDevelopmentMode) {
+        const elapsed = performance.now() - startedAt;
+        console.debug('[React][diff-render] 差分描画を適用しました', {
+          elapsedMs: Number(elapsed.toFixed(2)),
+          changedCount,
+          skipped: false
+        });
+      }
+
+      return mergedDsl;
+    });
+  };
+
   useEffect(() => {
     // WebView準備完了メッセージを送信
     if (vscodeApi?.postMessage) {
@@ -76,11 +131,11 @@ const App: React.FC = () => {
       
       if (message.type === 'json') {
         console.log('[React] JSONデータを受信:', message.json);
-        setJson(message.json as TextUIDSL);
+        applyDslUpdate(message.json as TextUIDSL);
         setError(null);
       } else if (message.type === 'update') {
         console.log('[React] 更新データを受信:', message.data);
-        setJson(message.data as TextUIDSL);
+        applyDslUpdate(message.data as TextUIDSL);
         setError(null);
       } else if (message.type === 'error') {
         console.log('[React] エラーメッセージを受信:', message.error);
@@ -468,6 +523,7 @@ const App: React.FC = () => {
   }
 
   const components: ComponentDef[] = json.page?.components || [];
+  const componentKeys = createComponentKeys(components);
   return (
     <div style={{ padding: 24, position: 'relative' }}>
       {/* テーマ切り替えスイッチ */}
@@ -512,7 +568,7 @@ const App: React.FC = () => {
       </button>
       
       {/* プレビューコンテンツ */}
-      {components.map((comp, i) => renderRegisteredComponent(comp, i))}
+      {components.map((comp, i) => renderRegisteredComponent(comp, componentKeys[i] || i))}
     </div>
   );
 };
