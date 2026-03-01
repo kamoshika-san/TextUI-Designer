@@ -15,10 +15,8 @@ theme:
         secondary:
           value: "#475569"
     spacing:
-      md:
-        value: "1rem"
-      lg:
-        value: "1.5rem"
+      md: "1rem"
+      lg: "1.5rem"
   components:
     button:
       primary:
