@@ -207,11 +207,13 @@ export class WebViewMessageHandler {
     
     const discoveredPaths = new Set<string>();
 
+    const activeTuiPath = this.resolveActiveTuiPath();
     // 各ワークスペースフォルダでテーマファイルを検索
     for (const folder of workspaceFolders) {
       const folderPath = folder.uri.fsPath;
 
-      const themeFiles = this.collectThemeFiles(folderPath);
+      const searchRoot = this.resolveThemeSearchRoot(folderPath, activeTuiPath);
+      const themeFiles = this.collectThemeFiles(searchRoot);
 
       for (const filePath of themeFiles) {
         const normalizedPath = path.resolve(filePath);
@@ -263,6 +265,36 @@ export class WebViewMessageHandler {
 
     console.log('[WebViewMessageHandler] 検出されたテーマ:', themes);
     return themes;
+  }
+
+  private resolveActiveTuiPath(): string | undefined {
+    const activeEditorFile = vscode.window.activeTextEditor?.document.fileName;
+    if (activeEditorFile && ConfigManager.isSupportedFile(activeEditorFile)) {
+      return activeEditorFile;
+    }
+
+    const lastTuiFile = this.updateManager.getLastTuiFile();
+    if (lastTuiFile && ConfigManager.isSupportedFile(lastTuiFile)) {
+      return lastTuiFile;
+    }
+
+    return undefined;
+  }
+
+  private resolveThemeSearchRoot(folderPath: string, activeTuiPath?: string): string {
+    if (!activeTuiPath) {
+      return folderPath;
+    }
+
+    const normalizedFolder = path.resolve(folderPath);
+    const normalizedActiveFile = path.resolve(activeTuiPath);
+    const activeDir = path.dirname(normalizedActiveFile);
+
+    if (!activeDir.startsWith(normalizedFolder)) {
+      return folderPath;
+    }
+
+    return activeDir;
   }
 
   private collectThemeFiles(rootPath: string): string[] {

@@ -54,12 +54,16 @@ describe('テーマ切り替え機能 結合テスト', () => {
     testWorkspaceDir = path.join(__dirname, '../fixtures/theme-integration-test');
     const sampleDir = path.join(testWorkspaceDir, 'sample');
     const nestedThemeDir = path.join(sampleDir, 'nested', 'themes');
+    const otherDir = path.join(testWorkspaceDir, 'other');
     fs.mkdirSync(sampleDir, { recursive: true });
     fs.mkdirSync(nestedThemeDir, { recursive: true });
+    fs.mkdirSync(otherDir, { recursive: true });
 
     const theme1Path = path.join(sampleDir, 'integration-one-theme.yml');
     const theme2Path = path.join(sampleDir, 'integration-two-theme.yml');
     const nestedThemePath = path.join(nestedThemeDir, 'integration-nested-theme.yml');
+    const outsideThemePath = path.join(otherDir, 'outside-theme.yml');
+    const activeTuiPath = path.join(sampleDir, 'active.tui.yml');
 
     fs.writeFileSync(theme1Path, `theme:
   name: "Integration Theme One"
@@ -81,7 +85,18 @@ describe('テーマ切り替え機能 結合テスト', () => {
     color:
       primary: "#7C3AED"`);
 
-    testThemeFiles = [theme1Path, theme2Path, nestedThemePath];
+    fs.writeFileSync(outsideThemePath, `theme:
+  name: "Outside Theme"
+  description: "Theme outside active tui directory"
+  tokens:
+    color:
+      primary: "#0EA5E9"`);
+
+    fs.writeFileSync(activeTuiPath, `page:
+  id: active
+  components: []`);
+
+    testThemeFiles = [theme1Path, theme2Path, nestedThemePath, outsideThemePath, activeTuiPath];
     emittedMessages.length = 0;
 
     webviewManager = global.WebViewManagerFactory.createForTest(global.vscode, {
@@ -95,6 +110,12 @@ describe('テーマ切り替え機能 結合テスト', () => {
       name: 'theme-integration-test',
       index: 0
     }];
+    webviewManager._testHelpers.extendedVscode.window.activeTextEditor = {
+      document: {
+        fileName: activeTuiPath,
+        getText: () => 'page:\n  components: []'
+      }
+    };
 
     // 本番と同じくMessageHandler側にもThemeManagerを設定
     webviewManager.themeManager = mockThemeManager;
@@ -144,6 +165,7 @@ describe('テーマ切り替え機能 結合テスト', () => {
     assert.ok(names.includes('Integration Theme One'), '追加テーマ1が検出される');
     assert.ok(names.includes('Integration Theme Two'), '追加テーマ2が検出される');
     assert.ok(names.includes('Integration Nested Theme'), 'ネストディレクトリのテーマが検出される');
+    assert.ok(!names.includes('Outside Theme'), 'アクティブtui.yml配下以外のテーマは検出されない');
   });
 
   it('theme-switchでCSS適用とアクティブテーマ更新が行われる', async () => {
