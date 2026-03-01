@@ -65,6 +65,14 @@ describe('CommandManager', () => {
       const finalSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
       expect(finalSubscriptions - initialSubscriptions).to.equal(19);
     });
+
+    it('dispose()でCommandManagerが保持するDisposableを解放できる', () => {
+      commandManager.registerCommands();
+
+      expect(commandManager.commandDisposables.length).to.equal(19);
+      commandManager.dispose();
+      expect(commandManager.commandDisposables.length).to.equal(0);
+    });
   });
 
   describe('プレビュー関連コマンド', () => {

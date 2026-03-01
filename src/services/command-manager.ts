@@ -7,12 +7,13 @@ import { SchemaManager } from './schema-manager';
 import { ErrorHandler } from '../utils/error-handler';
 import { ConfigManager } from '../utils/config-manager';
 import { RuntimeInspectionService } from './runtime-inspection-service';
+import { ICommandManager } from '../types';
 
 /**
  * コマンド管理サービス
  * VS Code拡張のコマンド登録と実行を担当
  */
-export class CommandManager {
+export class CommandManager implements ICommandManager {
   private context: vscode.ExtensionContext;
   private webViewManager: WebViewManager;
   private exportService: ExportService;
@@ -20,6 +21,7 @@ export class CommandManager {
   private settingsService: SettingsService;
   private schemaManager: SchemaManager;
   private runtimeInspectionService: RuntimeInspectionService;
+  private commandDisposables: vscode.Disposable[] = [];
 
   constructor(
     context: vscode.ExtensionContext,
@@ -103,8 +105,23 @@ export class CommandManager {
   private registerCommand(command: string, callback: (...args: any[]) => void): void {
     console.log(`[CommandManager] コマンドを登録: ${command}`);
     const disposable = vscode.commands.registerCommand(command, callback);
+    this.commandDisposables.push(disposable);
     this.context.subscriptions.push(disposable);
     console.log(`[CommandManager] コマンド登録成功: ${command}`);
+  }
+
+  /**
+   * CommandManagerが直接保持するリソースを解放
+   */
+  dispose(): void {
+    this.commandDisposables.forEach(disposable => {
+      try {
+        disposable.dispose();
+      } catch (error) {
+        console.warn('[CommandManager] disposable解放時にエラーが発生しました:', error);
+      }
+    });
+    this.commandDisposables = [];
   }
 
   /**
