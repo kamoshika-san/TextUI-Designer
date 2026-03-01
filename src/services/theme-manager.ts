@@ -171,26 +171,13 @@ export class ThemeManager implements IThemeManager {
       return;
     }
     try {
-      const content = fs.readFileSync(this.themePath, 'utf-8');
-      console.log('[ThemeManager] theme file content length:', content.length);
-      
-      // YAMLパース処理を非同期で実行（ブロッキングを防ぐ）
-      const data = await new Promise<unknown>((resolve, reject) => {
-        setImmediate(() => {
-          try {
-            const parsed = YAML.parse(content);
-            resolve(parsed);
-          } catch (error) {
-            reject(error);
-          }
-        });
-      });
-      
+      const data = await this.resolveThemeDefinition(this.themePath);
+
       console.log('[ThemeManager] parsed theme data:', JSON.stringify(data, null, 2));
       await this.validateTheme(data);
       if (isThemeDefinition(data)) {
-        this.tokens = data.theme.tokens || this.defaultTokens;
-        this.components = data.theme.components || this.defaultComponents;
+        this.tokens = this.deepMerge(this.defaultTokens, data.theme.tokens || {}) as ThemeTokens;
+        this.components = this.deepMerge(this.defaultComponents, data.theme.components || {}) as ThemeComponents;
       } else {
         console.warn('[ThemeManager] テーマ定義の形式が不正なため、デフォルトを使用します');
         this.resetToDefaultTheme();
@@ -202,6 +189,78 @@ export class ThemeManager implements IThemeManager {
       console.error('[ThemeManager] failed to load theme, using default theme', err);
       this.resetToDefaultTheme();
     }
+  }
+
+  private async resolveThemeDefinition(themeFilePath: string, chain: string[] = []): Promise<unknown> {
+    const normalizedPath = path.resolve(themeFilePath);
+    if (chain.includes(normalizedPath)) {
+      throw new Error(`[ThemeManager] Circular theme inheritance detected: ${[...chain, normalizedPath].join(' -> ')}`);
+    }
+
+    if (!fs.existsSync(normalizedPath)) {
+      throw new Error(`[ThemeManager] Extended theme file not found: ${normalizedPath}`);
+    }
+
+    const content = fs.readFileSync(normalizedPath, 'utf-8');
+    console.log('[ThemeManager] theme file content length:', content.length, 'path:', normalizedPath);
+
+    const data = await new Promise<unknown>((resolve, reject) => {
+      setImmediate(() => {
+        try {
+          const parsed = YAML.parse(content);
+          resolve(parsed);
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+
+    if (!isThemeDefinition(data)) {
+      return data;
+    }
+
+    const extendsPath = typeof data.theme.extends === 'string' ? data.theme.extends.trim() : '';
+    if (!extendsPath) {
+      return data;
+    }
+
+    if (extendsPath.startsWith('npm:')) {
+      throw new Error(`[ThemeManager] Unsupported extends path: ${extendsPath}`);
+    }
+
+    const parentPath = path.resolve(path.dirname(normalizedPath), extendsPath);
+    const parentData = await this.resolveThemeDefinition(parentPath, [...chain, normalizedPath]);
+    if (!isThemeDefinition(parentData)) {
+      return data;
+    }
+
+    const mergedTheme = this.deepMerge(parentData.theme, data.theme);
+    return {
+      ...parentData,
+      ...data,
+      theme: mergedTheme
+    };
+  }
+
+  private deepMerge(base: unknown, override: unknown): unknown {
+    if (Array.isArray(base) || Array.isArray(override)) {
+      return override ?? base;
+    }
+
+    if (!this.isPlainObject(base) || !this.isPlainObject(override)) {
+      return override ?? base;
+    }
+
+    const result: Record<string, unknown> = { ...base };
+    for (const [key, value] of Object.entries(override)) {
+      const baseValue = (base as Record<string, unknown>)[key];
+      result[key] = this.deepMerge(baseValue, value);
+    }
+    return result;
+  }
+
+  private isPlainObject(value: unknown): value is Record<string, unknown> {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
   }
 
   generateCSSVariables(): string {

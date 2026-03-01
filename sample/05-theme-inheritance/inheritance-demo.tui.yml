@@ -1,0 +1,29 @@
+page:
+  id: theme-inheritance-demo
+  title: "Theme Inheritance Demo"
+  description: "extends で継承したテーマの動作確認"
+  layout: vertical
+
+  components:
+    - Text:
+        variant: h1
+        value: "🌿 Theme Inheritance Demo"
+    - Text:
+        variant: p
+        value: "この画面は base -> corporate -> product の継承チェーンで配色・ボタンスタイルを確認するサンプルです。"
+    - Alert:
+        variant: info
+        message: "Product A Theme は primary と一部テキスト色のみ上書きしています。"
+    - Container:
+        layout: horizontal
+        components:
+          - Button:
+              kind: primary
+              label: "Primary"
+          - Button:
+              kind: secondary
+              label: "Secondary"
+    - Input:
+        label: "名前"
+        name: "name"
+        type: text

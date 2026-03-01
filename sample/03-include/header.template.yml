@@ -1,0 +1,9 @@
+# パラメータで見出しを差し替え
+- Text:
+    variant: h2
+    value: "{{ $params.title }}"
+- Text:
+    variant: p
+    value: "{{ $params.subtitle }}"
+- Divider:
+    orientation: horizontal

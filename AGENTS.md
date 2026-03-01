@@ -38,6 +38,6 @@ VS Code環境がなくても、コンパイル済みの`out/exporters/html-expor
 const { HtmlExporter } = require('./out/exporters/html-exporter');
 const yaml = require('yaml');
 const fs = require('fs');
-const dsl = yaml.parse(fs.readFileSync('./sample/sample.tui.yml', 'utf8'));
+const dsl = yaml.parse(fs.readFileSync('./sample/01-basic/sample.tui.yml', 'utf8'));
 new HtmlExporter().export(dsl, { format: 'html' }).then(html => console.log(html));
 ```
