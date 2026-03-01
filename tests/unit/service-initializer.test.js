@@ -17,6 +17,7 @@ describe('ServiceInitializer', () => {
     let diagnosticDisposeCalled = false;
     let webviewDisposeCalled = false;
     let themeDisposeCalled = false;
+    let commandManagerDisposeCalled = false;
 
     initializer.services = {
       schemaManager: {
@@ -47,7 +48,11 @@ describe('ServiceInitializer', () => {
         }
       },
       completionProvider: {},
-      commandManager: {}
+      commandManager: {
+        dispose: () => {
+          commandManagerDisposeCalled = true;
+        }
+      }
     };
 
     await initializer.cleanup();
@@ -57,6 +62,7 @@ describe('ServiceInitializer', () => {
     assert.strictEqual(diagnosticDisposeCalled, true, 'DiagnosticManager.dispose が呼ばれる');
     assert.strictEqual(webviewDisposeCalled, true, 'WebViewManager.dispose が呼ばれる');
     assert.strictEqual(themeDisposeCalled, true, 'ThemeManager.dispose が呼ばれる');
+    assert.strictEqual(commandManagerDisposeCalled, true, 'CommandManager.dispose が呼ばれる');
     assert.strictEqual(initializer.getServices(), null, 'cleanup後にservicesが解放される');
   });
 });

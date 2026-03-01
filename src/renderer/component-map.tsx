@@ -16,23 +16,24 @@ import { Divider } from './components/Divider';
 import { Alert } from './components/Alert';
 import type { ComponentDef, FormComponent, FormField, FormAction } from './types';
 import { getComponentName } from '../registry/component-registry';
-
-export type WebViewComponentRenderer = (props: any, key: number) => React.ReactNode;
-
-const componentMap = new Map<string, WebViewComponentRenderer>();
+import {
+  getWebViewComponentRenderer,
+  registerWebViewComponent as registerRenderer,
+  type WebViewComponentRenderer
+} from '../registry/webview-component-registry';
 
 // --- 組み込みコンポーネントの登録 ---
 
-componentMap.set('Text', (props, key) => <Text key={key} {...props} />);
-componentMap.set('Input', (props, key) => <Input key={key} {...props} />);
-componentMap.set('Button', (props, key) => <Button key={key} {...props} />);
-componentMap.set('Checkbox', (props, key) => <Checkbox key={key} {...props} />);
-componentMap.set('Radio', (props, key) => <Radio key={key} {...props} />);
-componentMap.set('Select', (props, key) => <Select key={key} {...props} />);
-componentMap.set('Divider', (props, key) => <Divider key={key} {...props} />);
-componentMap.set('Alert', (props, key) => <Alert key={key} {...props} />);
+registerRenderer('Text', (props, key) => <Text key={key} {...props} />);
+registerRenderer('Input', (props, key) => <Input key={key} {...props} />);
+registerRenderer('Button', (props, key) => <Button key={key} {...props} />);
+registerRenderer('Checkbox', (props, key) => <Checkbox key={key} {...props} />);
+registerRenderer('Radio', (props, key) => <Radio key={key} {...props} />);
+registerRenderer('Select', (props, key) => <Select key={key} {...props} />);
+registerRenderer('Divider', (props, key) => <Divider key={key} {...props} />);
+registerRenderer('Alert', (props, key) => <Alert key={key} {...props} />);
 
-componentMap.set('Container', (props, key) => {
+registerRenderer('Container', (props, key) => {
   const children = props.components as ComponentDef[] | undefined;
   return (
     <Container key={key} layout={props.layout || 'vertical'}>
@@ -41,7 +42,7 @@ componentMap.set('Container', (props, key) => {
   );
 });
 
-componentMap.set('Form', (props, key) => {
+registerRenderer('Form', (props, key) => {
   const form = props as FormComponent;
   return (
     <Form
@@ -70,9 +71,10 @@ componentMap.set('Form', (props, key) => {
 function renderFormField(field: FormField, index: number): React.ReactNode {
   const name = getComponentName(field as Record<string, unknown>);
   const props = name ? (field as any)[name] : undefined;
+  const renderer = name ? getWebViewComponentRenderer(name) : undefined;
 
-  if (name && props && componentMap.has(name)) {
-    return componentMap.get(name)!(props, index);
+  if (name && props && renderer) {
+    return renderer(props, index);
   }
   return null;
 }
@@ -84,9 +86,10 @@ function renderFormField(field: FormField, index: number): React.ReactNode {
 export function renderRegisteredComponent(comp: ComponentDef, key: number): React.ReactNode {
   const name = getComponentName(comp as Record<string, unknown>);
   const props = name ? (comp as any)[name] : undefined;
+  const renderer = name ? getWebViewComponentRenderer(name) : undefined;
 
-  if (name && props && componentMap.has(name)) {
-    return componentMap.get(name)!(props, key);
+  if (name && props && renderer) {
+    return renderer(props, key);
   }
 
   return (
@@ -100,5 +103,5 @@ export function renderRegisteredComponent(comp: ComponentDef, key: number): Reac
  * カスタムコンポーネントを登録するための公開API
  */
 export function registerWebViewComponent(name: string, renderer: WebViewComponentRenderer): void {
-  componentMap.set(name, renderer);
+  registerRenderer(name, renderer);
 }

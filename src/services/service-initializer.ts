@@ -145,6 +145,8 @@ export class ServiceInitializer {
         this.services.diagnosticManager.clearCache();
         this.services.diagnosticManager.dispose();
 
+        this.services.commandManager?.dispose?.();
+
         this.services.webViewManager.dispose();
 
         this.services.themeManager?.dispose?.();
