@@ -208,6 +208,7 @@ export class WebViewMessageHandler {
     const discoveredPaths = new Set<string>();
 
     const activeTuiPath = this.resolveActiveTuiPath();
+
     // 各ワークスペースフォルダでテーマファイルを検索
     for (const folder of workspaceFolders) {
       const folderPath = folder.uri.fsPath;

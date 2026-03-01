@@ -10,6 +10,8 @@ type DiagnosticCacheEntry = {
   timestamp: number;
 };
 
+type ValidationSchemaKind = 'main' | 'template' | 'theme';
+
 /**
  * 診断管理サービス
  * YAML/JSONファイルのバリデーションとエラー表示を担当
@@ -20,8 +22,16 @@ export class DiagnosticManager {
   private validationCache: Map<string, DiagnosticCacheEntry> = new Map();
   private validationTimeouts: Map<string, NodeJS.Timeout> = new Map();
   private ajvInstance: Ajv | null = null;
-  private schemaCache: SchemaDefinition | null = null;
-  private lastSchemaLoad: number = 0;
+  private schemaCaches: Record<ValidationSchemaKind, SchemaDefinition | null> = {
+    main: null,
+    template: null,
+    theme: null
+  };
+  private lastSchemaLoads: Record<ValidationSchemaKind, number> = {
+    main: 0,
+    template: 0,
+    theme: 0
+  };
   private readonly CACHE_TTL = 5000; // 5秒
   private readonly DEBOUNCE_DELAY = 500; // 500ms
   private diagnosticTimeout: NodeJS.Timeout | null = null;
@@ -79,13 +89,14 @@ export class DiagnosticManager {
     }
 
     // 診断を実行
-    await this.performValidation(document, text, false);
+    const schemaKind = this.resolveSchemaKind(document.fileName);
+    await this.performValidation(document, text, schemaKind);
   }
 
   /**
    * 実際の検証処理を実行
    */
-  private async performValidation(document: vscode.TextDocument, text: string, isTemplate: boolean): Promise<void> {
+  private async performValidation(document: vscode.TextDocument, text: string, schemaKind: ValidationSchemaKind): Promise<void> {
     const uri = document.uri.toString();
     const now = Date.now();
 
@@ -113,9 +124,9 @@ export class DiagnosticManager {
       });
       
       // スキーマキャッシュの更新チェック
-      if (!this.schemaCache || (now - this.lastSchemaLoad) > this.CACHE_TTL) {
-        this.schemaCache = await this.schemaManager.loadSchema();
-        this.lastSchemaLoad = now;
+      if (!this.schemaCaches[schemaKind] || (now - this.lastSchemaLoads[schemaKind]) > this.CACHE_TTL) {
+        this.schemaCaches[schemaKind] = await this.loadSchemaByKind(schemaKind);
+        this.lastSchemaLoads[schemaKind] = now;
         
         // 古いAjvインスタンスを破棄して新しいインスタンスを作成
         if (this.ajvInstance) {
@@ -128,24 +139,12 @@ export class DiagnosticManager {
         this.ajvInstance = new Ajv({ allErrors: true, allowUnionTypes: true });
       }
       
-      let validate;
-      if (isTemplate) {
-        // テンプレート用: ルートがコンポーネント配列でもOKなスキーマを動的生成
-        if (!this.schemaCache) {
-          throw new Error('スキーマキャッシュが初期化されていません');
-        }
-        const templateSchema = {
-          ...this.schemaCache,
-          type: 'array',
-          items: this.schemaCache.definitions?.component
-        };
-        validate = this.ajvInstance.compile(templateSchema);
-      } else {
-        if (!this.schemaCache) {
-          throw new Error('スキーマキャッシュが初期化されていません');
-        }
-        validate = this.ajvInstance.compile(this.schemaCache);
+      const schema = this.schemaCaches[schemaKind];
+      if (!schema) {
+        throw new Error('スキーマキャッシュが初期化されていません');
       }
+
+      const validate = this.ajvInstance.compile(schema);
 
       const valid = validate(yaml);
       if (!valid && validate.errors) {
@@ -179,6 +178,51 @@ export class DiagnosticManager {
     });
 
     this.diagnosticCollection.set(document.uri, diagnostics);
+  }
+
+  private resolveSchemaKind(fileName: string): ValidationSchemaKind {
+    const lower = fileName.toLowerCase();
+
+    if (/\.template\.(ya?ml|json)$/.test(lower)) {
+      return 'template';
+    }
+
+    if (
+      lower.endsWith('-theme.yml') ||
+      lower.endsWith('-theme.yaml') ||
+      lower.endsWith('_theme.yml') ||
+      lower.endsWith('_theme.yaml') ||
+      lower.endsWith('/textui-theme.yml') ||
+      lower.endsWith('/textui-theme.yaml') ||
+      lower.endsWith('\\textui-theme.yml') ||
+      lower.endsWith('\\textui-theme.yaml') ||
+      lower.endsWith('-theme.json') ||
+      lower.endsWith('_theme.json') ||
+      lower.endsWith('/textui-theme.json') ||
+      lower.endsWith('\\textui-theme.json')
+    ) {
+      return 'theme';
+    }
+
+    return 'main';
+  }
+
+  private async loadSchemaByKind(schemaKind: ValidationSchemaKind): Promise<SchemaDefinition> {
+    switch (schemaKind) {
+      case 'template':
+        if (typeof this.schemaManager.loadTemplateSchema === 'function') {
+          return await this.schemaManager.loadTemplateSchema();
+        }
+        return await this.schemaManager.loadSchema();
+      case 'theme':
+        if (typeof this.schemaManager.loadThemeSchema === 'function') {
+          return await this.schemaManager.loadThemeSchema();
+        }
+        return await this.schemaManager.loadSchema();
+      case 'main':
+      default:
+        return await this.schemaManager.loadSchema();
+    }
   }
 
   /**
@@ -251,14 +295,22 @@ export class DiagnosticManager {
    */
   clearCache(): void {
     this.validationCache.clear();
-    this.schemaCache = null;
+    this.schemaCaches = {
+      main: null,
+      template: null,
+      theme: null
+    };
+    this.lastSchemaLoads = {
+      main: 0,
+      template: 0,
+      theme: 0
+    };
     
     // Ajvインスタンスを適切に破棄
     if (this.ajvInstance) {
       this.ajvInstance = null;
     }
     
-    this.lastSchemaLoad = 0;
   }
 
   /**

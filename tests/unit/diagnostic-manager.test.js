@@ -167,6 +167,25 @@ describe('DiagnosticManager', () => {
       const diagnostics = helpers.getDiagnostics(document.uri);
       assert.ok(Array.isArray(diagnostics), '診断結果が配列として返される');
     });
+
+    it('themeファイルはthemeスキーマで検証される', async () => {
+      let themeSchemaCallCount = 0;
+      const originalLoadThemeSchema = helpers.mockSchemaManager.loadThemeSchema;
+      helpers.mockSchemaManager.loadThemeSchema = async () => {
+        themeSchemaCallCount += 1;
+        return await originalLoadThemeSchema();
+      };
+
+      const themeContent = `theme:\n  name: \"base\"\n  tokens:\n    colors:\n      primary:\n        value: \"#2563EB\"`;
+      const document = helpers.createTestDocument(themeContent, '/test/base-theme.yml');
+
+      await diagnosticManager.validateAndReportDiagnostics(document);
+      await new Promise(resolve => setTimeout(resolve, 350));
+
+      const diagnostics = helpers.getDiagnostics(document.uri);
+      assert.strictEqual(themeSchemaCallCount > 0, true, 'themeスキーマが読み込まれる');
+      assert.strictEqual(diagnostics.length, 0, 'themeファイルで不適切なエラーが出ない');
+    });
   });
 
   describe('リソース管理', () => {
