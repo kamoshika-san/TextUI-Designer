@@ -38,6 +38,8 @@ export interface SchemaValidationError {
 export interface ISchemaManager {
   initialize(): Promise<void>;
   cleanup(): Promise<void>;
+  reinitialize(): Promise<void>;
+  debugSchemas(): Promise<void>;
   loadSchema(): Promise<SchemaDefinition>;
   loadTemplateSchema(): Promise<SchemaDefinition>;
   loadThemeSchema(): Promise<SchemaDefinition>;

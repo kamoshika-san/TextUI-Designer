@@ -243,20 +243,20 @@
         "title": "TextUI: Open Preview"
       },
       {
-        "command": "textui-designer.createTemplate",
-        "title": "TextUI: 新規テンプレート作成"
-      },
-      {
-        "command": "textui-designer.insertTemplate",
-        "title": "TextUI: テンプレート挿入"
+        "command": "textui-designer.openDevTools",
+        "title": "TextUI: Open Developer Tools"
       },
       {
         "command": "textui-designer.export",
         "title": "TextUI: Export to Code"
       },
       {
-        "command": "textui-designer.openDevTools",
-        "title": "TextUI: Open Developer Tools"
+        "command": "textui-designer.createTemplate",
+        "title": "TextUI: 新規テンプレート作成"
+      },
+      {
+        "command": "textui-designer.insertTemplate",
+        "title": "TextUI: テンプレート挿入"
       },
       {
         "command": "textui-designer.openSettings",
@@ -269,6 +269,10 @@
       {
         "command": "textui-designer.showSettings",
         "title": "TextUI: 設定を表示"
+      },
+      {
+        "command": "textui-designer.checkAutoPreviewSetting",
+        "title": "TextUI: 自動プレビュー設定を確認"
       },
       {
         "command": "textui-designer.reinitializeSchemas",
@@ -297,10 +301,6 @@
       {
         "command": "textui-designer.generateSampleEvents",
         "title": "TextUI: サンプルイベントを生成"
-      },
-      {
-        "command": "textui-designer.checkAutoPreviewSetting",
-        "title": "TextUI: 自動プレビュー設定を確認"
       },
       {
         "command": "textui-designer.showMemoryReport",
@@ -367,6 +367,7 @@
     "package:vsix": "npm run package && npm run build-webview && npx --yes @vscode/vsce package --no-dependencies",
     "build-webview": "vite build",
     "dev-webview": "vite",
+    "sync:commands": "npm run compile && node ./scripts/sync-command-manifest.cjs",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
