@@ -19,6 +19,8 @@ export class WebViewUpdateManager {
   private errorHandler: WebViewErrorHandler;
   private lastTuiFile: string | undefined = undefined;
   private isUpdating: boolean = false;
+  private readonly isNamedError = (value: unknown, expectedName: string): value is Error =>
+    value instanceof Error && value.name === expectedName;
 
   constructor(lifecycleManager: WebViewLifecycleManager, schemaLoader?: YamlSchemaLoader) {
     this.lifecycleManager = lifecycleManager;
@@ -143,15 +145,15 @@ export class WebViewUpdateManager {
       // メモリ使用量をチェック
       this.cacheManager.checkMemoryUsage();
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[WebViewUpdateManager] YAML送信処理でエラーが発生しました:', error);
       
       // エラータイプに応じて適切なエラーハンドリング
-      if (error.name === 'YamlParseError') {
+      if (this.isNamedError(error, 'YamlParseError')) {
         this.errorHandler.sendParseError(error, this.lastTuiFile || '', '');
-      } else if (error.name === 'SchemaValidationError') {
+      } else if (this.isNamedError(error, 'SchemaValidationError')) {
         this.errorHandler.sendSchemaError(error, this.lastTuiFile || '', '');
-      } else if (error.name === 'FileSizeError') {
+      } else if (this.isNamedError(error, 'FileSizeError')) {
         this.errorHandler.sendFileSizeError(0, this.lastTuiFile || '');
       } else {
         ErrorHandler.showError('プレビューの更新に失敗しました', error);
@@ -199,7 +201,7 @@ export class WebViewUpdateManager {
   /**
    * WebViewにメッセージを送信
    */
-  private sendMessageToWebView(data: any, fileName: string): void {
+  private sendMessageToWebView(data: unknown, fileName: string): void {
     const panel = this.lifecycleManager.getPanel();
     if (!panel) {
       return;

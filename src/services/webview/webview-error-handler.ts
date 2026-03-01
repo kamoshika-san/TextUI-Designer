@@ -5,9 +5,17 @@ import { YamlErrorInfo, SchemaErrorInfo } from './yaml-parser';
 export interface ErrorMessage {
   type: 'error' | 'parseError' | 'schemaError';
   message?: string;
-  error?: any;
+  error?: unknown;
   fileName?: string;
   content?: string;
+}
+
+type ErrorType = 'parse' | 'schema' | 'size';
+
+interface ErrorStateEntry {
+  type: ErrorType;
+  details: unknown;
+  timestamp: number;
 }
 
 /**
@@ -16,7 +24,7 @@ export interface ErrorMessage {
  */
 export class WebViewErrorHandler {
   private lifecycleManager: WebViewLifecycleManager;
-  private errorState: Map<string, any> = new Map(); // ファイル別エラー状態
+  private errorState: Map<string, ErrorStateEntry> = new Map(); // ファイル別エラー状態
 
   constructor(lifecycleManager: WebViewLifecycleManager) {
     this.lifecycleManager = lifecycleManager;
@@ -92,7 +100,7 @@ export class WebViewErrorHandler {
   /**
    * エラー状態を取得
    */
-  getErrorState(fileName: string): any | null {
+  getErrorState(fileName: string): ErrorStateEntry | null {
     return this.errorState.get(fileName) || null;
   }
 
@@ -156,8 +164,11 @@ export class WebViewErrorHandler {
    * パースエラーの詳細を抽出
    */
   private extractParseErrorDetails(error: Error): YamlErrorInfo | null {
-    if (error.name === 'YamlParseError' && (error as any).details) {
-      return (error as any).details;
+    if (error.name === 'YamlParseError') {
+      const parseError = error as Error & { details?: YamlErrorInfo };
+      if (parseError.details) {
+        return parseError.details;
+      }
     }
 
     // フォールバック: エラーメッセージから情報を抽出
@@ -182,8 +193,11 @@ export class WebViewErrorHandler {
    * スキーマエラーの詳細を抽出
    */
   private extractSchemaErrorDetails(error: Error): SchemaErrorInfo | null {
-    if (error.name === 'SchemaValidationError' && (error as any).details) {
-      return (error as any).details;
+    if (error.name === 'SchemaValidationError') {
+      const schemaError = error as Error & { details?: SchemaErrorInfo };
+      if (schemaError.details) {
+        return schemaError.details;
+      }
     }
 
     // フォールバック: 基本的なエラー情報
@@ -219,10 +233,10 @@ export class WebViewErrorHandler {
   /**
    * エラー状態を設定
    */
-  private setErrorState(fileName: string, type: string, details: any): void {
+  private setErrorState(fileName: string, type: ErrorType, details: unknown): void {
     this.errorState.set(fileName, {
-      type: type,
-      details: details,
+      type,
+      details,
       timestamp: Date.now()
     });
     console.log(`[WebViewErrorHandler] エラー状態を設定: ${fileName} (${type})`);
@@ -257,14 +271,14 @@ export class WebViewErrorHandler {
   /**
    * テスト用: エラー状態を取得
    */
-  _getErrorState(): Map<string, any> {
+  _getErrorState(): Map<string, ErrorStateEntry> {
     return new Map(this.errorState);
   }
 
   /**
    * テスト用: エラー状態を設定
    */
-  _setErrorState(fileName: string, errorInfo: any): void {
+  _setErrorState(fileName: string, errorInfo: ErrorStateEntry): void {
     this.errorState.set(fileName, errorInfo);
   }
 

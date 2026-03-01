@@ -18,7 +18,7 @@ import type { ExportOptions, Exporter } from './index';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';
 import { getComponentName, BUILT_IN_COMPONENTS, type BuiltInComponentName } from '../registry/component-registry';
 
-export type ComponentHandler = (props: any, key: number) => string;
+export type ComponentHandler = (props: unknown, key: number) => string;
 
 /**
  * コンポーネントレンダリングの基底クラス
@@ -39,16 +39,16 @@ export abstract class BaseComponentRenderer implements Exporter {
    */
   protected initializeHandlers(): void {
     const builtInHandlers: Record<BuiltInComponentName, ComponentHandler> = {
-      Text: (props, key) => this.renderText(props, key),
-      Input: (props, key) => this.renderInput(props, key),
-      Button: (props, key) => this.renderButton(props, key),
-      Checkbox: (props, key) => this.renderCheckbox(props, key),
-      Radio: (props, key) => this.renderRadio(props, key),
-      Select: (props, key) => this.renderSelect(props, key),
-      Divider: (props, key) => this.renderDivider(props, key),
-      Alert: (props, key) => this.renderAlert(props, key),
-      Container: (props, key) => this.renderContainer(props, key),
-      Form: (props, key) => this.renderForm(props, key)
+      Text: (props, key) => this.renderText(props as TextComponent, key),
+      Input: (props, key) => this.renderInput(props as InputComponent, key),
+      Button: (props, key) => this.renderButton(props as ButtonComponent, key),
+      Checkbox: (props, key) => this.renderCheckbox(props as CheckboxComponent, key),
+      Radio: (props, key) => this.renderRadio(props as RadioComponent, key),
+      Select: (props, key) => this.renderSelect(props as SelectComponent, key),
+      Divider: (props, key) => this.renderDivider(props as DividerComponent, key),
+      Alert: (props, key) => this.renderAlert(props as AlertComponent, key),
+      Container: (props, key) => this.renderContainer(props as ContainerComponent, key),
+      Form: (props, key) => this.renderForm(props as FormComponent, key)
     };
 
     for (const componentName of BUILT_IN_COMPONENTS) {
