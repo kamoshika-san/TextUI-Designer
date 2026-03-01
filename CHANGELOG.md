@@ -4,6 +4,33 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.2.1] - 2026-03-01
+
+### 機能・リファクタリング
+- **コンポーネントレジストリの導入**: 名前検出・プロパティ抽出を一元化。
+- **BaseComponentRenderer を Map ベースのディスパッチに変更**: 各エクスポーターの `renderForm` から if-else 連鎖を排除。
+- **WebView のコンポーネントレンダリングを component-map に集約**。
+- **ExportManager**: `registerExporter` / `unregisterExporter` API を追加。`ExportOptions.format` を string 型に拡張。
+- **StyleManager**: カスタムフォーマットスタイル登録 API を追加。
+- **ConfigManager**: 設定プロバイダー差し替え機構を導入。
+- **ServiceInitializer**: ファクトリー注入対応、グローバル変数除去。
+- **スキーマ/型/レジストリの整合性検証スクリプト**を追加。
+
+### 型・品質まわり
+- **WebViewManager**: `@ts-ignore` を排除し型を適正化。
+- **重複型定義を固有名に変更**し同名衝突を解消。
+- **エクスポーター**: 全エクスポーターの `renderXxx(props: any)` を正しいコンポーネント型に修正。
+- **YamlParser**: スキーマローダーをバリデーションに注入。テストのモック環境を安定化。
+- **lastParsedData setter** の永続化を修正。
+
+### テスト・CI
+- **テスト安定化**: ファクトリーでのモジュール再読み込み、vscode モックのフォールバック、mocha `--exit` の付与、e2e タイムアウト延長。
+- **CI**: 統合テスト前にビルドステップを追加。診断キャッシュキー修正と品質ゲート強化。統合テストのカバレッジ有効化と lint 警告ゼロを要求。
+- **theme-switching 統合テスト**: ワークスペースモックの接続を修正。
+
+### 依存関係の更新
+- ajv、webpack、js-yaml、glob、vite、rollup などのビルド・開発用依存関係を更新。
+
 ## [0.1.7] - 2025-07-03
 
 ### 🧠 拡張機能専用メモリ追跡システム完全実装（Issue #48対応）

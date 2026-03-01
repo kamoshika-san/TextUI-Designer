@@ -91,9 +91,14 @@ export class WebViewMessageHandler {
    */
   private async handleWebViewReady(): Promise<void> {
     console.log('[WebViewMessageHandler] WebView準備完了メッセージを受信');
-    
-    // YAMLデータを送信（通常更新でキャッシュ活用）
-    await this.updateManager.sendYamlToWebview(false);
+
+    // 現在のVS Codeテーマをプレビューに送信（自動モードで正しくダーク/ライトを表示するため）
+    const colorTheme = vscode.window.activeColorTheme;
+    const initialTheme = colorTheme.kind === vscode.ColorThemeKind.Light ? 'light' : 'dark';
+    this.notifyThemeChange(initialTheme);
+
+    // プレビューを開いた直後は必ずYAMLを送信（自動プレビュー設定に依存しない）
+    await this.updateManager.sendYamlToWebview(true);
     
     // テーマ変数を適用
     if (this.themeManager) {
