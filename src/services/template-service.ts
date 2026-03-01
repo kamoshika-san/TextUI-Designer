@@ -72,9 +72,9 @@ export class TemplateService {
    */
   private async selectTemplateType(): Promise<TemplateTypeOption | undefined> {
     return await vscode.window.showQuickPick([
-      { label: 'フォーム', value: 'form' },
-      { label: '一覧', value: 'list' },
-      { label: '空', value: 'empty' }
+      { label: 'フォーム（会員登録）', detail: '入力フォーム + 利用規約同意 + 送信導線', value: 'form' },
+      { label: 'ダッシュボード', detail: 'KPIカード・通知・アクションを含む管理画面', value: 'dashboard' },
+      { label: 'ステップフォーム', detail: '進捗表示つきのマルチステップ入力', value: 'stepForm' }
     ], {
       placeHolder: 'テンプレート種別を選択してください'
     });
@@ -148,11 +148,12 @@ export class TemplateService {
     switch (type) {
       case 'form':
         return this.getFormTemplate();
-      case 'list':
-        return this.getListTemplate();
-      case 'empty':
+      case 'dashboard':
+        return this.getDashboardTemplate();
+      case 'stepForm':
+        return this.getStepFormTemplate();
       default:
-        return this.getEmptyTemplate();
+        return this.getFormTemplate();
     }
   }
 
@@ -160,65 +161,162 @@ export class TemplateService {
    * フォームテンプレート
    */
   private getFormTemplate(): string {
-    return `- Form:
-    id: myForm
-    fields:
-      - Input:
-          label: ユーザー名
-          name: username
-          type: text
-          required: true
-      - Input:
-          label: メールアドレス
-          name: email
-          type: email
-          required: true
-      - Checkbox:
-          label: 利用規約に同意する
-          name: agree
-          required: true
-    actions:
-      - Button:
-          kind: submit
-          label: 送信
-          submit: true`;
+    return `# 用途: 初回登録・問い合わせなどの単一画面フォーム
+# ポイント: TextUI Previewですぐ確認できるよう、最小テーマを同梱
+theme:
+  tokens:
+    color:
+      primary: "#2563eb"
+      surface: "#f8fafc"
+
+page:
+  id: signup-form-template
+  title: "会員登録フォーム"
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: "新規会員登録"
+    - Text:
+        variant: p
+        value: "必要事項を入力してアカウントを作成してください。"
+    - Form:
+        id: memberSignupForm
+        fields:
+          - Input:
+              label: "お名前"
+              name: fullName
+              type: text
+              required: true
+          - Input:
+              label: "メールアドレス"
+              name: email
+              type: email
+              required: true
+          - Select:
+              label: "プラン"
+              name: plan
+              options:
+                - label: "Free"
+                  value: "free"
+                - label: "Pro"
+                  value: "pro"
+          - Checkbox:
+              label: "利用規約に同意する"
+              name: terms
+              required: true
+        actions:
+          - Button:
+              kind: primary
+              label: "登録する"
+              submit: true`;
   }
 
   /**
-   * 一覧テンプレート
+   * ダッシュボードテンプレート
    */
-  private getListTemplate(): string {
-    return `- Container:
-    layout: vertical
-    components:
-      - Text:
-          variant: h2
-          value: "一覧"
-      - Divider:
-          orientation: horizontal
-      - Text:
-          variant: p
-          value: "リストアイテム1"
-      - Text:
-          variant: p
-          value: "リストアイテム2"
-      - Text:
-          variant: p
-          value: "リストアイテム3"`;
+  private getDashboardTemplate(): string {
+    return `# 用途: 運用画面・管理画面の初期プロトタイプ
+# ポイント: KPI / 通知 / アクションをひとつの画面に集約
+theme:
+  tokens:
+    color:
+      primary: "#0f766e"
+      info: "#0ea5e9"
+
+page:
+  id: operations-dashboard-template
+  title: "運用ダッシュボード"
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: "今日のサマリー"
+    - Container:
+        layout: horizontal
+        components:
+          - Alert:
+              variant: info
+              message: "新規申込 24件"
+          - Alert:
+              variant: success
+              message: "決済成功率 98.3%"
+          - Alert:
+              variant: warning
+              message: "要確認チケット 3件"
+    - Divider:
+        orientation: horizontal
+    - Text:
+        variant: h2
+        value: "クイックアクション"
+    - Container:
+        layout: horizontal
+        components:
+          - Button:
+              kind: primary
+              label: "レポートを出力"
+          - Button:
+              kind: secondary
+              label: "担当者へ通知"
+    - Text:
+        variant: p
+        value: "最新更新: 10:45"`;
   }
 
   /**
-   * 空テンプレート
+   * ステップフォームテンプレート
    */
-  private getEmptyTemplate(): string {
-    return `- Container:
-    layout: vertical
-    components:
-      - Text:
-          variant: h1
-          value: "タイトル"
-      - Text:
-          variant: p
-          value: "コンテンツをここに追加してください"`;
+  private getStepFormTemplate(): string {
+    return `# 用途: オンボーディングや申請フローの段階入力
+# ポイント: ステップ表示をテキストで表現し、主要入力コンポーネントを網羅
+theme:
+  tokens:
+    color:
+      primary: "#7c3aed"
+      muted: "#64748b"
+
+page:
+  id: onboarding-step-form-template
+  title: "3ステップ申請フォーム"
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: "アカウント設定"
+    - Text:
+        variant: p
+        value: "Step 2 / 3: 連絡先情報を入力してください"
+    - Divider:
+        orientation: horizontal
+    - Input:
+        label: "会社名"
+        name: company
+        type: text
+        required: true
+    - Input:
+        label: "電話番号"
+        name: phone
+        type: tel
+    - Radio:
+        label: "連絡方法"
+        name: contactMethod
+        options:
+          - label: "メール"
+            value: "email"
+          - label: "電話"
+            value: "phone"
+    - Checkbox:
+        label: "次回からこの情報を自動入力する"
+        name: rememberProfile
+    - Container:
+        layout: horizontal
+        components:
+          - Button:
+              kind: secondary
+              label: "戻る"
+          - Button:
+              kind: primary
+              label: "次へ"
+              submit: true`;
   }
-} 
+}

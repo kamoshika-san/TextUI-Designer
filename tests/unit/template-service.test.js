@@ -92,8 +92,8 @@ class MockTemplateService {
   async selectTemplateType() {
     const items = [
       { value: 'form', label: 'Form Template' },
-      { value: 'list', label: 'List Template' },
-      { value: 'empty', label: 'Empty Template' }
+      { value: 'dashboard', label: 'Dashboard Template' },
+      { value: 'stepForm', label: 'Step Form Template' }
     ];
     return await mockVscode.window.showQuickPick(items, {
       placeHolder: 'テンプレートの種類を選択してください'
@@ -118,19 +118,28 @@ class MockTemplateService {
     Button:
       id: submit
       text: Submit`;
-      case 'list':
-        return `Container:
-  layout: vertical
+      case 'dashboard':
+        return `page:
+  title: Dashboard
   components:
-    Text:
-      content: List Item 1
-    Divider:
-    Text:
-      content: List Item 2`;
+    - Alert:
+        variant: info`;
+      case 'stepForm':
+        return `page:
+  title: Step Form
+  components:
+    - Input:
+        label: Company`;
       default:
-        return `Container:
-  components:
-    # Add your components here`;
+        return `Form:
+  id: myForm
+  fields:
+    Input:
+      id: name
+      label: Name
+    Button:
+      id: submit
+      text: Submit`;
     }
   }
 
@@ -187,8 +196,8 @@ describe('TemplateService', () => {
     assert.ok(lastQuickPick);
     assert.strictEqual(lastQuickPick.items.length, 3);
     assert.ok(lastQuickPick.items.some(item => item.value === 'form'));
-    assert.ok(lastQuickPick.items.some(item => item.value === 'list'));
-    assert.ok(lastQuickPick.items.some(item => item.value === 'empty'));
+    assert.ok(lastQuickPick.items.some(item => item.value === 'dashboard'));
+    assert.ok(lastQuickPick.items.some(item => item.value === 'stepForm'));
     
     // 保存先選択のテスト
     const saveUri = await service.selectSaveLocation();
@@ -214,21 +223,19 @@ describe('TemplateService', () => {
     assert.ok(formContent.includes('Input:'));
     assert.ok(formContent.includes('Button:'));
     
-    // 一覧テンプレート
-    const listContent = service.generateTemplateContent('list');
-    assert.ok(listContent.includes('Container:'));
-    assert.ok(listContent.includes('layout: vertical'));
-    assert.ok(listContent.includes('Text:'));
-    assert.ok(listContent.includes('Divider:'));
-    
-    // 空テンプレート
-    const emptyContent = service.generateTemplateContent('empty');
-    assert.ok(emptyContent.includes('Container:'));
-    assert.ok(emptyContent.includes('components:'));
-    
-    // 無効な種別の場合は空テンプレート
+    // ダッシュボードテンプレート
+    const dashboardContent = service.generateTemplateContent('dashboard');
+    assert.ok(dashboardContent.includes('Dashboard'));
+    assert.ok(dashboardContent.includes('Alert:'));
+
+    // ステップフォームテンプレート
+    const stepFormContent = service.generateTemplateContent('stepForm');
+    assert.ok(stepFormContent.includes('Step Form'));
+    assert.ok(stepFormContent.includes('Input:'));
+
+    // 無効な種別の場合はフォームテンプレート
     const invalidContent = service.generateTemplateContent('invalid');
-    assert.strictEqual(invalidContent, emptyContent);
+    assert.strictEqual(invalidContent, formContent);
   });
 
   it('テンプレート内容の挿入が正しく動作する', async () => {
