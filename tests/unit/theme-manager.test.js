@@ -11,6 +11,7 @@ global.vscode = global.vscode || {};
 describe('ThemeManager', () => {
   let themeManager;
   let testThemePath;
+  let extraCleanupPaths;
 
   beforeEach(() => {
     // ファクトリからThemeManagerを作成
@@ -23,6 +24,8 @@ describe('ThemeManager', () => {
       global.ThemeManagerFactory = ThemeManagerFactory;
     }
     
+    extraCleanupPaths = [];
+
     themeManager = global.ThemeManagerFactory.createForTest(global.vscode, {
       extensionPath: __dirname + '/../../',
       workspacePath: __dirname + '/../../'
@@ -35,6 +38,13 @@ describe('ThemeManager', () => {
       themeManager._testHelpers.cleanupTestFile(testThemePath);
     }
     
+    const fs = require('fs');
+    for (const filePath of extraCleanupPaths || []) {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
     if (themeManager && themeManager._testHelpers) {
       themeManager._testHelpers.resetAllMocks();
       themeManager._testHelpers.restoreRequire();
@@ -148,6 +158,108 @@ describe('ThemeManager', () => {
     // デフォルトテーマが使用されている
     assert.ok(cssVariables.includes('--colors-primary'));
     assert.ok(cssVariables.includes('--spacing-md'));
+  });
+
+
+  it('extendsで親テーマを継承し、子テーマで上書きできる', async () => {
+    const fs = require('fs');
+    const path = require('path');
+    const workspaceRoot = path.join(__dirname, '../../');
+    const parentPath = path.join(workspaceRoot, 'parent-theme.yml');
+
+    const parentTheme = {
+      theme: {
+        tokens: {
+          colors: {
+            primary: { value: '#111111' },
+            secondary: { value: '#222222' }
+          },
+          spacing: {
+            md: { value: '1rem' }
+          }
+        },
+        components: {
+          button: {
+            primary: {
+              color: '#FFFFFF',
+              backgroundColor: '#111111'
+            }
+          }
+        }
+      }
+    };
+
+    const childTheme = {
+      theme: {
+        extends: './parent-theme.yml',
+        tokens: {
+          colors: {
+            primary: { value: '#FF0000' }
+          }
+        },
+        components: {
+          button: {
+            primary: {
+              backgroundColor: '#FF0000'
+            }
+          }
+        }
+      }
+    };
+
+    fs.writeFileSync(parentPath, JSON.stringify(parentTheme, null, 2));
+    extraCleanupPaths.push(parentPath);
+    testThemePath = themeManager._testHelpers.createTestThemeFile(childTheme);
+
+    await themeManager.loadTheme();
+    const cssVariables = themeManager.generateCSSVariables();
+
+    assert.ok(cssVariables.includes('--colors-primary: #FF0000'));
+    assert.ok(cssVariables.includes('--colors-secondary: #222222'));
+    assert.ok(cssVariables.includes('--spacing-md: 1rem'));
+    assert.ok(cssVariables.includes('--component-button-primary-backgroundColor: #FF0000'));
+    assert.ok(cssVariables.includes('--component-button-primary-color: #FFFFFF'));
+
+  });
+
+  it('循環参照の継承が検出された場合はデフォルトテーマにフォールバックする', async () => {
+    const fs = require('fs');
+    const path = require('path');
+    const workspaceRoot = path.join(__dirname, '../../');
+    const parentPath = path.join(workspaceRoot, 'parent-circular-theme.yml');
+
+    const parentTheme = {
+      theme: {
+        extends: './textui-theme.yml',
+        tokens: {
+          colors: {
+            secondary: { value: '#00FF00' }
+          }
+        }
+      }
+    };
+
+    const childTheme = {
+      theme: {
+        extends: './parent-circular-theme.yml',
+        tokens: {
+          colors: {
+            primary: { value: '#FF0000' }
+          }
+        }
+      }
+    };
+
+    fs.writeFileSync(parentPath, JSON.stringify(parentTheme, null, 2));
+    extraCleanupPaths.push(parentPath);
+    testThemePath = themeManager._testHelpers.createTestThemeFile(childTheme);
+
+    await themeManager.loadTheme();
+    const cssVariables = themeManager.generateCSSVariables();
+
+    assert.ok(cssVariables.includes('--colors-primary: #3B82F6'));
+    assert.ok(cssVariables.includes('--spacing-md: 1rem'));
+
   });
 
   describe('ファクトリパターンの検証', () => {
