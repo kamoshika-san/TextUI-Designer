@@ -9,19 +9,30 @@ import { TemplateService } from './template-service';
 import { SettingsService } from './settings-service';
 import { ExportManager } from '../exporters';
 import { ThemeManager } from './theme-manager';
-import { ErrorHandler } from '../utils/error-handler';
+import type {
+  ISchemaManager,
+  IThemeManager,
+  IWebViewManager,
+  IExportManager,
+  IExportService,
+  ITemplateService,
+  ISettingsService,
+  IDiagnosticManager,
+  ICompletionProvider,
+  ICommandManager
+} from '../types';
 
 export interface ExtensionServices {
-  schemaManager: SchemaManager;
-  themeManager: ThemeManager;
-  webViewManager: WebViewManager;
-  exportManager: ExportManager;
-  exportService: ExportService;
-  templateService: TemplateService;
-  settingsService: SettingsService;
-  diagnosticManager: DiagnosticManager;
-  completionProvider: TextUICompletionProvider;
-  commandManager: CommandManager;
+  schemaManager: ISchemaManager;
+  themeManager: IThemeManager;
+  webViewManager: IWebViewManager;
+  exportManager: IExportManager;
+  exportService: IExportService;
+  templateService: ITemplateService;
+  settingsService: ISettingsService;
+  diagnosticManager: IDiagnosticManager;
+  completionProvider: ICompletionProvider;
+  commandManager: ICommandManager;
 }
 
 /**
@@ -29,16 +40,16 @@ export interface ExtensionServices {
  * テスト時やカスタム構成でサービスの生成を差し替えるための型
  */
 export interface ServiceFactoryOverrides {
-  createSchemaManager?: (context: vscode.ExtensionContext) => SchemaManager;
-  createThemeManager?: (context: vscode.ExtensionContext) => ThemeManager;
+  createSchemaManager?: (context: vscode.ExtensionContext) => ISchemaManager;
+  createThemeManager?: (context: vscode.ExtensionContext) => IThemeManager;
   createWebViewManager?: (
     context: vscode.ExtensionContext,
-    themeManager: ThemeManager,
-    schemaManager: SchemaManager
-  ) => WebViewManager;
-  createExportManager?: () => ExportManager;
-  createTemplateService?: () => TemplateService;
-  createSettingsService?: () => SettingsService;
+    themeManager: IThemeManager,
+    schemaManager: ISchemaManager
+  ) => IWebViewManager;
+  createExportManager?: () => IExportManager;
+  createTemplateService?: () => ITemplateService;
+  createSettingsService?: () => ISettingsService;
 }
 
 /**
@@ -65,34 +76,34 @@ export class ServiceInitializer {
     try {
       const f = this.factoryOverrides;
 
-      const schemaManager = f.createSchemaManager
+      const schemaManager: ISchemaManager = f.createSchemaManager
         ? f.createSchemaManager(this.context)
         : new SchemaManager(this.context);
-      const themeManager = f.createThemeManager
+      const themeManager: IThemeManager = f.createThemeManager
         ? f.createThemeManager(this.context)
         : new ThemeManager(this.context);
 
-      const webViewManager = f.createWebViewManager
+      const webViewManager: IWebViewManager = f.createWebViewManager
         ? f.createWebViewManager(this.context, themeManager, schemaManager)
         : new WebViewManager(this.context, themeManager, schemaManager);
 
-      const exportManager = f.createExportManager
+      const exportManager: IExportManager = f.createExportManager
         ? f.createExportManager()
         : new ExportManager();
-      const exportService = new ExportService(exportManager);
+      const exportService: IExportService = new ExportService(exportManager);
 
-      const templateService = f.createTemplateService
+      const templateService: ITemplateService = f.createTemplateService
         ? f.createTemplateService()
         : new TemplateService();
 
-      const settingsService = f.createSettingsService
+      const settingsService: ISettingsService = f.createSettingsService
         ? f.createSettingsService()
         : new SettingsService();
 
-      const diagnosticManager = new DiagnosticManager(schemaManager);
-      const completionProvider = new TextUICompletionProvider(schemaManager);
+      const diagnosticManager: IDiagnosticManager = new DiagnosticManager(schemaManager);
+      const completionProvider: ICompletionProvider = new TextUICompletionProvider(schemaManager);
 
-      const commandManager = new CommandManager(
+      const commandManager: ICommandManager = new CommandManager(
         this.context,
         webViewManager,
         exportService,

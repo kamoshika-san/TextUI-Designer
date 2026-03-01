@@ -97,7 +97,7 @@ export class SettingsService implements ISettingsService {
   /**
    * 現在の設定を取得
    */
-  private getCurrentSettings(): Record<string, any> {
+  private getCurrentSettings(): Record<string, unknown> {
     return {
       supportedFileExtensions: this.configManager.getSupportedFileExtensions(),
       autoPreview: {
@@ -117,7 +117,7 @@ export class SettingsService implements ISettingsService {
   /**
    * 設定をフォーマット
    */
-  private formatSettings(settings: Record<string, any>): string {
+  private formatSettings(settings: Record<string, unknown>): string {
     return JSON.stringify(settings, null, 2);
   }
 

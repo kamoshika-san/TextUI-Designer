@@ -1,19 +1,18 @@
 import * as vscode from 'vscode';
-import { ExportManager } from '../exporters';
 import { ErrorHandler } from '../utils/error-handler';
 import { ConfigManager } from '../utils/config-manager';
 import { PerformanceMonitor } from '../utils/performance-monitor';
 import path from 'path';
-import { IExportService } from '../types';
+import type { IExportManager, IExportService } from '../types';
 
 /**
  * エクスポート処理を担当するサービス
  */
 export class ExportService implements IExportService {
-  private exportManager: ExportManager;
+  private exportManager: IExportManager;
   private performanceMonitor: PerformanceMonitor;
 
-  constructor(exportManager: ExportManager) {
+  constructor(exportManager: IExportManager) {
     this.exportManager = exportManager;
     this.performanceMonitor = PerformanceMonitor.getInstance();
   }

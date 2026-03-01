@@ -1,13 +1,15 @@
 import * as vscode from 'vscode';
-import { WebViewManager } from './webview-manager';
-import { ExportService } from './export-service';
-import { TemplateService } from './template-service';
-import { SettingsService } from './settings-service';
-import { SchemaManager } from './schema-manager';
 import { ErrorHandler } from '../utils/error-handler';
 import { ConfigManager } from '../utils/config-manager';
 import { RuntimeInspectionService } from './runtime-inspection-service';
-import { ICommandManager } from '../types';
+import type {
+  ICommandManager,
+  IWebViewManager,
+  IExportService,
+  ITemplateService,
+  ISettingsService,
+  ISchemaManager
+} from '../types';
 import { createCommandDefinitions, type CommandHandler } from './command-catalog';
 
 /**
@@ -16,21 +18,21 @@ import { createCommandDefinitions, type CommandHandler } from './command-catalog
  */
 export class CommandManager implements ICommandManager {
   private context: vscode.ExtensionContext;
-  private webViewManager: WebViewManager;
-  private exportService: ExportService;
-  private templateService: TemplateService;
-  private settingsService: SettingsService;
-  private schemaManager: SchemaManager;
+  private webViewManager: IWebViewManager;
+  private exportService: IExportService;
+  private templateService: ITemplateService;
+  private settingsService: ISettingsService;
+  private schemaManager: ISchemaManager;
   private runtimeInspectionService: RuntimeInspectionService;
   private commandDisposables: vscode.Disposable[] = [];
 
   constructor(
     context: vscode.ExtensionContext,
-    webViewManager: WebViewManager,
-    exportService: ExportService,
-    templateService: TemplateService,
-    settingsService: SettingsService,
-    schemaManager: SchemaManager
+    webViewManager: IWebViewManager,
+    exportService: IExportService,
+    templateService: ITemplateService,
+    settingsService: ISettingsService,
+    schemaManager: ISchemaManager
   ) {
     this.context = context;
     this.webViewManager = webViewManager;
