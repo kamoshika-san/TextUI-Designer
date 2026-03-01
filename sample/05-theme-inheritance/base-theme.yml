@@ -1,0 +1,28 @@
+theme:
+  name: "Base Design System"
+  description: "共通ベーステーマ"
+  tokens:
+    colors:
+      primary:
+        value: "#2563EB"
+      secondary:
+        value: "#64748B"
+      surface:
+        value: "#F8FAFC"
+      text:
+        primary:
+          value: "#0F172A"
+        secondary:
+          value: "#475569"
+    spacing:
+      md:
+        value: "1rem"
+      lg:
+        value: "1.5rem"
+  components:
+    button:
+      primary:
+        backgroundColor: "var(--colors-primary)"
+        color: "#FFFFFF"
+        borderRadius: "8px"
+        padding: "0.75rem 1rem"
