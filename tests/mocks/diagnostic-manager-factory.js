@@ -15,51 +15,49 @@ class DiagnosticManagerFactory {
     };
 
     // Mock SchemaManagerを作成（実際のDiagnosticManagerに合わせる）
-    const mockSchemaManager = {
-      loadSchema: async () => {
-        // テスト用のスキーマを返す
-        return {
+    const createMainSchema = () => ({
+      type: 'object',
+      properties: {
+        page: {
           type: 'object',
           properties: {
-            page: {
-              type: 'object',
-              properties: {
-                id: { type: 'string' },
-                title: { type: 'string' },
-                components: {
-                  type: 'array',
-                  items: {
-                    type: 'object'
-                  }
-                }
-              },
-              required: ['id', 'title']
+            id: { type: 'string' },
+            title: { type: 'string' },
+            components: {
+              type: 'array',
+              items: {
+                type: 'object'
+              }
             }
           },
-          required: ['page']
-        };
+          required: ['id', 'title']
+        }
       },
-      getSchema: () => {
-        return {
+      required: ['page']
+    });
+    const createTemplateSchema = () => ({
+      type: 'array',
+      items: { type: 'object' }
+    });
+    const createThemeSchema = () => ({
+      type: 'object',
+      properties: {
+        theme: {
           type: 'object',
           properties: {
-            page: {
-              type: 'object',
-              properties: {
-                id: { type: 'string' },
-                title: { type: 'string' },
-                components: {
-                  type: 'array',
-                  items: {
-                    type: 'object'
-                  }
-                }
-              },
-              required: ['id', 'title']
-            }
-          },
-          required: ['page']
-        };
+            tokens: { type: 'object' },
+            components: { type: 'object' }
+          }
+        }
+      }
+    });
+
+    const mockSchemaManager = {
+      loadSchema: async () => createMainSchema(),
+      loadTemplateSchema: async () => createTemplateSchema(),
+      loadThemeSchema: async () => createThemeSchema(),
+      getSchema: () => {
+        return createMainSchema();
       }
     };
 
@@ -191,30 +189,17 @@ class DiagnosticManagerFactory {
           mockSchemaManager.loadSchema = async () => {
             throw new Error('Schema load failed for testing');
           };
+          mockSchemaManager.loadTemplateSchema = async () => {
+            throw new Error('Template schema load failed for testing');
+          };
+          mockSchemaManager.loadThemeSchema = async () => {
+            throw new Error('Theme schema load failed for testing');
+          };
         } else {
           // デフォルトの動作に戻す
-          mockSchemaManager.loadSchema = async () => {
-            return {
-              type: 'object',
-              properties: {
-                page: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'string' },
-                    title: { type: 'string' },
-                    components: {
-                      type: 'array',
-                      items: {
-                        type: 'object'
-                      }
-                    }
-                  },
-                  required: ['id', 'title']
-                }
-              },
-              required: ['page']
-            };
-          };
+          mockSchemaManager.loadSchema = async () => createMainSchema();
+          mockSchemaManager.loadTemplateSchema = async () => createTemplateSchema();
+          mockSchemaManager.loadThemeSchema = async () => createThemeSchema();
         }
       },
       // テスト用ドキュメント作成ヘルパー

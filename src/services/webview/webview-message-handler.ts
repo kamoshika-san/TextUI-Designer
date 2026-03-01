@@ -205,60 +205,53 @@ export class WebViewMessageHandler {
     console.log('[WebViewMessageHandler] 現在のテーマパス:', currentThemePath);
     console.log('[WebViewMessageHandler] デフォルトテーマがアクティブ:', isDefaultThemeActive);
     
+    const discoveredPaths = new Set<string>();
+
+    const activeTuiPath = this.resolveActiveTuiPath();
+
     // 各ワークスペースフォルダでテーマファイルを検索
     for (const folder of workspaceFolders) {
       const folderPath = folder.uri.fsPath;
-      
-      // サンプルフォルダとルートディレクトリでテーマファイルを検索
-      const searchPaths = [
-        path.join(folderPath, 'sample'),
-        path.join(folderPath, 'textui-designer', 'sample'),
-        folderPath
-      ];
 
-      for (const searchPath of searchPaths) {
-        if (!fs.existsSync(searchPath)) {
+      const searchRoot = this.resolveThemeSearchRoot(folderPath, activeTuiPath);
+      const themeFiles = this.collectThemeFiles(searchRoot);
+
+      for (const filePath of themeFiles) {
+        const normalizedPath = path.resolve(filePath);
+        if (discoveredPaths.has(normalizedPath)) {
           continue;
         }
+        discoveredPaths.add(normalizedPath);
 
-        const files = fs.readdirSync(searchPath);
-        const themeFiles = files.filter(file => 
-          file.endsWith('-theme.yml') || 
-          file.endsWith('_theme.yml') || 
-          file === 'textui-theme.yml'
-        );
+        const relativePath = path.relative(folderPath, filePath);
+        const fileName = path.basename(filePath);
 
-        for (const file of themeFiles) {
-          const filePath = path.join(searchPath, file);
-          const relativePath = path.relative(folderPath, filePath);
-          
-          // テーマファイルの内容を読み取って名前と説明を取得
-          try {
-            const content = fs.readFileSync(filePath, 'utf8');
-            const themeData = YAML.parse(content);
-            
-            const themeName = themeData?.theme?.name || file.replace(/(-theme|_theme)\.yml$/, '').replace(/\.yml$/, '');
-            const themeDescription = themeData?.theme?.description;
-            
-            // 現在のアクティブテーマかどうかを判定（パスの正規化で比較）
-            const isActive = Boolean(currentThemePath) &&
-              path.resolve(currentThemePath) === path.resolve(filePath);
+        // テーマファイルの内容を読み取って名前と説明を取得
+        try {
+          const content = fs.readFileSync(filePath, 'utf8');
+          const themeData = YAML.parse(content);
 
-            themes.push({
-              name: themeName,
-              path: relativePath,
-              isActive,
-              description: themeDescription
-            });
-          } catch (error) {
-            console.log(`[WebViewMessageHandler] テーマファイル読み取りエラー: ${filePath}`, error);
-            // エラーの場合はファイル名のみで追加
-            themes.push({
-              name: file.replace(/(-theme|_theme)\.yml$/, '').replace(/\.yml$/, ''),
-              path: relativePath,
-              isActive: false
-            });
-          }
+          const themeName = themeData?.theme?.name || fileName.replace(/(-theme|_theme)\.(ya?ml)$/, '').replace(/\.(ya?ml)$/, '');
+          const themeDescription = themeData?.theme?.description;
+
+          // 現在のアクティブテーマかどうかを判定（パスの正規化で比較）
+          const isActive = Boolean(currentThemePath) &&
+            path.resolve(currentThemePath) === path.resolve(filePath);
+
+          themes.push({
+            name: themeName,
+            path: relativePath,
+            isActive,
+            description: themeDescription
+          });
+        } catch (error) {
+          console.log(`[WebViewMessageHandler] テーマファイル読み取りエラー: ${filePath}`, error);
+          // エラーの場合はファイル名のみで追加
+          themes.push({
+            name: fileName.replace(/(-theme|_theme)\.(ya?ml)$/, '').replace(/\.(ya?ml)$/, ''),
+            path: relativePath,
+            isActive: false
+          });
         }
       }
     }
@@ -273,6 +266,84 @@ export class WebViewMessageHandler {
 
     console.log('[WebViewMessageHandler] 検出されたテーマ:', themes);
     return themes;
+  }
+
+  private resolveActiveTuiPath(): string | undefined {
+    const activeEditorFile = vscode.window.activeTextEditor?.document.fileName;
+    if (activeEditorFile && ConfigManager.isSupportedFile(activeEditorFile)) {
+      return activeEditorFile;
+    }
+
+    const lastTuiFile = this.updateManager.getLastTuiFile();
+    if (lastTuiFile && ConfigManager.isSupportedFile(lastTuiFile)) {
+      return lastTuiFile;
+    }
+
+    return undefined;
+  }
+
+  private resolveThemeSearchRoot(folderPath: string, activeTuiPath?: string): string {
+    if (!activeTuiPath) {
+      return folderPath;
+    }
+
+    const normalizedFolder = path.resolve(folderPath);
+    const normalizedActiveFile = path.resolve(activeTuiPath);
+    const activeDir = path.dirname(normalizedActiveFile);
+
+    if (!activeDir.startsWith(normalizedFolder)) {
+      return folderPath;
+    }
+
+    return activeDir;
+  }
+
+  private collectThemeFiles(rootPath: string): string[] {
+    if (!fs.existsSync(rootPath)) {
+      return [];
+    }
+
+    const themeFiles: string[] = [];
+    const skipDirs = new Set(['.git', 'node_modules', 'out', 'media', '.next', 'dist', 'build']);
+    const stack: string[] = [rootPath];
+
+    while (stack.length > 0) {
+      const currentPath = stack.pop();
+      if (!currentPath) {
+        continue;
+      }
+
+      let entries: fs.Dirent[] = [];
+      try {
+        entries = fs.readdirSync(currentPath, { withFileTypes: true });
+      } catch (error) {
+        console.log(`[WebViewMessageHandler] ディレクトリ読み取りエラー: ${currentPath}`, error);
+        continue;
+      }
+
+      for (const entry of entries) {
+        const entryPath = path.join(currentPath, entry.name);
+        if (entry.isDirectory()) {
+          if (!skipDirs.has(entry.name)) {
+            stack.push(entryPath);
+          }
+          continue;
+        }
+
+        if (
+          entry.name.endsWith('-theme.yml') ||
+          entry.name.endsWith('-theme.yaml') ||
+          entry.name.endsWith('_theme.yml') ||
+          entry.name.endsWith('_theme.yaml') ||
+          entry.name === 'textui-theme.yml' ||
+          entry.name === 'textui-theme.yaml'
+        ) {
+          themeFiles.push(entryPath);
+        }
+      }
+    }
+
+    return themeFiles;
   }
 
   /**
