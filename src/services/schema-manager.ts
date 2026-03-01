@@ -91,18 +91,16 @@ export class SchemaManager implements ISchemaManager {
    * テンプレート用スキーマを生成
    */
   private async createTemplateSchema(): Promise<void> {
-    if (!fs.existsSync(this.templateSchemaPath)) {
-      try {
-        const schema = JSON.parse(fs.readFileSync(this.schemaPath, 'utf-8'));
-        const templateSchema = {
-          ...schema,
-          type: 'array',
-          items: schema.definitions.component
-        };
-        fs.writeFileSync(this.templateSchemaPath, JSON.stringify(templateSchema, null, 2), 'utf-8');
-      } catch (error) {
-        console.error('テンプレートスキーマの作成に失敗しました:', error);
-      }
+    try {
+      const schema = JSON.parse(fs.readFileSync(this.schemaPath, 'utf-8'));
+      const templateSchema = {
+        ...schema,
+        type: 'array',
+        items: schema.definitions.componentArray?.items ?? schema.definitions.component
+      };
+      fs.writeFileSync(this.templateSchemaPath, JSON.stringify(templateSchema, null, 2), 'utf-8');
+    } catch (error) {
+      console.error('テンプレートスキーマの作成に失敗しました:', error);
     }
   }
 
