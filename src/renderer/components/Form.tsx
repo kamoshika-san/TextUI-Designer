@@ -8,7 +8,7 @@ interface FormProps extends FormComponent {
   id?: string;
   fields: FormField[];
   actions?: FormAction[];
-  onSubmit: (data: any) => void;
+  onSubmit: (data: Record<string, FormDataEntryValue>) => void;
   children: React.ReactNode;
 }
 
@@ -22,8 +22,8 @@ export const Form: React.FC<FormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    const data = Object.fromEntries(formData);
-      onSubmit(data);
+    const data = Object.fromEntries(formData.entries()) as Record<string, FormDataEntryValue>;
+    onSubmit(data);
   };
 
   return (

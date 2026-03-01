@@ -118,8 +118,10 @@ export class DiffManager {
    * 個別コンポーネントの変更を検出
    */
   private hasComponentChanged(oldComp: ComponentDef, newComp: ComponentDef): boolean {
-    const oldKeys = Object.keys(oldComp);
-    const newKeys = Object.keys(newComp);
+    const oldRecord = oldComp as unknown as Record<string, unknown>;
+    const newRecord = newComp as unknown as Record<string, unknown>;
+    const oldKeys = Object.keys(oldRecord);
+    const newKeys = Object.keys(newRecord);
 
     // キーの数が異なる場合は変更あり
     if (oldKeys.length !== newKeys.length) {
@@ -133,8 +135,8 @@ export class DiffManager {
 
     // 各キーの値を比較
     for (const key of oldKeys) {
-      const oldValue = (oldComp as any)[key];
-      const newValue = (newComp as any)[key];
+      const oldValue = oldRecord[key];
+      const newValue = newRecord[key];
 
       if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
         return true;

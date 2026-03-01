@@ -5,7 +5,7 @@ const path = require('path');
 describe('コマンド定義整合性', () => {
   const workspaceRoot = path.resolve(__dirname, '../..');
   const packageJsonPath = path.join(workspaceRoot, 'package.json');
-  const commandManagerPath = path.join(workspaceRoot, 'src/services/command-manager.ts');
+  const commandCatalogPath = path.join(workspaceRoot, 'out/services/command-catalog.js');
 
   const readManifestCommands = () => {
     const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
@@ -13,16 +13,8 @@ describe('コマンド定義整合性', () => {
   };
 
   const readRegisteredCommands = () => {
-    const source = fs.readFileSync(commandManagerPath, 'utf8');
-    const pattern = /registerCommand\('([^']+)'/g;
-    const commands = [];
-    let match = null;
-
-    while ((match = pattern.exec(source)) !== null) {
-      commands.push(match[1]);
-    }
-
-    return commands;
+    const { TEXTUI_COMMAND_IDS } = require(commandCatalogPath);
+    return [...TEXTUI_COMMAND_IDS];
   };
 
   it('CommandManagerで登録するコマンドはすべてmanifestに存在する', () => {

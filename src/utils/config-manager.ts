@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 export type ConfigProvider = (section: string) => {
   get<T>(key: string, defaultValue: T): T;
-  update(key: string, value: any, target?: any): Thenable<void>;
+  update(key: string, value: unknown, target?: boolean | vscode.ConfigurationTarget | null): Thenable<void>;
 };
 
 /**
@@ -54,7 +54,7 @@ export class ConfigManager {
   /**
    * 設定値を設定
    */
-  static async set(key: string, value: any): Promise<void> {
+  static async set(key: string, value: unknown): Promise<void> {
     const config = this.getConfig();
     await config.update(key, value, vscode.ConfigurationTarget.Global);
   }
@@ -216,7 +216,7 @@ export class ConfigManager {
   /**
    * 設定スキーマを取得
    */
-  static getConfigurationSchema(): any {
+  static getConfigurationSchema(): Record<string, unknown> {
     return {
       type: 'object',
       title: 'TextUI Designer',

@@ -8,6 +8,7 @@ import { ErrorHandler } from '../utils/error-handler';
 import { ConfigManager } from '../utils/config-manager';
 import { RuntimeInspectionService } from './runtime-inspection-service';
 import { ICommandManager } from '../types';
+import { createCommandDefinitions, type CommandHandler } from './command-catalog';
 
 /**
  * コマンド管理サービス
@@ -45,40 +46,33 @@ export class CommandManager implements ICommandManager {
    */
   registerCommands(): void {
     console.log('[CommandManager] コマンド登録を開始');
-    
-    // プレビュー関連
-    this.registerCommand('textui-designer.openPreview', () => this.openPreviewWithCheck());
-    this.registerCommand('textui-designer.openDevTools', () => this.webViewManager.openDevTools());
 
-    // エクスポート関連
-    this.registerCommand('textui-designer.export', (filePath?: string) => this.exportService.executeExport(filePath));
+    const commandDefinitions = createCommandDefinitions({
+      openPreviewWithCheck: () => this.openPreviewWithCheck(),
+      openDevTools: () => this.webViewManager.openDevTools(),
+      executeExport: (filePath?: string) => this.exportService.executeExport(filePath),
+      createTemplate: () => this.templateService.createTemplate(),
+      insertTemplate: () => this.templateService.insertTemplate(),
+      openSettings: () => this.settingsService.openSettings(),
+      resetSettings: () => this.settingsService.resetSettings(),
+      showAutoPreviewSetting: () => this.settingsService.showAutoPreviewSetting(),
+      checkAutoPreviewSetting: () => this.checkAutoPreviewSetting(),
+      reinitializeSchemas: () => this.schemaManager.reinitialize(),
+      debugSchemas: () => this.schemaManager.debugSchemas(),
+      showPerformanceReport: () => this.runtimeInspectionService.showPerformanceReport(),
+      clearPerformanceMetrics: () => this.runtimeInspectionService.clearPerformanceMetrics(),
+      togglePerformanceMonitoring: () => this.runtimeInspectionService.togglePerformanceMonitoring(),
+      enablePerformanceMonitoring: () => this.runtimeInspectionService.enablePerformanceMonitoring(),
+      generateSampleEvents: () => this.runtimeInspectionService.generateSampleEvents(),
+      showMemoryReport: () => this.runtimeInspectionService.showMemoryReport(),
+      toggleMemoryTracking: () => this.runtimeInspectionService.toggleMemoryTracking(),
+      enableMemoryTracking: () => this.runtimeInspectionService.enableMemoryTracking()
+    });
 
-    // テンプレート関連
-    this.registerCommand('textui-designer.createTemplate', () => this.templateService.createTemplate());
-    this.registerCommand('textui-designer.insertTemplate', () => this.templateService.insertTemplate());
+    for (const { command, callback } of commandDefinitions) {
+      this.registerCommand(command, callback);
+    }
 
-    // 設定関連
-    this.registerCommand('textui-designer.openSettings', () => this.settingsService.openSettings());
-    this.registerCommand('textui-designer.resetSettings', () => this.settingsService.resetSettings());
-    this.registerCommand('textui-designer.showSettings', () => this.settingsService.showAutoPreviewSetting());
-    this.registerCommand('textui-designer.checkAutoPreviewSetting', () => this.checkAutoPreviewSetting());
-
-    // スキーマ関連
-    this.registerCommand('textui-designer.reinitializeSchemas', () => this.schemaManager.reinitialize());
-    this.registerCommand('textui-designer.debugSchemas', () => this.schemaManager.debugSchemas());
-
-    // パフォーマンス関連
-    this.registerCommand('textui-designer.showPerformanceReport', () => this.runtimeInspectionService.showPerformanceReport());
-    this.registerCommand('textui-designer.clearPerformanceMetrics', () => this.runtimeInspectionService.clearPerformanceMetrics());
-    this.registerCommand('textui-designer.togglePerformanceMonitoring', () => this.runtimeInspectionService.togglePerformanceMonitoring());
-    this.registerCommand('textui-designer.enablePerformanceMonitoring', () => this.runtimeInspectionService.enablePerformanceMonitoring());
-    this.registerCommand('textui-designer.generateSampleEvents', () => this.runtimeInspectionService.generateSampleEvents());
-    
-    // メモリ追跡関連
-    this.registerCommand('textui-designer.showMemoryReport', () => this.runtimeInspectionService.showMemoryReport());
-    this.registerCommand('textui-designer.toggleMemoryTracking', () => this.runtimeInspectionService.toggleMemoryTracking());
-    this.registerCommand('textui-designer.enableMemoryTracking', () => this.runtimeInspectionService.enableMemoryTracking());
-    
     console.log('[CommandManager] コマンド登録完了');
   }
 
@@ -102,7 +96,7 @@ export class CommandManager implements ICommandManager {
   /**
    * コマンドを登録
    */
-  private registerCommand(command: string, callback: (...args: any[]) => void): void {
+  private registerCommand(command: string, callback: CommandHandler): void {
     console.log(`[CommandManager] コマンドを登録: ${command}`);
     const disposable = vscode.commands.registerCommand(command, callback);
     this.commandDisposables.push(disposable);

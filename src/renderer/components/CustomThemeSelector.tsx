@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getVSCodeApi } from '../vscode-api';
 
 interface Theme {
   name: string;
@@ -16,15 +17,15 @@ export const CustomThemeSelector: React.FC<CustomThemeSelectorProps> = ({ classN
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const vscode = (window as any).vscode;
+  const vscodeApi = getVSCodeApi();
 
   // コンポーネント初期化時にテーマ一覧を要求
   useEffect(() => {
-    if (vscode && vscode.postMessage) {
+    if (vscodeApi?.postMessage) {
       console.log('[CustomThemeSelector] テーマ一覧を要求');
-      vscode.postMessage({ type: 'get-themes' });
+      vscodeApi.postMessage({ type: 'get-themes' });
     }
-  }, []);
+  }, [vscodeApi]);
 
   // WebViewからのメッセージを監視
   useEffect(() => {
@@ -43,10 +44,10 @@ export const CustomThemeSelector: React.FC<CustomThemeSelectorProps> = ({ classN
 
   // テーマ切り替え処理
   const handleThemeSwitch = (theme: Theme) => {
-    if (vscode && vscode.postMessage && !theme.isActive) {
+    if (vscodeApi?.postMessage && !theme.isActive) {
       console.log('[CustomThemeSelector] テーマ切り替えを要求:', theme);
       setIsLoading(true);
-      vscode.postMessage({ 
+      vscodeApi.postMessage({
         type: 'theme-switch', 
         themePath: theme.path 
       });

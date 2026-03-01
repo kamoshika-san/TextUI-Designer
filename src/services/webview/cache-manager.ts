@@ -26,7 +26,7 @@ export class CacheManager {
   /**
    * キャッシュからデータを取得
    */
-  getCachedData(fileName: string, content: string): any | null {
+  getCachedData(fileName: string, content: string): unknown | null {
     const cacheKey = this.generateCacheKey(fileName, content);
     const entry = this.cache.get(cacheKey);
 
@@ -44,7 +44,7 @@ export class CacheManager {
   /**
    * データをキャッシュに保存
    */
-  setCachedData(fileName: string, content: string, data: any): void {
+  setCachedData(fileName: string, content: string, data: unknown): void {
     const cacheKey = this.generateCacheKey(fileName, content);
     const entrySize = this.calculateEntrySize(content, data);
 
@@ -177,9 +177,10 @@ export class CacheManager {
   /**
    * エントリのサイズを計算
    */
-  private calculateEntrySize(content: string, data: any): number {
+  private calculateEntrySize(content: string, data: unknown): number {
     const contentSize = Buffer.byteLength(content, 'utf8');
-    const dataSize = Buffer.byteLength(JSON.stringify(data), 'utf8');
+    const serializedData = JSON.stringify(data) ?? 'null';
+    const dataSize = Buffer.byteLength(serializedData, 'utf8');
     return contentSize + dataSize;
   }
 

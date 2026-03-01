@@ -1,4 +1,5 @@
 import { PerformanceMonitor } from '../utils/performance-monitor';
+import type { MonitorMetrics } from '../utils/performance-monitor';
 
 /**
  * パフォーマンス追跡
@@ -48,14 +49,18 @@ export class PerformanceTracker {
   /**
    * イベントの記録
    */
-  recordEvent(eventName: 'render' | 'cache' | 'diff' | 'export', duration: number, metadata?: any): void {
+  recordEvent(
+    eventName: 'render' | 'cache' | 'diff' | 'export',
+    duration: number,
+    metadata?: Record<string, unknown>
+  ): void {
     this.performanceMonitor.recordEvent(eventName, duration, metadata);
   }
 
   /**
    * パフォーマンス統計の取得
    */
-  getPerformanceStats(): any {
+  getPerformanceStats(): MonitorMetrics {
     return this.performanceMonitor.getMetrics();
   }
 

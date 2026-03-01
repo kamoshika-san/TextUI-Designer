@@ -4,9 +4,35 @@ import { ThemeToggle } from './components/ThemeToggle';
 import { CustomThemeSelector } from './components/CustomThemeSelector';
 import { renderRegisteredComponent } from './component-map';
 import type { TextUIDSL, ComponentDef } from './types';
+import { getVSCodeApi, type ElectronModule } from './vscode-api';
 
 // HTMLテンプレートで既に取得されているvscodeオブジェクトを使用
-const vscode = (window as any).vscode;
+const vscodeApi = getVSCodeApi();
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isElectronModule = (value: unknown): value is ElectronModule => {
+  if (!isRecord(value)) {
+    return false;
+  }
+  const remote = value.remote;
+  return isRecord(remote) && typeof remote.getCurrentWindow === 'function';
+};
+
+function formatSchemaErrors(errors: unknown): string {
+  if (!Array.isArray(errors)) {
+    return '';
+  }
+  return errors.map(errorItem => {
+    if (!isRecord(errorItem)) {
+      return '- 不明なスキーマエラー';
+    }
+    const instancePath = typeof errorItem.instancePath === 'string' ? errorItem.instancePath : '';
+    const message = typeof errorItem.message === 'string' ? errorItem.message : '';
+    return `- ${instancePath} ${message}`.trim();
+  }).join('\n');
+}
 
 // エラー情報の型定義
 interface ErrorInfo {
@@ -36,35 +62,38 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // WebView準備完了メッセージを送信
-    if (vscode && vscode.postMessage) {
+    if (vscodeApi?.postMessage) {
       console.log('[React] WebView準備完了メッセージを送信');
-      vscode.postMessage({ type: 'webview-ready' });
+      vscodeApi.postMessage({ type: 'webview-ready' });
     }
 
-    window.addEventListener('message', (event) => {
+    const onMessage = (event: MessageEvent<unknown>) => {
       const message = event.data;
+      if (!isRecord(message) || typeof message.type !== 'string') {
+        return;
+      }
       console.log('[React] メッセージを受信:', message);
       
       if (message.type === 'json') {
         console.log('[React] JSONデータを受信:', message.json);
-        setJson(message.json);
+        setJson(message.json as TextUIDSL);
         setError(null);
       } else if (message.type === 'update') {
         console.log('[React] 更新データを受信:', message.data);
-        setJson(message.data);
+        setJson(message.data as TextUIDSL);
         setError(null);
       } else if (message.type === 'error') {
         console.log('[React] エラーメッセージを受信:', message.error);
         setError({
           type: 'simple',
-          message: message.error
+          message: typeof message.error === 'string' ? message.error : '不明なエラー'
         });
       } else if (message.type === 'schema-error') {
         console.log('[React] スキーマエラーメッセージを受信:', message.errors);
+        const schemaErrors = formatSchemaErrors(message.errors);
         setError({
           type: 'simple',
-          message: 'スキーマバリデーションエラー:\n' +
-            (message.errors?.map((e: any) => `- ${e.instancePath} ${e.message}`).join('\n') || '')
+          message: `スキーマバリデーションエラー:\n${schemaErrors}`
         });
       } else if (message.type === 'theme-change') {
         console.log('[React] テーマ変更メッセージを受信:', message.theme);
@@ -83,17 +112,17 @@ const App: React.FC = () => {
         console.log('[React] 詳細パースエラーメッセージを受信:', message.error);
         setError({
           type: 'parse',
-          details: message.error,
-          fileName: message.fileName,
-          content: message.content
+          details: message.error as ErrorInfo['details'],
+          fileName: typeof message.fileName === 'string' ? message.fileName : undefined,
+          content: typeof message.content === 'string' ? message.content : undefined
         });
       } else if (message.type === 'schemaError') {
         console.log('[React] 詳細スキーマエラーメッセージを受信:', message.error);
         setError({
           type: 'schema',
-          details: message.error,
-          fileName: message.fileName,
-          content: message.content
+          details: message.error as ErrorInfo['details'],
+          fileName: typeof message.fileName === 'string' ? message.fileName : undefined,
+          content: typeof message.content === 'string' ? message.content : undefined
         });
       } else if (message.type === 'clearError') {
         console.log('[React] エラー状態クリアメッセージを受信');
@@ -101,13 +130,16 @@ const App: React.FC = () => {
       } else {
         console.log('[React] 未対応のメッセージタイプ:', message.type);
       }
-    });
+    };
+
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
   }, []);
 
   const handleExport = () => {
-    if (vscode && vscode.postMessage) {
+    if (vscodeApi?.postMessage) {
       console.log('[React] エクスポートボタンがクリックされました');
-      vscode.postMessage({ type: 'export' });
+      vscodeApi.postMessage({ type: 'export' });
     }
   };
 
@@ -489,13 +521,16 @@ const App: React.FC = () => {
 window.addEventListener('message', (event) => {
 	const message = event.data;
 	
-	if (message.type === 'openDevTools') {
+	if (isRecord(message) && message.type === 'openDevTools') {
 		// 開発者ツールを開く（Electron環境でのみ動作）
-		if (window.require) {
+		const requireFn = window.require;
+		if (requireFn) {
 			try {
-				const { remote } = window.require('electron');
-				const currentWindow = remote.getCurrentWindow();
-				currentWindow.webContents.openDevTools();
+				const electronModule = requireFn('electron');
+				if (isElectronModule(electronModule)) {
+					const currentWindow = electronModule.remote.getCurrentWindow();
+					currentWindow.webContents.openDevTools();
+				}
 			} catch (e) {
 				console.log('開発者ツールを開けませんでした:', e);
 			}

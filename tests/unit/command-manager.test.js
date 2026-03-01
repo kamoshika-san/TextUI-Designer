@@ -1,4 +1,9 @@
 const { expect } = require('chai');
+const path = require('path');
+
+const commandCatalogPath = path.resolve(__dirname, '../../out/services/command-catalog.js');
+const { TEXTUI_COMMAND_IDS } = require(commandCatalogPath);
+const EXPECTED_COMMAND_COUNT = TEXTUI_COMMAND_IDS.length;
 
 // VSCode APIのモック
 const vscode = {
@@ -52,24 +57,24 @@ describe('CommandManager', () => {
       const initialSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
       commandManager.registerCommands();
 
-      // 期待されるコマンド数を確認（メモリ追跡コマンド3個を含む）
+      // 期待されるコマンド数を確認（宣言駆動のコマンドカタログと一致）
       const finalSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
-      expect(finalSubscriptions - initialSubscriptions).to.equal(19);
+      expect(finalSubscriptions - initialSubscriptions).to.equal(EXPECTED_COMMAND_COUNT);
     });
 
     it('登録されたコマンドがcontextのsubscriptionsに追加される', () => {
       const initialSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
       commandManager.registerCommands();
 
-      // 登録されたコマンドの数だけsubscriptionsに追加されていることを確認（メモリ追跡コマンド3個を含む）
+      // 登録されたコマンドの数だけsubscriptionsに追加されていることを確認
       const finalSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
-      expect(finalSubscriptions - initialSubscriptions).to.equal(19);
+      expect(finalSubscriptions - initialSubscriptions).to.equal(EXPECTED_COMMAND_COUNT);
     });
 
     it('dispose()でCommandManagerが保持するDisposableを解放できる', () => {
       commandManager.registerCommands();
 
-      expect(commandManager.commandDisposables.length).to.equal(19);
+      expect(commandManager.commandDisposables.length).to.equal(EXPECTED_COMMAND_COUNT);
       commandManager.dispose();
       expect(commandManager.commandDisposables.length).to.equal(0);
     });
@@ -149,9 +154,9 @@ describe('CommandManager', () => {
       const initialSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
       commandManager.registerCommands();
 
-      // メモリ追跡コマンドが登録されていることを確認（3個追加）
+      // メモリ追跡コマンドを含むカタログ件数が登録されていることを確認
       const finalSubscriptions = commandManager._testHelpers.mockContext.subscriptions.length;
-      expect(finalSubscriptions - initialSubscriptions).to.equal(19);
+      expect(finalSubscriptions - initialSubscriptions).to.equal(EXPECTED_COMMAND_COUNT);
     });
 
     it('TextUIMemoryTrackerのモックが正しく設定されている', () => {

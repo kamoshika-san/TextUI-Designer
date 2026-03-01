@@ -14,7 +14,21 @@ import { Radio } from './components/Radio';
 import { Select } from './components/Select';
 import { Divider } from './components/Divider';
 import { Alert } from './components/Alert';
-import type { ComponentDef, FormComponent, FormField, FormAction } from './types';
+import type {
+  ComponentDef,
+  FormComponent,
+  FormField,
+  FormAction,
+  TextComponent,
+  InputComponent,
+  ButtonComponent,
+  CheckboxComponent,
+  RadioComponent,
+  SelectComponent,
+  DividerComponent,
+  AlertComponent,
+  ContainerComponent
+} from './types';
 import { getComponentName } from '../registry/component-registry';
 import { BUILT_IN_COMPONENTS, type BuiltInComponentName } from '../registry/component-registry';
 import {
@@ -23,18 +37,32 @@ import {
   type WebViewComponentRenderer
 } from '../registry/webview-component-registry';
 
+const isComponentProps = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+function extractProps(
+  component: Record<string, unknown>,
+  name: string | null
+): Record<string, unknown> | undefined {
+  if (!name) {
+    return undefined;
+  }
+  const value = component[name];
+  return isComponentProps(value) ? value : undefined;
+}
+
 // --- 組み込みコンポーネントの登録 ---
 const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> = {
-  Text: (props, key) => <Text key={key} {...props} />,
-  Input: (props, key) => <Input key={key} {...props} />,
-  Button: (props, key) => <Button key={key} {...props} />,
-  Checkbox: (props, key) => <Checkbox key={key} {...props} />,
-  Radio: (props, key) => <Radio key={key} {...props} />,
-  Select: (props, key) => <Select key={key} {...props} />,
-  Divider: (props, key) => <Divider key={key} {...props} />,
-  Alert: (props, key) => <Alert key={key} {...props} />,
+  Text: (props, key) => <Text key={key} {...(props as unknown as TextComponent)} />,
+  Input: (props, key) => <Input key={key} {...(props as unknown as InputComponent)} />,
+  Button: (props, key) => <Button key={key} {...(props as unknown as ButtonComponent)} />,
+  Checkbox: (props, key) => <Checkbox key={key} {...(props as unknown as CheckboxComponent)} />,
+  Radio: (props, key) => <Radio key={key} {...(props as unknown as RadioComponent)} />,
+  Select: (props, key) => <Select key={key} {...(props as unknown as SelectComponent)} />,
+  Divider: (props, key) => <Divider key={key} {...(props as unknown as DividerComponent)} />,
+  Alert: (props, key) => <Alert key={key} {...(props as unknown as AlertComponent)} />,
   Container: (props, key) => {
-    const containerProps = props as { layout?: string; components?: ComponentDef[] };
+    const containerProps = props as unknown as ContainerComponent;
     const children = containerProps.components;
     return (
       <Container key={key} layout={containerProps.layout || 'vertical'}>
@@ -74,8 +102,9 @@ for (const componentName of BUILT_IN_COMPONENTS) {
  * FormFieldをレンダリング（Mapベースのディスパッチ）
  */
 function renderFormField(field: FormField, index: number): React.ReactNode {
-  const name = getComponentName(field as Record<string, unknown>);
-  const props = name ? (field as any)[name] : undefined;
+  const fieldRecord = field as unknown as Record<string, unknown>;
+  const name = getComponentName(fieldRecord);
+  const props = extractProps(fieldRecord, name);
   const renderer = name ? getWebViewComponentRenderer(name) : undefined;
 
   if (name && props && renderer) {
@@ -89,8 +118,9 @@ function renderFormField(field: FormField, index: number): React.ReactNode {
  * webview.tsx から呼び出されるメイン関数
  */
 export function renderRegisteredComponent(comp: ComponentDef, key: number): React.ReactNode {
-  const name = getComponentName(comp as Record<string, unknown>);
-  const props = name ? (comp as any)[name] : undefined;
+  const componentRecord = comp as unknown as Record<string, unknown>;
+  const name = getComponentName(componentRecord);
+  const props = extractProps(componentRecord, name);
   const renderer = name ? getWebViewComponentRenderer(name) : undefined;
 
   if (name && props && renderer) {

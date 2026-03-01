@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { WebViewLifecycleManager } from './webview-lifecycle-manager';
 import { WebViewUpdateManager } from './webview-update-manager';
-import type { IThemeManager } from '../../types';
+import { isWebViewMessage, type IThemeManager } from '../../types';
 import { ConfigManager } from '../../utils/config-manager';
 
 /**
@@ -47,8 +47,8 @@ export class WebViewMessageHandler {
   /**
    * メッセージを処理
    */
-  private async handleMessage(message: any): Promise<void> {
-    if (!message || typeof message !== 'object' || typeof message.type !== 'string') {
+  private async handleMessage(message: unknown): Promise<void> {
+    if (!isWebViewMessage(message)) {
       console.warn('[WebViewMessageHandler] 無効なメッセージを受信しました');
       return;
     }
@@ -61,7 +61,11 @@ export class WebViewMessageHandler {
         await this.handleWebViewReady();
         break;
       case 'theme-switch':
-        await this.handleThemeSwitch(message.themePath);
+        if (typeof message.themePath === 'string') {
+          await this.handleThemeSwitch(message.themePath);
+        } else {
+          console.warn('[WebViewMessageHandler] theme-switch の themePath が無効です');
+        }
         break;
       case 'get-themes':
         await this.handleGetThemes();

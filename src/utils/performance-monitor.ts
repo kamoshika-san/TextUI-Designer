@@ -58,7 +58,7 @@ export class PerformanceMonitor {
   /**
    * パフォーマンスイベントを記録
    */
-  recordEvent(type: MonitorEvent['type'], duration: number, metadata?: Record<string, any>): void {
+  recordEvent(type: MonitorEvent['type'], duration: number, metadata?: Record<string, unknown>): void {
     if (!this.isEnabled) {return;}
 
     const event: MonitorEvent = {

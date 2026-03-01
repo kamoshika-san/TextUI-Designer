@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getVSCodeApi } from '../vscode-api';
 
 type ThemeMode = 'light' | 'dark' | 'auto';
 
@@ -9,6 +10,7 @@ interface ThemeToggleProps {
 export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
   const [themeMode, setThemeMode] = useState<ThemeMode>('auto');
   const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('dark');
+  const vscodeApi = getVSCodeApi();
 
   // 初期化時にlocalStorageから設定を読み込み
   useEffect(() => {
@@ -24,16 +26,15 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
     
     if (themeMode === 'auto') {
       // VSCodeのテーマに連動
-      const vscode = (window as any).vscode;
-      if (vscode && vscode.getState) {
-        const state = vscode.getState();
+      if (vscodeApi?.getState) {
+        const state = vscodeApi.getState();
         const vscodeTheme = state?.theme || 'dark';
         setCurrentTheme(vscodeTheme === 'light' ? 'light' : 'dark');
       }
     } else {
       setCurrentTheme(themeMode);
     }
-  }, [themeMode]);
+  }, [themeMode, vscodeApi]);
 
   // 現在のテーマに応じてbodyクラスを設定
   useEffect(() => {
