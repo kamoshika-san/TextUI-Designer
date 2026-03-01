@@ -40,11 +40,15 @@ Module.prototype.require = function(id) {
 const testSchemaPath = path.join(__dirname, 'schemas', 'schema.json');
 const testTemplateSchemaPath = path.join(__dirname, 'schemas', 'template-schema.json');
 const testThemeSchemaPath = path.join(__dirname, 'schemas', 'theme-schema.json');
+const componentNames = ['Text', 'Input', 'Button', 'Checkbox', 'Radio', 'Select', 'Divider', 'Alert', 'Container', 'Form'];
 const testSchemaContent = {
   $id: 'test-schema',
   type: 'object',
   definitions: {
-    component: { type: 'object', properties: { foo: { type: 'string' } } }
+    component: {
+      oneOf: componentNames.map(name => ({ $ref: `#/definitions/${name}` }))
+    },
+    ...Object.fromEntries(componentNames.map(name => [name, { type: 'object' }]))
   }
 };
 const testThemeSchemaContent = {

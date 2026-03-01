@@ -3,17 +3,17 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
 import Ajv from 'ajv';
-import { IThemeManager, ThemeTokens, ThemeComponents, ThemeDefinition } from '../types';
+import { IThemeManager, ThemeTokens, ThemeComponents, isThemeDefinition } from '../types';
 
-export class ThemeManager {
+export class ThemeManager implements IThemeManager {
   private context: vscode.ExtensionContext;
   private themePath: string | undefined;
-  private tokens: any = {};
-  private components: any = {};
+  private tokens: ThemeTokens = {};
+  private components: ThemeComponents = {};
   private watcher: vscode.FileSystemWatcher | undefined;
 
   // デフォルトテーマ
-  private defaultTokens = {
+  private defaultTokens: ThemeTokens = {
     colors: {
       primary: { value: '#3B82F6' },
       secondary: { value: '#6B7280' },
@@ -63,7 +63,7 @@ export class ThemeManager {
   };
 
   // デフォルトコンポーネントスタイル
-  private defaultComponents = {
+  private defaultComponents: ThemeComponents = {
     button: {
       primary: {
         backgroundColor: 'var(--color-primary)',
@@ -151,11 +151,23 @@ export class ThemeManager {
     }
   }
 
+  getThemePath(): string | undefined {
+    return this.themePath;
+  }
+
+  setThemePath(themePath: string | undefined): void {
+    this.themePath = themePath;
+  }
+
+  private resetToDefaultTheme(): void {
+    this.tokens = this.defaultTokens;
+    this.components = this.defaultComponents;
+  }
+
   async loadTheme(): Promise<void> {
     if (!this.themePath || !fs.existsSync(this.themePath)) {
       console.log('[ThemeManager] theme file not found, using default theme');
-      this.tokens = this.defaultTokens;
-      this.components = this.defaultComponents;
+      this.resetToDefaultTheme();
       return;
     }
     try {
@@ -163,7 +175,7 @@ export class ThemeManager {
       console.log('[ThemeManager] theme file content length:', content.length);
       
       // YAMLパース処理を非同期で実行（ブロッキングを防ぐ）
-      const data = await new Promise<any>((resolve, reject) => {
+      const data = await new Promise<unknown>((resolve, reject) => {
         setImmediate(() => {
           try {
             const parsed = YAML.parse(content);
@@ -176,15 +188,19 @@ export class ThemeManager {
       
       console.log('[ThemeManager] parsed theme data:', JSON.stringify(data, null, 2));
       await this.validateTheme(data);
-      this.tokens = data.theme?.tokens || this.defaultTokens;
-      this.components = data.theme?.components || this.defaultComponents;
+      if (isThemeDefinition(data)) {
+        this.tokens = data.theme.tokens || this.defaultTokens;
+        this.components = data.theme.components || this.defaultComponents;
+      } else {
+        console.warn('[ThemeManager] テーマ定義の形式が不正なため、デフォルトを使用します');
+        this.resetToDefaultTheme();
+      }
       console.log('[ThemeManager] extracted tokens:', JSON.stringify(this.tokens, null, 2));
       console.log('[ThemeManager] extracted components:', JSON.stringify(this.components, null, 2));
       console.log('[ThemeManager] theme loaded');
     } catch (err) {
       console.error('[ThemeManager] failed to load theme, using default theme', err);
-      this.tokens = this.defaultTokens;
-      this.components = this.defaultComponents;
+      this.resetToDefaultTheme();
     }
   }
 
@@ -228,13 +244,16 @@ export class ThemeManager {
     return css;
   }
 
-  private flattenTokens(obj: any, prefix = ''): Record<string, string> {
-    let result: Record<string, string> = {};
-    if (!obj) {return result;}
-    for (const [key, value] of Object.entries(obj)) {
+  private flattenTokens(obj: unknown, prefix = ''): Record<string, string> {
+    const result: Record<string, string> = {};
+    if (!obj || typeof obj !== 'object') {
+      return result;
+    }
+
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
       const newKey = prefix ? `${prefix}-${key}` : key;
-      if (value && typeof value === 'object' && 'value' in (value as any)) {
-        result[newKey] = (value as any).value as string;
+      if (this.isTokenLeaf(value)) {
+        result[newKey] = value.value;
       } else if (value && typeof value === 'object') {
         Object.assign(result, this.flattenTokens(value, newKey));
       } else {
@@ -244,12 +263,28 @@ export class ThemeManager {
     return result;
   }
 
+  private isTokenLeaf(value: unknown): value is { value: string } {
+    if (!value || typeof value !== 'object' || !('value' in value)) {
+      return false;
+    }
+    const leaf = value as { value: unknown };
+    return typeof leaf.value === 'string';
+  }
+
   private generateComponentVariables(): Record<string, string> {
     const result: Record<string, string> = {};
     
-    for (const [componentName, variants] of Object.entries(this.components)) {
-      for (const [variantName, styles] of Object.entries(variants as any)) {
-        for (const [propertyName, value] of Object.entries(styles as any)) {
+    for (const [componentName, variants] of Object.entries(this.components as Record<string, unknown>)) {
+      if (!variants || typeof variants !== 'object') {
+        continue;
+      }
+
+      for (const [variantName, styles] of Object.entries(variants as Record<string, unknown>)) {
+        if (!styles || typeof styles !== 'object') {
+          continue;
+        }
+
+        for (const [propertyName, value] of Object.entries(styles as Record<string, unknown>)) {
           const varName = `component-${componentName}-${variantName}-${propertyName}`;
           result[varName] = String(value);
         }
@@ -259,7 +294,7 @@ export class ThemeManager {
     return result;
   }
 
-  private async validateTheme(data: any): Promise<void> {
+  private async validateTheme(data: unknown): Promise<void> {
     try {
       const schemaPath = path.join(this.context.extensionPath, 'schemas', 'theme-schema.json');
       if (!fs.existsSync(schemaPath)) {
@@ -293,8 +328,7 @@ export class ThemeManager {
     this.watcher.onDidCreate(reload);
     this.watcher.onDidDelete(async () => {
       console.log('[ThemeManager] theme file deleted, using default theme');
-      this.tokens = this.defaultTokens;
-      this.components = this.defaultComponents;
+      this.resetToDefaultTheme();
       const css = this.generateCSSVariables();
       callback(css);
     });

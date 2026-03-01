@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { WebViewLifecycleManager } from './webview-lifecycle-manager';
 import { WebViewUpdateManager } from './webview-update-manager';
-import { ThemeManager } from '../theme-manager';
+import type { IThemeManager } from '../../types';
 import { ConfigManager } from '../../utils/config-manager';
 
 /**
@@ -11,14 +11,14 @@ import { ConfigManager } from '../../utils/config-manager';
 export class WebViewMessageHandler {
   private lifecycleManager: WebViewLifecycleManager;
   private updateManager: WebViewUpdateManager;
-  private themeManager: ThemeManager | undefined;
+  private themeManager: IThemeManager | undefined;
   private context: vscode.ExtensionContext;
 
   constructor(
     context: vscode.ExtensionContext,
     lifecycleManager: WebViewLifecycleManager,
     updateManager: WebViewUpdateManager,
-    themeManager?: ThemeManager
+    themeManager?: IThemeManager
   ) {
     this.context = context;
     this.lifecycleManager = lifecycleManager;
@@ -195,7 +195,7 @@ export class WebViewMessageHandler {
     const themes: { name: string; path: string; isActive: boolean; description?: string }[] = [];
     
     // 現在のアクティブテーマパスを取得
-    const currentThemePath = this.themeManager ? (this.themeManager as any).themePath : '';
+    const currentThemePath = this.themeManager?.getThemePath() || '';
     const isDefaultThemeActive = !currentThemePath;
     
     console.log('[WebViewMessageHandler] 現在のテーマパス:', currentThemePath);
@@ -237,7 +237,7 @@ export class WebViewMessageHandler {
             const themeDescription = themeData?.theme?.description;
             
             // 現在のアクティブテーマかどうかを判定（パスの正規化で比較）
-            const isActive = currentThemePath && 
+            const isActive = Boolean(currentThemePath) &&
               path.resolve(currentThemePath) === path.resolve(filePath);
 
             themes.push({
@@ -286,7 +286,7 @@ export class WebViewMessageHandler {
         console.log('[WebViewMessageHandler] デフォルトテーマに切り替え');
         
         // ThemeManagerの状態をクリア
-        (this.themeManager as any).themePath = '';
+        this.themeManager.setThemePath(undefined);
         
         // デフォルトスタイルを適用（空文字でリセット）
         this.applyThemeVariables('');
@@ -326,7 +326,7 @@ export class WebViewMessageHandler {
       console.log('[WebViewMessageHandler] テーマを切り替え:', fullThemePath);
       
       // ThemeManagerのテーマパスを更新して読み込み
-      (this.themeManager as any).themePath = fullThemePath;
+      this.themeManager.setThemePath(fullThemePath);
       await this.themeManager.loadTheme();
       const cssVariables = this.themeManager.generateCSSVariables();
       

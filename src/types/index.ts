@@ -50,44 +50,69 @@ export interface IThemeManager {
   loadTheme(): Promise<void>;
   generateCSSVariables(): string;
   watchThemeFile(callback: (css: string) => void): void;
+  getThemePath(): string | undefined;
+  setThemePath(themePath: string | undefined): void;
   dispose(): void;
-  themePath?: string;
 }
 
 export interface IWebViewManager {
-  createPreviewPanel(filePath: string): Promise<vscode.WebviewPanel>;
-  updateContent(data: TextUIDSL, fileName: string): Promise<void>;
+  openPreview(): Promise<void>;
+  updatePreview(forceUpdate?: boolean): Promise<void>;
+  closePreview(): void;
+  setLastTuiFile(filePath: string, updatePreview?: boolean): void;
+  getLastTuiFile(): string | undefined;
   applyThemeVariables(css: string): void;
+  notifyThemeChange(theme: 'light' | 'dark'): void;
   dispose(): void;
   hasPanel(): boolean;
   getPanel(): vscode.WebviewPanel | undefined;
+  openDevTools(): void;
+}
+
+export interface ExportRequest {
+  format: string;
+  outputPath?: string;
+  fileName?: string;
+}
+
+export interface IRegisteredExporter {
+  export(dsl: TextUIDSL, options: ExportRequest): Promise<string>;
+  getFileExtension(): string;
 }
 
 export interface IExportManager {
-  export(data: TextUIDSL, format: ExportFormat, options?: ExportOptions): Promise<string>;
-  getSupportedFormats(): ExportFormat[];
+  registerExporter(format: string, exporter: IRegisteredExporter): void;
+  unregisterExporter(format: string): boolean;
+  exportFromFile(filePath: string, options: ExportRequest): Promise<string>;
+  getSupportedFormats(): string[];
+  getFileExtension(format: string): string;
+  clearCache(): void;
+  clearFormatCache(format: string): void;
+  dispose(): void;
 }
 
 export interface IExportService {
-  exportToFile(data: TextUIDSL, format: ExportFormat, filePath?: string): Promise<string>;
-  exportFromPreview(format: ExportFormat): Promise<string>;
+  executeExport(lastTuiFile?: string): Promise<void>;
 }
 
 export interface ITemplateService {
   createTemplate(): Promise<void>;
   insertTemplate(): Promise<void>;
-  getTemplates(): Promise<TemplateInfo[]>;
 }
 
 export interface ISettingsService {
-  getSettings(): Record<string, unknown>;
-  updateSettings(settings: Record<string, unknown>): Promise<void>;
+  openSettings(): Promise<void>;
   resetSettings(): Promise<void>;
   showSettings(): Promise<void>;
+  showAutoPreviewSetting(): Promise<void>;
+  startWatching(callback: () => void): vscode.Disposable;
+  hasConfigurationChanged(event: vscode.ConfigurationChangeEvent): boolean;
 }
 
 export interface IDiagnosticManager {
-  validateDocument(document: vscode.TextDocument): Promise<void>;
+  validateAndReportDiagnostics(document: vscode.TextDocument): Promise<void>;
+  clearDiagnostics(): void;
+  clearDiagnosticsForUri(uri: vscode.Uri): void;
   clearCache(): void;
   dispose(): void;
 }
@@ -98,7 +123,7 @@ export interface ICompletionProvider {
     position: vscode.Position,
     token: vscode.CancellationToken,
     context: vscode.CompletionContext
-  ): Promise<vscode.CompletionItem[]>;
+  ): Promise<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>>;
 }
 
 export interface ICommandManager {
@@ -110,19 +135,24 @@ export interface ICommandManager {
 // テーマ関連の型定義
 // ============================================================================
 
-export interface ThemeTokens {
-  colors?: Record<string, string | ThemeTokenValue>;
-  spacing?: Record<string, string | ThemeTokenValue>;
-  typography?: Record<string, string | ThemeTokenValue>;
-  borderRadius?: Record<string, string | ThemeTokenValue>;
-  shadows?: Record<string, string | ThemeTokenValue>;
-  transition?: Record<string, string | ThemeTokenValue>;
-  [key: string]: unknown;
-}
-
 export interface ThemeTokenValue {
   value: string;
   description?: string;
+}
+
+export type ThemeTokenEntry =
+  | string
+  | ThemeTokenValue
+  | { [key: string]: ThemeTokenEntry };
+
+export interface ThemeTokens {
+  colors?: Record<string, ThemeTokenEntry>;
+  spacing?: Record<string, ThemeTokenEntry>;
+  typography?: Record<string, ThemeTokenEntry>;
+  borderRadius?: Record<string, ThemeTokenEntry>;
+  shadows?: Record<string, ThemeTokenEntry>;
+  transition?: Record<string, ThemeTokenEntry>;
+  [key: string]: unknown;
 }
 
 export interface ThemeComponents {

@@ -1,23 +1,23 @@
 import * as vscode from 'vscode';
-import { ThemeManager } from './theme-manager';
 import { WebViewLifecycleManager } from './webview/webview-lifecycle-manager';
 import { WebViewUpdateManager } from './webview/webview-update-manager';
 import { WebViewMessageHandler } from './webview/webview-message-handler';
 import type { YamlSchemaLoader } from './webview/yaml-parser';
 import { TextUIDSL } from '../renderer/types';
+import type { IThemeManager, IWebViewManager } from '../types';
 
 /**
  * WebViewManager（ファサード）
  * 各専用クラスに処理を委譲する
  */
-export class WebViewManager {
+export class WebViewManager implements IWebViewManager {
   private lifecycleManager: WebViewLifecycleManager;
   private updateManager: WebViewUpdateManager;
   private messageHandler: WebViewMessageHandler;
-  private themeManager: ThemeManager | undefined;
+  private themeManager: IThemeManager | undefined;
   private context: vscode.ExtensionContext;
 
-  constructor(context: vscode.ExtensionContext, themeManager?: ThemeManager, schemaLoader?: YamlSchemaLoader) {
+  constructor(context: vscode.ExtensionContext, themeManager?: IThemeManager, schemaLoader?: YamlSchemaLoader) {
     this.context = context;
     this.themeManager = themeManager;
     this.lifecycleManager = new WebViewLifecycleManager(context);
