@@ -1,0 +1,14 @@
+theme:
+  name: "Corporate Theme"
+  extends: "./base-theme.yml"
+  description: "全社共通の派生テーマ"
+  tokens:
+    colors:
+      primary:
+        value: "#1D4ED8"
+      accent:
+        value: "#0EA5E9"
+  components:
+    button:
+      primary:
+        borderRadius: "9999px"
