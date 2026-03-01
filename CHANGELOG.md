@@ -4,6 +4,30 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.3.0] - 2026-03-01
+
+### 新機能
+- **テーマ継承（extends）**: テーマファイルで `extends` によりベーステーマを継承できるように。サンプル `sample/05-theme-inheritance/` を追加。
+- **ネストしたテンプレート include**: YAML パーサーでネストした `!include` をサポート。
+- **サンプルデータの再構成**: `sample/` を 01-basic、02-theme、03-include、04-include-cyclic、05-theme-inheritance に整理。
+
+### 変更・改善
+- **テーマ検出**: ネストしたディレクトリ内のカスタムテーマを検出。テーマ検出をアクティブな tui ディレクトリにスコープ。
+- **テーマ YAML の診断**: テーマファイルにテーマ用スキーマを適用し、診断精度を向上。
+- **診断のスコープ**: Markdown ファイルに対して診断が実行されないよう修正。
+- **スキーマ検証**: `!include` サポートとスキーマ検証の整合を修正。
+- **テーマサンプル**: スペーシングトークンをスキーマに合わせて修正。
+
+### 拡張性・保守性
+- **コマンドマニフェスト**: コマンド一覧の同期を一元化（sync-command-manifest.cjs）。インターフェース重視のサービス設計に合わせて整理。
+- **コンポーネントマニフェスト**: コンポーネントマニフェストのリファクタとサービスインターフェースの統一。
+- **ファイルチェック・DSL 補完**: 統一されたファイルチェックと DSL 補完による拡張性の向上。
+- **拡張 API の一貫性**: 拡張性ガードレールとコマンドマニフェストの一貫性を改善。中〜高優先の一貫性・保守性の対応。
+
+### ドキュメント
+- テスト状況の記述を更新（AGENTS.md、README.md）。
+- テーマ継承サンプルセットと README を追加。
+
 ## [0.2.1] - 2026-03-01
 
 ### 機能・リファクタリング

@@ -176,11 +176,16 @@ describe('DiagnosticManager', () => {
         return await originalLoadThemeSchema();
       };
 
+      // キャッシュをクリアして theme スキーマが確実に読み込まれるようにする
+      if (diagnosticManager.clearCache) {
+        diagnosticManager.clearCache();
+      }
+
       const themeContent = `theme:\n  name: \"base\"\n  tokens:\n    colors:\n      primary:\n        value: \"#2563EB\"`;
       const document = helpers.createTestDocument(themeContent, '/test/base-theme.yml');
 
       await diagnosticManager.validateAndReportDiagnostics(document);
-      await new Promise(resolve => setTimeout(resolve, 350));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const diagnostics = helpers.getDiagnostics(document.uri);
       assert.strictEqual(themeSchemaCallCount > 0, true, 'themeスキーマが読み込まれる');

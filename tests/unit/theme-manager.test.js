@@ -164,8 +164,8 @@ describe('ThemeManager', () => {
   it('extendsで親テーマを継承し、子テーマで上書きできる', async () => {
     const fs = require('fs');
     const path = require('path');
-    const workspaceRoot = path.join(__dirname, '../../');
-    const parentPath = path.join(workspaceRoot, 'parent-theme.yml');
+    const workspaceRoot = path.resolve(__dirname, '../..');
+    const parentPath = path.resolve(workspaceRoot, 'parent-theme.yml');
 
     const parentTheme = {
       theme: {
@@ -225,8 +225,8 @@ describe('ThemeManager', () => {
   it('循環参照の継承が検出された場合はデフォルトテーマにフォールバックする', async () => {
     const fs = require('fs');
     const path = require('path');
-    const workspaceRoot = path.join(__dirname, '../../');
-    const parentPath = path.join(workspaceRoot, 'parent-circular-theme.yml');
+    const workspaceRoot = path.resolve(__dirname, '../..');
+    const parentPath = path.resolve(workspaceRoot, 'parent-circular-theme.yml');
 
     const parentTheme = {
       theme: {

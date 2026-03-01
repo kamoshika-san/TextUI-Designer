@@ -3,12 +3,14 @@
  * ファイルシステムとワークスペース依存のモックを含む
  */
 
+const path = require('path');
+
 class ThemeManagerFactory {
   static createForTest(vscode, options = {}) {
     // デフォルト設定
     const defaultOptions = {
-      extensionPath: __dirname + '/../../',
-      workspacePath: __dirname + '/../../',
+      extensionPath: path.resolve(__dirname, '../..'),
+      workspacePath: path.resolve(__dirname, '../..'),
       ...options
     };
 
@@ -107,8 +109,7 @@ class ThemeManagerFactory {
       // テスト用テーマファイル作成ヘルパー
       createTestThemeFile: (themeContent) => {
         const fs = require('fs');
-        const path = require('path');
-        const testThemePath = path.join(__dirname, '../../textui-theme.yml');
+        const testThemePath = path.resolve(__dirname, '../..', 'textui-theme.yml');
         fs.writeFileSync(testThemePath, JSON.stringify(themeContent, null, 2));
         return testThemePath;
       },
