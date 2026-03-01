@@ -40,7 +40,14 @@
     "componentArray": {
       "type": "array",
       "items": {
-        "$ref": "#/definitions/component"
+        "oneOf": [
+          {
+            "$ref": "#/definitions/component"
+          },
+          {
+            "$ref": "#/definitions/includeDirective"
+          }
+        ]
       }
     },
     "component": {
@@ -78,6 +85,34 @@
           "$ref": "#/definitions/Alert"
         }
       ]
+    },
+    "includeDirective": {
+      "type": "object",
+      "required": [
+        "$include"
+      ],
+      "properties": {
+        "$include": {
+          "type": "object",
+          "required": [
+            "template"
+          ],
+          "properties": {
+            "template": {
+              "type": "string",
+              "description": "参照するテンプレートファイルへの相対パス。"
+            },
+            "params": {
+              "type": "object",
+              "description": "テンプレートへ渡すパラメータ。",
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false,
+      "description": "$include によるテンプレート参照。"
     },
     "Text": {
       "type": "object",
@@ -490,38 +525,12 @@
   },
   "additionalProperties": false,
   "items": {
-    "type": "object",
-    "description": "Tagged union of all v0 components",
     "oneOf": [
       {
-        "$ref": "#/definitions/Text"
+        "$ref": "#/definitions/component"
       },
       {
-        "$ref": "#/definitions/Input"
-      },
-      {
-        "$ref": "#/definitions/Button"
-      },
-      {
-        "$ref": "#/definitions/Form"
-      },
-      {
-        "$ref": "#/definitions/Checkbox"
-      },
-      {
-        "$ref": "#/definitions/Radio"
-      },
-      {
-        "$ref": "#/definitions/Select"
-      },
-      {
-        "$ref": "#/definitions/Divider"
-      },
-      {
-        "$ref": "#/definitions/Container"
-      },
-      {
-        "$ref": "#/definitions/Alert"
+        "$ref": "#/definitions/includeDirective"
       }
     ]
   }
