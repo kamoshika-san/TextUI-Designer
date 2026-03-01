@@ -175,8 +175,9 @@ export interface ThemeDefinition {
   theme: {
     name: string;
     description?: string;
-    tokens: ThemeTokens;
-    components: ThemeComponents;
+    extends?: string;
+    tokens?: ThemeTokens;
+    components?: ThemeComponents;
   };
 }
 
