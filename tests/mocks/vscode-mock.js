@@ -198,6 +198,7 @@ const mockVscode = {
     },
 
     activeTextEditor: null,
+    activeColorTheme: { kind: 1 },
     visibleTextEditors: [],
     terminals: [],
 
@@ -208,7 +209,8 @@ const mockVscode = {
     },
 
     onDidChangeActiveTextEditor: () => ({ dispose: () => {} }),
-    onDidChangeVisibleTextEditors: () => ({ dispose: () => {} })
+    onDidChangeVisibleTextEditors: () => ({ dispose: () => {} }),
+    onDidChangeActiveColorTheme: () => ({ dispose: () => {} })
   },
 
   // Commands
@@ -252,6 +254,22 @@ const mockVscode = {
     One: 1,
     Two: 2,
     Three: 3
+  },
+
+  // Theme kinds
+  ColorThemeKind: {
+    Light: 1,
+    Dark: 2,
+    HighContrast: 3
+  },
+
+  // UI kinds / environment
+  UIKind: {
+    Desktop: 1,
+    Web: 2
+  },
+  env: {
+    uiKind: 1
   },
 
   // Extensions

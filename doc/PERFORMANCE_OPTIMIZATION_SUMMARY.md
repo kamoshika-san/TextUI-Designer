@@ -69,7 +69,7 @@ export class PerformanceMonitor {
 
 ### 4. 最適化されたエクスポートマネージャー
 
-**新規作成**: `src/exporters/optimized-export-manager.ts`
+**拡張**: `src/exporters/index.ts` (`ExportManager`)
 
 - **統合された最適化**: キャッシュ、差分更新、パフォーマンス監視を統合
 - **バッチ処理**: 複数ファイルの効率的な並列処理
@@ -77,7 +77,7 @@ export class PerformanceMonitor {
 - **詳細な統計情報**: パフォーマンス指標の提供
 
 ```typescript
-export class OptimizedExportManager {
+export class ExportManager {
   exportFromFile(filePath: string, options: ExportOptions): Promise<string>
   exportWithDiffUpdate(dsl: TextUIDSL, options: ExportOptions): Promise<{ result: string; isFullUpdate: boolean; changedComponents: number[] }>
   batchExport(files: Array<{ path: string; options: ExportOptions }>): Promise<Map<string, string>>
@@ -121,9 +121,9 @@ export class OptimizedExportManager {
 ### 基本的な使用
 
 ```typescript
-import { OptimizedExportManager } from './exporters/optimized-export-manager';
+import { ExportManager } from './exporters';
 
-const manager = new OptimizedExportManager();
+const manager = new ExportManager();
 
 // 通常のエクスポート（キャッシュと差分更新が自動適用）
 const result = await manager.exportFromFile('sample.tui.yml', { format: 'html' });

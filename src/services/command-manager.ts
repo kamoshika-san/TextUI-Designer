@@ -6,7 +6,7 @@ import { SettingsService } from './settings-service';
 import { SchemaManager } from './schema-manager';
 import { ErrorHandler } from '../utils/error-handler';
 import { ConfigManager } from '../utils/config-manager';
-import { TextUIMemoryTracker } from '../utils/textui-memory-tracker';
+import { RuntimeInspectionService } from './runtime-inspection-service';
 
 /**
  * コマンド管理サービス
@@ -19,6 +19,7 @@ export class CommandManager {
   private templateService: TemplateService;
   private settingsService: SettingsService;
   private schemaManager: SchemaManager;
+  private runtimeInspectionService: RuntimeInspectionService;
 
   constructor(
     context: vscode.ExtensionContext,
@@ -34,6 +35,7 @@ export class CommandManager {
     this.templateService = templateService;
     this.settingsService = settingsService;
     this.schemaManager = schemaManager;
+    this.runtimeInspectionService = new RuntimeInspectionService();
   }
 
   /**
@@ -64,125 +66,18 @@ export class CommandManager {
     this.registerCommand('textui-designer.debugSchemas', () => this.schemaManager.debugSchemas());
 
     // パフォーマンス関連
-    this.registerCommand('textui-designer.showPerformanceReport', () => this.showPerformanceReport());
-    this.registerCommand('textui-designer.clearPerformanceMetrics', () => this.clearPerformanceMetrics());
-    this.registerCommand('textui-designer.togglePerformanceMonitoring', () => this.togglePerformanceMonitoring());
-    this.registerCommand('textui-designer.enablePerformanceMonitoring', () => this.enablePerformanceMonitoring());
-    this.registerCommand('textui-designer.generateSampleEvents', () => this.generateSampleEvents());
+    this.registerCommand('textui-designer.showPerformanceReport', () => this.runtimeInspectionService.showPerformanceReport());
+    this.registerCommand('textui-designer.clearPerformanceMetrics', () => this.runtimeInspectionService.clearPerformanceMetrics());
+    this.registerCommand('textui-designer.togglePerformanceMonitoring', () => this.runtimeInspectionService.togglePerformanceMonitoring());
+    this.registerCommand('textui-designer.enablePerformanceMonitoring', () => this.runtimeInspectionService.enablePerformanceMonitoring());
+    this.registerCommand('textui-designer.generateSampleEvents', () => this.runtimeInspectionService.generateSampleEvents());
     
     // メモリ追跡関連
-    this.registerCommand('textui-designer.showMemoryReport', () => this.showMemoryReport());
-    this.registerCommand('textui-designer.toggleMemoryTracking', () => this.toggleMemoryTracking());
-    this.registerCommand('textui-designer.enableMemoryTracking', () => this.enableMemoryTracking());
+    this.registerCommand('textui-designer.showMemoryReport', () => this.runtimeInspectionService.showMemoryReport());
+    this.registerCommand('textui-designer.toggleMemoryTracking', () => this.runtimeInspectionService.toggleMemoryTracking());
+    this.registerCommand('textui-designer.enableMemoryTracking', () => this.runtimeInspectionService.enableMemoryTracking());
     
     console.log('[CommandManager] コマンド登録完了');
-  }
-
-  /**
-   * パフォーマンスレポートを表示
-   */
-  private async showPerformanceReport(): Promise<void> {
-    const result = await ErrorHandler.executeSafely(async () => {
-      const { PerformanceMonitor } = await import('../utils/performance-monitor');
-      const monitor = PerformanceMonitor.getInstance();
-      const report = monitor.generateReport();
-      
-      // 新しいドキュメントでレポートを表示
-      const doc = await vscode.workspace.openTextDocument({
-        content: report,
-        language: 'markdown'
-      });
-      await vscode.window.showTextDocument(doc);
-      
-      ErrorHandler.showInfo('パフォーマンスレポートを表示しました');
-    }, 'パフォーマンスレポートの表示に失敗しました');
-
-    if (!result) {
-      // エラーハンドリングは既にErrorHandlerで処理済み
-      return;
-    }
-  }
-
-  /**
-   * パフォーマンスメトリクスをクリア
-   */
-  private async clearPerformanceMetrics(): Promise<void> {
-    const result = await ErrorHandler.executeSafely(async () => {
-      const { PerformanceMonitor } = await import('../utils/performance-monitor');
-      const monitor = PerformanceMonitor.getInstance();
-      monitor.clear();
-      ErrorHandler.showInfo('パフォーマンスメトリクスをクリアしました');
-    }, 'パフォーマンスメトリクスのクリアに失敗しました');
-
-    if (!result) {
-      // エラーハンドリングは既にErrorHandlerで処理済み
-      return;
-    }
-  }
-
-  /**
-   * パフォーマンス監視の有効化/無効化を切り替え
-   */
-  private async togglePerformanceMonitoring(): Promise<void> {
-    const result = await ErrorHandler.executeSafely(async () => {
-      const { PerformanceMonitor } = await import('../utils/performance-monitor');
-      const monitor = PerformanceMonitor.getInstance();
-      
-      // 現在の状態を確認（簡易的な方法）
-      const currentSettings = ConfigManager.getPerformanceSettings();
-      const newEnabled = !currentSettings.enablePerformanceLogs;
-      
-      // 設定を更新
-      await ConfigManager.set('performance.enablePerformanceLogs', newEnabled);
-      
-      // モニターの状態を更新
-      monitor.setEnabled(newEnabled);
-      
-      const status = newEnabled ? '有効化' : '無効化';
-      ErrorHandler.showInfo(`パフォーマンス監視を${status}しました`);
-    }, 'パフォーマンス監視の切り替えに失敗しました');
-
-    if (!result) {
-      // エラーハンドリングは既にErrorHandlerで処理済み
-      return;
-    }
-  }
-
-  /**
-   * パフォーマンス監視を有効化
-   */
-  private async enablePerformanceMonitoring(): Promise<void> {
-    const result = await ErrorHandler.executeSafely(async () => {
-      const { PerformanceMonitor } = await import('../utils/performance-monitor');
-      const monitor = PerformanceMonitor.getInstance();
-      const currentSettings = ConfigManager.getPerformanceSettings();
-      const newEnabled = true;
-      await ConfigManager.set('performance.enablePerformanceLogs', newEnabled);
-      monitor.setEnabled(newEnabled);
-      ErrorHandler.showInfo('パフォーマンス監視を有効化しました');
-    }, 'パフォーマンス監視の有効化に失敗しました');
-
-    if (!result) {
-      // エラーハンドリングは既にErrorHandlerで処理済み
-      return;
-    }
-  }
-
-  /**
-   * サンプルイベントを生成
-   */
-  private async generateSampleEvents(): Promise<void> {
-    const result = await ErrorHandler.executeSafely(async () => {
-      const { PerformanceMonitor } = await import('../utils/performance-monitor');
-      const monitor = PerformanceMonitor.getInstance();
-      monitor.generateSampleEvents();
-      ErrorHandler.showInfo('サンプルイベントを生成しました');
-    }, 'サンプルイベントの生成に失敗しました');
-
-    if (!result) {
-      // エラーハンドリングは既にErrorHandlerで処理済み
-      return;
-    }
   }
 
   /**
@@ -198,76 +93,6 @@ export class CommandManager {
 
     if (!result) {
       // エラーハンドリングは既にErrorHandlerで処理済み
-      return;
-    }
-  }
-
-  /**
-   * メモリレポートを表示
-   */
-  private async showMemoryReport(): Promise<void> {
-    const result = await ErrorHandler.executeSafely(async () => {
-      const memoryTracker = TextUIMemoryTracker.getInstance();
-      const report = memoryTracker.generateMemoryReport();
-      
-      // 新しいドキュメントでレポートを表示
-      const doc = await vscode.workspace.openTextDocument({
-        content: report,
-        language: 'markdown'
-      });
-      await vscode.window.showTextDocument(doc);
-      
-      ErrorHandler.showInfo('メモリレポートを表示しました');
-    }, 'メモリレポートの表示に失敗しました');
-
-    if (!result) {
-      return;
-    }
-  }
-
-  /**
-   * メモリ追跡の有効化/無効化を切り替え
-   */
-  private async toggleMemoryTracking(): Promise<void> {
-    const result = await ErrorHandler.executeSafely(async () => {
-      const memoryTracker = TextUIMemoryTracker.getInstance();
-      
-      // 現在の状態を確認
-      const currentSettings = ConfigManager.getPerformanceSettings();
-      const newEnabled = !currentSettings.enableMemoryTracking;
-      
-      // 設定を更新
-      await ConfigManager.set('performance.enableMemoryTracking', newEnabled);
-      
-      // メモリトラッカーの状態を更新
-      memoryTracker.setEnabled(newEnabled);
-      
-      const status = newEnabled ? '有効化' : '無効化';
-      ErrorHandler.showInfo(`メモリ追跡を${status}しました`);
-    }, 'メモリ追跡の切り替えに失敗しました');
-
-    if (!result) {
-      return;
-    }
-  }
-
-  /**
-   * メモリ追跡を有効化
-   */
-  private async enableMemoryTracking(): Promise<void> {
-    const result = await ErrorHandler.executeSafely(async () => {
-      const memoryTracker = TextUIMemoryTracker.getInstance();
-      
-      // 設定を更新
-      await ConfigManager.set('performance.enableMemoryTracking', true);
-      
-      // メモリトラッカーを有効化
-      memoryTracker.setEnabled(true);
-      
-      ErrorHandler.showInfo('メモリ追跡を有効化しました');
-    }, 'メモリ追跡の有効化に失敗しました');
-
-    if (!result) {
       return;
     }
   }
