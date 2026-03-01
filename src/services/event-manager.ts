@@ -132,13 +132,40 @@ export class EventManager {
 
     const documentOpenDisposable = vscode.workspace.onDidOpenTextDocument(document => {
       const diagnosticSettings = ConfigManager.getDiagnosticSettings();
-      if (diagnosticSettings.enabled) {
+      if (diagnosticSettings.enabled && this.shouldValidateDocument(document.fileName)) {
         this.services!.diagnosticManager.validateAndReportDiagnostics(document);
       }
     });
     
     this.disposables.push(documentOpenDisposable);
     console.log('[EventManager] ドキュメントオープン監視を登録しました');
+  }
+
+  /**
+   * 診断対象ファイルかどうかを判定
+   */
+  private shouldValidateDocument(fileName: string): boolean {
+    const lower = fileName.toLowerCase();
+
+    if (ConfigManager.isSupportedFile(lower)) {
+      return true;
+    }
+
+    return (
+      /\.template\.(ya?ml|json)$/.test(lower) ||
+      lower.endsWith('-theme.yml') ||
+      lower.endsWith('-theme.yaml') ||
+      lower.endsWith('_theme.yml') ||
+      lower.endsWith('_theme.yaml') ||
+      lower.endsWith('/textui-theme.yml') ||
+      lower.endsWith('/textui-theme.yaml') ||
+      lower.endsWith('\\textui-theme.yml') ||
+      lower.endsWith('\\textui-theme.yaml') ||
+      lower.endsWith('-theme.json') ||
+      lower.endsWith('_theme.json') ||
+      lower.endsWith('/textui-theme.json') ||
+      lower.endsWith('\\textui-theme.json')
+    );
   }
 
   /**
