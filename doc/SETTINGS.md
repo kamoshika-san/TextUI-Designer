@@ -22,7 +22,7 @@ TextUI Designerの設定について説明します。
 
 ### プレビュー関連
 - `textui-designer.autoPreview.enabled`: 自動プレビュー有効化
-  - デフォルト: `true`
+  - デフォルト: `false`
 - `textui-designer.webview.theme`: WebViewテーマ
   - 選択肢: `"auto"`, `"light"`, `"dark"`
   - デフォルト: `"auto"`

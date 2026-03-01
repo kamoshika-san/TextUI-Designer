@@ -291,6 +291,14 @@
         "title": "TextUI: パフォーマンス監視の切り替え"
       },
       {
+        "command": "textui-designer.enablePerformanceMonitoring",
+        "title": "TextUI: パフォーマンス監視を有効化"
+      },
+      {
+        "command": "textui-designer.generateSampleEvents",
+        "title": "TextUI: サンプルイベントを生成"
+      },
+      {
         "command": "textui-designer.checkAutoPreviewSetting",
         "title": "TextUI: 自動プレビュー設定を確認"
       },
