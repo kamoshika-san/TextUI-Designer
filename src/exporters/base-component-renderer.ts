@@ -16,7 +16,7 @@ import type {
 } from '../renderer/types';
 import type { ExportOptions, Exporter } from './index';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';
-import { getComponentName, getComponentProps } from '../registry/component-registry';
+import { getComponentName, BUILT_IN_COMPONENTS, type BuiltInComponentName } from '../registry/component-registry';
 
 export type ComponentHandler = (props: any, key: number) => string;
 
@@ -38,16 +38,22 @@ export abstract class BaseComponentRenderer implements Exporter {
    * サブクラスでオーバーライドして追加コンポーネントを登録可能
    */
   protected initializeHandlers(): void {
-    this.componentHandlers.set('Text', (props, key) => this.renderText(props, key));
-    this.componentHandlers.set('Input', (props, key) => this.renderInput(props, key));
-    this.componentHandlers.set('Button', (props, key) => this.renderButton(props, key));
-    this.componentHandlers.set('Checkbox', (props, key) => this.renderCheckbox(props, key));
-    this.componentHandlers.set('Radio', (props, key) => this.renderRadio(props, key));
-    this.componentHandlers.set('Select', (props, key) => this.renderSelect(props, key));
-    this.componentHandlers.set('Divider', (props, key) => this.renderDivider(props, key));
-    this.componentHandlers.set('Alert', (props, key) => this.renderAlert(props, key));
-    this.componentHandlers.set('Container', (props, key) => this.renderContainer(props, key));
-    this.componentHandlers.set('Form', (props, key) => this.renderForm(props, key));
+    const builtInHandlers: Record<BuiltInComponentName, ComponentHandler> = {
+      Text: (props, key) => this.renderText(props, key),
+      Input: (props, key) => this.renderInput(props, key),
+      Button: (props, key) => this.renderButton(props, key),
+      Checkbox: (props, key) => this.renderCheckbox(props, key),
+      Radio: (props, key) => this.renderRadio(props, key),
+      Select: (props, key) => this.renderSelect(props, key),
+      Divider: (props, key) => this.renderDivider(props, key),
+      Alert: (props, key) => this.renderAlert(props, key),
+      Container: (props, key) => this.renderContainer(props, key),
+      Form: (props, key) => this.renderForm(props, key)
+    };
+
+    for (const componentName of BUILT_IN_COMPONENTS) {
+      this.componentHandlers.set(componentName, builtInHandlers[componentName]);
+    }
   }
 
   abstract export(dsl: TextUIDSL, options: ExportOptions): Promise<string>;
@@ -58,8 +64,9 @@ export abstract class BaseComponentRenderer implements Exporter {
    * if-else連鎖を排除し、レジストリに登録されたハンドラーで処理
    */
   protected renderComponent(comp: ComponentDef, key: number): string {
-    const name = getComponentName(comp as Record<string, unknown>);
-    const props = name ? (comp as any)[name] : undefined;
+    const componentRecord = comp as unknown as Record<string, unknown>;
+    const name = getComponentName(componentRecord);
+    const props = name ? componentRecord[name] : undefined;
 
     if (name && props !== undefined) {
       const handler = this.componentHandlers.get(name);
@@ -76,8 +83,9 @@ export abstract class BaseComponentRenderer implements Exporter {
    * FormField / FormAction も同じハンドラーMapで処理し、if-else連鎖を排除
    */
   protected renderFormField(field: FormField, index: number): string {
-    const name = getComponentName(field as Record<string, unknown>);
-    const props = name ? (field as any)[name] : undefined;
+    const fieldRecord = field as unknown as Record<string, unknown>;
+    const name = getComponentName(fieldRecord);
+    const props = name ? fieldRecord[name] : undefined;
 
     if (name && props !== undefined) {
       const handler = this.componentHandlers.get(name);

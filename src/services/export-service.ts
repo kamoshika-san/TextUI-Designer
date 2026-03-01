@@ -4,11 +4,12 @@ import { ErrorHandler } from '../utils/error-handler';
 import { ConfigManager } from '../utils/config-manager';
 import { PerformanceMonitor } from '../utils/performance-monitor';
 import path from 'path';
+import { IExportService } from '../types';
 
 /**
  * エクスポート処理を担当するサービス
  */
-export class ExportService {
+export class ExportService implements IExportService {
   private exportManager: ExportManager;
   private performanceMonitor: PerformanceMonitor;
 

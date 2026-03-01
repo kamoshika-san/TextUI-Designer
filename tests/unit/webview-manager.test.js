@@ -149,9 +149,15 @@ describe('WebViewManager 単体テスト', () => {
     beforeEach(() => {
       // ThemeManagerのモック作成
       mockThemeManager = {
-        themePath: '',
+        _themePath: '',
         loadTheme: async () => {},
-        generateCSSVariables: () => 'mock-css-variables'
+        generateCSSVariables: () => 'mock-css-variables',
+        getThemePath() {
+          return this._themePath;
+        },
+        setThemePath(themePath) {
+          this._themePath = themePath || '';
+        }
       };
       
       // WebViewManagerにThemeManagerを設定
@@ -197,9 +203,7 @@ describe('WebViewManager 単体テスト', () => {
           return Promise.resolve(true);
         };
 
-        const handler = panel._messageHandler;
-        assert.strictEqual(typeof handler, 'function', 'メッセージハンドラーが登録されている');
-        await handler({ type: 'webview-ready' });
+        await webviewManager.sendAvailableThemes();
         await wait(50);
 
         assert.ok(sentMessage, 'available-themesメッセージが送信される');

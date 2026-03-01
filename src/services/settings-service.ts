@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
 import { ConfigManager } from '../utils/config-manager';
 import { ErrorHandler } from '../utils/error-handler';
+import { ISettingsService } from '../types';
 
 /**
  * 設定管理を担当するサービス
  */
-export class SettingsService {
+export class SettingsService implements ISettingsService {
   private configManager: typeof ConfigManager;
   private errorHandler: typeof ErrorHandler;
 
