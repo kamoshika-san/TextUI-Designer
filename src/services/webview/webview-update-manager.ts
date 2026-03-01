@@ -167,10 +167,7 @@ export class WebViewUpdateManager {
   private async resolveCurrentYamlForCache(): Promise<{ fileName: string; content: string } | null> {
     const activeEditor = vscode.window.activeTextEditor;
     const activeFileName = activeEditor?.document.fileName;
-    const isSupportedActiveFile = Boolean(
-      activeFileName &&
-      (activeFileName.endsWith('.tui.yml') || activeFileName.endsWith('.tui.yaml'))
-    );
+    const isSupportedActiveFile = Boolean(activeFileName && ConfigManager.isSupportedFile(activeFileName));
 
     if (
       activeEditor &&

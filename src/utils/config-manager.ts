@@ -67,6 +67,16 @@ export class ConfigManager {
   }
 
   /**
+   * サポート対象のファイルかチェック
+   */
+  static isSupportedFile(fileName: string): boolean {
+    const normalizedFileName = fileName.toLowerCase();
+    return this.getSupportedFileExtensions().some(ext =>
+      normalizedFileName.endsWith(ext.toLowerCase())
+    );
+  }
+
+  /**
    * 自動プレビューが有効かチェック
    */
   static isAutoPreviewEnabled(): boolean {
