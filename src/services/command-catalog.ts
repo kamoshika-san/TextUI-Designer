@@ -77,7 +77,7 @@ const COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
     menus: [
       {
         location: 'editor/title',
-        when: 'resourceExtname == .tui.yml',
+        when: 'resourceLangId == yaml',
         group: 'navigation'
       }
     ],

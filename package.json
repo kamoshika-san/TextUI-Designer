@@ -324,7 +324,7 @@
         },
         {
           "command": "textui-designer.export",
-          "when": "resourceExtname == .tui.yml",
+          "when": "resourceLangId == yaml",
           "group": "navigation"
         }
       ]
@@ -368,6 +368,7 @@
     "build-webview": "vite build",
     "dev-webview": "vite",
     "sync:commands": "npm run compile && node ./scripts/sync-command-manifest.cjs",
+    "check:commands": "npm run compile && node ./scripts/check-command-manifest.cjs",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",

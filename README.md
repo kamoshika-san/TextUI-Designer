@@ -157,6 +157,14 @@ page:
 - **スニペット**: `tui:form`等のテンプレートで高速入力
 - **エクスポート**: プレビュー画面またはコマンドパレットからワンクリックでHTML/React/Pug形式に出力
 
+### 🔌 拡張者向け: カスタムエクスポーター
+
+- `ExportManager#registerExporter(format, exporter)` で独自フォーマットを追加できます。
+- `exporter` は `export(dsl, options)` と `getFileExtension()` を実装します。
+- 既定設定 `textui-designer.export.defaultFormat` は `html/react/pug` の3形式のみを対象とします。
+  - カスタム形式を既定値として直接選ぶ運用は想定していません。
+  - カスタム形式は拡張側コードからオプション指定で扱ってください。
+
 ## サポートコンポーネント一覧
 - Text（h1, h2, h3, p, small, caption）
 - Alert（info, warning, success, error）
