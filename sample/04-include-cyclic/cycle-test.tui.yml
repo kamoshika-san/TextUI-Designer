@@ -1,0 +1,7 @@
+page:
+  id: cycle
+  title: "循環参照テスト"
+  layout: vertical
+  components:
+    - $include:
+        template: "./a.template.yml"

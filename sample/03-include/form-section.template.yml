@@ -1,0 +1,8 @@
+# セクション見出し + ネストで fields.template.yml を参照
+- Text:
+    variant: h2
+    value: "{{ $params.sectionTitle }}"
+- $include:
+    template: "./fields.template.yml"
+    params:
+      submitLabel: "{{ $params.submitLabel }}"
