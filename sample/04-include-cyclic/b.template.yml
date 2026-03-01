@@ -1,0 +1,5 @@
+- Text:
+    variant: p
+    value: "B から"
+- $include:
+    template: "./a.template.yml"

@@ -1,0 +1,22 @@
+# PR #104 検証: $include と params のサンプル
+page:
+  id: include-demo
+  title: "$include サンプル"
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: "ネストした $include の検証"
+    - Divider:
+        orientation: horizontal
+    # テンプレートを 1 つ include（params 付き）
+    - $include:
+        template: "./header.template.yml"
+        params:
+          title: "ようこそ"
+          subtitle: "TextUI Designer へ"
+    - $include:
+        template: "./form-section.template.yml"
+        params:
+          sectionTitle: "お問い合わせ"
+          submitLabel: "送信"

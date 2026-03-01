@@ -1,0 +1,15 @@
+theme:
+  name: "Product A Theme"
+  extends: "./corporate-theme.yml"
+  description: "プロダクトA向けの最終テーマ（上書きは最小限）"
+  tokens:
+    colors:
+      primary:
+        value: "#7C3AED"
+      text:
+        secondary:
+          value: "#334155"
+  components:
+    button:
+      primary:
+        backgroundColor: "#7C3AED"

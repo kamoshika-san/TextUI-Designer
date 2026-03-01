@@ -1,0 +1,110 @@
+# TextUI Designer - テーマシステムデモ
+# 使い方: このフォルダの textui-theme.yml をプロジェクトルートにコピーしてプレビューを開く
+
+page:
+  id: theme-demo
+  title: "テーマシステムデモンストレーション"
+  description: "Modern Blue Theme を使用したすべてのコンポーネントの表示例"
+  layout: vertical
+
+  components:
+    - Text:
+        variant: h1
+        value: "🎨 TextUI Designer テーマシステム"
+    - Text:
+        variant: p
+        value: "このデモでは、すべてのコンポーネントがテーマシステムによって統一されたデザインで表示されます。"
+    - Alert:
+        variant: info
+        message: "💡 テーマファイル（textui-theme.yml）を編集すると、このプレビューがリアルタイムで更新されます！"
+    - Divider:
+        orientation: horizontal
+    - Text:
+        variant: h2
+        value: "📝 テキストコンポーネント"
+    - Container:
+        layout: vertical
+        components:
+          - Text:
+              variant: h3
+              value: "見出し3（H3）"
+          - Text:
+              variant: p
+              value: "これは段落テキストです。"
+          - Text:
+              variant: small
+              value: "小さなテキストです。"
+          - Text:
+              variant: caption
+              value: "キャプションテキストです。"
+    - Divider:
+        orientation: horizontal
+    - Text:
+        variant: h2
+        value: "🚨 アラートコンポーネント"
+    - Container:
+        layout: vertical
+        components:
+          - Alert:
+              variant: success
+              message: "✅ 成功メッセージ"
+          - Alert:
+              variant: warning
+              message: "⚠️ 警告メッセージ"
+          - Alert:
+              variant: error
+              message: "❌ エラーメッセージ"
+          - Alert:
+              variant: info
+              message: "ℹ️ 情報メッセージ"
+    - Divider:
+        orientation: horizontal
+    - Text:
+        variant: h2
+        value: "📋 フォーム入力コンポーネント"
+    - Container:
+        layout: vertical
+        components:
+          - Input:
+              label: "名前"
+              name: "name"
+              type: text
+              required: true
+          - Input:
+              label: "メールアドレス"
+              name: "email"
+              type: email
+              required: true
+          - Select:
+              label: "都道府県"
+              name: "prefecture"
+              options:
+                - label: "東京都"
+                  value: "tokyo"
+                - label: "大阪府"
+                  value: "osaka"
+          - Checkbox:
+              label: "利用規約に同意します"
+              name: "agree"
+              required: true
+    - Divider:
+        orientation: horizontal
+    - Text:
+        variant: h2
+        value: "🔘 ボタンコンポーネント"
+    - Container:
+        layout: horizontal
+        components:
+          - Button:
+              kind: primary
+              label: "プライマリボタン"
+          - Button:
+              kind: secondary
+              label: "セカンダリボタン"
+          - Button:
+              kind: primary
+              label: "送信ボタン"
+              submit: true
+    - Alert:
+        variant: success
+        message: "🎉 テーマファイルを編集すると、すべてのコンポーネントのデザインが統一されて変更されます！"
