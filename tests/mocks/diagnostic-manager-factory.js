@@ -17,12 +17,18 @@ class DiagnosticManagerFactory {
     // Mock SchemaManagerを作成（実際のDiagnosticManagerに合わせる）
     const createMainSchema = () => ({
       type: 'object',
+      additionalProperties: false,
       properties: {
         page: {
           type: 'object',
+          additionalProperties: false,
           properties: {
             id: { type: 'string' },
             title: { type: 'string' },
+            layout: {
+              type: 'string',
+              enum: ['vertical', 'horizontal']
+            },
             components: {
               type: 'array',
               items: {
@@ -30,7 +36,7 @@ class DiagnosticManagerFactory {
               }
             }
           },
-          required: ['id', 'title']
+          required: ['id', 'title', 'layout']
         }
       },
       required: ['page']
@@ -152,7 +158,9 @@ class DiagnosticManagerFactory {
     };
 
     // DiagnosticManagerを作成
-    const { DiagnosticManager } = require('../../out/services/diagnostic-manager.js');
+    const diagnosticManagerModulePath = require.resolve('../../out/services/diagnostic-manager.js');
+    delete require.cache[diagnosticManagerModulePath];
+    const { DiagnosticManager } = require(diagnosticManagerModulePath);
     const diagnosticManager = new DiagnosticManager(mockSchemaManager);
 
     // VSCode APIを元に戻す
@@ -214,7 +222,14 @@ class DiagnosticManagerFactory {
           isClosed: false,
           save: async () => true,
           eol: 1,
-          lineCount: content.split('\n').length
+          lineCount: content.split('\n').length,
+          positionAt: (offset) => {
+            const safeOffset = Math.max(0, Math.min(offset, content.length));
+            const lines = content.slice(0, safeOffset).split('\n');
+            const line = lines.length - 1;
+            const character = lines[lines.length - 1].length;
+            return new extendedVscode.Position(line, character);
+          }
         };
       },
       // 診断結果を取得するヘルパー
