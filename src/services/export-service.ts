@@ -114,7 +114,6 @@ export class ExportService {
    * サポートされているファイルかどうかをチェック
    */
   private isSupportedFile(fileName: string): boolean {
-    const supportedExtensions = ConfigManager.getSupportedFileExtensions();
-    return supportedExtensions.some(ext => fileName.endsWith(ext));
+    return ConfigManager.isSupportedFile(fileName);
   }
 } 

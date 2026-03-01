@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { WebViewLifecycleManager } from './webview-lifecycle-manager';
 import { WebViewUpdateManager } from './webview-update-manager';
 import { ThemeManager } from '../theme-manager';
+import { ConfigManager } from '../../utils/config-manager';
 
 /**
  * WebViewとのメッセージ通信を担当
@@ -93,8 +94,9 @@ export class WebViewMessageHandler {
     console.log('[WebViewMessageHandler] WebView準備完了メッセージを受信');
 
     // 現在のVS Codeテーマをプレビューに送信（自動モードで正しくダーク/ライトを表示するため）
-    const colorTheme = vscode.window.activeColorTheme;
-    const initialTheme = colorTheme.kind === vscode.ColorThemeKind.Light ? 'light' : 'dark';
+    const colorThemeKind = vscode.window.activeColorTheme?.kind;
+    const lightThemeKind = vscode.ColorThemeKind?.Light;
+    const initialTheme = colorThemeKind === lightThemeKind ? 'light' : 'dark';
     this.notifyThemeChange(initialTheme);
 
     // プレビューを開いた直後は必ずYAMLを送信（自動プレビュー設定に依存しない）
@@ -349,7 +351,9 @@ export class WebViewMessageHandler {
    */
   private async returnFocusToEditor(): Promise<void> {
     const activeEditor = vscode.window.activeTextEditor;
-    const shouldReturnFocus = activeEditor && activeEditor.document.fileName.endsWith('.tui.yml');
+    const shouldReturnFocus = Boolean(
+      activeEditor && ConfigManager.isSupportedFile(activeEditor.document.fileName)
+    );
     
     if (shouldReturnFocus && activeEditor) {
       setTimeout(async () => {

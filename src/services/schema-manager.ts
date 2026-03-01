@@ -8,6 +8,7 @@ import {
   SchemaValidationResult, 
   SchemaValidationError 
 } from '../types';
+import { ConfigManager } from '../utils/config-manager';
 
 type JsonSchemaAssociation = {
   fileMatch?: string[];
@@ -34,12 +35,14 @@ export class SchemaManager implements ISchemaManager {
   private lastSchemaLoad: number = 0;
   private lastTemplateSchemaLoad: number = 0;
   private lastThemeSchemaLoad: number = 0;
-  private readonly CACHE_TTL = 30000; // 30秒
+  private readonly cacheTTL: number;
   private readonly verboseLogging: boolean;
 
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
     this.verboseLogging = process.env.TEXTUI_SCHEMA_DEBUG === 'true';
+    const performanceSettings = ConfigManager.getPerformanceSettings();
+    this.cacheTTL = performanceSettings.schemaCacheTTL || 30000;
     
     // デバッグモードでのスキーマファイルパス解決を改善
     const possiblePaths = [
@@ -264,7 +267,7 @@ export class SchemaManager implements ISchemaManager {
     const now = Date.now();
     
     // キャッシュチェック
-    if (this.schemaCache && (now - this.lastSchemaLoad) < this.CACHE_TTL) {
+    if (this.schemaCache && (now - this.lastSchemaLoad) < this.cacheTTL) {
       this.debug('[SchemaManager] キャッシュされたスキーマを使用');
       return this.schemaCache;
     }
@@ -288,7 +291,7 @@ export class SchemaManager implements ISchemaManager {
     const now = Date.now();
     
     // キャッシュチェック
-    if (this.templateSchemaCache && (now - this.lastTemplateSchemaLoad) < this.CACHE_TTL) {
+    if (this.templateSchemaCache && (now - this.lastTemplateSchemaLoad) < this.cacheTTL) {
       this.debug('[SchemaManager] キャッシュされたテンプレートスキーマを使用');
       return this.templateSchemaCache;
     }
@@ -312,7 +315,7 @@ export class SchemaManager implements ISchemaManager {
     const now = Date.now();
     
     // キャッシュチェック
-    if (this.themeSchemaCache && (now - this.lastThemeSchemaLoad) < this.CACHE_TTL) {
+    if (this.themeSchemaCache && (now - this.lastThemeSchemaLoad) < this.cacheTTL) {
       this.debug('[SchemaManager] キャッシュされたテーマスキーマを使用');
       return this.themeSchemaCache;
     }

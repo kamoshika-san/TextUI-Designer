@@ -3,6 +3,7 @@ import * as YAML from 'yaml';
 import Ajv, { ErrorObject } from 'ajv';
 import { SchemaDefinition } from '../../types';
 import { PerformanceMonitor } from '../../utils/performance-monitor';
+import { ConfigManager } from '../../utils/config-manager';
 
 export interface YamlSchemaLoader {
   loadSchema(): Promise<SchemaDefinition>;
@@ -53,7 +54,7 @@ export class YamlParser {
       let yamlContent = '';
       let fileName = '';
 
-      if (activeEditor && activeEditor.document.fileName.endsWith('.tui.yml')) {
+      if (activeEditor && ConfigManager.isSupportedFile(activeEditor.document.fileName)) {
         yamlContent = activeEditor.document.getText();
         fileName = activeEditor.document.fileName;
         console.log(`[YamlParser] アクティブエディタからYAMLを取得: ${fileName}`);

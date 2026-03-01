@@ -29,6 +29,7 @@ export class ExportManager {
   private cacheManager: CacheManager;
   private diffManager: DiffManager;
   private performanceMonitor: PerformanceMonitor;
+  private readonly maxConcurrentOperations: number;
 
   constructor() {
     this.exporters.set('react', new ReactExporter());
@@ -36,6 +37,7 @@ export class ExportManager {
     this.exporters.set('html', new HtmlExporter());
 
     const settings = ConfigManager.getPerformanceSettings();
+    this.maxConcurrentOperations = Math.max(1, settings.maxConcurrentOperations || 3);
     
     this.cacheManager = new CacheManager({
       ttl: settings.cacheTTL,
@@ -170,7 +172,7 @@ export class ExportManager {
     const batchStartTime = performance.now();
 
     // ファイルを並列処理（ただし同時実行数を制限）
-    const batchSize = 3; // 同時実行数
+    const batchSize = this.maxConcurrentOperations;
     for (let i = 0; i < files.length; i += batchSize) {
       const batch = files.slice(i, i + batchSize);
       const batchPromises = batch.map(async ({ path, options }) => {

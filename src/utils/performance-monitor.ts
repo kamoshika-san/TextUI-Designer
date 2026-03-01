@@ -316,8 +316,13 @@ ${this.generateRecommendations(metrics)}
    * 開発モードかどうかを判定
    */
   private isDevelopmentMode(): boolean {
-    return process.env.NODE_ENV === 'development' || 
-           vscode.env.uiKind === vscode.UIKind.Web;
+    if (process.env.NODE_ENV === 'development') {
+      return true;
+    }
+
+    const uiKind = vscode.env?.uiKind;
+    const webUiKind = vscode.UIKind?.Web;
+    return uiKind !== undefined && webUiKind !== undefined && uiKind === webUiKind;
   }
 
   /**

@@ -1,6 +1,196 @@
 import * as vscode from 'vscode';
 import * as YAML from 'yaml';
 import { ISchemaManager, SchemaDefinition } from '../types';
+import { BUILT_IN_COMPONENTS } from '../registry/component-registry';
+import { ConfigManager } from '../utils/config-manager';
+
+type CompletionValue = { value: string; description: string };
+type ComponentProperty = { name: string; description: string; values?: CompletionValue[] };
+
+const BOOLEAN_VALUES: CompletionValue[] = [
+  { value: 'true', description: '有効' },
+  { value: 'false', description: '無効' }
+];
+
+const COMPONENT_DESCRIPTIONS: Record<string, string> = {
+  Text: 'テキストコンポーネント',
+  Input: '入力フィールド',
+  Button: 'ボタン',
+  Checkbox: 'チェックボックス',
+  Radio: 'ラジオボタン',
+  Select: 'セレクトボックス',
+  Divider: '区切り線',
+  Alert: 'アラート',
+  Container: 'コンテナ',
+  Form: 'フォーム'
+};
+
+const COMPONENT_PROPERTIES: Record<string, ComponentProperty[]> = {
+  Text: [
+    {
+      name: 'variant',
+      description: 'テキスト種別',
+      values: [
+        { value: 'h1', description: '見出し1' },
+        { value: 'h2', description: '見出し2' },
+        { value: 'h3', description: '見出し3' },
+        { value: 'p', description: '段落' },
+        { value: 'small', description: '小さいテキスト' },
+        { value: 'caption', description: 'キャプション' }
+      ]
+    },
+    { name: 'value', description: '表示テキスト' },
+    {
+      name: 'size',
+      description: 'テキストサイズ',
+      values: [
+        { value: 'xs', description: '極小' },
+        { value: 'sm', description: '小' },
+        { value: 'base', description: '標準' },
+        { value: 'lg', description: '大' },
+        { value: 'xl', description: '特大' },
+        { value: '2xl', description: '2倍サイズ' }
+      ]
+    },
+    {
+      name: 'weight',
+      description: 'フォントウェイト',
+      values: [
+        { value: 'normal', description: '標準' },
+        { value: 'medium', description: '中' },
+        { value: 'semibold', description: 'やや太字' },
+        { value: 'bold', description: '太字' }
+      ]
+    },
+    {
+      name: 'color',
+      description: 'テキストカラー',
+      values: [
+        { value: 'text-gray-300', description: 'グレー300' },
+        { value: 'text-gray-400', description: 'グレー400' },
+        { value: 'text-gray-500', description: 'グレー500' },
+        { value: 'text-gray-600', description: 'グレー600' },
+        { value: 'text-gray-700', description: 'グレー700' },
+        { value: 'text-gray-900', description: 'グレー900' }
+      ]
+    }
+  ],
+  Input: [
+    { name: 'label', description: '入力ラベル' },
+    { name: 'name', description: '入力名' },
+    {
+      name: 'type',
+      description: '入力タイプ',
+      values: [
+        { value: 'text', description: 'テキスト' },
+        { value: 'email', description: 'メールアドレス' },
+        { value: 'password', description: 'パスワード' },
+        { value: 'number', description: '数値' },
+        { value: 'multiline', description: '複数行テキスト' }
+      ]
+    },
+    { name: 'placeholder', description: 'プレースホルダー' },
+    { name: 'required', description: '必須入力', values: BOOLEAN_VALUES },
+    { name: 'disabled', description: '無効化', values: BOOLEAN_VALUES },
+    { name: 'multiline', description: '複数行入力', values: BOOLEAN_VALUES }
+  ],
+  Button: [
+    {
+      name: 'kind',
+      description: 'ボタン種別',
+      values: [
+        { value: 'primary', description: 'プライマリ' },
+        { value: 'secondary', description: 'セカンダリ' },
+        { value: 'submit', description: '送信ボタン' }
+      ]
+    },
+    { name: 'label', description: 'ボタンラベル' },
+    { name: 'submit', description: '送信ボタンとして扱う', values: BOOLEAN_VALUES },
+    { name: 'disabled', description: '無効化', values: BOOLEAN_VALUES },
+    {
+      name: 'size',
+      description: 'ボタンサイズ',
+      values: [
+        { value: 'sm', description: '小' },
+        { value: 'md', description: '標準' },
+        { value: 'lg', description: '大' }
+      ]
+    }
+  ],
+  Checkbox: [
+    { name: 'label', description: '表示ラベル' },
+    { name: 'name', description: '入力名' },
+    { name: 'checked', description: 'チェック状態', values: BOOLEAN_VALUES },
+    { name: 'disabled', description: '無効化', values: BOOLEAN_VALUES }
+  ],
+  Radio: [
+    { name: 'label', description: '表示ラベル' },
+    { name: 'name', description: 'グループ名' },
+    { name: 'value', description: '値' },
+    { name: 'checked', description: '選択状態', values: BOOLEAN_VALUES },
+    { name: 'disabled', description: '無効化', values: BOOLEAN_VALUES },
+    { name: 'options', description: '選択肢配列' }
+  ],
+  Select: [
+    { name: 'label', description: '表示ラベル' },
+    { name: 'name', description: '入力名' },
+    { name: 'options', description: '選択肢配列' },
+    { name: 'placeholder', description: 'プレースホルダー' },
+    { name: 'disabled', description: '無効化', values: BOOLEAN_VALUES },
+    { name: 'multiple', description: '複数選択', values: BOOLEAN_VALUES }
+  ],
+  Divider: [
+    {
+      name: 'orientation',
+      description: '区切り線の向き',
+      values: [
+        { value: 'horizontal', description: '水平' },
+        { value: 'vertical', description: '垂直' }
+      ]
+    },
+    {
+      name: 'spacing',
+      description: '区切りの余白',
+      values: [
+        { value: 'sm', description: '小' },
+        { value: 'md', description: '標準' },
+        { value: 'lg', description: '大' }
+      ]
+    }
+  ],
+  Alert: [
+    {
+      name: 'variant',
+      description: 'アラート種別',
+      values: [
+        { value: 'info', description: '情報' },
+        { value: 'success', description: '成功' },
+        { value: 'warning', description: '警告' },
+        { value: 'error', description: 'エラー' }
+      ]
+    },
+    { name: 'message', description: 'メッセージ本文' },
+    { name: 'title', description: 'タイトル' }
+  ],
+  Container: [
+    {
+      name: 'layout',
+      description: 'レイアウト',
+      values: [
+        { value: 'vertical', description: '縦並び' },
+        { value: 'horizontal', description: '横並び' },
+        { value: 'flex', description: 'フレックス' },
+        { value: 'grid', description: 'グリッド' }
+      ]
+    },
+    { name: 'components', description: '子コンポーネント配列' }
+  ],
+  Form: [
+    { name: 'id', description: 'フォームID' },
+    { name: 'fields', description: '入力フィールド配列' },
+    { name: 'actions', description: 'アクション配列' }
+  ]
+};
 
 /**
  * 補完プロバイダー
@@ -59,7 +249,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     const currentWord = this.getCurrentWord(linePrefix);
     const isTemplate = /\.template\.(ya?ml|json)$/.test(document.fileName);
     
-    if (!document.fileName.endsWith('.tui.yml') && !isTemplate) {
+    if (!ConfigManager.isSupportedFile(document.fileName) && !isTemplate) {
       return [];
     }
     
@@ -244,24 +434,11 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
    * コンポーネントの補完候補を取得
    */
   private getComponentCompletions(): vscode.CompletionItem[] {
-    const components = [
-      { name: 'Text', description: 'テキストコンポーネント' },
-      { name: 'Input', description: '入力フィールド' },
-      { name: 'Button', description: 'ボタン' },
-      { name: 'Checkbox', description: 'チェックボックス' },
-      { name: 'Radio', description: 'ラジオボタン' },
-      { name: 'Select', description: 'セレクトボックス' },
-      { name: 'Divider', description: '区切り線' },
-      { name: 'Alert', description: 'アラート' },
-      { name: 'Container', description: 'コンテナ' },
-      { name: 'Form', description: 'フォーム' }
-    ];
-
-    return components.map(comp => {
-      const item = new vscode.CompletionItem(comp.name, vscode.CompletionItemKind.Class);
-      item.detail = comp.description;
-      item.insertText = `${comp.name}:\n    `;
-      item.sortText = `0${comp.name}`;
+    return BUILT_IN_COMPONENTS.map(componentName => {
+      const item = new vscode.CompletionItem(componentName, vscode.CompletionItemKind.Class);
+      item.detail = COMPONENT_DESCRIPTIONS[componentName] || 'コンポーネント';
+      item.insertText = `${componentName}:\n    `;
+      item.sortText = `0${componentName}`;
       return item;
     });
   }
@@ -344,106 +521,20 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
    * コンポーネントのプロパティを取得
    */
   private getComponentProperties(componentName: string): Array<{ name: string; description: string }> {
-    const properties: Record<string, Array<{ name: string; description: string }>> = {
-      Text: [
-        { name: 'variant', description: 'テキストの種類（h1, h2, h3, p, span）' },
-        { name: 'value', description: 'テキストの内容' },
-        { name: 'className', description: 'CSSクラス名' }
-      ],
-      Input: [
-        { name: 'type', description: '入力タイプ（text, email, password, number）' },
-        { name: 'placeholder', description: 'プレースホルダーテキスト' },
-        { name: 'value', description: '初期値' },
-        { name: 'required', description: '必須入力' },
-        { name: 'className', description: 'CSSクラス名' }
-      ],
-      Button: [
-        { name: 'variant', description: 'ボタンの種類（primary, secondary, outline）' },
-        { name: 'text', description: 'ボタンのテキスト' },
-        { name: 'onClick', description: 'クリック時の処理' },
-        { name: 'disabled', description: '無効化' },
-        { name: 'className', description: 'CSSクラス名' }
-      ],
-      Checkbox: [
-        { name: 'label', description: 'チェックボックスのラベル' },
-        { name: 'checked', description: 'チェック状態' },
-        { name: 'onChange', description: '変更時の処理' },
-        { name: 'className', description: 'CSSクラス名' }
-      ],
-      Radio: [
-        { name: 'name', description: 'ラジオボタングループ名' },
-        { name: 'options', description: '選択肢の配列' },
-        { name: 'value', description: '選択された値' },
-        { name: 'onChange', description: '変更時の処理' },
-        { name: 'className', description: 'CSSクラス名' }
-      ],
-      Select: [
-        { name: 'options', description: '選択肢の配列' },
-        { name: 'value', description: '選択された値' },
-        { name: 'placeholder', description: 'プレースホルダーテキスト' },
-        { name: 'onChange', description: '変更時の処理' },
-        { name: 'className', description: 'CSSクラス名' }
-      ],
-      Divider: [
-        { name: 'orientation', description: '区切り線の方向（horizontal, vertical）' },
-        { name: 'className', description: 'CSSクラス名' }
-      ],
-      Alert: [
-        { name: 'variant', description: 'アラートの種類（info, success, warning, error）' },
-        { name: 'title', description: 'アラートのタイトル' },
-        { name: 'message', description: 'アラートのメッセージ' },
-        { name: 'className', description: 'CSSクラス名' }
-      ],
-      Container: [
-        { name: 'layout', description: 'レイアウト（vertical, horizontal）' },
-        { name: 'spacing', description: '要素間の間隔' },
-        { name: 'className', description: 'CSSクラス名' }
-      ],
-      Form: [
-        { name: 'onSubmit', description: '送信時の処理' },
-        { name: 'className', description: 'CSSクラス名' }
-      ]
-    };
-
-    return properties[componentName] || [];
+    return (COMPONENT_PROPERTIES[componentName] || []).map(({ name, description }) => ({
+      name,
+      description
+    }));
   }
 
   /**
    * プロパティの値を取得
    */
   private getPropertyValues(propertyName: string, componentName: string): Array<{ value: string; description: string }> {
-    const values: Record<string, Array<{ value: string; description: string }>> = {
-      variant: [
-        { value: 'h1', description: '見出し1' },
-        { value: 'h2', description: '見出し2' },
-        { value: 'h3', description: '見出し3' },
-        { value: 'p', description: '段落' },
-        { value: 'span', description: 'インライン' },
-        { value: 'primary', description: 'プライマリ' },
-        { value: 'secondary', description: 'セカンダリ' },
-        { value: 'outline', description: 'アウトライン' },
-        { value: 'info', description: '情報' },
-        { value: 'success', description: '成功' },
-        { value: 'warning', description: '警告' },
-        { value: 'error', description: 'エラー' }
-      ],
-      type: [
-        { value: 'text', description: 'テキスト' },
-        { value: 'email', description: 'メールアドレス' },
-        { value: 'password', description: 'パスワード' },
-        { value: 'number', description: '数値' }
-      ],
-      layout: [
-        { value: 'vertical', description: '縦並び' },
-        { value: 'horizontal', description: '横並び' }
-      ],
-      orientation: [
-        { value: 'horizontal', description: '水平' },
-        { value: 'vertical', description: '垂直' }
-      ]
-    };
-
-    return values[propertyName] || [];
+    const matchedProperty = (COMPONENT_PROPERTIES[componentName] || []).find(
+      property => property.name === propertyName
+    );
+    return matchedProperty?.values || [];
   }
 
   /**

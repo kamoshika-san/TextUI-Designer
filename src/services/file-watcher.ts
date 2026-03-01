@@ -246,7 +246,7 @@ export class FileWatcher {
    * サポートされているファイルかチェック
    */
   private isSupportedFile(fileName: string): boolean {
-    return fileName.endsWith('.tui.yml') || fileName.endsWith('.tui.yaml');
+    return ConfigManager.isSupportedFile(fileName);
   }
 
   /**
