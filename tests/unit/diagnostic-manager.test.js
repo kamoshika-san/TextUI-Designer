@@ -333,6 +333,39 @@ unknownRoot: true`,
         assert.ok(diagnostic.message.includes('場所:'), '場所セクションを含む');
       });
     });
+
+    it('未知キーがタイポの場合は候補キーが表示される', async () => {
+      const document = helpers.createTestDocument(`page:
+  id: test
+  titl: "テスト"
+  layout: vertical`, '/test/suggestion-for-typo.tui.yml');
+
+      await diagnosticManager.validateAndReportDiagnostics(document);
+      await new Promise(resolve => setTimeout(resolve, 700));
+
+      const diagnostics = helpers.getDiagnostics(document.uri);
+      const additionalPropDiagnostic = diagnostics.find(diagnostic => diagnostic.message.includes('[TUI003]'));
+
+      assert.ok(additionalPropDiagnostic, '追加プロパティエラーが生成される');
+      assert.ok(additionalPropDiagnostic.message.includes('候補: "title"。'), '候補キーが表示される');
+    });
+
+    it('未知キーに近い候補がない場合は候補を表示しない', async () => {
+      const document = helpers.createTestDocument(`page:
+  id: test
+  title: "テスト"
+  layout: vertical
+  completelyUnknownField: true`, '/test/no-suggestion-for-unrelated-key.tui.yml');
+
+      await diagnosticManager.validateAndReportDiagnostics(document);
+      await new Promise(resolve => setTimeout(resolve, 700));
+
+      const diagnostics = helpers.getDiagnostics(document.uri);
+      const additionalPropDiagnostic = diagnostics.find(diagnostic => diagnostic.message.includes('[TUI003]'));
+
+      assert.ok(additionalPropDiagnostic, '追加プロパティエラーが生成される');
+      assert.ok(!additionalPropDiagnostic.message.includes('候補:'), '候補がない場合は候補文が含まれない');
+    });
   });
 
 
