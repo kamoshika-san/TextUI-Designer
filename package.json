@@ -381,7 +381,8 @@
     "test:unit": "mocha --no-config --require ./tests/setup.js --timeout 5000 --exit tests/unit/**/*.js",
     "test:integration": "mocha --no-config --require ./tests/setup.js --timeout 5000 --exit ./tests/integration/command-manager.test.js",
     "test:e2e": "mocha --no-config --require ./tests/setup.js --timeout 20000 --exit ./tests/e2e/export-from-preview-e2e.test.js",
-    "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:regression"
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:regression",
+    "cli": "node ./out/cli/index.js"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.6",
@@ -420,5 +421,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/kamoshika-san/TextUI-Designer.git"
+  },
+  "bin": {
+    "textui": "./out/cli/index.js"
   }
 }
