@@ -26,3 +26,13 @@
 - **メインドキュメント**: [../README.md](../README.md) - TextUI Designer の全体説明
 - **スキーマ**: `../schemas/` - DSL の型定義
 - **テーマ詳細**: 従来のテーマカスタマイズガイドは [01-basic](01-basic/) および [02-theme](02-theme/) の README と、リポジトリ内の `doc/` を参照
+
+
+## サンプル追加フロー（品質ゲート対応）
+
+1. `sample/` 配下にサンプル (`*.tui.yml` / `*.template.yml` / `*theme.yml`) を追加する。
+2. `sample/README.md` または対象ディレクトリの README に目的・使い方を追記する。
+3. ローカルで `npm run validate:samples` を実行し、構文検証と代表エクスポート検証が通ることを確認する。
+4. 意図的に失敗するサンプル（例: 循環参照テスト）を追加する場合は `scripts/validate-samples.cjs` の `expectedFailureCases` に登録する。
+
+このフローにより、CI 上でも「動く見本」が継続的に検証されます。

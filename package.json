@@ -367,6 +367,7 @@
     "package:vsix": "npm run package && npm run build-webview && npx --yes @vscode/vsce package --no-dependencies",
     "build-webview": "vite build",
     "dev-webview": "vite",
+    "validate:samples": "npm run compile && node ./scripts/validate-samples.cjs",
     "sync:commands": "npm run compile && node ./scripts/sync-command-manifest.cjs",
     "check:commands": "npm run compile && node ./scripts/check-command-manifest.cjs",
     "compile-tests": "tsc -p . --outDir out",
