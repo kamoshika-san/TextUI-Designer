@@ -424,5 +424,8 @@
   },
   "bin": {
     "textui": "./out/cli/index.js"
+  },
+  "overrides": {
+    "serialize-javascript": "7.0.3"
   }
 }
