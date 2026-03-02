@@ -6,6 +6,7 @@ import { renderRegisteredComponent } from './component-map';
 import type { TextUIDSL, ComponentDef } from './types';
 import { getVSCodeApi, type ElectronModule } from './vscode-api';
 import { createComponentKeys, hashString, mergeDslWithPrevious } from './preview-diff';
+import { createErrorGuidance, type ErrorInfo } from './error-guidance';
 
 // HTMLテンプレートで既に取得されているvscodeオブジェクトを使用
 const vscodeApi = getVSCodeApi();
@@ -40,27 +41,6 @@ function formatSchemaErrors(errors: unknown): string {
   }).join('\n');
 }
 
-// エラー情報の型定義
-interface ErrorInfo {
-  type: 'simple' | 'parse' | 'schema';
-  message?: string;
-  details?: {
-    message: string;
-    lineNumber: number;
-    columnNumber: number;
-    errorContext: string;
-    suggestions: string[];
-    fileName: string;
-    fullPath: string;
-    allErrors?: Array<{
-      path: string;
-      message: string;
-      allowedValues?: string[];
-    }>;
-  };
-  fileName?: string;
-  content?: string;
-}
 
 const App: React.FC = () => {
   const [json, setJson] = useState<TextUIDSL | null>(null);
@@ -202,11 +182,29 @@ const App: React.FC = () => {
   const renderError = () => {
     if (!error) return null;
 
+    const guidance = createErrorGuidance(error);
+
     // 文字列エラー（レガシー）
     if (typeof error === 'string') {
       return (
         <div style={{ padding: 24 }}>
-          <div style={{ color: 'red' }}>YAMLパースエラー: {error}</div>
+          <div style={{ color: 'red', marginBottom: 8 }}>{guidance.title}: {error}</div>
+          <ul>
+            {guidance.actionItems.map(item => <li key={item}>{item}</li>)}
+          </ul>
+          <div>
+            {guidance.documentLinks.map(link => (
+              <a key={link.href} href={link.href} target="_blank" rel="noreferrer" style={{ marginRight: 12 }}>
+                {link.label}
+              </a>
+            ))}
+          </div>
+          {guidance.technicalDetails && (
+            <details style={{ marginTop: 12 }}>
+              <summary>技術情報を表示</summary>
+              <pre style={{ whiteSpace: 'pre-wrap' }}>{guidance.technicalDetails}</pre>
+            </details>
+          )}
         </div>
       );
     }
@@ -327,6 +325,29 @@ const App: React.FC = () => {
                 ))}
               </ul>
             </div>
+          )}
+
+          <div style={{ marginTop: 16 }}>
+            <div style={{ color: '#374151', fontWeight: 'medium', marginBottom: 8 }}>🛠 次のアクション</div>
+            <ul style={{ margin: 0, paddingLeft: 20, color: '#374151' }}>
+              {guidance.actionItems.map(item => <li key={item}>{item}</li>)}
+            </ul>
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <div style={{ color: '#374151', fontWeight: 'medium', marginBottom: 8 }}>📚 関連ドキュメント</div>
+            {guidance.documentLinks.map(link => (
+              <a key={link.href} href={link.href} target="_blank" rel="noreferrer" style={{ marginRight: 12 }}>
+                {link.label}
+              </a>
+            ))}
+          </div>
+
+          {guidance.technicalDetails && (
+            <details style={{ marginTop: 16 }}>
+              <summary style={{ cursor: 'pointer', color: '#6b7280' }}>技術情報（詳細）</summary>
+              <pre style={{ whiteSpace: 'pre-wrap', color: '#4b5563' }}>{guidance.technicalDetails}</pre>
+            </details>
           )}
         </div>
       );
@@ -488,6 +509,29 @@ const App: React.FC = () => {
               ))}
             </div>
           )}
+
+          <div style={{ marginTop: 16 }}>
+            <div style={{ color: '#374151', fontWeight: 'medium', marginBottom: 8 }}>🛠 次のアクション</div>
+            <ul style={{ margin: 0, paddingLeft: 20, color: '#374151' }}>
+              {guidance.actionItems.map(item => <li key={item}>{item}</li>)}
+            </ul>
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <div style={{ color: '#374151', fontWeight: 'medium', marginBottom: 8 }}>📚 関連ドキュメント</div>
+            {guidance.documentLinks.map(link => (
+              <a key={link.href} href={link.href} target="_blank" rel="noreferrer" style={{ marginRight: 12 }}>
+                {link.label}
+              </a>
+            ))}
+          </div>
+
+          {guidance.technicalDetails && (
+            <details style={{ marginTop: 16 }}>
+              <summary style={{ cursor: 'pointer', color: '#6b7280' }}>技術情報（詳細）</summary>
+              <pre style={{ whiteSpace: 'pre-wrap', color: '#4b5563' }}>{guidance.technicalDetails}</pre>
+            </details>
+          )}
         </div>
       );
     }
@@ -501,9 +545,24 @@ const App: React.FC = () => {
           border: '1px solid #fecaca',
           borderRadius: 8
         }}>
-          <div style={{ color: '#dc2626' }}>
-            {error.message}
+          <div style={{ color: '#dc2626', marginBottom: 8 }}>{error.message}</div>
+          <div style={{ color: '#374151', fontWeight: 'medium', marginBottom: 6 }}>🛠 次のアクション</div>
+          <ul style={{ margin: '0 0 12px 0', paddingLeft: 20, color: '#374151' }}>
+            {guidance.actionItems.map(item => <li key={item}>{item}</li>)}
+          </ul>
+          <div>
+            {guidance.documentLinks.map(link => (
+              <a key={link.href} href={link.href} target="_blank" rel="noreferrer" style={{ marginRight: 12 }}>
+                {link.label}
+              </a>
+            ))}
           </div>
+          {guidance.technicalDetails && (
+            <details style={{ marginTop: 12 }}>
+              <summary style={{ cursor: 'pointer', color: '#6b7280' }}>技術情報（詳細）</summary>
+              <pre style={{ whiteSpace: 'pre-wrap', color: '#4b5563' }}>{guidance.technicalDetails}</pre>
+            </details>
+          )}
         </div>
       );
     }
