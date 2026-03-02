@@ -110,6 +110,29 @@ describe('高優先度課題: 拡張性・柔軟性', () => {
     assert.ok(!labels.includes('text'));
   });
 
+
+  it('CompletionProvider は既存プロパティを重複候補から除外する', () => {
+    const provider = new TextUICompletionProvider({
+      loadSchema: async () => ({})
+    });
+
+    const existingProperties = new Set(['label']);
+    const labels = provider
+      .getComponentPropertyCompletions('Button', existingProperties)
+      .map(item => item.label);
+
+    assert.ok(!labels.includes('label'));
+    assert.ok(labels.includes('kind'));
+  });
+
+  it('CompletionProvider は page 定義済み時に root 候補を抑制する', () => {
+    const provider = new TextUICompletionProvider({
+      loadSchema: async () => ({})
+    });
+
+    const items = provider.getRootLevelCompletions(new Set(['page']));
+    assert.strictEqual(items.length, 0);
+  });
   it('CompletionProvider の variant 値補完は Text 型に一致する', () => {
     const provider = new TextUICompletionProvider({
       loadSchema: async () => ({})

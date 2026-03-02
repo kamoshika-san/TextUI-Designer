@@ -150,7 +150,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
       
       case 'component-properties':
         // コンポーネントのプロパティ
-        items.push(...this.getComponentPropertyCompletions(context.componentName));
+        items.push(...this.getComponentPropertyCompletions(context.componentName, context.existingProperties));
         break;
       
       case 'property-value':
@@ -160,7 +160,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
       
       case 'root-level':
         // ルートレベル
-        items.push(...this.getRootLevelCompletions());
+        items.push(...this.getRootLevelCompletions(context.rootKeys));
         break;
     }
 
@@ -174,10 +174,13 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     type: 'component-list' | 'component-properties' | 'property-value' | 'root-level';
     componentName?: string;
     propertyName?: string;
+    existingProperties?: Set<string>;
+    rootKeys?: Set<string>;
   } {
     const lines = linePrefix.split('\n');
     const currentLine = lines[lines.length - 1];
     const indentLevel = this.getIndentLevel(currentLine);
+    const contextMeta = this.collectContextMeta(lines, lines.length - 1, indentLevel);
 
     // ハイフンの後（コンポーネントリスト）
     if (currentLine.trim().endsWith('-') || currentLine.trim() === '-') {
@@ -186,7 +189,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
 
     // ルートレベル
     if (indentLevel === 0) {
-      return { type: 'root-level' };
+      return { type: 'root-level', rootKeys: contextMeta.rootKeys };
     }
 
     // プロパティ値の行（例: variant: ...）を先に判定
@@ -195,7 +198,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
       const propertyName = propertyMatch[1];
       const componentName = this.findParentComponent(lines, lines.length - 1);
       if (componentName) {
-        return { type: 'property-value', propertyName, componentName };
+        return { type: 'property-value', propertyName, componentName, existingProperties: contextMeta.existingProperties };
       }
     }
 
@@ -204,19 +207,56 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     if (componentMatch) {
       const componentName = this.findParentComponent(lines, lines.length - 1);
       if (componentName) {
-        return { type: 'property-value', propertyName: componentMatch[1], componentName };
+        return {
+          type: 'property-value',
+          propertyName: componentMatch[1],
+          componentName,
+          existingProperties: contextMeta.existingProperties
+        };
       } else {
-        return { type: 'component-properties', componentName: componentMatch[1] };
+        return {
+          type: 'component-properties',
+          componentName: componentMatch[1],
+          existingProperties: contextMeta.existingProperties
+        };
       }
     }
 
     // 空白行やその他の行で、親コンポーネントのプロパティ入力中
     const componentName = this.findParentComponent(lines, lines.length - 1);
     if (componentName) {
-      return { type: 'component-properties', componentName };
+      return { type: 'component-properties', componentName, existingProperties: contextMeta.existingProperties };
     }
 
-    return { type: 'root-level' };
+    return { type: 'root-level', rootKeys: contextMeta.rootKeys };
+  }
+
+  private collectContextMeta(
+    lines: string[],
+    currentIndex: number,
+    currentIndent: number
+  ): { existingProperties: Set<string>; rootKeys: Set<string> } {
+    const existingProperties = new Set<string>();
+    const rootKeys = new Set<string>();
+
+    for (let i = 0; i < currentIndex; i++) {
+      const line = lines[i];
+      const propertyMatch = line.match(/^\s*(?:-\s*)?(\w+):/);
+      if (!propertyMatch) {continue;}
+
+      const key = propertyMatch[1];
+      const indent = this.getIndentLevel(line);
+
+      if (indent === 0) {
+        rootKeys.add(key);
+      }
+
+      if (indent === currentIndent) {
+        existingProperties.add(key);
+      }
+    }
+
+    return { existingProperties, rootKeys };
   }
 
   /**
@@ -259,12 +299,13 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
   /**
    * コンポーネントのプロパティ補完候補を取得
    */
-  private getComponentPropertyCompletions(componentName?: string): vscode.CompletionItem[] {
+  private getComponentPropertyCompletions(componentName?: string, existingProperties: Set<string> = new Set()): vscode.CompletionItem[] {
     if (!componentName) {return [];}
 
     const properties = this.getComponentProperties(componentName);
+    const filteredProperties = properties.filter(prop => !existingProperties.has(prop.name));
     
-    return properties.map(prop => {
+    return filteredProperties.map(prop => {
       const item = new vscode.CompletionItem(prop.name, vscode.CompletionItemKind.Property);
       item.detail = prop.description;
       item.insertText = `${prop.name}: `;
@@ -293,8 +334,12 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
   /**
    * ルートレベルの補完候補を取得
    */
-  private getRootLevelCompletions(): vscode.CompletionItem[] {
+  private getRootLevelCompletions(existingRootKeys: Set<string> = new Set()): vscode.CompletionItem[] {
     const items: vscode.CompletionItem[] = [];
+
+    if (existingRootKeys.has('page')) {
+      return items;
+    }
     
     const pageItem = new vscode.CompletionItem('page', vscode.CompletionItemKind.Module);
     pageItem.detail = 'ページ定義';
