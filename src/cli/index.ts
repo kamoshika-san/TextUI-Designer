@@ -12,6 +12,7 @@ import { buildPlan } from './planner';
 import { buildState, DEFAULT_STATE_PATH, loadState, saveState, stateToStableJson } from './state-manager';
 import { getProviderExtension, runExport, type CliProvider } from './exporter-runner';
 import type { CliState, ExitCode, PlanSummary, ValidationSummary } from './types';
+import { sha256, stableStringify } from './utils';
 
 function getArg(flag: string): string | undefined {
   const index = process.argv.indexOf(flag);
@@ -89,6 +90,36 @@ function loadStatePayload(inputArg?: string): unknown {
 
   return JSON.parse(stdin);
 }
+
+function getStateFingerprint(state: CliState | null): string {
+  if (!state) {
+    return 'absent';
+  }
+  return sha256(stateToStableJson(state));
+}
+
+function toDeterministicDsl<T>(dsl: T): T {
+  return JSON.parse(stableStringify(dsl)) as T;
+}
+
+async function renderWithDeterministicCheck(params: {
+  dsl: Parameters<typeof runExport>[0];
+  provider: CliProvider;
+  deterministic: boolean;
+}): Promise<string> {
+  if (!params.deterministic) {
+    return runExport(params.dsl, params.provider);
+  }
+
+  const deterministicDsl = toDeterministicDsl(params.dsl);
+  const first = await runExport(deterministicDsl, params.provider);
+  const second = await runExport(deterministicDsl, params.provider);
+  if (first !== second) {
+    throw new Error('deterministic export check failed: provider output is not stable');
+  }
+  return first;
+}
+
 
 async function run(): Promise<ExitCode> {
   const command = process.argv[2];
@@ -201,6 +232,7 @@ async function run(): Promise<ExitCode> {
 
   const statePath = path.resolve(getArg('--state') ?? DEFAULT_STATE_PATH);
   const state = loadState(statePath);
+  const initialStateFingerprint = getStateFingerprint(state);
 
   if (command === 'plan') {
     const filePaths = resolveDslFiles(fileArg, dirArg);
@@ -269,7 +301,7 @@ async function run(): Promise<ExitCode> {
       return 2;
     }
 
-    const content = await runExport(loaded.dsl, provider);
+    const content = await renderWithDeterministicCheck({ dsl: loaded.dsl, provider, deterministic });
     const output = path.resolve(getArg('--output') ?? `generated/textui${getProviderExtension(provider)}`);
     ensureDirectoryForFile(output);
     fs.writeFileSync(output, content, 'utf8');
@@ -300,7 +332,7 @@ async function run(): Promise<ExitCode> {
       return 1;
     }
 
-    const content = await runExport(loaded.dsl, provider);
+    const content = await renderWithDeterministicCheck({ dsl: loaded.dsl, provider, deterministic });
     const output = path.resolve(getArg('--output') ?? `generated/textui${getProviderExtension(provider)}`);
     ensureDirectoryForFile(output);
     fs.writeFileSync(output, content, 'utf8');
@@ -312,6 +344,14 @@ async function run(): Promise<ExitCode> {
       dslRaw: loaded.raw,
       artifacts: [{ file: path.relative(process.cwd(), output), content }]
     });
+
+    const latestState = loadState(statePath);
+    const latestStateFingerprint = getStateFingerprint(latestState);
+    if (latestStateFingerprint !== initialStateFingerprint) {
+      process.stderr.write('state conflict detected: state changed since plan calculation\n');
+      return 4;
+    }
+
     saveState(statePath, nextState);
 
     if (hasFlag('--json')) {

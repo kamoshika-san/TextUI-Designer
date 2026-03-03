@@ -138,6 +138,70 @@ describe('TextUI CLI Sprint1', () => {
     assert.match(plan.stdout, /No changes/);
   });
 
+  it('apply returns exit code 4 when state changes during execution', async () => {
+    const workingFile = path.join(tmpDir, 'conflict.tui.yml');
+    fs.copyFileSync(sampleFile, workingFile);
+
+    const firstApply = spawnSync('node', [
+      cliPath,
+      'apply',
+      '--file',
+      workingFile,
+      '--provider',
+      'html',
+      '--output',
+      outFile,
+      '--state',
+      stateFile,
+      '--auto-approve'
+    ], { encoding: 'utf8' });
+    assert.strictEqual(firstApply.status, 0);
+
+    const original = fs.readFileSync(workingFile, 'utf8');
+    fs.writeFileSync(workingFile, original.replace('label: "ログイン"', 'label: "ログインする"'), 'utf8');
+
+    const child = require('child_process').spawn('node', [
+      cliPath,
+      'apply',
+      '--file',
+      workingFile,
+      '--provider',
+      'html',
+      '--output',
+      outFile,
+      '--state',
+      stateFile,
+      '--auto-approve'
+    ], { encoding: 'utf8' });
+
+    let stderr = '';
+    child.stderr.on('data', chunk => {
+      stderr += chunk.toString();
+    });
+
+    const baseState = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+    let tick = 0;
+    const timer = setInterval(() => {
+      const nextState = {
+        ...baseState,
+        meta: {
+          ...baseState.meta,
+          lastApply: new Date(Date.now() + tick).toISOString()
+        }
+      };
+      fs.writeFileSync(stateFile, JSON.stringify(nextState, null, 2));
+      tick += 1;
+    }, 1);
+
+    const status = await new Promise(resolve => {
+      child.on('close', code => resolve(code));
+    });
+
+    clearInterval(timer);
+    assert.strictEqual(status, 4);
+    assert.match(stderr, /state conflict detected/);
+  });
+
   it('state push writes state file from --input and state rm deletes a resource by id', () => {
     const pushPayload = {
       version: 1,
