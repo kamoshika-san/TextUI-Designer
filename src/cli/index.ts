@@ -1,12 +1,17 @@
 #!/usr/bin/env node
 import * as fs from 'fs';
 import * as path from 'path';
-import { ensureDirectoryForFile, loadDslFromFile, resolveDslFile } from './io';
+import {
+  ensureDirectoryForFile,
+  loadDslFromFile,
+  resolveDslFile,
+  resolveDslFiles
+} from './io';
 import { validateDsl } from './validator';
 import { buildPlan } from './planner';
 import { buildState, DEFAULT_STATE_PATH, loadState, saveState, stateToStableJson } from './state-manager';
 import { getProviderExtension, runExport, type CliProvider } from './exporter-runner';
-import type { ExitCode } from './types';
+import type { CliState, ExitCode, PlanSummary, ValidationSummary } from './types';
 
 function getArg(flag: string): string | undefined {
   const index = process.argv.indexOf(flag);
@@ -22,6 +27,67 @@ function hasFlag(flag: string): boolean {
 
 function printJson(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
+}
+
+function validateAcrossFiles(filePaths: string[]): ValidationSummary {
+  const files = filePaths.map(filePath => {
+    const loaded = loadDslFromFile(filePath);
+    const result = validateDsl(loaded.dsl);
+    const issues = result.issues.map(issue => ({ ...issue, file: loaded.sourcePath }));
+    return {
+      file: loaded.sourcePath,
+      valid: result.valid,
+      issues
+    };
+  });
+
+  return {
+    valid: files.every(file => file.valid),
+    issues: files.flatMap(file => file.issues),
+    files
+  };
+}
+
+function findStateForFile(state: CliState | null, filePath: string): CliState | null {
+  if (!state) {
+    return null;
+  }
+  const stateEntryPath = path.resolve(state.dsl.entry);
+  if (stateEntryPath !== filePath) {
+    return null;
+  }
+  return state;
+}
+
+function planAcrossFiles(filePaths: string[], state: CliState | null): PlanSummary {
+  const files = filePaths.map(filePath => {
+    const loaded = loadDslFromFile(filePath);
+    const plan = buildPlan(loaded.dsl, findStateForFile(state, loaded.sourcePath));
+    return {
+      file: loaded.sourcePath,
+      hasChanges: plan.hasChanges,
+      changes: plan.changes
+    };
+  });
+
+  return {
+    hasChanges: files.some(file => file.hasChanges),
+    changes: files.flatMap(file => file.changes.map(change => ({ ...change, path: `${file.file}::${change.path}` }))),
+    files
+  };
+}
+
+function loadStatePayload(inputArg?: string): unknown {
+  if (inputArg) {
+    return JSON.parse(fs.readFileSync(path.resolve(inputArg), 'utf8'));
+  }
+
+  const stdin = fs.readFileSync(0, 'utf8').trim();
+  if (!stdin) {
+    throw new Error('state push requires JSON input from --input or stdin');
+  }
+
+  return JSON.parse(stdin);
 }
 
 async function run(): Promise<ExitCode> {
@@ -55,32 +121,90 @@ async function run(): Promise<ExitCode> {
       return 0;
     }
 
+    if (sub === 'push') {
+      const payload = loadStatePayload(getArg('--input')) as CliState;
+      saveState(statePath, payload);
+      if (hasFlag('--json')) {
+        printJson({ pushed: true, state: statePath, resources: payload.resources?.length ?? 0 });
+      } else {
+        process.stdout.write(`state pushed: ${statePath}\n`);
+      }
+      return 0;
+    }
+
+    if (sub === 'rm') {
+      if (!state) {
+        process.stderr.write(`state not found: ${statePath}\n`);
+        return 1;
+      }
+      const id = getArg('--id');
+      if (!id) {
+        process.stderr.write('state rm requires --id <resource-id>\n');
+        return 1;
+      }
+      const before = state.resources.length;
+      state.resources = state.resources.filter(resource => resource.id !== id);
+      saveState(statePath, state);
+      const removed = before - state.resources.length;
+      if (hasFlag('--json')) {
+        printJson({ removed, id, state: statePath });
+      } else {
+        process.stdout.write(`removed ${removed} resource(s): ${id}\n`);
+      }
+      return 0;
+    }
+
     process.stderr.write(`unsupported state command: ${sub}\n`);
     return 1;
   }
 
-  const filePath = resolveDslFile(getArg('--file'));
-  const loaded = loadDslFromFile(filePath);
+  const fileArg = getArg('--file');
+  const dirArg = getArg('--dir');
 
   if (command === 'validate') {
-    const validation = validateDsl(loaded.dsl);
+    const filePaths = resolveDslFiles(fileArg, dirArg);
+    const summary = validateAcrossFiles(filePaths);
+
     if (hasFlag('--json')) {
-      printJson(validation);
-    } else if (validation.valid) {
-      process.stdout.write(`✔ valid: ${loaded.sourcePath}\n`);
+      if (fileArg) {
+        printJson({ valid: summary.valid, issues: summary.issues });
+      } else {
+        printJson(summary);
+      }
+    } else if (fileArg) {
+      const filePath = resolveDslFile(fileArg);
+      if (summary.valid) {
+        process.stdout.write(`✔ valid: ${filePath}\n`);
+      } else {
+        summary.issues.forEach(issue => {
+          process.stderr.write(`✖ ${issue.path ?? '/'} ${issue.message}\n`);
+        });
+      }
     } else {
-      validation.issues.forEach(issue => {
-        process.stderr.write(`✖ ${issue.path ?? '/'} ${issue.message}\n`);
+      if (summary.files.length === 0) {
+        process.stdout.write('No DSL files found.\n');
+      }
+      summary.files.forEach(file => {
+        if (file.valid) {
+          process.stdout.write(`✔ valid: ${file.file}\n`);
+        } else {
+          process.stderr.write(`✖ invalid: ${file.file}\n`);
+          file.issues.forEach(issue => {
+            process.stderr.write(`  - ${issue.path ?? '/'} ${issue.message}\n`);
+          });
+        }
       });
     }
-    return validation.valid ? 0 : 2;
+
+    return summary.valid ? 0 : 2;
   }
 
   const statePath = path.resolve(getArg('--state') ?? DEFAULT_STATE_PATH);
   const state = loadState(statePath);
 
   if (command === 'plan') {
-    const validation = validateDsl(loaded.dsl);
+    const filePaths = resolveDslFiles(fileArg, dirArg);
+    const validation = validateAcrossFiles(filePaths);
     if (!validation.valid) {
       if (hasFlag('--json')) {
         printJson(validation);
@@ -88,16 +212,39 @@ async function run(): Promise<ExitCode> {
       return 2;
     }
 
-    const plan = buildPlan(loaded.dsl, state);
+    const plan = planAcrossFiles(filePaths, state);
+
     if (hasFlag('--json')) {
-      printJson(plan);
-    } else if (!plan.hasChanges) {
-      process.stdout.write('No changes.\n');
+      if (fileArg) {
+        printJson({ hasChanges: plan.hasChanges, changes: plan.files[0]?.changes ?? [] });
+      } else {
+        printJson(plan);
+      }
+    } else if (fileArg) {
+      const filePlan = plan.files[0];
+      if (!filePlan || !filePlan.hasChanges) {
+        process.stdout.write('No changes.\n');
+      } else {
+        filePlan.changes.forEach(change => {
+          process.stdout.write(`${change.op} ${change.type}[id=${change.id}] @ ${change.path}${change.details ? ` (${change.details})` : ''}\n`);
+        });
+      }
     } else {
-      plan.changes.forEach(change => {
-        process.stdout.write(`${change.op} ${change.type}[id=${change.id}] @ ${change.path}${change.details ? ` (${change.details})` : ''}\n`);
+      if (plan.files.length === 0) {
+        process.stdout.write('No DSL files found.\n');
+      }
+      plan.files.forEach(filePlan => {
+        if (!filePlan.hasChanges) {
+          process.stdout.write(`No changes: ${filePlan.file}\n`);
+          return;
+        }
+        process.stdout.write(`Changes: ${filePlan.file}\n`);
+        filePlan.changes.forEach(change => {
+          process.stdout.write(`  ${change.op} ${change.type}[id=${change.id}] @ ${change.path}${change.details ? ` (${change.details})` : ''}\n`);
+        });
       });
     }
+
     const out = getArg('--out');
     if (out) {
       ensureDirectoryForFile(path.resolve(out));
@@ -105,6 +252,9 @@ async function run(): Promise<ExitCode> {
     }
     return plan.hasChanges ? 3 : 0;
   }
+
+  const filePath = resolveDslFile(fileArg);
+  const loaded = loadDslFromFile(filePath);
 
   const provider = (getArg('--provider') ?? 'html') as CliProvider;
   if (!['html', 'react', 'pug'].includes(provider)) {
