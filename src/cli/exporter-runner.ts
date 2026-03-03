@@ -1,30 +1,29 @@
 import type { TextUIDSL } from '../renderer/types';
-import { HtmlExporter } from '../exporters/html-exporter';
-import { ReactExporter } from '../exporters/react-exporter';
-import { PugExporter } from '../exporters/pug-exporter';
+import { getProvider, listProviders } from './provider-registry';
 
-export type CliProvider = 'html' | 'react' | 'pug';
+export type CliProvider = string;
 
 export function getProviderExtension(provider: CliProvider): string {
-  switch (provider) {
-    case 'html':
-      return '.html';
-    case 'react':
-      return '.tsx';
-    case 'pug':
-      return '.pug';
-    default:
-      return '.txt';
-  }
+  return getProvider(provider)?.extension ?? '.txt';
+}
+
+export function getProviderVersion(provider: CliProvider): string {
+  return getProvider(provider)?.version ?? 'unknown';
+}
+
+export function isSupportedProvider(provider: CliProvider): boolean {
+  return getProvider(provider) !== null;
+}
+
+export function getSupportedProviderNames(): string[] {
+  return listProviders().map(provider => provider.name);
 }
 
 export async function runExport(dsl: TextUIDSL, provider: CliProvider): Promise<string> {
-  switch (provider) {
-    case 'html':
-      return new HtmlExporter().export(dsl, { format: 'html' });
-    case 'react':
-      return new ReactExporter().export(dsl, { format: 'react' });
-    case 'pug':
-      return new PugExporter().export(dsl, { format: 'pug' });
+  const definition = getProvider(provider);
+  if (!definition) {
+    throw new Error(`unsupported provider: ${provider}`);
   }
+
+  return definition.render(dsl);
 }

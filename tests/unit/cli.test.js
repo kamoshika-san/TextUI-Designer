@@ -37,6 +37,30 @@ describe('TextUI CLI Sprint1', () => {
     assert.strictEqual(parsed.files[0].file, dirSampleFile);
   });
 
+
+  it('providers --json lists built-in providers', () => {
+    const output = execFileSync('node', [cliPath, 'providers', '--json'], { encoding: 'utf8' });
+    const parsed = JSON.parse(output);
+    assert.ok(Array.isArray(parsed.providers));
+    const names = parsed.providers.map(provider => provider.name);
+    assert.deepStrictEqual(names, ['html', 'pug', 'react']);
+  });
+
+  it('export returns exit code 1 with supported provider hint when provider is unknown', () => {
+    const result = spawnSync('node', [
+      cliPath,
+      'export',
+      '--file',
+      sampleFile,
+      '--provider',
+      'vue'
+    ], { encoding: 'utf8' });
+
+    assert.strictEqual(result.status, 1);
+    assert.match(result.stderr, /unsupported provider: vue/);
+    assert.match(result.stderr, /supported providers: html, pug, react/);
+  });
+
   it('plan returns exit code 3 when state is missing and changes exist', () => {
     const result = spawnSync('node', [cliPath, 'plan', '--file', sampleFile, '--state', stateFile], { encoding: 'utf8' });
     assert.strictEqual(result.status, 3);
