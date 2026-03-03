@@ -265,7 +265,12 @@ export class YamlParser {
       if (error instanceof Error && error.name === 'SchemaValidationError') {
         throw error;
       }
-      console.error('[YamlParser] スキーマバリデーションでエラーが発生しました:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[YamlParser] スキーマバリデーションでエラーが発生しました:', error);
+      } else {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`[YamlParser] スキーマバリデーションでエラーが発生しました: ${message}`);
+      }
       throw error;
     }
   }
