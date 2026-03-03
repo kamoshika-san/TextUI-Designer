@@ -266,6 +266,7 @@ export class YamlParser {
         throw error;
       }
       console.error('[YamlParser] スキーマバリデーションでエラーが発生しました:', error);
+      throw error;
     }
   }
 
