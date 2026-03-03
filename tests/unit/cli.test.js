@@ -54,6 +54,66 @@ describe('TextUI CLI Sprint1', () => {
     assert.strictEqual(parsed.files[0].hasChanges, true);
   });
 
+
+  it('export --deterministic includes deterministic=true in JSON output', () => {
+    const output = execFileSync('node', [
+      cliPath,
+      'export',
+      '--file',
+      sampleFile,
+      '--provider',
+      'html',
+      '--output',
+      outFile,
+      '--deterministic',
+      '--json'
+    ], { encoding: 'utf8' });
+
+    const parsed = JSON.parse(output);
+    assert.strictEqual(parsed.deterministic, true);
+    assert.ok(fs.existsSync(outFile));
+  });
+
+  it('plan includes changed field details when state has snapshots', () => {
+    const workingFile = path.join(tmpDir, 'working.tui.yml');
+    fs.copyFileSync(sampleFile, workingFile);
+
+    const apply = spawnSync('node', [
+      cliPath,
+      'apply',
+      '--file',
+      workingFile,
+      '--provider',
+      'html',
+      '--output',
+      outFile,
+      '--state',
+      stateFile,
+      '--auto-approve'
+    ], { encoding: 'utf8' });
+    assert.strictEqual(apply.status, 0);
+
+    const original = fs.readFileSync(workingFile, 'utf8');
+    const updated = original.replace('label: "ログイン"', 'label: "サインイン"');
+    fs.writeFileSync(workingFile, updated, 'utf8');
+
+    const plan = spawnSync('node', [
+      cliPath,
+      'plan',
+      '--file',
+      workingFile,
+      '--state',
+      stateFile,
+      '--json'
+    ], { encoding: 'utf8' });
+
+    assert.strictEqual(plan.status, 3);
+    const parsed = JSON.parse(plan.stdout);
+    const updateChange = parsed.changes.find(change => change.op === '~');
+    assert.ok(updateChange);
+    assert.match(updateChange.details || '', /fields changed: actions/);
+  });
+
   it('apply writes artifact and state, then plan returns 0', () => {
     const apply = spawnSync('node', [
       cliPath,

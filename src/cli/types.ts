@@ -18,6 +18,7 @@ export interface CliState {
     type: string;
     path: string;
     hash: string;
+    snapshot?: Record<string, unknown>;
   }>;
   artifacts: Array<{
     file: string;
@@ -58,6 +59,14 @@ export interface PlanChange {
   type: string;
   path: string;
   details?: string;
+}
+
+export interface ComponentResourceRecord {
+  id: string;
+  type: string;
+  path: string;
+  hash: string;
+  snapshot?: Record<string, unknown>;
 }
 
 export interface PlanResult {
