@@ -137,6 +137,29 @@ describe('YamlParser スキーマ検証', () => {
     );
   });
 
+  it('スキーマローダーの予期しないエラーは握りつぶさず再スローされる', async () => {
+    const schemaLoaderError = new Error('schema loader unavailable');
+    const schemaLoader = {
+      loadSchema: async () => {
+        throw schemaLoaderError;
+      }
+    };
+
+    setActiveEditor(`page:
+  id: "sample-page"`);
+
+    const parser = new YamlParser(schemaLoader);
+    PerformanceMonitor.getInstance().setEnabled(false);
+
+    await assert.rejects(
+      () => parser.parseYamlFile(),
+      (error) => {
+        assert.strictEqual(error, schemaLoaderError);
+        return true;
+      }
+    );
+  });
+
   it('$include で参照したテンプレートを解決し、ネストした参照も展開する', async () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-include-'));
     const nestedTemplatePath = path.join(tmpDir, 'nested.template.yml');
