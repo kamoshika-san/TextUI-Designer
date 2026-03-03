@@ -263,6 +263,7 @@ async function run(): Promise<ExitCode> {
   }
 
   if (command === 'export') {
+    const deterministic = hasFlag('--deterministic');
     const validation = validateDsl(loaded.dsl);
     if (!validation.valid) {
       return 2;
@@ -274,7 +275,7 @@ async function run(): Promise<ExitCode> {
     fs.writeFileSync(output, content, 'utf8');
 
     if (hasFlag('--json')) {
-      printJson({ output, provider, bytes: Buffer.byteLength(content, 'utf8') });
+      printJson({ output, provider, bytes: Buffer.byteLength(content, 'utf8'), deterministic });
     } else {
       process.stdout.write(`Exported: ${output}\n`);
     }
@@ -282,6 +283,7 @@ async function run(): Promise<ExitCode> {
   }
 
   if (command === 'apply') {
+    const deterministic = hasFlag('--deterministic');
     const validation = validateDsl(loaded.dsl);
     if (!validation.valid) {
       return 2;
@@ -313,7 +315,7 @@ async function run(): Promise<ExitCode> {
     saveState(statePath, nextState);
 
     if (hasFlag('--json')) {
-      printJson({ applied: true, output, state: statePath, changes: plan.changes.length });
+      printJson({ applied: true, output, state: statePath, changes: plan.changes.length, deterministic });
     } else {
       process.stdout.write(`Applied ${plan.changes.length} change(s). state: ${statePath}\n`);
     }
