@@ -10,7 +10,15 @@ import {
 import { validateDsl } from './validator';
 import { buildPlan } from './planner';
 import { buildState, DEFAULT_STATE_PATH, loadState, saveState, stateToStableJson } from './state-manager';
-import { getProviderExtension, runExport, type CliProvider } from './exporter-runner';
+import {
+  getProviderExtension,
+  getProviderVersion,
+  getSupportedProviderNames,
+  getSupportedProviders,
+  isSupportedProvider,
+  runExport,
+  type CliProvider
+} from './exporter-runner';
 import type { CliState, ExitCode, PlanSummary, ValidationSummary } from './types';
 import { sha256, stableStringify } from './utils';
 
@@ -125,12 +133,28 @@ async function run(): Promise<ExitCode> {
   const command = process.argv[2];
 
   if (!command || command === 'help' || command === '--help' || command === '-h') {
-    process.stdout.write('Usage: textui <validate|plan|apply|export|state|version> ...\n');
+    process.stdout.write('Usage: textui <validate|plan|apply|export|state|providers|version> ...\n');
     return 0;
   }
 
   if (command === 'version') {
     process.stdout.write('textui-cli 0.1.0\n');
+    return 0;
+  }
+
+
+
+  if (command === 'providers') {
+    const providers = getSupportedProviders();
+
+    if (hasFlag('--json')) {
+      printJson({ providers });
+    } else {
+      providers.forEach(provider => {
+        process.stdout.write(`${provider.name}	${provider.extension}	${provider.version}	${provider.source}\n`);
+      });
+    }
+
     return 0;
   }
 
@@ -289,8 +313,9 @@ async function run(): Promise<ExitCode> {
   const loaded = loadDslFromFile(filePath);
 
   const provider = (getArg('--provider') ?? 'html') as CliProvider;
-  if (!['html', 'react', 'pug'].includes(provider)) {
+  if (!isSupportedProvider(provider)) {
     process.stderr.write(`unsupported provider: ${provider}\n`);
+    process.stderr.write(`supported providers: ${getSupportedProviderNames().join(', ')}\n`);
     return 1;
   }
 
@@ -340,6 +365,7 @@ async function run(): Promise<ExitCode> {
     const nextState = buildState({
       entry: path.relative(process.cwd(), loaded.sourcePath),
       provider,
+      providerVersion: getProviderVersion(provider),
       dsl: loaded.dsl,
       dslRaw: loaded.raw,
       artifacts: [{ file: path.relative(process.cwd(), output), content }]

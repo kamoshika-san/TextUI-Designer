@@ -10,7 +10,7 @@ export interface CliState {
     updatedAt: string;
   };
   provider: {
-    name: 'html' | 'react' | 'pug';
+    name: string;
     version: string;
   };
   resources: Array<{

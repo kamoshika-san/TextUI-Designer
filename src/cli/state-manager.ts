@@ -22,7 +22,8 @@ export function saveState(statePath: string, state: CliState): void {
 
 export function buildState(params: {
   entry: string;
-  provider: 'html' | 'react' | 'pug';
+  provider: string;
+  providerVersion: string;
   dsl: unknown;
   dslRaw: string;
   artifacts: Array<{ file: string; content: string }>;
@@ -39,7 +40,7 @@ export function buildState(params: {
     },
     provider: {
       name: params.provider,
-      version: '1.0.0'
+      version: params.providerVersion
     },
     resources,
     artifacts: params.artifacts.map(item => ({
