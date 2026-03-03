@@ -34,11 +34,22 @@ export interface ValidationIssue {
   level: 'error' | 'warning';
   message: string;
   path?: string;
+  file?: string;
 }
 
 export interface ValidationResult {
   valid: boolean;
   issues: ValidationIssue[];
+}
+
+export interface ValidationSummary {
+  valid: boolean;
+  issues: ValidationIssue[];
+  files: Array<{
+    file: string;
+    valid: boolean;
+    issues: ValidationIssue[];
+  }>;
 }
 
 export interface PlanChange {
@@ -52,6 +63,16 @@ export interface PlanChange {
 export interface PlanResult {
   hasChanges: boolean;
   changes: PlanChange[];
+}
+
+export interface PlanSummary {
+  hasChanges: boolean;
+  changes: PlanChange[];
+  files: Array<{
+    file: string;
+    hasChanges: boolean;
+    changes: PlanChange[];
+  }>;
 }
 
 export interface LoadedDsl {
