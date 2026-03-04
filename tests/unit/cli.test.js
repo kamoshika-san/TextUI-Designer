@@ -204,6 +204,14 @@ describe('TextUI CLI Sprint1', () => {
     });
 
     const baseState = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+    fs.writeFileSync(stateFile, JSON.stringify({
+      ...baseState,
+      meta: {
+        ...baseState.meta,
+        lastApply: new Date(Date.now() + 10_000).toISOString()
+      }
+    }, null, 2));
+
     let tick = 0;
     const timer = setInterval(() => {
       const nextState = {

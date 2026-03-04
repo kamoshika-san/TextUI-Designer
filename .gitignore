@@ -4,4 +4,8 @@ node_modules
 .vscode-test/
 *.vsix
 media/
+!media/
+!media/.gitkeep
+!media/assets/
+!media/assets/.gitkeep
 icon.svg
