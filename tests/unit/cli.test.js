@@ -195,7 +195,8 @@ describe('TextUI CLI Sprint1', () => {
       outFile,
       '--state',
       stateFile,
-      '--auto-approve'
+      '--auto-approve',
+      '--deterministic'
     ], { encoding: 'utf8' });
 
     let stderr = '';
@@ -204,26 +205,21 @@ describe('TextUI CLI Sprint1', () => {
     });
 
     const baseState = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
-    fs.writeFileSync(stateFile, JSON.stringify({
-      ...baseState,
-      meta: {
-        ...baseState.meta,
-        lastApply: new Date(Date.now() + 10_000).toISOString()
-      }
-    }, null, 2));
-
     let tick = 0;
-    const timer = setInterval(() => {
+    const writeConflictState = () => {
       const nextState = {
         ...baseState,
         meta: {
           ...baseState.meta,
-          lastApply: new Date(Date.now() + tick).toISOString()
+          lastApply: new Date(Date.now() + 60_000 + tick).toISOString()
         }
       };
       fs.writeFileSync(stateFile, JSON.stringify(nextState, null, 2));
       tick += 1;
-    }, 1);
+    };
+
+    setTimeout(writeConflictState, 5);
+    const timer = setInterval(writeConflictState, 10);
 
     const status = await new Promise(resolve => {
       child.on('close', code => resolve(code));
