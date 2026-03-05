@@ -90,6 +90,29 @@ module.exports = {
     const parsed = JSON.parse(output);
     const names = parsed.providers.map(provider => provider.name);
     assert.deepStrictEqual(names, ['html', 'pug', 'react', 'vue']);
+    const external = parsed.providers.find(provider => provider.name === 'vue');
+    assert.strictEqual(external.source, 'external');
+  });
+
+  it('providers plain output keeps 3-column compatibility even with --provider-module', () => {
+    const output = execFileSync('node', [
+      cliPath,
+      'providers',
+      '--provider-module',
+      providerModuleFile
+    ], { encoding: 'utf8' });
+
+    const rows = output.trim().split('\n').map(line => line.split('\t'));
+    assert.ok(rows.length >= 4);
+    rows.forEach(columns => {
+      assert.strictEqual(columns.length, 3);
+    });
+    assert.ok(rows.some(columns => columns[0] === 'vue' && columns[1] === '.vue' && columns[2] === '0.1.0'));
+  });
+
+  it('help output includes provider-module option', () => {
+    const output = execFileSync('node', [cliPath, '--help'], { encoding: 'utf8' });
+    assert.match(output, /--provider-module <path>/);
   });
 
   it('export returns exit code 1 with supported provider hint when provider is unknown', () => {
@@ -182,6 +205,22 @@ module.exports = {
 
     assert.strictEqual(result.status, 1);
     assert.match(result.stderr, /provider module name mismatch/);
+  });
+
+  it('export fails when provider module file does not exist', () => {
+    const result = spawnSync('node', [
+      cliPath,
+      'export',
+      '--file',
+      sampleFile,
+      '--provider',
+      'vue',
+      '--provider-module',
+      path.join(tmpDir, 'does-not-exist.cjs')
+    ], { encoding: 'utf8' });
+
+    assert.strictEqual(result.status, 1);
+    assert.match(result.stderr, /provider module not found/);
   });
 
   it('plan returns exit code 3 when state is missing and changes exist', () => {
