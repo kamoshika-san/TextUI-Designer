@@ -11,11 +11,22 @@ describe('TextUI CLI Sprint1', () => {
   const dirSampleFile = path.join(tmpDir, 'nested', 'dir-sample.tui.yml');
   const stateFile = path.join(tmpDir, 'state.json');
   const outFile = path.join(tmpDir, 'result.html');
+  const providerModuleFile = path.join(tmpDir, 'custom-provider.cjs');
 
   beforeEach(() => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
     fs.mkdirSync(path.dirname(dirSampleFile), { recursive: true });
     fs.copyFileSync(sampleFile, dirSampleFile);
+    fs.writeFileSync(providerModuleFile, `
+module.exports = {
+  name: 'vue',
+  extension: '.vue',
+  version: '0.1.0',
+  async render() {
+    return '<template><main>custom provider</main></template>';
+  }
+};
+`, 'utf8');
   });
 
   afterEach(() => {
@@ -46,6 +57,20 @@ describe('TextUI CLI Sprint1', () => {
     assert.deepStrictEqual(names, ['html', 'pug', 'react']);
   });
 
+  it('providers --provider-module includes external provider', () => {
+    const output = execFileSync('node', [
+      cliPath,
+      'providers',
+      '--provider-module',
+      providerModuleFile,
+      '--json'
+    ], { encoding: 'utf8' });
+
+    const parsed = JSON.parse(output);
+    const names = parsed.providers.map(provider => provider.name);
+    assert.deepStrictEqual(names, ['html', 'pug', 'react', 'vue']);
+  });
+
   it('export returns exit code 1 with supported provider hint when provider is unknown', () => {
     const result = spawnSync('node', [
       cliPath,
@@ -59,6 +84,26 @@ describe('TextUI CLI Sprint1', () => {
     assert.strictEqual(result.status, 1);
     assert.match(result.stderr, /unsupported provider: vue/);
     assert.match(result.stderr, /supported providers: html, pug, react/);
+  });
+
+  it('export supports external provider module', () => {
+    const result = spawnSync('node', [
+      cliPath,
+      'export',
+      '--file',
+      sampleFile,
+      '--provider',
+      'vue',
+      '--provider-module',
+      providerModuleFile,
+      '--output',
+      path.join(tmpDir, 'result.vue'),
+      '--json'
+    ], { encoding: 'utf8' });
+
+    assert.strictEqual(result.status, 0);
+    const parsed = JSON.parse(result.stdout);
+    assert.ok(parsed.output.endsWith('.vue'));
   });
 
   it('plan returns exit code 3 when state is missing and changes exist', () => {
