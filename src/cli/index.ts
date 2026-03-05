@@ -135,6 +135,7 @@ async function run(): Promise<ExitCode> {
 
   if (!command || command === 'help' || command === '--help' || command === '-h') {
     process.stdout.write('Usage: textui <validate|plan|apply|export|state|providers|version> ...\n');
+    process.stdout.write('Options: --provider <name> --provider-module <path> --file <path> --dir <path> --json\n');
     return 0;
   }
 
