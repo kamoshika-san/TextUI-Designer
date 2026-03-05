@@ -15,6 +15,7 @@ import {
   getProviderVersion,
   getSupportedProviderNames,
   isSupportedProvider,
+  loadExternalProvider,
   runExport,
   type CliProvider
 } from './exporter-runner';
@@ -112,15 +113,16 @@ function toDeterministicDsl<T>(dsl: T): T {
 async function renderWithDeterministicCheck(params: {
   dsl: Parameters<typeof runExport>[0];
   provider: CliProvider;
+  providerModulePath?: string;
   deterministic: boolean;
 }): Promise<string> {
   if (!params.deterministic) {
-    return runExport(params.dsl, params.provider);
+    return runExport(params.dsl, params.provider, { providerModulePath: params.providerModulePath });
   }
 
   const deterministicDsl = toDeterministicDsl(params.dsl);
-  const first = await runExport(deterministicDsl, params.provider);
-  const second = await runExport(deterministicDsl, params.provider);
+  const first = await runExport(deterministicDsl, params.provider, { providerModulePath: params.providerModulePath });
+  const second = await runExport(deterministicDsl, params.provider, { providerModulePath: params.providerModulePath });
   if (first !== second) {
     throw new Error('deterministic export check failed: provider output is not stable');
   }
@@ -144,17 +146,33 @@ async function run(): Promise<ExitCode> {
 
 
   if (command === 'providers') {
-    const providers = getSupportedProviderNames().map(name => ({
-      name,
-      extension: getProviderExtension(name),
-      version: getProviderVersion(name)
-    }));
+    const providerModulePath = getArg('--provider-module');
+    const builtinNames = await getSupportedProviderNames();
+    const providers = await Promise.all(
+      builtinNames.map(async name => ({
+        name,
+        extension: await getProviderExtension(name),
+        version: await getProviderVersion(name),
+        source: 'builtin'
+      }))
+    );
+
+    if (providerModulePath) {
+      const externalProvider = await loadExternalProvider(providerModulePath);
+      providers.push({
+        name: externalProvider.name,
+        extension: externalProvider.extension,
+        version: externalProvider.version,
+        source: 'external'
+      });
+      providers.sort((a, b) => a.name.localeCompare(b.name));
+    }
 
     if (hasFlag('--json')) {
       printJson({ providers });
     } else {
       providers.forEach(provider => {
-        process.stdout.write(`${provider.name}	${provider.extension}	${provider.version}\n`);
+        process.stdout.write(`${provider.name}\t${provider.extension}\t${provider.version}\t${provider.source}\n`);
       });
     }
 
@@ -315,10 +333,12 @@ async function run(): Promise<ExitCode> {
   const filePath = resolveDslFile(fileArg);
   const loaded = loadDslFromFile(filePath);
 
+  const providerModulePath = getArg('--provider-module');
   const provider = (getArg('--provider') ?? 'html') as CliProvider;
-  if (!isSupportedProvider(provider)) {
+  if (!await isSupportedProvider(provider, { providerModulePath })) {
     process.stderr.write(`unsupported provider: ${provider}\n`);
-    process.stderr.write(`supported providers: ${getSupportedProviderNames().join(', ')}\n`);
+    const supportedProviders = await getSupportedProviderNames({ providerModulePath });
+    process.stderr.write(`supported providers: ${supportedProviders.join(', ')}\n`);
     return 1;
   }
 
@@ -329,8 +349,9 @@ async function run(): Promise<ExitCode> {
       return 2;
     }
 
-    const content = await renderWithDeterministicCheck({ dsl: loaded.dsl, provider, deterministic });
-    const output = path.resolve(getArg('--output') ?? `generated/textui${getProviderExtension(provider)}`);
+    const content = await renderWithDeterministicCheck({ dsl: loaded.dsl, provider, providerModulePath, deterministic });
+    const providerExtension = await getProviderExtension(provider, { providerModulePath });
+    const output = path.resolve(getArg('--output') ?? `generated/textui${providerExtension}`);
     ensureDirectoryForFile(output);
     fs.writeFileSync(output, content, 'utf8');
 
@@ -360,15 +381,16 @@ async function run(): Promise<ExitCode> {
       return 1;
     }
 
-    const content = await renderWithDeterministicCheck({ dsl: loaded.dsl, provider, deterministic });
-    const output = path.resolve(getArg('--output') ?? `generated/textui${getProviderExtension(provider)}`);
+    const content = await renderWithDeterministicCheck({ dsl: loaded.dsl, provider, providerModulePath, deterministic });
+    const providerExtension = await getProviderExtension(provider, { providerModulePath });
+    const output = path.resolve(getArg('--output') ?? `generated/textui${providerExtension}`);
     ensureDirectoryForFile(output);
     fs.writeFileSync(output, content, 'utf8');
 
     const nextState = buildState({
       entry: path.relative(process.cwd(), loaded.sourcePath),
       provider,
-      providerVersion: getProviderVersion(provider),
+      providerVersion: await getProviderVersion(provider, { providerModulePath }),
       dsl: loaded.dsl,
       dslRaw: loaded.raw,
       artifacts: [{ file: path.relative(process.cwd(), output), content }]
