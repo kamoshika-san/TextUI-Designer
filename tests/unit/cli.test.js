@@ -12,6 +12,8 @@ describe('TextUI CLI Sprint1', () => {
   const stateFile = path.join(tmpDir, 'state.json');
   const outFile = path.join(tmpDir, 'result.html');
   const providerModuleFile = path.join(tmpDir, 'custom-provider.cjs');
+  const invalidProviderModuleFile = path.join(tmpDir, 'invalid-provider.cjs');
+  const mismatchProviderModuleFile = path.join(tmpDir, 'mismatch-provider.cjs');
 
   beforeEach(() => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -24,6 +26,25 @@ module.exports = {
   version: '0.1.0',
   async render() {
     return '<template><main>custom provider</main></template>';
+  }
+};
+`, 'utf8');
+
+    fs.writeFileSync(invalidProviderModuleFile, `
+module.exports = {
+  name: 'broken',
+  extension: '.broken',
+  version: '0.0.1'
+};
+`, 'utf8');
+
+    fs.writeFileSync(mismatchProviderModuleFile, `
+module.exports = {
+  name: 'not-vue',
+  extension: '.vue',
+  version: '0.1.0',
+  async render() {
+    return '<div>mismatch</div>';
   }
 };
 `, 'utf8');
@@ -104,6 +125,63 @@ module.exports = {
     assert.strictEqual(result.status, 0);
     const parsed = JSON.parse(result.stdout);
     assert.ok(parsed.output.endsWith('.vue'));
+  });
+
+  it('apply supports external provider module and writes provider version to state', () => {
+    const stateOut = path.join(tmpDir, 'external-state.json');
+    const result = spawnSync('node', [
+      cliPath,
+      'apply',
+      '--file',
+      sampleFile,
+      '--provider',
+      'vue',
+      '--provider-module',
+      providerModuleFile,
+      '--output',
+      path.join(tmpDir, 'applied.vue'),
+      '--state',
+      stateOut,
+      '--auto-approve',
+      '--json'
+    ], { encoding: 'utf8' });
+
+    assert.strictEqual(result.status, 0);
+    const state = JSON.parse(fs.readFileSync(stateOut, 'utf8'));
+    assert.strictEqual(state.provider.name, 'vue');
+    assert.strictEqual(state.provider.version, '0.1.0');
+  });
+
+  it('export fails when provider module shape is invalid', () => {
+    const result = spawnSync('node', [
+      cliPath,
+      'export',
+      '--file',
+      sampleFile,
+      '--provider',
+      'broken',
+      '--provider-module',
+      invalidProviderModuleFile
+    ], { encoding: 'utf8' });
+
+    assert.strictEqual(result.status, 1);
+    assert.match(result.stderr, /invalid provider module/);
+  });
+
+  it('export fails when --provider does not match provider module name', () => {
+    const result = spawnSync('node', [
+      cliPath,
+      'export',
+      '--file',
+      sampleFile,
+      '--provider',
+      'vue',
+      '--provider-module',
+      mismatchProviderModuleFile
+    ], { encoding: 'utf8' });
+
+    assert.strictEqual(result.status, 1);
+    assert.match(result.stderr, /provider module name mismatch/);
   });
 
   it('plan returns exit code 3 when state is missing and changes exist', () => {

@@ -172,7 +172,7 @@ async function run(): Promise<ExitCode> {
       printJson({ providers });
     } else {
       providers.forEach(provider => {
-        process.stdout.write(`${provider.name}\t${provider.extension}\t${provider.version}\t${provider.source}\n`);
+        process.stdout.write(`${provider.name}\t${provider.extension}\t${provider.version}\n`);
       });
     }
 
