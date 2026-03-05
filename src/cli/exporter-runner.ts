@@ -1,5 +1,6 @@
 import type { TextUIDSL } from '../renderer/types';
 import * as path from 'path';
+import * as fs from 'fs';
 import { getProvider, listProviders, type CliProviderDefinition } from './provider-registry';
 
 export type CliProvider = string;
@@ -7,6 +8,8 @@ export type CliProvider = string;
 export interface ProviderLookupOptions {
   providerModulePath?: string;
 }
+
+const externalProviderCache = new Map<string, Promise<CliProviderDefinition>>();
 
 function isProviderDefinition(value: unknown): value is CliProviderDefinition {
   if (!value || typeof value !== 'object') {
@@ -21,14 +24,34 @@ function isProviderDefinition(value: unknown): value is CliProviderDefinition {
 
 export async function loadExternalProvider(providerModulePath: string): Promise<CliProviderDefinition> {
   const absolutePath = path.resolve(providerModulePath);
-  const imported = await import(absolutePath);
-  const candidate = (imported.default ?? imported) as unknown;
-
-  if (!isProviderDefinition(candidate)) {
-    throw new Error('invalid provider module: expected { name, extension, version, render }');
+  const cached = externalProviderCache.get(absolutePath);
+  if (cached) {
+    return cached;
   }
 
-  return candidate;
+  if (!fs.existsSync(absolutePath)) {
+    throw new Error(`provider module not found: ${absolutePath}`);
+  }
+
+  const loadPromise = (async (): Promise<CliProviderDefinition> => {
+    const imported = await import(absolutePath);
+    const candidate = (imported.default ?? imported) as unknown;
+
+    if (!isProviderDefinition(candidate)) {
+      throw new Error('invalid provider module: expected { name, extension, version, render }');
+    }
+
+    return candidate;
+  })();
+
+  externalProviderCache.set(absolutePath, loadPromise);
+
+  try {
+    return await loadPromise;
+  } catch (error) {
+    externalProviderCache.delete(absolutePath);
+    throw error;
+  }
 }
 
 export async function resolveProviderDefinition(
