@@ -112,6 +112,41 @@ function toDeterministicDsl<T>(dsl: T): T {
   return JSON.parse(stableStringify(dsl)) as T;
 }
 
+function stripDslExtension(filePath: string): string {
+  return filePath.replace(/\.tui\.ya?ml$/i, '');
+}
+
+function assertDirectoryTarget(targetPath: string, flagName: '--output' | '--state'): void {
+  if (fs.existsSync(targetPath) && !fs.statSync(targetPath).isDirectory()) {
+    throw new Error(`${flagName} must be a directory when used with --dir: ${targetPath}`);
+  }
+}
+
+function resolveBatchOutputPath(params: {
+  filePath: string;
+  rootDir: string;
+  providerExtension: string;
+  outputArg?: string;
+}): string {
+  const outputRoot = path.resolve(params.outputArg ?? 'generated');
+  assertDirectoryTarget(outputRoot, '--output');
+  const relativeDslPath = path.relative(params.rootDir, params.filePath);
+  const outputBase = stripDslExtension(relativeDslPath);
+  return path.join(outputRoot, `${outputBase}${params.providerExtension}`);
+}
+
+function resolveBatchStatePath(params: {
+  filePath: string;
+  rootDir: string;
+  stateArg?: string;
+}): string {
+  const stateRoot = path.resolve(params.stateArg ?? '.textui/state');
+  assertDirectoryTarget(stateRoot, '--state');
+  const relativeDslPath = path.relative(params.rootDir, params.filePath);
+  const stateBase = stripDslExtension(relativeDslPath);
+  return path.join(stateRoot, `${stateBase}.state.json`);
+}
+
 async function renderWithDeterministicCheck(params: {
   dsl: Parameters<typeof runExport>[0];
   provider: CliProvider;
@@ -129,6 +164,142 @@ async function renderWithDeterministicCheck(params: {
     throw new Error('deterministic export check failed: provider output is not stable');
   }
   return first;
+}
+
+async function applyAcrossFiles(params: {
+  filePaths: string[];
+  rootDir: string;
+  provider: CliProvider;
+  providerModulePath?: string;
+  deterministic: boolean;
+  autoApprove: boolean;
+  outputArg?: string;
+  stateArg?: string;
+  json: boolean;
+}): Promise<ExitCode> {
+  const validation = validateAcrossFiles(params.filePaths);
+  if (!validation.valid) {
+    if (params.json) {
+      printJson(validation);
+    } else {
+      validation.files.forEach(file => {
+        process.stderr.write(`✖ invalid: ${file.file}\n`);
+        file.issues.forEach(issue => {
+          process.stderr.write(`  - ${issue.path ?? '/'} ${issue.message}\n`);
+        });
+      });
+    }
+    return 2;
+  }
+
+  if (!params.autoApprove) {
+    process.stderr.write('apply requires --auto-approve in non-interactive mode\n');
+    return 1;
+  }
+
+  if (params.filePaths.length === 0) {
+    if (params.json) {
+      printJson({ applied: false, files: [], changes: 0 });
+    } else {
+      process.stdout.write('No DSL files found.\n');
+    }
+    return 0;
+  }
+
+  const providerExtension = await getProviderExtension(params.provider, { providerModulePath: params.providerModulePath });
+  const results: Array<{
+    file: string;
+    output: string;
+    state: string;
+    changes: number;
+    applied: boolean;
+  }> = [];
+  let totalChanges = 0;
+
+  for (const filePath of params.filePaths) {
+    const loaded = loadDslFromFile(filePath);
+    const outputPath = resolveBatchOutputPath({
+      filePath: loaded.sourcePath,
+      rootDir: params.rootDir,
+      providerExtension,
+      outputArg: params.outputArg
+    });
+    const statePath = resolveBatchStatePath({
+      filePath: loaded.sourcePath,
+      rootDir: params.rootDir,
+      stateArg: params.stateArg
+    });
+    const state = loadState(statePath);
+    const initialStateFingerprint = getStateFingerprint(state);
+    const plan = buildPlan(loaded.dsl, findStateForFile(state, loaded.sourcePath));
+
+    if (!plan.hasChanges) {
+      results.push({
+        file: loaded.sourcePath,
+        output: outputPath,
+        state: statePath,
+        changes: 0,
+        applied: false
+      });
+      continue;
+    }
+
+    const content = await renderWithDeterministicCheck({
+      dsl: loaded.dsl,
+      provider: params.provider,
+      providerModulePath: params.providerModulePath,
+      deterministic: params.deterministic
+    });
+    ensureDirectoryForFile(outputPath);
+    fs.writeFileSync(outputPath, content, 'utf8');
+
+    const nextState = buildState({
+      entry: path.relative(process.cwd(), loaded.sourcePath),
+      provider: params.provider,
+      providerVersion: await getProviderVersion(params.provider, { providerModulePath: params.providerModulePath }),
+      dsl: loaded.dsl,
+      dslRaw: loaded.raw,
+      artifacts: [{ file: path.relative(process.cwd(), outputPath), content }]
+    });
+
+    const latestState = loadState(statePath);
+    const latestStateFingerprint = getStateFingerprint(latestState);
+    if (latestStateFingerprint !== initialStateFingerprint) {
+      process.stderr.write(`state conflict detected: ${loaded.sourcePath}\n`);
+      return 4;
+    }
+
+    saveState(statePath, nextState);
+    totalChanges += plan.changes.length;
+    results.push({
+      file: loaded.sourcePath,
+      output: outputPath,
+      state: statePath,
+      changes: plan.changes.length,
+      applied: true
+    });
+  }
+
+  if (params.json) {
+    printJson({
+      applied: true,
+      files: results,
+      changes: totalChanges,
+      deterministic: params.deterministic
+    });
+  } else {
+    results.forEach(result => {
+      if (result.applied) {
+        process.stdout.write(`Applied ${result.changes} change(s): ${result.file}\n`);
+      } else {
+        process.stdout.write(`No changes: ${result.file}\n`);
+      }
+      process.stdout.write(`  output: ${result.output}\n`);
+      process.stdout.write(`  state: ${result.state}\n`);
+    });
+  }
+
+  return 0;
 }
 
 
@@ -333,19 +504,18 @@ async function run(): Promise<ExitCode> {
     return plan.hasChanges ? 3 : 0;
   }
 
-  const filePath = resolveDslFile(fileArg);
-  const loaded = loadDslFromFile(filePath);
-
   const providerModulePath = getArg('--provider-module');
   const provider = (getArg('--provider') ?? 'html') as CliProvider;
-  if (!await isSupportedProvider(provider, { providerModulePath })) {
-    process.stderr.write(`unsupported provider: ${provider}\n`);
-    const supportedProviders = await getSupportedProviderNames({ providerModulePath });
-    process.stderr.write(`supported providers: ${supportedProviders.join(', ')}\n`);
-    return 1;
-  }
 
   if (command === 'export') {
+    const filePath = resolveDslFile(fileArg);
+    const loaded = loadDslFromFile(filePath);
+    if (!await isSupportedProvider(provider, { providerModulePath })) {
+      process.stderr.write(`unsupported provider: ${provider}\n`);
+      const supportedProviders = await getSupportedProviderNames({ providerModulePath });
+      process.stderr.write(`supported providers: ${supportedProviders.join(', ')}\n`);
+      return 1;
+    }
     const deterministic = hasFlag('--deterministic');
     const validation = validateDsl(loaded.dsl);
     if (!validation.valid) {
@@ -367,7 +537,29 @@ async function run(): Promise<ExitCode> {
   }
 
   if (command === 'apply') {
+    if (!await isSupportedProvider(provider, { providerModulePath })) {
+      process.stderr.write(`unsupported provider: ${provider}\n`);
+      const supportedProviders = await getSupportedProviderNames({ providerModulePath });
+      process.stderr.write(`supported providers: ${supportedProviders.join(', ')}\n`);
+      return 1;
+    }
     const deterministic = hasFlag('--deterministic');
+    if (dirArg) {
+      const filePaths = resolveDslFiles(fileArg, dirArg);
+      return applyAcrossFiles({
+        filePaths,
+        rootDir: path.resolve(dirArg),
+        provider,
+        providerModulePath,
+        deterministic,
+        autoApprove: hasFlag('--auto-approve'),
+        outputArg: getArg('--output'),
+        stateArg: getArg('--state'),
+        json: hasFlag('--json')
+      });
+    }
+    const filePath = resolveDslFile(fileArg);
+    const loaded = loadDslFromFile(filePath);
     const validation = validateDsl(loaded.dsl);
     if (!validation.valid) {
       return 2;
