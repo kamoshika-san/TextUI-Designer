@@ -250,6 +250,75 @@ module.exports = {
     assert.strictEqual(parsed.files[0].hasChanges, true);
   });
 
+  it('apply --dir writes per-file artifacts and state files', () => {
+    const rootSampleFile = path.join(tmpDir, 'root-sample.tui.yml');
+    fs.copyFileSync(sampleFile, rootSampleFile);
+    const outputDir = path.join(tmpDir, 'generated');
+    const stateDir = path.join(tmpDir, 'state');
+
+    const apply = spawnSync('node', [
+      cliPath,
+      'apply',
+      '--dir',
+      tmpDir,
+      '--provider',
+      'html',
+      '--output',
+      outputDir,
+      '--state',
+      stateDir,
+      '--auto-approve',
+      '--json'
+    ], { encoding: 'utf8' });
+
+    assert.strictEqual(apply.status, 0);
+    const parsed = JSON.parse(apply.stdout);
+    assert.strictEqual(parsed.applied, true);
+    assert.strictEqual(parsed.files.length, 2);
+
+    const nestedOutput = path.join(outputDir, 'nested', 'dir-sample.html');
+    const rootOutput = path.join(outputDir, 'root-sample.html');
+    const nestedState = path.join(stateDir, 'nested', 'dir-sample.state.json');
+    const rootState = path.join(stateDir, 'root-sample.state.json');
+    assert.ok(fs.existsSync(nestedOutput));
+    assert.ok(fs.existsSync(rootOutput));
+    assert.ok(fs.existsSync(nestedState));
+    assert.ok(fs.existsSync(rootState));
+
+    const rootPlan = spawnSync('node', [
+      cliPath,
+      'plan',
+      '--file',
+      rootSampleFile,
+      '--state',
+      rootState,
+      '--json'
+    ], { encoding: 'utf8' });
+    assert.strictEqual(rootPlan.status, 0);
+    const rootPlanParsed = JSON.parse(rootPlan.stdout);
+    assert.strictEqual(rootPlanParsed.hasChanges, false);
+  });
+
+  it('apply --dir fails when --state points to an existing file', () => {
+    const rootSampleFile = path.join(tmpDir, 'root-sample.tui.yml');
+    fs.copyFileSync(sampleFile, rootSampleFile);
+    const invalidStatePath = path.join(tmpDir, 'state.json');
+    fs.writeFileSync(invalidStatePath, '{}', 'utf8');
+
+    const apply = spawnSync('node', [
+      cliPath,
+      'apply',
+      '--dir',
+      tmpDir,
+      '--state',
+      invalidStatePath,
+      '--auto-approve'
+    ], { encoding: 'utf8' });
+
+    assert.strictEqual(apply.status, 1);
+    assert.match(apply.stderr, /--state must be a directory when used with --dir/);
+  });
+
 
   it('export --deterministic includes deterministic=true in JSON output', () => {
     const output = execFileSync('node', [
