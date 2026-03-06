@@ -2,7 +2,7 @@ import type {
   TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, SelectComponent, SelectOption, DividerComponent,
-  AlertComponent, ContainerComponent
+  AlertComponent, ContainerComponent, AccordionComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -140,6 +140,26 @@ ${componentCode}`;
     }
     code += `\n        p.text-sm ${message}`;
     
+    return code;
+  }
+
+
+  protected renderAccordion(props: AccordionComponent, key: number): string {
+    const { allowMultiple = false, items = [] } = props;
+
+    let code = `      .textui-accordion.border.border-gray-300.rounded-md.divide-y.divide-gray-200(data-allow-multiple="${allowMultiple ? 'true' : 'false'}")`;
+    items.forEach(item => {
+      code += `
+        details.border-b.border-gray-200`;
+      if (item.open) {
+        code += `(open)`;
+      }
+      code += `
+          summary.px-4.py-3.text-sm.font-medium.cursor-pointer ${item.title}`;
+      code += `
+          .px-4.pb-4.text-sm.text-gray-600 ${item.content}`;
+    });
+
     return code;
   }
 

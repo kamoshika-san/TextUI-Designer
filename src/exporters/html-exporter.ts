@@ -2,7 +2,7 @@ import type {
   TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, RadioOption, SelectComponent, SelectOption,
-  DividerComponent, AlertComponent, ContainerComponent
+  DividerComponent, AlertComponent, ContainerComponent, AccordionComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -263,6 +263,30 @@ ${componentCode}
     code += `\n      <p class="text-sm">${safeMessage}</p>`;
     code += `\n    </div>`;
     
+    return code;
+  }
+
+
+  protected renderAccordion(props: AccordionComponent, key: number): string {
+    const { allowMultiple = false, items = [] } = props;
+
+    let code = `    <div class="textui-accordion border border-gray-700 rounded-md divide-y divide-gray-700" data-allow-multiple="${allowMultiple ? 'true' : 'false'}">`;
+    items.forEach((item, index) => {
+      const safeTitle = this.escapeHtml(item.title ?? '');
+      const safeContent = this.escapeHtml(item.content ?? '');
+      const isOpen = item.open ? 'true' : 'false';
+      code += `
+      <details class="textui-accordion-item" ${item.open ? 'open' : ''} data-open="${isOpen}">`;
+      code += `
+        <summary class="px-4 py-3 text-sm font-medium text-gray-200 cursor-pointer">${safeTitle}</summary>`;
+      code += `
+        <div class="px-4 pb-4 text-sm text-gray-300">${safeContent}</div>`;
+      code += `
+      </details>`;
+    });
+    code += `
+    </div>`;
+
     return code;
   }
 

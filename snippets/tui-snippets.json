@@ -45,5 +45,17 @@
       "    message: $2"
     ],
     "description": "アラートのテンプレート"
+  },
+  "tui:accordion": {
+    "prefix": "tui:accordion",
+    "body": [
+      "- Accordion:",
+      "    allowMultiple: ${1|true,false|}",
+      "    items:",
+      "      - title: $2",
+      "        content: $3",
+      "        open: ${4|false,true|}"
+    ],
+    "description": "アコーディオンのテンプレート"
   }
-} 
+}

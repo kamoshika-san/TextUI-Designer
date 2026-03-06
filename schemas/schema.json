@@ -83,6 +83,9 @@
         },
         {
           "$ref": "#/definitions/Alert"
+        },
+        {
+          "$ref": "#/definitions/Accordion"
         }
       ]
     },
@@ -529,6 +532,59 @@
       },
       "additionalProperties": false,
       "description": "フォームコンポーネント。"
+    },
+    "Accordion": {
+      "type": "object",
+      "required": [
+        "Accordion"
+      ],
+      "properties": {
+        "Accordion": {
+          "type": "object",
+          "required": [
+            "items"
+          ],
+          "properties": {
+            "allowMultiple": {
+              "type": "boolean",
+              "default": false,
+              "description": "複数のセクションを同時に展開可能にします。"
+            },
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "description": "アコーディオンの項目一覧。",
+              "items": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "content"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "description": "項目の見出し。"
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "展開時に表示する本文。"
+                  },
+                  "open": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "初期状態で展開するかどうか。"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "折りたたみ可能なセクションを表示するコンポーネント。\n利用可能な属性: allowMultiple, items"
+        }
+      },
+      "additionalProperties": false,
+      "description": "折りたたみ可能なセクションを表示するコンポーネント。"
     }
   },
   "additionalProperties": false
