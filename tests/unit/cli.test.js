@@ -70,6 +70,16 @@ module.exports = {
   });
 
 
+  it('validate detects cyclic include as invalid', () => {
+    const cyclicSampleFile = path.join(repoRoot, 'sample/04-include-cyclic/cycle-test.tui.yml');
+    const result = spawnSync('node', [cliPath, 'validate', '--file', cyclicSampleFile, '--json'], { encoding: 'utf8' });
+
+    assert.strictEqual(result.status, 2);
+    const parsed = JSON.parse(result.stdout);
+    assert.strictEqual(parsed.valid, false);
+    assert.ok(parsed.issues.some(issue => issue.message.includes('循環参照を検出しました')));
+  });
+
   it('providers --json lists built-in providers', () => {
     const output = execFileSync('node', [cliPath, 'providers', '--json'], { encoding: 'utf8' });
     const parsed = JSON.parse(output);

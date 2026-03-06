@@ -8,6 +8,7 @@ import {
   resolveDslFiles
 } from './io';
 import { validateDsl } from './validator';
+import { validateIncludeReferences } from './include-validator';
 import { buildPlan } from './planner';
 import { buildState, DEFAULT_STATE_PATH, loadState, saveState, stateToStableJson } from './state-manager';
 import {
@@ -42,10 +43,11 @@ function validateAcrossFiles(filePaths: string[]): ValidationSummary {
   const files = filePaths.map(filePath => {
     const loaded = loadDslFromFile(filePath);
     const result = validateDsl(loaded.dsl);
-    const issues = result.issues.map(issue => ({ ...issue, file: loaded.sourcePath }));
+    const includeIssues = validateIncludeReferences(loaded.dsl, loaded.sourcePath);
+    const issues = [...result.issues, ...includeIssues].map(issue => ({ ...issue, file: loaded.sourcePath }));
     return {
       file: loaded.sourcePath,
-      valid: result.valid,
+      valid: result.valid && includeIssues.length === 0,
       issues
     };
   });
