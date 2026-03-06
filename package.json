@@ -383,7 +383,9 @@
     "test:integration": "mocha --no-config --require ./tests/setup.js --timeout 5000 --exit ./tests/integration/command-manager.test.js",
     "test:e2e": "mocha --no-config --require ./tests/setup.js --timeout 20000 --exit ./tests/e2e/export-from-preview-e2e.test.js",
     "test:all": "npm run pretest && npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:regression",
-    "cli": "node ./out/cli/index.js"
+    "cli": "node ./out/cli/index.js",
+    "prepare": "npm run compile",
+    "precli": "npm run compile"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.6",
