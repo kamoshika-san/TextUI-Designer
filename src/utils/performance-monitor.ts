@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { ConfigManager } from './config-manager';
+import { Logger } from './logger';
 
 export interface MonitorMetrics {
   renderTime: number;
@@ -32,6 +33,7 @@ export class PerformanceMonitor {
   private isEnabled: boolean;
   private maxEvents: number;
   private cleanupInterval: NodeJS.Timeout | null = null;
+  private readonly logger: Logger = new Logger('PerformanceMonitor');
 
   private constructor() {
     const settings = ConfigManager.getPerformanceSettings();
@@ -40,11 +42,11 @@ export class PerformanceMonitor {
     this.startCleanupInterval();
     
     // デバッグ用ログ
-    console.log(`[PerformanceMonitor] 初期化完了 - 有効: ${this.isEnabled}`);
+    this.logger.debug(`初期化完了 - 有効: ${this.isEnabled}`);
     if (this.isEnabled) {
-      console.log('[PerformanceMonitor] パフォーマンス監視が有効です');
+      this.logger.debug('パフォーマンス監視が有効です');
     } else {
-      console.log('[PerformanceMonitor] パフォーマンス監視が無効です。設定で有効化してください。');
+      this.logger.debug('パフォーマンス監視が無効です。設定で有効化してください。');
     }
   }
 
@@ -78,7 +80,7 @@ export class PerformanceMonitor {
 
     // 開発モードではコンソールにログ出力
     if (this.isDevelopmentMode()) {
-      console.log(`[Performance] ${type}: ${duration}ms`, metadata);
+      this.logger.debug(`${type}: ${duration}ms`, metadata);
     }
   }
 
@@ -272,7 +274,7 @@ ${this.generateRecommendations(metrics)}
    */
   setEnabled(enabled: boolean): void {
     this.isEnabled = enabled;
-    console.log(`[PerformanceMonitor] パフォーマンス監視を${enabled ? '有効' : '無効'}にしました`);
+    this.logger.info(`パフォーマンス監視を${enabled ? '有効' : '無効'}にしました`);
   }
 
   /**
@@ -280,14 +282,14 @@ ${this.generateRecommendations(metrics)}
    */
   forceEnable(): void {
     this.isEnabled = true;
-    console.log('[PerformanceMonitor] パフォーマンス監視を強制的に有効化しました');
+    this.logger.info('パフォーマンス監視を強制的に有効化しました');
   }
 
   /**
    * テスト用のサンプルイベントを生成
    */
   generateSampleEvents(): void {
-    console.log('[PerformanceMonitor] サンプルイベントを生成中...');
+    this.logger.debug('サンプルイベントを生成中...');
     
     // レンダリングイベント
     this.recordEvent('render', 150, { component: 'Button' });
@@ -309,7 +311,7 @@ ${this.generateRecommendations(metrics)}
     this.recordEvent('export', 500, { format: 'html' });
     this.recordEvent('export', 300, { format: 'react' });
     
-    console.log(`[PerformanceMonitor] サンプルイベント生成完了 - 総イベント数: ${this.events.length}`);
+    this.logger.debug(`サンプルイベント生成完了 - 総イベント数: ${this.events.length}`);
   }
 
   /**
