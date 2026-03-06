@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { SelectComponent, SelectOption } from '../types';
 
 interface SelectProps extends SelectComponent {
@@ -18,12 +18,26 @@ export const Select: React.FC<SelectProps> = ({
   disabled = false,
   multiple = false,
 }) => {
-  const [selectedValue, setSelectedValue] = useState('');
+  const initialSelectedValues = useMemo(
+    () => options.filter(option => option.selected).map(option => option.value),
+    [options]
+  );
+
+  const [selectedValue, setSelectedValue] = useState<string | string[]>(
+    multiple ? initialSelectedValues : (initialSelectedValues[0] ?? '')
+  );
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (!disabled) {
-      setSelectedValue(e.target.value);
+    if (disabled) {
+      return;
     }
+
+    if (multiple) {
+      setSelectedValue(Array.from(e.target.selectedOptions, (option) => option.value));
+      return;
+    }
+
+    setSelectedValue(e.target.value);
   };
 
   return (
