@@ -4,6 +4,32 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.4.0] - 2026-03-06
+
+### 新機能
+- WebView プレビューのレンダリング性能を改善し、初回表示時間を短縮しました。
+- エクスポーター（HTML / React / Pug）の出力安定性を向上し、フォームレンダリングの不整合を修正しました。
+- CLI: コマンドラインからエクスポートを実行する `exporter-runner` を追加し、CI やスクリプトから HTML / React / Pug 出力が可能になりました。
+
+### 変更・改善
+- テーマ検出ロジックを強化し、大規模ワークスペースでの誤検出を低減しました。
+- YAML の `!include` 解決における循環参照検出と診断メッセージを改善しました。
+- 開発ビルドスクリプトを整理し、`npm run build-webview` 等の再現性を向上させました。
+
+### バグ修正
+- 複数ファイル編集時にプレビューが更新されない問題を修正しました。
+- 一部環境での `HtmlExporter` による CSS パス解決の不具合を修正しました。
+
+### テスト・ドキュメント
+- テストスイートを更新し、ユニット／統合テストの安定性を向上しました。
+- ドキュメントとサンプル (`sample/`) を最新化しました。
+
+### 依存関係
+- 開発依存の小幅アップデート（ビルドツール・テストランナーなど）。
+
+### 破壊的変更
+- なし
+
 ## [0.3.0] - 2026-03-01
 
 ### 新機能
