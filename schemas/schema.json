@@ -86,6 +86,9 @@
         },
         {
           "$ref": "#/definitions/Accordion"
+        },
+        {
+          "$ref": "#/definitions/Tabs"
         }
       ]
     },
@@ -585,6 +588,59 @@
       },
       "additionalProperties": false,
       "description": "折りたたみ可能なセクションを表示するコンポーネント。"
+    },
+    "Tabs": {
+      "type": "object",
+      "required": [
+        "Tabs"
+      ],
+      "properties": {
+        "Tabs": {
+          "type": "object",
+          "required": [
+            "items"
+          ],
+          "properties": {
+            "defaultTab": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "初期表示するタブのインデックス（0始まり）。"
+            },
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "description": "タブ項目の配列。",
+              "items": {
+                "type": "object",
+                "required": [
+                  "label"
+                ],
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "description": "タブラベル。"
+                  },
+                  "disabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "タブを無効化するかどうか。"
+                  },
+                  "components": {
+                    "$ref": "#/definitions/componentArray"
+                  }
+                },
+                "additionalProperties": false,
+                "description": "タブ項目。"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "タブ切り替えコンポーネント。\n利用可能な属性: defaultTab, items"
+        }
+      },
+      "additionalProperties": false,
+      "description": "タブ切り替えコンポーネント。"
     }
   },
   "additionalProperties": false
