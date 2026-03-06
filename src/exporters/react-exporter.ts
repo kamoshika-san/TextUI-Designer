@@ -2,7 +2,7 @@ import type {
   TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, SelectComponent, DividerComponent, AlertComponent,
-  ContainerComponent, AccordionComponent, SelectOption
+  ContainerComponent, AccordionComponent, TabsComponent, SelectOption
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -166,6 +166,30 @@ ${optionsCode}
 
     return `      <div key={${key}} className="border border-gray-300 rounded-md divide-y divide-gray-200" data-allow-multiple={${allowMultiple}}>
 ${itemsCode}
+      </div>`;
+  }
+
+
+
+  protected renderTabs(props: TabsComponent, key: number): string {
+    const { defaultTab = 0, items = [] } = props;
+    const activeIndex = Math.min(Math.max(defaultTab, 0), Math.max(items.length - 1, 0));
+
+    const tabsHeader = items
+      .map((item, index) => `        <button type="button" className="px-4 py-2 text-sm border-r border-gray-700 last:border-r-0 ${index === activeIndex ? 'bg-gray-800 text-white' : 'bg-gray-900 text-gray-300'} ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}" ${item.disabled ? 'disabled' : ''}>${item.label}</button>`)
+      .join('\n');
+
+    const panelItems = (items[activeIndex]?.components || [])
+      .map((component: ComponentDef, index: number) => this.renderComponent(component, index))
+      .join('\n');
+
+    return `      <div key={${key}} className="textui-tabs border border-gray-300 rounded-md overflow-hidden">
+        <div className="flex border-b border-gray-300">
+${tabsHeader}
+        </div>
+        <div className="p-4 space-y-3">
+${panelItems}
+        </div>
       </div>`;
   }
 

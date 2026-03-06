@@ -57,5 +57,20 @@
       "        open: ${4|false,true|}"
     ],
     "description": "アコーディオンのテンプレート"
+  },
+  "tui:tabs": {
+    "prefix": "tui:tabs",
+    "body": [
+      "- Tabs:",
+      "    defaultTab: ${1|0,1,2|}",
+      "    items:",
+      "      - label: $2",
+      "        disabled: ${3|false,true|}",
+      "        components:",
+      "          - Text:",
+      "              variant: p",
+      "              value: $4"
+    ],
+    "description": "タブのテンプレート"
   }
 }

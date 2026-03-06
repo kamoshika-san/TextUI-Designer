@@ -2,7 +2,8 @@ import type {
   TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, SelectComponent, SelectOption, DividerComponent,
-  AlertComponent, ContainerComponent, AccordionComponent
+  AlertComponent, ContainerComponent, AccordionComponent,
+  TabsComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -158,6 +159,31 @@ ${componentCode}`;
           summary.px-4.py-3.text-sm.font-medium.cursor-pointer ${item.title}`;
       code += `
           .px-4.pb-4.text-sm.text-gray-600 ${item.content}`;
+    });
+
+    return code;
+  }
+
+
+
+  protected renderTabs(props: TabsComponent, key: number): string {
+    const { defaultTab = 0, items = [] } = props;
+    const activeIndex = Math.min(Math.max(defaultTab, 0), Math.max(items.length - 1, 0));
+
+    let code = `      .textui-tabs.border.border-gray-300.rounded-md.overflow-hidden`;
+    code += `\n        .flex.border-b.border-gray-300`;
+    items.forEach((item, index) => {
+      const activeClass = index === activeIndex ? 'bg-gray-200 text-gray-900' : 'bg-gray-100 text-gray-700';
+      const disabledAttr = item.disabled ? 'disabled' : '';
+      const disabledClass = item.disabled ? 'opacity-50 cursor-not-allowed' : '';
+      code += `\n          button(type="button" class="px-4 py-2 text-sm border-r border-gray-300 last:border-r-0 ${activeClass} ${disabledClass}" ${disabledAttr}) ${item.label}`;
+    });
+
+    code += `\n        .p-4.space-y-3`;
+    (items[activeIndex]?.components || []).forEach((component: ComponentDef, index: number) => {
+      const itemCode = this.renderComponent(component, index);
+      const indentedCode = itemCode.split('\n').map(line => `  ${line}`).join('\n');
+      code += `\n${indentedCode}`;
     });
 
     return code;

@@ -17,7 +17,8 @@ export const BUILT_IN_COMPONENTS = [
   'Alert',
   'Container',
   'Form',
-  'Accordion'
+  'Accordion',
+  'Tabs'
 ] as const;
 
 export type BuiltInComponentName = typeof BUILT_IN_COMPONENTS[number];
@@ -252,6 +253,15 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
     properties: [
       { name: 'allowMultiple', description: '複数項目を同時展開するか', values: BOOLEAN_VALUES },
       { name: 'items', description: '見出しと本文を持つ項目配列' }
+    ]
+  },
+
+  Tabs: {
+    description: 'タブ',
+    schemaRef: '#/definitions/Tabs',
+    properties: [
+      { name: 'defaultTab', description: '初期表示するタブのインデックス（0始まり）' },
+      { name: 'items', description: 'ラベルと内容コンポーネントを持つタブ配列' }
     ]
   },
 };

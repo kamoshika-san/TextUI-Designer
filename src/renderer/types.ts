@@ -121,6 +121,17 @@ export interface AccordionComponent {
   items: AccordionItem[];
 }
 
+export interface TabsItem {
+  label: string;
+  disabled?: boolean;
+  components?: ComponentDef[];
+}
+
+export interface TabsComponent {
+  defaultTab?: number;
+  items: TabsItem[];
+}
+
 export type ContainerLayout = 'vertical' | 'horizontal' | 'flex' | 'grid';
 
 export interface ContainerComponent {
@@ -139,7 +150,8 @@ export type ComponentDef =
   | { Select: SelectComponent }
   | { Divider: DividerComponent }
   | { Alert: AlertComponent }
-  | { Accordion: AccordionComponent };
+  | { Accordion: AccordionComponent }
+  | { Tabs: TabsComponent };
 
 export interface PageDef {
   id: string;
@@ -200,4 +212,8 @@ export function isFormComponent(comp: ComponentDef): comp is { Form: FormCompone
 
 export function isAccordionComponent(comp: ComponentDef): comp is { Accordion: AccordionComponent } {
   return 'Accordion' in comp;
+}
+
+export function isTabsComponent(comp: ComponentDef): comp is { Tabs: TabsComponent } {
+  return 'Tabs' in comp;
 }

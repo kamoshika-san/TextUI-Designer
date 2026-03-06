@@ -1,0 +1,73 @@
+import React, { useMemo, useState } from 'react';
+import type { ComponentDef, TabsComponent } from '../types';
+
+interface TabsProps extends TabsComponent {
+  renderComponent: (component: ComponentDef, key: React.Key) => React.ReactNode;
+}
+
+export const Tabs: React.FC<TabsProps> = ({ defaultTab = 0, items = [], renderComponent }) => {
+  const firstEnabledTab = useMemo(() => items.findIndex(item => !item.disabled), [items]);
+  const initialTab = useMemo(() => {
+    if (items.length === 0) {
+      return -1;
+    }
+    const safeDefault = Math.min(Math.max(defaultTab, 0), items.length - 1);
+    if (!items[safeDefault]?.disabled) {
+      return safeDefault;
+    }
+    return firstEnabledTab;
+  }, [defaultTab, firstEnabledTab, items]);
+
+  const [activeTab, setActiveTab] = useState<number>(initialTab);
+
+  if (items.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="textui-tabs border border-gray-700 rounded-md overflow-hidden">
+      <div className="flex border-b border-gray-700" role="tablist" aria-label="Tabs">
+        {items.map((item, index) => {
+          const isSelected = index === activeTab;
+          return (
+            <button
+              key={`${item.label}-${index}`}
+              type="button"
+              role="tab"
+              aria-selected={isSelected}
+              aria-controls={`tab-panel-${index}`}
+              id={`tab-${index}`}
+              disabled={item.disabled}
+              onClick={() => {
+                setActiveTab(index);
+              }}
+              className={`px-4 py-2 text-sm border-r border-gray-700 last:border-r-0 ${
+                isSelected ? 'bg-gray-800 text-white' : 'bg-gray-900 text-gray-300 hover:bg-gray-800'
+              } ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
+      {items.map((item, index) => {
+        if (index !== activeTab) {
+          return null;
+        }
+        return (
+          <div
+            key={`panel-${item.label}-${index}`}
+            id={`tab-panel-${index}`}
+            role="tabpanel"
+            aria-labelledby={`tab-${index}`}
+            className="p-4 space-y-3"
+          >
+            {(item.components || []).map((component: ComponentDef, componentIndex: number) =>
+              renderComponent(component, index * 1000 + componentIndex)
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
