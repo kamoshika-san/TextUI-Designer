@@ -102,6 +102,7 @@ ${componentCode}
 
   protected renderText(props: TextComponent, key: number): string {
     const { value, variant = 'p', size = 'base', weight = 'normal', color = 'text-gray-300' } = props;
+    const safeValue = this.escapeHtml(value ?? '');
     
     // StyleManagerを使用してスタイルを取得
     const styleManager = this.getStyleManager();
@@ -121,20 +122,23 @@ ${componentCode}
       tag = 'p';
     }
     
-    return `    <${tag} class="${className}">${value}</${tag}>`;
+    return `    <${tag} class="${className}">${safeValue}</${tag}>`;
   }
 
   protected renderInput(props: InputComponent, key: number): string {
     const { label, placeholder, type = 'text', required = false, disabled = false } = props;
+    const safeLabel = label ? this.escapeHtml(label) : '';
+    const safePlaceholder = this.escapeAttribute(placeholder || '');
+    const safeType = this.escapeAttribute(type);
     const disabledClass = this.getDisabledClass(disabled);
     const requiredAttr = required ? ' required' : '';
     const disabledAttr = disabled ? ' disabled' : '';
     
     let code = `    <div class="mb-4">`;
     if (label) {
-      code += `\n      <label class="block text-sm font-medium text-gray-400 mb-2">${label}</label>`;
+      code += `\n      <label class="block text-sm font-medium text-gray-400 mb-2">${safeLabel}</label>`;
     }
-    code += `\n      <input type="${type}" placeholder="${placeholder || ''}" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${requiredAttr}${disabledAttr}>`;
+    code += `\n      <input type="${safeType}" placeholder="${safePlaceholder}" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${requiredAttr}${disabledAttr}>`;
     code += `\n    </div>`;
     
     return code;
@@ -142,35 +146,39 @@ ${componentCode}
 
   protected renderButton(props: ButtonComponent, key: number): string {
     const { label, kind = 'primary', disabled = false, submit = false } = props;
+    const safeLabel = this.escapeHtml(label ?? '');
     const styleManager = this.getStyleManager();
     const kindClasses = styleManager.getKindClasses(this.format);
     const disabledClass = this.getDisabledClass(disabled);
     const disabledAttr = disabled ? ' disabled' : '';
     const typeAttr = submit ? ' type="submit"' : '';
     
-    return `    <button${typeAttr} class="${kindClasses[kind as keyof typeof kindClasses]} ${disabledClass}"${disabledAttr}>${label}</button>`;
+    return `    <button${typeAttr} class="${kindClasses[kind as keyof typeof kindClasses]} ${disabledClass}"${disabledAttr}>${safeLabel}</button>`;
   }
 
   protected renderCheckbox(props: CheckboxComponent, key: number): string {
     const { label, checked = false, disabled = false } = props;
+    const safeLabel = this.escapeHtml(label ?? '');
     const disabledClass = this.getDisabledClass(disabled);
     const checkedAttr = checked ? ' checked' : '';
     const disabledAttr = disabled ? ' disabled' : '';
     
     return `    <div class="flex items-center mb-4">
       <input type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-800 ${disabledClass}"${checkedAttr}${disabledAttr}>
-      <label class="ml-2 block text-sm text-gray-400">${label}</label>
+      <label class="ml-2 block text-sm text-gray-400">${safeLabel}</label>
     </div>`;
   }
 
   protected renderRadio(props: RadioComponent, key: number): string {
     const { label, name, options = [], disabled = false } = props;
+    const safeLabel = label ? this.escapeHtml(label) : '';
+    const safeGroupName = this.escapeAttribute(name || 'radio');
     const disabledClass = this.getDisabledClass(disabled);
     const disabledAttr = disabled ? ' disabled' : '';
     
     let code = `    <div class="mb-4">`;
     if (label) {
-      code += `\n      <label class="block text-sm font-medium text-gray-400 mb-2">${label}</label>`;
+      code += `\n      <label class="block text-sm font-medium text-gray-400 mb-2">${safeLabel}</label>`;
     }
     
     // options配列がある場合は、各オプションをラジオボタンとしてレンダリング
@@ -178,8 +186,8 @@ ${componentCode}
       options.forEach((opt: RadioOption, index: number) => {
         const checkedAttr = opt.checked ? ' checked' : '';
         code += `\n      <div class="flex items-center mb-2">
-        <input type="radio" name="${name || 'radio'}" value="${opt.value || ''}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 bg-gray-800 ${disabledClass}"${checkedAttr}${disabledAttr}>
-        <label class="ml-2 block text-sm text-gray-400">${opt.label}</label>
+        <input type="radio" name="${safeGroupName}" value="${this.escapeAttribute(opt.value || '')}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 bg-gray-800 ${disabledClass}"${checkedAttr}${disabledAttr}>
+        <label class="ml-2 block text-sm text-gray-400">${this.escapeHtml(opt.label ?? '')}</label>
       </div>`;
       });
     } else {
@@ -187,8 +195,8 @@ ${componentCode}
       const { value, checked = false } = props;
       const checkedAttr = checked ? ' checked' : '';
       code += `\n      <div class="flex items-center mb-2">
-        <input type="radio" name="${name || 'radio'}" value="${value || ''}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 bg-gray-800 ${disabledClass}"${checkedAttr}${disabledAttr}>
-        <label class="ml-2 block text-sm text-gray-400">${label}</label>
+        <input type="radio" name="${safeGroupName}" value="${this.escapeAttribute(value || '')}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 bg-gray-800 ${disabledClass}"${checkedAttr}${disabledAttr}>
+        <label class="ml-2 block text-sm text-gray-400">${safeLabel}</label>
       </div>`;
     }
     
@@ -198,6 +206,7 @@ ${componentCode}
 
   protected renderSelect(props: SelectComponent, key: number): string {
     const { label, options = [], placeholder, disabled = false, multiple = false } = props;
+    const safeLabel = label ? this.escapeHtml(label) : '';
     const disabledClass = this.getDisabledClass(disabled);
     const disabledAttr = disabled ? ' disabled' : '';
     const multipleAttr = multiple ? ' multiple' : '';
@@ -209,17 +218,17 @@ ${componentCode}
     
     let code = `    <div class="mb-4">`;
     if (label) {
-      code += `\n      <label class="block text-sm font-medium text-gray-400 mb-2">${label}</label>`;
+      code += `\n      <label class="block text-sm font-medium text-gray-400 mb-2">${safeLabel}</label>`;
     }
     code += `\n      <select class="${selectClass}"${disabledAttr}${multipleAttr}>`;
     
     if (placeholder && !multiple) {
-      code += `\n        <option value="" class="bg-gray-800 text-gray-400">${placeholder}</option>`;
+      code += `\n        <option value="" class="bg-gray-800 text-gray-400">${this.escapeHtml(placeholder)}</option>`;
     }
     
     options.forEach((opt: SelectOption) => {
       const selectedAttr = opt.selected ? ' selected' : '';
-      code += `\n        <option value="${opt.value}" class="bg-gray-800 text-gray-400"${selectedAttr}>${opt.label}</option>`;
+      code += `\n        <option value="${this.escapeAttribute(opt.value)}" class="bg-gray-800 text-gray-400"${selectedAttr}>${this.escapeHtml(opt.label)}</option>`;
     });
     
     code += `\n      </select>`;
@@ -242,14 +251,16 @@ ${componentCode}
 
   protected renderAlert(props: AlertComponent, key: number): string {
     const { message, variant = 'info', title } = props;
+    const safeTitle = title ? this.escapeHtml(title) : '';
+    const safeMessage = this.escapeHtml(message ?? '');
     const styleManager = this.getStyleManager();
     const variantClasses = styleManager.getAlertVariantClasses(this.format);
     
     let code = `    <div class="p-4 border rounded-md ${variantClasses[variant as keyof typeof variantClasses]}">`;
     if (title) {
-      code += `\n      <h3 class="text-sm font-medium mb-1">${title}</h3>`;
+      code += `\n      <h3 class="text-sm font-medium mb-1">${safeTitle}</h3>`;
     }
-    code += `\n      <p class="text-sm">${message}</p>`;
+    code += `\n      <p class="text-sm">${safeMessage}</p>`;
     code += `\n    </div>`;
     
     return code;
@@ -278,8 +289,9 @@ ${componentCode}
 
   protected renderForm(props: FormComponent, key: number): string {
     const { id, fields = [], actions = [] } = props;
+    const safeId = this.escapeAttribute(id);
     
-    let code = `    <form id="${id}" class="textui-container space-y-4">`;
+    let code = `    <form id="${safeId}" class="textui-container space-y-4">`;
     
     fields.forEach((field: FormField, index: number) => {
       const fieldCode = this.renderFormField(field, index);

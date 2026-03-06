@@ -14,10 +14,23 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#39;');
 }
 
+
+function generateNonce(length: number = 32): string {
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let nonce = '';
+  for (let i = 0; i < length; i++) {
+    nonce += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+  return nonce;
+}
+
 /**
  * WebViewのHTMLコンテンツを生成
  */
 export function getWebviewContent(context: vscode.ExtensionContext, panel?: vscode.WebviewPanel): string {
+  const nonce = generateNonce();
+  const cspSource = panel ? panel.webview.cspSource : "'none'";
+
   // CSSファイルのパスを取得
   const cssPath = path.join(context.extensionPath, 'media', 'assets');
   let cssFiles: string[] = [];
@@ -43,11 +56,12 @@ export function getWebviewContent(context: vscode.ExtensionContext, panel?: vsco
   return `<!DOCTYPE html>
 <html lang="ja">
 <head>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${cspSource} https: data:; style-src ${cspSource} 'nonce-${nonce}'; script-src ${cspSource} 'nonce-${nonce}'; font-src ${cspSource} https:; connect-src ${cspSource};">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TextUI Preview</title>
   <link rel="stylesheet" href="${cssUri}">
-  <style>
+  <style nonce="${nonce}">
     /* VS Codeテーマ変数を無効化 */
     :root {
       --vscode-foreground: unset !important;
@@ -67,19 +81,51 @@ export function getWebviewContent(context: vscode.ExtensionContext, panel?: vsco
     #root {
       padding: 1rem;
     }
+
+    .textui-preview-empty {
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .textui-preview-empty-title {
+      color: #cccccc;
+    }
+
+    .textui-preview-empty-message {
+      color: #9ca3af;
+    }
+
+    .textui-error-container {
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .textui-error-title {
+      color: #ef4444;
+    }
+
+    .textui-error-message {
+      color: #fca5a5;
+      margin: 1rem 0;
+    }
+
+    .textui-error-help {
+      color: #9ca3af;
+      font-size: 0.875rem;
+    }
   </style>
   <!-- テーマ変数はビルドされたCSSの後に適用される -->
-  <style id="theme-vars"></style>
+  <style id="theme-vars" nonce="${nonce}"></style>
 </head>
 <body>
   <div id="root">
-    <div style="text-align: center; padding: 2rem;">
-      <h2>TextUI Designer Preview</h2>
-      <p>YAMLファイルを開いてプレビューを表示してください。</p>
+    <div class="textui-preview-empty">
+      <h2 class="textui-preview-empty-title">TextUI Designer Preview</h2>
+      <p class="textui-preview-empty-message">YAMLファイルを開いてプレビューを表示してください。</p>
     </div>
   </div>
   
-  <script>
+  <script nonce="${nonce}">
     // VS Code APIの取得（一度だけ）
     let vscode;
     try {
@@ -128,7 +174,7 @@ export function getWebviewContent(context: vscode.ExtensionContext, panel?: vsco
     });
   </script>
   
-  <script src="${jsUri}"></script>
+  <script nonce="${nonce}" src="${jsUri}"></script>
 </body>
 </html>`;
 }
@@ -139,10 +185,10 @@ export function getWebviewContent(context: vscode.ExtensionContext, panel?: vsco
 export function getErrorHtml(message: string): string {
   const safeMessage = escapeHtml(message);
   return `
-    <div style="padding: 2rem; text-align: center;">
-      <h2 style="color: #ef4444;">エラーが発生しました</h2>
-      <p style="color: #fca5a5; margin: 1rem 0;">${safeMessage}</p>
-      <p style="color: #9ca3af; font-size: 0.875rem;">
+    <div class="textui-error-container">
+      <h2 class="textui-error-title">エラーが発生しました</h2>
+      <p class="textui-error-message">${safeMessage}</p>
+      <p class="textui-error-help">
         YAMLファイルの構文を確認してください。
       </p>
     </div>
