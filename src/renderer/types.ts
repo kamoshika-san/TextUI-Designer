@@ -110,6 +110,17 @@ export interface AlertComponent {
   title?: string;
 }
 
+export interface AccordionItem {
+  title: string;
+  content: string;
+  open?: boolean;
+}
+
+export interface AccordionComponent {
+  allowMultiple?: boolean;
+  items: AccordionItem[];
+}
+
 export type ContainerLayout = 'vertical' | 'horizontal' | 'flex' | 'grid';
 
 export interface ContainerComponent {
@@ -127,7 +138,8 @@ export type ComponentDef =
   | { Radio: RadioComponent }
   | { Select: SelectComponent }
   | { Divider: DividerComponent }
-  | { Alert: AlertComponent };
+  | { Alert: AlertComponent }
+  | { Accordion: AccordionComponent };
 
 export interface PageDef {
   id: string;
@@ -184,4 +196,8 @@ export function isContainerComponent(comp: ComponentDef): comp is { Container: C
 
 export function isFormComponent(comp: ComponentDef): comp is { Form: FormComponent } {
   return 'Form' in comp;
-} 
+}
+
+export function isAccordionComponent(comp: ComponentDef): comp is { Accordion: AccordionComponent } {
+  return 'Accordion' in comp;
+}

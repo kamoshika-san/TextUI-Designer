@@ -16,7 +16,8 @@ export const BUILT_IN_COMPONENTS = [
   'Divider',
   'Alert',
   'Container',
-  'Form'
+  'Form',
+  'Accordion'
 ] as const;
 
 export type BuiltInComponentName = typeof BUILT_IN_COMPONENTS[number];
@@ -243,7 +244,16 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
       { name: 'fields', description: '入力フィールド配列' },
       { name: 'actions', description: 'アクション配列' }
     ]
-  }
+  },
+
+  Accordion: {
+    description: 'アコーディオン',
+    schemaRef: '#/definitions/Accordion',
+    properties: [
+      { name: 'allowMultiple', description: '複数項目を同時展開するか', values: BOOLEAN_VALUES },
+      { name: 'items', description: '見出しと本文を持つ項目配列' }
+    ]
+  },
 };
 
 export function isBuiltInComponentName(name: string): name is BuiltInComponentName {

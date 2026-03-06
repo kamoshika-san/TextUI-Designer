@@ -14,6 +14,7 @@ import { Radio } from './components/Radio';
 import { Select } from './components/Select';
 import { Divider } from './components/Divider';
 import { Alert } from './components/Alert';
+import { Accordion } from './components/Accordion';
 import type {
   ComponentDef,
   FormComponent,
@@ -27,7 +28,8 @@ import type {
   SelectComponent,
   DividerComponent,
   AlertComponent,
-  ContainerComponent
+  ContainerComponent,
+  AccordionComponent
 } from './types';
 import { getComponentName } from '../registry/component-registry';
 import { BUILT_IN_COMPONENTS, type BuiltInComponentName } from '../registry/component-registry';
@@ -61,6 +63,7 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
   Select: (props, key) => <Select key={key} {...(props as unknown as SelectComponent)} />,
   Divider: (props, key) => <Divider key={key} {...(props as unknown as DividerComponent)} />,
   Alert: (props, key) => <Alert key={key} {...(props as unknown as AlertComponent)} />,
+  Accordion: (props, key) => <Accordion key={key} {...(props as unknown as AccordionComponent)} />,
   Container: (props, key) => {
     const containerProps = props as unknown as ContainerComponent;
     const children = containerProps.components;

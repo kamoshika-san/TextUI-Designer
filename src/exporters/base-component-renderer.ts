@@ -12,7 +12,8 @@ import type {
   SelectComponent,
   DividerComponent,
   AlertComponent,
-  ContainerComponent
+  ContainerComponent,
+  AccordionComponent
 } from '../renderer/types';
 import type { ExportOptions, Exporter } from './index';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';
@@ -48,7 +49,8 @@ export abstract class BaseComponentRenderer implements Exporter {
       Divider: (props, key) => this.renderDivider(props as DividerComponent, key),
       Alert: (props, key) => this.renderAlert(props as AlertComponent, key),
       Container: (props, key) => this.renderContainer(props as ContainerComponent, key),
-      Form: (props, key) => this.renderForm(props as FormComponent, key)
+      Form: (props, key) => this.renderForm(props as FormComponent, key),
+      Accordion: (props, key) => this.renderAccordion(props as AccordionComponent, key)
     };
 
     for (const componentName of BUILT_IN_COMPONENTS) {
@@ -148,6 +150,7 @@ export abstract class BaseComponentRenderer implements Exporter {
   protected abstract renderAlert(props: AlertComponent, key: number): string;
   protected abstract renderContainer(props: ContainerComponent, key: number): string;
   protected abstract renderForm(props: FormComponent, key: number): string;
+  protected abstract renderAccordion(props: AccordionComponent, key: number): string;
 
   protected getStyleManager(): typeof StyleManager {
     return StyleManager;

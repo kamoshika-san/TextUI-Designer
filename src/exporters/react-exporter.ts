@@ -2,7 +2,7 @@ import type {
   TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, SelectComponent, DividerComponent, AlertComponent,
-  ContainerComponent, SelectOption
+  ContainerComponent, AccordionComponent, SelectOption
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -150,6 +150,22 @@ ${optionsCode}
     
     return `      <div key={${key}} className="p-4 border rounded-md ${className}">
         <p className="text-sm">${message}</p>
+      </div>`;
+  }
+
+
+  protected renderAccordion(props: AccordionComponent, key: number): string {
+    const { allowMultiple = false, items = [] } = props;
+
+    const itemsCode = items
+      .map((item, index) => `        <details key={${index}} className="border-b border-gray-200 last:border-b-0" ${item.open ? 'open' : ''}>
+          <summary className="px-4 py-3 text-sm font-medium cursor-pointer">${item.title}</summary>
+          <div className="px-4 pb-4 text-sm text-gray-600">${item.content}</div>
+        </details>`)
+      .join('\n');
+
+    return `      <div key={${key}} className="border border-gray-300 rounded-md divide-y divide-gray-200" data-allow-multiple={${allowMultiple}}>
+${itemsCode}
       </div>`;
   }
 
