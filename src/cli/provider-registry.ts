@@ -1,7 +1,4 @@
 import type { TextUIDSL } from '../renderer/types';
-import { HtmlExporter } from '../exporters/html-exporter';
-import { ReactExporter } from '../exporters/react-exporter';
-import { PugExporter } from '../exporters/pug-exporter';
 
 export interface CliProviderDefinition {
   name: string;
@@ -15,19 +12,28 @@ const BUILTIN_PROVIDERS: CliProviderDefinition[] = [
     name: 'html',
     extension: '.html',
     version: '1.0.0',
-    render: (dsl: TextUIDSL) => new HtmlExporter().export(dsl, { format: 'html' })
+    render: async (dsl: TextUIDSL) => {
+      const { HtmlExporter } = await import('../exporters/html-exporter');
+      return new HtmlExporter().export(dsl, { format: 'html' });
+    }
   },
   {
     name: 'react',
     extension: '.tsx',
     version: '1.0.0',
-    render: (dsl: TextUIDSL) => new ReactExporter().export(dsl, { format: 'react' })
+    render: async (dsl: TextUIDSL) => {
+      const { ReactExporter } = await import('../exporters/react-exporter');
+      return new ReactExporter().export(dsl, { format: 'react' });
+    }
   },
   {
     name: 'pug',
     extension: '.pug',
     version: '1.0.0',
-    render: (dsl: TextUIDSL) => new PugExporter().export(dsl, { format: 'pug' })
+    render: async (dsl: TextUIDSL) => {
+      const { PugExporter } = await import('../exporters/pug-exporter');
+      return new PugExporter().export(dsl, { format: 'pug' });
+    }
   }
 ];
 
