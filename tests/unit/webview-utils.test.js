@@ -74,8 +74,8 @@ describe('WebViewUtils', () => {
       assert.ok(errorHtml.includes('<p'));
       
       // スタイルが適用されている
-      assert.ok(errorHtml.includes('color: #ef4444'));
-      assert.ok(errorHtml.includes('color: #fca5a5'));
+      assert.ok(errorHtml.includes('textui-error-title'));
+      assert.ok(errorHtml.includes('textui-error-message'));
     });
   });
 
@@ -112,6 +112,8 @@ describe('WebViewUtils', () => {
       // インラインスタイルが含まれている
       assert.ok(content.includes('body {'));
       assert.ok(content.includes('#root {'));
+      assert.ok(content.includes('Content-Security-Policy'));
+      assert.ok(content.includes('nonce='));
       
       // VS Codeテーマ変数の無効化が含まれている
       assert.ok(content.includes('--vscode-foreground: unset'));

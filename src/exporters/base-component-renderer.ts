@@ -167,4 +167,17 @@ export abstract class BaseComponentRenderer implements Exporter {
       return this.adjustIndentation(childCode, baseIndent);
     }).join('\n');
   }
+
+  protected escapeHtml(value: unknown): string {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  protected escapeAttribute(value: unknown): string {
+    return this.escapeHtml(value);
+  }
 }
