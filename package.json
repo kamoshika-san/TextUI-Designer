@@ -384,7 +384,7 @@
     "test:e2e": "mocha --no-config --require ./tests/setup.js --timeout 20000 --exit ./tests/e2e/export-from-preview-e2e.test.js",
     "test:all": "npm run pretest && npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:regression",
     "cli": "node ./out/cli/index.js",
-    "prepare": "npm run compile",
+    "prepare": "node ./scripts/prepare.cjs",
     "precli": "npm run compile"
   },
   "devDependencies": {
