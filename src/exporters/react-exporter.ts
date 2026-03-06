@@ -2,7 +2,7 @@ import type {
   TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, SelectComponent, DividerComponent, AlertComponent,
-  ContainerComponent, AccordionComponent, TabsComponent, SelectOption
+  ContainerComponent, AccordionComponent, TabsComponent, TableComponent, SelectOption
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -190,6 +190,45 @@ ${tabsHeader}
         <div className="p-4 space-y-3">
 ${panelItems}
         </div>
+      </div>`;
+  }
+
+  protected renderTable(props: TableComponent, key: number): string {
+    const { columns = [], rows = [], striped = false } = props;
+
+    if (columns.length === 0) {
+      return `      <div key={${key}} className="text-sm text-yellow-700 border border-yellow-400 rounded-md px-3 py-2">Table の columns が未定義です</div>`;
+    }
+
+    const headerCode = columns
+      .map(column => `              <th key="${column.key}" className="px-4 py-2 text-left font-semibold text-gray-900">${column.header}</th>`)
+      .join('\n');
+
+    const bodyCode = rows
+      .map((row, rowIndex) => {
+        const cells = columns
+          .map(column => {
+            const rawValue = row[column.key];
+            const value = rawValue === null || rawValue === undefined ? '' : String(rawValue);
+            return `              <td key="${rowIndex}-${column.key}" className="px-4 py-2 align-top text-gray-700">${value}</td>`;
+          })
+          .join('\n');
+
+        return `            <tr key={${rowIndex}} className={${striped} && ${rowIndex} % 2 === 1 ? 'bg-gray-50' : ''}>\n${cells}\n            </tr>`;
+      })
+      .join('\n');
+
+    return `      <div key={${key}} className="overflow-x-auto border border-gray-300 rounded-md">
+        <table className="min-w-full divide-y divide-gray-200 text-sm text-gray-900">
+          <thead className="bg-gray-100">
+            <tr>
+${headerCode}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 bg-white">
+${bodyCode}
+          </tbody>
+        </table>
       </div>`;
   }
 

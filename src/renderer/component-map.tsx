@@ -16,6 +16,7 @@ import { Divider } from './components/Divider';
 import { Alert } from './components/Alert';
 import { Accordion } from './components/Accordion';
 import { Tabs } from './components/Tabs';
+import { Table } from './components/Table';
 import type {
   ComponentDef,
   FormComponent,
@@ -31,7 +32,8 @@ import type {
   AlertComponent,
   ContainerComponent,
   AccordionComponent,
-  TabsComponent
+  TabsComponent,
+  TableComponent
 } from './types';
 import { getComponentName } from '../registry/component-registry';
 import { BUILT_IN_COMPONENTS, type BuiltInComponentName } from '../registry/component-registry';
@@ -67,6 +69,7 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
   Alert: (props, key) => <Alert key={key} {...(props as unknown as AlertComponent)} />,
   Accordion: (props, key) => <Accordion key={key} {...(props as unknown as AccordionComponent)} />,
   Tabs: (props, key) => <Tabs key={key} {...(props as unknown as TabsComponent)} renderComponent={renderRegisteredComponent} />,
+  Table: (props, key) => <Table key={key} {...(props as unknown as TableComponent)} />,
   Container: (props, key) => {
     const containerProps = props as unknown as ContainerComponent;
     const children = containerProps.components;

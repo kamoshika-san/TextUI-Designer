@@ -40,7 +40,7 @@ Module.prototype.require = function(id) {
 const testSchemaPath = path.join(__dirname, 'schemas', 'schema.json');
 const testTemplateSchemaPath = path.join(__dirname, 'schemas', 'template-schema.json');
 const testThemeSchemaPath = path.join(__dirname, 'schemas', 'theme-schema.json');
-const componentNames = ['Text', 'Input', 'Button', 'Checkbox', 'Radio', 'Select', 'Divider', 'Alert', 'Container', 'Form', 'Accordion', 'Tabs'];
+const componentNames = ['Text', 'Input', 'Button', 'Checkbox', 'Radio', 'Select', 'Divider', 'Alert', 'Container', 'Form', 'Accordion', 'Tabs', 'Table'];
 const testSchemaContent = {
   $id: 'test-schema',
   type: 'object',

@@ -89,6 +89,9 @@
         },
         {
           "$ref": "#/definitions/Tabs"
+        },
+        {
+          "$ref": "#/definitions/Table"
         }
       ]
     },
@@ -641,6 +644,70 @@
       },
       "additionalProperties": false,
       "description": "タブ切り替えコンポーネント。"
+    },
+    "Table": {
+      "type": "object",
+      "required": [
+        "Table"
+      ],
+      "properties": {
+        "Table": {
+          "type": "object",
+          "required": [
+            "columns",
+            "rows"
+          ],
+          "properties": {
+            "columns": {
+              "type": "array",
+              "minItems": 1,
+              "description": "列定義の配列。",
+              "items": {
+                "type": "object",
+                "required": [
+                  "key",
+                  "header"
+                ],
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "description": "行データ参照用のキー名。"
+                  },
+                  "header": {
+                    "type": "string",
+                    "description": "列ヘッダーに表示する文言。"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "rows": {
+              "type": "array",
+              "description": "行データの配列。各オブジェクトのキーはcolumns[].keyに対応。",
+              "items": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                  ]
+                }
+              }
+            },
+            "striped": {
+              "type": "boolean",
+              "default": false,
+              "description": "true の場合は行を交互色で表示します。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "表形式でデータを表示するコンポーネント。\n利用可能な属性: columns, rows, striped"
+        }
+      },
+      "additionalProperties": false,
+      "description": "表形式でデータを表示するコンポーネント。"
     }
   },
   "additionalProperties": false

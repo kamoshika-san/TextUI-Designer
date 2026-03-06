@@ -18,7 +18,8 @@ export const BUILT_IN_COMPONENTS = [
   'Container',
   'Form',
   'Accordion',
-  'Tabs'
+  'Tabs',
+  'Table'
 ] as const;
 
 export type BuiltInComponentName = typeof BUILT_IN_COMPONENTS[number];
@@ -262,6 +263,16 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
     properties: [
       { name: 'defaultTab', description: '初期表示するタブのインデックス（0始まり）' },
       { name: 'items', description: 'ラベルと内容コンポーネントを持つタブ配列' }
+    ]
+  },
+
+  Table: {
+    description: 'テーブル',
+    schemaRef: '#/definitions/Table',
+    properties: [
+      { name: 'columns', description: '列定義（key/header）配列' },
+      { name: 'rows', description: '行データ配列' },
+      { name: 'striped', description: '行を交互色で表示', values: BOOLEAN_VALUES }
     ]
   },
 };

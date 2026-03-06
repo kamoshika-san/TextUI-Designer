@@ -14,7 +14,8 @@ import type {
   AlertComponent,
   ContainerComponent,
   AccordionComponent,
-  TabsComponent
+  TabsComponent,
+  TableComponent
 } from '../renderer/types';
 import type { ExportOptions, Exporter } from './index';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';
@@ -52,7 +53,8 @@ export abstract class BaseComponentRenderer implements Exporter {
       Container: (props, key) => this.renderContainer(props as ContainerComponent, key),
       Form: (props, key) => this.renderForm(props as FormComponent, key),
       Accordion: (props, key) => this.renderAccordion(props as AccordionComponent, key),
-      Tabs: (props, key) => this.renderTabs(props as TabsComponent, key)
+      Tabs: (props, key) => this.renderTabs(props as TabsComponent, key),
+      Table: (props, key) => this.renderTable(props as TableComponent, key)
     };
 
     for (const componentName of BUILT_IN_COMPONENTS) {
@@ -154,6 +156,7 @@ export abstract class BaseComponentRenderer implements Exporter {
   protected abstract renderForm(props: FormComponent, key: number): string;
   protected abstract renderAccordion(props: AccordionComponent, key: number): string;
   protected abstract renderTabs(props: TabsComponent, key: number): string;
+  protected abstract renderTable(props: TableComponent, key: number): string;
 
   protected getStyleManager(): typeof StyleManager {
     return StyleManager;
