@@ -3,7 +3,7 @@ import type {
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, SelectComponent, SelectOption, DividerComponent,
   AlertComponent, ContainerComponent, AccordionComponent,
-  TabsComponent
+  TabsComponent, TableComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -184,6 +184,37 @@ ${componentCode}`;
       const itemCode = this.renderComponent(component, index);
       const indentedCode = itemCode.split('\n').map(line => `  ${line}`).join('\n');
       code += `\n${indentedCode}`;
+    });
+
+    return code;
+  }
+
+  protected renderTable(props: TableComponent, key: number): string {
+    const { columns = [], rows = [], striped = false } = props;
+
+    if (columns.length === 0) {
+      return `      .text-sm.text-yellow-700.border.border-yellow-400.rounded-md.px-3.py-2 Table の columns が未定義です`;
+    }
+
+    let code = `      .overflow-x-auto.border.border-gray-300.rounded-md`;
+    code += `\n        table.min-w-full.divide-y.divide-gray-200.text-sm.text-gray-900`;
+    code += `\n          thead.bg-gray-100`;
+    code += `\n            tr`;
+
+    columns.forEach(column => {
+      code += `\n              th.px-4.py-2.text-left.font-semibold.text-gray-900 ${column.header}`;
+    });
+
+    code += `\n          tbody.divide-y.divide-gray-200.bg-white`;
+
+    rows.forEach((row, rowIndex) => {
+      const stripedClass = striped && rowIndex % 2 === 1 ? '.bg-gray-50' : '';
+      code += `\n            tr${stripedClass}`;
+      columns.forEach(column => {
+        const rawValue = row[column.key];
+        const value = rawValue === null || rawValue === undefined ? '' : String(rawValue);
+        code += `\n              td.px-4.py-2.align-top.text-gray-700 ${value}`;
+      });
     });
 
     return code;

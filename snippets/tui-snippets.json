@@ -72,5 +72,21 @@
       "              value: $4"
     ],
     "description": "タブのテンプレート"
+  },
+  "tui:table": {
+    "prefix": "tui:table",
+    "body": [
+      "- Table:",
+      "    striped: ${1|false,true|}",
+      "    columns:",
+      "      - key: id",
+      "        header: ID",
+      "      - key: name",
+      "        header: 名前",
+      "    rows:",
+      "      - id: 1",
+      "        name: $2"
+    ],
+    "description": "テーブルのテンプレート"
   }
 }

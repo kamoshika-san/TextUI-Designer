@@ -3,7 +3,8 @@ import type {
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, RadioOption, SelectComponent, SelectOption,
   DividerComponent, AlertComponent, ContainerComponent, AccordionComponent,
-  TabsComponent
+  TabsComponent,
+  TableComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -313,6 +314,46 @@ ${tabsHeader}
 ${panelItems}
         </div>
       </div>`;
+  }
+
+  protected renderTable(props: TableComponent, key: number): string {
+    const { columns = [], rows = [], striped = false } = props;
+
+    if (columns.length === 0) {
+      return `    <div class="text-sm text-yellow-300 border border-yellow-700 rounded-md px-3 py-2">Table の columns が未定義です</div>`;
+    }
+
+    const headerCode = columns
+      .map(column => `          <th class="px-4 py-2 text-left font-semibold text-gray-100">${this.escapeHtml(column.header)}</th>`)
+      .join('\n');
+
+    const bodyCode = rows
+      .map((row, rowIndex) => {
+        const rowClass = striped && rowIndex % 2 === 1 ? ' class="bg-gray-800/70"' : '';
+        const cells = columns
+          .map(column => {
+            const rawValue = row[column.key];
+            const value = rawValue === null || rawValue === undefined ? '' : String(rawValue);
+            return `          <td class="px-4 py-2 align-top text-gray-300">${this.escapeHtml(value)}</td>`;
+          })
+          .join('\n');
+
+        return `        <tr${rowClass}>\n${cells}\n        </tr>`;
+      })
+      .join('\n');
+
+    return `    <div class="overflow-x-auto border border-gray-700 rounded-md">
+      <table class="min-w-full divide-y divide-gray-700 text-sm text-gray-200">
+        <thead class="bg-gray-800">
+          <tr>
+${headerCode}
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-700 bg-gray-900">
+${bodyCode}
+        </tbody>
+      </table>
+    </div>`;
   }
 
   protected renderContainer(props: ContainerComponent, key: number): string {

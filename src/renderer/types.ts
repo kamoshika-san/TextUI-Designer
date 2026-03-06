@@ -82,6 +82,7 @@ export interface FormField {
   Divider?: DividerComponent;
   Alert?: AlertComponent;
   Container?: ContainerComponent;
+  Table?: TableComponent;
 }
 
 export interface FormAction {
@@ -132,6 +133,17 @@ export interface TabsComponent {
   items: TabsItem[];
 }
 
+export interface TableColumn {
+  key: string;
+  header: string;
+}
+
+export interface TableComponent {
+  columns: TableColumn[];
+  rows: Record<string, string | number | boolean | null>[];
+  striped?: boolean;
+}
+
 export type ContainerLayout = 'vertical' | 'horizontal' | 'flex' | 'grid';
 
 export interface ContainerComponent {
@@ -151,7 +163,8 @@ export type ComponentDef =
   | { Divider: DividerComponent }
   | { Alert: AlertComponent }
   | { Accordion: AccordionComponent }
-  | { Tabs: TabsComponent };
+  | { Tabs: TabsComponent }
+  | { Table: TableComponent };
 
 export interface PageDef {
   id: string;
@@ -216,4 +229,8 @@ export function isAccordionComponent(comp: ComponentDef): comp is { Accordion: A
 
 export function isTabsComponent(comp: ComponentDef): comp is { Tabs: TabsComponent } {
   return 'Tabs' in comp;
+}
+
+export function isTableComponent(comp: ComponentDef): comp is { Table: TableComponent } {
+  return 'Table' in comp;
 }
