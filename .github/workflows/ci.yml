@@ -56,6 +56,48 @@ jobs:
         name: codecov-umbrella
       continue-on-error: true
 
+  dsl-plan:
+    name: DSL Plan (PR)
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build CLI
+      run: npm run compile
+
+    - name: Fetch base branch
+      run: git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+
+    - name: Run TextUI plan summary
+      run: node ./scripts/plan-pr-diff.cjs --base-ref "origin/${{ github.base_ref }}" --summary-file ".tmp-plan/summary.md" --json-file ".tmp-plan/result.json"
+
+    - name: Publish plan summary
+      run: node -e "const fs=require('fs');process.stdout.write(fs.readFileSync('.tmp-plan/summary.md','utf8'))" >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Upload plan artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: textui-plan-summary
+        path: .tmp-plan
+        retention-days: 14
+
   lint:
     name: Lint & Format Check
     permissions:
