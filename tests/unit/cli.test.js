@@ -80,6 +80,122 @@ module.exports = {
     assert.ok(parsed.issues.some(issue => issue.message.includes('循環参照を検出しました')));
   });
 
+  it('validate passes when token reference exists in theme tokens', () => {
+    const tokenDslFile = path.join(tmpDir, 'token-valid.tui.yml');
+    const tokenThemeFile = path.join(tmpDir, 'textui-theme.yml');
+    fs.writeFileSync(tokenThemeFile, `
+theme:
+  name: "Token Theme"
+  version: "1.0.0"
+  tokens:
+    color:
+      primary: "#3B82F6"
+`, 'utf8');
+    fs.writeFileSync(tokenDslFile, `
+page:
+  id: token-valid
+  title: "Token Valid"
+  layout: vertical
+  components:
+    - Button:
+        label: "送信"
+        token: color.primary
+`, 'utf8');
+
+    const result = spawnSync('node', [cliPath, 'validate', '--file', tokenDslFile, '--json'], { encoding: 'utf8' });
+    assert.strictEqual(result.status, 0);
+    const parsed = JSON.parse(result.stdout);
+    assert.strictEqual(parsed.valid, true);
+  });
+
+  it('validate fails when token is undefined', () => {
+    const tokenDslFile = path.join(tmpDir, 'token-undefined.tui.yml');
+    const tokenThemeFile = path.join(tmpDir, 'textui-theme.yml');
+    fs.writeFileSync(tokenThemeFile, `
+theme:
+  name: "Token Theme"
+  version: "1.0.0"
+  tokens:
+    color:
+      primary: "#3B82F6"
+`, 'utf8');
+    fs.writeFileSync(tokenDslFile, `
+page:
+  id: token-undefined
+  title: "Token Undefined"
+  layout: vertical
+  components:
+    - Button:
+        label: "送信"
+        token: color.missing
+`, 'utf8');
+
+    const result = spawnSync('node', [cliPath, 'validate', '--file', tokenDslFile, '--json'], { encoding: 'utf8' });
+    assert.strictEqual(result.status, 2);
+    const parsed = JSON.parse(result.stdout);
+    assert.strictEqual(parsed.valid, false);
+    assert.ok(parsed.issues.some(issue => issue.message.includes('未定義のtoken参照')));
+  });
+
+  it('validate fails when token points to object node', () => {
+    const tokenDslFile = path.join(tmpDir, 'token-type-mismatch.tui.yml');
+    const tokenThemeFile = path.join(tmpDir, 'textui-theme.yml');
+    fs.writeFileSync(tokenThemeFile, `
+theme:
+  name: "Token Theme"
+  version: "1.0.0"
+  tokens:
+    color:
+      primary: "#3B82F6"
+`, 'utf8');
+    fs.writeFileSync(tokenDslFile, `
+page:
+  id: token-type
+  title: "Token Type"
+  layout: vertical
+  components:
+    - Button:
+        label: "送信"
+        token: color
+`, 'utf8');
+
+    const result = spawnSync('node', [cliPath, 'validate', '--file', tokenDslFile, '--json'], { encoding: 'utf8' });
+    assert.strictEqual(result.status, 2);
+    const parsed = JSON.parse(result.stdout);
+    assert.strictEqual(parsed.valid, false);
+    assert.ok(parsed.issues.some(issue => issue.message.includes('token型不整合')));
+  });
+
+  it('validate fails when token definitions contain cyclic references', () => {
+    const tokenDslFile = path.join(tmpDir, 'token-cycle.tui.yml');
+    const tokenThemeFile = path.join(tmpDir, 'textui-theme.yml');
+    fs.writeFileSync(tokenThemeFile, `
+theme:
+  name: "Token Theme"
+  version: "1.0.0"
+  tokens:
+    color:
+      primary: "{color.secondary}"
+      secondary: "{color.primary}"
+`, 'utf8');
+    fs.writeFileSync(tokenDslFile, `
+page:
+  id: token-cycle
+  title: "Token Cycle"
+  layout: vertical
+  components:
+    - Button:
+        label: "送信"
+        token: color.primary
+`, 'utf8');
+
+    const result = spawnSync('node', [cliPath, 'validate', '--file', tokenDslFile, '--json'], { encoding: 'utf8' });
+    assert.strictEqual(result.status, 2);
+    const parsed = JSON.parse(result.stdout);
+    assert.strictEqual(parsed.valid, false);
+    assert.ok(parsed.issues.some(issue => issue.message.includes('循環参照')));
+  });
+
   it('providers --json lists built-in providers', () => {
     const output = execFileSync('node', [cliPath, 'providers', '--json'], { encoding: 'utf8' });
     const parsed = JSON.parse(output);
