@@ -455,6 +455,138 @@ page:
     assert.ok(fs.existsSync(outFile));
   });
 
+  it('export resolves token value into HTML inline style', () => {
+    const tokenDslFile = path.join(tmpDir, 'token-export.tui.yml');
+    const tokenThemeFile = path.join(tmpDir, 'textui-theme.yml');
+    const tokenOutFile = path.join(tmpDir, 'token-export.html');
+    fs.writeFileSync(tokenThemeFile, `
+theme:
+  name: "Token Theme"
+  version: "1.0.0"
+  tokens:
+    color:
+      primary: "#123456"
+`, 'utf8');
+    fs.writeFileSync(tokenDslFile, `
+page:
+  id: token-export
+  title: "Token Export"
+  layout: vertical
+  components:
+    - Button:
+        label: "送信"
+        token: color.primary
+`, 'utf8');
+
+    const result = spawnSync('node', [
+      cliPath,
+      'export',
+      '--file',
+      tokenDslFile,
+      '--provider',
+      'html',
+      '--output',
+      tokenOutFile
+    ], { encoding: 'utf8' });
+
+    assert.strictEqual(result.status, 0);
+    const html = fs.readFileSync(tokenOutFile, 'utf8');
+    assert.match(html, /background-color:\s*#123456/);
+  });
+
+  it('export with --token-on-error warn succeeds and reports token warnings', () => {
+    const tokenDslFile = path.join(tmpDir, 'token-warn-export.tui.yml');
+    const tokenThemeFile = path.join(tmpDir, 'textui-theme.yml');
+    const tokenOutFile = path.join(tmpDir, 'token-warn-export.html');
+    fs.writeFileSync(tokenThemeFile, `
+theme:
+  name: "Token Theme"
+  version: "1.0.0"
+  tokens:
+    color:
+      primary: "#3B82F6"
+`, 'utf8');
+    fs.writeFileSync(tokenDslFile, `
+page:
+  id: token-warn-export
+  title: "Token Warn Export"
+  layout: vertical
+  components:
+    - Button:
+        label: "送信"
+        token: color.missing
+`, 'utf8');
+
+    const result = spawnSync('node', [
+      cliPath,
+      'export',
+      '--file',
+      tokenDslFile,
+      '--provider',
+      'html',
+      '--output',
+      tokenOutFile,
+      '--token-on-error',
+      'warn',
+      '--json'
+    ], { encoding: 'utf8' });
+
+    assert.strictEqual(result.status, 0);
+    const parsed = JSON.parse(result.stdout);
+    assert.strictEqual(parsed.tokenOnError, 'warn');
+    assert.ok(parsed.tokenWarnings > 0);
+    assert.ok(fs.existsSync(tokenOutFile));
+  });
+
+  it('apply with --token-on-error warn succeeds and writes state', () => {
+    const tokenDslFile = path.join(tmpDir, 'token-warn-apply.tui.yml');
+    const tokenThemeFile = path.join(tmpDir, 'textui-theme.yml');
+    const tokenStateFile = path.join(tmpDir, 'token-warn-apply.state.json');
+    const tokenOutFile = path.join(tmpDir, 'token-warn-apply.html');
+    fs.writeFileSync(tokenThemeFile, `
+theme:
+  name: "Token Theme"
+  version: "1.0.0"
+  tokens:
+    color:
+      primary: "#3B82F6"
+`, 'utf8');
+    fs.writeFileSync(tokenDslFile, `
+page:
+  id: token-warn-apply
+  title: "Token Warn Apply"
+  layout: vertical
+  components:
+    - Button:
+        label: "送信"
+        token: color.missing
+`, 'utf8');
+
+    const result = spawnSync('node', [
+      cliPath,
+      'apply',
+      '--file',
+      tokenDslFile,
+      '--provider',
+      'html',
+      '--output',
+      tokenOutFile,
+      '--state',
+      tokenStateFile,
+      '--auto-approve',
+      '--token-on-error',
+      'warn',
+      '--json'
+    ], { encoding: 'utf8' });
+
+    assert.strictEqual(result.status, 0);
+    const parsed = JSON.parse(result.stdout);
+    assert.strictEqual(parsed.tokenOnError, 'warn');
+    assert.ok(parsed.tokenWarnings > 0);
+    assert.ok(fs.existsSync(tokenOutFile));
+    assert.ok(fs.existsSync(tokenStateFile));
+  });
+
   it('plan includes changed field details when state has snapshots', () => {
     const workingFile = path.join(tmpDir, 'working.tui.yml');
     fs.copyFileSync(sampleFile, workingFile);

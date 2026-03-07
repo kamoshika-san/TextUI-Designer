@@ -20,6 +20,7 @@ import {
   runExport,
   type CliProvider
 } from './exporter-runner';
+import { resolveDslTokens, type TokenErrorMode } from './theme-token-resolver';
 import type { CliState, ExitCode, PlanSummary, ValidationSummary } from './types';
 import { sha256, stableStringify } from './utils';
 
@@ -39,10 +40,27 @@ function printJson(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
 }
 
-function validateAcrossFiles(filePaths: string[]): ValidationSummary {
+function parseTokenErrorMode(): TokenErrorMode {
+  const mode = (getArg('--token-on-error') ?? 'error').toLowerCase();
+  if (mode === 'error' || mode === 'warn' || mode === 'ignore') {
+    return mode;
+  }
+  throw new Error(`invalid --token-on-error value: ${mode}. expected: error|warn|ignore`);
+}
+
+function emitTokenWarnings(warnings: Array<{ path: string; message: string }>): void {
+  warnings.forEach(warning => {
+    process.stderr.write(`⚠ token ${warning.path} ${warning.message}\n`);
+  });
+}
+
+function validateAcrossFiles(filePaths: string[], skipTokenValidation: boolean = false): ValidationSummary {
   const files = filePaths.map(filePath => {
     const loaded = loadDslFromFile(filePath);
-    const result = validateDsl(loaded.dsl, loaded.sourcePath);
+    const result = validateDsl(loaded.dsl, {
+      sourcePath: loaded.sourcePath,
+      skipTokenValidation
+    });
     const includeIssues = validateIncludeReferences(loaded.dsl, loaded.sourcePath);
     const issues = [...result.issues, ...includeIssues].map(issue => ({ ...issue, file: loaded.sourcePath }));
     return {
@@ -172,12 +190,13 @@ async function applyAcrossFiles(params: {
   provider: CliProvider;
   providerModulePath?: string;
   deterministic: boolean;
+  tokenOnError: TokenErrorMode;
   autoApprove: boolean;
   outputArg?: string;
   stateArg?: string;
   json: boolean;
 }): Promise<ExitCode> {
-  const validation = validateAcrossFiles(params.filePaths);
+  const validation = validateAcrossFiles(params.filePaths, params.tokenOnError !== 'error');
   if (!validation.valid) {
     if (params.json) {
       printJson(validation);
@@ -213,8 +232,10 @@ async function applyAcrossFiles(params: {
     state: string;
     changes: number;
     applied: boolean;
+    tokenWarnings: number;
   }> = [];
   let totalChanges = 0;
+  let totalTokenWarnings = 0;
 
   for (const filePath of params.filePaths) {
     const loaded = loadDslFromFile(filePath);
@@ -239,13 +260,23 @@ async function applyAcrossFiles(params: {
         output: outputPath,
         state: statePath,
         changes: 0,
-        applied: false
+        applied: false,
+        tokenWarnings: 0
       });
       continue;
     }
 
-    const content = await renderWithDeterministicCheck({
+    const tokenResolution = resolveDslTokens({
       dsl: loaded.dsl,
+      sourcePath: loaded.sourcePath,
+      onError: params.tokenOnError
+    });
+    if (params.tokenOnError === 'warn' && tokenResolution.issues.length > 0) {
+      emitTokenWarnings(tokenResolution.issues);
+    }
+
+    const content = await renderWithDeterministicCheck({
+      dsl: tokenResolution.dsl,
       provider: params.provider,
       providerModulePath: params.providerModulePath,
       deterministic: params.deterministic
@@ -257,7 +288,7 @@ async function applyAcrossFiles(params: {
       entry: path.relative(process.cwd(), loaded.sourcePath),
       provider: params.provider,
       providerVersion: await getProviderVersion(params.provider, { providerModulePath: params.providerModulePath }),
-      dsl: loaded.dsl,
+      dsl: tokenResolution.dsl,
       dslRaw: loaded.raw,
       artifacts: [{ file: path.relative(process.cwd(), outputPath), content }]
     });
@@ -271,12 +302,14 @@ async function applyAcrossFiles(params: {
 
     saveState(statePath, nextState);
     totalChanges += plan.changes.length;
+    totalTokenWarnings += tokenResolution.issues.length;
     results.push({
       file: loaded.sourcePath,
       output: outputPath,
       state: statePath,
       changes: plan.changes.length,
-      applied: true
+      applied: true,
+      tokenWarnings: tokenResolution.issues.length
     });
   }
 
@@ -285,7 +318,9 @@ async function applyAcrossFiles(params: {
       applied: true,
       files: results,
       changes: totalChanges,
-      deterministic: params.deterministic
+      deterministic: params.deterministic,
+      tokenOnError: params.tokenOnError,
+      tokenWarnings: totalTokenWarnings
     });
   } else {
     results.forEach(result => {
@@ -296,6 +331,9 @@ async function applyAcrossFiles(params: {
       }
       process.stdout.write(`  output: ${result.output}\n`);
       process.stdout.write(`  state: ${result.state}\n`);
+      if (result.tokenWarnings > 0) {
+        process.stdout.write(`  token-warnings: ${result.tokenWarnings}\n`);
+      }
     });
   }
 
@@ -308,7 +346,7 @@ async function run(): Promise<ExitCode> {
 
   if (!command || command === 'help' || command === '--help' || command === '-h') {
     process.stdout.write('Usage: textui <validate|plan|apply|export|state|providers|version> ...\n');
-    process.stdout.write('Options: --provider <name> --provider-module <path> --file <path> --dir <path> --json\n');
+    process.stdout.write('Options: --provider <name> --provider-module <path> --file <path> --dir <path> --json --token-on-error <error|warn|ignore>\n');
     return 0;
   }
 
@@ -517,21 +555,49 @@ async function run(): Promise<ExitCode> {
       return 1;
     }
     const deterministic = hasFlag('--deterministic');
-    const validation = validateDsl(loaded.dsl, loaded.sourcePath);
+    const tokenOnError = parseTokenErrorMode();
+    const validation = validateDsl(loaded.dsl, {
+      sourcePath: loaded.sourcePath,
+      skipTokenValidation: tokenOnError !== 'error'
+    });
     if (!validation.valid) {
       return 2;
     }
 
-    const content = await renderWithDeterministicCheck({ dsl: loaded.dsl, provider, providerModulePath, deterministic });
+    const tokenResolution = resolveDslTokens({
+      dsl: loaded.dsl,
+      sourcePath: loaded.sourcePath,
+      onError: tokenOnError
+    });
+    if (tokenOnError === 'warn' && tokenResolution.issues.length > 0) {
+      emitTokenWarnings(tokenResolution.issues);
+    }
+
+    const content = await renderWithDeterministicCheck({
+      dsl: tokenResolution.dsl,
+      provider,
+      providerModulePath,
+      deterministic
+    });
     const providerExtension = await getProviderExtension(provider, { providerModulePath });
     const output = path.resolve(getArg('--output') ?? `generated/textui${providerExtension}`);
     ensureDirectoryForFile(output);
     fs.writeFileSync(output, content, 'utf8');
 
     if (hasFlag('--json')) {
-      printJson({ output, provider, bytes: Buffer.byteLength(content, 'utf8'), deterministic });
+      printJson({
+        output,
+        provider,
+        bytes: Buffer.byteLength(content, 'utf8'),
+        deterministic,
+        tokenOnError,
+        tokenWarnings: tokenResolution.issues.length
+      });
     } else {
       process.stdout.write(`Exported: ${output}\n`);
+      if (tokenResolution.issues.length > 0) {
+        process.stdout.write(`token-warnings: ${tokenResolution.issues.length}\n`);
+      }
     }
     return 0;
   }
@@ -544,6 +610,7 @@ async function run(): Promise<ExitCode> {
       return 1;
     }
     const deterministic = hasFlag('--deterministic');
+    const tokenOnError = parseTokenErrorMode();
     if (dirArg) {
       const filePaths = resolveDslFiles(fileArg, dirArg);
       return applyAcrossFiles({
@@ -552,6 +619,7 @@ async function run(): Promise<ExitCode> {
         provider,
         providerModulePath,
         deterministic,
+        tokenOnError,
         autoApprove: hasFlag('--auto-approve'),
         outputArg: getArg('--output'),
         stateArg: getArg('--state'),
@@ -560,7 +628,10 @@ async function run(): Promise<ExitCode> {
     }
     const filePath = resolveDslFile(fileArg);
     const loaded = loadDslFromFile(filePath);
-    const validation = validateDsl(loaded.dsl, loaded.sourcePath);
+    const validation = validateDsl(loaded.dsl, {
+      sourcePath: loaded.sourcePath,
+      skipTokenValidation: tokenOnError !== 'error'
+    });
     if (!validation.valid) {
       return 2;
     }
@@ -576,7 +647,21 @@ async function run(): Promise<ExitCode> {
       return 1;
     }
 
-    const content = await renderWithDeterministicCheck({ dsl: loaded.dsl, provider, providerModulePath, deterministic });
+    const tokenResolution = resolveDslTokens({
+      dsl: loaded.dsl,
+      sourcePath: loaded.sourcePath,
+      onError: tokenOnError
+    });
+    if (tokenOnError === 'warn' && tokenResolution.issues.length > 0) {
+      emitTokenWarnings(tokenResolution.issues);
+    }
+
+    const content = await renderWithDeterministicCheck({
+      dsl: tokenResolution.dsl,
+      provider,
+      providerModulePath,
+      deterministic
+    });
     const providerExtension = await getProviderExtension(provider, { providerModulePath });
     const output = path.resolve(getArg('--output') ?? `generated/textui${providerExtension}`);
     ensureDirectoryForFile(output);
@@ -586,7 +671,7 @@ async function run(): Promise<ExitCode> {
       entry: path.relative(process.cwd(), loaded.sourcePath),
       provider,
       providerVersion: await getProviderVersion(provider, { providerModulePath }),
-      dsl: loaded.dsl,
+      dsl: tokenResolution.dsl,
       dslRaw: loaded.raw,
       artifacts: [{ file: path.relative(process.cwd(), output), content }]
     });
@@ -601,9 +686,20 @@ async function run(): Promise<ExitCode> {
     saveState(statePath, nextState);
 
     if (hasFlag('--json')) {
-      printJson({ applied: true, output, state: statePath, changes: plan.changes.length, deterministic });
+      printJson({
+        applied: true,
+        output,
+        state: statePath,
+        changes: plan.changes.length,
+        deterministic,
+        tokenOnError,
+        tokenWarnings: tokenResolution.issues.length
+      });
     } else {
       process.stdout.write(`Applied ${plan.changes.length} change(s). state: ${statePath}\n`);
+      if (tokenResolution.issues.length > 0) {
+        process.stdout.write(`token-warnings: ${tokenResolution.issues.length}\n`);
+      }
     }
     return 0;
   }

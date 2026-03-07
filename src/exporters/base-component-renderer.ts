@@ -30,6 +30,21 @@ export type ComponentHandler = (props: unknown, key: number) => string;
 export abstract class BaseComponentRenderer implements Exporter {
   protected format: ExportFormat;
   private componentHandlers: Map<string, ComponentHandler> = new Map();
+  private static readonly TOKEN_STYLE_PROPERTY_MAP: Record<string, string> = {
+    Text: 'color',
+    Input: 'border-color',
+    Button: 'background-color',
+    Checkbox: 'accent-color',
+    Radio: 'accent-color',
+    Select: 'border-color',
+    Divider: 'border-color',
+    Alert: 'border-color',
+    Container: 'border-color',
+    Form: 'border-color',
+    Accordion: 'border-color',
+    Tabs: 'border-color',
+    Table: 'border-color'
+  };
 
   constructor(format: ExportFormat) {
     this.format = format;
@@ -175,6 +190,32 @@ export abstract class BaseComponentRenderer implements Exporter {
       const childCode = this.renderComponent(child, index);
       return this.adjustIndentation(childCode, baseIndent);
     }).join('\n');
+  }
+
+  protected getHtmlTokenStyleAttr(componentType: string, token?: string): string {
+    const property = BaseComponentRenderer.TOKEN_STYLE_PROPERTY_MAP[componentType];
+    if (!property || !token) {
+      return '';
+    }
+    return ` style="${property}: ${this.escapeAttribute(token)};"`;
+  }
+
+  protected getPugTokenStyleAttr(componentType: string, token?: string): string {
+    const property = BaseComponentRenderer.TOKEN_STYLE_PROPERTY_MAP[componentType];
+    if (!property || !token) {
+      return '';
+    }
+    return ` style="${property}: ${this.escapeAttribute(token)};"`;
+  }
+
+  protected getReactTokenStyleProp(componentType: string, token?: string): string {
+    const property = BaseComponentRenderer.TOKEN_STYLE_PROPERTY_MAP[componentType];
+    if (!property || !token) {
+      return '';
+    }
+
+    const reactProperty = property.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
+    return ` style={{ ${reactProperty}: ${JSON.stringify(token)} }}`;
   }
 
   protected escapeHtml(value: unknown): string {
