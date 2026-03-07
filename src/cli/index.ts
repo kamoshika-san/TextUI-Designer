@@ -11,6 +11,7 @@ import { validateDsl } from './validator';
 import { validateIncludeReferences } from './include-validator';
 import { buildPlan } from './planner';
 import { buildState, DEFAULT_STATE_PATH, loadState, saveState, stateToStableJson } from './state-manager';
+import { importAllOpenApiToDsl, importOpenApiToDsl } from './openapi-importer';
 import {
   getProviderExtension,
   getProviderVersion,
@@ -345,13 +346,96 @@ async function run(): Promise<ExitCode> {
   const command = process.argv[2];
 
   if (!command || command === 'help' || command === '--help' || command === '-h') {
-    process.stdout.write('Usage: textui <validate|plan|apply|export|state|providers|version> ...\n');
+    process.stdout.write('Usage: textui <validate|plan|apply|export|import|state|providers|version> ...\n');
     process.stdout.write('Options: --provider <name> --provider-module <path> --file <path> --dir <path> --json --token-on-error <error|warn|ignore>\n');
+    process.stdout.write('Import: textui import openapi --input <openapi.(yml|yaml|json)> [--operation <operationId>] [--all] [--output <file>|--output-dir <dir>] [--json]\n');
     return 0;
   }
 
   if (command === 'version') {
     process.stdout.write('textui-cli 0.1.0\n');
+    return 0;
+  }
+
+  if (command === 'import') {
+    const sub = process.argv[3];
+    if (sub !== 'openapi') {
+      process.stderr.write(`unsupported import target: ${sub ?? '(missing)'}\n`);
+      return 1;
+    }
+
+    const inputPathArg = getArg('--input');
+    if (!inputPathArg) {
+      process.stderr.write('import openapi requires --input <path>\n');
+      return 1;
+    }
+
+    const inputPath = path.resolve(inputPathArg);
+    const importAll = hasFlag('--all');
+    const operationId = getArg('--operation');
+    if (importAll && operationId) {
+      process.stderr.write('import openapi: --all and --operation cannot be used together\n');
+      return 1;
+    }
+
+    if (importAll) {
+      const outputDir = path.resolve(getArg('--output-dir') ?? getArg('--output') ?? 'generated/from-openapi');
+      fs.mkdirSync(outputDir, { recursive: true });
+      const importedList = importAllOpenApiToDsl({ inputPath });
+      const files = importedList.map(item => {
+        const safeName = item.operationId.replace(/[^A-Za-z0-9_.-]+/g, '-').replace(/^-+|-+$/g, '');
+        const filePath = path.join(outputDir, `${safeName || 'operation'}.tui.yml`);
+        ensureDirectoryForFile(filePath);
+        fs.writeFileSync(filePath, item.yaml, 'utf8');
+        return {
+          operationId: item.operationId,
+          sourceOperation: item.sourceOperation,
+          fields: item.fields,
+          output: filePath
+        };
+      });
+
+      if (hasFlag('--json')) {
+        printJson({
+          imported: true,
+          mode: 'all',
+          input: inputPath,
+          generated: files.length,
+          files
+        });
+      } else {
+        process.stdout.write(`Imported ${files.length} OpenAPI operations -> ${outputDir}\n`);
+        files.forEach(file => {
+          process.stdout.write(`  - ${file.operationId} (${file.sourceOperation}) -> ${file.output} [fields=${file.fields}]\n`);
+        });
+      }
+      return 0;
+    }
+
+    const imported = importOpenApiToDsl({
+      inputPath,
+      operationId
+    });
+    const output = path.resolve(getArg('--output') ?? 'generated/from-openapi.tui.yml');
+    ensureDirectoryForFile(output);
+    fs.writeFileSync(output, imported.yaml, 'utf8');
+
+    if (hasFlag('--json')) {
+      printJson({
+        imported: true,
+        mode: 'single',
+        input: inputPath,
+        output,
+        operationId: imported.operationId,
+        sourceOperation: imported.sourceOperation,
+        fields: imported.fields
+      });
+    } else {
+      process.stdout.write(`Imported OpenAPI operation ${imported.operationId} -> ${output}\n`);
+      process.stdout.write(`  source: ${imported.sourceOperation}\n`);
+      process.stdout.write(`  fields: ${imported.fields}\n`);
+    }
+
     return 0;
   }
 
