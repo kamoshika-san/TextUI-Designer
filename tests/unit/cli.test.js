@@ -21,11 +21,11 @@ describe('TextUI CLI Sprint1', () => {
     fs.copyFileSync(sampleFile, dirSampleFile);
     fs.writeFileSync(providerModuleFile, `
 module.exports = {
-  name: 'vue',
-  extension: '.vue',
+  name: 'solid',
+  extension: '.solid',
   version: '0.1.0',
   async render() {
-    return '<template><main>custom provider</main></template>';
+    return '<main>custom provider</main>';
   }
 };
 `, 'utf8');
@@ -40,8 +40,8 @@ module.exports = {
 
     fs.writeFileSync(mismatchProviderModuleFile, `
 module.exports = {
-  name: 'not-vue',
-  extension: '.vue',
+  name: 'not-solid',
+  extension: '.solid',
   version: '0.1.0',
   async render() {
     return '<div>mismatch</div>';
@@ -201,7 +201,7 @@ page:
     const parsed = JSON.parse(output);
     assert.ok(Array.isArray(parsed.providers));
     const names = parsed.providers.map(provider => provider.name);
-    assert.deepStrictEqual(names, ['html', 'pug', 'react']);
+    assert.deepStrictEqual(names, ['html', 'pug', 'react', 'svelte', 'vue']);
   });
 
   it('providers --provider-module includes external provider', () => {
@@ -215,8 +215,8 @@ page:
 
     const parsed = JSON.parse(output);
     const names = parsed.providers.map(provider => provider.name);
-    assert.deepStrictEqual(names, ['html', 'pug', 'react', 'vue']);
-    const external = parsed.providers.find(provider => provider.name === 'vue');
+    assert.deepStrictEqual(names, ['html', 'pug', 'react', 'solid', 'svelte', 'vue']);
+    const external = parsed.providers.find(provider => provider.name === 'solid');
     assert.strictEqual(external.source, 'external');
   });
 
@@ -233,7 +233,7 @@ page:
     rows.forEach(columns => {
       assert.strictEqual(columns.length, 3);
     });
-    assert.ok(rows.some(columns => columns[0] === 'vue' && columns[1] === '.vue' && columns[2] === '0.1.0'));
+    assert.ok(rows.some(columns => columns[0] === 'solid' && columns[1] === '.solid' && columns[2] === '0.1.0'));
   });
 
   it('help output includes provider-module option', () => {
@@ -248,12 +248,12 @@ page:
       '--file',
       sampleFile,
       '--provider',
-      'vue'
+      'angular'
     ], { encoding: 'utf8' });
 
     assert.strictEqual(result.status, 1);
-    assert.match(result.stderr, /unsupported provider: vue/);
-    assert.match(result.stderr, /supported providers: html, pug, react/);
+    assert.match(result.stderr, /unsupported provider: angular/);
+    assert.match(result.stderr, /supported providers: html, pug, react, svelte, vue/);
   });
 
   it('export supports external provider module', () => {
@@ -263,17 +263,17 @@ page:
       '--file',
       sampleFile,
       '--provider',
-      'vue',
+      'solid',
       '--provider-module',
       providerModuleFile,
       '--output',
-      path.join(tmpDir, 'result.vue'),
+      path.join(tmpDir, 'result.solid'),
       '--json'
     ], { encoding: 'utf8' });
 
     assert.strictEqual(result.status, 0);
     const parsed = JSON.parse(result.stdout);
-    assert.ok(parsed.output.endsWith('.vue'));
+    assert.ok(parsed.output.endsWith('.solid'));
   });
 
   it('apply supports external provider module and writes provider version to state', () => {
@@ -284,11 +284,11 @@ page:
       '--file',
       sampleFile,
       '--provider',
-      'vue',
+      'solid',
       '--provider-module',
       providerModuleFile,
       '--output',
-      path.join(tmpDir, 'applied.vue'),
+      path.join(tmpDir, 'applied.solid'),
       '--state',
       stateOut,
       '--auto-approve',
@@ -297,7 +297,7 @@ page:
 
     assert.strictEqual(result.status, 0);
     const state = JSON.parse(fs.readFileSync(stateOut, 'utf8'));
-    assert.strictEqual(state.provider.name, 'vue');
+    assert.strictEqual(state.provider.name, 'solid');
     assert.strictEqual(state.provider.version, '0.1.0');
   });
 
@@ -324,7 +324,7 @@ page:
       '--file',
       sampleFile,
       '--provider',
-      'vue',
+      'solid',
       '--provider-module',
       mismatchProviderModuleFile
     ], { encoding: 'utf8' });
@@ -340,7 +340,7 @@ page:
       '--file',
       sampleFile,
       '--provider',
-      'vue',
+      'solid',
       '--provider-module',
       path.join(tmpDir, 'does-not-exist.cjs')
     ], { encoding: 'utf8' });

@@ -34,6 +34,24 @@ const BUILTIN_PROVIDERS: CliProviderDefinition[] = [
       const { PugExporter } = await import('../exporters/pug-exporter');
       return new PugExporter().export(dsl, { format: 'pug' });
     }
+  },
+  {
+    name: 'svelte',
+    extension: '.svelte',
+    version: '1.0.0',
+    render: async (dsl: TextUIDSL) => {
+      const { SvelteExporter } = await import('../exporters/svelte-exporter');
+      return new SvelteExporter().export(dsl, { format: 'svelte' });
+    }
+  },
+  {
+    name: 'vue',
+    extension: '.vue',
+    version: '1.0.0',
+    render: async (dsl: TextUIDSL) => {
+      const { VueExporter } = await import('../exporters/vue-exporter');
+      return new VueExporter().export(dsl, { format: 'vue' });
+    }
   }
 ];
 
