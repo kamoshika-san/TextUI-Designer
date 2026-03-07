@@ -123,6 +123,11 @@
       "additionalProperties": false,
       "description": "$include によるテンプレート参照。"
     },
+    "tokenRef": {
+      "type": "string",
+      "description": "デザイントークン参照（例: color.primary, spacing.md）",
+      "pattern": "^[A-Za-z0-9_.-]+$"
+    },
     "Text": {
       "type": "object",
       "required": [
@@ -151,6 +156,10 @@
             "value": {
               "type": "string",
               "description": "表示するテキスト内容。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "テキストに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
@@ -201,6 +210,10 @@
             "placeholder": {
               "type": "string",
               "description": "入力欄のプレースホルダー（薄い説明文）。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Inputに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
@@ -240,6 +253,10 @@
               "type": "boolean",
               "default": false,
               "description": "フォーム送信ボタンかどうか。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Buttonに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
@@ -274,6 +291,10 @@
               "type": "boolean",
               "default": false,
               "description": "必須項目かどうか。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Checkboxに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
@@ -332,6 +353,10 @@
               },
               "minItems": 1,
               "description": "選択肢の配列。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Radioに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
@@ -399,6 +424,10 @@
             "placeholder": {
               "type": "string",
               "description": "セレクトボックスのプレースホルダー（未選択時の表示）。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Selectに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
@@ -425,6 +454,10 @@
               ],
               "default": "horizontal",
               "description": "区切り線の向き（横・縦）。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Dividerに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
@@ -456,6 +489,10 @@
             "components": {
               "$ref": "#/definitions/componentArray",
               "description": "子コンポーネントの配列。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Containerに適用するデザイントークン参照。"
             }
           },
           "required": [
@@ -495,6 +532,10 @@
             "message": {
               "type": "string",
               "description": "表示するメッセージ内容。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Alertに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
@@ -527,6 +568,10 @@
                 "$ref": "#/definitions/Button"
               },
               "description": "フォーム下部のボタン群。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Formに適用するデザイントークン参照。"
             }
           },
           "required": [
@@ -583,6 +628,10 @@
                 },
                 "additionalProperties": false
               }
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Accordionに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
@@ -636,6 +685,10 @@
                 "additionalProperties": false,
                 "description": "タブ項目。"
               }
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Tabsに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
@@ -700,6 +753,10 @@
               "type": "boolean",
               "default": false,
               "description": "true の場合は行を交互色で表示します。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Tableに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,

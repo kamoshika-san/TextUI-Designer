@@ -42,7 +42,7 @@ function printJson(value: unknown): void {
 function validateAcrossFiles(filePaths: string[]): ValidationSummary {
   const files = filePaths.map(filePath => {
     const loaded = loadDslFromFile(filePath);
-    const result = validateDsl(loaded.dsl);
+    const result = validateDsl(loaded.dsl, loaded.sourcePath);
     const includeIssues = validateIncludeReferences(loaded.dsl, loaded.sourcePath);
     const issues = [...result.issues, ...includeIssues].map(issue => ({ ...issue, file: loaded.sourcePath }));
     return {
@@ -517,7 +517,7 @@ async function run(): Promise<ExitCode> {
       return 1;
     }
     const deterministic = hasFlag('--deterministic');
-    const validation = validateDsl(loaded.dsl);
+    const validation = validateDsl(loaded.dsl, loaded.sourcePath);
     if (!validation.valid) {
       return 2;
     }
@@ -560,7 +560,7 @@ async function run(): Promise<ExitCode> {
     }
     const filePath = resolveDslFile(fileArg);
     const loaded = loadDslFromFile(filePath);
-    const validation = validateDsl(loaded.dsl);
+    const validation = validateDsl(loaded.dsl, loaded.sourcePath);
     if (!validation.valid) {
       return 2;
     }

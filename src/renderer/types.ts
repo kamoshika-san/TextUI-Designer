@@ -11,6 +11,7 @@ export interface TextComponent {
   size?: TextSize;
   weight?: TextWeight;
   color?: TextColor;
+  token?: string;
 }
 
 export type InputType = 'text' | 'email' | 'password' | 'number' | 'multiline';
@@ -23,6 +24,7 @@ export interface InputComponent {
   required?: boolean;
   disabled?: boolean;
   multiline?: boolean;
+  token?: string;
 }
 
 export type ButtonKind = 'primary' | 'secondary' | 'submit';
@@ -34,6 +36,7 @@ export interface ButtonComponent {
   submit?: boolean;
   disabled?: boolean;
   size?: ButtonSize;
+  token?: string;
 }
 
 export interface CheckboxComponent {
@@ -41,6 +44,7 @@ export interface CheckboxComponent {
   name?: string;
   checked?: boolean;
   disabled?: boolean;
+  token?: string;
 }
 
 export interface RadioOption {
@@ -56,6 +60,7 @@ export interface RadioComponent {
   checked?: boolean;
   disabled?: boolean;
   options?: RadioOption[];
+  token?: string;
 }
 
 export interface SelectOption {
@@ -71,6 +76,7 @@ export interface SelectComponent {
   placeholder?: string;
   disabled?: boolean;
   multiple?: boolean;
+  token?: string;
 }
 
 export interface FormField {
@@ -93,6 +99,7 @@ export interface FormComponent {
   id?: string;
   fields: FormField[];
   actions?: FormAction[];
+  token?: string;
 }
 
 export type DividerOrientation = 'horizontal' | 'vertical';
@@ -101,6 +108,7 @@ export type DividerSpacing = 'sm' | 'md' | 'lg';
 export interface DividerComponent {
   orientation?: DividerOrientation;
   spacing?: DividerSpacing;
+  token?: string;
 }
 
 export type AlertVariant = 'info' | 'success' | 'warning' | 'error';
@@ -109,6 +117,7 @@ export interface AlertComponent {
   variant?: AlertVariant;
   message: string;
   title?: string;
+  token?: string;
 }
 
 export interface AccordionItem {
@@ -120,6 +129,7 @@ export interface AccordionItem {
 export interface AccordionComponent {
   allowMultiple?: boolean;
   items: AccordionItem[];
+  token?: string;
 }
 
 export interface TabsItem {
@@ -131,6 +141,7 @@ export interface TabsItem {
 export interface TabsComponent {
   defaultTab?: number;
   items: TabsItem[];
+  token?: string;
 }
 
 export interface TableColumn {
@@ -142,6 +153,7 @@ export interface TableComponent {
   columns: TableColumn[];
   rows: Record<string, string | number | boolean | null>[];
   striped?: boolean;
+  token?: string;
 }
 
 export type ContainerLayout = 'vertical' | 'horizontal' | 'flex' | 'grid';
@@ -149,6 +161,7 @@ export type ContainerLayout = 'vertical' | 'horizontal' | 'flex' | 'grid';
 export interface ContainerComponent {
   layout?: ContainerLayout;
   components?: ComponentDef[];
+  token?: string;
 }
 
 export type ComponentDef =
