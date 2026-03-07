@@ -9,6 +9,7 @@ const repoRoot = path.resolve(__dirname, '..');
 const cliPath = path.join(repoRoot, 'out/cli/index.js');
 const PLAN_PATH_GLOBS = ['*.tui.yml', '*.tui.yaml'];
 const MAX_CHANGES_IN_SUMMARY = 50;
+const MAX_VALIDATION_ISSUES_IN_SUMMARY = 20;
 
 function parseArgs(argv) {
   const parsed = {};
@@ -128,12 +129,24 @@ function getChangeCounts(changes) {
   }, { add: 0, update: 0, remove: 0 });
 }
 
+function normalizeValidationResult(stdout) {
+  const parsed = JSON.parse(stdout || '{}');
+  const issues = Array.isArray(parsed.issues) ? parsed.issues : [];
+  return {
+    valid: Boolean(parsed.valid),
+    issues
+  };
+}
+
 function buildSummaryMarkdown(result) {
   const lines = [];
   lines.push('## TextUI DSL Plan サマリー');
   lines.push('');
+  lines.push(`- Validateゲート: ${result.gates.validatePassed ? '✅ pass' : '❌ fail'}`);
+  lines.push(`- Plan実行: ${result.gates.planCompleted ? '✅ completed' : '❌ failed'}`);
   lines.push(`- 比較元: \`${result.baseRef}\``);
   lines.push(`- 対象ファイル数: ${result.totals.files}`);
+  lines.push(`- Validate失敗ファイル数: ${result.totals.validationFailures}`);
   lines.push(`- 変更ありファイル数: ${result.totals.filesWithChanges}`);
   lines.push(`- 合計差分: +${result.totals.add} / ~${result.totals.update} / -${result.totals.remove}`);
   if (result.totals.errors > 0) {
@@ -151,6 +164,21 @@ function buildSummaryMarkdown(result) {
     lines.push(`### ${fileResult.currentPath}`);
     lines.push(`- ステータス: ${fileResult.status}`);
     lines.push(`- 比較元ファイル: ${fileResult.basePath || '(新規ファイル)'}`);
+
+    if (fileResult.validation) {
+      lines.push(`- Validate: ${fileResult.validation.valid ? '✅ valid' : `❌ invalid (${fileResult.validation.issues.length}件)`}`);
+      if (!fileResult.validation.valid && fileResult.validation.issues.length > 0) {
+        lines.push('- Validate詳細:');
+        const visibleIssues = fileResult.validation.issues.slice(0, MAX_VALIDATION_ISSUES_IN_SUMMARY);
+        for (const issue of visibleIssues) {
+          const issuePath = issue.path || '/';
+          lines.push(`  - ${issuePath} ${issue.message || 'validation error'}`);
+        }
+        if (fileResult.validation.issues.length > MAX_VALIDATION_ISSUES_IN_SUMMARY) {
+          lines.push(`  - ... ${fileResult.validation.issues.length - MAX_VALIDATION_ISSUES_IN_SUMMARY} 件省略`);
+        }
+      }
+    }
 
     if (fileResult.error) {
       lines.push(`- 判定: ❌ エラー`);
@@ -222,6 +250,7 @@ function main() {
   const files = [];
   const totals = {
     files: targets.length,
+    validationFailures: 0,
     filesWithChanges: 0,
     add: 0,
     update: 0,
@@ -243,6 +272,30 @@ function main() {
 
       const statePath = path.join(workDir, `state-${index}.json`);
       try {
+        const validate = runCli([
+          'validate',
+          '--file', currentAbsolute,
+          '--json'
+        ]);
+
+        if (validate.status !== 0 && validate.status !== 2) {
+          throw new Error((validate.stderr || validate.stdout || 'validate failed').trim());
+        }
+
+        const validation = normalizeValidationResult(validate.stdout);
+        if (!validation.valid) {
+          totals.validationFailures += 1;
+          files.push({
+            ...target,
+            validation,
+            hasChanges: false,
+            changes: [],
+            counts: { add: 0, update: 0, remove: 0 },
+            error: null
+          });
+          return;
+        }
+
         if (target.basePath) {
           const baseContent = readBaseFile(baseRef, target.basePath);
           const baseDslPath = path.join(workDir, `base-${index}.tui.yml`);
@@ -292,6 +345,7 @@ function main() {
 
         files.push({
           ...target,
+          validation,
           hasChanges: Boolean(parsed.hasChanges),
           changes,
           counts
@@ -312,6 +366,10 @@ function main() {
     generatedAt: new Date().toISOString(),
     baseRef,
     totals,
+    gates: {
+      validatePassed: totals.validationFailures === 0 && totals.errors === 0,
+      planCompleted: totals.errors === 0
+    },
     files
   };
 
@@ -322,6 +380,8 @@ function main() {
   process.stdout.write(`${summaryMarkdown}\n`);
   if (totals.errors > 0) {
     process.exitCode = 1;
+  } else if (totals.validationFailures > 0) {
+    process.exitCode = 2;
   }
 }
 
