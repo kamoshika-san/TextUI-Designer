@@ -1,17 +1,24 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
-import Ajv from 'ajv';
-import type { ValidationResult, ValidationIssue } from './types';
+import type { TextUIDSL } from '../renderer/types';
+
+export type TokenErrorMode = 'error' | 'warn' | 'ignore';
+
+export interface TokenResolutionIssue {
+  kind: 'undefined' | 'type' | 'cycle' | 'missing-theme' | 'invalid-token' | 'invalid-value' | 'theme-load';
+  path: string;
+  message: string;
+}
+
+export interface ResolveDslTokensResult {
+  dsl: TextUIDSL;
+  issues: TokenResolutionIssue[];
+}
 
 interface ComponentEntry {
   type: string;
   props: Record<string, unknown>;
-  path: string;
-}
-
-interface TokenUsage {
-  token: string;
   path: string;
 }
 
@@ -22,7 +29,7 @@ interface TokenIndex {
 
 type ResolveResult =
   | { ok: true; value: unknown }
-  | { ok: false; kind: 'undefined' | 'type' | 'cycle'; tokenPath: string; cycle?: string[] };
+  | { ok: false; kind: 'undefined' | 'type' | 'cycle'; cycle?: string[] };
 
 const KNOWN_COMPONENTS = new Set([
   'Text',
@@ -42,139 +49,120 @@ const KNOWN_COMPONENTS = new Set([
 
 const TOKEN_REF_PATTERN = /^\{([A-Za-z0-9_.-]+)\}$/;
 
-export function validateDsl(
-  dsl: unknown,
-  options: { sourcePath?: string; skipTokenValidation?: boolean } = {}
-): ValidationResult {
-  const schemaPath = path.resolve(__dirname, '../../schemas/schema.json');
-  const schemaRaw = fs.readFileSync(schemaPath, 'utf8');
-  const schema = JSON.parse(schemaRaw);
+export function resolveDslTokens(params: {
+  dsl: TextUIDSL;
+  sourcePath: string;
+  onError: TokenErrorMode;
+}): ResolveDslTokensResult {
+  const resolvedDsl = JSON.parse(JSON.stringify(params.dsl)) as TextUIDSL;
+  const entries = collectComponentEntries(resolvedDsl);
+  const tokenEntries = entries.filter(entry => Object.prototype.hasOwnProperty.call(entry.props, 'token'));
 
-  const ajv = new Ajv({ allErrors: true, strict: false });
-  const validate = ajv.compile(schema);
-  const valid = validate(dsl);
-
-  const issues: ValidationIssue[] = [];
-  if (!valid && validate.errors) {
-    validate.errors.forEach(error => {
-      issues.push({
-        level: 'error',
-        message: error.message || 'schema validation error',
-        path: error.instancePath || '/'
-      });
-    });
+  if (tokenEntries.length === 0) {
+    return { dsl: resolvedDsl, issues: [] };
   }
 
-  issues.push(...validateSemanticRules(dsl, options.sourcePath, options.skipTokenValidation ?? false));
+  const themeLoad = loadThemeTokens(params.sourcePath);
+  const issues: TokenResolutionIssue[] = [...themeLoad.issues];
 
-  return {
-    valid: issues.every(issue => issue.level !== 'error'),
-    issues
-  };
-}
-
-function validateSemanticRules(dsl: unknown, sourcePath?: string, skipTokenValidation: boolean = false): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-  if (!dsl || typeof dsl !== 'object') {
-    return [{ level: 'error', message: 'DSLがオブジェクトではありません', path: '/' }];
-  }
-
-  const components = collectComponentEntries(dsl);
-  const seenIds = new Set<string>();
-  const tokenUsages: TokenUsage[] = [];
-
-  components.forEach(component => {
-    const id = component.props.id;
-    if (typeof id === 'string') {
-      if (seenIds.has(id)) {
+  if (!themeLoad.tokens) {
+    tokenEntries.forEach(entry => {
+      if (typeof entry.props.token === 'string' && entry.props.token.trim()) {
         issues.push({
-          level: 'error',
-          message: `重複ID: ${id}`,
-          path: `${component.path}/id`
+          kind: 'missing-theme',
+          path: `${entry.path}/token`,
+          message: `token '${entry.props.token}' を解決できません（テーマ未検出）`
         });
       }
-      seenIds.add(id);
-    }
-
-    if (!Object.prototype.hasOwnProperty.call(component.props, 'token')) {
-      return;
-    }
-
-    const tokenValue = component.props.token;
-    if (tokenValue === undefined || tokenValue === null) {
-      return;
-    }
-
-    if (typeof tokenValue !== 'string') {
-      issues.push({
-        level: 'error',
-        message: 'token は文字列で指定してください',
-        path: `${component.path}/token`
-      });
-      return;
-    }
-
-    tokenUsages.push({ token: tokenValue, path: `${component.path}/token` });
-  });
-
-  if (tokenUsages.length === 0) {
-    return issues;
-  }
-
-  if (skipTokenValidation) {
-    return issues;
-  }
-
-  if (!sourcePath) {
-    issues.push({
-      level: 'error',
-      message: 'token検証にはDSLファイルパスが必要です',
-      path: '/'
+      delete entry.props.token;
     });
-    return issues;
-  }
-
-  const themeLoad = loadThemeTokens(sourcePath);
-  issues.push(...themeLoad.issues);
-  if (!themeLoad.tokens) {
-    return issues;
+    return finalizeResolution(resolvedDsl, issues, params.onError);
   }
 
   const tokenIndex = buildTokenIndex(themeLoad.tokens);
-  issues.push(...validateTokenDefinitions(tokenIndex));
 
-  tokenUsages.forEach(usage => {
-    const result = resolveTokenValue(usage.token, tokenIndex, []);
-    if (result.ok) {
+  tokenEntries.forEach(entry => {
+    const tokenPath = entry.props.token;
+    const issuePath = `${entry.path}/token`;
+    if (tokenPath === undefined || tokenPath === null || tokenPath === '') {
+      delete entry.props.token;
       return;
     }
 
-    if (result.kind === 'undefined') {
+    if (typeof tokenPath !== 'string') {
       issues.push({
-        level: 'error',
-        message: `未定義のtoken参照: ${usage.token}`,
-        path: usage.path
+        kind: 'invalid-token',
+        path: issuePath,
+        message: 'token は文字列で指定してください'
       });
+      delete entry.props.token;
       return;
     }
 
-    if (result.kind === 'type') {
+    const result = resolveTokenValue(tokenPath, tokenIndex, []);
+    if (!result.ok) {
+      if (result.kind === 'undefined') {
+        issues.push({
+          kind: 'undefined',
+          path: issuePath,
+          message: `未定義のtoken参照: ${tokenPath}`
+        });
+      } else if (result.kind === 'type') {
+        issues.push({
+          kind: 'type',
+          path: issuePath,
+          message: `token型不整合: ${tokenPath} はオブジェクトを指しており、スカラー値を期待します`
+        });
+      } else {
+        issues.push({
+          kind: 'cycle',
+          path: issuePath,
+          message: `token循環参照を検出しました: ${(result.cycle ?? []).join(' -> ')}`
+        });
+      }
+      delete entry.props.token;
+      return;
+    }
+
+    if (!isScalarTokenValue(result.value)) {
       issues.push({
-        level: 'error',
-        message: `token型不整合: ${usage.token} はオブジェクトを指しており、スカラー値を期待します`,
-        path: usage.path
+        kind: 'invalid-value',
+        path: issuePath,
+        message: `token値の型が不正です: ${tokenPath}`
       });
+      delete entry.props.token;
       return;
     }
 
-    issues.push({
-      level: 'error',
-      message: `token循環参照を検出しました: ${(result.cycle ?? []).join(' -> ')}`,
-      path: usage.path
-    });
+    entry.props.token = String(result.value);
   });
 
-  return issues;
+  return finalizeResolution(resolvedDsl, issues, params.onError);
+}
+
+function finalizeResolution(
+  dsl: TextUIDSL,
+  issues: TokenResolutionIssue[],
+  onError: TokenErrorMode
+): ResolveDslTokensResult {
+  if (issues.length === 0) {
+    return { dsl, issues: [] };
+  }
+
+  if (onError === 'ignore') {
+    return { dsl, issues: [] };
+  }
+
+  if (onError === 'warn') {
+    return { dsl, issues };
+  }
+
+  const joined = issues.map(issue => `${issue.path}: ${issue.message}`).join('\n');
+  throw new Error(`token解決に失敗しました:\n${joined}`);
+}
+
+function isScalarTokenValue(value: unknown): value is string | number | boolean {
+  return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
 }
 
 function collectComponentEntries(dsl: unknown): ComponentEntry[] {
@@ -185,11 +173,7 @@ function collectComponentEntries(dsl: unknown): ComponentEntry[] {
   return entries;
 }
 
-function collectFromComponentArray(
-  values: unknown,
-  basePath: string,
-  entries: ComponentEntry[]
-): void {
+function collectFromComponentArray(values: unknown, basePath: string, entries: ComponentEntry[]): void {
   if (!Array.isArray(values)) {
     return;
   }
@@ -231,14 +215,12 @@ function collectFromComponentArray(
       if (!Array.isArray(items)) {
         return;
       }
-
       items.forEach((item, itemIndex) => {
         if (!item || typeof item !== 'object' || Array.isArray(item)) {
           return;
         }
-        const itemComponents = (item as Record<string, unknown>).components;
         collectFromComponentArray(
-          itemComponents,
+          (item as Record<string, unknown>).components,
           `${componentPath}/items/${itemIndex}/components`,
           entries
         );
@@ -247,15 +229,15 @@ function collectFromComponentArray(
   });
 }
 
-function loadThemeTokens(sourcePath: string): { tokens: Record<string, unknown> | null; issues: ValidationIssue[] } {
+function loadThemeTokens(sourcePath: string): { tokens: Record<string, unknown> | null; issues: TokenResolutionIssue[] } {
   const themePath = findNearestThemePath(sourcePath);
   if (!themePath) {
     return {
       tokens: null,
       issues: [{
-        level: 'error',
-        message: 'tokenを使用していますが textui-theme.yml / textui-theme.yaml が見つかりません',
-        path: '/'
+        kind: 'missing-theme',
+        path: '/',
+        message: 'textui-theme.yml / textui-theme.yaml が見つかりません'
       }]
     };
   }
@@ -267,21 +249,20 @@ function loadThemeTokens(sourcePath: string): { tokens: Record<string, unknown> 
       return {
         tokens: null,
         issues: [{
-          level: 'error',
-          message: `テーマに tokens 定義がありません: ${themePath}`,
-          path: '/'
+          kind: 'theme-load',
+          path: '/',
+          message: `テーマに tokens 定義がありません: ${themePath}`
         }]
       };
     }
-
     return { tokens, issues: [] };
   } catch (error) {
     return {
       tokens: null,
       issues: [{
-        level: 'error',
-        message: `テーマ読み込みに失敗しました: ${error instanceof Error ? error.message : String(error)}`,
-        path: '/'
+        kind: 'theme-load',
+        path: '/',
+        message: `テーマ読み込みに失敗しました: ${error instanceof Error ? error.message : String(error)}`
       }]
     };
   }
@@ -298,7 +279,6 @@ function findNearestThemePath(sourcePath: string): string | null {
         return candidate;
       }
     }
-
     const parent = path.dirname(current);
     if (parent === current) {
       return null;
@@ -351,20 +331,13 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 function extractTokens(theme: unknown): Record<string, unknown> | null {
-  if (!isPlainObject(theme)) {
+  if (!isPlainObject(theme) || !isPlainObject(theme.theme)) {
     return null;
   }
-
-  const themeRoot = theme.theme;
-  if (!isPlainObject(themeRoot)) {
-    return null;
-  }
-
-  const tokens = themeRoot.tokens;
+  const tokens = (theme.theme as Record<string, unknown>).tokens;
   if (!isPlainObject(tokens)) {
     return null;
   }
-
   return tokens;
 }
 
@@ -408,7 +381,6 @@ function parseTokenReference(value: unknown): string | null {
   if (typeof value !== 'string') {
     return null;
   }
-
   const matched = TOKEN_REF_PATTERN.exec(value.trim());
   if (!matched) {
     return null;
@@ -420,15 +392,13 @@ function resolveTokenValue(tokenPath: string, tokenIndex: TokenIndex, stack: str
   const normalized = normalizeTokenPath(tokenPath);
 
   if (!tokenIndex.nodeMap.has(normalized)) {
-    return { ok: false, kind: 'undefined', tokenPath: normalized };
+    return { ok: false, kind: 'undefined' };
   }
-
   if (stack.includes(normalized)) {
-    return { ok: false, kind: 'cycle', tokenPath: normalized, cycle: [...stack, normalized] };
+    return { ok: false, kind: 'cycle', cycle: [...stack, normalized] };
   }
-
   if (!tokenIndex.leafMap.has(normalized)) {
-    return { ok: false, kind: 'type', tokenPath: normalized };
+    return { ok: false, kind: 'type' };
   }
 
   const value = tokenIndex.leafMap.get(normalized);
@@ -438,39 +408,4 @@ function resolveTokenValue(tokenPath: string, tokenIndex: TokenIndex, stack: str
   }
 
   return resolveTokenValue(reference, tokenIndex, [...stack, normalized]);
-}
-
-function validateTokenDefinitions(tokenIndex: TokenIndex): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-  const seenIssueKeys = new Set<string>();
-
-  tokenIndex.leafMap.forEach((_value, tokenPath) => {
-    const result = resolveTokenValue(tokenPath, tokenIndex, []);
-    if (result.ok) {
-      return;
-    }
-
-    let message: string;
-    if (result.kind === 'undefined') {
-      message = `token定義が未定義の参照を含みます: ${tokenPath}`;
-    } else if (result.kind === 'type') {
-      message = `token定義がオブジェクト参照を含みます: ${tokenPath}`;
-    } else {
-      message = `token定義で循環参照を検出しました: ${(result.cycle ?? []).join(' -> ')}`;
-    }
-
-    const issueKey = `${result.kind}:${message}`;
-    if (seenIssueKeys.has(issueKey)) {
-      return;
-    }
-    seenIssueKeys.add(issueKey);
-
-    issues.push({
-      level: 'error',
-      message,
-      path: `/theme/tokens/${tokenPath.replace(/\./g, '/')}`
-    });
-  });
-
-  return issues;
 }
