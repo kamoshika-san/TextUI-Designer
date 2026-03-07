@@ -129,6 +129,9 @@ npx textui providers --json
 # OpenAPIからDSLを生成
 npx textui import openapi --input openapi.yaml --output generated/from-openapi.tui.yml
 
+# OpenAPIの全operationを一括生成
+npx textui import openapi --input openapi.yaml --all --output-dir generated/from-openapi
+
 # Vue / Svelte への出力（CLI）
 npx textui export --file sample/01-basic/sample.tui.yml --provider vue --output generated/App.vue
 npx textui export --file sample/01-basic/sample.tui.yml --provider svelte --output generated/App.svelte

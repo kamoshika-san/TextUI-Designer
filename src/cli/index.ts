@@ -11,7 +11,7 @@ import { validateDsl } from './validator';
 import { validateIncludeReferences } from './include-validator';
 import { buildPlan } from './planner';
 import { buildState, DEFAULT_STATE_PATH, loadState, saveState, stateToStableJson } from './state-manager';
-import { importOpenApiToDsl } from './openapi-importer';
+import { importAllOpenApiToDsl, importOpenApiToDsl } from './openapi-importer';
 import {
   getProviderExtension,
   getProviderVersion,
@@ -348,7 +348,7 @@ async function run(): Promise<ExitCode> {
   if (!command || command === 'help' || command === '--help' || command === '-h') {
     process.stdout.write('Usage: textui <validate|plan|apply|export|import|state|providers|version> ...\n');
     process.stdout.write('Options: --provider <name> --provider-module <path> --file <path> --dir <path> --json --token-on-error <error|warn|ignore>\n');
-    process.stdout.write('Import: textui import openapi --input <openapi.(yml|yaml|json)> --output <file> [--operation <operationId>] [--json]\n');
+    process.stdout.write('Import: textui import openapi --input <openapi.(yml|yaml|json)> [--operation <operationId>] [--all] [--output <file>|--output-dir <dir>] [--json]\n');
     return 0;
   }
 
@@ -370,9 +370,51 @@ async function run(): Promise<ExitCode> {
       return 1;
     }
 
+    const inputPath = path.resolve(inputPathArg);
+    const importAll = hasFlag('--all');
+    const operationId = getArg('--operation');
+    if (importAll && operationId) {
+      process.stderr.write('import openapi: --all and --operation cannot be used together\n');
+      return 1;
+    }
+
+    if (importAll) {
+      const outputDir = path.resolve(getArg('--output-dir') ?? getArg('--output') ?? 'generated/from-openapi');
+      fs.mkdirSync(outputDir, { recursive: true });
+      const importedList = importAllOpenApiToDsl({ inputPath });
+      const files = importedList.map(item => {
+        const safeName = item.operationId.replace(/[^A-Za-z0-9_.-]+/g, '-').replace(/^-+|-+$/g, '');
+        const filePath = path.join(outputDir, `${safeName || 'operation'}.tui.yml`);
+        ensureDirectoryForFile(filePath);
+        fs.writeFileSync(filePath, item.yaml, 'utf8');
+        return {
+          operationId: item.operationId,
+          sourceOperation: item.sourceOperation,
+          fields: item.fields,
+          output: filePath
+        };
+      });
+
+      if (hasFlag('--json')) {
+        printJson({
+          imported: true,
+          mode: 'all',
+          input: inputPath,
+          generated: files.length,
+          files
+        });
+      } else {
+        process.stdout.write(`Imported ${files.length} OpenAPI operations -> ${outputDir}\n`);
+        files.forEach(file => {
+          process.stdout.write(`  - ${file.operationId} (${file.sourceOperation}) -> ${file.output} [fields=${file.fields}]\n`);
+        });
+      }
+      return 0;
+    }
+
     const imported = importOpenApiToDsl({
-      inputPath: path.resolve(inputPathArg),
-      operationId: getArg('--operation')
+      inputPath,
+      operationId
     });
     const output = path.resolve(getArg('--output') ?? 'generated/from-openapi.tui.yml');
     ensureDirectoryForFile(output);
@@ -381,6 +423,8 @@ async function run(): Promise<ExitCode> {
     if (hasFlag('--json')) {
       printJson({
         imported: true,
+        mode: 'single',
+        input: inputPath,
         output,
         operationId: imported.operationId,
         sourceOperation: imported.sourceOperation,

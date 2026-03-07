@@ -209,4 +209,96 @@ paths:
     assert.strictEqual(imported.status, 1);
     assert.match(imported.stderr, /operationId not found/);
   });
+
+  it('imports all operations with --all into output directory', () => {
+    const openapiPath = path.join(tmpDir, 'all-openapi.yml');
+    const outputDir = path.join(tmpDir, 'generated-all');
+    fs.writeFileSync(openapiPath, `
+openapi: 3.0.3
+info:
+  title: Batch API
+  version: 1.0.0
+paths:
+  /users:
+    post:
+      operationId: createUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+  /invoices:
+    post:
+      operationId: createInvoice
+      parameters:
+        - name: dryRun
+          in: query
+          schema:
+            type: boolean
+`, 'utf8');
+
+    const imported = spawnSync('node', [
+      cliPath,
+      'import',
+      'openapi',
+      '--input',
+      openapiPath,
+      '--all',
+      '--output-dir',
+      outputDir,
+      '--json'
+    ], { encoding: 'utf8' });
+
+    assert.strictEqual(imported.status, 0, imported.stderr || imported.stdout);
+    const parsed = JSON.parse(imported.stdout);
+    assert.strictEqual(parsed.mode, 'all');
+    assert.strictEqual(parsed.generated, 2);
+    assert.strictEqual(parsed.files.length, 2);
+
+    parsed.files.forEach(file => {
+      assert.ok(fs.existsSync(file.output));
+      const validate = spawnSync('node', [cliPath, 'validate', '--file', file.output, '--json'], { encoding: 'utf8' });
+      assert.strictEqual(validate.status, 0, validate.stderr || validate.stdout);
+    });
+  });
+
+  it('returns exit code 1 when --all and --operation are used together', () => {
+    const openapiPath = path.join(tmpDir, 'exclusive-openapi.yml');
+    fs.writeFileSync(openapiPath, `
+openapi: 3.0.3
+info:
+  title: Exclusive API
+  version: 1.0.0
+paths:
+  /users:
+    post:
+      operationId: createUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+`, 'utf8');
+
+    const imported = spawnSync('node', [
+      cliPath,
+      'import',
+      'openapi',
+      '--input',
+      openapiPath,
+      '--all',
+      '--operation',
+      'createUser'
+    ], { encoding: 'utf8' });
+
+    assert.strictEqual(imported.status, 1);
+    assert.match(imported.stderr, /cannot be used together/);
+  });
 });

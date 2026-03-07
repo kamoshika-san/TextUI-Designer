@@ -480,3 +480,36 @@ export function importOpenApiToDsl(params: {
     fields: fields.length
   };
 }
+
+export function importAllOpenApiToDsl(params: {
+  inputPath: string;
+}): OpenApiImportResult[] {
+  const document = loadOpenApiFile(params.inputPath);
+  const operations = buildOperationList(document);
+  if (operations.length === 0) {
+    throw new Error('OpenAPI document has no operations.');
+  }
+
+  const results: OpenApiImportResult[] = [];
+  for (const operation of operations) {
+    const fields = buildFieldDescriptors(operation, document);
+    if (fields.length === 0) {
+      continue;
+    }
+    const dsl = buildDsl(operation, fields);
+    const yaml = YAML.stringify(dsl, { lineWidth: 0 });
+    results.push({
+      dsl,
+      yaml,
+      operationId: operation.operationId,
+      sourceOperation: `${operation.method.toUpperCase()} ${operation.path}`,
+      fields: fields.length
+    });
+  }
+
+  if (results.length === 0) {
+    throw new Error('No importable operations found (requestBody/parameters missing).');
+  }
+
+  return results;
+}
