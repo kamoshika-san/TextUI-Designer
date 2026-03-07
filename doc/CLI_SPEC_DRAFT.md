@@ -12,6 +12,7 @@ textui validate [--file <path>|--dir <path>] [--format yaml|json] [--strict] [--
 textui plan     [--file <path>|--dir <path>] [--state .textui/state.json] [--out plan.json] [--json]
 textui apply    [--file <path>|--dir <path>] [--state .textui/state.json] [--provider html|react|pug|vue|svelte] [--token-on-error error|warn|ignore] [--auto-approve] [--json]
 textui export   [--file <path>] [--provider html|react|pug|vue|svelte] [--token-on-error error|warn|ignore] [--output <path>] [--deterministic] [--json]
+textui import   openapi --input <openapi.(yml|yaml|json)> [--operation <operationId>] [--output generated/from-openapi.tui.yml] [--json]
 textui state    show|pull|push|rm [--state .textui/state.json] [--json]
 textui version
 ```
@@ -56,6 +57,14 @@ textui version
 - `pull`: ファイルからstate読込（標準出力へ）
 - `push`: 標準入力/ファイルからstate上書き
 - `rm`: 特定resourceをstateから削除
+
+### 6) `import openapi`
+- 役割: OpenAPI仕様（requestBody / parameters）から TextUI DSL を生成。
+- 特徴:
+  - `$ref`（ローカル参照）を解決
+  - 型マッピング（`email/password/number/boolean/enum`）
+  - `--operation` で特定 operationId を指定可能
+  - 生成DSLは `validate / plan / apply / export` にそのまま接続可能
 
 ---
 
