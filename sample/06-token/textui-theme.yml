@@ -1,0 +1,13 @@
+theme:
+  name: "Token Demo Theme"
+  version: "1.0.0"
+  description: "token解決用の最小テーマ"
+  author: "TextUI Designer Team"
+  tokens:
+    color:
+      brandPrimary: "#4F46E5"
+      ctaBg: "{color.brandPrimary}"
+      text:
+        primary: "#111827"
+    spacing:
+      md: "1rem"

@@ -5,9 +5,12 @@ const path = require('path');
 const { globSync } = require('glob');
 const YAML = require('yaml');
 const Ajv = require('ajv');
+const os = require('os');
+const { spawnSync } = require('child_process');
 
 const repoRoot = path.resolve(__dirname, '..');
 const sampleRoot = path.join(repoRoot, 'sample');
+const cliPath = path.join(repoRoot, 'out/cli/index.js');
 
 const expectedFailureCases = [
   {
@@ -203,7 +206,8 @@ async function validateRepresentativeExports() {
     'sample/01-basic/sample.tui.yml',
     'sample/02-theme/theme-demo.tui.yml',
     'sample/03-include/include-sample.tui.yml',
-    'sample/05-theme-inheritance/inheritance-demo.tui.yml'
+    'sample/05-theme-inheritance/inheritance-demo.tui.yml',
+    'sample/06-token/token-demo.tui.yml'
   ];
 
   for (const sampleFile of representativeSamples) {
@@ -218,9 +222,66 @@ async function validateRepresentativeExports() {
   }
 }
 
+function runCli(args) {
+  return spawnSync(process.execPath, [cliPath, ...args], {
+    cwd: repoRoot,
+    encoding: 'utf8'
+  });
+}
+
+async function validateRepresentativeCliExports() {
+  const sampleFile = path.join(repoRoot, 'sample/06-token/token-demo.tui.yml');
+  const providers = [
+    { name: 'html', extension: '.html' },
+    { name: 'vue', extension: '.vue' },
+    { name: 'svelte', extension: '.svelte' }
+  ];
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-sample-gate-'));
+
+  try {
+    providers.forEach(provider => {
+      const outputPath = path.join(tempDir, `token-demo${provider.extension}`);
+      const result = runCli([
+        'export',
+        '--file', sampleFile,
+        '--provider', provider.name,
+        '--output', outputPath,
+        '--deterministic',
+        '--json'
+      ]);
+
+      if (result.status !== 0) {
+        throw new Error(`CLI export failed (${provider.name}): ${result.stderr || result.stdout}`);
+      }
+
+      if (!fs.existsSync(outputPath)) {
+        throw new Error(`CLI export output missing (${provider.name}): ${outputPath}`);
+      }
+
+      const parsed = JSON.parse(result.stdout || '{}');
+      if (parsed.tokenWarnings && Number(parsed.tokenWarnings) > 0) {
+        throw new Error(`CLI export has token warnings (${provider.name})`);
+      }
+
+      const output = fs.readFileSync(outputPath, 'utf8');
+      if (provider.name === 'vue' && !output.includes('<template>')) {
+        throw new Error('Vue exporter output is invalid');
+      }
+      if (provider.name === 'svelte' && !output.includes('<script lang="ts">')) {
+        throw new Error('Svelte exporter output is invalid');
+      }
+
+      console.log(`✅ cli export verified: ${provider.name}`);
+    });
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
 async function main() {
   validateAllSamples();
   await validateRepresentativeExports();
+  await validateRepresentativeCliExports();
   console.log('🎉 sample quality gate passed.');
 }
 

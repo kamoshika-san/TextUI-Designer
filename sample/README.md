@@ -11,6 +11,7 @@
 | **[03-include](03-include/)** | テンプレート分割（$include） | `include-sample.tui.yml` |
 | **[04-include-cyclic](04-include-cyclic/)** | 循環参照の検証（エラー確認用） | `cycle-test.tui.yml` |
 | **[05-theme-inheritance](05-theme-inheritance/)** | テーマ継承（extends）の使い方 | `inheritance-demo.tui.yml` |
+| **[06-token](06-token/)** | `token` 属性とテーマトークン解決 | `token-demo.tui.yml` |
 
 各フォルダ内の `README.md` に、ファイルの説明と使い方が書いてあります。
 
@@ -20,6 +21,7 @@
 2. **テーマを試す**: `02-theme/README.md` の手順で `textui-theme.yml` をプロジェクトルートにコピー → `02-theme/theme-demo.tui.yml` でプレビュー
 3. **$include を試す**: `03-include/include-sample.tui.yml` を開いてプレビュー（ネストしたテンプレートと params の動作確認）
 4. **テーマ継承を試す**: `05-theme-inheritance/README.md` の手順でテーマ一式をコピー → `inheritance-demo.tui.yml` で継承結果を確認
+5. **token解決を試す**: `06-token/README.md` の手順でテーマをコピー → `token-demo.tui.yml` で token 適用を確認
 
 ## 参考
 

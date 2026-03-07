@@ -1,0 +1,23 @@
+page:
+  id: token-demo
+  title: "Token Demo"
+  layout: vertical
+  components:
+    - Text:
+        variant: h2
+        value: "Token付きUIサンプル"
+        token: color.brandPrimary
+    - Input:
+        label: "メールアドレス"
+        name: email
+        type: email
+        required: true
+        token: color.brandPrimary
+    - Divider:
+        orientation: horizontal
+        token: color.brandPrimary
+    - Button:
+        kind: primary
+        label: "送信"
+        submit: true
+        token: color.ctaBg
