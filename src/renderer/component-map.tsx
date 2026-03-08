@@ -14,6 +14,7 @@ import { Radio } from './components/Radio';
 import { Select } from './components/Select';
 import { DatePicker } from './components/DatePicker';
 import { Divider } from './components/Divider';
+import { Spacer } from './components/Spacer';
 import { Alert } from './components/Alert';
 import { Accordion } from './components/Accordion';
 import { Tabs } from './components/Tabs';
@@ -31,6 +32,7 @@ import type {
   SelectComponent,
   DatePickerComponent,
   DividerComponent,
+  SpacerComponent,
   AlertComponent,
   ContainerComponent,
   AccordionComponent,
@@ -69,6 +71,7 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
   Select: (props, key) => <Select key={key} {...(props as unknown as SelectComponent)} />,
   DatePicker: (props, key) => <DatePicker key={key} {...(props as unknown as DatePickerComponent)} />,
   Divider: (props, key) => <Divider key={key} {...(props as unknown as DividerComponent)} />,
+  Spacer: (props, key) => <Spacer key={key} {...(props as unknown as SpacerComponent)} />,
   Alert: (props, key) => <Alert key={key} {...(props as unknown as AlertComponent)} />,
   Accordion: (props, key) => (
     <Accordion

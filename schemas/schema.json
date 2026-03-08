@@ -82,6 +82,9 @@
           "$ref": "#/definitions/Divider"
         },
         {
+          "$ref": "#/definitions/Spacer"
+        },
+        {
           "$ref": "#/definitions/Container"
         },
         {
@@ -524,6 +527,56 @@
       },
       "additionalProperties": false,
       "description": "区切り線コンポーネント。"
+    },
+    "Spacer": {
+      "type": "object",
+      "required": [
+        "Spacer"
+      ],
+      "properties": {
+        "Spacer": {
+          "type": "object",
+          "properties": {
+            "axis": {
+              "type": "string",
+              "enum": [
+                "vertical",
+                "horizontal"
+              ],
+              "default": "vertical",
+              "description": "余白を作る方向（縦・横）。"
+            },
+            "size": {
+              "type": "string",
+              "enum": [
+                "xs",
+                "sm",
+                "md",
+                "lg",
+                "xl"
+              ],
+              "default": "md",
+              "description": "余白サイズ。"
+            },
+            "width": {
+              "type": "string",
+              "description": "横幅（例: 16px, 1rem, 10%）。"
+            },
+            "height": {
+              "type": "string",
+              "description": "高さ（例: 16px, 1rem, 10%）。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Spacerに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "レイアウト余白を表現するスペーサー。\n利用可能な属性: axis, size, width, height"
+        }
+      },
+      "additionalProperties": false,
+      "description": "レイアウト余白を表現するスペーサー。"
     },
     "Container": {
       "type": "object",

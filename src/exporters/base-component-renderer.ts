@@ -12,6 +12,7 @@ import type {
   SelectComponent,
   DatePickerComponent,
   DividerComponent,
+  SpacerComponent,
   AlertComponent,
   ContainerComponent,
   AccordionComponent,
@@ -40,6 +41,7 @@ export abstract class BaseComponentRenderer implements Exporter {
     Select: 'border-color',
     DatePicker: 'border-color',
     Divider: 'border-color',
+    Spacer: 'height',
     Alert: 'border-color',
     Container: 'border-color',
     Form: 'border-color',
@@ -67,6 +69,7 @@ export abstract class BaseComponentRenderer implements Exporter {
       Select: (props, key) => this.renderSelect(props as SelectComponent, key),
       DatePicker: (props, key) => this.renderDatePicker(props as DatePickerComponent, key),
       Divider: (props, key) => this.renderDivider(props as DividerComponent, key),
+      Spacer: (props, key) => this.renderSpacer(props as SpacerComponent, key),
       Alert: (props, key) => this.renderAlert(props as AlertComponent, key),
       Container: (props, key) => this.renderContainer(props as ContainerComponent, key),
       Form: (props, key) => this.renderForm(props as FormComponent, key),
@@ -170,6 +173,7 @@ export abstract class BaseComponentRenderer implements Exporter {
   protected abstract renderSelect(props: SelectComponent, key: number): string;
   protected abstract renderDatePicker(props: DatePickerComponent, key: number): string;
   protected abstract renderDivider(props: DividerComponent, key: number): string;
+  protected abstract renderSpacer(props: SpacerComponent, key: number): string;
   protected abstract renderAlert(props: AlertComponent, key: number): string;
   protected abstract renderContainer(props: ContainerComponent, key: number): string;
   protected abstract renderForm(props: FormComponent, key: number): string;

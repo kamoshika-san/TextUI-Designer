@@ -40,6 +40,7 @@ const KNOWN_COMPONENTS = new Set([
   'Radio',
   'Select',
   'Divider',
+  'Spacer',
   'Container',
   'Alert',
   'Accordion',

@@ -94,6 +94,14 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
     example: { Divider: { orientation: 'horizontal', spacing: 'md' } }
   },
   {
+    name: 'Spacer',
+    description: '余白用スペーサー',
+    requiredProps: [],
+    optionalProps: ['axis', 'size', 'width', 'height', 'token'],
+    supportsChildren: false,
+    example: { Spacer: { axis: 'vertical', size: 'md' } }
+  },
+  {
     name: 'Alert',
     description: '通知メッセージ',
     requiredProps: ['message'],

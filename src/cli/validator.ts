@@ -34,6 +34,7 @@ const KNOWN_COMPONENTS = new Set([
   'Select',
   'DatePicker',
   'Divider',
+  'Spacer',
   'Container',
   'Alert',
   'Accordion',

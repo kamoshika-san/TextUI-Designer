@@ -2,7 +2,7 @@ import type {
   TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, RadioOption, SelectComponent, SelectOption, DatePickerComponent,
-  DividerComponent, AlertComponent, ContainerComponent, AccordionComponent,
+  DividerComponent, SpacerComponent, AlertComponent, ContainerComponent, AccordionComponent,
   TabsComponent,
   TableComponent
 } from '../renderer/types';
@@ -281,6 +281,22 @@ ${componentCode}
     }
     
     return `    <hr class="border-gray-700 ${spacingClasses[spacing as keyof typeof spacingClasses]}"${tokenStyle}>`;
+  }
+
+  protected renderSpacer(props: SpacerComponent, key: number): string {
+    const { axis = 'vertical', size = 'md', width, height, token } = props;
+    const sizeMap: Record<'xs' | 'sm' | 'md' | 'lg' | 'xl', string> = {
+      xs: '0.25rem',
+      sm: '0.5rem',
+      md: '1rem',
+      lg: '1.5rem',
+      xl: '2rem'
+    };
+    const fallbackSize = token || sizeMap[size];
+    const resolvedWidth = width || (axis === 'horizontal' ? fallbackSize : '100%');
+    const resolvedHeight = height || (axis === 'horizontal' ? '1px' : fallbackSize);
+
+    return `    <div class="textui-spacer" style="width: ${this.escapeAttribute(resolvedWidth)}; height: ${this.escapeAttribute(resolvedHeight)}; flex-shrink: 0;" aria-hidden="true"></div>`;
   }
 
   protected renderAlert(props: AlertComponent, key: number): string {
