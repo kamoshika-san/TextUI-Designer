@@ -250,6 +250,12 @@ export class TextUiMcpServer {
             name: 'TextUI Components Catalog',
             description: '利用可能コンポーネント一覧',
             mimeType: 'application/json'
+          },
+          {
+            uri: 'textui://cli/run',
+            name: 'TextUI CLI Runner Resource',
+            description: 'resource-onlyクライアント向け。queryでCLIを実行します（args/cwd/timeoutMs/parseJson）。',
+            mimeType: 'application/json'
           }
         ]
       };
@@ -383,7 +389,56 @@ export class TextUiMcpServer {
         components: getTextUiComponentCatalog()
       };
     }
+    if (uri.startsWith('textui://cli/run')) {
+      const request = this.parseCliResourceUri(uri);
+      return this.runCli(request);
+    }
     throw new Error(`Unknown resource uri: ${uri}`);
+  }
+
+  private parseCliResourceUri(uri: string): Record<string, unknown> {
+    let parsed: URL;
+    try {
+      parsed = new URL(uri);
+    } catch {
+      throw new Error(`invalid cli resource uri: ${uri}`);
+    }
+
+    const argsParam = parsed.searchParams.get('args');
+    if (!argsParam) {
+      throw new Error('cli resource requires args query param');
+    }
+
+    let args: unknown;
+    try {
+      args = JSON.parse(argsParam);
+    } catch {
+      throw new Error('cli resource args must be JSON string array');
+    }
+    if (!Array.isArray(args) || !args.every(item => typeof item === 'string')) {
+      throw new Error('cli resource args must be JSON string array');
+    }
+
+    const request: Record<string, unknown> = {
+      args
+    };
+    const cwd = parsed.searchParams.get('cwd');
+    if (cwd) {
+      request.cwd = cwd;
+    }
+    const timeoutMsRaw = parsed.searchParams.get('timeoutMs');
+    if (timeoutMsRaw) {
+      const timeoutMs = Number(timeoutMsRaw);
+      if (!Number.isFinite(timeoutMs) || timeoutMs < 0) {
+        throw new Error(`invalid timeoutMs: ${timeoutMsRaw}`);
+      }
+      request.timeoutMs = timeoutMs;
+    }
+    const parseJsonRaw = parsed.searchParams.get('parseJson');
+    if (parseJsonRaw) {
+      request.parseJson = parseJsonRaw !== 'false';
+    }
+    return request;
   }
 
   private getPrompt(name: string, args: Record<string, unknown>): unknown {

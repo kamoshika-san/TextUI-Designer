@@ -72,6 +72,26 @@ describe('TextUiMcpServer', () => {
     assert.ok(response.result.contents[0].text.includes('schema'));
   });
 
+  it('resources/read textui://cli/run で version を実行できる', async () => {
+    const server = new TextUiMcpServer();
+    const args = encodeURIComponent(JSON.stringify(['version']));
+    const response = await server.handleMessage({
+      jsonrpc: '2.0',
+      id: 41,
+      method: 'resources/read',
+      params: {
+        uri: `textui://cli/run?args=${args}&parseJson=false`
+      }
+    });
+
+    assert.ok(response.result);
+    assert.ok(Array.isArray(response.result.contents));
+    assert.ok(response.result.contents.length > 0);
+    const parsed = JSON.parse(response.result.contents[0].text);
+    assert.strictEqual(parsed.exitCode, 0);
+    assert.ok(parsed.stdout.includes('textui-cli'));
+  });
+
   it('tools/call run_cli が version を実行できる', async () => {
     const server = new TextUiMcpServer();
     const response = await server.handleMessage({
