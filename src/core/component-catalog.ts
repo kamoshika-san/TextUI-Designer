@@ -118,11 +118,11 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
     name: 'Accordion',
     description: '折りたたみ表示',
     requiredProps: ['items'],
-    optionalProps: ['allowMultiple', 'token'],
+    optionalProps: ['allowMultiple', 'token', 'items[].content', 'items[].components'],
     supportsChildren: true,
     example: {
       Accordion: {
-        items: [{ title: 'FAQ', content: '質問への回答' }]
+        items: [{ title: 'FAQ', components: [{ Text: { value: '質問への回答' } }] }]
       }
     }
   },

@@ -225,6 +225,24 @@ function collectFromComponentArray(values: unknown, basePath: string, entries: C
           entries
         );
       });
+      return;
+    }
+
+    if (type === 'Accordion') {
+      const items = propsRecord.items;
+      if (!Array.isArray(items)) {
+        return;
+      }
+      items.forEach((item, itemIndex) => {
+        if (!item || typeof item !== 'object' || Array.isArray(item)) {
+          return;
+        }
+        collectFromComponentArray(
+          (item as Record<string, unknown>).components,
+          `${componentPath}/items/${itemIndex}/components`,
+          entries
+        );
+      });
     }
   });
 }

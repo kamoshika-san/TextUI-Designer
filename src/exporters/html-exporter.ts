@@ -286,12 +286,20 @@ ${componentCode}
       const safeTitle = this.escapeHtml(item.title ?? '');
       const safeContent = this.escapeHtml(item.content ?? '');
       const isOpen = item.open ? 'true' : 'false';
+      const itemComponents = item.components || [];
+      const nestedCode = itemComponents
+        .map((component: ComponentDef, childIndex: number) => this.renderComponent(component, index * 1000 + childIndex))
+        .map(childCode => childCode.split('\n').map(line => `          ${line}`).join('\n'))
+        .join('\n');
+      const contentCode = nestedCode || `          ${safeContent}`;
       code += `
       <details class="textui-accordion-item" ${item.open ? 'open' : ''} data-open="${isOpen}">`;
       code += `
         <summary class="px-4 py-3 text-sm font-medium text-gray-200 cursor-pointer">${safeTitle}</summary>`;
       code += `
-        <div class="px-4 pb-4 text-sm text-gray-300">${safeContent}</div>`;
+        <div class="px-4 pb-4 text-sm text-gray-300">
+${contentCode}
+        </div>`;
       code += `
       </details>`;
     });

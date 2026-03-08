@@ -122,7 +122,8 @@ export interface AlertComponent {
 
 export interface AccordionItem {
   title: string;
-  content: string;
+  content?: string;
+  components?: ComponentDef[];
   open?: boolean;
 }
 

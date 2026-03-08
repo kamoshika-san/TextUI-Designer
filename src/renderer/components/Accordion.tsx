@@ -1,9 +1,11 @@
 import React, { useId, useMemo, useState } from 'react';
-import type { AccordionComponent } from '../types';
+import type { AccordionComponent, ComponentDef } from '../types';
 
-interface AccordionProps extends AccordionComponent {}
+interface AccordionProps extends AccordionComponent {
+  renderComponent?: (component: ComponentDef, key: React.Key) => React.ReactNode;
+}
 
-export const Accordion: React.FC<AccordionProps> = ({ allowMultiple = false, items }) => {
+export const Accordion: React.FC<AccordionProps> = ({ allowMultiple = false, items, renderComponent }) => {
   const accordionId = useId();
   const initialOpenIndexes = useMemo(() => {
     const indexes: number[] = [];
@@ -62,7 +64,15 @@ export const Accordion: React.FC<AccordionProps> = ({ allowMultiple = false, ite
               aria-labelledby={buttonId}
               className={`px-4 pb-4 text-sm text-gray-300 ${isOpen ? 'block' : 'hidden'}`}
             >
-              {item.content}
+              {Array.isArray(item.components) && item.components.length > 0 && renderComponent ? (
+                <div className="space-y-3">
+                  {item.components.map((component, componentIndex) =>
+                    renderComponent(component, index * 1000 + componentIndex)
+                  )}
+                </div>
+              ) : (
+                item.content ?? null
+              )}
             </div>
           </div>
         );

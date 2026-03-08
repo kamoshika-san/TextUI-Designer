@@ -243,6 +243,26 @@ function collectFromComponentArray(
           entries
         );
       });
+      return;
+    }
+
+    if (type === 'Accordion') {
+      const items = propsRecord.items;
+      if (!Array.isArray(items)) {
+        return;
+      }
+
+      items.forEach((item, itemIndex) => {
+        if (!item || typeof item !== 'object' || Array.isArray(item)) {
+          return;
+        }
+        const itemComponents = (item as Record<string, unknown>).components;
+        collectFromComponentArray(
+          itemComponents,
+          `${componentPath}/items/${itemIndex}/components`,
+          entries
+        );
+      });
     }
   });
 }

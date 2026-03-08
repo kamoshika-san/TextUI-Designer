@@ -64,4 +64,30 @@ page:
     assert.ok(button);
     assert.ok(result.supportedProviders.includes('html'));
   });
+
+  it('Accordion item に components を入れてDSL生成できる', async () => {
+    const engine = new TextUICoreEngine();
+    const result = await engine.generateUi({
+      title: 'アコーディオンテスト',
+      components: [
+        {
+          type: 'Accordion',
+          items: [
+            {
+              title: 'セクション1',
+              components: [
+                { type: 'Text', props: { variant: 'p', value: 'ネストされた本文' } },
+                { type: 'Input', props: { label: '名前', name: 'name', type: 'text' } }
+              ]
+            }
+          ]
+        }
+      ]
+    });
+
+    assert.strictEqual(result.validation.valid, true);
+    assert.ok(result.yaml.includes('Accordion:'));
+    assert.ok(result.yaml.includes('components:'));
+    assert.ok(result.yaml.includes('ネストされた本文'));
+  });
 });
