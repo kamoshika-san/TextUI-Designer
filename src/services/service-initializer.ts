@@ -9,6 +9,7 @@ import { TemplateService } from './template-service';
 import { SettingsService } from './settings-service';
 import { ExportManager } from '../exporters';
 import { ThemeManager } from './theme-manager';
+import { McpBootstrapService } from './mcp-bootstrap-service';
 import type {
   ISchemaManager,
   IThemeManager,
@@ -114,6 +115,7 @@ export class ServiceInitializer {
 
       await schemaManager.initialize();
       commandManager.registerCommands();
+      await this.ensureMcpConfigured();
 
       await themeManager.loadTheme();
       webViewManager.applyThemeVariables(themeManager.generateCSSVariables());
@@ -177,5 +179,19 @@ export class ServiceInitializer {
    */
   getServices(): ExtensionServices | null {
     return this.services;
+  }
+
+  private async ensureMcpConfigured(): Promise<void> {
+    try {
+      const mcpBootstrap = new McpBootstrapService(this.context);
+      const result = await mcpBootstrap.ensureConfigured();
+      if (result.updated) {
+        console.log('[ServiceInitializer] MCP設定を更新しました:', result.updatedFiles.join(', '));
+      } else if (result.reason) {
+        console.log(`[ServiceInitializer] MCP設定をスキップ: ${result.reason}`);
+      }
+    } catch (error) {
+      console.warn('[ServiceInitializer] MCP設定中にエラーが発生しました:', error);
+    }
   }
 } 
