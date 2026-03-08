@@ -178,6 +178,18 @@ const App: React.FC = () => {
     }
   };
 
+  const handleJumpToDsl = (dslPath: string, componentName: string) => {
+    const runtimeApi = getVSCodeApi();
+    if (!runtimeApi?.postMessage) {
+      return;
+    }
+    runtimeApi.postMessage({
+      type: 'jump-to-dsl',
+      dslPath,
+      componentName
+    });
+  };
+
   // エラー表示コンポーネント
   const renderError = () => {
     if (!error) return null;
@@ -627,7 +639,10 @@ const App: React.FC = () => {
       </button>
       
       {/* プレビューコンテンツ */}
-      {components.map((comp, i) => renderRegisteredComponent(comp, componentKeys[i] || i))}
+      {components.map((comp, i) => renderRegisteredComponent(comp, componentKeys[i] || i, {
+        dslPath: `/page/components/${i}`,
+        onJumpToDsl: handleJumpToDsl
+      }))}
     </div>
   );
 };

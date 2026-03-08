@@ -1,11 +1,24 @@
 import React, { useId, useMemo, useState } from 'react';
 import type { AccordionComponent, ComponentDef } from '../types';
 
-interface AccordionProps extends AccordionComponent {
-  renderComponent?: (component: ComponentDef, key: React.Key) => React.ReactNode;
+interface RenderContext {
+  dslPath: string;
+  onJumpToDsl?: (dslPath: string, componentName: string) => void;
 }
 
-export const Accordion: React.FC<AccordionProps> = ({ allowMultiple = false, items, renderComponent }) => {
+interface AccordionProps extends AccordionComponent {
+  renderComponent?: (component: ComponentDef, key: React.Key, context?: RenderContext) => React.ReactNode;
+  dslPath?: string;
+  onJumpToDsl?: (dslPath: string, componentName: string) => void;
+}
+
+export const Accordion: React.FC<AccordionProps> = ({
+  allowMultiple = false,
+  items,
+  renderComponent,
+  dslPath,
+  onJumpToDsl
+}) => {
   const accordionId = useId();
   const initialOpenIndexes = useMemo(() => {
     const indexes: number[] = [];
@@ -67,7 +80,10 @@ export const Accordion: React.FC<AccordionProps> = ({ allowMultiple = false, ite
               {Array.isArray(item.components) && item.components.length > 0 && renderComponent ? (
                 <div className="space-y-3">
                   {item.components.map((component, componentIndex) =>
-                    renderComponent(component, index * 1000 + componentIndex)
+                    renderComponent(component, index * 1000 + componentIndex, {
+                      dslPath: `${dslPath ?? ''}/Accordion/items/${index}/components/${componentIndex}`,
+                      onJumpToDsl
+                    })
                   )}
                 </div>
               ) : (

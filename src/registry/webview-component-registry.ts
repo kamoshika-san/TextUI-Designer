@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
+import type { Key, ReactNode } from 'react';
 
-export type WebViewComponentRenderer = (props: Record<string, unknown>, key: number) => ReactNode;
+export type WebViewComponentRenderer = (props: Record<string, unknown>, key: Key) => ReactNode;
 
 const webViewComponentMap = new Map<string, WebViewComponentRenderer>();
 
