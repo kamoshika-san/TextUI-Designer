@@ -9,3 +9,5 @@ media/
 !media/assets/
 !media/assets/.gitkeep
 icon.svg
+.codex/
+.cursor/
