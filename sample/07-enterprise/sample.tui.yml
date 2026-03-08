@@ -1,0 +1,206 @@
+﻿page:
+  id: enterprise-dashboard
+  title: "業務システムダッシュボード（サンプル）"
+  layout: vertical
+  components:
+    - Container:
+        layout: vertical
+        components:
+          - Container:
+              layout: horizontal
+              components:
+                - Text:
+                    variant: h1
+                    value: "受注管理システム"
+                - Text:
+                    variant: h3
+                    value: "オペレーション用ダッシュボード"
+                - Button:
+                    kind: primary
+                    label: "新規受注作成"
+    - Container:
+        layout: horizontal
+        components:
+          - Container:
+              layout: vertical
+              components:
+                - Text:
+                    variant: h3
+                    value: "サマリー"
+                - Text:
+                    variant: p
+                    value: "総受注数: 1284"
+                - Text:
+                    variant: p
+                    value: "今月売上: ¥12,345,678"
+          - Container:
+              layout: vertical
+              components:
+                - Text:
+                    variant: h3
+                    value: "アクティビティ"
+                - Text:
+                    variant: p
+                    value: "承認待ち: 12件"
+                - Text:
+                    variant: p
+                    value: "エラー: 1件"
+                - Text:
+                    variant: p
+                    value: "発送未処理: 24件"
+    - Divider: {}
+    - Form:
+        id: order-search-form
+        fields:
+          - Container:
+              layout: horizontal
+              components:
+                - Input:
+                    label: "受注ID"
+                    name: "orderId"
+                    type: text
+                - Input:
+                    label: "顧客名"
+                    name: "customerName"
+                    type: text
+                - Select:
+                    label: "ステータス"
+                    name: "status"
+                    options:
+                      - label: "すべて"
+                        value: ""
+                      - label: "新規"
+                        value: "new"
+                      - label: "処理中"
+                        value: "processing"
+                      - label: "完了"
+                        value: "done"
+                      - label: "キャンセル"
+                        value: "cancelled"
+                - Input:
+                    label: "受注日(From)"
+                    name: "orderDateFrom"
+                    type: text
+                - Input:
+                    label: "受注日(To)"
+                    name: "orderDateTo"
+                    type: text
+        actions:
+          - Button:
+              kind: primary
+              label: "検索"
+              submit: true
+          - Button:
+              kind: secondary
+              label: "クリア"
+          - Button:
+              kind: secondary
+              label: "高度な検索"
+    - Container:
+        layout: horizontal
+        components:
+          - Table:
+              width: "70%"
+              columns:
+                - { key: "select", header: "選択" }
+                - { key: "orderId", header: "受注ID" }
+                - { key: "customerName", header: "顧客名" }
+                - { key: "total", header: "合計" }
+                - { key: "status", header: "ステータス" }
+                - { key: "orderDate", header: "受注日" }
+              rows:
+                - orderId: "ORD-1001"
+                  customerName: "山田 太郎"
+                  total: 12000
+                  status: "新規"
+                  orderDate: "2026-03-01"
+                - orderId: "ORD-1002"
+                  customerName: "佐藤 花子"
+                  total: 54300
+                  status: "処理中"
+                  orderDate: "2026-03-03"
+                - orderId: "ORD-1003"
+                  customerName: "鈴木 次郎"
+                  total: 7800
+                  status: "完了"
+                  orderDate: "2026-02-28"
+          - Container:
+              layout: vertical
+              width: "30%"
+              components:
+                - Text:
+                    variant: h3
+                    value: "受注詳細"
+                - Text:
+                    variant: p
+                    value: "受注ID: --"
+                - Text:
+                    variant: p
+                    value: "顧客名: --"
+                - Text:
+                    variant: p
+                    value: "合計: --"
+                - Divider: {}
+                - Button:
+                    kind: secondary
+                    label: "一括キャンセル"
+    - Container:
+        layout: vertical
+        components:
+          - Tabs:
+              items:
+                  - label: "承認 - 確認"
+                    components:
+                      - Text:
+                          variant: p
+                          value: "承認候補の受注情報を確認してください。"
+                      - Table:
+                          columns:
+                            - { key: "orderId", header: "受注ID" }
+                            - { key: "customerName", header: "顧客名" }
+                            - { key: "total", header: "合計" }
+                          rows: []
+                  - label: "承認 - コメント"
+                    components:
+                      - Form:
+                          id: approval-form
+                          fields:
+                            - Input:
+                                label: "コメント"
+                                name: "comment"
+                                type: multiline
+                            - Radio:
+                                label: "結果"
+                                name: "result"
+                                options:
+                                  - { label: "承認", value: "approve" }
+                                  - { label: "差戻し", value: "reject" }
+                  - label: "承認 - 完了"
+                    components:
+                      - Text:
+                          variant: p
+                          value: "承認処理が完了しました。"
+    - Divider: {}
+    - Container:
+        layout: vertical
+        components:
+          - Text:
+              variant: h3
+              value: "レポート(サンプル)"
+          - Table:
+              columns:
+                - { key: "month", header: "月" }
+                - { key: "amount", header: "売上" }
+              rows:
+                - { month: "2026-01", amount: 1234567 }
+                - { month: "2026-02", amount: 2345678 }
+          - Table:
+              columns:
+                - { key: "status", header: "ステータス" }
+                - { key: "count", header: "件数" }
+              rows:
+                - { status: "新規", count: 12 }
+                - { status: "処理中", count: 34 }
+    - Text:
+        variant: small
+        value: "© 2026 Example Corp. 業務システムサンプル"

@@ -9,7 +9,7 @@
 		"dist": true // set this to false to include "dist" folder in search results
 	},
 	// Turn off tsc task auto detection since we have the necessary tasks as npm scripts
-	"typescript.tsc.autoDetect": "off",
+	"js/ts.tsc.autoDetect": "off",
 	// CSS検証の設定
 	"css.validate": false,
 	"less.validate": false,
@@ -22,9 +22,8 @@
 		["@apply\\s+([^;}]+)", "([^;}]+)"],
 		["classList\\.add\\(([^)]*)\\)", "([^)]*)"]
 	],
-	"textui-designer.mcp.autoConfigure": true,
+	"textui-designer.mcp.autoConfigure": false,
 	"textui-designer.mcp.scope": "both",
 	"textui-designer.mcp.serverId": "textui-designer",
-	"textui-designer.mcp.command": "node",
-	"chat.mcp.autostart": true
+	"textui-designer.mcp.command": "node"
 }
