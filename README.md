@@ -52,13 +52,23 @@ page:
 - Text
 - Alert
 - Divider
+- Accordion
+- Tabs
 - Input
 - Checkbox
 - Radio
 - Select
 - Button
 - Container
+- Table
 - Form
+
+---
+
+## リリースノート
+
+- 最新版（v0.5.0）: `docs/RELEASE_NOTES_v0.5.0.md`
+- 変更履歴（全体）: `CHANGELOG.md`
 
 ---
 

@@ -4,6 +4,28 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.5.0] - 2026-03-08
+
+### 新機能
+- **新コンポーネント追加**: DSL / WebView / Exporter で `Accordion`・`Tabs`・`Table` をサポートしました。
+- **レイアウト表現の強化**: `Container` / `Table` の `width` 指定に対応し、画面設計時の可読性を改善しました。
+- **CLI OpenAPI 連携**: `textui import openapi` を追加し、`--all` による全 operation 一括生成に対応しました。
+- **CLI プロバイダー拡張**: 組み込みプロバイダーとして `Vue` / `Svelte` を追加しました。
+
+### 変更・改善
+- **デザイントークン運用の改善**: CLI のトークンスキーマ／意味検証と export/apply 時のトークン解決を追加しました。
+- **バッチ適用の強化**: CLI `apply --dir` モードを追加し、複数 DSL ファイルの一括処理に対応しました。
+- **MCP 統合**: コアエンジンに MCP サーバーを同梱し、起動時の自動設定（mcp.json）と起動安定性を改善しました。
+- **ドキュメント整理**: 旧 `doc/` 配下を `docs/` へ集約し、運用ドキュメントの参照性を高めました。
+
+### 配布・品質
+- **VSIX 配布改善**: VSIX パッケージに `yaml` / `ajv` ランタイム依存を明示的に同梱し、実行環境差分による不具合を抑制しました。
+- **CI 強化**: DSL validate と PR plan レポートを CI ゲートに追加しました。
+- **テスト強化**: CLI 回帰テストを拡充し、トークン／プロバイダー契約／MCP 周辺の検証を強化しました。
+
+### 破壊的変更
+- なし
+
 ## [0.4.0] - 2026-03-06
 
 ### 新機能
