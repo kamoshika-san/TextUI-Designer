@@ -147,14 +147,14 @@ export class McpBootstrapService {
     }
 
     const serverId = config.get<string>('mcp.serverId', 'textui-designer');
-    const scope = config.get<McpScope>('mcp.scope', 'workspace');
+    const scope = config.get<McpScope>('mcp.scope', 'both');
     const targets = this.resolveTargets(scope);
 
     if (targets.length === 0) {
       return {
         updated: false,
         updatedFiles: [],
-        reason: 'no writable mcp.json target'
+        reason: 'no writable MCP config target'
       };
     }
 
