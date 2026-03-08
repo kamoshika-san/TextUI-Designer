@@ -21,6 +21,11 @@
   "main": "./out/extension.js",
   "files": [
     "out/**/*",
+    "node_modules/ajv/**/*",
+    "node_modules/fast-deep-equal/**/*",
+    "node_modules/fast-uri/**/*",
+    "node_modules/json-schema-traverse/**/*",
+    "node_modules/require-from-string/**/*",
     "node_modules/yaml/**/*",
     "schemas/**/*",
     "media/**/*",
