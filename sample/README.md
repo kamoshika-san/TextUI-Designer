@@ -27,7 +27,7 @@
 
 - **メインドキュメント**: [../README.md](../README.md) - TextUI Designer の全体説明
 - **スキーマ**: `../schemas/` - DSL の型定義
-- **テーマ詳細**: 従来のテーマカスタマイズガイドは [01-basic](01-basic/) および [02-theme](02-theme/) の README と、リポジトリ内の `doc/` を参照
+- **テーマ詳細**: 従来のテーマカスタマイズガイドは [01-basic](01-basic/) および [02-theme](02-theme/) の README と、リポジトリ内の `docs/` を参照
 
 
 ## サンプル追加フロー（品質ゲート対応）
