@@ -255,6 +255,11 @@
           "default": "textui-designer",
           "description": "mcp.jsonで使用するMCPサーバーID"
         },
+        "textui-designer.mcp.command": {
+          "type": "string",
+          "default": "node",
+          "description": "MCPサーバー起動コマンド（通常はnode）"
+        },
         "textui-designer.mcp.notifyOnConfigured": {
           "type": "boolean",
           "default": true,
@@ -384,12 +389,12 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run package",
+    "vscode:prepublish": "npm run compile && npm run package && npm run build-webview",
     "compile": "tsc -p ./",
     "build": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "package": "webpack --mode production --devtool hidden-source-map",
-    "package:vsix": "npm run package && npm run build-webview && npx --yes @vscode/vsce package --no-dependencies",
+    "package:vsix": "npm run compile && npm run package && npm run build-webview && npx --yes @vscode/vsce package --no-dependencies",
     "build-webview": "vite build",
     "dev-webview": "vite",
     "validate:samples": "npm run compile && node ./scripts/validate-samples.cjs",

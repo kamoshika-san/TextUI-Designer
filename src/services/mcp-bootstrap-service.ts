@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 export type McpScope = 'workspace' | 'user' | 'both';
+export const DEFAULT_MCP_COMMAND = 'node';
 
 export interface McpServerConfigEntry {
   type: 'stdio';
@@ -21,6 +22,23 @@ export interface McpBootstrapResult {
   updated: boolean;
   updatedFiles: string[];
   reason?: string;
+}
+
+export function resolveMcpServerScriptPath(extensionPath: string): string {
+  return path.join(extensionPath, 'out', 'mcp', 'server.js');
+}
+
+export function createMcpServerConfigEntry(params: {
+  extensionPath: string;
+  command?: string;
+}): McpServerConfigEntry {
+  const command = (params.command ?? DEFAULT_MCP_COMMAND).trim() || DEFAULT_MCP_COMMAND;
+  return {
+    type: 'stdio',
+    command,
+    args: [resolveMcpServerScriptPath(params.extensionPath)],
+    cwd: params.extensionPath
+  };
 }
 
 export function resolveUserMcpJsonPath(options: {
@@ -100,7 +118,17 @@ export class McpBootstrapService {
       };
     }
 
-    const entry = this.createServerEntry();
+    const serverScriptPath = resolveMcpServerScriptPath(this.context.extensionPath);
+    if (!fs.existsSync(serverScriptPath)) {
+      return {
+        updated: false,
+        updatedFiles: [],
+        reason: `mcp server script missing: ${serverScriptPath}`
+      };
+    }
+
+    const command = config.get<string>('mcp.command', DEFAULT_MCP_COMMAND);
+    const entry = this.createServerEntry(command);
     const updatedFiles = targets.filter(target => upsertMcpServerConfig(target, serverId, entry));
     if (updatedFiles.length > 0) {
       const notifyOnConfigured = config.get<boolean>('mcp.notifyOnConfigured', true);
@@ -117,14 +145,11 @@ export class McpBootstrapService {
     };
   }
 
-  private createServerEntry(): McpServerConfigEntry {
-    const serverScript = path.join(this.context.extensionPath, 'out', 'mcp', 'server.js');
-    return {
-      type: 'stdio',
-      command: process.execPath,
-      args: [serverScript],
-      cwd: this.context.extensionPath
-    };
+  private createServerEntry(command: string): McpServerConfigEntry {
+    return createMcpServerConfigEntry({
+      extensionPath: this.context.extensionPath,
+      command
+    });
   }
 
   private resolveTargets(scope: McpScope): string[] {

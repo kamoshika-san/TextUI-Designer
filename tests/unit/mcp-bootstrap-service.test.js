@@ -5,10 +5,17 @@ const path = require('path');
 describe('mcp-bootstrap-service', () => {
   let upsertMcpServerConfig;
   let resolveUserMcpJsonPath;
+  let resolveMcpServerScriptPath;
+  let createMcpServerConfigEntry;
   const tempRoot = path.resolve(__dirname, '../../.tmp-mcp-bootstrap-test');
 
   before(() => {
-    ({ upsertMcpServerConfig, resolveUserMcpJsonPath } = require('../../out/services/mcp-bootstrap-service'));
+    ({
+      upsertMcpServerConfig,
+      resolveUserMcpJsonPath,
+      resolveMcpServerScriptPath,
+      createMcpServerConfigEntry
+    } = require('../../out/services/mcp-bootstrap-service'));
   });
 
   beforeEach(() => {
@@ -65,5 +72,21 @@ describe('mcp-bootstrap-service', () => {
       env: {}
     });
     assert.strictEqual(p, '/home/test-user/.config/Code/User/mcp.json');
+  });
+
+  it('resolveMcpServerScriptPath は拡張配下のout/mcp/server.jsを返す', () => {
+    const p = resolveMcpServerScriptPath('/opt/ext/textui-designer-0.4.0');
+    assert.strictEqual(p, path.join('/opt/ext/textui-designer-0.4.0', 'out', 'mcp', 'server.js'));
+  });
+
+  it('createMcpServerConfigEntry はnodeコマンドを既定値にする', () => {
+    const entry = createMcpServerConfigEntry({
+      extensionPath: '/opt/ext/textui-designer-0.4.0'
+    });
+
+    assert.strictEqual(entry.type, 'stdio');
+    assert.strictEqual(entry.command, 'node');
+    assert.deepStrictEqual(entry.args, [path.join('/opt/ext/textui-designer-0.4.0', 'out', 'mcp', 'server.js')]);
+    assert.strictEqual(entry.cwd, '/opt/ext/textui-designer-0.4.0');
   });
 });
