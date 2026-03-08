@@ -490,6 +490,10 @@
               "$ref": "#/definitions/componentArray",
               "description": "子コンポーネントの配列。"
             },
+            "width": {
+              "type": "string",
+              "description": "横幅指定（例: 70%, 480px）。"
+            },
             "token": {
               "$ref": "#/definitions/tokenRef",
               "description": "Containerに適用するデザイントークン参照。"
@@ -753,6 +757,10 @@
               "type": "boolean",
               "default": false,
               "description": "true の場合は行を交互色で表示します。"
+            },
+            "width": {
+              "type": "string",
+              "description": "横幅指定（例: 70%, 480px）。"
             },
             "token": {
               "$ref": "#/definitions/tokenRef",

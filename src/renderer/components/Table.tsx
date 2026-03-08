@@ -1,7 +1,7 @@
 import React from 'react';
 import type { TableComponent } from '../types';
 
-export const Table: React.FC<TableComponent> = ({ columns = [], rows = [], striped = false }) => {
+export const Table: React.FC<TableComponent> = ({ columns = [], rows = [], striped = false, width }) => {
   if (columns.length === 0) {
     return (
       <div className="text-sm text-yellow-300 border border-yellow-700 rounded-md px-3 py-2">
@@ -11,7 +11,7 @@ export const Table: React.FC<TableComponent> = ({ columns = [], rows = [], strip
   }
 
   return (
-    <div className="overflow-x-auto border border-gray-700 rounded-md">
+    <div className="overflow-x-auto border border-gray-700 rounded-md" style={width ? { width } : undefined}>
       <table className="min-w-full divide-y divide-gray-700 text-sm text-gray-200">
         <thead className="bg-gray-800">
           <tr>

@@ -91,7 +91,7 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
     name: 'Container',
     description: '子コンポーネントをグループ化',
     requiredProps: [],
-    optionalProps: ['layout', 'components', 'token'],
+    optionalProps: ['layout', 'components', 'width', 'token'],
     supportsChildren: true,
     example: {
       Container: {
@@ -145,7 +145,7 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
     name: 'Table',
     description: '表形式表示',
     requiredProps: ['columns', 'rows'],
-    optionalProps: ['striped', 'token'],
+    optionalProps: ['striped', 'width', 'token'],
     supportsChildren: false,
     example: {
       Table: {

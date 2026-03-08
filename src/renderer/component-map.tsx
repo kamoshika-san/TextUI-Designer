@@ -74,7 +74,7 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
     const containerProps = props as unknown as ContainerComponent;
     const children = containerProps.components;
     return (
-      <Container key={key} layout={containerProps.layout || 'vertical'}>
+      <Container key={key} layout={containerProps.layout || 'vertical'} width={containerProps.width}>
         {children ? children.map((child: ComponentDef, i: number) => renderRegisteredComponent(child, i)) : null}
       </Container>
     );

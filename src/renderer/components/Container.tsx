@@ -17,9 +17,10 @@ const layoutClasses: Record<Layout, string> = {
 
 export const Container: React.FC<ContainerProps> = ({ 
   layout = 'vertical', 
+  width,
   children 
 }) => {
   const className = layoutClasses[layout];
 
-  return <div className={className}>{children || null}</div>;
+  return <div className={className} style={width ? { width } : undefined}>{children || null}</div>;
 }; 

@@ -153,6 +153,7 @@ export interface TableComponent {
   columns: TableColumn[];
   rows: Record<string, string | number | boolean | null>[];
   striped?: boolean;
+  width?: string;
   token?: string;
 }
 
@@ -161,6 +162,7 @@ export type ContainerLayout = 'vertical' | 'horizontal' | 'flex' | 'grid';
 export interface ContainerComponent {
   layout?: ContainerLayout;
   components?: ComponentDef[];
+  width?: string;
   token?: string;
 }
 
