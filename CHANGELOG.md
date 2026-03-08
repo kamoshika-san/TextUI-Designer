@@ -4,6 +4,21 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.5.1] - 2026-03-08
+
+### 新機能
+- **新コンポーネント対応**: `Spacer` / `TreeView` を追加し、MVP構成を超えたレイアウト・階層表示をDSLで扱えるように改善。
+
+### 変更
+- **サンプルDSL更新**: `sample/01-basic` を全対応コンポーネントを使うサンプルに更新。
+- **エンタープライズサンプル更新**: `sample/07-enterprise` を実運用向け構成として更新。
+- **MCPカタログ整合**: `list_components` の説明・必須/任意プロパティを実スキーマ要件に合わせて修正。
+- **ドキュメント更新**: `docs/` 配下のMCP/Cursor設定ガイドと例を更新。
+
+### リリース
+- 拡張機能バージョンを `0.5.1` に更新。
+- `v0.5.1` 向けの配布資材（VSIX / リリースノート）を更新。
+
 ## [0.5.0] - 2026-03-08
 
 ### 新機能

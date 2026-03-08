@@ -607,7 +607,7 @@ page:
     assert.strictEqual(apply.status, 0);
 
     const original = fs.readFileSync(workingFile, 'utf8');
-    const updated = original.replace('label: "ログイン"', 'label: "サインイン"');
+    const updated = original.replace('label: "Submit"', 'label: "送信"');
     fs.writeFileSync(workingFile, updated, 'utf8');
 
     const plan = spawnSync('node', [
@@ -671,7 +671,7 @@ page:
     assert.strictEqual(firstApply.status, 0);
 
     const original = fs.readFileSync(workingFile, 'utf8');
-    fs.writeFileSync(workingFile, original.replace('label: "ログイン"', 'label: "ログインする"'), 'utf8');
+    fs.writeFileSync(workingFile, original.replace('label: "Submit"', 'label: "Submit Form"'), 'utf8');
 
     const child = require('child_process').spawn('node', [
       cliPath,
@@ -707,8 +707,8 @@ page:
       tick += 1;
     };
 
-    setTimeout(writeConflictState, 5);
-    const timer = setInterval(writeConflictState, 10);
+    setTimeout(writeConflictState, 0);
+    const timer = setInterval(writeConflictState, 2);
 
     const status = await new Promise(resolve => {
       child.on('close', code => resolve(code));

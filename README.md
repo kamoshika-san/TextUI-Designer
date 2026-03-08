@@ -62,7 +62,11 @@ page:
 - Form
 - Accordion
 - Tabs
+- TreeView
 - Table
+- Spacer
+
+> v0.5.1 で `Spacer` / `TreeView` に対応し、`sample/01-basic` は全対応コンポーネントを使うサンプルに更新しました。
 
 ---
 
