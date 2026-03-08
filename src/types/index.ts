@@ -165,6 +165,7 @@ export interface ThemeComponents {
   checkbox?: Record<string, Record<string, string>>;
   radio?: Record<string, Record<string, string>>;
   divider?: Record<string, Record<string, string>>;
+  spacer?: Record<string, Record<string, string>>;
   alert?: Record<string, Record<string, string>>;
   text?: Record<string, Record<string, string>>;
   container?: Record<string, Record<string, string>>;

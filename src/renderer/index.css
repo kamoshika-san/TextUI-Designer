@@ -365,6 +365,12 @@
   border-left: 1px solid var(--color-secondary, rgb(209 213 219));
 }
 
+/* Spacer */
+.textui-spacer {
+  display: block;
+  background: transparent;
+}
+
 /* Button */
 /* ボタンの改善 */
 .textui-button {

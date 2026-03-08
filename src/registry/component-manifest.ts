@@ -15,6 +15,7 @@ export const BUILT_IN_COMPONENTS = [
   'Select',
   'DatePicker',
   'Divider',
+  'Spacer',
   'Alert',
   'Container',
   'Form',
@@ -215,6 +216,33 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
           { value: 'lg', description: '大' }
         ]
       }
+    ]
+  },
+  Spacer: {
+    description: '余白スペーサー',
+    schemaRef: '#/definitions/Spacer',
+    properties: [
+      {
+        name: 'axis',
+        description: '余白を作る方向',
+        values: [
+          { value: 'vertical', description: '縦方向に余白を追加' },
+          { value: 'horizontal', description: '横方向に余白を追加' }
+        ]
+      },
+      {
+        name: 'size',
+        description: '余白サイズ',
+        values: [
+          { value: 'xs', description: '極小' },
+          { value: 'sm', description: '小' },
+          { value: 'md', description: '標準' },
+          { value: 'lg', description: '大' },
+          { value: 'xl', description: '特大' }
+        ]
+      },
+      { name: 'width', description: '横幅（例: 16px, 1rem, 10%）' },
+      { name: 'height', description: '高さ（例: 16px, 1rem, 10%）' }
     ]
   },
   Alert: {

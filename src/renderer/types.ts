@@ -98,6 +98,7 @@ export interface FormField {
   DatePicker?: DatePickerComponent;
   Text?: TextComponent;
   Divider?: DividerComponent;
+  Spacer?: SpacerComponent;
   Alert?: AlertComponent;
   Container?: ContainerComponent;
   Table?: TableComponent;
@@ -116,10 +117,20 @@ export interface FormComponent {
 
 export type DividerOrientation = 'horizontal' | 'vertical';
 export type DividerSpacing = 'sm' | 'md' | 'lg';
+export type SpacerAxis = 'vertical' | 'horizontal';
+export type SpacerSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 export interface DividerComponent {
   orientation?: DividerOrientation;
   spacing?: DividerSpacing;
+  token?: string;
+}
+
+export interface SpacerComponent {
+  axis?: SpacerAxis;
+  size?: SpacerSize;
+  width?: string;
+  height?: string;
   token?: string;
 }
 
@@ -190,6 +201,7 @@ export type ComponentDef =
   | { Select: SelectComponent }
   | { DatePicker: DatePickerComponent }
   | { Divider: DividerComponent }
+  | { Spacer: SpacerComponent }
   | { Alert: AlertComponent }
   | { Accordion: AccordionComponent }
   | { Tabs: TabsComponent }
@@ -242,6 +254,10 @@ export function isDatePickerComponent(comp: ComponentDef): comp is { DatePicker:
 
 export function isDividerComponent(comp: ComponentDef): comp is { Divider: DividerComponent } {
   return 'Divider' in comp;
+}
+
+export function isSpacerComponent(comp: ComponentDef): comp is { Spacer: SpacerComponent } {
+  return 'Spacer' in comp;
 }
 
 export function isAlertComponent(comp: ComponentDef): comp is { Alert: AlertComponent } {
