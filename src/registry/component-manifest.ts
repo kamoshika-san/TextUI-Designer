@@ -13,6 +13,7 @@ export const BUILT_IN_COMPONENTS = [
   'Checkbox',
   'Radio',
   'Select',
+  'DatePicker',
   'Divider',
   'Alert',
   'Container',
@@ -178,6 +179,19 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
       { name: 'placeholder', description: 'プレースホルダー' },
       { name: 'disabled', description: '無効化', values: BOOLEAN_VALUES },
       { name: 'multiple', description: '複数選択', values: BOOLEAN_VALUES }
+    ]
+  },
+  DatePicker: {
+    description: '日付選択',
+    schemaRef: '#/definitions/DatePicker',
+    properties: [
+      { name: 'label', description: '表示ラベル' },
+      { name: 'name', description: '入力名' },
+      { name: 'required', description: '必須入力', values: BOOLEAN_VALUES },
+      { name: 'disabled', description: '無効化', values: BOOLEAN_VALUES },
+      { name: 'min', description: '最小日付（YYYY-MM-DD）' },
+      { name: 'max', description: '最大日付（YYYY-MM-DD）' },
+      { name: 'value', description: '初期日付（YYYY-MM-DD）' }
     ]
   },
   Divider: {

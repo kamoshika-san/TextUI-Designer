@@ -717,6 +717,25 @@
               },
               "additionalProperties": true
             },
+            "datepicker": {
+              "type": "object",
+              "description": "日付選択コンポーネントのスタイル",
+              "properties": {
+                "label": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "ラベルのスタイル"
+                },
+                "field": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "日付入力フィールドのスタイル"
+                },
+                "focus": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "フォーカス時のスタイル"
+                }
+              },
+              "additionalProperties": true
+            },
             "select": {
               "type": "object",
               "description": "セレクトコンポーネントのスタイル",

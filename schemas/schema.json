@@ -76,6 +76,9 @@
           "$ref": "#/definitions/Select"
         },
         {
+          "$ref": "#/definitions/DatePicker"
+        },
+        {
           "$ref": "#/definitions/Divider"
         },
         {
@@ -436,6 +439,61 @@
       },
       "additionalProperties": false,
       "description": "セレクトボックスコンポーネント。"
+    },
+    "DatePicker": {
+      "type": "object",
+      "required": [
+        "DatePicker"
+      ],
+      "properties": {
+        "DatePicker": {
+          "type": "object",
+          "required": [
+            "label",
+            "name"
+          ],
+          "properties": {
+            "label": {
+              "type": "string",
+              "description": "日付入力欄のラベル。"
+            },
+            "name": {
+              "type": "string",
+              "description": "フォーム送信時のname属性。"
+            },
+            "required": {
+              "type": "boolean",
+              "default": false,
+              "description": "必須入力かどうか。trueで必須。"
+            },
+            "disabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "入力を無効化するかどうか。"
+            },
+            "min": {
+              "type": "string",
+              "description": "選択可能な最小日付（YYYY-MM-DD）。"
+            },
+            "max": {
+              "type": "string",
+              "description": "選択可能な最大日付（YYYY-MM-DD）。"
+            },
+            "value": {
+              "type": "string",
+              "description": "初期値の日付（YYYY-MM-DD）。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "DatePickerに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "日付を選択するコンポーネント。\n利用可能な属性: label, name, required, disabled, min, max, value"
+        }
+      },
+      "additionalProperties": false,
+      "description": "日付を選択するコンポーネント。"
     },
     "Divider": {
       "type": "object",

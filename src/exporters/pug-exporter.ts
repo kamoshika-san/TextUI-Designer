@@ -1,7 +1,7 @@
 import type {
   TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
-  RadioComponent, SelectComponent, SelectOption, DividerComponent,
+  RadioComponent, SelectComponent, DatePickerComponent, SelectOption, DividerComponent,
   AlertComponent, ContainerComponent, AccordionComponent,
   TabsComponent, TableComponent
 } from '../renderer/types';
@@ -121,6 +121,25 @@ ${componentCode}`;
       code += `\n          option(value="${opt.value}") ${opt.label}`;
     });
     
+    return code;
+  }
+
+  protected renderDatePicker(props: DatePickerComponent, key: number): string {
+    const { label, name = 'date', required = false, disabled = false, min, max, value, token } = props;
+    const disabledClass = this.getDisabledClass(disabled);
+    const requiredAttr = required ? 'required' : '';
+    const disabledAttr = disabled ? 'disabled' : '';
+    const minAttr = min ? `min="${min}"` : '';
+    const maxAttr = max ? `max="${max}"` : '';
+    const valueAttr = value ? `value="${value}"` : '';
+    const tokenStyle = this.getPugTokenStyleAttr('DatePicker', token).trim();
+
+    let code = `      .mb-4`;
+    if (label) {
+      code += `\n        label.block.text-sm.font-medium.text-gray-700.mb-2(for="${name}") ${label}`;
+    }
+    code += `\n        input(type="date" id="${name}" name="${name}" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}" ${requiredAttr} ${disabledAttr} ${minAttr} ${maxAttr} ${valueAttr}${tokenStyle ? ` ${tokenStyle}` : ''})`;
+
     return code;
   }
 

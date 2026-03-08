@@ -160,6 +160,7 @@ export interface ThemeTokens {
 export interface ThemeComponents {
   button?: Record<string, Record<string, string>>;
   input?: Record<string, Record<string, string>>;
+  datepicker?: Record<string, Record<string, string>>;
   select?: Record<string, Record<string, string>>;
   checkbox?: Record<string, Record<string, string>>;
   radio?: Record<string, Record<string, string>>;

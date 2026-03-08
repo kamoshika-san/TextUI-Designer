@@ -32,6 +32,7 @@ const KNOWN_COMPONENTS = new Set([
   'Checkbox',
   'Radio',
   'Select',
+  'DatePicker',
   'Divider',
   'Container',
   'Alert',

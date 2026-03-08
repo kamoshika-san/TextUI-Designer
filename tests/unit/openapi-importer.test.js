@@ -55,6 +55,9 @@ components:
           type: boolean
         age:
           type: integer
+        birthDate:
+          type: string
+          format: date
 `, 'utf8');
 
     const imported = spawnSync('node', [
@@ -95,11 +98,13 @@ components:
     const hasRoleSelect = form.fields.some(field => field.Select?.name === 'role' && Array.isArray(field.Select?.options) && field.Select.options.length === 2);
     const hasBooleanCheckbox = form.fields.some(field => field.Checkbox?.name === 'marketingOptIn');
     const hasNumberInput = form.fields.some(field => field.Input?.name === 'age' && field.Input?.type === 'number');
+    const hasBirthDatePicker = form.fields.some(field => field.DatePicker?.name === 'birthDate');
 
     assert.strictEqual(hasEmailInput, true);
     assert.strictEqual(hasRoleSelect, true);
     assert.strictEqual(hasBooleanCheckbox, true);
     assert.strictEqual(hasNumberInput, true);
+    assert.strictEqual(hasBirthDatePicker, true);
   });
 
   it('supports --operation selection and parameter mapping', () => {

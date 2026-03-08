@@ -1,7 +1,7 @@
 import type {
   TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
-  RadioComponent, RadioOption, SelectComponent, SelectOption,
+  RadioComponent, RadioOption, SelectComponent, SelectOption, DatePickerComponent,
   DividerComponent, AlertComponent, ContainerComponent, AccordionComponent,
   TabsComponent,
   TableComponent
@@ -242,6 +242,31 @@ ${componentCode}
     code += `\n      </select>`;
     code += `\n    </div>`;
     
+    return code;
+  }
+
+  protected renderDatePicker(props: DatePickerComponent, key: number): string {
+    const { label, name = 'date', required = false, disabled = false, min, max, value, token } = props;
+    const safeLabel = label ? this.escapeHtml(label) : '';
+    const safeName = this.escapeAttribute(name);
+    const safeMin = min ? this.escapeAttribute(min) : '';
+    const safeMax = max ? this.escapeAttribute(max) : '';
+    const safeValue = value ? this.escapeAttribute(value) : '';
+    const disabledClass = this.getDisabledClass(disabled);
+    const requiredAttr = required ? ' required' : '';
+    const disabledAttr = disabled ? ' disabled' : '';
+    const minAttr = safeMin ? ` min="${safeMin}"` : '';
+    const maxAttr = safeMax ? ` max="${safeMax}"` : '';
+    const valueAttr = safeValue ? ` value="${safeValue}"` : '';
+    const tokenStyle = this.getHtmlTokenStyleAttr('DatePicker', token);
+
+    let code = `    <div class="mb-4">`;
+    if (label) {
+      code += `\n      <label for="${safeName}" class="block text-sm font-medium text-gray-400 mb-2">${safeLabel}</label>`;
+    }
+    code += `\n      <input id="${safeName}" name="${safeName}" type="date" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${requiredAttr}${disabledAttr}${minAttr}${maxAttr}${valueAttr}${tokenStyle}>`;
+    code += `\n    </div>`;
+
     return code;
   }
 

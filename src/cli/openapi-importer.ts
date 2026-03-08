@@ -56,7 +56,7 @@ interface ResolvedOperation {
 }
 
 interface FieldDescriptor {
-  kind: 'Input' | 'Select' | 'Checkbox';
+  kind: 'Input' | 'Select' | 'Checkbox' | 'DatePicker';
   name: string;
   label: string;
   required: boolean;
@@ -286,6 +286,15 @@ function mapSchemaToField(
     };
   }
 
+  if (resolved.type === 'string' && (resolved.format === 'date' || resolved.format === 'date-time')) {
+    return {
+      kind: 'DatePicker',
+      name,
+      label,
+      required
+    };
+  }
+
   if (resolved.type === 'object' || resolved.properties) {
     return {
       kind: 'Input',
@@ -416,6 +425,16 @@ function buildDsl(operation: ResolvedOperation, fields: FieldDescriptor[]): Text
           name: field.name,
           options: field.options ?? [],
           multiple: Boolean(field.multiple)
+        }
+      };
+    }
+
+    if (field.kind === 'DatePicker') {
+      return {
+        DatePicker: {
+          label: field.label,
+          name: field.name,
+          required: field.required
         }
       };
     }

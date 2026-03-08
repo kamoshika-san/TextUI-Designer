@@ -72,6 +72,20 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
     }
   },
   {
+    name: 'DatePicker',
+    description: '日付選択フィールド',
+    requiredProps: ['label', 'name'],
+    optionalProps: ['required', 'disabled', 'min', 'max', 'value', 'token'],
+    supportsChildren: false,
+    example: {
+      DatePicker: {
+        label: '生年月日',
+        name: 'birthday',
+        required: true
+      }
+    }
+  },
+  {
     name: 'Divider',
     description: '区切り線',
     requiredProps: [],

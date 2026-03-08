@@ -91,5 +91,18 @@
       "        name: $2"
     ],
     "description": "テーブルのテンプレート"
+  },
+  "tui:datepicker": {
+    "prefix": "tui:datepicker",
+    "body": [
+      "- DatePicker:",
+      "    label: $1",
+      "    name: $2",
+      "    required: ${3|false,true|}",
+      "    min: $4",
+      "    max: $5",
+      "    value: $6"
+    ],
+    "description": "日付選択コンポーネントのテンプレート"
   }
 }

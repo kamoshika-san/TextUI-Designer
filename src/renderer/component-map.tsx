@@ -12,6 +12,7 @@ import { Container } from './components/Container';
 import { Form } from './components/Form';
 import { Radio } from './components/Radio';
 import { Select } from './components/Select';
+import { DatePicker } from './components/DatePicker';
 import { Divider } from './components/Divider';
 import { Alert } from './components/Alert';
 import { Accordion } from './components/Accordion';
@@ -28,6 +29,7 @@ import type {
   CheckboxComponent,
   RadioComponent,
   SelectComponent,
+  DatePickerComponent,
   DividerComponent,
   AlertComponent,
   ContainerComponent,
@@ -65,6 +67,7 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
   Checkbox: (props, key) => <Checkbox key={key} {...(props as unknown as CheckboxComponent)} />,
   Radio: (props, key) => <Radio key={key} {...(props as unknown as RadioComponent)} />,
   Select: (props, key) => <Select key={key} {...(props as unknown as SelectComponent)} />,
+  DatePicker: (props, key) => <DatePicker key={key} {...(props as unknown as DatePickerComponent)} />,
   Divider: (props, key) => <Divider key={key} {...(props as unknown as DividerComponent)} />,
   Alert: (props, key) => <Alert key={key} {...(props as unknown as AlertComponent)} />,
   Accordion: (props, key) => (
