@@ -31,6 +31,7 @@ describe('TextUiMcpServer', () => {
     const toolNames = toolsList.result.tools.map(tool => tool.name);
     assert.ok(toolNames.includes('generate_ui'));
     assert.ok(toolNames.includes('validate_ui'));
+    assert.ok(toolNames.includes('run_cli'));
   });
 
   it('tools/call generate_ui がDSLを返す', async () => {
@@ -69,5 +70,45 @@ describe('TextUiMcpServer', () => {
 
     assert.ok(response.result.contents.length > 0);
     assert.ok(response.result.contents[0].text.includes('schema'));
+  });
+
+  it('tools/call run_cli が version を実行できる', async () => {
+    const server = new TextUiMcpServer();
+    const response = await server.handleMessage({
+      jsonrpc: '2.0',
+      id: 5,
+      method: 'tools/call',
+      params: {
+        name: 'run_cli',
+        arguments: {
+          args: ['version'],
+          parseJson: false
+        }
+      }
+    });
+
+    assert.ok(response.result);
+    assert.strictEqual(response.result.structuredContent.exitCode, 0);
+    assert.ok(response.result.structuredContent.stdout.includes('textui-cli'));
+  });
+
+  it('tools/call run_cli が providers --json をJSON解析して返す', async () => {
+    const server = new TextUiMcpServer();
+    const response = await server.handleMessage({
+      jsonrpc: '2.0',
+      id: 6,
+      method: 'tools/call',
+      params: {
+        name: 'run_cli',
+        arguments: {
+          args: ['providers', '--json']
+        }
+      }
+    });
+
+    assert.ok(response.result);
+    assert.strictEqual(response.result.structuredContent.exitCode, 0);
+    assert.ok(response.result.structuredContent.parsedJson);
+    assert.ok(Array.isArray(response.result.structuredContent.parsedJson.providers));
   });
 });
