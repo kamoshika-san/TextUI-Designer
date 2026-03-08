@@ -16,7 +16,7 @@ npm run package:vsix
 
 1. `npm run package` … Webpack で拡張をビルド（`out/` に出力）
 2. `npm run build-webview` … Vite で WebView をビルド（`media/` に出力）
-3. `npx @vscode/vsce package --no-dependencies` … .vsix を生成
+3. `npx @vscode/vsce package` … .vsix を生成（dependencies を同梱）
 
 成功するとプロジェクトルートに `textui-designer-<version>.vsix` が作成されます（例: `textui-designer-0.2.1.vsix`）。
 
