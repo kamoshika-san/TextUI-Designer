@@ -95,6 +95,98 @@ describe('WebViewManager 単体テスト', () => {
     });
   });
 
+  describe('プレビューからDSLジャンプ', () => {
+    const createPositionAt = (content) => (offset) => {
+      const safeOffset = Math.max(0, Math.min(offset, content.length));
+      const sliced = content.slice(0, safeOffset);
+      const lines = sliced.split('\n');
+      return {
+        line: lines.length - 1,
+        character: (lines[lines.length - 1] || '').length
+      };
+    };
+
+    it('jump-to-dsl メッセージで対応するDSL位置へ移動する', async () => {
+      const yamlContent = `page:
+  id: jump-test
+  components:
+    - Text:
+        value: "タイトル"
+`;
+      const doc = {
+        fileName: testFilePath,
+        getText: () => yamlContent,
+        positionAt: createPositionAt(yamlContent)
+      };
+
+      const shownEditors = [];
+      webviewManager._testHelpers.extendedVscode.workspace.openTextDocument = async () => doc;
+      webviewManager._testHelpers.extendedVscode.window.showTextDocument = async (document, column) => {
+        const editor = {
+          document,
+          selection: null,
+          revealRange: () => {}
+        };
+        shownEditors.push({ editor, column });
+        return editor;
+      };
+
+      webviewManager.setLastTuiFile(testFilePath);
+      await webviewManager.openPreview();
+      const panel = webviewManager.getPanel();
+      assert.ok(panel && typeof panel._messageHandler === 'function', 'WebViewメッセージハンドラーが登録される');
+
+      await panel._messageHandler({
+        type: 'jump-to-dsl',
+        dslPath: '/page/components/0',
+        componentName: 'Text'
+      });
+
+      assert.strictEqual(shownEditors.length, 1, 'エディタが開かれる');
+      assert.ok(shownEditors[0].editor.selection, '選択位置が設定される');
+      assert.strictEqual(shownEditors[0].column, webviewManager._testHelpers.extendedVscode.ViewColumn.One, '左側エディタで表示される');
+    });
+
+    it('jump-to-dsl で不正なDSLパスを受けた場合は警告を表示する', async () => {
+      const yamlContent = `page:
+  id: jump-test
+  components:
+    - Text:
+        value: "タイトル"
+`;
+      const doc = {
+        fileName: testFilePath,
+        getText: () => yamlContent,
+        positionAt: createPositionAt(yamlContent)
+      };
+      const warnings = [];
+      webviewManager._testHelpers.extendedVscode.workspace.openTextDocument = async () => doc;
+      webviewManager._testHelpers.extendedVscode.window.showTextDocument = async () => ({
+        selection: null,
+        revealRange: () => {}
+      });
+      webviewManager._testHelpers.extendedVscode.window.showWarningMessage = async (message) => {
+        warnings.push(message);
+      };
+
+      webviewManager.setLastTuiFile(testFilePath);
+      await webviewManager.openPreview();
+      const panel = webviewManager.getPanel();
+      assert.ok(panel && typeof panel._messageHandler === 'function', 'WebViewメッセージハンドラーが登録される');
+
+      await panel._messageHandler({
+        type: 'jump-to-dsl',
+        dslPath: '/page/components/99',
+        componentName: 'Text'
+      });
+
+      assert.ok(
+        warnings.some(message => message.includes('DSLパスを解決できませんでした')),
+        '解決できないDSLパスで警告が表示される'
+      );
+    });
+  });
+
   describe('lastParsedData の管理', () => {
     it('setterで設定した値をgetterで取得できる', () => {
       const testPath = '/path/to/parsed.tui.yml';

@@ -1,11 +1,24 @@
 import React, { useMemo, useState } from 'react';
 import type { ComponentDef, TabsComponent } from '../types';
 
-interface TabsProps extends TabsComponent {
-  renderComponent: (component: ComponentDef, key: React.Key) => React.ReactNode;
+interface RenderContext {
+  dslPath: string;
+  onJumpToDsl?: (dslPath: string, componentName: string) => void;
 }
 
-export const Tabs: React.FC<TabsProps> = ({ defaultTab = 0, items = [], renderComponent }) => {
+interface TabsProps extends TabsComponent {
+  renderComponent: (component: ComponentDef, key: React.Key, context?: RenderContext) => React.ReactNode;
+  dslPath?: string;
+  onJumpToDsl?: (dslPath: string, componentName: string) => void;
+}
+
+export const Tabs: React.FC<TabsProps> = ({
+  defaultTab = 0,
+  items = [],
+  renderComponent,
+  dslPath,
+  onJumpToDsl
+}) => {
   const firstEnabledTab = useMemo(() => items.findIndex(item => !item.disabled), [items]);
   const initialTab = useMemo(() => {
     if (items.length === 0) {
@@ -63,7 +76,10 @@ export const Tabs: React.FC<TabsProps> = ({ defaultTab = 0, items = [], renderCo
             className="p-4 space-y-3"
           >
             {(item.components || []).map((component: ComponentDef, componentIndex: number) =>
-              renderComponent(component, index * 1000 + componentIndex)
+              renderComponent(component, index * 1000 + componentIndex, {
+                dslPath: `${dslPath ?? ''}/Tabs/items/${index}/components/${componentIndex}`,
+                onJumpToDsl
+              })
             )}
           </div>
         );

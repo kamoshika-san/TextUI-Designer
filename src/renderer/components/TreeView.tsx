@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import type { ComponentDef, TreeViewComponent, TreeViewItem } from '../types';
 
+interface RenderContext {
+  dslPath: string;
+  onJumpToDsl?: (dslPath: string, componentName: string) => void;
+}
+
 interface TreeViewProps extends TreeViewComponent {
-  renderComponent?: (comp: ComponentDef, key: React.Key) => React.ReactNode;
+  renderComponent?: (comp: ComponentDef, key: React.Key, context?: RenderContext) => React.ReactNode;
+  dslPath?: string;
+  onJumpToDsl?: (dslPath: string, componentName: string) => void;
 }
 
 function collectInitialOpenState(
@@ -27,7 +34,9 @@ export const TreeView: React.FC<TreeViewProps> = ({
   items,
   showLines = true,
   expandAll = false,
-  renderComponent
+  renderComponent,
+  dslPath,
+  onJumpToDsl
 }) => {
   const [openNodes, setOpenNodes] = useState<Record<string, boolean>>(
     collectInitialOpenState(items, expandAll)
@@ -79,7 +88,10 @@ export const TreeView: React.FC<TreeViewProps> = ({
               <div className="textui-treeview-children">
                 {components.length > 0 && renderComponent
                   ? components.map((component, componentIndex) =>
-                      renderComponent(component, `${path}-component-${componentIndex}`)
+                      renderComponent(component, `${path}-component-${componentIndex}`, {
+                        dslPath: `${dslPath ?? ''}/TreeView/items/${toPointerPath(path)}/components/${componentIndex}`,
+                        onJumpToDsl
+                      })
                     )
                   : null}
                 {children.length > 0 ? renderNodes(children, path) : null}
@@ -93,3 +105,19 @@ export const TreeView: React.FC<TreeViewProps> = ({
 
   return <div className="textui-treeview">{renderNodes(items, 'node')}</div>;
 };
+
+function toPointerPath(nodePath: string): string {
+  const tokens = nodePath.split('-');
+  const indices = tokens
+    .slice(1)
+    .filter(token => token.length > 0 && Number.isInteger(Number(token)))
+    .map(token => Number(token));
+  if (indices.length === 0) {
+    return '';
+  }
+  let pointer = String(indices[0]);
+  for (let i = 1; i < indices.length; i += 1) {
+    pointer += `/children/${indices[i]}`;
+  }
+  return pointer;
+}

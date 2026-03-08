@@ -49,6 +49,11 @@ import {
   type WebViewComponentRenderer
 } from '../registry/webview-component-registry';
 
+interface RenderContext {
+  dslPath: string;
+  onJumpToDsl?: (dslPath: string, componentName: string) => void;
+}
+
 const isComponentProps = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
@@ -80,28 +85,50 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
       key={key}
       {...(props as unknown as AccordionComponent)}
       renderComponent={renderRegisteredComponent}
+      dslPath={extractRenderContext(props)?.dslPath}
+      onJumpToDsl={extractRenderContext(props)?.onJumpToDsl}
     />
   ),
-  Tabs: (props, key) => <Tabs key={key} {...(props as unknown as TabsComponent)} renderComponent={renderRegisteredComponent} />,
+  Tabs: (props, key) => (
+    <Tabs
+      key={key}
+      {...(props as unknown as TabsComponent)}
+      renderComponent={renderRegisteredComponent}
+      dslPath={extractRenderContext(props)?.dslPath}
+      onJumpToDsl={extractRenderContext(props)?.onJumpToDsl}
+    />
+  ),
   TreeView: (props, key) => (
     <TreeView
       key={key}
       {...(props as unknown as TreeViewComponent)}
       renderComponent={renderRegisteredComponent}
+      dslPath={extractRenderContext(props)?.dslPath}
+      onJumpToDsl={extractRenderContext(props)?.onJumpToDsl}
     />
   ),
   Table: (props, key) => <Table key={key} {...(props as unknown as TableComponent)} />,
   Container: (props, key) => {
     const containerProps = props as unknown as ContainerComponent;
     const children = containerProps.components;
+    const context = extractRenderContext(props);
+    const containerPath = context?.dslPath ?? '';
     return (
       <Container key={key} layout={containerProps.layout || 'vertical'} width={containerProps.width}>
-        {children ? children.map((child: ComponentDef, i: number) => renderRegisteredComponent(child, i)) : null}
+        {children
+          ? children.map((child: ComponentDef, i: number) => renderRegisteredComponent(
+              child,
+              i,
+              createChildContext(context, `${containerPath}/Container/components/${i}`)
+            ))
+          : null}
       </Container>
     );
   },
   Form: (props, key) => {
     const form = props as FormComponent;
+    const context = extractRenderContext(props);
+    const formPath = context?.dslPath ?? '';
     return (
       <Form
         key={key}
@@ -112,10 +139,20 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
           console.log('Form submit:', data);
         }}
       >
-        {(form.fields || []).map((field: FormField, i: number) => renderFormField(field, i))}
+        {(form.fields || []).map((field: FormField, i: number) => renderFormField(
+          field,
+          i,
+          createChildContext(context, `${formPath}/Form/fields/${i}`)
+        ))}
         <div style={{ display: 'flex', gap: 8 }}>
           {(form.actions || []).map((action: FormAction, i: number) => {
-            if (action.Button) {return <Button key={i} {...action.Button} />;}
+            if (action.Button) {
+              return renderRegisteredComponent(
+                { Button: action.Button },
+                i,
+                createChildContext(context, `${formPath}/Form/actions/${i}`)
+              );
+            }
             return null;
           })}
         </div>
@@ -131,14 +168,14 @@ for (const componentName of BUILT_IN_COMPONENTS) {
 /**
  * FormFieldをレンダリング（Mapベースのディスパッチ）
  */
-function renderFormField(field: FormField, index: number): React.ReactNode {
+function renderFormField(field: FormField, index: number, context?: RenderContext): React.ReactNode {
   const fieldRecord = field as unknown as Record<string, unknown>;
   const name = getComponentName(fieldRecord);
   const props = extractProps(fieldRecord, name);
   const renderer = name ? getWebViewComponentRenderer(name) : undefined;
 
   if (name && props && renderer) {
-    return renderer(props, index);
+    return renderer(attachRenderContext(props, context), index);
   }
   return null;
 }
@@ -147,14 +184,35 @@ function renderFormField(field: FormField, index: number): React.ReactNode {
  * ComponentDefをレンダリング（Mapベースのディスパッチ）
  * webview.tsx から呼び出されるメイン関数
  */
-export function renderRegisteredComponent(comp: ComponentDef, key: React.Key): React.ReactNode {
+export function renderRegisteredComponent(
+  comp: ComponentDef,
+  key: React.Key,
+  context?: RenderContext
+): React.ReactNode {
   const componentRecord = comp as unknown as Record<string, unknown>;
   const name = getComponentName(componentRecord);
   const props = extractProps(componentRecord, name);
   const renderer = name ? getWebViewComponentRenderer(name) : undefined;
 
   if (name && props && renderer) {
-    return renderer(props, key);
+    const rendered = renderer(attachRenderContext(props, context), key);
+    return (
+      <div
+        key={key}
+        className="textui-jump-target"
+        title={context?.dslPath ? `DSLへジャンプ: ${context.dslPath}` : undefined}
+        onClick={(event) => {
+          if (!context?.dslPath || !context.onJumpToDsl || !name) {
+            return;
+          }
+          event.preventDefault();
+          event.stopPropagation();
+          context.onJumpToDsl(context.dslPath, name);
+        }}
+      >
+        {rendered}
+      </div>
+    );
   }
 
   return (
@@ -169,4 +227,48 @@ export function renderRegisteredComponent(comp: ComponentDef, key: React.Key): R
  */
 export function registerWebViewComponent(name: string, renderer: WebViewComponentRenderer): void {
   registerRenderer(name, renderer);
+}
+
+function attachRenderContext(
+  props: Record<string, unknown>,
+  context?: RenderContext
+): Record<string, unknown> {
+  if (!context) {
+    return props;
+  }
+  return {
+    ...props,
+    __renderContext: context
+  };
+}
+
+function extractRenderContext(props: unknown): RenderContext | undefined {
+  if (!props || typeof props !== 'object') {
+    return undefined;
+  }
+  const value = (props as Record<string, unknown>).__renderContext;
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+  const dslPath = (value as Record<string, unknown>).dslPath;
+  if (typeof dslPath !== 'string') {
+    return undefined;
+  }
+  const onJumpToDsl = (value as Record<string, unknown>).onJumpToDsl;
+  return {
+    dslPath,
+    onJumpToDsl: typeof onJumpToDsl === 'function'
+      ? (onJumpToDsl as (dslPath: string, componentName: string) => void)
+      : undefined
+  };
+}
+
+function createChildContext(parent: RenderContext | undefined, childPath: string): RenderContext | undefined {
+  if (!parent) {
+    return undefined;
+  }
+  return {
+    dslPath: childPath,
+    onJumpToDsl: parent.onJumpToDsl
+  };
 }
