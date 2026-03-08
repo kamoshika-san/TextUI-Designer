@@ -1,5 +1,4 @@
-import { TextUICoreEngine, type ComponentBlueprint } from '../core/textui-core-engine';
-import { getTextUiComponentCatalog } from '../core/component-catalog';
+import type { ComponentBlueprint } from '../core/textui-core-engine';
 import { StdioJsonRpcTransport, type JsonRpcMessage, type JsonRpcRequest, type JsonRpcResponse } from './stdio-jsonrpc';
 import * as path from 'path';
 import { spawn } from 'child_process';
@@ -153,10 +152,23 @@ const TOOLS: ToolDefinition[] = [
 ];
 
 export class TextUiMcpServer {
-  private readonly coreEngine: TextUICoreEngine;
+  private coreEnginePromise: Promise<import('../core/textui-core-engine').TextUICoreEngine> | null = null;
+  private catalogPromise: Promise<ReturnType<typeof import('../core/component-catalog').getTextUiComponentCatalog>> | null = null;
 
-  constructor(coreEngine: TextUICoreEngine = new TextUICoreEngine()) {
-    this.coreEngine = coreEngine;
+  constructor() {}
+
+  private async getCoreEngine(): Promise<import('../core/textui-core-engine').TextUICoreEngine> {
+    if (!this.coreEnginePromise) {
+      this.coreEnginePromise = import('../core/textui-core-engine').then(m => new m.TextUICoreEngine());
+    }
+    return this.coreEnginePromise;
+  }
+
+  private async getCatalog(): Promise<ReturnType<typeof import('../core/component-catalog').getTextUiComponentCatalog>> {
+    if (!this.catalogPromise) {
+      this.catalogPromise = import('../core/component-catalog').then(m => m.getTextUiComponentCatalog());
+    }
+    return this.catalogPromise;
   }
 
   async handleMessage(message: JsonRpcMessage): Promise<JsonRpcResponse | undefined> {
@@ -313,9 +325,10 @@ export class TextUiMcpServer {
       throw new Error('tools/call requires name');
     }
 
+    const engine = await this.getCoreEngine();
     let structuredContent: unknown;
     if (name === 'generate_ui') {
-      structuredContent = await this.coreEngine.generateUi({
+      structuredContent = await engine.generateUi({
         title: this.getObjectValue(args, 'title') ?? '',
         pageId: this.getObjectValue(args, 'pageId'),
         layout: this.getObjectValue(args, 'layout'),
@@ -328,7 +341,7 @@ export class TextUiMcpServer {
       if (rawDsl === undefined) {
         throw new Error('validate_ui requires dsl');
       }
-      structuredContent = this.coreEngine.validateUi({
+      structuredContent = engine.validateUi({
         dsl: (rawDsl as string | Record<string, unknown>),
         sourcePath: this.getObjectValue(args, 'sourcePath'),
         skipTokenValidation: this.getObjectBoolean(args, 'skipTokenValidation')
@@ -338,7 +351,7 @@ export class TextUiMcpServer {
       if (!Array.isArray(diagnostics)) {
         throw new Error('explain_error requires diagnostics');
       }
-      structuredContent = this.coreEngine.explainError({
+      structuredContent = engine.explainError({
         diagnostics: diagnostics
           .filter(item => item && typeof item === 'object')
           .map(item => {
@@ -351,12 +364,12 @@ export class TextUiMcpServer {
           })
       });
     } else if (name === 'preview_schema') {
-      structuredContent = this.coreEngine.previewSchema({
+      structuredContent = engine.previewSchema({
         schema: (this.getObjectValue(args, 'schema') as 'main' | 'template' | 'theme' | undefined),
         jsonPointer: this.getObjectValue(args, 'jsonPointer')
       });
     } else if (name === 'list_components') {
-      structuredContent = await this.coreEngine.listComponents();
+      structuredContent = await engine.listComponents();
     } else if (name === 'run_cli') {
       structuredContent = await this.runCli(args);
     } else {
@@ -375,18 +388,19 @@ export class TextUiMcpServer {
   }
 
   private async readResource(uri: string): Promise<unknown> {
+    const engine = await this.getCoreEngine();
     if (uri === 'textui://schema/main') {
-      return this.coreEngine.previewSchema({ schema: 'main' });
+      return engine.previewSchema({ schema: 'main' });
     }
     if (uri === 'textui://schema/template') {
-      return this.coreEngine.previewSchema({ schema: 'template' });
+      return engine.previewSchema({ schema: 'template' });
     }
     if (uri === 'textui://schema/theme') {
-      return this.coreEngine.previewSchema({ schema: 'theme' });
+      return engine.previewSchema({ schema: 'theme' });
     }
     if (uri === 'textui://components/catalog') {
       return {
-        components: getTextUiComponentCatalog()
+        components: await this.getCatalog()
       };
     }
     if (uri.startsWith('textui://cli/run')) {
