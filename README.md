@@ -43,7 +43,7 @@ page:
         submit: true
 ```
 
-> 既存サンプルは `sample/` 配下にあります（basic / theme / include / theme-inheritance）。
+> 既存サンプルは `sample/` 配下にあります（basic / theme / include / theme-inheritance / token）。
 
 ---
 
@@ -68,6 +68,7 @@ page:
 ## リリースノート
 
 - 最新版（v0.5.0）: `docs/RELEASE_NOTES_v0.5.0.md`
+- リリースチェックリスト: `docs/RELEASE_CHECKLIST_v0.5.0.md`
 - 変更履歴（全体）: `CHANGELOG.md`
 
 ---
@@ -141,6 +142,9 @@ npx textui import openapi --input openapi.yaml --output generated/from-openapi.t
 
 # OpenAPIの全operationを一括生成
 npx textui import openapi --input openapi.yaml --all --output-dir generated/from-openapi
+
+# ディレクトリ配下のDSLを一括適用
+npx textui apply --dir sample --provider react --output generated/react
 
 # Vue / Svelte への出力（CLI）
 npx textui export --file sample/01-basic/sample.tui.yml --provider vue --output generated/App.vue

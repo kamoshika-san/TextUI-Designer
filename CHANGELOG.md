@@ -17,6 +17,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - **バッチ適用の強化**: CLI `apply --dir` モードを追加し、複数 DSL ファイルの一括処理に対応しました。
 - **MCP 統合**: コアエンジンに MCP サーバーを同梱し、起動時の自動設定（mcp.json）と起動安定性を改善しました。
 - **ドキュメント整理**: 旧 `doc/` 配下を `docs/` へ集約し、運用ドキュメントの参照性を高めました。
+- **サンプル拡張**: `sample/06-token` を追加し、トークン定義と適用例を確認しやすくしました。
 
 ### 配布・品質
 - **VSIX 配布改善**: VSIX パッケージに `yaml` / `ajv` ランタイム依存を明示的に同梱し、実行環境差分による不具合を抑制しました。
