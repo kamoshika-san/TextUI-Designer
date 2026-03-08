@@ -91,7 +91,6 @@ describe('TextUiMcpServer', () => {
     assert.strictEqual(parsed.exitCode, 0);
     assert.ok(parsed.stdout.includes('textui-cli'));
   });
-
   it('tools/call run_cli が version を実行できる', async () => {
     const server = new TextUiMcpServer();
     const response = await server.handleMessage({

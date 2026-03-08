@@ -21,5 +21,10 @@
 	"tailwindCSS.experimental.classRegex": [
 		["@apply\\s+([^;}]+)", "([^;}]+)"],
 		["classList\\.add\\(([^)]*)\\)", "([^)]*)"]
-	]
+	],
+	"textui-designer.mcp.autoConfigure": true,
+	"textui-designer.mcp.scope": "workspace",
+	"textui-designer.mcp.serverId": "textui-designer",
+	"textui-designer.mcp.command": "node",
+	"chat.mcp.autostart": true
 }
