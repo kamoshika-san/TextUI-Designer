@@ -52,33 +52,33 @@ export class StdioJsonRpcTransport extends EventEmitter {
 
   private processBuffer(): void {
     while (true) {
-      const headerEnd = this.buffer.indexOf('\r\n\r\n');
-      if (headerEnd === -1) {
+      const headerBoundary = this.findHeaderBoundary(this.buffer);
+      if (!headerBoundary) {
         return;
       }
 
-      const headerBlock = this.buffer.slice(0, headerEnd).toString('utf8');
+      const headerBlock = this.buffer.slice(0, headerBoundary.index).toString('utf8');
       const headers = this.parseHeaders(headerBlock);
       const contentLengthHeader = headers['content-length'];
       if (!contentLengthHeader) {
-        this.buffer = this.buffer.slice(headerEnd + 4);
+        this.buffer = this.buffer.slice(headerBoundary.bodyOffset);
         this.emit('error', new Error('Content-Length header is missing'));
         continue;
       }
 
       const contentLength = Number(contentLengthHeader);
       if (!Number.isFinite(contentLength) || contentLength < 0) {
-        this.buffer = this.buffer.slice(headerEnd + 4);
+        this.buffer = this.buffer.slice(headerBoundary.bodyOffset);
         this.emit('error', new Error(`Invalid Content-Length: ${contentLengthHeader}`));
         continue;
       }
 
-      const totalLength = headerEnd + 4 + contentLength;
+      const totalLength = headerBoundary.bodyOffset + contentLength;
       if (this.buffer.length < totalLength) {
         return;
       }
 
-      const body = this.buffer.slice(headerEnd + 4, totalLength).toString('utf8');
+      const body = this.buffer.slice(headerBoundary.bodyOffset, totalLength).toString('utf8');
       this.buffer = this.buffer.slice(totalLength);
 
       try {
@@ -92,7 +92,7 @@ export class StdioJsonRpcTransport extends EventEmitter {
 
   private parseHeaders(headerBlock: string): Record<string, string> {
     const headers: Record<string, string> = {};
-    const lines = headerBlock.split('\r\n');
+    const lines = headerBlock.split(/\r?\n/);
     lines.forEach(line => {
       const separator = line.indexOf(':');
       if (separator === -1) {
@@ -103,5 +103,26 @@ export class StdioJsonRpcTransport extends EventEmitter {
       headers[name] = value;
     });
     return headers;
+  }
+
+  private findHeaderBoundary(buffer: Buffer): { index: number; bodyOffset: number } | null {
+    const crlfIndex = buffer.indexOf('\r\n\r\n');
+    const lfIndex = buffer.indexOf('\n\n');
+
+    if (crlfIndex === -1 && lfIndex === -1) {
+      return null;
+    }
+
+    if (crlfIndex === -1) {
+      return { index: lfIndex, bodyOffset: lfIndex + 2 };
+    }
+    if (lfIndex === -1) {
+      return { index: crlfIndex, bodyOffset: crlfIndex + 4 };
+    }
+
+    if (crlfIndex <= lfIndex) {
+      return { index: crlfIndex, bodyOffset: crlfIndex + 4 };
+    }
+    return { index: lfIndex, bodyOffset: lfIndex + 2 };
   }
 }
