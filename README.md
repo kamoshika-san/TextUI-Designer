@@ -114,7 +114,7 @@ npm run test:all         # unit / integration / e2e / regression
 npm run package          # extension package build
 ```
 
-CI運用テンプレート（DSL validate + plan）は `doc/CI_TEMPLATE.md` を参照してください。
+CI運用テンプレート（DSL validate + plan）は `docs/CI_TEMPLATE.md` を参照してください。
 
 ### CLI
 

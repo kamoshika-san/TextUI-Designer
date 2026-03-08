@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-const requiredOutputs = ['out/cli/index.js', 'out/extension.js'];
+const requiredOutputs = ['out/cli/index.js', 'out/extension.js', 'out/mcp/server.js'];
 
 const missingOutputs = requiredOutputs.filter(file => !fs.existsSync(path.resolve(file)));
 
