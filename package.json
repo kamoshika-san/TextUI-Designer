@@ -234,6 +234,31 @@
           "minimum": 10000,
           "maximum": 300000,
           "description": "メモリクリーンアップ間隔（ミリ秒）"
+        },
+        "textui-designer.mcp.autoConfigure": {
+          "type": "boolean",
+          "default": true,
+          "description": "拡張起動時にMCP設定(mcp.json)を自動構成する"
+        },
+        "textui-designer.mcp.scope": {
+          "type": "string",
+          "enum": [
+            "workspace",
+            "user",
+            "both"
+          ],
+          "default": "workspace",
+          "description": "MCP設定の書き込み先"
+        },
+        "textui-designer.mcp.serverId": {
+          "type": "string",
+          "default": "textui-designer",
+          "description": "mcp.jsonで使用するMCPサーバーID"
+        },
+        "textui-designer.mcp.notifyOnConfigured": {
+          "type": "boolean",
+          "default": true,
+          "description": "MCP設定更新時に通知を表示する"
         }
       }
     },
@@ -385,6 +410,7 @@
     "test:e2e": "mocha --no-config --require ./tests/setup.js --timeout 20000 --exit ./tests/e2e/export-from-preview-e2e.test.js",
     "test:all": "npm run pretest && npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:regression",
     "cli": "node ./out/cli/index.js",
+    "mcp:serve": "node ./out/mcp/server.js",
     "prepare": "node ./scripts/prepare.cjs",
     "precli": "npm run compile"
   },
