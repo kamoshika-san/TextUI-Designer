@@ -40,7 +40,6 @@ export function createMcpServerConfigEntry(params: {
     cwd: params.extensionPath
   };
 }
-
 export function resolveUserMcpJsonPath(options: {
   platform: NodeJS.Platform;
   appName?: string;
