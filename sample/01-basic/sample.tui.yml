@@ -1,86 +1,112 @@
-page:
-  id: sample-mvp
-  title: "MVPコンポーネントサンプル"
+﻿page:
+  id: sample-all-components
+  title: "All Components Sample"
   layout: vertical
   components:
     - Text:
         variant: h1
-        value: "MVPコンポーネントサンプル"
-    - Text:
-        variant: h2
-        value: "MVPコンポーネントサンプル"
+        value: "TextUI Designer - All Components"
     - Alert:
         variant: info
-        message: "これはインフォメーションアラートです"
-    - Alert:
-        variant: warning
-        message: "これは警告アラートですよ"
+        message: "This sample includes every supported component."
     - Divider:
         orientation: horizontal
-    - Input:
-        label: "名前"
-        name: "name"
-        type: text
-        required: true
-    - Input:
-        label: "メールアドレス"
-        name: "email"
-        type: email
-        required: true
-    - Checkbox:
-        label: "利用規約に同意する"
-        name: "agree"
-        required: true
-    - Radio:
-        label: "性別"
-        name: "gender"
-        options:
-          - label: "男性"
-            value: "male"
-          - label: "女性"
-            value: "female"
-          - label: "その他"
-            value: "other"
-    - Select:
-        label: "国"
-        name: "country"
-        options:
-          - label: "日本"
-            value: "jp"
-          - label: "アメリカ"
-            value: "us"
-          - label: "イギリス"
-            value: "uk"
-    - Divider:
-        orientation: horizontal
+    - Spacer:
+        axis: vertical
+        size: md
     - Container:
         layout: horizontal
         components:
-          - Button:
-              kind: primary
-              label: "送信"
-              submit: true
-          - Button:
-              kind: secondary
-              label: "キャンセル"
+          - Input:
+              label: "Name"
+              name: "name"
+              type: text
+              placeholder: "Jane Doe"
+              required: true
+          - DatePicker:
+              label: "Birthday"
+              name: "birthday"
+              min: "1900-01-01"
+              max: "2100-12-31"
     - Form:
-        id: "sample-form"
+        id: "all-components-form"
         fields:
           - Input:
-              label: "ユーザー名"
-              name: "username"
-              type: text
+              label: "Email"
+              name: "email"
+              type: email
               required: true
-          - Input:
-              label: "パスワード"
-              name: "password"
-              type: password
-              required: true
+          - Select:
+              label: "Country"
+              name: "country"
+              options:
+                - label: "Japan"
+                  value: "jp"
+                - label: "United States"
+                  value: "us"
+                - label: "United Kingdom"
+                  value: "uk"
+          - Radio:
+              label: "Plan"
+              name: "plan"
+              options:
+                - label: "Basic"
+                  value: "basic"
+                - label: "Pro"
+                  value: "pro"
           - Checkbox:
-              label: "ログイン状態を保持"
-              name: "remember"
+              label: "Agree to terms"
+              name: "agree"
         actions:
           - Button:
+              label: "Submit"
               kind: submit
-              label: "ログイン"
               submit: true
+          - Button:
+              label: "Cancel"
+              kind: secondary
+    - Tabs:
+        defaultTab: 0
+        items:
+          - label: "Overview"
+            components:
+              - Text:
+                  variant: h2
+                  value: "Overview Tab"
+              - Table:
+                  columns:
+                    - key: "name"
+                      header: "Name"
+                    - key: "role"
+                      header: "Role"
+                  rows:
+                    - name: "Alice"
+                      role: "Admin"
+                    - name: "Bob"
+                      role: "Editor"
+          - label: "Structure"
+            components:
+              - TreeView:
+                  showLines: true
+                  items:
+                    - label: "src"
+                      expanded: true
+                      children:
+                        - label: "extension.ts"
+                        - label: "renderer"
+                          children:
+                            - label: "App.tsx"
+                    - label: "README.md"
+    - Accordion:
+        allowMultiple: true
+        items:
+          - title: "What is this?"
+            components:
+              - Text:
+                  variant: p
+                  value: "A complete DSL example using all supported components."
+          - title: "Can I customize it?"
+            components:
+              - Text:
+                  variant: p
+                  value: "Yes. Replace labels, options, and layouts to match your app."

@@ -10,45 +10,45 @@ export interface TextUIComponentCatalogEntry {
 const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
   {
     name: 'Text',
-    description: '見出し・本文などのテキスト表示',
-    requiredProps: ['value'],
-    optionalProps: ['variant', 'size', 'weight', 'color', 'token'],
+    description: 'Heading/body text display.',
+    requiredProps: ['variant', 'value'],
+    optionalProps: ['token'],
     supportsChildren: false,
-    example: { Text: { value: 'ログイン', variant: 'h2' } }
+    example: { Text: { variant: 'h2', value: 'Login' } }
   },
   {
     name: 'Input',
-    description: '単一行/複数行入力フィールド',
-    requiredProps: [],
-    optionalProps: ['label', 'name', 'type', 'placeholder', 'required', 'disabled', 'multiline', 'token'],
+    description: 'Single-line or multiline text input.',
+    requiredProps: ['label', 'name', 'type'],
+    optionalProps: ['required', 'placeholder', 'token'],
     supportsChildren: false,
-    example: { Input: { label: 'メールアドレス', name: 'email', type: 'email', required: true } }
+    example: { Input: { label: 'Email', name: 'email', type: 'email', required: true } }
   },
   {
     name: 'Button',
-    description: '操作ボタン',
+    description: 'Action button.',
     requiredProps: ['label'],
-    optionalProps: ['kind', 'submit', 'disabled', 'size', 'token'],
+    optionalProps: ['kind', 'submit', 'token'],
     supportsChildren: false,
-    example: { Button: { label: '送信', kind: 'primary' } }
+    example: { Button: { label: 'Submit', kind: 'primary' } }
   },
   {
     name: 'Checkbox',
-    description: 'チェックボックス',
-    requiredProps: ['label'],
-    optionalProps: ['name', 'checked', 'disabled', 'token'],
+    description: 'Checkbox input.',
+    requiredProps: ['label', 'name'],
+    optionalProps: ['required', 'token'],
     supportsChildren: false,
-    example: { Checkbox: { label: '利用規約に同意する', name: 'terms' } }
+    example: { Checkbox: { label: 'I agree', name: 'terms', required: true } }
   },
   {
     name: 'Radio',
-    description: 'ラジオボタン',
-    requiredProps: [],
-    optionalProps: ['label', 'name', 'value', 'checked', 'disabled', 'options', 'token'],
+    description: 'Radio group input.',
+    requiredProps: ['label', 'name', 'options'],
+    optionalProps: ['token'],
     supportsChildren: false,
     example: {
       Radio: {
-        label: 'プラン',
+        label: 'Plan',
         name: 'plan',
         options: [
           { label: 'Basic', value: 'basic' },
@@ -59,43 +59,40 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
   },
   {
     name: 'Select',
-    description: '選択ボックス',
-    requiredProps: [],
-    optionalProps: ['label', 'name', 'options', 'placeholder', 'disabled', 'multiple', 'token'],
+    description: 'Select box input.',
+    requiredProps: ['label', 'name', 'options'],
+    optionalProps: ['multiple', 'placeholder', 'token'],
     supportsChildren: false,
     example: {
       Select: {
-        label: '都道府県',
-        name: 'prefecture',
-        options: [{ label: '東京都', value: 'tokyo' }]
+        label: 'Country',
+        name: 'country',
+        options: [
+          { label: 'Japan', value: 'jp' },
+          { label: 'United States', value: 'us' }
+        ]
       }
     }
   },
   {
     name: 'DatePicker',
-    description: '日付選択フィールド',
+    description: 'Date selection input.',
     requiredProps: ['label', 'name'],
     optionalProps: ['required', 'disabled', 'min', 'max', 'value', 'token'],
     supportsChildren: false,
-    example: {
-      DatePicker: {
-        label: '生年月日',
-        name: 'birthday',
-        required: true
-      }
-    }
+    example: { DatePicker: { label: 'Birthday', name: 'birthday', required: true } }
   },
   {
     name: 'Divider',
-    description: '区切り線',
+    description: 'Visual divider line.',
     requiredProps: [],
-    optionalProps: ['orientation', 'spacing', 'token'],
+    optionalProps: ['orientation', 'token'],
     supportsChildren: false,
-    example: { Divider: { orientation: 'horizontal', spacing: 'md' } }
+    example: { Divider: { orientation: 'horizontal' } }
   },
   {
     name: 'Spacer',
-    description: '余白用スペーサー',
+    description: 'Layout spacing element.',
     requiredProps: [],
     optionalProps: ['axis', 'size', 'width', 'height', 'token'],
     supportsChildren: false,
@@ -103,71 +100,75 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
   },
   {
     name: 'Alert',
-    description: '通知メッセージ',
-    requiredProps: ['message'],
-    optionalProps: ['variant', 'title', 'token'],
+    description: 'Status or warning message.',
+    requiredProps: ['variant', 'message'],
+    optionalProps: ['token'],
     supportsChildren: false,
-    example: { Alert: { variant: 'warning', message: '未入力の項目があります' } }
+    example: { Alert: { variant: 'warning', message: 'There are missing fields.' } }
   },
   {
     name: 'Container',
-    description: '子コンポーネントをグループ化',
-    requiredProps: [],
-    optionalProps: ['layout', 'components', 'width', 'token'],
+    description: 'Group child components with layout.',
+    requiredProps: ['components'],
+    optionalProps: ['layout', 'width', 'token'],
     supportsChildren: true,
     example: {
       Container: {
         layout: 'vertical',
-        components: [{ Text: { value: 'プロフィール' } }, { Input: { label: '名前' } }]
+        components: [
+          { Text: { variant: 'h3', value: 'Profile' } },
+          { Input: { label: 'Name', name: 'name', type: 'text' } }
+        ]
       }
     }
   },
   {
     name: 'Form',
-    description: '入力フィールドとアクションをまとめるフォーム',
+    description: 'Group fields and action buttons.',
     requiredProps: ['fields'],
     optionalProps: ['id', 'actions', 'token'],
     supportsChildren: true,
     example: {
       Form: {
         id: 'login-form',
-        fields: [{ Input: { label: 'メールアドレス', name: 'email', required: true } }],
-        actions: [{ Button: { label: 'ログイン', submit: true } }]
+        fields: [{ Input: { label: 'Email', name: 'email', type: 'email', required: true } }],
+        actions: [{ Button: { label: 'Login', kind: 'submit', submit: true } }]
       }
     }
   },
   {
     name: 'Accordion',
-    description: '折りたたみ表示',
+    description: 'Collapsible section list.',
     requiredProps: ['items'],
-    optionalProps: ['allowMultiple', 'token', 'items[].content', 'items[].components'],
+    optionalProps: ['allowMultiple', 'token', 'items[].title', 'items[].content', 'items[].components', 'items[].open'],
     supportsChildren: true,
     example: {
       Accordion: {
-        items: [{ title: 'FAQ', components: [{ Text: { value: '質問への回答' } }] }]
+        items: [{ title: 'FAQ', content: 'You can put details here.' }]
       }
     }
   },
   {
     name: 'Tabs',
-    description: 'タブ切り替え表示',
-    requiredProps: ['items'],
-    optionalProps: ['defaultTab', 'token'],
+    description: 'Tabbed content switcher.',
+    requiredProps: ['items', 'items[].label'],
+    optionalProps: ['defaultTab', 'token', 'items[].disabled', 'items[].components'],
     supportsChildren: true,
     example: {
       Tabs: {
+        defaultTab: 0,
         items: [
-          { label: '基本情報', components: [{ Input: { label: '氏名' } }] },
-          { label: '設定', components: [{ Checkbox: { label: '通知を受け取る' } }] }
+          { label: 'Profile', components: [{ Input: { label: 'Name', name: 'name', type: 'text' } }] },
+          { label: 'Settings', components: [{ Checkbox: { label: 'Enable notifications', name: 'notify' } }] }
         ]
       }
     }
   },
   {
     name: 'TreeView',
-    description: '階層ツリービュー',
-    requiredProps: ['items'],
-    optionalProps: ['showLines', 'expandAll', 'token'],
+    description: 'Hierarchical tree view.',
+    requiredProps: ['items', 'items[].label'],
+    optionalProps: ['showLines', 'expandAll', 'token', 'items[].icon', 'items[].expanded', 'items[].components', 'items[].children'],
     supportsChildren: true,
     example: {
       TreeView: {
@@ -180,14 +181,14 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
   },
   {
     name: 'Table',
-    description: '表形式表示',
-    requiredProps: ['columns', 'rows'],
+    description: 'Tabular data display.',
+    requiredProps: ['columns', 'rows', 'columns[].key', 'columns[].header'],
     optionalProps: ['striped', 'width', 'token'],
     supportsChildren: false,
     example: {
       Table: {
-        columns: [{ key: 'name', header: '氏名' }],
-        rows: [{ name: '田中 太郎' }]
+        columns: [{ key: 'name', header: 'Name' }],
+        rows: [{ name: 'Alice' }]
       }
     }
   }
