@@ -3,7 +3,7 @@ import type {
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, SelectComponent, DatePickerComponent, SelectOption, DividerComponent, SpacerComponent,
   AlertComponent, ContainerComponent, AccordionComponent,
-  TabsComponent, TableComponent
+  TabsComponent, TreeViewComponent, TableComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -244,6 +244,63 @@ ${indentedCode}`;
     });
 
     return code;
+  }
+
+  protected renderTreeView(props: TreeViewComponent, key: number): string {
+    const { items = [], showLines = true, expandAll = false, token } = props;
+    const tokenStyle = this.getPugTokenStyleAttr('TreeView', token).trim();
+    const listClass = showLines ? 'with-lines' : 'without-lines';
+
+    const renderNodeList = (
+      nodes: TreeViewComponent['items'],
+      path: string,
+      depth: number,
+      indent: string
+    ): string => {
+      const nodeCode = nodes.map((node, index) => {
+        const children = node.children || [];
+        const components = node.components || [];
+        const hasChildren = children.length > 0 || components.length > 0;
+        const label = `${node.icon ? `${node.icon} ` : ''}${node.label ?? ''}`;
+        const nodeIndent = `${indent}  `;
+
+        if (!hasChildren) {
+          return `${nodeIndent}li.textui-treeview-item
+${nodeIndent}  .textui-treeview-label-row
+${nodeIndent}    span.textui-treeview-toggle.placeholder •
+${nodeIndent}    span.textui-treeview-label ${label}`;
+        }
+
+        const shouldOpen = expandAll || node.expanded;
+        const componentCode = components
+          .map((component: ComponentDef, componentIndex: number) =>
+            this.renderComponent(component, key * 100000 + depth * 1000 + index * 100 + componentIndex)
+          )
+          .map(code => code.split('\n').map(line => `${nodeIndent}      ${line}`).join('\n'))
+          .join('\n');
+
+        const childrenCode = children.length > 0
+          ? renderNodeList(children, `${path}-${index}`, depth + 1, `${nodeIndent}      `)
+          : '';
+
+        const bodyCode = [componentCode, childrenCode].filter(Boolean).join('\n');
+
+        return `${nodeIndent}li.textui-treeview-item
+${nodeIndent}  details${shouldOpen ? '(open)' : ''}
+${nodeIndent}    summary.textui-treeview-label-row
+${nodeIndent}      span.textui-treeview-toggle ▸
+${nodeIndent}      span.textui-treeview-label ${label}
+${nodeIndent}    .textui-treeview-children
+${bodyCode}`;
+      }).join('\n');
+
+      return `${indent}ul.textui-treeview-list.${listClass}
+${nodeCode}`;
+    };
+
+    const treeCode = renderNodeList(items, `tree-${key}`, 0, '        ');
+    return `      .textui-treeview${tokenStyle ? `(${tokenStyle})` : ''}
+${treeCode}`;
   }
 
   protected renderTable(props: TableComponent, key: number): string {

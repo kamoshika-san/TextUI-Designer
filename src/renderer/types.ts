@@ -99,6 +99,7 @@ export interface FormField {
   Text?: TextComponent;
   Divider?: DividerComponent;
   Spacer?: SpacerComponent;
+  TreeView?: TreeViewComponent;
   Alert?: AlertComponent;
   Container?: ContainerComponent;
   Table?: TableComponent;
@@ -168,6 +169,21 @@ export interface TabsComponent {
   token?: string;
 }
 
+export interface TreeViewItem {
+  label: string;
+  icon?: string;
+  expanded?: boolean;
+  components?: ComponentDef[];
+  children?: TreeViewItem[];
+}
+
+export interface TreeViewComponent {
+  items: TreeViewItem[];
+  showLines?: boolean;
+  expandAll?: boolean;
+  token?: string;
+}
+
 export interface TableColumn {
   key: string;
   header: string;
@@ -205,6 +221,7 @@ export type ComponentDef =
   | { Alert: AlertComponent }
   | { Accordion: AccordionComponent }
   | { Tabs: TabsComponent }
+  | { TreeView: TreeViewComponent }
   | { Table: TableComponent };
 
 export interface PageDef {
@@ -278,6 +295,10 @@ export function isAccordionComponent(comp: ComponentDef): comp is { Accordion: A
 
 export function isTabsComponent(comp: ComponentDef): comp is { Tabs: TabsComponent } {
   return 'Tabs' in comp;
+}
+
+export function isTreeViewComponent(comp: ComponentDef): comp is { TreeView: TreeViewComponent } {
+  return 'TreeView' in comp;
 }
 
 export function isTableComponent(comp: ComponentDef): comp is { Table: TableComponent } {

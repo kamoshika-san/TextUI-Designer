@@ -18,6 +18,7 @@ import { Spacer } from './components/Spacer';
 import { Alert } from './components/Alert';
 import { Accordion } from './components/Accordion';
 import { Tabs } from './components/Tabs';
+import { TreeView } from './components/TreeView';
 import { Table } from './components/Table';
 import type {
   ComponentDef,
@@ -37,6 +38,7 @@ import type {
   ContainerComponent,
   AccordionComponent,
   TabsComponent,
+  TreeViewComponent,
   TableComponent
 } from './types';
 import { getComponentName } from '../registry/component-registry';
@@ -81,6 +83,13 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
     />
   ),
   Tabs: (props, key) => <Tabs key={key} {...(props as unknown as TabsComponent)} renderComponent={renderRegisteredComponent} />,
+  TreeView: (props, key) => (
+    <TreeView
+      key={key}
+      {...(props as unknown as TreeViewComponent)}
+      renderComponent={renderRegisteredComponent}
+    />
+  ),
   Table: (props, key) => <Table key={key} {...(props as unknown as TableComponent)} />,
   Container: (props, key) => {
     const containerProps = props as unknown as ContainerComponent;

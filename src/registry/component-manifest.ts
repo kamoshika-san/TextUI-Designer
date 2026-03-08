@@ -21,6 +21,7 @@ export const BUILT_IN_COMPONENTS = [
   'Form',
   'Accordion',
   'Tabs',
+  'TreeView',
   'Table'
 ] as const;
 
@@ -306,6 +307,16 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
     properties: [
       { name: 'defaultTab', description: '初期表示するタブのインデックス（0始まり）' },
       { name: 'items', description: 'ラベルと内容コンポーネントを持つタブ配列' }
+    ]
+  },
+
+  TreeView: {
+    description: 'ツリービュー',
+    schemaRef: '#/definitions/TreeView',
+    properties: [
+      { name: 'items', description: 'ツリー項目配列（label, children, components など）' },
+      { name: 'showLines', description: '接続線を表示するか', values: BOOLEAN_VALUES },
+      { name: 'expandAll', description: '初期状態で全ノード展開', values: BOOLEAN_VALUES }
     ]
   },
 

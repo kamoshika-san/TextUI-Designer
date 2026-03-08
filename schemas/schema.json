@@ -97,6 +97,9 @@
           "$ref": "#/definitions/Tabs"
         },
         {
+          "$ref": "#/definitions/TreeView"
+        },
+        {
           "$ref": "#/definitions/Table"
         }
       ]
@@ -827,6 +830,82 @@
       },
       "additionalProperties": false,
       "description": "タブ切り替えコンポーネント。"
+    },
+    "treeViewItemArray": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/treeViewItem"
+      }
+    },
+    "treeViewItem": {
+      "type": "object",
+      "required": [
+        "label"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "ノードの表示ラベル。"
+        },
+        "icon": {
+          "type": "string",
+          "description": "ラベル前に表示する簡易アイコン文字列。"
+        },
+        "expanded": {
+          "type": "boolean",
+          "default": false,
+          "description": "初期状態で展開するかどうか。"
+        },
+        "components": {
+          "$ref": "#/definitions/componentArray",
+          "description": "ノード直下に表示する子コンポーネント配列。"
+        },
+        "children": {
+          "$ref": "#/definitions/treeViewItemArray",
+          "description": "子ノード配列。"
+        }
+      },
+      "additionalProperties": false,
+      "description": "TreeViewの単一ノード。"
+    },
+    "TreeView": {
+      "type": "object",
+      "required": [
+        "TreeView"
+      ],
+      "properties": {
+        "TreeView": {
+          "type": "object",
+          "required": [
+            "items"
+          ],
+          "properties": {
+            "items": {
+              "$ref": "#/definitions/treeViewItemArray",
+              "minItems": 1,
+              "description": "ツリー項目配列。"
+            },
+            "showLines": {
+              "type": "boolean",
+              "default": true,
+              "description": "ツリー接続線を表示するかどうか。"
+            },
+            "expandAll": {
+              "type": "boolean",
+              "default": false,
+              "description": "初期状態ですべてのノードを展開するかどうか。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "TreeViewに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "階層構造を表示するツリービューコンポーネント。\n利用可能な属性: items, showLines, expandAll"
+        }
+      },
+      "additionalProperties": false,
+      "description": "階層構造を表示するツリービューコンポーネント。"
     },
     "Table": {
       "type": "object",

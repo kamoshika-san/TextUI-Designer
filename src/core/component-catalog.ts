@@ -164,6 +164,21 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
     }
   },
   {
+    name: 'TreeView',
+    description: '階層ツリービュー',
+    requiredProps: ['items'],
+    optionalProps: ['showLines', 'expandAll', 'token'],
+    supportsChildren: true,
+    example: {
+      TreeView: {
+        items: [
+          { label: 'src', expanded: true, children: [{ label: 'index.ts' }] },
+          { label: 'README.md' }
+        ]
+      }
+    }
+  },
+  {
     name: 'Table',
     description: '表形式表示',
     requiredProps: ['columns', 'rows'],

@@ -2,7 +2,7 @@ import type {
   TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, SelectComponent, DatePickerComponent, DividerComponent, SpacerComponent, AlertComponent,
-  ContainerComponent, AccordionComponent, TabsComponent, TableComponent, SelectOption
+  ContainerComponent, AccordionComponent, TabsComponent, TreeViewComponent, TableComponent, SelectOption
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -258,6 +258,71 @@ ${tabsHeader}
         <div className="p-4 space-y-3">
 ${panelItems}
         </div>
+      </div>`;
+  }
+
+  protected renderTreeView(props: TreeViewComponent, key: number): string {
+    const { items = [], showLines = true, expandAll = false, token } = props;
+    const tokenStyle = this.getReactTokenStyleProp('TreeView', token);
+    const listClass = showLines ? 'textui-treeview-list with-lines' : 'textui-treeview-list without-lines';
+
+    const renderNodeList = (
+      nodes: TreeViewComponent['items'],
+      path: string,
+      depth: number,
+      indent: string
+    ): string => {
+      const nodeCode = nodes.map((node, index) => {
+        const children = node.children || [];
+        const components = node.components || [];
+        const hasChildren = children.length > 0 || components.length > 0;
+        const label = `${node.icon ? `${node.icon} ` : ''}${node.label ?? ''}`;
+        const nodeIndent = `${indent}  `;
+
+        if (!hasChildren) {
+          return `${nodeIndent}<li className="textui-treeview-item">
+${nodeIndent}  <div className="textui-treeview-label-row">
+${nodeIndent}    <span className="textui-treeview-toggle placeholder">•</span>
+${nodeIndent}    <span className="textui-treeview-label">${label}</span>
+${nodeIndent}  </div>
+${nodeIndent}</li>`;
+        }
+
+        const openAttr = expandAll || node.expanded ? ' open' : '';
+        const componentCode = components
+          .map((component: ComponentDef, componentIndex: number) =>
+            this.renderComponent(component, key * 100000 + depth * 1000 + index * 100 + componentIndex)
+          )
+          .map(code => code.split('\n').map(line => `${nodeIndent}      ${line}`).join('\n'))
+          .join('\n');
+
+        const childrenCode = children.length > 0
+          ? renderNodeList(children, `${path}-${index}`, depth + 1, `${nodeIndent}      `)
+          : '';
+
+        const bodyCode = [componentCode, childrenCode].filter(Boolean).join('\n');
+
+        return `${nodeIndent}<li className="textui-treeview-item">
+${nodeIndent}  <details${openAttr}>
+${nodeIndent}    <summary className="textui-treeview-label-row">
+${nodeIndent}      <span className="textui-treeview-toggle">▸</span>
+${nodeIndent}      <span className="textui-treeview-label">${label}</span>
+${nodeIndent}    </summary>
+${nodeIndent}    <div className="textui-treeview-children">
+${bodyCode}
+${nodeIndent}    </div>
+${nodeIndent}  </details>
+${nodeIndent}</li>`;
+      }).join('\n');
+
+      return `${indent}<ul className="${listClass}">
+${nodeCode}
+${indent}</ul>`;
+    };
+
+    const treeCode = renderNodeList(items, `tree-${key}`, 0, '        ');
+    return `      <div key={${key}} className="textui-treeview"${tokenStyle}>
+${treeCode}
       </div>`;
   }
 

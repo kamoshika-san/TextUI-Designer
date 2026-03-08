@@ -45,6 +45,7 @@ const KNOWN_COMPONENTS = new Set([
   'Alert',
   'Accordion',
   'Tabs',
+  'TreeView',
   'Table'
 ]);
 
@@ -244,7 +245,28 @@ function collectFromComponentArray(values: unknown, basePath: string, entries: C
           entries
         );
       });
+      return;
     }
+
+    if (type === 'TreeView') {
+      collectFromTreeViewItems(propsRecord.items, `${componentPath}/items`, entries);
+    }
+  });
+}
+
+function collectFromTreeViewItems(values: unknown, basePath: string, entries: ComponentEntry[]): void {
+  if (!Array.isArray(values)) {
+    return;
+  }
+
+  values.forEach((value, index) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return;
+    }
+
+    const item = value as Record<string, unknown>;
+    collectFromComponentArray(item.components, `${basePath}/${index}/components`, entries);
+    collectFromTreeViewItems(item.children, `${basePath}/${index}/children`, entries);
   });
 }
 
