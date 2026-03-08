@@ -4,6 +4,27 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.5.0] - 2026-03-08
+
+### 新機能
+- **サンプル 07-enterprise**: 業務システム想定のダッシュボード・検索・一覧・承認フロー・レポートのサンプルを追加（`sample/07-enterprise/`）。
+
+### 変更・改善
+- **MCP サーバー起動の高速化**: `TextUICoreEngine` と `component-catalog` を初回ツール／リソース利用時まで遅延読み込みし、`initialize` の応答を短時間で返すようにしました。Cursor 等で MCP がタイムアウトしにくくなります。
+- **MCP トランスポートの Cursor 互換**: クライアントが Content-Length ヘッダーなしの生 JSON で送る場合（Cursor の形式）に対応。受信はヘッダーなし JSON をそのままパースし、レスポンスもヘッダーなし＋改行で返すようにしました。
+- **MCP メッセージ境界の拡張**: ヘッダーとボディの区切りとして、単一の `\r\n` または `\n` の直後に `{` / `[` がある形式も認識するようにしました（従来の `\r\n\r\n` / `\n\n` に加えて）。
+
+### バグ修正
+- **Cursor で MCP がタイムアウトする問題**: 起動時の重いモジュール読み込みを遅延したことと、Cursor のヘッダーなし JSON 送受信に対応したことで解消しました。
+- **Cursor が「Content-Length: ... is not valid JSON」でエラーになる問題**: レスポンスをヘッダー付きで返していたため、Cursor が生 JSON としてパースして失敗していました。同一セッションでは受信形式に合わせてレスポンスもヘッダーなしで返すように修正しました。
+
+### テスト・ドキュメント
+- MCP トランスポートの単一 CRLF／単一 LF 区切り・ヘッダーなし JSON のユニットテストを追加しました。
+- Cursor で MCP が利用できない場合の原因（タイムアウト・ヘッダー形式）と対処（ワークスペースビルドの利用・ユーザー MCP 設定の変更）をドキュメントに記載しました。
+
+### 破壊的変更
+- なし
+
 ## [0.4.0] - 2026-03-06
 
 ### 新機能
