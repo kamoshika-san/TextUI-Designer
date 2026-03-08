@@ -382,6 +382,10 @@
   padding-left: 0.75rem;
 }
 
+.textui-treeview > .textui-treeview-list {
+  padding-left: 0;
+}
+
 .textui-treeview-list.with-lines {
   border-left: 1px dashed var(--color-secondary, rgb(75 85 99));
 }
@@ -421,6 +425,7 @@
 
 .textui-treeview-children {
   margin-top: 0.25rem;
+  margin-left: 1rem;
 }
 
 /* Button */
