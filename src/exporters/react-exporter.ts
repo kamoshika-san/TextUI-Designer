@@ -172,10 +172,25 @@ ${optionsCode}
     const tokenStyle = this.getReactTokenStyleProp('Accordion', token);
 
     const itemsCode = items
-      .map((item, index) => `        <details key={${index}} className="border-b border-gray-200 last:border-b-0" ${item.open ? 'open' : ''}>
+      .map((item, index) => {
+        const itemChildren = item.components || [];
+        const nestedCode = itemChildren
+          .map((component: ComponentDef, childIndex: number) =>
+            this.adjustIndentation(
+              this.renderComponent(component, index * 1000 + childIndex),
+              '            '
+            )
+          )
+          .join('\n');
+        const contentCode = nestedCode || `            ${item.content ?? ''}`;
+
+        return `        <details key={${index}} className="border-b border-gray-200 last:border-b-0" ${item.open ? 'open' : ''}>
           <summary className="px-4 py-3 text-sm font-medium cursor-pointer">${item.title}</summary>
-          <div className="px-4 pb-4 text-sm text-gray-600">${item.content}</div>
-        </details>`)
+          <div className="px-4 pb-4 text-sm text-gray-600">
+${contentCode}
+          </div>
+        </details>`;
+      })
       .join('\n');
 
     return `      <div key={${key}} className="border border-gray-300 rounded-md divide-y divide-gray-200" data-allow-multiple={${allowMultiple}}${tokenStyle}>

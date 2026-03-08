@@ -233,6 +233,16 @@ export class TextUICoreEngine {
       });
     }
 
+    if (component.type === 'Accordion' && component.items) {
+      props.items = component.items.map(item => {
+        const next: Record<string, unknown> = { ...item };
+        if (item.components) {
+          next.components = item.components.map(child => this.buildComponent(child));
+        }
+        return next;
+      });
+    }
+
     return {
       [component.type]: props
     } as unknown as ComponentDef;

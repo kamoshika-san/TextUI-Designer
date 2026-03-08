@@ -53,7 +53,10 @@
       "    allowMultiple: ${1|true,false|}",
       "    items:",
       "      - title: $2",
-      "        content: $3",
+      "        components:",
+      "          - Text:",
+      "              variant: p",
+      "              value: $3",
       "        open: ${4|false,true|}"
     ],
     "description": "アコーディオンのテンプレート"

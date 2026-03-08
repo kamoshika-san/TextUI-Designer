@@ -254,7 +254,7 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
     schemaRef: '#/definitions/Accordion',
     properties: [
       { name: 'allowMultiple', description: '複数項目を同時展開するか', values: BOOLEAN_VALUES },
-      { name: 'items', description: '見出しと本文を持つ項目配列' }
+      { name: 'items', description: '見出しとcontent/componentsを持つ項目配列' }
     ]
   },
 

@@ -158,7 +158,8 @@ ${componentCode}`;
     const tokenStyle = this.getPugTokenStyleAttr('Accordion', token).trim();
 
     let code = `      .textui-accordion.border.border-gray-300.rounded-md.divide-y.divide-gray-200(data-allow-multiple="${allowMultiple ? 'true' : 'false'}"${tokenStyle ? ` ${tokenStyle}` : ''})`;
-    items.forEach(item => {
+    items.forEach((item, index) => {
+      const itemComponents = item.components || [];
       code += `
         details.border-b.border-gray-200`;
       if (item.open) {
@@ -166,8 +167,19 @@ ${componentCode}`;
       }
       code += `
           summary.px-4.py-3.text-sm.font-medium.cursor-pointer ${item.title}`;
-      code += `
-          .px-4.pb-4.text-sm.text-gray-600 ${item.content}`;
+      if (itemComponents.length > 0) {
+        code += `
+          .px-4.pb-4.text-sm.text-gray-600`;
+        itemComponents.forEach((component: ComponentDef, childIndex: number) => {
+          const childCode = this.renderComponent(component, index * 1000 + childIndex);
+          const indentedCode = childCode.split('\n').map(line => `  ${line}`).join('\n');
+          code += `
+${indentedCode}`;
+        });
+      } else {
+        code += `
+          .px-4.pb-4.text-sm.text-gray-600 ${item.content ?? ''}`;
+      }
     });
 
     return code;

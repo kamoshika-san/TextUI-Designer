@@ -67,7 +67,13 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
   Select: (props, key) => <Select key={key} {...(props as unknown as SelectComponent)} />,
   Divider: (props, key) => <Divider key={key} {...(props as unknown as DividerComponent)} />,
   Alert: (props, key) => <Alert key={key} {...(props as unknown as AlertComponent)} />,
-  Accordion: (props, key) => <Accordion key={key} {...(props as unknown as AccordionComponent)} />,
+  Accordion: (props, key) => (
+    <Accordion
+      key={key}
+      {...(props as unknown as AccordionComponent)}
+      renderComponent={renderRegisteredComponent}
+    />
+  ),
   Tabs: (props, key) => <Tabs key={key} {...(props as unknown as TabsComponent)} renderComponent={renderRegisteredComponent} />,
   Table: (props, key) => <Table key={key} {...(props as unknown as TableComponent)} />,
   Container: (props, key) => {
