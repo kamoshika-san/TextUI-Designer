@@ -18,6 +18,11 @@ interface McpConfigFile {
   [key: string]: unknown;
 }
 
+interface McpTargetFile {
+  kind: 'mcp-json' | 'codex-toml';
+  filePath: string;
+}
+
 export interface McpBootstrapResult {
   updated: boolean;
   updatedFiles: string[];
@@ -64,6 +69,18 @@ export function resolveUserMcpJsonPath(options: {
   return path.join(configRoot, product, 'User', 'mcp.json');
 }
 
+export function resolveUserCodexConfigPath(options: {
+  homeDir?: string;
+  env?: NodeJS.ProcessEnv;
+}): string {
+  const env = options.env ?? process.env;
+  const home = options.homeDir ?? os.homedir();
+  const codexHome = env.CODEX_HOME
+    ? path.resolve(env.CODEX_HOME)
+    : path.join(home, '.codex');
+  return path.join(codexHome, 'config.toml');
+}
+
 export function upsertMcpServerConfig(
   filePath: string,
   serverId: string,
@@ -84,6 +101,30 @@ export function upsertMcpServerConfig(
 
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
+  return true;
+}
+
+export function upsertCodexServerConfig(
+  filePath: string,
+  serverId: string,
+  serverConfig: McpServerConfigEntry
+): boolean {
+  const tableName = `mcp_servers.${serverId}`;
+  const lines = [
+    `[${tableName}]`,
+    `command = ${toTomlString(serverConfig.command)}`,
+    `args = ${toTomlStringArray(serverConfig.args)}`
+  ];
+  const sectionText = `${lines.join('\n')}\n`;
+
+  const current = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf8') : '';
+  const next = upsertTomlSection(current, tableName, sectionText);
+  if (current === next) {
+    return false;
+  }
+
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, next, 'utf8');
   return true;
 }
 
@@ -128,7 +169,9 @@ export class McpBootstrapService {
 
     const command = config.get<string>('mcp.command', DEFAULT_MCP_COMMAND);
     const entry = this.createServerEntry(command);
-    const updatedFiles = targets.filter(target => upsertMcpServerConfig(target, serverId, entry));
+    const updatedFiles = targets
+      .filter(target => this.upsertTargetConfig(target, serverId, entry))
+      .map(target => target.filePath);
     if (updatedFiles.length > 0) {
       const notifyOnConfigured = config.get<boolean>('mcp.notifyOnConfigured', true);
       if (notifyOnConfigured) {
@@ -151,24 +194,38 @@ export class McpBootstrapService {
     });
   }
 
-  private resolveTargets(scope: McpScope): string[] {
-    const targets = new Set<string>();
+  private resolveTargets(scope: McpScope): McpTargetFile[] {
+    const targets = new Map<string, McpTargetFile>();
 
     if (scope === 'workspace' || scope === 'both') {
       const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
       if (workspaceFolder) {
-        targets.add(path.join(workspaceFolder.uri.fsPath, '.vscode', 'mcp.json'));
+        const workspaceRoot = workspaceFolder.uri.fsPath;
+        const mcpJson = path.join(workspaceRoot, '.vscode', 'mcp.json');
+        const codexToml = path.join(workspaceRoot, '.codex', 'config.toml');
+        targets.set(mcpJson, { kind: 'mcp-json', filePath: mcpJson });
+        targets.set(codexToml, { kind: 'codex-toml', filePath: codexToml });
       }
     }
 
     if (scope === 'user' || scope === 'both') {
-      targets.add(resolveUserMcpJsonPath({
+      const userMcpJson = resolveUserMcpJsonPath({
         platform: process.platform,
         appName: vscode.env.appName
-      }));
+      });
+      const userCodexToml = resolveUserCodexConfigPath({});
+      targets.set(userMcpJson, { kind: 'mcp-json', filePath: userMcpJson });
+      targets.set(userCodexToml, { kind: 'codex-toml', filePath: userCodexToml });
     }
 
-    return Array.from(targets);
+    return Array.from(targets.values());
+  }
+
+  private upsertTargetConfig(target: McpTargetFile, serverId: string, entry: McpServerConfigEntry): boolean {
+    if (target.kind === 'codex-toml') {
+      return upsertCodexServerConfig(target.filePath, serverId, entry);
+    }
+    return upsertMcpServerConfig(target.filePath, serverId, entry);
   }
 }
 
@@ -230,4 +287,49 @@ function sortRecursively(value: unknown): unknown {
     output[key] = sortRecursively(input[key]);
   });
   return output;
+}
+
+function toTomlString(value: string): string {
+  const escaped = value
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"');
+  return `"${escaped}"`;
+}
+
+function toTomlStringArray(values: string[]): string {
+  return `[${values.map(item => toTomlString(item)).join(', ')}]`;
+}
+
+function upsertTomlSection(content: string, tableName: string, sectionText: string): string {
+  const normalized = content.replace(/\r\n/g, '\n');
+  const lines = normalized.split('\n');
+  const targetHeader = `[${tableName}]`;
+  const start = lines.findIndex(line => line.trim() === targetHeader);
+
+  if (start === -1) {
+    const trimmed = normalized.trimEnd();
+    const prefix = trimmed.length === 0 ? '' : `${trimmed}\n\n`;
+    return `${prefix}${sectionText}`;
+  }
+
+  let end = lines.length;
+  for (let i = start + 1; i < lines.length; i += 1) {
+    if (lines[i].trim().startsWith('[')) {
+      end = i;
+      break;
+    }
+  }
+
+  const before = lines.slice(0, start).join('\n').replace(/\n+$/g, '');
+  const after = lines.slice(end).join('\n').replace(/^\n+/g, '');
+  if (!before && !after) {
+    return sectionText;
+  }
+  if (!before) {
+    return `${sectionText}\n${after}`.replace(/\n{3,}/g, '\n\n');
+  }
+  if (!after) {
+    return `${before}\n\n${sectionText}`.replace(/\n{3,}/g, '\n\n');
+  }
+  return `${before}\n\n${sectionText}\n${after}`.replace(/\n{3,}/g, '\n\n');
 }

@@ -254,7 +254,7 @@
             "both"
           ],
           "default": "workspace",
-          "description": "MCP設定の書き込み先"
+          "description": "MCP設定の書き込み先（mcp.json と Codex用 .codex/config.toml）"
         },
         "textui-designer.mcp.serverId": {
           "type": "string",

@@ -4,7 +4,9 @@ const path = require('path');
 
 describe('mcp-bootstrap-service', () => {
   let upsertMcpServerConfig;
+  let upsertCodexServerConfig;
   let resolveUserMcpJsonPath;
+  let resolveUserCodexConfigPath;
   let resolveMcpServerScriptPath;
   let createMcpServerConfigEntry;
   const tempRoot = path.resolve(__dirname, '../../.tmp-mcp-bootstrap-test');
@@ -12,7 +14,9 @@ describe('mcp-bootstrap-service', () => {
   before(() => {
     ({
       upsertMcpServerConfig,
+      upsertCodexServerConfig,
       resolveUserMcpJsonPath,
+      resolveUserCodexConfigPath,
       resolveMcpServerScriptPath,
       createMcpServerConfigEntry
     } = require('../../out/services/mcp-bootstrap-service'));
@@ -72,6 +76,29 @@ describe('mcp-bootstrap-service', () => {
       env: {}
     });
     assert.strictEqual(p, '/home/test-user/.config/Code/User/mcp.json');
+  });
+
+  it('resolveUserCodexConfigPath はLinuxで~/.codex/config.tomlを返す', () => {
+    const p = resolveUserCodexConfigPath({
+      homeDir: '/home/test-user',
+      env: {}
+    });
+    assert.strictEqual(p, '/home/test-user/.codex/config.toml');
+  });
+
+  it('upsertCodexServerConfig はconfig.tomlへmcp_serversセクションを作成する', () => {
+    const filePath = path.join(tempRoot, '.codex', 'config.toml');
+    const changed = upsertCodexServerConfig(filePath, 'textui-designer', {
+      type: 'stdio',
+      command: '/usr/bin/node',
+      args: ['/opt/textui/server.js']
+    });
+
+    assert.strictEqual(changed, true);
+    const content = fs.readFileSync(filePath, 'utf8');
+    assert.ok(content.includes('[mcp_servers.textui-designer]'));
+    assert.ok(content.includes('command = "/usr/bin/node"'));
+    assert.ok(content.includes('args = ["/opt/textui/server.js"]'));
   });
 
   it('resolveMcpServerScriptPath は拡張配下のout/mcp/server.jsを返す', () => {
