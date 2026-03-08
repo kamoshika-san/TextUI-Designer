@@ -56,9 +56,13 @@ page:
 - Checkbox
 - Radio
 - Select
+- DatePicker
 - Button
 - Container
 - Form
+- Accordion
+- Tabs
+- Table
 
 ---
 

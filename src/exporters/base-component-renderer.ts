@@ -10,6 +10,7 @@ import type {
   CheckboxComponent,
   RadioComponent,
   SelectComponent,
+  DatePickerComponent,
   DividerComponent,
   AlertComponent,
   ContainerComponent,
@@ -37,6 +38,7 @@ export abstract class BaseComponentRenderer implements Exporter {
     Checkbox: 'accent-color',
     Radio: 'accent-color',
     Select: 'border-color',
+    DatePicker: 'border-color',
     Divider: 'border-color',
     Alert: 'border-color',
     Container: 'border-color',
@@ -63,6 +65,7 @@ export abstract class BaseComponentRenderer implements Exporter {
       Checkbox: (props, key) => this.renderCheckbox(props as CheckboxComponent, key),
       Radio: (props, key) => this.renderRadio(props as RadioComponent, key),
       Select: (props, key) => this.renderSelect(props as SelectComponent, key),
+      DatePicker: (props, key) => this.renderDatePicker(props as DatePickerComponent, key),
       Divider: (props, key) => this.renderDivider(props as DividerComponent, key),
       Alert: (props, key) => this.renderAlert(props as AlertComponent, key),
       Container: (props, key) => this.renderContainer(props as ContainerComponent, key),
@@ -165,6 +168,7 @@ export abstract class BaseComponentRenderer implements Exporter {
   protected abstract renderCheckbox(props: CheckboxComponent, key: number): string;
   protected abstract renderRadio(props: RadioComponent, key: number): string;
   protected abstract renderSelect(props: SelectComponent, key: number): string;
+  protected abstract renderDatePicker(props: DatePickerComponent, key: number): string;
   protected abstract renderDivider(props: DividerComponent, key: number): string;
   protected abstract renderAlert(props: AlertComponent, key: number): string;
   protected abstract renderContainer(props: ContainerComponent, key: number): string;

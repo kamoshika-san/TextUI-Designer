@@ -380,6 +380,16 @@ export class TextUICoreEngine {
       return;
     }
 
+    if (componentType === 'DatePicker') {
+      if (typeof props.label !== 'string' || !props.label.trim()) {
+        props.label = '日付';
+      }
+      if (typeof props.name !== 'string' || !props.name.trim()) {
+        props.name = 'date';
+      }
+      return;
+    }
+
     if (componentType === 'Alert') {
       if (typeof props.message !== 'string' || !props.message.trim()) {
         props.message = '通知メッセージ';

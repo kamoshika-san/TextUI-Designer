@@ -79,11 +79,23 @@ export interface SelectComponent {
   token?: string;
 }
 
+export interface DatePickerComponent {
+  label?: string;
+  name?: string;
+  required?: boolean;
+  disabled?: boolean;
+  min?: string;
+  max?: string;
+  value?: string;
+  token?: string;
+}
+
 export interface FormField {
   Input?: InputComponent;
   Checkbox?: CheckboxComponent;
   Radio?: RadioComponent;
   Select?: SelectComponent;
+  DatePicker?: DatePickerComponent;
   Text?: TextComponent;
   Divider?: DividerComponent;
   Alert?: AlertComponent;
@@ -176,6 +188,7 @@ export type ComponentDef =
   | { Container: ContainerComponent }
   | { Radio: RadioComponent }
   | { Select: SelectComponent }
+  | { DatePicker: DatePickerComponent }
   | { Divider: DividerComponent }
   | { Alert: AlertComponent }
   | { Accordion: AccordionComponent }
@@ -221,6 +234,10 @@ export function isRadioComponent(comp: ComponentDef): comp is { Radio: RadioComp
 
 export function isSelectComponent(comp: ComponentDef): comp is { Select: SelectComponent } {
   return 'Select' in comp;
+}
+
+export function isDatePickerComponent(comp: ComponentDef): comp is { DatePicker: DatePickerComponent } {
+  return 'DatePicker' in comp;
 }
 
 export function isDividerComponent(comp: ComponentDef): comp is { Divider: DividerComponent } {
