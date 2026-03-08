@@ -17,6 +17,7 @@ import type {
   ContainerComponent,
   AccordionComponent,
   TabsComponent,
+  TreeViewComponent,
   TableComponent
 } from '../renderer/types';
 import type { ExportOptions, Exporter } from './index';
@@ -47,6 +48,7 @@ export abstract class BaseComponentRenderer implements Exporter {
     Form: 'border-color',
     Accordion: 'border-color',
     Tabs: 'border-color',
+    TreeView: 'border-color',
     Table: 'border-color'
   };
 
@@ -75,6 +77,7 @@ export abstract class BaseComponentRenderer implements Exporter {
       Form: (props, key) => this.renderForm(props as FormComponent, key),
       Accordion: (props, key) => this.renderAccordion(props as AccordionComponent, key),
       Tabs: (props, key) => this.renderTabs(props as TabsComponent, key),
+      TreeView: (props, key) => this.renderTreeView(props as TreeViewComponent, key),
       Table: (props, key) => this.renderTable(props as TableComponent, key)
     };
 
@@ -179,6 +182,7 @@ export abstract class BaseComponentRenderer implements Exporter {
   protected abstract renderForm(props: FormComponent, key: number): string;
   protected abstract renderAccordion(props: AccordionComponent, key: number): string;
   protected abstract renderTabs(props: TabsComponent, key: number): string;
+  protected abstract renderTreeView(props: TreeViewComponent, key: number): string;
   protected abstract renderTable(props: TableComponent, key: number): string;
 
   protected getStyleManager(): typeof StyleManager {

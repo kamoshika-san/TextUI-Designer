@@ -166,6 +166,7 @@ export interface ThemeComponents {
   radio?: Record<string, Record<string, string>>;
   divider?: Record<string, Record<string, string>>;
   spacer?: Record<string, Record<string, string>>;
+  treeview?: Record<string, Record<string, string>>;
   alert?: Record<string, Record<string, string>>;
   text?: Record<string, Record<string, string>>;
   container?: Record<string, Record<string, string>>;

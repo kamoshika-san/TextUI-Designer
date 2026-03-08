@@ -13,7 +13,12 @@ export interface ComponentBlueprint {
   components?: ComponentBlueprint[];
   fields?: ComponentBlueprint[];
   actions?: ComponentBlueprint[];
-  items?: Array<Record<string, unknown> & { components?: ComponentBlueprint[] }>;
+  items?: TreeViewBlueprintItem[] | Array<Record<string, unknown> & { components?: ComponentBlueprint[] }>;
+}
+
+export interface TreeViewBlueprintItem extends Record<string, unknown> {
+  components?: ComponentBlueprint[];
+  children?: TreeViewBlueprintItem[];
 }
 
 export interface GenerateUiRequest {
@@ -243,6 +248,10 @@ export class TextUICoreEngine {
       });
     }
 
+    if (component.type === 'TreeView' && component.items) {
+      props.items = this.buildTreeViewItems(component.items as TreeViewBlueprintItem[]);
+    }
+
     return {
       [component.type]: props
     } as unknown as ComponentDef;
@@ -411,6 +420,13 @@ export class TextUICoreEngine {
       return;
     }
 
+    if (componentType === 'TreeView') {
+      if (!Array.isArray(props.items) || props.items.length === 0) {
+        props.items = [{ label: 'ルート', expanded: true, children: [{ label: '子ノード' }] }];
+      }
+      return;
+    }
+
     if (componentType === 'Table') {
       if (!Array.isArray(props.columns) || props.columns.length === 0) {
         props.columns = [{ key: 'name', header: '名称' }];
@@ -428,6 +444,19 @@ export class TextUICoreEngine {
       .replace(/[^a-z0-9]+/g, '_')
       .replace(/^_+|_+$/g, '');
     return normalized || 'field';
+  }
+
+  private buildTreeViewItems(items: TreeViewBlueprintItem[]): Array<Record<string, unknown>> {
+    return items.map(item => {
+      const next: Record<string, unknown> = { ...item };
+      if (item.components) {
+        next.components = item.components.map(child => this.buildComponent(child));
+      }
+      if (item.children) {
+        next.children = this.buildTreeViewItems(item.children);
+      }
+      return next;
+    });
   }
 
   async getSupportedProviders(): Promise<string[]> {
