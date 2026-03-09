@@ -9,6 +9,7 @@ import { HtmlExporter } from '../exporters/html-exporter';
 
 export interface PreviewCaptureOptions {
   outputPath: string;
+  themePath?: string;
   width?: number;
   height?: number;
   scale?: number;
@@ -80,7 +81,10 @@ export async function capturePreviewImageFromDsl(
   const browserPath = resolveBrowserPath(options.browserPath);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
-  const html = await new HtmlExporter().export(dsl, { format: 'html' });
+  const html = await new HtmlExporter().export(dsl, {
+    format: 'html',
+    themePath: options.themePath
+  });
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-preview-capture-'));
   const htmlPath = path.join(tempDir, 'preview.html');
 

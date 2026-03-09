@@ -177,7 +177,9 @@ theme:
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-mcp-capture-test-'));
     const dslPath = path.join(tmpDir, 'sample.tui.yml');
     const outPath = path.join(tmpDir, 'preview.png');
+    const themePath = path.join(tmpDir, 'theme.yml');
     fs.writeFileSync(dslPath, 'page:\n  id: mcp-capture\n  title: "MCP Capture"\n  layout: vertical\n  components: []\n', 'utf8');
+    fs.writeFileSync(themePath, 'theme:\n  name: "MCP Theme"\n', 'utf8');
 
     try {
       let capturedRunCliArgs = null;
@@ -203,6 +205,7 @@ theme:
           arguments: {
             dslFile: dslPath,
             output: outPath,
+            themePath,
             browser: '/tmp/forbidden-browser-path'
           }
         }
@@ -218,6 +221,8 @@ theme:
       assert.ok(capturedRunCliArgs.args.includes('capture'));
       assert.ok(capturedRunCliArgs.args.includes('--file'));
       assert.ok(capturedRunCliArgs.args.includes(dslPath));
+      assert.ok(capturedRunCliArgs.args.includes('--theme'));
+      assert.ok(capturedRunCliArgs.args.includes(themePath));
       assert.ok(!capturedRunCliArgs.args.includes('--browser'));
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
