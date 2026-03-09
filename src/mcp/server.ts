@@ -19,6 +19,7 @@ const CLI_SUPPORTED_ROOT_COMMANDS = new Set([
   'plan',
   'apply',
   'export',
+  'capture',
   'import',
   'state',
   'providers',
@@ -124,7 +125,7 @@ const TOOLS: ToolDefinition[] = [
   },
   {
     name: 'run_cli',
-    description: 'TextUI CLIコマンドをMCP経由で実行します（validate/plan/apply/export/import/state/providers/version対応）。',
+    description: 'TextUI CLIコマンドをMCP経由で実行します（validate/plan/apply/export/capture/import/state/providers/version対応）。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -147,6 +148,52 @@ const TOOLS: ToolDefinition[] = [
         }
       },
       required: ['args']
+    }
+  },
+  {
+    name: 'capture_preview',
+    description: 'DSLファイルからプレビュー画像(PNG)を生成します。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        dslFile: {
+          type: 'string',
+          description: '対象の .tui.yml / .tui.yaml ファイルパス'
+        },
+        output: {
+          type: 'string',
+          description: '出力PNGファイルパス'
+        },
+        cwd: {
+          type: 'string',
+          description: '相対パス解決に使うカレントディレクトリ'
+        },
+        width: {
+          type: 'number',
+          description: 'キャプチャ幅(px)'
+        },
+        height: {
+          type: 'number',
+          description: 'キャプチャ高さ(px)'
+        },
+        scale: {
+          type: 'number',
+          description: 'device scale factor'
+        },
+        waitMs: {
+          type: 'number',
+          description: '描画待機時間(ms)'
+        },
+        browser: {
+          type: 'string',
+          description: 'ヘッドレスブラウザ実行パス'
+        },
+        timeoutMs: {
+          type: 'number',
+          description: 'CLI実行タイムアウト(ms)。省略時120000'
+        }
+      },
+      required: ['dslFile']
     }
   }
 ];
@@ -372,6 +419,8 @@ export class TextUiMcpServer {
       structuredContent = await engine.listComponents();
     } else if (name === 'run_cli') {
       structuredContent = await this.runCli(args);
+    } else if (name === 'capture_preview') {
+      structuredContent = await this.capturePreview(args);
     } else {
       throw new Error(`Unknown tool: ${name}`);
     }
@@ -385,6 +434,60 @@ export class TextUiMcpServer {
         }
       ]
     };
+  }
+
+  private async capturePreview(args: Record<string, unknown>): Promise<{
+    command: string;
+    cwd: string;
+    exitCode: number;
+    timedOut: boolean;
+    stdout: string;
+    stderr: string;
+    parsedJson?: unknown;
+  }> {
+    const dslFile = this.getObjectValue(args, 'dslFile');
+    if (!dslFile) {
+      throw new Error('capture_preview requires dslFile');
+    }
+
+    const cliArgs: string[] = ['capture', '--file', dslFile, '--json'];
+    const output = this.getObjectValue(args, 'output');
+    const width = this.getObjectNumber(args, 'width');
+    const height = this.getObjectNumber(args, 'height');
+    const scale = this.getObjectNumber(args, 'scale');
+    const waitMs = this.getObjectNumber(args, 'waitMs');
+    const browser = this.getObjectValue(args, 'browser');
+    if (output) {
+      cliArgs.push('--output', output);
+    }
+    if (width !== undefined) {
+      cliArgs.push('--width', String(width));
+    }
+    if (height !== undefined) {
+      cliArgs.push('--height', String(height));
+    }
+    if (scale !== undefined) {
+      cliArgs.push('--scale', String(scale));
+    }
+    if (waitMs !== undefined) {
+      cliArgs.push('--wait-ms', String(waitMs));
+    }
+    if (browser) {
+      cliArgs.push('--browser', browser);
+    }
+
+    const response = await this.runCli({
+      args: cliArgs,
+      cwd: this.getObjectValue(args, 'cwd'),
+      timeoutMs: this.getObjectNumber(args, 'timeoutMs'),
+      parseJson: true
+    });
+
+    if (response.exitCode !== 0) {
+      throw new Error(`capture_preview failed: ${response.stderr || response.stdout}`.trim());
+    }
+
+    return response;
   }
 
   private async readResource(uri: string): Promise<unknown> {

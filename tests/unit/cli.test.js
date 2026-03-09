@@ -11,6 +11,8 @@ describe('TextUI CLI Sprint1', () => {
   const dirSampleFile = path.join(tmpDir, 'nested', 'dir-sample.tui.yml');
   const stateFile = path.join(tmpDir, 'state.json');
   const outFile = path.join(tmpDir, 'result.html');
+  const captureOutFile = path.join(tmpDir, 'preview.png');
+  const captureMockBrowser = path.join(tmpDir, 'mock-browser.js');
   const providerModuleFile = path.join(tmpDir, 'custom-provider.cjs');
   const invalidProviderModuleFile = path.join(tmpDir, 'invalid-provider.cjs');
   const mismatchProviderModuleFile = path.join(tmpDir, 'mismatch-provider.cjs');
@@ -48,6 +50,22 @@ module.exports = {
   }
 };
 `, 'utf8');
+
+    fs.writeFileSync(captureMockBrowser, `#!/usr/bin/env node
+const fs = require('fs');
+const path = require('path');
+const screenshotArg = process.argv.find(arg => arg.startsWith('--screenshot='));
+if (!screenshotArg) {
+  process.stderr.write('missing --screenshot');
+  process.exit(2);
+}
+const target = screenshotArg.slice('--screenshot='.length);
+fs.mkdirSync(path.dirname(target), { recursive: true });
+const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMBAANQ8Z8AAAAASUVORK5CYII=', 'base64');
+fs.writeFileSync(target, png);
+process.exit(0);
+`, 'utf8');
+    fs.chmodSync(captureMockBrowser, 0o755);
   });
 
   afterEach(() => {
@@ -453,6 +471,26 @@ page:
     const parsed = JSON.parse(output);
     assert.strictEqual(parsed.deterministic, true);
     assert.ok(fs.existsSync(outFile));
+  });
+
+  it('capture writes preview image using mock browser', () => {
+    const result = spawnSync('node', [
+      cliPath,
+      'capture',
+      '--file',
+      sampleFile,
+      '--output',
+      captureOutFile,
+      '--browser',
+      captureMockBrowser,
+      '--json'
+    ], { encoding: 'utf8' });
+
+    assert.strictEqual(result.status, 0);
+    const parsed = JSON.parse(result.stdout);
+    assert.strictEqual(parsed.captured, true);
+    assert.ok(fs.existsSync(captureOutFile));
+    assert.ok(parsed.browserPath.includes('mock-browser.js'));
   });
 
   it('export resolves token value into HTML inline style', () => {
