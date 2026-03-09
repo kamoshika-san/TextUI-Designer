@@ -1,209 +1,23 @@
-import type { ComponentBlueprint } from '../core/textui-core-engine';
 import { StdioJsonRpcTransport, type JsonRpcMessage, type JsonRpcRequest, type JsonRpcResponse } from './stdio-jsonrpc';
 import * as path from 'path';
-import { spawn } from 'child_process';
-
-interface ToolDefinition {
-  name: string;
-  description: string;
-  inputSchema: Record<string, unknown>;
-}
+import { CliRunner, type CliRunResponse } from './cli-runner';
+import { TOOLS } from './tool-manifest';
+import { createToolHandlers } from './tools/tool-handlers';
 
 const SERVER_INFO = {
   name: 'textui-designer-mcp',
   version: '0.1.0'
 } as const;
 
-const CLI_SUPPORTED_ROOT_COMMANDS = new Set([
-  'validate',
-  'plan',
-  'apply',
-  'export',
-  'capture',
-  'import',
-  'state',
-  'providers',
-  'version',
-  'help',
-  '--help',
-  '-h'
-]);
-
-const TOOLS: ToolDefinition[] = [
-  {
-    name: 'generate_ui',
-    description: 'コンポーネント定義からTextUI DSLを生成し、必要ならコードへ変換します。',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        title: { type: 'string', description: '画面タイトル' },
-        pageId: { type: 'string', description: 'ページID(省略時はタイトルから自動生成)' },
-        layout: { type: 'string', description: 'レイアウト名(例: vertical)' },
-        components: {
-          type: 'array',
-          description: 'コンポーネント青写真',
-          items: {
-            type: 'object',
-            properties: {
-              type: { type: 'string' },
-              props: { type: 'object' },
-              components: { type: 'array' },
-              fields: { type: 'array' },
-              actions: { type: 'array' },
-              items: { type: 'array' }
-            },
-            required: ['type']
-          }
-        },
-        format: { type: 'string', description: 'html/react/pug/vue/svelteなど' },
-        providerModulePath: { type: 'string', description: '外部providerモジュールパス' },
-        themePath: { type: 'string', description: 'HTML出力時に適用するテーマファイルパス' }
-      },
-      required: ['title']
-    }
-  },
-  {
-    name: 'validate_ui',
-    description: 'YAML/JSON DSLを検証し、診断と修正ヒントを返します。',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        dsl: {
-          oneOf: [
-            { type: 'string' },
-            { type: 'object' }
-          ]
-        },
-        sourcePath: { type: 'string' },
-        skipTokenValidation: { type: 'boolean' }
-      },
-      required: ['dsl']
-    }
-  },
-  {
-    name: 'explain_error',
-    description: '診断結果を短い原因説明と修正候補に要約します。',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        diagnostics: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              level: { type: 'string' },
-              path: { type: 'string' },
-              message: { type: 'string' }
-            },
-            required: ['message']
-          }
-        }
-      },
-      required: ['diagnostics']
-    }
-  },
-  {
-    name: 'preview_schema',
-    description: 'TextUIスキーマを返します。jsonPointerで部分取得できます。',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        schema: {
-          type: 'string',
-          enum: ['main', 'template', 'theme']
-        },
-        jsonPointer: { type: 'string' }
-      }
-    }
-  },
-  {
-    name: 'list_components',
-    description: '利用可能なTextUIコンポーネント一覧を返します。',
-    inputSchema: {
-      type: 'object',
-      properties: {}
-    }
-  },
-  {
-    name: 'run_cli',
-    description: 'TextUI CLIコマンドをMCP経由で実行します（validate/plan/apply/export/capture/import/state/providers/version対応）。',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        args: {
-          type: 'array',
-          description: 'textui のサブコマンド以降の引数配列。例: ["validate", "--file", "sample.tui.yml", "--json"]',
-          items: { type: 'string' }
-        },
-        cwd: {
-          type: 'string',
-          description: 'CLIを実行するカレントディレクトリ。省略時はMCPサーバープロセスのcwd。'
-        },
-        timeoutMs: {
-          type: 'number',
-          description: 'CLI実行タイムアウト(ms)。省略時は120000。'
-        },
-        parseJson: {
-          type: 'boolean',
-          description: 'stdoutをJSONとして解析して返す（既定: true）。'
-        }
-      },
-      required: ['args']
-    }
-  },
-  {
-    name: 'capture_preview',
-    description: 'DSLファイルからプレビュー画像(PNG)を生成します。',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        dslFile: {
-          type: 'string',
-          description: '対象の .tui.yml / .tui.yaml ファイルパス'
-        },
-        output: {
-          type: 'string',
-          description: '出力PNGファイルパス'
-        },
-        themePath: {
-          type: 'string',
-          description: '適用するテーマファイルパス（CLIの --theme に相当）'
-        },
-        cwd: {
-          type: 'string',
-          description: '相対パス解決に使うカレントディレクトリ'
-        },
-        width: {
-          type: 'number',
-          description: 'キャプチャ幅(px)'
-        },
-        height: {
-          type: 'number',
-          description: 'キャプチャ高さ(px)'
-        },
-        scale: {
-          type: 'number',
-          description: 'device scale factor'
-        },
-        waitMs: {
-          type: 'number',
-          description: '描画待機時間(ms)'
-        },
-        timeoutMs: {
-          type: 'number',
-          description: 'CLI実行タイムアウト(ms)。省略時120000'
-        }
-      },
-      required: ['dslFile']
-    }
-  }
-];
 
 export class TextUiMcpServer {
   private coreEnginePromise: Promise<import('../core/textui-core-engine').TextUICoreEngine> | null = null;
   private catalogPromise: Promise<ReturnType<typeof import('../core/component-catalog').getTextUiComponentCatalog>> | null = null;
+  private readonly cliRunner: CliRunner;
 
-  constructor() {}
+  constructor() {
+    this.cliRunner = new CliRunner();
+  }
 
   private async getCoreEngine(): Promise<import('../core/textui-core-engine').TextUICoreEngine> {
     if (!this.coreEnginePromise) {
@@ -373,60 +187,22 @@ export class TextUiMcpServer {
       throw new Error('tools/call requires name');
     }
 
-    const engine = await this.getCoreEngine();
-    let structuredContent: unknown;
-    if (name === 'generate_ui') {
-      structuredContent = await engine.generateUi({
-        title: this.getObjectValue(args, 'title') ?? '',
-        pageId: this.getObjectValue(args, 'pageId'),
-        layout: this.getObjectValue(args, 'layout'),
-        components: this.getObjectArray(args, 'components') as unknown as ComponentBlueprint[] | undefined,
-        format: this.getObjectValue(args, 'format'),
-        providerModulePath: this.getObjectValue(args, 'providerModulePath'),
-        themePath: this.getObjectValue(args, 'themePath')
-      });
-    } else if (name === 'validate_ui') {
-      const rawDsl = this.getObjectUnknown(args, 'dsl');
-      if (rawDsl === undefined) {
-        throw new Error('validate_ui requires dsl');
-      }
-      structuredContent = engine.validateUi({
-        dsl: (rawDsl as string | Record<string, unknown>),
-        sourcePath: this.getObjectValue(args, 'sourcePath'),
-        skipTokenValidation: this.getObjectBoolean(args, 'skipTokenValidation')
-      });
-    } else if (name === 'explain_error') {
-      const diagnostics = this.getObjectUnknown(args, 'diagnostics');
-      if (!Array.isArray(diagnostics)) {
-        throw new Error('explain_error requires diagnostics');
-      }
-      structuredContent = engine.explainError({
-        diagnostics: diagnostics
-          .filter(item => item && typeof item === 'object')
-          .map(item => {
-            const value = item as Record<string, unknown>;
-            return {
-              message: typeof value.message === 'string' ? value.message : 'unknown error',
-              path: typeof value.path === 'string' ? value.path : '/',
-              level: value.level === 'warning' ? 'warning' : 'error'
-            };
-          })
-      });
-    } else if (name === 'preview_schema') {
-      structuredContent = engine.previewSchema({
-        schema: (this.getObjectValue(args, 'schema') as 'main' | 'template' | 'theme' | undefined),
-        jsonPointer: this.getObjectValue(args, 'jsonPointer')
-      });
-    } else if (name === 'list_components') {
-      structuredContent = await engine.listComponents();
-    } else if (name === 'run_cli') {
-      structuredContent = await this.runCli(args);
-    } else if (name === 'capture_preview') {
-      structuredContent = await this.capturePreview(args);
-    } else {
+    const toolHandlers = createToolHandlers({
+      engine: await this.getCoreEngine(),
+      args,
+      getObjectValue: this.getObjectValue.bind(this),
+      getObjectUnknown: this.getObjectUnknown.bind(this),
+      getObjectBoolean: this.getObjectBoolean.bind(this),
+      getObjectArray: this.getObjectArray.bind(this),
+      runCli: this.runCli.bind(this),
+      capturePreview: this.capturePreview.bind(this)
+    });
+    const handler = toolHandlers[name];
+    if (!handler) {
       throw new Error(`Unknown tool: ${name}`);
     }
 
+    const structuredContent = await handler();
     return {
       structuredContent,
       content: [
@@ -438,15 +214,7 @@ export class TextUiMcpServer {
     };
   }
 
-  private async capturePreview(args: Record<string, unknown>): Promise<{
-    command: string;
-    cwd: string;
-    exitCode: number;
-    timedOut: boolean;
-    stdout: string;
-    stderr: string;
-    parsedJson?: unknown;
-  }> {
+  private async capturePreview(args: Record<string, unknown>): Promise<CliRunResponse> {
     const dslFile = this.getObjectValue(args, 'dslFile');
     if (!dslFile) {
       throw new Error('capture_preview requires dslFile');
@@ -601,111 +369,17 @@ export class TextUiMcpServer {
     throw new Error(`Unknown prompt: ${name}`);
   }
 
-  private async runCli(args: Record<string, unknown>): Promise<{
-    command: string;
-    cwd: string;
-    exitCode: number;
-    timedOut: boolean;
-    stdout: string;
-    stderr: string;
-    parsedJson?: unknown;
-  }> {
+  private async runCli(args: Record<string, unknown>): Promise<CliRunResponse> {
     const rawArgs = this.getObjectStringArray(args, 'args');
     if (!rawArgs || rawArgs.length === 0) {
       throw new Error('run_cli requires args (string[])');
     }
-
-    const rootCommand = rawArgs[0];
-    if (!CLI_SUPPORTED_ROOT_COMMANDS.has(rootCommand)) {
-      throw new Error(`run_cli unsupported command: ${rootCommand}`);
-    }
-    if (rootCommand === 'capture' && hasForbiddenCaptureArg(rawArgs)) {
-      throw new Error('run_cli capture does not allow --browser or --allow-no-sandbox via MCP');
-    }
-
-    const cwdArg = this.getObjectValue(args, 'cwd');
-    const cwd = cwdArg ? path.resolve(cwdArg) : process.cwd();
-    const timeoutMs = this.getObjectNumber(args, 'timeoutMs') ?? 120000;
-    const parseJson = this.getObjectBoolean(args, 'parseJson') ?? true;
-    const cliEntry = path.resolve(__dirname, '../cli/index.js');
-    const nodeArgs = [cliEntry, ...rawArgs];
-
-    const { code, stdout, stderr, timedOut } = await new Promise<{
-      code: number;
-      stdout: string;
-      stderr: string;
-      timedOut: boolean;
-    }>((resolve, reject) => {
-      const child = spawn(process.execPath, nodeArgs, {
-        cwd,
-        stdio: ['ignore', 'pipe', 'pipe']
-      });
-      let stdout = '';
-      let stderr = '';
-      let timedOut = false;
-      let timeoutHandle: NodeJS.Timeout | undefined;
-
-      if (timeoutMs > 0) {
-        timeoutHandle = setTimeout(() => {
-          timedOut = true;
-          child.kill('SIGTERM');
-        }, timeoutMs);
-      }
-
-      child.stdout.on('data', chunk => {
-        stdout += chunk.toString();
-      });
-      child.stderr.on('data', chunk => {
-        stderr += chunk.toString();
-      });
-      child.on('error', error => {
-        if (timeoutHandle) {
-          clearTimeout(timeoutHandle);
-        }
-        reject(error);
-      });
-      child.on('close', code => {
-        if (timeoutHandle) {
-          clearTimeout(timeoutHandle);
-        }
-        resolve({
-          code: code ?? (timedOut ? 124 : 1),
-          stdout,
-          stderr,
-          timedOut
-        });
-      });
+    return this.cliRunner.run({
+      args: rawArgs,
+      cwd: this.getObjectValue(args, 'cwd'),
+      timeoutMs: this.getObjectNumber(args, 'timeoutMs'),
+      parseJson: this.getObjectBoolean(args, 'parseJson')
     });
-
-    const response: {
-      command: string;
-      cwd: string;
-      exitCode: number;
-      timedOut: boolean;
-      stdout: string;
-      stderr: string;
-      parsedJson?: unknown;
-    } = {
-      command: `textui ${rawArgs.join(' ')}`.trim(),
-      cwd,
-      exitCode: code,
-      timedOut,
-      stdout,
-      stderr
-    };
-
-    if (parseJson) {
-      const trimmed = stdout.trim();
-      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-        try {
-          response.parsedJson = JSON.parse(trimmed) as unknown;
-        } catch {
-          // 非JSON出力の場合はparsedJsonを未設定のまま返す
-        }
-      }
-    }
-
-    return response;
   }
 
   private getObject(value: unknown, key: string): Record<string, unknown> {
@@ -759,14 +433,6 @@ export class TextUiMcpServer {
   private getObjectUnknown(value: Record<string, unknown>, key: string): unknown {
     return value[key];
   }
-}
-
-function hasForbiddenCaptureArg(args: string[]): boolean {
-  return args.some(arg =>
-    arg === '--browser'
-    || arg.startsWith('--browser=')
-    || arg === '--allow-no-sandbox'
-  );
 }
 
 export function runMcpServer(): void {
