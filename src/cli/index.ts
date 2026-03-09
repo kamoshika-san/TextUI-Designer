@@ -257,6 +257,7 @@ async function applyAcrossFiles(params: {
   stateArg?: string;
   json: boolean;
 }): Promise<ExitCode> {
+  const providerVersion = await getProviderVersion(params.provider, { providerModulePath: params.providerModulePath });
   const validation = validateAcrossFiles(params.filePaths, params.tokenOnError !== 'error');
   if (!validation.valid) {
     if (params.json) {
@@ -313,9 +314,21 @@ async function applyAcrossFiles(params: {
     });
     const state = loadState(statePath);
     const initialStateFingerprint = getStateFingerprint(state);
-    const plan = buildPlan(loaded.dsl, findStateForFile(state, loaded.sourcePath));
+    const execution = await applyForFile({
+      loaded,
+      statePath,
+      outputPath,
+      planState: findStateForFile(state, loaded.sourcePath),
+      expectedStateFingerprint: initialStateFingerprint,
+      provider: params.provider,
+      providerVersion,
+      providerModulePath: params.providerModulePath,
+      themePath: params.themePath,
+      deterministic: params.deterministic,
+      tokenOnError: params.tokenOnError
+    });
 
-    if (!plan.hasChanges) {
+    if (!execution.applied) {
       results.push({
         file: loaded.sourcePath,
         output: outputPath,
@@ -327,51 +340,19 @@ async function applyAcrossFiles(params: {
       continue;
     }
 
-    const tokenResolution = resolveDslTokens({
-      dsl: loaded.dsl,
-      sourcePath: loaded.sourcePath,
-      onError: params.tokenOnError
-    });
-    if (params.tokenOnError === 'warn' && tokenResolution.issues.length > 0) {
-      emitTokenWarnings(tokenResolution.issues);
-    }
-
-    const content = await renderWithDeterministicCheck({
-      dsl: tokenResolution.dsl,
-      provider: params.provider,
-      providerModulePath: params.providerModulePath,
-      themePath: params.themePath,
-      deterministic: params.deterministic
-    });
-    ensureDirectoryForFile(outputPath);
-    fs.writeFileSync(outputPath, content, 'utf8');
-
-    const nextState = buildState({
-      entry: path.relative(process.cwd(), loaded.sourcePath),
-      provider: params.provider,
-      providerVersion: await getProviderVersion(params.provider, { providerModulePath: params.providerModulePath }),
-      dsl: tokenResolution.dsl,
-      dslRaw: loaded.raw,
-      artifacts: [{ file: path.relative(process.cwd(), outputPath), content }]
-    });
-
-    const latestState = loadState(statePath);
-    const latestStateFingerprint = getStateFingerprint(latestState);
-    if (latestStateFingerprint !== initialStateFingerprint) {
+    if (execution.conflict) {
       process.stderr.write(`state conflict detected: ${loaded.sourcePath}\n`);
       return 4;
     }
-
-    saveState(statePath, nextState);
-    totalChanges += plan.changes.length;
-    totalTokenWarnings += tokenResolution.issues.length;
+    totalChanges += execution.changes;
+    totalTokenWarnings += execution.tokenWarnings;
     results.push({
       file: loaded.sourcePath,
       output: outputPath,
       state: statePath,
-      changes: plan.changes.length,
+      changes: execution.changes,
       applied: true,
-      tokenWarnings: tokenResolution.issues.length
+      tokenWarnings: execution.tokenWarnings
     });
   }
 
@@ -403,15 +384,598 @@ async function applyAcrossFiles(params: {
   return 0;
 }
 
+interface ApplyForFileParams {
+  loaded: ReturnType<typeof loadDslFromFile>;
+  statePath: string;
+  outputPath: string;
+  planState: CliState | null;
+  expectedStateFingerprint: string;
+  provider: CliProvider;
+  providerVersion: string;
+  providerModulePath?: string;
+  themePath?: string;
+  deterministic: boolean;
+  tokenOnError: TokenErrorMode;
+}
+
+interface ApplyForFileResult {
+  applied: boolean;
+  conflict: boolean;
+  changes: number;
+  tokenWarnings: number;
+}
+
+async function applyForFile(params: ApplyForFileParams): Promise<ApplyForFileResult> {
+  const plan = buildPlan(params.loaded.dsl, params.planState);
+  if (!plan.hasChanges) {
+    return {
+      applied: false,
+      conflict: false,
+      changes: 0,
+      tokenWarnings: 0
+    };
+  }
+
+  const tokenResolution = resolveDslTokens({
+    dsl: params.loaded.dsl,
+    sourcePath: params.loaded.sourcePath,
+    onError: params.tokenOnError
+  });
+  if (params.tokenOnError === 'warn' && tokenResolution.issues.length > 0) {
+    emitTokenWarnings(tokenResolution.issues);
+  }
+
+  const content = await renderWithDeterministicCheck({
+    dsl: tokenResolution.dsl,
+    provider: params.provider,
+    providerModulePath: params.providerModulePath,
+    themePath: params.themePath,
+    deterministic: params.deterministic
+  });
+  ensureDirectoryForFile(params.outputPath);
+  fs.writeFileSync(params.outputPath, content, 'utf8');
+
+  const nextState = buildState({
+    entry: path.relative(process.cwd(), params.loaded.sourcePath),
+    provider: params.provider,
+    providerVersion: params.providerVersion,
+    dsl: tokenResolution.dsl,
+    dslRaw: params.loaded.raw,
+    artifacts: [{ file: path.relative(process.cwd(), params.outputPath), content }]
+  });
+
+  const latestState = loadState(params.statePath);
+  const latestStateFingerprint = getStateFingerprint(latestState);
+  if (latestStateFingerprint !== params.expectedStateFingerprint) {
+    return {
+      applied: true,
+      conflict: true,
+      changes: 0,
+      tokenWarnings: 0
+    };
+  }
+
+  saveState(params.statePath, nextState);
+  return {
+    applied: true,
+    conflict: false,
+    changes: plan.changes.length,
+    tokenWarnings: tokenResolution.issues.length
+  };
+}
+
+function printHelp(): void {
+  process.stdout.write('Usage: textui <validate|plan|apply|export|capture|import|state|providers|version> ...\n');
+  process.stdout.write('Options: --provider <name> --provider-module <path> --theme <path> --file <path> --dir <path> --json --token-on-error <error|warn|ignore>\n');
+  process.stdout.write('Capture: textui capture --file <path> [--output <png>] [--theme <path>] [--width <px>] [--height <px>] [--scale <n>] [--wait-ms <ms>] [--browser <path|name>] [--allow-no-sandbox] [--json]\n');
+  process.stdout.write('Import: textui import openapi --input <openapi.(yml|yaml|json)> [--operation <operationId>] [--all] [--output <file>|--output-dir <dir>] [--json]\n');
+}
+
+async function handleImportCommand(): Promise<ExitCode> {
+  const sub = process.argv[3];
+  if (sub !== 'openapi') {
+    process.stderr.write(`unsupported import target: ${sub ?? '(missing)'}\n`);
+    return 1;
+  }
+
+  const inputPathArg = getArg('--input');
+  if (!inputPathArg) {
+    process.stderr.write('import openapi requires --input <path>\n');
+    return 1;
+  }
+
+  const inputPath = path.resolve(inputPathArg);
+  const importAll = hasFlag('--all');
+  const operationId = getArg('--operation');
+  if (importAll && operationId) {
+    process.stderr.write('import openapi: --all and --operation cannot be used together\n');
+    return 1;
+  }
+
+  if (importAll) {
+    const outputDir = path.resolve(getArg('--output-dir') ?? getArg('--output') ?? 'generated/from-openapi');
+    fs.mkdirSync(outputDir, { recursive: true });
+    const importedList = importAllOpenApiToDsl({ inputPath });
+    const files = importedList.map(item => {
+      const safeName = item.operationId.replace(/[^A-Za-z0-9_.-]+/g, '-').replace(/^-+|-+$/g, '');
+      const filePath = path.join(outputDir, `${safeName || 'operation'}.tui.yml`);
+      ensureDirectoryForFile(filePath);
+      fs.writeFileSync(filePath, item.yaml, 'utf8');
+      return {
+        operationId: item.operationId,
+        sourceOperation: item.sourceOperation,
+        fields: item.fields,
+        output: filePath
+      };
+    });
+
+    if (hasFlag('--json')) {
+      printJson({
+        imported: true,
+        mode: 'all',
+        input: inputPath,
+        generated: files.length,
+        files
+      });
+    } else {
+      process.stdout.write(`Imported ${files.length} OpenAPI operations -> ${outputDir}\n`);
+      files.forEach(file => {
+        process.stdout.write(`  - ${file.operationId} (${file.sourceOperation}) -> ${file.output} [fields=${file.fields}]\n`);
+      });
+    }
+    return 0;
+  }
+
+  const imported = importOpenApiToDsl({
+    inputPath,
+    operationId
+  });
+  const output = path.resolve(getArg('--output') ?? 'generated/from-openapi.tui.yml');
+  ensureDirectoryForFile(output);
+  fs.writeFileSync(output, imported.yaml, 'utf8');
+
+  if (hasFlag('--json')) {
+    printJson({
+      imported: true,
+      mode: 'single',
+      input: inputPath,
+      output,
+      operationId: imported.operationId,
+      sourceOperation: imported.sourceOperation,
+      fields: imported.fields
+    });
+  } else {
+    process.stdout.write(`Imported OpenAPI operation ${imported.operationId} -> ${output}\n`);
+    process.stdout.write(`  source: ${imported.sourceOperation}\n`);
+    process.stdout.write(`  fields: ${imported.fields}\n`);
+  }
+
+  return 0;
+}
+
+async function handleProvidersCommand(): Promise<ExitCode> {
+  const providerModulePath = getArg('--provider-module');
+  const builtinNames = await getSupportedProviderNames();
+  const providers = await Promise.all(
+    builtinNames.map(async name => ({
+      name,
+      extension: await getProviderExtension(name),
+      version: await getProviderVersion(name),
+      source: 'builtin'
+    }))
+  );
+
+  if (providerModulePath) {
+    const externalProvider = await loadExternalProvider(providerModulePath);
+    providers.push({
+      name: externalProvider.name,
+      extension: externalProvider.extension,
+      version: externalProvider.version,
+      source: 'external'
+    });
+    providers.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  if (hasFlag('--json')) {
+    printJson({ providers });
+  } else {
+    providers.forEach(provider => {
+      process.stdout.write(`${provider.name}\t${provider.extension}\t${provider.version}\n`);
+    });
+  }
+
+  return 0;
+}
+
+function handleStateCommand(): ExitCode {
+  const sub = process.argv[3] ?? 'show';
+  const statePath = path.resolve(getArg('--state') ?? DEFAULT_STATE_PATH);
+  const state = loadState(statePath);
+
+  if (sub === 'show' || sub === 'pull') {
+    if (!state) {
+      process.stderr.write(`state not found: ${statePath}\n`);
+      return 1;
+    }
+    if (hasFlag('--json')) {
+      printJson(state);
+    } else {
+      process.stdout.write(`${stateToStableJson(state)}\n`);
+    }
+    return 0;
+  }
+
+  if (sub === 'push') {
+    const payload = loadStatePayload(getArg('--input')) as CliState;
+    saveState(statePath, payload);
+    if (hasFlag('--json')) {
+      printJson({ pushed: true, state: statePath, resources: payload.resources?.length ?? 0 });
+    } else {
+      process.stdout.write(`state pushed: ${statePath}\n`);
+    }
+    return 0;
+  }
+
+  if (sub === 'rm') {
+    if (!state) {
+      process.stderr.write(`state not found: ${statePath}\n`);
+      return 1;
+    }
+    const id = getArg('--id');
+    if (!id) {
+      process.stderr.write('state rm requires --id <resource-id>\n');
+      return 1;
+    }
+    const before = state.resources.length;
+    state.resources = state.resources.filter(resource => resource.id !== id);
+    saveState(statePath, state);
+    const removed = before - state.resources.length;
+    if (hasFlag('--json')) {
+      printJson({ removed, id, state: statePath });
+    } else {
+      process.stdout.write(`removed ${removed} resource(s): ${id}\n`);
+    }
+    return 0;
+  }
+
+  process.stderr.write(`unsupported state command: ${sub}\n`);
+  return 1;
+}
+
+async function handleCaptureCommand(fileArg: string | undefined, dirArg: string | undefined): Promise<ExitCode> {
+  if (dirArg) {
+    process.stderr.write('capture does not support --dir. use --file <path>\n');
+    return 1;
+  }
+
+  const filePath = resolveDslFile(fileArg);
+  const loaded = loadDslFromFile(filePath);
+  const validation = validateDsl(loaded.dsl, {
+    sourcePath: loaded.sourcePath,
+    skipTokenValidation: true
+  });
+  if (!validation.valid) {
+    if (hasFlag('--json')) {
+      printJson({ valid: false, issues: validation.issues });
+    } else {
+      validation.issues.forEach(issue => {
+        process.stderr.write(`✖ ${issue.path ?? '/'} ${issue.message}\n`);
+      });
+    }
+    return 2;
+  }
+
+  const output = path.resolve(getArg('--output') ?? `generated/${stripDslExtension(path.basename(filePath))}.preview.png`);
+  const themePath = parseThemePath();
+  const width = parseOptionalPositiveInt('--width');
+  const height = parseOptionalPositiveInt('--height');
+  const scale = parseOptionalPositiveNumber('--scale');
+  const waitMs = parseOptionalNonNegativeInt('--wait-ms');
+  const browserPath = getArg('--browser');
+  const allowNoSandbox = hasFlag('--allow-no-sandbox');
+  ensureDirectoryForFile(output);
+
+  const result = await capturePreviewImageFromDsl(loaded.dsl, {
+    outputPath: output,
+    themePath,
+    width,
+    height,
+    scale,
+    waitMs,
+    browserPath,
+    allowNoSandbox
+  });
+  const bytes = fs.statSync(output).size;
+
+  if (hasFlag('--json')) {
+    printJson({
+      captured: true,
+      file: loaded.sourcePath,
+      output,
+      bytes,
+      width: result.width,
+      height: result.height,
+      browserPath: result.browserPath,
+      themePath
+    });
+  } else {
+    process.stdout.write(`Captured preview image: ${output}\n`);
+    process.stdout.write(`  file: ${loaded.sourcePath}\n`);
+    process.stdout.write(`  size: ${result.width}x${result.height}\n`);
+    process.stdout.write(`  bytes: ${bytes}\n`);
+    process.stdout.write(`  browser: ${result.browserPath}\n`);
+    if (themePath) {
+      process.stdout.write(`  theme: ${themePath}\n`);
+    }
+  }
+  return 0;
+}
+
+function handleValidateCommand(fileArg: string | undefined, dirArg: string | undefined): ExitCode {
+  const filePaths = resolveDslFiles(fileArg, dirArg);
+  const summary = validateAcrossFiles(filePaths);
+
+  if (hasFlag('--json')) {
+    if (fileArg) {
+      printJson({ valid: summary.valid, issues: summary.issues });
+    } else {
+      printJson(summary);
+    }
+  } else if (fileArg) {
+    const filePath = resolveDslFile(fileArg);
+    if (summary.valid) {
+      process.stdout.write(`✔ valid: ${filePath}\n`);
+    } else {
+      summary.issues.forEach(issue => {
+        process.stderr.write(`✖ ${issue.path ?? '/'} ${issue.message}\n`);
+      });
+    }
+  } else {
+    if (summary.files.length === 0) {
+      process.stdout.write('No DSL files found.\n');
+    }
+    summary.files.forEach(file => {
+      if (file.valid) {
+        process.stdout.write(`✔ valid: ${file.file}\n`);
+      } else {
+        process.stderr.write(`✖ invalid: ${file.file}\n`);
+        file.issues.forEach(issue => {
+          process.stderr.write(`  - ${issue.path ?? '/'} ${issue.message}\n`);
+        });
+      }
+    });
+  }
+
+  return summary.valid ? 0 : 2;
+}
+
+function handlePlanCommand(
+  fileArg: string | undefined,
+  dirArg: string | undefined,
+  state: CliState | null
+): ExitCode {
+  const filePaths = resolveDslFiles(fileArg, dirArg);
+  const validation = validateAcrossFiles(filePaths);
+  if (!validation.valid) {
+    if (hasFlag('--json')) {
+      printJson(validation);
+    }
+    return 2;
+  }
+
+  const plan = planAcrossFiles(filePaths, state);
+
+  if (hasFlag('--json')) {
+    if (fileArg) {
+      printJson({ hasChanges: plan.hasChanges, changes: plan.files[0]?.changes ?? [] });
+    } else {
+      printJson(plan);
+    }
+  } else if (fileArg) {
+    const filePlan = plan.files[0];
+    if (!filePlan || !filePlan.hasChanges) {
+      process.stdout.write('No changes.\n');
+    } else {
+      filePlan.changes.forEach(change => {
+        process.stdout.write(`${change.op} ${change.type}[id=${change.id}] @ ${change.path}${change.details ? ` (${change.details})` : ''}\n`);
+      });
+    }
+  } else {
+    if (plan.files.length === 0) {
+      process.stdout.write('No DSL files found.\n');
+    }
+    plan.files.forEach(filePlan => {
+      if (!filePlan.hasChanges) {
+        process.stdout.write(`No changes: ${filePlan.file}\n`);
+        return;
+      }
+      process.stdout.write(`Changes: ${filePlan.file}\n`);
+      filePlan.changes.forEach(change => {
+        process.stdout.write(`  ${change.op} ${change.type}[id=${change.id}] @ ${change.path}${change.details ? ` (${change.details})` : ''}\n`);
+      });
+    });
+  }
+
+  const out = getArg('--out');
+  if (out) {
+    ensureDirectoryForFile(path.resolve(out));
+    fs.writeFileSync(path.resolve(out), `${JSON.stringify(plan, null, 2)}\n`, 'utf8');
+  }
+  return plan.hasChanges ? 3 : 0;
+}
+
+async function handleExportCommand(fileArg: string | undefined): Promise<ExitCode> {
+  const providerModulePath = getArg('--provider-module');
+  const provider = (getArg('--provider') ?? 'html') as CliProvider;
+  const themePath = parseThemePath();
+
+  const filePath = resolveDslFile(fileArg);
+  const loaded = loadDslFromFile(filePath);
+  if (!await isSupportedProvider(provider, { providerModulePath })) {
+    process.stderr.write(`unsupported provider: ${provider}\n`);
+    const supportedProviders = await getSupportedProviderNames({ providerModulePath });
+    process.stderr.write(`supported providers: ${supportedProviders.join(', ')}\n`);
+    return 1;
+  }
+  const deterministic = hasFlag('--deterministic');
+  const tokenOnError = parseTokenErrorMode();
+  const validation = validateDsl(loaded.dsl, {
+    sourcePath: loaded.sourcePath,
+    skipTokenValidation: tokenOnError !== 'error'
+  });
+  if (!validation.valid) {
+    return 2;
+  }
+
+  const tokenResolution = resolveDslTokens({
+    dsl: loaded.dsl,
+    sourcePath: loaded.sourcePath,
+    onError: tokenOnError
+  });
+  if (tokenOnError === 'warn' && tokenResolution.issues.length > 0) {
+    emitTokenWarnings(tokenResolution.issues);
+  }
+
+  const content = await renderWithDeterministicCheck({
+    dsl: tokenResolution.dsl,
+    provider,
+    providerModulePath,
+    themePath,
+    deterministic
+  });
+  const providerExtension = await getProviderExtension(provider, { providerModulePath });
+  const output = path.resolve(getArg('--output') ?? `generated/textui${providerExtension}`);
+  ensureDirectoryForFile(output);
+  fs.writeFileSync(output, content, 'utf8');
+
+  if (hasFlag('--json')) {
+    printJson({
+      output,
+      provider,
+      bytes: Buffer.byteLength(content, 'utf8'),
+      deterministic,
+      themePath,
+      tokenOnError,
+      tokenWarnings: tokenResolution.issues.length
+    });
+  } else {
+    process.stdout.write(`Exported: ${output}\n`);
+    if (tokenResolution.issues.length > 0) {
+      process.stdout.write(`token-warnings: ${tokenResolution.issues.length}\n`);
+    }
+  }
+  return 0;
+}
+
+async function handleApplyCommand(params: {
+  fileArg: string | undefined;
+  dirArg: string | undefined;
+  statePath: string;
+  state: CliState | null;
+  initialStateFingerprint: string;
+}): Promise<ExitCode> {
+  const providerModulePath = getArg('--provider-module');
+  const provider = (getArg('--provider') ?? 'html') as CliProvider;
+  const themePath = parseThemePath();
+
+  if (!await isSupportedProvider(provider, { providerModulePath })) {
+    process.stderr.write(`unsupported provider: ${provider}\n`);
+    const supportedProviders = await getSupportedProviderNames({ providerModulePath });
+    process.stderr.write(`supported providers: ${supportedProviders.join(', ')}\n`);
+    return 1;
+  }
+  const deterministic = hasFlag('--deterministic');
+  const tokenOnError = parseTokenErrorMode();
+  if (params.dirArg) {
+    const filePaths = resolveDslFiles(params.fileArg, params.dirArg);
+    return applyAcrossFiles({
+      filePaths,
+      rootDir: path.resolve(params.dirArg),
+      provider,
+      providerModulePath,
+      themePath,
+      deterministic,
+      tokenOnError,
+      autoApprove: hasFlag('--auto-approve'),
+      outputArg: getArg('--output'),
+      stateArg: getArg('--state'),
+      json: hasFlag('--json')
+    });
+  }
+
+  const filePath = resolveDslFile(params.fileArg);
+  const loaded = loadDslFromFile(filePath);
+  const validation = validateDsl(loaded.dsl, {
+    sourcePath: loaded.sourcePath,
+    skipTokenValidation: tokenOnError !== 'error'
+  });
+  if (!validation.valid) {
+    return 2;
+  }
+
+  const previewPlan = buildPlan(loaded.dsl, params.state);
+  if (!previewPlan.hasChanges) {
+    process.stdout.write('No changes. apply skipped.\n');
+    return 0;
+  }
+
+  if (!hasFlag('--auto-approve')) {
+    process.stderr.write('apply requires --auto-approve in non-interactive mode\n');
+    return 1;
+  }
+
+  const providerExtension = await getProviderExtension(provider, { providerModulePath });
+  const outputPath = path.resolve(getArg('--output') ?? `generated/textui${providerExtension}`);
+  const providerVersion = await getProviderVersion(provider, { providerModulePath });
+  const execution = await applyForFile({
+    loaded,
+    statePath: params.statePath,
+    outputPath,
+    planState: params.state,
+    expectedStateFingerprint: params.initialStateFingerprint,
+    provider,
+    providerVersion,
+    providerModulePath,
+    themePath,
+    deterministic,
+    tokenOnError
+  });
+
+  if (!execution.applied) {
+    process.stdout.write('No changes. apply skipped.\n');
+    return 0;
+  }
+  if (execution.conflict) {
+    process.stderr.write('state conflict detected: state changed since plan calculation\n');
+    return 4;
+  }
+
+  if (hasFlag('--json')) {
+    printJson({
+      applied: true,
+      output: outputPath,
+      state: params.statePath,
+      changes: execution.changes,
+      deterministic,
+      themePath,
+      tokenOnError,
+      tokenWarnings: execution.tokenWarnings
+    });
+  } else {
+    process.stdout.write(`Applied ${execution.changes} change(s). state: ${params.statePath}\n`);
+    if (execution.tokenWarnings > 0) {
+      process.stdout.write(`token-warnings: ${execution.tokenWarnings}\n`);
+    }
+  }
+  return 0;
+}
+
 
 async function run(): Promise<ExitCode> {
   const command = process.argv[2];
 
   if (!command || command === 'help' || command === '--help' || command === '-h') {
-    process.stdout.write('Usage: textui <validate|plan|apply|export|capture|import|state|providers|version> ...\n');
-    process.stdout.write('Options: --provider <name> --provider-module <path> --theme <path> --file <path> --dir <path> --json --token-on-error <error|warn|ignore>\n');
-    process.stdout.write('Capture: textui capture --file <path> [--output <png>] [--theme <path>] [--width <px>] [--height <px>] [--scale <n>] [--wait-ms <ms>] [--browser <path|name>] [--allow-no-sandbox] [--json]\n');
-    process.stdout.write('Import: textui import openapi --input <openapi.(yml|yaml|json)> [--operation <operationId>] [--all] [--output <file>|--output-dir <dir>] [--json]\n');
+    printHelp();
     return 0;
   }
 
@@ -421,286 +985,28 @@ async function run(): Promise<ExitCode> {
   }
 
   if (command === 'import') {
-    const sub = process.argv[3];
-    if (sub !== 'openapi') {
-      process.stderr.write(`unsupported import target: ${sub ?? '(missing)'}\n`);
-      return 1;
-    }
-
-    const inputPathArg = getArg('--input');
-    if (!inputPathArg) {
-      process.stderr.write('import openapi requires --input <path>\n');
-      return 1;
-    }
-
-    const inputPath = path.resolve(inputPathArg);
-    const importAll = hasFlag('--all');
-    const operationId = getArg('--operation');
-    if (importAll && operationId) {
-      process.stderr.write('import openapi: --all and --operation cannot be used together\n');
-      return 1;
-    }
-
-    if (importAll) {
-      const outputDir = path.resolve(getArg('--output-dir') ?? getArg('--output') ?? 'generated/from-openapi');
-      fs.mkdirSync(outputDir, { recursive: true });
-      const importedList = importAllOpenApiToDsl({ inputPath });
-      const files = importedList.map(item => {
-        const safeName = item.operationId.replace(/[^A-Za-z0-9_.-]+/g, '-').replace(/^-+|-+$/g, '');
-        const filePath = path.join(outputDir, `${safeName || 'operation'}.tui.yml`);
-        ensureDirectoryForFile(filePath);
-        fs.writeFileSync(filePath, item.yaml, 'utf8');
-        return {
-          operationId: item.operationId,
-          sourceOperation: item.sourceOperation,
-          fields: item.fields,
-          output: filePath
-        };
-      });
-
-      if (hasFlag('--json')) {
-        printJson({
-          imported: true,
-          mode: 'all',
-          input: inputPath,
-          generated: files.length,
-          files
-        });
-      } else {
-        process.stdout.write(`Imported ${files.length} OpenAPI operations -> ${outputDir}\n`);
-        files.forEach(file => {
-          process.stdout.write(`  - ${file.operationId} (${file.sourceOperation}) -> ${file.output} [fields=${file.fields}]\n`);
-        });
-      }
-      return 0;
-    }
-
-    const imported = importOpenApiToDsl({
-      inputPath,
-      operationId
-    });
-    const output = path.resolve(getArg('--output') ?? 'generated/from-openapi.tui.yml');
-    ensureDirectoryForFile(output);
-    fs.writeFileSync(output, imported.yaml, 'utf8');
-
-    if (hasFlag('--json')) {
-      printJson({
-        imported: true,
-        mode: 'single',
-        input: inputPath,
-        output,
-        operationId: imported.operationId,
-        sourceOperation: imported.sourceOperation,
-        fields: imported.fields
-      });
-    } else {
-      process.stdout.write(`Imported OpenAPI operation ${imported.operationId} -> ${output}\n`);
-      process.stdout.write(`  source: ${imported.sourceOperation}\n`);
-      process.stdout.write(`  fields: ${imported.fields}\n`);
-    }
-
-    return 0;
+    return handleImportCommand();
   }
 
 
 
   if (command === 'providers') {
-    const providerModulePath = getArg('--provider-module');
-    const builtinNames = await getSupportedProviderNames();
-    const providers = await Promise.all(
-      builtinNames.map(async name => ({
-        name,
-        extension: await getProviderExtension(name),
-        version: await getProviderVersion(name),
-        source: 'builtin'
-      }))
-    );
-
-    if (providerModulePath) {
-      const externalProvider = await loadExternalProvider(providerModulePath);
-      providers.push({
-        name: externalProvider.name,
-        extension: externalProvider.extension,
-        version: externalProvider.version,
-        source: 'external'
-      });
-      providers.sort((a, b) => a.name.localeCompare(b.name));
-    }
-
-    if (hasFlag('--json')) {
-      printJson({ providers });
-    } else {
-      providers.forEach(provider => {
-        process.stdout.write(`${provider.name}\t${provider.extension}\t${provider.version}\n`);
-      });
-    }
-
-    return 0;
+    return handleProvidersCommand();
   }
 
   if (command === 'state') {
-    const sub = process.argv[3] ?? 'show';
-    const statePath = path.resolve(getArg('--state') ?? DEFAULT_STATE_PATH);
-    const state = loadState(statePath);
-
-    if (sub === 'show' || sub === 'pull') {
-      if (!state) {
-        process.stderr.write(`state not found: ${statePath}\n`);
-        return 1;
-      }
-      if (hasFlag('--json')) {
-        printJson(state);
-      } else {
-        process.stdout.write(`${stateToStableJson(state)}\n`);
-      }
-      return 0;
-    }
-
-    if (sub === 'push') {
-      const payload = loadStatePayload(getArg('--input')) as CliState;
-      saveState(statePath, payload);
-      if (hasFlag('--json')) {
-        printJson({ pushed: true, state: statePath, resources: payload.resources?.length ?? 0 });
-      } else {
-        process.stdout.write(`state pushed: ${statePath}\n`);
-      }
-      return 0;
-    }
-
-    if (sub === 'rm') {
-      if (!state) {
-        process.stderr.write(`state not found: ${statePath}\n`);
-        return 1;
-      }
-      const id = getArg('--id');
-      if (!id) {
-        process.stderr.write('state rm requires --id <resource-id>\n');
-        return 1;
-      }
-      const before = state.resources.length;
-      state.resources = state.resources.filter(resource => resource.id !== id);
-      saveState(statePath, state);
-      const removed = before - state.resources.length;
-      if (hasFlag('--json')) {
-        printJson({ removed, id, state: statePath });
-      } else {
-        process.stdout.write(`removed ${removed} resource(s): ${id}\n`);
-      }
-      return 0;
-    }
-
-    process.stderr.write(`unsupported state command: ${sub}\n`);
-    return 1;
+    return handleStateCommand();
   }
 
   const fileArg = getArg('--file');
   const dirArg = getArg('--dir');
 
   if (command === 'capture') {
-    if (dirArg) {
-      process.stderr.write('capture does not support --dir. use --file <path>\n');
-      return 1;
-    }
-
-    const filePath = resolveDslFile(fileArg);
-    const loaded = loadDslFromFile(filePath);
-    const validation = validateDsl(loaded.dsl, {
-      sourcePath: loaded.sourcePath,
-      skipTokenValidation: true
-    });
-    if (!validation.valid) {
-      if (hasFlag('--json')) {
-        printJson({ valid: false, issues: validation.issues });
-      } else {
-        validation.issues.forEach(issue => {
-          process.stderr.write(`✖ ${issue.path ?? '/'} ${issue.message}\n`);
-        });
-      }
-      return 2;
-    }
-
-    const output = path.resolve(getArg('--output') ?? `generated/${stripDslExtension(path.basename(filePath))}.preview.png`);
-    const themePath = parseThemePath();
-    const width = parseOptionalPositiveInt('--width');
-    const height = parseOptionalPositiveInt('--height');
-    const scale = parseOptionalPositiveNumber('--scale');
-    const waitMs = parseOptionalNonNegativeInt('--wait-ms');
-    const browserPath = getArg('--browser');
-    const allowNoSandbox = hasFlag('--allow-no-sandbox');
-    ensureDirectoryForFile(output);
-
-    const result = await capturePreviewImageFromDsl(loaded.dsl, {
-      outputPath: output,
-      themePath,
-      width,
-      height,
-      scale,
-      waitMs,
-      browserPath,
-      allowNoSandbox
-    });
-    const bytes = fs.statSync(output).size;
-
-    if (hasFlag('--json')) {
-      printJson({
-        captured: true,
-        file: loaded.sourcePath,
-        output,
-        bytes,
-        width: result.width,
-        height: result.height,
-        browserPath: result.browserPath,
-        themePath
-      });
-    } else {
-      process.stdout.write(`Captured preview image: ${output}\n`);
-      process.stdout.write(`  file: ${loaded.sourcePath}\n`);
-      process.stdout.write(`  size: ${result.width}x${result.height}\n`);
-      process.stdout.write(`  bytes: ${bytes}\n`);
-      process.stdout.write(`  browser: ${result.browserPath}\n`);
-      if (themePath) {
-        process.stdout.write(`  theme: ${themePath}\n`);
-      }
-    }
-    return 0;
+    return handleCaptureCommand(fileArg, dirArg);
   }
 
   if (command === 'validate') {
-    const filePaths = resolveDslFiles(fileArg, dirArg);
-    const summary = validateAcrossFiles(filePaths);
-
-    if (hasFlag('--json')) {
-      if (fileArg) {
-        printJson({ valid: summary.valid, issues: summary.issues });
-      } else {
-        printJson(summary);
-      }
-    } else if (fileArg) {
-      const filePath = resolveDslFile(fileArg);
-      if (summary.valid) {
-        process.stdout.write(`✔ valid: ${filePath}\n`);
-      } else {
-        summary.issues.forEach(issue => {
-          process.stderr.write(`✖ ${issue.path ?? '/'} ${issue.message}\n`);
-        });
-      }
-    } else {
-      if (summary.files.length === 0) {
-        process.stdout.write('No DSL files found.\n');
-      }
-      summary.files.forEach(file => {
-        if (file.valid) {
-          process.stdout.write(`✔ valid: ${file.file}\n`);
-        } else {
-          process.stderr.write(`✖ invalid: ${file.file}\n`);
-          file.issues.forEach(issue => {
-            process.stderr.write(`  - ${issue.path ?? '/'} ${issue.message}\n`);
-          });
-        }
-      });
-    }
-
-    return summary.valid ? 0 : 2;
+    return handleValidateCommand(fileArg, dirArg);
   }
 
   const statePath = path.resolve(getArg('--state') ?? DEFAULT_STATE_PATH);
@@ -708,222 +1014,21 @@ async function run(): Promise<ExitCode> {
   const initialStateFingerprint = getStateFingerprint(state);
 
   if (command === 'plan') {
-    const filePaths = resolveDslFiles(fileArg, dirArg);
-    const validation = validateAcrossFiles(filePaths);
-    if (!validation.valid) {
-      if (hasFlag('--json')) {
-        printJson(validation);
-      }
-      return 2;
-    }
-
-    const plan = planAcrossFiles(filePaths, state);
-
-    if (hasFlag('--json')) {
-      if (fileArg) {
-        printJson({ hasChanges: plan.hasChanges, changes: plan.files[0]?.changes ?? [] });
-      } else {
-        printJson(plan);
-      }
-    } else if (fileArg) {
-      const filePlan = plan.files[0];
-      if (!filePlan || !filePlan.hasChanges) {
-        process.stdout.write('No changes.\n');
-      } else {
-        filePlan.changes.forEach(change => {
-          process.stdout.write(`${change.op} ${change.type}[id=${change.id}] @ ${change.path}${change.details ? ` (${change.details})` : ''}\n`);
-        });
-      }
-    } else {
-      if (plan.files.length === 0) {
-        process.stdout.write('No DSL files found.\n');
-      }
-      plan.files.forEach(filePlan => {
-        if (!filePlan.hasChanges) {
-          process.stdout.write(`No changes: ${filePlan.file}\n`);
-          return;
-        }
-        process.stdout.write(`Changes: ${filePlan.file}\n`);
-        filePlan.changes.forEach(change => {
-          process.stdout.write(`  ${change.op} ${change.type}[id=${change.id}] @ ${change.path}${change.details ? ` (${change.details})` : ''}\n`);
-        });
-      });
-    }
-
-    const out = getArg('--out');
-    if (out) {
-      ensureDirectoryForFile(path.resolve(out));
-      fs.writeFileSync(path.resolve(out), `${JSON.stringify(plan, null, 2)}\n`, 'utf8');
-    }
-    return plan.hasChanges ? 3 : 0;
+    return handlePlanCommand(fileArg, dirArg, state);
   }
 
-  const providerModulePath = getArg('--provider-module');
-  const provider = (getArg('--provider') ?? 'html') as CliProvider;
-  const themePath = parseThemePath();
-
   if (command === 'export') {
-    const filePath = resolveDslFile(fileArg);
-    const loaded = loadDslFromFile(filePath);
-    if (!await isSupportedProvider(provider, { providerModulePath })) {
-      process.stderr.write(`unsupported provider: ${provider}\n`);
-      const supportedProviders = await getSupportedProviderNames({ providerModulePath });
-      process.stderr.write(`supported providers: ${supportedProviders.join(', ')}\n`);
-      return 1;
-    }
-    const deterministic = hasFlag('--deterministic');
-    const tokenOnError = parseTokenErrorMode();
-    const validation = validateDsl(loaded.dsl, {
-      sourcePath: loaded.sourcePath,
-      skipTokenValidation: tokenOnError !== 'error'
-    });
-    if (!validation.valid) {
-      return 2;
-    }
-
-    const tokenResolution = resolveDslTokens({
-      dsl: loaded.dsl,
-      sourcePath: loaded.sourcePath,
-      onError: tokenOnError
-    });
-    if (tokenOnError === 'warn' && tokenResolution.issues.length > 0) {
-      emitTokenWarnings(tokenResolution.issues);
-    }
-
-    const content = await renderWithDeterministicCheck({
-      dsl: tokenResolution.dsl,
-      provider,
-      providerModulePath,
-      themePath,
-      deterministic
-    });
-    const providerExtension = await getProviderExtension(provider, { providerModulePath });
-    const output = path.resolve(getArg('--output') ?? `generated/textui${providerExtension}`);
-    ensureDirectoryForFile(output);
-    fs.writeFileSync(output, content, 'utf8');
-
-    if (hasFlag('--json')) {
-      printJson({
-        output,
-        provider,
-        bytes: Buffer.byteLength(content, 'utf8'),
-        deterministic,
-        themePath,
-        tokenOnError,
-        tokenWarnings: tokenResolution.issues.length
-      });
-    } else {
-      process.stdout.write(`Exported: ${output}\n`);
-      if (tokenResolution.issues.length > 0) {
-        process.stdout.write(`token-warnings: ${tokenResolution.issues.length}\n`);
-      }
-    }
-    return 0;
+    return handleExportCommand(fileArg);
   }
 
   if (command === 'apply') {
-    if (!await isSupportedProvider(provider, { providerModulePath })) {
-      process.stderr.write(`unsupported provider: ${provider}\n`);
-      const supportedProviders = await getSupportedProviderNames({ providerModulePath });
-      process.stderr.write(`supported providers: ${supportedProviders.join(', ')}\n`);
-      return 1;
-    }
-    const deterministic = hasFlag('--deterministic');
-    const tokenOnError = parseTokenErrorMode();
-    if (dirArg) {
-      const filePaths = resolveDslFiles(fileArg, dirArg);
-      return applyAcrossFiles({
-        filePaths,
-        rootDir: path.resolve(dirArg),
-        provider,
-        providerModulePath,
-        themePath,
-        deterministic,
-        tokenOnError,
-        autoApprove: hasFlag('--auto-approve'),
-        outputArg: getArg('--output'),
-        stateArg: getArg('--state'),
-        json: hasFlag('--json')
-      });
-    }
-    const filePath = resolveDslFile(fileArg);
-    const loaded = loadDslFromFile(filePath);
-    const validation = validateDsl(loaded.dsl, {
-      sourcePath: loaded.sourcePath,
-      skipTokenValidation: tokenOnError !== 'error'
+    return handleApplyCommand({
+      fileArg,
+      dirArg,
+      statePath,
+      state,
+      initialStateFingerprint
     });
-    if (!validation.valid) {
-      return 2;
-    }
-
-    const plan = buildPlan(loaded.dsl, state);
-    if (!plan.hasChanges) {
-      process.stdout.write('No changes. apply skipped.\n');
-      return 0;
-    }
-
-    if (!hasFlag('--auto-approve')) {
-      process.stderr.write('apply requires --auto-approve in non-interactive mode\n');
-      return 1;
-    }
-
-    const tokenResolution = resolveDslTokens({
-      dsl: loaded.dsl,
-      sourcePath: loaded.sourcePath,
-      onError: tokenOnError
-    });
-    if (tokenOnError === 'warn' && tokenResolution.issues.length > 0) {
-      emitTokenWarnings(tokenResolution.issues);
-    }
-
-    const content = await renderWithDeterministicCheck({
-      dsl: tokenResolution.dsl,
-      provider,
-      providerModulePath,
-      themePath,
-      deterministic
-    });
-    const providerExtension = await getProviderExtension(provider, { providerModulePath });
-    const output = path.resolve(getArg('--output') ?? `generated/textui${providerExtension}`);
-    ensureDirectoryForFile(output);
-    fs.writeFileSync(output, content, 'utf8');
-
-    const nextState = buildState({
-      entry: path.relative(process.cwd(), loaded.sourcePath),
-      provider,
-      providerVersion: await getProviderVersion(provider, { providerModulePath }),
-      dsl: tokenResolution.dsl,
-      dslRaw: loaded.raw,
-      artifacts: [{ file: path.relative(process.cwd(), output), content }]
-    });
-
-    const latestState = loadState(statePath);
-    const latestStateFingerprint = getStateFingerprint(latestState);
-    if (latestStateFingerprint !== initialStateFingerprint) {
-      process.stderr.write('state conflict detected: state changed since plan calculation\n');
-      return 4;
-    }
-
-    saveState(statePath, nextState);
-
-    if (hasFlag('--json')) {
-      printJson({
-        applied: true,
-        output,
-        state: statePath,
-        changes: plan.changes.length,
-        deterministic,
-        themePath,
-        tokenOnError,
-        tokenWarnings: tokenResolution.issues.length
-      });
-    } else {
-      process.stdout.write(`Applied ${plan.changes.length} change(s). state: ${statePath}\n`);
-      if (tokenResolution.issues.length > 0) {
-        process.stdout.write(`token-warnings: ${tokenResolution.issues.length}\n`);
-      }
-    }
-    return 0;
   }
 
   process.stderr.write(`unknown command: ${command}\n`);
