@@ -56,7 +56,8 @@ const TOOLS: ToolDefinition[] = [
           }
         },
         format: { type: 'string', description: 'html/react/pug/vue/svelteなど' },
-        providerModulePath: { type: 'string', description: '外部providerモジュールパス' }
+        providerModulePath: { type: 'string', description: '外部providerモジュールパス' },
+        themePath: { type: 'string', description: 'HTML出力時に適用するテーマファイルパス' }
       },
       required: ['title']
     }
@@ -377,7 +378,8 @@ export class TextUiMcpServer {
         layout: this.getObjectValue(args, 'layout'),
         components: this.getObjectArray(args, 'components') as unknown as ComponentBlueprint[] | undefined,
         format: this.getObjectValue(args, 'format'),
-        providerModulePath: this.getObjectValue(args, 'providerModulePath')
+        providerModulePath: this.getObjectValue(args, 'providerModulePath'),
+        themePath: this.getObjectValue(args, 'themePath')
       });
     } else if (name === 'validate_ui') {
       const rawDsl = this.getObjectUnknown(args, 'dsl');

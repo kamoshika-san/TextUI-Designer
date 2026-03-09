@@ -91,7 +91,7 @@ export class ServiceInitializer {
       const exportManager: IExportManager = f.createExportManager
         ? f.createExportManager()
         : new ExportManager();
-      const exportService: IExportService = new ExportService(exportManager);
+      const exportService: IExportService = new ExportService(exportManager, themeManager);
 
       const templateService: ITemplateService = f.createTemplateService
         ? f.createTemplateService()

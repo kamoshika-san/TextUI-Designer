@@ -60,6 +60,44 @@ describe('TextUiMcpServer', () => {
     assert.strictEqual(response.result.structuredContent.validation.valid, true);
   });
 
+  it('tools/call generate_ui は themePath 指定でHTMLへテーマ変数を埋め込む', async () => {
+    const server = new TextUiMcpServer();
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-mcp-theme-test-'));
+    const themePath = path.join(tmpDir, 'custom-theme.yml');
+    fs.writeFileSync(themePath, `
+theme:
+  name: "MCP Theme"
+  tokens:
+    color:
+      primary: "#334455"
+      text:
+        primary: "#f9fafb"
+`, 'utf8');
+
+    try {
+      const response = await server.handleMessage({
+        jsonrpc: '2.0',
+        id: 31,
+        method: 'tools/call',
+        params: {
+          name: 'generate_ui',
+          arguments: {
+            title: 'テーマ付き生成',
+            format: 'html',
+            themePath
+          }
+        }
+      });
+
+      assert.ok(response.result);
+      const exported = response.result.structuredContent.exportedCode;
+      assert.ok(typeof exported === 'string');
+      assert.match(exported, /--color-primary:\s*#334455\s*!important;/);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
   it('resources/read がschemaを返す', async () => {
     const server = new TextUiMcpServer();
     const response = await server.handleMessage({
