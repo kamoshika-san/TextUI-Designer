@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 import * as YAML from 'yaml';
-import Ajv, { ErrorObject } from 'ajv';
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import { ErrorObject } from 'ajv';
 import { SchemaDefinition } from '../../types';
 import { PerformanceMonitor } from '../../utils/performance-monitor';
-import { ConfigManager } from '../../utils/config-manager';
+import { YamlContentReader } from './yaml-content-reader';
+import { YamlIncludeResolver } from './yaml-include-resolver';
+import { YamlSchemaValidator } from './yaml-schema-validator';
 
 export interface YamlSchemaLoader {
   loadSchema(): Promise<SchemaDefinition>;
@@ -39,12 +39,20 @@ export interface SchemaErrorInfo {
  */
 export class YamlParser {
   private performanceMonitor: PerformanceMonitor;
-  private schemaLoader?: YamlSchemaLoader;
   private readonly MAX_YAML_SIZE: number = 1024 * 1024; // 1MB制限
+  private readonly contentReader: YamlContentReader;
+  private readonly includeResolver: YamlIncludeResolver;
+  private readonly schemaValidator: YamlSchemaValidator;
 
   constructor(schemaLoader?: YamlSchemaLoader) {
     this.performanceMonitor = PerformanceMonitor.getInstance();
-    this.schemaLoader = schemaLoader;
+    this.contentReader = new YamlContentReader(
+      this.getDefaultSampleYaml(),
+      () => vscode.window.activeTextEditor,
+      filePath => Promise.resolve(vscode.workspace.openTextDocument(filePath))
+    );
+    this.includeResolver = new YamlIncludeResolver((content, fileName) => this.parseYamlContent(content, fileName));
+    this.schemaValidator = new YamlSchemaValidator(schemaLoader);
   }
 
   /**
@@ -52,31 +60,14 @@ export class YamlParser {
    */
   async parseYamlFile(filePath?: string): Promise<ParsedYamlResult> {
     return this.performanceMonitor.measureRenderTime(async () => {
-      const activeEditor = vscode.window.activeTextEditor;
-      let yamlContent = '';
-      let fileName = '';
-
-      if (activeEditor && ConfigManager.isSupportedFile(activeEditor.document.fileName)) {
-        yamlContent = activeEditor.document.getText();
-        fileName = activeEditor.document.fileName;
-        console.log(`[YamlParser] アクティブエディタからYAMLを取得: ${fileName}`);
-      } else if (filePath) {
-        // 指定されたファイルを使用
-        const document = await vscode.workspace.openTextDocument(filePath);
-        yamlContent = document.getText();
-        fileName = filePath;
-      } else {
-        // デフォルトのサンプルデータ
-        yamlContent = this.getDefaultSampleYaml();
-        fileName = 'sample.tui.yml';
-      }
+      const { content: yamlContent, fileName } = await this.contentReader.read(filePath);
 
       // ファイルサイズ制限をチェック
       this.validateFileSize(yamlContent, fileName);
 
       // YAMLパース処理を非同期で実行
       const yaml = await this.parseYamlContent(yamlContent, fileName);
-      const resolvedYaml = await this.resolveTemplateIncludes(yaml, fileName, new Set<string>());
+      const resolvedYaml = await this.includeResolver.resolve(yaml, fileName);
 
       // スキーマバリデーションを実行
       await this.validateYamlSchema(resolvedYaml, yamlContent, fileName);
@@ -111,119 +102,6 @@ export class YamlParser {
   }
 
   /**
-   * $include を再帰的に解決
-   */
-  private async resolveTemplateIncludes(node: unknown, currentFile: string, includeStack: Set<string>): Promise<unknown> {
-    if (Array.isArray(node)) {
-      const resolvedItems: unknown[] = [];
-
-      for (const item of node) {
-        if (this.isIncludeDirective(item)) {
-          const included = await this.loadInclude(item.$include, currentFile, includeStack);
-          const flattened = Array.isArray(included) ? included : [included];
-          resolvedItems.push(...flattened);
-          continue;
-        }
-
-        resolvedItems.push(await this.resolveTemplateIncludes(item, currentFile, includeStack));
-      }
-
-      return resolvedItems;
-    }
-
-    if (this.isRecord(node)) {
-      const resolvedObject: Record<string, unknown> = {};
-
-      for (const [key, value] of Object.entries(node)) {
-        resolvedObject[key] = await this.resolveTemplateIncludes(value, currentFile, includeStack);
-      }
-
-      return resolvedObject;
-    }
-
-    return node;
-  }
-
-  private async loadInclude(
-    includeSpec: { template: string; params?: Record<string, unknown> },
-    currentFile: string,
-    includeStack: Set<string>
-  ): Promise<unknown> {
-    const baseDir = path.dirname(currentFile);
-    const includePath = path.resolve(baseDir, includeSpec.template);
-
-    if (includeStack.has(includePath)) {
-      const error = new Error(`循環参照を検出しました: ${[...includeStack, includePath].join(' -> ')}`);
-      error.name = 'YamlParseError';
-      throw error;
-    }
-
-    includeStack.add(includePath);
-
-    try {
-      const includeContent = await fs.readFile(includePath, 'utf-8');
-      const includeYaml = await this.parseYamlContent(includeContent, includePath);
-      const withParams = this.applyIncludeParams(includeYaml, includeSpec.params ?? {});
-
-      return await this.resolveTemplateIncludes(withParams, includePath, includeStack);
-    } catch (error: unknown) {
-      if (error instanceof Error && error.name === 'YamlParseError') {
-        throw error;
-      }
-
-      const fileError = new Error(`テンプレート読み込みに失敗しました: ${includeSpec.template} (${String(error)})`);
-      fileError.name = 'YamlParseError';
-      throw fileError;
-    } finally {
-      includeStack.delete(includePath);
-    }
-  }
-
-  private applyIncludeParams(node: unknown, params: Record<string, unknown>): unknown {
-    if (typeof node === 'string') {
-      return node.replace(/\{\{\s*\$params\.([\w.]+)\s*\}\}/g, (_match, expression: string) => {
-        const resolved = expression.split('.').reduce<unknown>((acc, key) => {
-          if (!this.isRecord(acc)) {
-            return undefined;
-          }
-
-          return acc[key];
-        }, params);
-
-        return resolved === undefined || resolved === null ? '' : String(resolved);
-      });
-    }
-
-    if (Array.isArray(node)) {
-      return node.map(item => this.applyIncludeParams(item, params));
-    }
-
-    if (this.isRecord(node)) {
-      const resolvedObject: Record<string, unknown> = {};
-
-      for (const [key, value] of Object.entries(node)) {
-        resolvedObject[key] = this.applyIncludeParams(value, params);
-      }
-
-      return resolvedObject;
-    }
-
-    return node;
-  }
-
-  private isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null;
-  }
-
-  private isIncludeDirective(value: unknown): value is { $include: { template: string; params?: Record<string, unknown> } } {
-    if (!this.isRecord(value) || !this.isRecord(value.$include)) {
-      return false;
-    }
-
-    return typeof value.$include.template === 'string';
-  }
-
-  /**
    * ファイルサイズを検証
    */
   private validateFileSize(yamlContent: string, fileName: string): void {
@@ -239,25 +117,8 @@ export class YamlParser {
    */
   private async validateYamlSchema(yaml: unknown, yamlContent: string, fileName: string): Promise<void> {
     try {
-      if (!this.schemaLoader) {
-        console.warn('[YamlParser] スキーマローダーが未設定のため、スキーマ検証をスキップします');
-        return;
-      }
-
-      const schema = await this.schemaLoader.loadSchema();
-      if (!schema) {
-        console.warn('[YamlParser] スキーマの読み込みに失敗しました');
-        return;
-      }
-
-      // Ajvを使用してバリデーション
-      const ajv = new Ajv({ allErrors: true });
-      const validate = ajv.compile(schema);
-      
-      const valid = validate(yaml);
-      
-      if (!valid) {
-        const validationErrors = validate.errors ?? [];
+      const validationErrors = await this.schemaValidator.validate(yaml);
+      if (validationErrors && validationErrors.length > 0) {
         console.warn('[YamlParser] スキーマバリデーションエラー:', validationErrors);
         throw this.createSchemaError(validationErrors, yamlContent, fileName);
       }
