@@ -200,9 +200,12 @@ export function renderRegisteredComponent(
       <div
         key={key}
         className="textui-jump-target"
-        title={context?.dslPath ? `DSLへジャンプ: ${context.dslPath}` : undefined}
+        title={context?.dslPath ? `Ctrl+Shift+クリックでDSLへジャンプ: ${context.dslPath}` : undefined}
         onClick={(event) => {
           if (!context?.dslPath || !context.onJumpToDsl || !name) {
+            return;
+          }
+          if (!(event.ctrlKey && event.shiftKey)) {
             return;
           }
           event.preventDefault();
