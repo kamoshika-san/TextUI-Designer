@@ -147,7 +147,9 @@ class WebViewManagerFactory {
       '../../out/services/webview-manager.js',
       '../../out/services/webview/webview-lifecycle-manager.js',
       '../../out/services/webview/webview-message-handler.js',
-      '../../out/services/webview/webview-update-manager.js'
+      '../../out/services/webview/webview-update-manager.js',
+      '../../out/services/webview/theme-discovery-service.js',
+      '../../out/services/webview/yaml-pointer-resolver.js'
     ];
     for (const modulePath of modulesToReload) {
       const resolvedPath = require.resolve(modulePath);

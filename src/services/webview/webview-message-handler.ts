@@ -1,8 +1,12 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import * as vscode from 'vscode';
 import { WebViewLifecycleManager } from './webview-lifecycle-manager';
 import { WebViewUpdateManager } from './webview-update-manager';
 import { isWebViewMessage, type IThemeManager } from '../../types';
 import { ConfigManager } from '../../utils/config-manager';
+import { ThemeDiscoveryService } from './theme-discovery-service';
+import { YamlPointerResolver } from './yaml-pointer-resolver';
 
 /**
  * WebViewとのメッセージ通信を担当
@@ -11,8 +15,10 @@ import { ConfigManager } from '../../utils/config-manager';
 export class WebViewMessageHandler {
   private lifecycleManager: WebViewLifecycleManager;
   private updateManager: WebViewUpdateManager;
-  private themeManager: IThemeManager | undefined;
+  themeManager: IThemeManager | undefined;
   private context: vscode.ExtensionContext;
+  private readonly themeDiscoveryService: ThemeDiscoveryService;
+  private readonly yamlPointerResolver: YamlPointerResolver;
 
   constructor(
     context: vscode.ExtensionContext,
@@ -24,6 +30,8 @@ export class WebViewMessageHandler {
     this.lifecycleManager = lifecycleManager;
     this.updateManager = updateManager;
     this.themeManager = themeManager;
+    this.themeDiscoveryService = new ThemeDiscoveryService(() => this.updateManager.getLastTuiFile());
+    this.yamlPointerResolver = new YamlPointerResolver();
   }
 
   /**
@@ -96,7 +104,7 @@ export class WebViewMessageHandler {
     try {
       const document = await vscode.workspace.openTextDocument(targetFile);
       const editor = await vscode.window.showTextDocument(document, vscode.ViewColumn.One);
-      const position = this.resolveYamlPointerPosition(document, dslPath);
+      const position = this.yamlPointerResolver.resolvePosition(document, dslPath);
 
       if (!position) {
         vscode.window.showWarningMessage(`DSLパスを解決できませんでした: ${dslPath}`);
@@ -210,7 +218,7 @@ export class WebViewMessageHandler {
     }
 
     try {
-      const themes = await this.detectAvailableThemes();
+      const themes = await this.themeDiscoveryService.detectAvailableThemes(this.themeManager);
       
       // WebViewに送信
       panel.webview.postMessage({
@@ -220,88 +228,6 @@ export class WebViewMessageHandler {
     } catch (error) {
       console.error('[WebViewMessageHandler] テーマ一覧取得エラー:', error);
     }
-  }
-
-  /**
-   * 利用可能なテーマを検出
-   */
-  private async detectAvailableThemes(): Promise<{ name: string; path: string; isActive: boolean; description?: string }[]> {
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders) {
-      console.log('[WebViewMessageHandler] ワークスペースフォルダが見つかりません');
-      return [];
-    }
-
-    const themes: { name: string; path: string; isActive: boolean; description?: string }[] = [];
-    
-    // 現在のアクティブテーマパスを取得
-    const currentThemePath = this.themeManager?.getThemePath() || '';
-    const isDefaultThemeActive = !currentThemePath;
-    
-    console.log('[WebViewMessageHandler] 現在のテーマパス:', currentThemePath);
-    console.log('[WebViewMessageHandler] デフォルトテーマがアクティブ:', isDefaultThemeActive);
-    
-    const discoveredPaths = new Set<string>();
-
-    const activeTuiPath = this.resolveActiveTuiPath();
-
-    // 各ワークスペースフォルダでテーマファイルを検索
-    for (const folder of workspaceFolders) {
-      const folderPath = folder.uri.fsPath;
-
-      const searchRoot = this.resolveThemeSearchRoot(folderPath, activeTuiPath);
-      const themeFiles = this.collectThemeFiles(searchRoot);
-
-      for (const filePath of themeFiles) {
-        const normalizedPath = path.resolve(filePath);
-        if (discoveredPaths.has(normalizedPath)) {
-          continue;
-        }
-        discoveredPaths.add(normalizedPath);
-
-        const relativePath = path.relative(folderPath, filePath);
-        const fileName = path.basename(filePath);
-
-        // テーマファイルの内容を読み取って名前と説明を取得
-        try {
-          const content = fs.readFileSync(filePath, 'utf8');
-          const themeData = YAML.parse(content);
-
-          const themeName = themeData?.theme?.name || fileName.replace(/(-theme|_theme)\.(ya?ml)$/, '').replace(/\.(ya?ml)$/, '');
-          const themeDescription = themeData?.theme?.description;
-
-          // 現在のアクティブテーマかどうかを判定（パスの正規化で比較）
-          const isActive = Boolean(currentThemePath) &&
-            path.resolve(currentThemePath) === path.resolve(filePath);
-
-          themes.push({
-            name: themeName,
-            path: relativePath,
-            isActive,
-            description: themeDescription
-          });
-        } catch (error) {
-          console.log(`[WebViewMessageHandler] テーマファイル読み取りエラー: ${filePath}`, error);
-          // エラーの場合はファイル名のみで追加
-          themes.push({
-            name: fileName.replace(/(-theme|_theme)\.(ya?ml)$/, '').replace(/\.(ya?ml)$/, ''),
-            path: relativePath,
-            isActive: false
-          });
-        }
-      }
-    }
-
-    // デフォルトテーマを追加（常に先頭に配置）
-    themes.unshift({
-      name: 'デフォルト',
-      path: '',
-      isActive: isDefaultThemeActive,
-      description: 'システムデフォルトテーマ'
-    });
-
-    console.log('[WebViewMessageHandler] 検出されたテーマ:', themes);
-    return themes;
   }
 
   private resolveActiveTuiPath(): string | undefined {
@@ -316,70 +242,6 @@ export class WebViewMessageHandler {
     }
 
     return undefined;
-  }
-
-  private resolveThemeSearchRoot(folderPath: string, activeTuiPath?: string): string {
-    if (!activeTuiPath) {
-      return folderPath;
-    }
-
-    const normalizedFolder = path.resolve(folderPath);
-    const normalizedActiveFile = path.resolve(activeTuiPath);
-    const activeDir = path.dirname(normalizedActiveFile);
-
-    if (!activeDir.startsWith(normalizedFolder)) {
-      return folderPath;
-    }
-
-    return activeDir;
-  }
-
-  private collectThemeFiles(rootPath: string): string[] {
-    if (!fs.existsSync(rootPath)) {
-      return [];
-    }
-
-    const themeFiles: string[] = [];
-    const skipDirs = new Set(['.git', 'node_modules', 'out', 'media', '.next', 'dist', 'build']);
-    const stack: string[] = [rootPath];
-
-    while (stack.length > 0) {
-      const currentPath = stack.pop();
-      if (!currentPath) {
-        continue;
-      }
-
-      let entries: fs.Dirent[] = [];
-      try {
-        entries = fs.readdirSync(currentPath, { withFileTypes: true });
-      } catch (error) {
-        console.log(`[WebViewMessageHandler] ディレクトリ読み取りエラー: ${currentPath}`, error);
-        continue;
-      }
-
-      for (const entry of entries) {
-        const entryPath = path.join(currentPath, entry.name);
-        if (entry.isDirectory()) {
-          if (!skipDirs.has(entry.name)) {
-            stack.push(entryPath);
-          }
-          continue;
-        }
-
-        if (
-          entry.name.endsWith('-theme.yml') ||
-          entry.name.endsWith('-theme.yaml') ||
-          entry.name.endsWith('_theme.yml') ||
-          entry.name.endsWith('_theme.yaml') ||
-          entry.name === 'textui-theme.yml' ||
-          entry.name === 'textui-theme.yaml'
-        ) {
-          themeFiles.push(entryPath);
-        }
-      }
-    }
-
-    return themeFiles;
   }
 
   /**
@@ -457,121 +319,6 @@ export class WebViewMessageHandler {
     }
   }
 
-  private resolveYamlPointerPosition(document: vscode.TextDocument, pointer: string): vscode.Position | null {
-    const normalizedPointer = pointer.startsWith('/') ? pointer : `/${pointer}`;
-    if (normalizedPointer === '/') {
-      return this.createPosition(0, 0);
-    }
-
-    try {
-      const yamlDocument = YAML.parseDocument(document.getText(), {
-        prettyErrors: false
-      });
-      const rootNode = yamlDocument.contents as unknown;
-      const segments = normalizedPointer
-        .split('/')
-        .slice(1)
-        .map(segment => segment.replace(/~1/g, '/').replace(/~0/g, '~'));
-
-      const node = this.resolveNodeByPointer(rootNode, segments);
-      const offset = this.extractNodeStartOffset(node);
-      if (offset === null) {
-        return null;
-      }
-      const fromDocument = document.positionAt(offset);
-      return this.createPosition(fromDocument.line, fromDocument.character);
-    } catch (error) {
-      console.warn('[WebViewMessageHandler] YAML pointer解決に失敗しました:', error);
-      return null;
-    }
-  }
-
-  private resolveNodeByPointer(rootNode: unknown, segments: string[]): unknown {
-    let currentNode: unknown = rootNode;
-
-    for (const segment of segments) {
-      if (this.isYamlMapNode(currentNode)) {
-        const pair = currentNode.items.find(item => this.readYamlKey(item?.key) === segment);
-        if (!pair) {
-          return null;
-        }
-        currentNode = pair.value;
-        continue;
-      }
-
-      if (this.isYamlSeqNode(currentNode)) {
-        const index = Number(segment);
-        if (!Number.isInteger(index) || index < 0 || index >= currentNode.items.length) {
-          return null;
-        }
-        currentNode = currentNode.items[index];
-        continue;
-      }
-
-      return null;
-    }
-
-    return currentNode;
-  }
-
-  private extractNodeStartOffset(node: unknown): number | null {
-    if (!node || typeof node !== 'object') {
-      return null;
-    }
-    const range = (node as { range?: unknown }).range;
-    if (!Array.isArray(range) || typeof range[0] !== 'number') {
-      return null;
-    }
-    return range[0];
-  }
-
-  private readYamlKey(keyNode: unknown): string | null {
-    if (!keyNode || typeof keyNode !== 'object') {
-      return null;
-    }
-    const value = (keyNode as { value?: unknown }).value;
-    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-      return String(value);
-    }
-    return null;
-  }
-
-  private isYamlMapNode(node: unknown): node is { items: Array<{ key?: unknown; value?: unknown }> } {
-    if (!node || typeof node !== 'object') {
-      return false;
-    }
-    const items = (node as { items?: unknown }).items;
-    if (!Array.isArray(items)) {
-      return false;
-    }
-    if (items.length === 0) {
-      return false;
-    }
-    const firstItem = items[0];
-    return Boolean(firstItem && typeof firstItem === 'object' && 'key' in firstItem && 'value' in firstItem);
-  }
-
-  private isYamlSeqNode(node: unknown): node is { items: unknown[] } {
-    if (!node || typeof node !== 'object') {
-      return false;
-    }
-    const items = (node as { items?: unknown }).items;
-    if (!Array.isArray(items)) {
-      return false;
-    }
-    if (items.length === 0) {
-      return true;
-    }
-    const firstItem = items[0];
-    return !(firstItem && typeof firstItem === 'object' && 'key' in firstItem && 'value' in firstItem);
-  }
-
-  private createPosition(line: number, character: number): vscode.Position {
-    return typeof (vscode as { Position?: unknown }).Position === 'function'
-      ? new vscode.Position(line, character)
-      : ({ line, character } as unknown as vscode.Position);
-  }
-
   private applyEditorSelection(editor: vscode.TextEditor, position: vscode.Position): void {
     const selection = typeof (vscode as { Selection?: unknown }).Selection === 'function'
       ? new vscode.Selection(position, position)
@@ -612,8 +359,3 @@ export class WebViewMessageHandler {
     }
   }
 }
-
-// 必要なインポートを追加
-import * as fs from 'fs';
-import * as path from 'path';
-import * as YAML from 'yaml'; 
