@@ -537,6 +537,8 @@ theme:
       captureOutFile,
       '--browser',
       'google-chrome',
+      '--wait-ms',
+      '0',
       '--json'
     ], {
       encoding: 'utf8',
