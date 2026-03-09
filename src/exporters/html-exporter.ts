@@ -489,17 +489,8 @@ ${varLines}
   }
 
   protected renderSpacer(props: SpacerComponent, key: number): string {
-    const { axis = 'vertical', size = 'md', width, height, token } = props;
-    const sizeMap: Record<'xs' | 'sm' | 'md' | 'lg' | 'xl', string> = {
-      xs: '0.25rem',
-      sm: '0.5rem',
-      md: '1rem',
-      lg: '1.5rem',
-      xl: '2rem'
-    };
-    const fallbackSize = token || sizeMap[size];
-    const resolvedWidth = width || (axis === 'horizontal' ? fallbackSize : '100%');
-    const resolvedHeight = height || (axis === 'horizontal' ? '1px' : fallbackSize);
+    const { token } = props;
+    const { width: resolvedWidth, height: resolvedHeight } = this.resolveSpacerDimensions(props);
 
     return `    <div class="textui-spacer" style="width: ${this.escapeAttribute(resolvedWidth)}; height: ${this.escapeAttribute(resolvedHeight)}; flex-shrink: 0;" aria-hidden="true"></div>`;
   }
@@ -560,7 +551,7 @@ ${contentCode}
 
   protected renderTabs(props: TabsComponent, key: number): string {
     const { defaultTab = 0, items = [], token } = props;
-    const activeIndex = Math.min(Math.max(defaultTab, 0), Math.max(items.length - 1, 0));
+    const activeIndex = this.resolveActiveTabIndex(defaultTab, items.length);
     const tokenStyle = this.getHtmlTokenStyleAttr('Tabs', token);
 
     const tabsHeader = items
@@ -663,8 +654,7 @@ ${treeCode}
         const rowClass = striped && rowIndex % 2 === 1 ? ' class="bg-gray-800/70"' : '';
         const cells = columns
           .map(column => {
-            const rawValue = row[column.key];
-            const value = rawValue === null || rawValue === undefined ? '' : String(rawValue);
+            const value = this.toTableCellText(row[column.key]);
             return `          <td class="px-4 py-2 align-top text-gray-300">${this.escapeHtml(value)}</td>`;
           })
           .join('\n');
