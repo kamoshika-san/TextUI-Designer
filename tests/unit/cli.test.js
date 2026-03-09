@@ -12,7 +12,7 @@ describe('TextUI CLI Sprint1', () => {
   const stateFile = path.join(tmpDir, 'state.json');
   const outFile = path.join(tmpDir, 'result.html');
   const captureOutFile = path.join(tmpDir, 'preview.png');
-  const captureMockBrowser = path.join(tmpDir, 'mock-browser.js');
+  const captureMockBrowser = path.join(tmpDir, 'google-chrome');
   const providerModuleFile = path.join(tmpDir, 'custom-provider.cjs');
   const invalidProviderModuleFile = path.join(tmpDir, 'invalid-provider.cjs');
   const mismatchProviderModuleFile = path.join(tmpDir, 'mismatch-provider.cjs');
@@ -55,6 +55,10 @@ module.exports = {
 const fs = require('fs');
 const path = require('path');
 const screenshotArg = process.argv.find(arg => arg.startsWith('--screenshot='));
+if (process.argv.includes('--version')) {
+  process.stdout.write('Google Chrome 999.0.0');
+  process.exit(0);
+}
 if (!screenshotArg) {
   process.stderr.write('missing --screenshot');
   process.exit(2);
@@ -482,15 +486,21 @@ page:
       '--output',
       captureOutFile,
       '--browser',
-      captureMockBrowser,
+      'google-chrome',
       '--json'
-    ], { encoding: 'utf8' });
+    ], {
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        PATH: `${tmpDir}${path.delimiter}${process.env.PATH || ''}`
+      }
+    });
 
     assert.strictEqual(result.status, 0);
     const parsed = JSON.parse(result.stdout);
     assert.strictEqual(parsed.captured, true);
     assert.ok(fs.existsSync(captureOutFile));
-    assert.ok(parsed.browserPath.includes('mock-browser.js'));
+    assert.ok(parsed.browserPath.endsWith('google-chrome'));
   });
 
   it('export resolves token value into HTML inline style', () => {
