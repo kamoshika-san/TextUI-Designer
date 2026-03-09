@@ -1,15 +1,6 @@
 import * as vscode from 'vscode';
-import { SchemaManager } from './schema-manager';
-import { WebViewManager } from './webview-manager';
-import { DiagnosticManager } from './diagnostic-manager';
-import { TextUICompletionProvider } from './completion-provider';
-import { CommandManager } from './command-manager';
-import { ExportService } from './export-service';
-import { TemplateService } from './template-service';
-import { SettingsService } from './settings-service';
-import { ExportManager } from '../exporters';
-import { ThemeManager } from './theme-manager';
 import { McpBootstrapService } from './mcp-bootstrap-service';
+import { ServiceFactory } from './service-factory';
 import type {
   ISchemaManager,
   IThemeManager,
@@ -75,66 +66,9 @@ export class ServiceInitializer {
     console.log('[ServiceInitializer] サービス初期化開始');
 
     try {
-      const f = this.factoryOverrides;
+      this.services = this.createServices();
 
-      const schemaManager: ISchemaManager = f.createSchemaManager
-        ? f.createSchemaManager(this.context)
-        : new SchemaManager(this.context);
-      const themeManager: IThemeManager = f.createThemeManager
-        ? f.createThemeManager(this.context)
-        : new ThemeManager(this.context);
-
-      const webViewManager: IWebViewManager = f.createWebViewManager
-        ? f.createWebViewManager(this.context, themeManager, schemaManager)
-        : new WebViewManager(this.context, themeManager, schemaManager);
-
-      const exportManager: IExportManager = f.createExportManager
-        ? f.createExportManager()
-        : new ExportManager();
-      const exportService: IExportService = new ExportService(exportManager, themeManager);
-
-      const templateService: ITemplateService = f.createTemplateService
-        ? f.createTemplateService()
-        : new TemplateService();
-
-      const settingsService: ISettingsService = f.createSettingsService
-        ? f.createSettingsService()
-        : new SettingsService();
-
-      const diagnosticManager: IDiagnosticManager = new DiagnosticManager(schemaManager);
-      const completionProvider: ICompletionProvider = new TextUICompletionProvider(schemaManager);
-
-      const commandManager: ICommandManager = new CommandManager(
-        this.context,
-        webViewManager,
-        exportService,
-        templateService,
-        settingsService,
-        schemaManager
-      );
-
-      await schemaManager.initialize();
-      commandManager.registerCommands();
-      await this.ensureMcpConfigured();
-
-      await themeManager.loadTheme();
-      webViewManager.applyThemeVariables(themeManager.generateCSSVariables());
-      themeManager.watchThemeFile(css => {
-        webViewManager.applyThemeVariables(css);
-      });
-
-      this.services = {
-        schemaManager,
-        themeManager,
-        webViewManager,
-        exportManager,
-        exportService,
-        templateService,
-        settingsService,
-        diagnosticManager,
-        completionProvider,
-        commandManager
-      };
+      await this.initializeRuntime(this.services);
 
       console.log('[ServiceInitializer] 全サービス初期化完了');
       return this.services;
@@ -179,6 +113,24 @@ export class ServiceInitializer {
    */
   getServices(): ExtensionServices | null {
     return this.services;
+  }
+
+
+  private createServices(): ExtensionServices {
+    const serviceFactory = new ServiceFactory(this.context, this.factoryOverrides);
+    return serviceFactory.create();
+  }
+
+  private async initializeRuntime(services: ExtensionServices): Promise<void> {
+    await services.schemaManager.initialize();
+    services.commandManager.registerCommands();
+    await this.ensureMcpConfigured();
+
+    await services.themeManager.loadTheme();
+    services.webViewManager.applyThemeVariables(services.themeManager.generateCSSVariables());
+    services.themeManager.watchThemeFile(css => {
+      services.webViewManager.applyThemeVariables(css);
+    });
   }
 
   private async ensureMcpConfigured(): Promise<void> {

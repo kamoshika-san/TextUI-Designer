@@ -72,22 +72,14 @@ export class HtmlExporter extends BaseComponentRenderer {
 
   protected renderInput(props: InputComponent, key: number): string {
     const { label, placeholder, type = 'text', required = false, disabled = false, token } = props;
-    const safeLabel = label ? this.escapeHtml(label) : '';
     const safePlaceholder = this.escapeAttribute(placeholder || '');
     const safeType = this.escapeAttribute(type);
     const disabledClass = this.getDisabledClass(disabled);
-    const requiredAttr = required ? ' required' : '';
-    const disabledAttr = disabled ? ' disabled' : '';
     
     const tokenStyle = this.getHtmlTokenStyleAttr('Input', token);
-    let code = `    <div class="mb-4">`;
-    if (label) {
-      code += `\n      <label class="block text-sm font-medium text-gray-400 mb-2">${safeLabel}</label>`;
-    }
-    code += `\n      <input type="${safeType}" placeholder="${safePlaceholder}" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${requiredAttr}${disabledAttr}${tokenStyle}>`;
-    code += `\n    </div>`;
-    
-    return code;
+    const inputHtml = `      <input type="${safeType}" placeholder="${safePlaceholder}" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${this.buildBooleanAttr('required', required)}${this.buildBooleanAttr('disabled', disabled)}${tokenStyle}>`;
+
+    return this.renderLabeledFieldWrapper(label, inputHtml);
   }
 
   protected renderButton(props: ButtonComponent, key: number): string {
@@ -157,60 +149,61 @@ export class HtmlExporter extends BaseComponentRenderer {
   protected renderSelect(props: SelectComponent, key: number): string {
     const { label, options = [], placeholder, disabled = false, multiple = false, token } = props;
     const tokenStyle = this.getHtmlTokenStyleAttr('Select', token);
-    const safeLabel = label ? this.escapeHtml(label) : '';
     const disabledClass = this.getDisabledClass(disabled);
-    const disabledAttr = disabled ? ' disabled' : '';
-    const multipleAttr = multiple ? ' multiple' : '';
     
     // multipleの場合は高さを調整
     const selectClass = multiple 
       ? `w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-32 ${disabledClass}`
       : `w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}`;
     
-    let code = `    <div class="mb-4">`;
-    if (label) {
-      code += `\n      <label class="block text-sm font-medium text-gray-400 mb-2">${safeLabel}</label>`;
-    }
-    code += `\n      <select class="${selectClass}"${disabledAttr}${multipleAttr}${tokenStyle}>`;
+    let selectHtml = `      <select class="${selectClass}"${this.buildBooleanAttr('disabled', disabled)}${this.buildBooleanAttr('multiple', multiple)}${tokenStyle}>`;
     
     if (placeholder && !multiple) {
-      code += `\n        <option value="" class="bg-gray-800 text-gray-400">${this.escapeHtml(placeholder)}</option>`;
+      selectHtml += `\n        <option value="" class="bg-gray-800 text-gray-400">${this.escapeHtml(placeholder)}</option>`;
     }
     
     options.forEach((opt: SelectOption) => {
-      const selectedAttr = opt.selected ? ' selected' : '';
-      code += `\n        <option value="${this.escapeAttribute(opt.value)}" class="bg-gray-800 text-gray-400"${selectedAttr}>${this.escapeHtml(opt.label)}</option>`;
+      selectHtml += `\n        <option value="${this.escapeAttribute(opt.value)}" class="bg-gray-800 text-gray-400"${this.buildBooleanAttr('selected', Boolean(opt.selected))}>${this.escapeHtml(opt.label)}</option>`;
     });
     
-    code += `\n      </select>`;
-    code += `\n    </div>`;
-    
-    return code;
+    selectHtml += `\n      </select>`;
+
+    return this.renderLabeledFieldWrapper(label, selectHtml);
   }
 
   protected renderDatePicker(props: DatePickerComponent, key: number): string {
     const { label, name = 'date', required = false, disabled = false, min, max, value, token } = props;
-    const safeLabel = label ? this.escapeHtml(label) : '';
     const safeName = this.escapeAttribute(name);
-    const safeMin = min ? this.escapeAttribute(min) : '';
-    const safeMax = max ? this.escapeAttribute(max) : '';
-    const safeValue = value ? this.escapeAttribute(value) : '';
     const disabledClass = this.getDisabledClass(disabled);
-    const requiredAttr = required ? ' required' : '';
-    const disabledAttr = disabled ? ' disabled' : '';
-    const minAttr = safeMin ? ` min="${safeMin}"` : '';
-    const maxAttr = safeMax ? ` max="${safeMax}"` : '';
-    const valueAttr = safeValue ? ` value="${safeValue}"` : '';
     const tokenStyle = this.getHtmlTokenStyleAttr('DatePicker', token);
 
+    const inputHtml = `      <input id="${safeName}" name="${safeName}" type="date" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${this.buildBooleanAttr('required', required)}${this.buildBooleanAttr('disabled', disabled)}${this.buildValueAttr('min', min)}${this.buildValueAttr('max', max)}${this.buildValueAttr('value', value)}${tokenStyle}>`;
+
+    return this.renderLabeledFieldWrapper(label, inputHtml, safeName);
+  }
+
+  private renderLabeledFieldWrapper(label: string | undefined, fieldHtml: string, labelFor?: string): string {
     let code = `    <div class="mb-4">`;
     if (label) {
-      code += `\n      <label for="${safeName}" class="block text-sm font-medium text-gray-400 mb-2">${safeLabel}</label>`;
+      const safeLabel = this.escapeHtml(label);
+      const forAttr = labelFor ? ` for="${labelFor}"` : '';
+      code += `\n      <label${forAttr} class="block text-sm font-medium text-gray-400 mb-2">${safeLabel}</label>`;
     }
-    code += `\n      <input id="${safeName}" name="${safeName}" type="date" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${requiredAttr}${disabledAttr}${minAttr}${maxAttr}${valueAttr}${tokenStyle}>`;
+    code += `\n${fieldHtml}`;
     code += `\n    </div>`;
-
     return code;
+  }
+
+  private buildBooleanAttr(name: string, enabled: boolean): string {
+    return enabled ? ` ${name}` : '';
+  }
+
+  private buildValueAttr(name: string, value: string | undefined): string {
+    if (!value) {
+      return '';
+    }
+
+    return ` ${name}="${this.escapeAttribute(value)}"`;
   }
 
   protected renderDivider(props: DividerComponent, key: number): string {
