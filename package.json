@@ -13,6 +13,7 @@
   ],
   "activationEvents": [
     "onCommand:textui-designer.openPreview",
+    "onCommand:textui-designer.capturePreviewImage",
     "onCommand:textui-designer.export",
     "onCommand:textui-designer.checkAutoPreviewSetting",
     "onLanguage:yaml"
@@ -277,6 +278,10 @@
       {
         "command": "textui-designer.openPreview",
         "title": "TextUI: Open Preview"
+      },
+      {
+        "command": "textui-designer.capturePreviewImage",
+        "title": "TextUI: Capture Preview Image"
       },
       {
         "command": "textui-designer.openDevTools",

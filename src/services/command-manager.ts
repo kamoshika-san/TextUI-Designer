@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { ErrorHandler } from '../utils/error-handler';
 import { ConfigManager } from '../utils/config-manager';
 import { RuntimeInspectionService } from './runtime-inspection-service';
+import { capturePreviewImageFromDslFile } from '../utils/preview-capture';
 import type {
   ICommandManager,
   IWebViewManager,
@@ -51,6 +53,7 @@ export class CommandManager implements ICommandManager {
 
     const commandDefinitions = createCommandDefinitions({
       openPreviewWithCheck: () => this.openPreviewWithCheck(),
+      capturePreviewImage: () => this.capturePreviewImage(),
       openDevTools: () => this.webViewManager.openDevTools(),
       executeExport: (filePath?: string) => this.exportService.executeExport(filePath),
       createTemplate: () => this.templateService.createTemplate(),
@@ -135,5 +138,54 @@ export class CommandManager implements ICommandManager {
       const errorMessage = error instanceof Error ? error.message : String(error);
       vscode.window.showErrorMessage(`プレビューの表示に失敗しました: ${errorMessage}`);
     }
+  }
+
+  /**
+   * 現在のプレビュー対象DSLをPNG画像として保存
+   */
+  private async capturePreviewImage(): Promise<void> {
+    const targetFile = this.resolveCaptureTargetFile();
+    if (!targetFile) {
+      vscode.window.showWarningMessage('キャプチャ対象の .tui.yml ファイルが見つかりません。');
+      return;
+    }
+
+    const defaultFileName = `${path.basename(targetFile).replace(/\.tui\.ya?ml$/i, '')}.preview.png`;
+    const defaultUri = vscode.Uri.file(path.join(path.dirname(targetFile), defaultFileName));
+    const outputUri = await vscode.window.showSaveDialog({
+      defaultUri,
+      saveLabel: 'プレビュー画像を保存',
+      filters: {
+        PNG: ['png']
+      }
+    });
+
+    if (!outputUri) {
+      return;
+    }
+
+    try {
+      await capturePreviewImageFromDslFile(targetFile, {
+        outputPath: outputUri.fsPath
+      });
+      vscode.window.showInformationMessage(`プレビュー画像を出力しました: ${outputUri.fsPath}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      vscode.window.showErrorMessage(`プレビュー画像の出力に失敗しました: ${message}`);
+    }
+  }
+
+  private resolveCaptureTargetFile(): string | undefined {
+    const activeFile = vscode.window.activeTextEditor?.document.fileName;
+    if (activeFile && ConfigManager.isSupportedFile(activeFile)) {
+      return activeFile;
+    }
+
+    const lastFile = this.webViewManager.getLastTuiFile();
+    if (lastFile && ConfigManager.isSupportedFile(lastFile)) {
+      return lastFile;
+    }
+
+    return undefined;
   }
 } 

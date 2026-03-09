@@ -26,6 +26,7 @@ interface CommandMenuEntry {
 
 export interface CommandCatalogDependencies {
   openPreviewWithCheck: () => Promise<void>;
+  capturePreviewImage: () => Promise<void>;
   openDevTools: () => void;
   executeExport: (filePath?: string) => Promise<void>;
   createTemplate: () => Promise<void>;
@@ -65,6 +66,11 @@ const COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
       }
     ],
     callback: deps => () => deps.openPreviewWithCheck()
+  },
+  {
+    command: 'textui-designer.capturePreviewImage',
+    title: 'TextUI: Capture Preview Image',
+    callback: deps => () => deps.capturePreviewImage()
   },
   {
     command: 'textui-designer.openDevTools',

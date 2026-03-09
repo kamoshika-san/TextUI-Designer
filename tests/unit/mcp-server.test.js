@@ -1,4 +1,7 @@
 const assert = require('assert');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 
 describe('TextUiMcpServer', () => {
   let TextUiMcpServer;
@@ -129,5 +132,61 @@ describe('TextUiMcpServer', () => {
     assert.strictEqual(response.result.structuredContent.exitCode, 0);
     assert.ok(response.result.structuredContent.parsedJson);
     assert.ok(Array.isArray(response.result.structuredContent.parsedJson.providers));
+  });
+
+  it('tools/call capture_preview でPNGを出力できる', async () => {
+    const server = new TextUiMcpServer();
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-mcp-capture-test-'));
+    const dslPath = path.join(tmpDir, 'sample.tui.yml');
+    const outPath = path.join(tmpDir, 'preview.png');
+    const mockBrowser = path.join(tmpDir, 'mock-browser.js');
+    fs.writeFileSync(dslPath, `
+page:
+  id: mcp-capture
+  title: "MCP Capture"
+  layout: vertical
+  components:
+    - Text:
+        variant: p
+        value: "hello"
+`, 'utf8');
+    fs.writeFileSync(mockBrowser, `#!/usr/bin/env node
+const fs = require('fs');
+const path = require('path');
+const screenshotArg = process.argv.find(arg => arg.startsWith('--screenshot='));
+if (!screenshotArg) {
+  process.exit(2);
+}
+const target = screenshotArg.slice('--screenshot='.length);
+fs.mkdirSync(path.dirname(target), { recursive: true });
+const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMBAANQ8Z8AAAAASUVORK5CYII=', 'base64');
+fs.writeFileSync(target, png);
+`, 'utf8');
+    fs.chmodSync(mockBrowser, 0o755);
+
+    try {
+      const response = await server.handleMessage({
+        jsonrpc: '2.0',
+        id: 7,
+        method: 'tools/call',
+        params: {
+          name: 'capture_preview',
+          arguments: {
+            dslFile: dslPath,
+            output: outPath,
+            browser: mockBrowser
+          }
+        }
+      });
+
+      assert.ok(response.result);
+      const payload = response.result.structuredContent;
+      assert.strictEqual(payload.exitCode, 0);
+      assert.ok(payload.parsedJson);
+      assert.strictEqual(payload.parsedJson.captured, true);
+      assert.ok(fs.existsSync(outPath));
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
   });
 });

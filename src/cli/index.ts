@@ -24,6 +24,7 @@ import {
 import { resolveDslTokens, type TokenErrorMode } from './theme-token-resolver';
 import type { CliState, ExitCode, PlanSummary, ValidationSummary } from './types';
 import { sha256, stableStringify } from './utils';
+import { capturePreviewImageFromDsl } from '../utils/preview-capture';
 
 function getArg(flag: string): string | undefined {
   const index = process.argv.indexOf(flag);
@@ -47,6 +48,42 @@ function parseTokenErrorMode(): TokenErrorMode {
     return mode;
   }
   throw new Error(`invalid --token-on-error value: ${mode}. expected: error|warn|ignore`);
+}
+
+function parseOptionalPositiveInt(flag: string): number | undefined {
+  const value = getArg(flag);
+  if (value === undefined) {
+    return undefined;
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`invalid ${flag} value: ${value}. expected positive integer`);
+  }
+  return parsed;
+}
+
+function parseOptionalPositiveNumber(flag: string): number | undefined {
+  const value = getArg(flag);
+  if (value === undefined) {
+    return undefined;
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error(`invalid ${flag} value: ${value}. expected positive number`);
+  }
+  return parsed;
+}
+
+function parseOptionalNonNegativeInt(flag: string): number | undefined {
+  const value = getArg(flag);
+  if (value === undefined) {
+    return undefined;
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`invalid ${flag} value: ${value}. expected non-negative integer`);
+  }
+  return parsed;
 }
 
 function emitTokenWarnings(warnings: Array<{ path: string; message: string }>): void {
@@ -346,8 +383,9 @@ async function run(): Promise<ExitCode> {
   const command = process.argv[2];
 
   if (!command || command === 'help' || command === '--help' || command === '-h') {
-    process.stdout.write('Usage: textui <validate|plan|apply|export|import|state|providers|version> ...\n');
+    process.stdout.write('Usage: textui <validate|plan|apply|export|capture|import|state|providers|version> ...\n');
     process.stdout.write('Options: --provider <name> --provider-module <path> --file <path> --dir <path> --json --token-on-error <error|warn|ignore>\n');
+    process.stdout.write('Capture: textui capture --file <path> [--output <png>] [--width <px>] [--height <px>] [--scale <n>] [--wait-ms <ms>] [--browser <path>] [--json]\n');
     process.stdout.write('Import: textui import openapi --input <openapi.(yml|yaml|json)> [--operation <operationId>] [--all] [--output <file>|--output-dir <dir>] [--json]\n');
     return 0;
   }
@@ -532,6 +570,67 @@ async function run(): Promise<ExitCode> {
 
   const fileArg = getArg('--file');
   const dirArg = getArg('--dir');
+
+  if (command === 'capture') {
+    if (dirArg) {
+      process.stderr.write('capture does not support --dir. use --file <path>\n');
+      return 1;
+    }
+
+    const filePath = resolveDslFile(fileArg);
+    const loaded = loadDslFromFile(filePath);
+    const validation = validateDsl(loaded.dsl, {
+      sourcePath: loaded.sourcePath,
+      skipTokenValidation: true
+    });
+    if (!validation.valid) {
+      if (hasFlag('--json')) {
+        printJson({ valid: false, issues: validation.issues });
+      } else {
+        validation.issues.forEach(issue => {
+          process.stderr.write(`✖ ${issue.path ?? '/'} ${issue.message}\n`);
+        });
+      }
+      return 2;
+    }
+
+    const output = path.resolve(getArg('--output') ?? `generated/${stripDslExtension(path.basename(filePath))}.preview.png`);
+    const width = parseOptionalPositiveInt('--width');
+    const height = parseOptionalPositiveInt('--height');
+    const scale = parseOptionalPositiveNumber('--scale');
+    const waitMs = parseOptionalNonNegativeInt('--wait-ms');
+    const browserPath = getArg('--browser');
+    ensureDirectoryForFile(output);
+
+    const result = await capturePreviewImageFromDsl(loaded.dsl, {
+      outputPath: output,
+      width,
+      height,
+      scale,
+      waitMs,
+      browserPath
+    });
+    const bytes = fs.statSync(output).size;
+
+    if (hasFlag('--json')) {
+      printJson({
+        captured: true,
+        file: loaded.sourcePath,
+        output,
+        bytes,
+        width: result.width,
+        height: result.height,
+        browserPath: result.browserPath
+      });
+    } else {
+      process.stdout.write(`Captured preview image: ${output}\n`);
+      process.stdout.write(`  file: ${loaded.sourcePath}\n`);
+      process.stdout.write(`  size: ${result.width}x${result.height}\n`);
+      process.stdout.write(`  bytes: ${bytes}\n`);
+      process.stdout.write(`  browser: ${result.browserPath}\n`);
+    }
+    return 0;
+  }
 
   if (command === 'validate') {
     const filePaths = resolveDslFiles(fileArg, dirArg);
