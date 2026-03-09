@@ -385,7 +385,7 @@ async function run(): Promise<ExitCode> {
   if (!command || command === 'help' || command === '--help' || command === '-h') {
     process.stdout.write('Usage: textui <validate|plan|apply|export|capture|import|state|providers|version> ...\n');
     process.stdout.write('Options: --provider <name> --provider-module <path> --file <path> --dir <path> --json --token-on-error <error|warn|ignore>\n');
-    process.stdout.write('Capture: textui capture --file <path> [--output <png>] [--width <px>] [--height <px>] [--scale <n>] [--wait-ms <ms>] [--browser <path>] [--json]\n');
+    process.stdout.write('Capture: textui capture --file <path> [--output <png>] [--width <px>] [--height <px>] [--scale <n>] [--wait-ms <ms>] [--browser <path|name>] [--allow-no-sandbox] [--json]\n');
     process.stdout.write('Import: textui import openapi --input <openapi.(yml|yaml|json)> [--operation <operationId>] [--all] [--output <file>|--output-dir <dir>] [--json]\n');
     return 0;
   }
@@ -600,6 +600,7 @@ async function run(): Promise<ExitCode> {
     const scale = parseOptionalPositiveNumber('--scale');
     const waitMs = parseOptionalNonNegativeInt('--wait-ms');
     const browserPath = getArg('--browser');
+    const allowNoSandbox = hasFlag('--allow-no-sandbox');
     ensureDirectoryForFile(output);
 
     const result = await capturePreviewImageFromDsl(loaded.dsl, {
@@ -608,7 +609,8 @@ async function run(): Promise<ExitCode> {
       height,
       scale,
       waitMs,
-      browserPath
+      browserPath,
+      allowNoSandbox
     });
     const bytes = fs.statSync(output).size;
 
