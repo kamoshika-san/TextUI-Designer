@@ -703,7 +703,11 @@ page:
           lastApply: new Date(Date.now() + 60_000 + tick).toISOString()
         }
       };
-      fs.writeFileSync(stateFile, JSON.stringify(nextState, null, 2));
+      // 直接上書きすると読み手が途中状態を読むことがあり、CIでまれにJSONパースエラーになる。
+      // テストは「競合検知」を検証したいので、常に完全なJSONを原子的に差し替える。
+      const tempStatePath = `${stateFile}.tmp-${process.pid}-${tick}`;
+      fs.writeFileSync(tempStatePath, JSON.stringify(nextState, null, 2));
+      fs.renameSync(tempStatePath, stateFile);
       tick += 1;
     };
 
