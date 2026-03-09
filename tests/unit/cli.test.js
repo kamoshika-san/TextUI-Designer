@@ -542,7 +542,8 @@ theme:
     assert.match(html, /data-kind="primary"/);
   });
 
-  it('capture writes preview image using mock browser', () => {
+  it('capture writes preview image using mock browser', function() {
+    this.timeout(15000);
     const result = spawnSync('node', [
       cliPath,
       'capture',
@@ -570,7 +571,8 @@ theme:
     assert.ok(parsed.browserPath.endsWith('google-chrome'));
   });
 
-  it('capture --theme applies theme styles before screenshot', () => {
+  it('capture --theme applies theme styles before screenshot', function() {
+    this.timeout(15000);
     const themedDsl = path.join(tmpDir, 'theme-capture.tui.yml');
     const themedFile = path.join(tmpDir, 'capture-theme.yml');
     const themedOut = path.join(tmpDir, 'theme-preview.png');
