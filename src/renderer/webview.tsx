@@ -155,8 +155,10 @@ const App: React.FC = () => {
       }
       console.log('[React] メッセージを受信:', message);
 
-      const handler = messageHandlers[message.type];
-      if (handler) {
+      const handler = Object.prototype.hasOwnProperty.call(messageHandlers, message.type)
+        ? messageHandlers[message.type]
+        : undefined;
+      if (typeof handler === 'function') {
         handler(message);
       } else {
         console.log('[React] 未対応のメッセージタイプ:', message.type);
