@@ -9,11 +9,9 @@ import type {
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
 import { StyleManager } from '../utils/style-manager';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as YAML from 'yaml';
 import { buildHtmlDocument } from './html-template-builder';
 import { buildThemeStyleBlock } from './theme-style-builder';
+import { buildThemeVariables } from './theme-definition-resolver';
 
 export class HtmlExporter extends BaseComponentRenderer {
   constructor() {
@@ -34,116 +32,12 @@ export class HtmlExporter extends BaseComponentRenderer {
     }
 
     try {
-      const theme = this.loadThemeDefinition(themePath, []);
-      const tokens = this.extractThemeSection(theme, 'tokens');
-      const components = this.extractThemeSection(theme, 'components');
-      const tokenVars = this.flattenTokens(tokens);
-      const componentVars = this.flattenComponentVars(components);
-      const allVars = { ...tokenVars, ...componentVars };
-
+      const allVars = buildThemeVariables(themePath);
       return buildThemeStyleBlock(allVars);
     } catch (error) {
       console.warn(`[HtmlExporter] テーマ読み込みに失敗しました: ${error instanceof Error ? error.message : String(error)}`);
       return '';
     }
-  }
-
-  private loadThemeDefinition(themePath: string, chain: string[]): unknown {
-    const absolutePath = path.resolve(themePath);
-    if (chain.includes(absolutePath)) {
-      throw new Error(`テーマ継承で循環参照を検出しました: ${[...chain, absolutePath].join(' -> ')}`);
-    }
-    const raw = fs.readFileSync(absolutePath, 'utf8');
-    const parsed = YAML.parse(raw);
-    if (!this.isPlainObject(parsed)) {
-      return parsed;
-    }
-    const themeRoot = parsed.theme;
-    if (!this.isPlainObject(themeRoot)) {
-      return parsed;
-    }
-    const extendsPath = typeof themeRoot.extends === 'string' ? themeRoot.extends.trim() : '';
-    if (!extendsPath || extendsPath.startsWith('npm:')) {
-      return parsed;
-    }
-    const parentPath = path.resolve(path.dirname(absolutePath), extendsPath);
-    const parent = this.loadThemeDefinition(parentPath, [...chain, absolutePath]);
-    return this.deepMerge(parent, parsed);
-  }
-
-  private deepMerge(base: unknown, override: unknown): unknown {
-    if (Array.isArray(base) || Array.isArray(override)) {
-      return override ?? base;
-    }
-    if (!this.isPlainObject(base) || !this.isPlainObject(override)) {
-      return override ?? base;
-    }
-    const result: Record<string, unknown> = { ...base };
-    Object.entries(override).forEach(([key, value]) => {
-      result[key] = this.deepMerge((base as Record<string, unknown>)[key], value);
-    });
-    return result;
-  }
-
-  private extractThemeSection(themeDefinition: unknown, key: 'tokens' | 'components'): Record<string, unknown> {
-    if (!this.isPlainObject(themeDefinition) || !this.isPlainObject(themeDefinition.theme)) {
-      return {};
-    }
-    const section = (themeDefinition.theme as Record<string, unknown>)[key];
-    return this.isPlainObject(section) ? section : {};
-  }
-
-  private flattenTokens(obj: Record<string, unknown>, prefix = ''): Record<string, string> {
-    const result: Record<string, string> = {};
-    Object.entries(obj).forEach(([key, value]) => {
-      const nextKey = prefix ? `${prefix}-${key}` : key;
-      if (this.isTokenLeaf(value)) {
-        result[nextKey] = value.value;
-        return;
-      }
-      if (this.isPlainObject(value)) {
-        Object.assign(result, this.flattenTokens(value, nextKey));
-        return;
-      }
-      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-        result[nextKey] = String(value);
-      }
-    });
-    return result;
-  }
-
-  private flattenComponentVars(components: Record<string, unknown>): Record<string, string> {
-    const result: Record<string, string> = {};
-    Object.entries(components).forEach(([componentName, variants]) => {
-      if (!this.isPlainObject(variants)) {
-        return;
-      }
-      Object.entries(variants).forEach(([variantName, styles]) => {
-        if (!this.isPlainObject(styles)) {
-          return;
-        }
-        Object.entries(styles).forEach(([propertyName, value]) => {
-          if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-            result[`component-${componentName}-${variantName}-${propertyName}`] = String(value);
-          }
-        });
-      });
-    });
-    return result;
-  }
-
-  private isTokenLeaf(value: unknown): value is { value: string } {
-    return Boolean(
-      value &&
-      typeof value === 'object' &&
-      !Array.isArray(value) &&
-      Object.prototype.hasOwnProperty.call(value, 'value') &&
-      typeof (value as { value: unknown }).value === 'string'
-    );
-  }
-
-  private isPlainObject(value: unknown): value is Record<string, unknown> {
-    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
   }
 
   getFileExtension(): string {
