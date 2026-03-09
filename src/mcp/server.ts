@@ -185,10 +185,6 @@ const TOOLS: ToolDefinition[] = [
           type: 'number',
           description: '描画待機時間(ms)'
         },
-        browser: {
-          type: 'string',
-          description: 'ヘッドレスブラウザ実行パス'
-        },
         timeoutMs: {
           type: 'number',
           description: 'CLI実行タイムアウト(ms)。省略時120000'
@@ -458,7 +454,6 @@ export class TextUiMcpServer {
     const height = this.getObjectNumber(args, 'height');
     const scale = this.getObjectNumber(args, 'scale');
     const waitMs = this.getObjectNumber(args, 'waitMs');
-    const browser = this.getObjectValue(args, 'browser');
     if (output) {
       cliArgs.push('--output', output);
     }
@@ -473,9 +468,6 @@ export class TextUiMcpServer {
     }
     if (waitMs !== undefined) {
       cliArgs.push('--wait-ms', String(waitMs));
-    }
-    if (browser) {
-      cliArgs.push('--browser', browser);
     }
 
     const response = await this.runCli({
@@ -619,6 +611,9 @@ export class TextUiMcpServer {
     if (!CLI_SUPPORTED_ROOT_COMMANDS.has(rootCommand)) {
       throw new Error(`run_cli unsupported command: ${rootCommand}`);
     }
+    if (rootCommand === 'capture' && hasForbiddenCaptureArg(rawArgs)) {
+      throw new Error('run_cli capture does not allow --browser or --allow-no-sandbox via MCP');
+    }
 
     const cwdArg = this.getObjectValue(args, 'cwd');
     const cwd = cwdArg ? path.resolve(cwdArg) : process.cwd();
@@ -756,6 +751,14 @@ export class TextUiMcpServer {
   private getObjectUnknown(value: Record<string, unknown>, key: string): unknown {
     return value[key];
   }
+}
+
+function hasForbiddenCaptureArg(args: string[]): boolean {
+  return args.some(arg =>
+    arg === '--browser'
+    || arg.startsWith('--browser=')
+    || arg === '--allow-no-sandbox'
+  );
 }
 
 export function runMcpServer(): void {

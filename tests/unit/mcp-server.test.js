@@ -172,37 +172,28 @@ theme:
     assert.ok(Array.isArray(response.result.structuredContent.parsedJson.providers));
   });
 
-  it('tools/call capture_preview でPNGを出力できる', async () => {
+  it('tools/call capture_preview はMCP内でbrowser指定を使わずCLIへ委譲する', async () => {
     const server = new TextUiMcpServer();
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-mcp-capture-test-'));
     const dslPath = path.join(tmpDir, 'sample.tui.yml');
     const outPath = path.join(tmpDir, 'preview.png');
-    const mockBrowser = path.join(tmpDir, 'mock-browser.js');
-    fs.writeFileSync(dslPath, `
-page:
-  id: mcp-capture
-  title: "MCP Capture"
-  layout: vertical
-  components:
-    - Text:
-        variant: p
-        value: "hello"
-`, 'utf8');
-    fs.writeFileSync(mockBrowser, `#!/usr/bin/env node
-const fs = require('fs');
-const path = require('path');
-const screenshotArg = process.argv.find(arg => arg.startsWith('--screenshot='));
-if (!screenshotArg) {
-  process.exit(2);
-}
-const target = screenshotArg.slice('--screenshot='.length);
-fs.mkdirSync(path.dirname(target), { recursive: true });
-const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMBAANQ8Z8AAAAASUVORK5CYII=', 'base64');
-fs.writeFileSync(target, png);
-`, 'utf8');
-    fs.chmodSync(mockBrowser, 0o755);
+    fs.writeFileSync(dslPath, 'page:\n  id: mcp-capture\n  title: "MCP Capture"\n  layout: vertical\n  components: []\n', 'utf8');
 
     try {
+      let capturedRunCliArgs = null;
+      server.runCli = async args => {
+        capturedRunCliArgs = args;
+        return {
+          command: 'textui capture',
+          cwd: process.cwd(),
+          exitCode: 0,
+          timedOut: false,
+          stdout: '{"captured":true}',
+          stderr: '',
+          parsedJson: { captured: true }
+        };
+      };
+
       const response = await server.handleMessage({
         jsonrpc: '2.0',
         id: 7,
@@ -212,7 +203,7 @@ fs.writeFileSync(target, png);
           arguments: {
             dslFile: dslPath,
             output: outPath,
-            browser: mockBrowser
+            browser: '/tmp/forbidden-browser-path'
           }
         }
       });
@@ -222,9 +213,32 @@ fs.writeFileSync(target, png);
       assert.strictEqual(payload.exitCode, 0);
       assert.ok(payload.parsedJson);
       assert.strictEqual(payload.parsedJson.captured, true);
-      assert.ok(fs.existsSync(outPath));
+      assert.ok(capturedRunCliArgs);
+      assert.ok(Array.isArray(capturedRunCliArgs.args));
+      assert.ok(capturedRunCliArgs.args.includes('capture'));
+      assert.ok(capturedRunCliArgs.args.includes('--file'));
+      assert.ok(capturedRunCliArgs.args.includes(dslPath));
+      assert.ok(!capturedRunCliArgs.args.includes('--browser'));
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
+  });
+
+  it('tools/call run_cli は capture時の --browser 指定を拒否する', async () => {
+    const server = new TextUiMcpServer();
+    const response = await server.handleMessage({
+      jsonrpc: '2.0',
+      id: 8,
+      method: 'tools/call',
+      params: {
+        name: 'run_cli',
+        arguments: {
+          args: ['capture', '--file', 'sample/01-basic/sample.tui.yml', '--browser', '/tmp/evil']
+        }
+      }
+    });
+
+    assert.ok(response.error);
+    assert.match(response.error.message, /does not allow --browser or --allow-no-sandbox/);
   });
 });

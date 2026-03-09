@@ -14,6 +14,7 @@ export interface PreviewCaptureOptions {
   scale?: number;
   waitMs?: number;
   browserPath?: string;
+  allowNoSandbox?: boolean;
 }
 
 export interface PreviewCaptureResult {
@@ -33,6 +34,15 @@ const DEFAULT_WIDTH = 1280;
 const DEFAULT_HEIGHT = 720;
 const DEFAULT_SCALE = 1;
 const DEFAULT_WAIT_MS = 3000;
+const ALLOWED_BROWSER_COMMANDS = new Set([
+  'google-chrome',
+  'google-chrome-stable',
+  'chromium-browser',
+  'chromium',
+  'microsoft-edge',
+  'chrome.exe',
+  'msedge.exe'
+]);
 
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
 
@@ -55,6 +65,7 @@ export async function capturePreviewImageFromDsl(
   const height = options.height ?? DEFAULT_HEIGHT;
   const scale = options.scale ?? DEFAULT_SCALE;
   const waitMs = options.waitMs ?? DEFAULT_WAIT_MS;
+  const allowNoSandbox = options.allowNoSandbox ?? parseBooleanEnv(process.env.TEXTUI_CAPTURE_ALLOW_NO_SANDBOX);
 
   if (width <= 0 || height <= 0) {
     throw new Error(`width/height must be positive: width=${width}, height=${height}`);
@@ -83,6 +94,7 @@ export async function capturePreviewImageFromDsl(
       height,
       scale,
       waitMs,
+      allowNoSandbox,
       targetUrl
     });
 
@@ -109,21 +121,20 @@ export async function capturePreviewImageFromDsl(
 }
 
 function resolveBrowserPath(overridePath?: string): string {
+  const trustedBrowserPaths = discoverTrustedBrowserPaths();
+  const trustedPathSet = new Set(trustedBrowserPaths);
+
   if (overridePath) {
-    return overridePath;
+    return resolveAndValidateBrowserOverride(overridePath, trustedPathSet, '--browser');
   }
 
   const envPath = process.env.TEXTUI_CAPTURE_BROWSER_PATH;
   if (envPath) {
-    return envPath;
+    return resolveAndValidateBrowserOverride(envPath, trustedPathSet, 'TEXTUI_CAPTURE_BROWSER_PATH');
   }
 
-  const candidates = getPlatformBrowserCandidates();
-
-  for (const candidate of candidates) {
-    if (canExecuteBrowser(candidate)) {
-      return candidate;
-    }
+  if (trustedBrowserPaths.length > 0) {
+    return trustedBrowserPaths[0];
   }
 
   throw new Error(
@@ -176,6 +187,112 @@ function isPathLike(value: string): boolean {
   return value.includes('/') || value.includes('\\');
 }
 
+function parseBooleanEnv(value: string | undefined): boolean {
+  if (!value) {
+    return false;
+  }
+  const normalized = value.trim().toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'yes';
+}
+
+function discoverTrustedBrowserPaths(): string[] {
+  const trusted = new Set<string>();
+  for (const candidate of getPlatformBrowserCandidates()) {
+    if (isPathLike(candidate)) {
+      const resolvedPath = resolvePathCandidate(candidate);
+      if (resolvedPath && canExecuteBrowser(resolvedPath) && isAllowedBrowserBasename(path.basename(resolvedPath))) {
+        trusted.add(resolvedPath);
+      }
+      continue;
+    }
+
+    if (!ALLOWED_BROWSER_COMMANDS.has(candidate)) {
+      continue;
+    }
+    const executablePath = resolveExecutableCommand(candidate);
+    if (!executablePath) {
+      continue;
+    }
+    if (!canExecuteBrowser(executablePath) || !isAllowedBrowserBasename(path.basename(executablePath))) {
+      continue;
+    }
+    trusted.add(executablePath);
+  }
+  return Array.from(trusted);
+}
+
+function resolveAndValidateBrowserOverride(
+  overrideValue: string,
+  trustedPathSet: Set<string>,
+  sourceLabel: '--browser' | 'TEXTUI_CAPTURE_BROWSER_PATH'
+): string {
+  const candidate = overrideValue.trim();
+  if (!candidate) {
+    throw new Error(`${sourceLabel} must not be empty`);
+  }
+
+  const resolvedPath = isPathLike(candidate)
+    ? resolvePathCandidate(candidate)
+    : resolveExecutableCommand(candidate);
+
+  if (!resolvedPath) {
+    throw new Error(`${sourceLabel} could not be resolved: ${candidate}`);
+  }
+  if (!isAllowedBrowserBasename(path.basename(resolvedPath))) {
+    throw new Error(`${sourceLabel} is not an allowed browser executable: ${candidate}`);
+  }
+  if (!trustedPathSet.has(resolvedPath)) {
+    throw new Error(`${sourceLabel} is not in trusted browser allowlist: ${candidate}`);
+  }
+  if (!canExecuteBrowser(resolvedPath)) {
+    throw new Error(`${sourceLabel} is not executable as browser: ${candidate}`);
+  }
+  return resolvedPath;
+}
+
+function resolvePathCandidate(candidatePath: string): string | null {
+  const absolutePath = path.resolve(candidatePath);
+  if (!fs.existsSync(absolutePath)) {
+    return null;
+  }
+  try {
+    return fs.realpathSync(absolutePath);
+  } catch {
+    return null;
+  }
+}
+
+function resolveExecutableCommand(commandName: string): string | null {
+  const resolver = process.platform === 'win32' ? 'where' : 'which';
+  try {
+    const result = spawnSync(resolver, [commandName], { encoding: 'utf8' });
+    if (result.status !== 0) {
+      return null;
+    }
+    const firstLine = result.stdout
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .find(Boolean);
+    if (!firstLine) {
+      return null;
+    }
+    return resolvePathCandidate(firstLine);
+  } catch {
+    return null;
+  }
+}
+
+function isAllowedBrowserBasename(fileName: string): boolean {
+  const normalized = fileName.toLowerCase();
+  return normalized === 'google-chrome'
+    || normalized === 'google-chrome-stable'
+    || normalized === 'chromium-browser'
+    || normalized === 'chromium'
+    || normalized === 'microsoft-edge'
+    || normalized === 'chrome.exe'
+    || normalized === 'msedge.exe';
+}
+
 async function runBrowserCapture(params: {
   browserPath: string;
   outputPath: string;
@@ -183,6 +300,7 @@ async function runBrowserCapture(params: {
   height: number;
   scale: number;
   waitMs: number;
+  allowNoSandbox: boolean;
   targetUrl: string;
 }): Promise<CaptureExecutionResult> {
   const headlessModes = ['--headless=new', '--headless'];
@@ -202,7 +320,10 @@ async function runBrowserCapture(params: {
     ];
 
     if (process.platform === 'linux') {
-      args.splice(1, 0, '--no-sandbox', '--disable-dev-shm-usage');
+      args.splice(1, 0, '--disable-dev-shm-usage');
+      if (params.allowNoSandbox) {
+        args.splice(1, 0, '--no-sandbox');
+      }
     }
 
     const execution = await runProcess(params.browserPath, args);
