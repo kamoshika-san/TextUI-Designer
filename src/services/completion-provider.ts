@@ -16,6 +16,13 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
   private completionCache: Map<string, { items: vscode.CompletionItem[]; timestamp: number }> = new Map();
   private readonly CACHE_TTL = 10000; // 10秒
   private completionTimeout: NodeJS.Timeout | null = null;
+  private readonly completionItemKindFallback: Record<'Class' | 'Property' | 'Value' | 'Module' | 'Field', number> = {
+    Class: 7,
+    Property: 9,
+    Value: 12,
+    Module: 3,
+    Field: 5
+  };
 
   constructor(schemaManager: ISchemaManager) {
     this.schemaManager = schemaManager;
@@ -58,7 +65,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     context: vscode.CompletionContext
   ): Promise<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
     const text = document.getText();
-    const linePrefix = text.substring(document.offsetAt(new vscode.Position(position.line, 0)), document.offsetAt(position));
+    const linePrefix = text.substring(document.offsetAt(this.createPosition(position.line, 0)), document.offsetAt(position));
     const currentWord = this.getCurrentWord(linePrefix);
     const isTemplate = /\.template\.(ya?ml|json)$/.test(document.fileName);
     
@@ -121,7 +128,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     isTemplate: boolean
   ): string {
     const text = document.getText();
-    const linePrefix = text.substring(document.offsetAt(new vscode.Position(position.line, 0)), document.offsetAt(position));
+    const linePrefix = text.substring(document.offsetAt(this.createPosition(position.line, 0)), document.offsetAt(position));
     const triggerChar = context.triggerCharacter || '';
     
     return `${document.uri.toString()}:${position.line}:${position.character}:${isTemplate}:${triggerChar}:${linePrefix}`;
@@ -288,7 +295,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
    */
   private getComponentCompletions(): vscode.CompletionItem[] {
     return BUILT_IN_COMPONENTS.map(componentName => {
-      const item = new vscode.CompletionItem(componentName, vscode.CompletionItemKind.Class);
+      const item = this.createCompletionItem(componentName, 'Class');
       item.detail = COMPONENT_DESCRIPTIONS[componentName] || 'コンポーネント';
       item.insertText = `${componentName}:\n    `;
       item.sortText = `0${componentName}`;
@@ -306,7 +313,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     const filteredProperties = properties.filter(prop => !existingProperties.has(prop.name));
     
     return filteredProperties.map(prop => {
-      const item = new vscode.CompletionItem(prop.name, vscode.CompletionItemKind.Property);
+      const item = this.createCompletionItem(prop.name, 'Property');
       item.detail = prop.description;
       item.insertText = `${prop.name}: `;
       item.sortText = `0${prop.name}`;
@@ -323,7 +330,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     const values = this.getPropertyValues(propertyName, componentName);
     
     return values.map(val => {
-      const item = new vscode.CompletionItem(val.value, vscode.CompletionItemKind.Value);
+      const item = this.createCompletionItem(val.value, 'Value');
       item.detail = val.description;
       item.insertText = val.value;
       item.sortText = `0${val.value}`;
@@ -341,7 +348,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
       return items;
     }
     
-    const pageItem = new vscode.CompletionItem('page', vscode.CompletionItemKind.Module);
+    const pageItem = this.createCompletionItem('page', 'Module');
     pageItem.detail = 'ページ定義';
     pageItem.insertText = 'page:\n  id: \n  title: \n  layout: vertical\n  components:\n    - ';
     pageItem.sortText = '0page';
@@ -366,7 +373,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     ];
     
     basicItems.forEach(item => {
-      const completionItem = new vscode.CompletionItem(item.name, vscode.CompletionItemKind.Field);
+      const completionItem = this.createCompletionItem(item.name, 'Field');
       completionItem.detail = item.description;
       completionItem.insertText = `${item.name}: `;
       items.push(completionItem);
@@ -410,5 +417,39 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
   private getCurrentWord(linePrefix: string): string {
     const words = linePrefix.trim().split(/\s+/);
     return words[words.length - 1] || '';
+  }
+
+  private createPosition(line: number, character: number): vscode.Position {
+    const positionCtor = (vscode as { Position?: unknown }).Position;
+    if (typeof positionCtor === 'function') {
+      return new vscode.Position(line, character);
+    }
+    return { line, character } as vscode.Position;
+  }
+
+  private getCompletionItemKind(kind: 'Class' | 'Property' | 'Value' | 'Module' | 'Field'): number {
+    const completionItemKind = (vscode as unknown as { CompletionItemKind?: Record<string, number> }).CompletionItemKind;
+    if (completionItemKind && typeof completionItemKind[kind] === 'number') {
+      return completionItemKind[kind];
+    }
+    return this.completionItemKindFallback[kind];
+  }
+
+  private createCompletionItem(
+    label: string,
+    kind: 'Class' | 'Property' | 'Value' | 'Module' | 'Field'
+  ): vscode.CompletionItem {
+    const completionCtor = (vscode as { CompletionItem?: unknown }).CompletionItem;
+    const resolvedKind = this.getCompletionItemKind(kind);
+    if (typeof completionCtor === 'function') {
+      return new vscode.CompletionItem(label, resolvedKind as vscode.CompletionItemKind);
+    }
+    return {
+      label,
+      kind: resolvedKind,
+      detail: '',
+      insertText: '',
+      sortText: ''
+    } as unknown as vscode.CompletionItem;
   }
 } 
