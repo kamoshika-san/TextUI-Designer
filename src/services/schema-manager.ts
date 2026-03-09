@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 import * as fs from 'fs';
 import Ajv, { ErrorObject } from 'ajv';
 import { 
@@ -9,17 +8,15 @@ import {
   SchemaValidationError 
 } from '../types';
 import { ConfigManager } from '../utils/config-manager';
-import { BUILT_IN_COMPONENTS, getComponentSchemaRefs } from '../registry/component-manifest';
-
-type JsonSchemaAssociation = {
-  fileMatch?: string[];
-  schema?: {
-    $id?: string;
-    title?: string;
-    [key: string]: unknown;
-  };
-  [key: string]: unknown;
-};
+import {
+  buildTextUiJsonSchemas,
+  buildTextUiYamlSchemas,
+  filterTextUiJsonSchemas,
+  filterTextUiYamlSchemas,
+  type JsonSchemaAssociation
+} from './schema/schema-association';
+import { resolveSchemaPaths } from './schema/schema-path-resolver';
+import { validateSchemaConsistency } from './schema/schema-consistency-checker';
 
 /**
  * スキーマ管理サービス
@@ -90,33 +87,16 @@ export class SchemaManager implements ISchemaManager {
     const performanceSettings = ConfigManager.getPerformanceSettings();
     this.cacheTTL = performanceSettings.schemaCacheTTL || 30000;
     
-    // デバッグモードでのスキーマファイルパス解決を改善
-    const possiblePaths = [
-      path.join(context.extensionPath, 'schemas', 'schema.json'),
-      path.join(__dirname, '..', '..', 'schemas', 'schema.json'),
-      path.join(process.cwd(), 'schemas', 'schema.json')
-    ];
-    
-    // 最初に存在するパスを使用
-    let foundSchemaPath = '';
-    for (const schemaPath of possiblePaths) {
-      if (fs.existsSync(schemaPath)) {
-        foundSchemaPath = schemaPath;
-        this.debug('[SchemaManager] スキーマパスを設定:', foundSchemaPath);
-        break;
-      }
-    }
-    
-    if (!foundSchemaPath) {
-      console.error('[SchemaManager] スキーマファイルが見つかりません。検索したパス:', possiblePaths);
-      // フォールバックとしてデフォルトパスを使用
-      this.schemaPath = path.join(context.extensionPath, 'schemas', 'schema.json');
+    const resolvedSchemaPaths = resolveSchemaPaths(context);
+    this.schemaPath = resolvedSchemaPaths.schemaPath;
+    this.templateSchemaPath = resolvedSchemaPaths.templateSchemaPath;
+    this.themeSchemaPath = resolvedSchemaPaths.themeSchemaPath;
+
+    if (!fs.existsSync(this.schemaPath)) {
+      console.error('[SchemaManager] スキーマファイルが見つかりません。検索したパス:', resolvedSchemaPaths.searchedPaths);
     } else {
-      this.schemaPath = foundSchemaPath;
+      this.debug('[SchemaManager] スキーマパスを設定:', this.schemaPath);
     }
-    
-    this.templateSchemaPath = path.join(path.dirname(this.schemaPath), 'template-schema.json');
-    this.themeSchemaPath = path.join(path.dirname(this.schemaPath), 'theme-schema.json');
     
     this.debug('[SchemaManager] 初期化完了');
     this.debug('[SchemaManager] スキーマパス:', this.schemaPath);
@@ -181,47 +161,8 @@ export class SchemaManager implements ISchemaManager {
         const yamlConfig = vscode.workspace.getConfiguration('yaml');
         const currentSchemas = yamlConfig.get('schemas') as Record<string, string[]> || {};
         
-        // 既存のTextUI Designer関連のスキーマを完全に削除
-        const filteredSchemas = Object.fromEntries(
-          Object.entries(currentSchemas).filter(([uri, patterns]) => {
-            // URIに基づくフィルタリング
-            const isTextUIDesignerSchema = uri.includes('textui-designer') || 
-                                         uri.includes('schema.json') || 
-                                         uri.includes('template-schema.json');
-            
-            // パターンに基づくフィルタリング
-            const hasTextUIPatterns = patterns.some(pattern => 
-              pattern.includes('tui') || pattern.includes('template')
-            );
-            
-            return !isTextUIDesignerSchema && !hasTextUIPatterns;
-          })
-        );
-        
-        // 重複チェック
-        const existingSchemaUri = Object.keys(filteredSchemas).find(uri => 
-          uri === schemaUri || uri.includes('schema.json')
-        );
-        const existingTemplateSchemaUri = Object.keys(filteredSchemas).find(uri => 
-          uri === templateSchemaUri || uri.includes('template-schema.json')
-        );
-        
-        if (existingSchemaUri) {
-          this.debug('[SchemaManager] 既存のスキーマを削除:', existingSchemaUri);
-          delete filteredSchemas[existingSchemaUri];
-        }
-        
-        if (existingTemplateSchemaUri) {
-          this.debug('[SchemaManager] 既存のテンプレートスキーマを削除:', existingTemplateSchemaUri);
-          delete filteredSchemas[existingTemplateSchemaUri];
-        }
-        
-        const newSchemas = {
-          ...filteredSchemas,
-          [schemaUri]: ['*.tui.yml', '*.tui.yaml'],
-          [templateSchemaUri]: ['*.template.yml', '*.template.yaml'],
-          [themeSchemaUri]: ['*-theme.yml', '*-theme.yaml', '*_theme.yml', '*_theme.yaml', 'textui-theme.yml', 'textui-theme.yaml']
-        };
+        const filteredSchemas = filterTextUiYamlSchemas(currentSchemas);
+        const newSchemas = buildTextUiYamlSchemas(filteredSchemas, schemaUri, templateSchemaUri, themeSchemaUri);
         
         await yamlConfig.update('schemas', newSchemas, vscode.ConfigurationTarget.Global);
         this.debug('[SchemaManager] YAMLスキーマ登録成功');
@@ -235,39 +176,18 @@ export class SchemaManager implements ISchemaManager {
         const jsonConfig = vscode.workspace.getConfiguration('json');
         const currentSchemas = (jsonConfig.get('schemas') as JsonSchemaAssociation[] | undefined) || [];
         
-        // 既存のTextUI Designer関連のスキーマを完全に削除
-        const filteredSchemas = currentSchemas.filter((schema: JsonSchemaAssociation) => {
-          // fileMatchに基づくフィルタリング
-          const hasTextUIMatch = schema.fileMatch?.some((match: string) => 
-            match.includes('tui') || match.includes('template')
-          );
-          
-            // schemaオブジェクトに基づくフィルタリング
-          const isTextUISchema = schema.schema?.$id?.includes('textui') ||
-                                schema.schema?.title?.includes('TextUI');
-          
-          return !hasTextUIMatch && !isTextUISchema;
-        });
+        const filteredSchemas = filterTextUiJsonSchemas(currentSchemas);
         
         const schemaContent = JSON.parse(fs.readFileSync(this.schemaPath, 'utf-8'));
         const templateSchemaContent = JSON.parse(fs.readFileSync(this.templateSchemaPath, 'utf-8'));
         const themeSchemaContent = JSON.parse(fs.readFileSync(this.themeSchemaPath, 'utf-8'));
         
-        const newSchemas = [
-          ...filteredSchemas,
-          {
-            fileMatch: ['*.tui.json'],
-            schema: schemaContent
-          },
-          {
-            fileMatch: ['*.template.json'],
-            schema: templateSchemaContent
-          },
-          {
-            fileMatch: ['*-theme.json', '*_theme.json', 'textui-theme.json'],
-            schema: themeSchemaContent
-          }
-        ];
+        const newSchemas = buildTextUiJsonSchemas(
+          filteredSchemas,
+          schemaContent,
+          templateSchemaContent,
+          themeSchemaContent
+        );
         
         await jsonConfig.update('schemas', newSchemas, vscode.ConfigurationTarget.Global);
         this.debug('[SchemaManager] JSONスキーマ登録成功');
@@ -309,7 +229,7 @@ export class SchemaManager implements ISchemaManager {
    */
   async loadSchema(): Promise<SchemaDefinition> {
     const schema = this.loadSchemaWithCache('main');
-    this.validateSchemaConsistency(schema);
+    validateSchemaConsistency(schema);
     return schema;
   }
 
@@ -360,20 +280,7 @@ export class SchemaManager implements ISchemaManager {
       const yamlConfig = vscode.workspace.getConfiguration('yaml');
       const currentSchemas = yamlConfig.get('schemas') as Record<string, string[]> || {};
       
-      const filteredSchemas = Object.fromEntries(
-        Object.entries(currentSchemas).filter(([uri, patterns]) => {
-          const isTextUIDesignerSchema = uri.includes('textui-designer') || 
-                                       uri.includes('schema.json') || 
-                                       uri.includes('template-schema.json') ||
-                                       uri.includes('theme-schema.json');
-          
-          const hasTextUIPatterns = patterns.some(pattern => 
-            pattern.includes('tui') || pattern.includes('template') || pattern.includes('theme')
-          );
-          
-          return !isTextUIDesignerSchema && !hasTextUIPatterns;
-        })
-      );
+      const filteredSchemas = filterTextUiYamlSchemas(currentSchemas);
       
       await yamlConfig.update('schemas', filteredSchemas, vscode.ConfigurationTarget.Global);
       this.debug('[SchemaManager] YAMLスキーマクリーンアップ完了');
@@ -382,16 +289,7 @@ export class SchemaManager implements ISchemaManager {
       const jsonConfig = vscode.workspace.getConfiguration('json');
       const currentJsonSchemas = (jsonConfig.get('schemas') as JsonSchemaAssociation[] | undefined) || [];
       
-      const filteredJsonSchemas = currentJsonSchemas.filter((schema: JsonSchemaAssociation) => {
-        const hasTextUIMatch = schema.fileMatch?.some((match: string) => 
-          match.includes('tui') || match.includes('template') || match.includes('theme')
-        );
-        
-        const isTextUISchema = schema.schema?.$id?.includes('textui') ||
-                              schema.schema?.title?.includes('TextUI');
-        
-        return !hasTextUIMatch && !isTextUISchema;
-      });
+      const filteredJsonSchemas = filterTextUiJsonSchemas(currentJsonSchemas);
       
       await jsonConfig.update('schemas', filteredJsonSchemas, vscode.ConfigurationTarget.Global);
       this.debug('[SchemaManager] JSONスキーマクリーンアップ完了');
@@ -531,61 +429,4 @@ export class SchemaManager implements ISchemaManager {
 
     console.log(message, ...args);
   }
-
-  /**
-   * component-manifest と schema.json の整合性を検証
-   */
-  private validateSchemaConsistency(schema: SchemaDefinition): void {
-    const expectedRefs = getComponentSchemaRefs();
-    const actualRefs = this.collectSchemaComponentRefs(schema);
-    const missingRefs = expectedRefs.filter(ref => !actualRefs.includes(ref));
-    const extraRefs = actualRefs.filter(ref => !expectedRefs.includes(ref));
-
-    const definitions = schema.definitions ?? {};
-    const missingDefinitions = BUILT_IN_COMPONENTS.filter(componentName => !(componentName in definitions));
-
-    if (missingRefs.length === 0 && extraRefs.length === 0 && missingDefinitions.length === 0) {
-      return;
-    }
-
-    const problems: string[] = [];
-    if (missingRefs.length > 0) {
-      problems.push(`不足しているoneOf参照: ${missingRefs.join(', ')}`);
-    }
-    if (extraRefs.length > 0) {
-      problems.push(`manifestに存在しないoneOf参照: ${extraRefs.join(', ')}`);
-    }
-    if (missingDefinitions.length > 0) {
-      problems.push(`definitions不足: ${missingDefinitions.join(', ')}`);
-    }
-
-    throw new Error(`[SchemaManager] schema整合性エラー: ${problems.join(' / ')}`);
-  }
-
-  private collectSchemaComponentRefs(schema: SchemaDefinition): string[] {
-    const definitions = schema.definitions;
-    if (!definitions) {
-      return [];
-    }
-
-    const componentDefinition = definitions.component;
-    if (!componentDefinition || typeof componentDefinition !== 'object') {
-      return [];
-    }
-
-    const oneOf = (componentDefinition as Record<string, unknown>).oneOf;
-    if (!Array.isArray(oneOf)) {
-      return [];
-    }
-
-    return oneOf
-      .map(definition => {
-        if (!definition || typeof definition !== 'object') {
-          return undefined;
-        }
-        const ref = (definition as Record<string, unknown>).$ref;
-        return typeof ref === 'string' ? ref : undefined;
-      })
-      .filter((ref): ref is string => Boolean(ref));
-  }
-} 
+}

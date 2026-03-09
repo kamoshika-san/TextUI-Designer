@@ -5,12 +5,15 @@ import { FileWatcher } from './file-watcher';
 import { MemoryMonitor } from './memory-monitor';
 import { PerformanceTracker } from './performance-tracker';
 import { ErrorHandler } from '../utils/error-handler';
+import { TextUIMemoryTracker } from '../utils/textui-memory-tracker';
+import { Logger } from '../utils/logger';
 
 /**
  * 拡張機能のライフサイクル管理
  * activate/deactivateの統合管理を担当
  */
 export class ExtensionLifecycleManager {
+  private readonly logger = new Logger('ExtensionLifecycleManager');
   private context: vscode.ExtensionContext;
   private serviceInitializer: ServiceInitializer;
   private eventManager: EventManager;
@@ -31,9 +34,12 @@ export class ExtensionLifecycleManager {
    * 拡張機能をアクティベート
    */
   async activate(): Promise<void> {
-    console.log('[ExtensionLifecycleManager] アクティベーション開始');
+    this.logger.info('アクティベーション開始');
     
     try {
+      // メモリ追跡システムの初期化
+      TextUIMemoryTracker.getInstance();
+
       // パフォーマンス追跡開始
       this.performanceTracker.startActivation();
 
@@ -52,10 +58,10 @@ export class ExtensionLifecycleManager {
       // パフォーマンス追跡完了
       this.performanceTracker.completeActivation();
 
-      console.log('[ExtensionLifecycleManager] アクティベーション完了');
+      this.logger.info('アクティベーション完了');
 
     } catch (error) {
-      console.error('[ExtensionLifecycleManager] アクティベーション中にエラーが発生しました:', error);
+      this.logger.error('アクティベーション中にエラーが発生しました:', error);
       ErrorHandler.showError('TextUI Designer拡張の初期化に失敗しました', error);
       throw error;
     }
@@ -65,7 +71,7 @@ export class ExtensionLifecycleManager {
    * 拡張機能を非アクティベート
    */
   async deactivate(): Promise<void> {
-    console.log('[ExtensionLifecycleManager] 非アクティベーション開始');
+    this.logger.info('非アクティベーション開始');
 
     try {
       // パフォーマンス追跡のクリーンアップ
@@ -83,10 +89,13 @@ export class ExtensionLifecycleManager {
       // サービスのクリーンアップ
       await this.serviceInitializer.cleanup();
 
-      console.log('[ExtensionLifecycleManager] 非アクティベーション完了');
+      // メモリ追跡システムのクリーンアップ
+      TextUIMemoryTracker.getInstance().dispose();
+
+      this.logger.info('非アクティベーション完了');
 
     } catch (error) {
-      console.error('[ExtensionLifecycleManager] 非アクティベーション中にエラーが発生しました:', error);
+      this.logger.error('非アクティベーション中にエラーが発生しました:', error);
     }
   }
 
