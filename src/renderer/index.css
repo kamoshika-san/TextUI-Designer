@@ -579,11 +579,3 @@ body.light {
   gap: var(--spacing-sm, 0.75rem);
 } 
 
-.textui-jump-target {
-  cursor: pointer;
-}
-
-.textui-jump-target:hover {
-  outline: 1px dashed rgba(59, 130, 246, 0.8);
-  outline-offset: 2px;
-}
