@@ -107,47 +107,6 @@ const App: React.FC = () => {
       vscodeApi.postMessage({ type: 'webview-ready' });
     }
 
-    const messageHandlers: Record<string, (payload: Record<string, unknown>) => void> = {
-      json: payload => {
-        console.log('[React] JSONデータを受信:', payload.json);
-        applyDslUpdate(payload.json as TextUIDSL);
-        setError(null);
-      },
-      update: payload => {
-        console.log('[React] 更新データを受信:', payload.data);
-        applyDslUpdate(payload.data as TextUIDSL);
-        setError(null);
-      },
-      error: payload => {
-        console.log('[React] エラーメッセージを受信:', payload.error);
-        setError(mapSimpleError(payload));
-      },
-      'schema-error': payload => {
-        console.log('[React] スキーマエラーメッセージを受信:', payload.errors);
-        const schemaErrors = formatSchemaErrors(payload.errors);
-        setError(mapSchemaValidationError(payload, schemaErrors));
-      },
-      'theme-change': payload => {
-        console.log('[React] テーマ変更メッセージを受信:', payload.theme);
-        // テーマ変更はThemeToggleコンポーネントで処理される
-      },
-      'theme-variables': payload => {
-        applyThemeVariables(payload.css);
-      },
-      parseError: payload => {
-        console.log('[React] 詳細パースエラーメッセージを受信:', payload.error);
-        setError(mapParseError(payload));
-      },
-      schemaError: payload => {
-        console.log('[React] 詳細スキーマエラーメッセージを受信:', payload.error);
-        setError(mapDetailedSchemaError(payload));
-      },
-      clearError: () => {
-        console.log('[React] エラー状態クリアメッセージを受信');
-        setError(null);
-      }
-    };
-
     const onMessage = (event: MessageEvent<unknown>) => {
       const message = event.data;
       if (!isRecord(message) || typeof message.type !== 'string') {
@@ -155,13 +114,48 @@ const App: React.FC = () => {
       }
       console.log('[React] メッセージを受信:', message);
 
-      const handler = Object.prototype.hasOwnProperty.call(messageHandlers, message.type)
-        ? messageHandlers[message.type]
-        : undefined;
-      if (typeof handler === 'function') {
-        handler(message);
-      } else {
-        console.log('[React] 未対応のメッセージタイプ:', message.type);
+      switch (message.type) {
+        case 'json':
+          console.log('[React] JSONデータを受信:', message.json);
+          applyDslUpdate(message.json as TextUIDSL);
+          setError(null);
+          break;
+        case 'update':
+          console.log('[React] 更新データを受信:', message.data);
+          applyDslUpdate(message.data as TextUIDSL);
+          setError(null);
+          break;
+        case 'error':
+          console.log('[React] エラーメッセージを受信:', message.error);
+          setError(mapSimpleError(message));
+          break;
+        case 'schema-error': {
+          console.log('[React] スキーマエラーメッセージを受信:', message.errors);
+          const schemaErrors = formatSchemaErrors(message.errors);
+          setError(mapSchemaValidationError(message, schemaErrors));
+          break;
+        }
+        case 'theme-change':
+          console.log('[React] テーマ変更メッセージを受信:', message.theme);
+          // テーマ変更はThemeToggleコンポーネントで処理される
+          break;
+        case 'theme-variables':
+          applyThemeVariables(message.css);
+          break;
+        case 'parseError':
+          console.log('[React] 詳細パースエラーメッセージを受信:', message.error);
+          setError(mapParseError(message));
+          break;
+        case 'schemaError':
+          console.log('[React] 詳細スキーマエラーメッセージを受信:', message.error);
+          setError(mapDetailedSchemaError(message));
+          break;
+        case 'clearError':
+          console.log('[React] エラー状態クリアメッセージを受信');
+          setError(null);
+          break;
+        default:
+          console.log('[React] 未対応のメッセージタイプ:', message.type);
       }
     };
 
