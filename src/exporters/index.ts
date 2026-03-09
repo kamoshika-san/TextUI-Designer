@@ -13,6 +13,7 @@ export interface ExportOptions {
   format: string;
   outputPath?: string;
   fileName?: string;
+  themePath?: string;
 }
 
 export interface Exporter {

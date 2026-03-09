@@ -257,6 +257,7 @@ page:
   it('help output includes provider-module option', () => {
     const output = execFileSync('node', [cliPath, '--help'], { encoding: 'utf8' });
     assert.match(output, /--provider-module <path>/);
+    assert.match(output, /--theme <path>/);
   });
 
   it('export returns exit code 1 with supported provider hint when provider is unknown', () => {
@@ -471,6 +472,55 @@ page:
     const parsed = JSON.parse(output);
     assert.strictEqual(parsed.deterministic, true);
     assert.ok(fs.existsSync(outFile));
+  });
+
+  it('export --theme applies theme variables into HTML output', () => {
+    const themedDsl = path.join(tmpDir, 'theme-export.tui.yml');
+    const themedFile = path.join(tmpDir, 'custom-theme.yml');
+    const themedOut = path.join(tmpDir, 'theme-export.html');
+    fs.writeFileSync(themedDsl, `
+page:
+  id: theme-export
+  title: "Theme Export"
+  layout: vertical
+  components:
+    - Button:
+        label: "送信"
+        kind: primary
+`, 'utf8');
+    fs.writeFileSync(themedFile, `
+theme:
+  name: "CLI Theme"
+  tokens:
+    color:
+      primary: "#112233"
+      background: "#f4f4f5"
+      text:
+        primary: "#111111"
+  components:
+    button:
+      primary:
+        backgroundColor: "#112233"
+`, 'utf8');
+
+    const result = spawnSync('node', [
+      cliPath,
+      'export',
+      '--file',
+      themedDsl,
+      '--provider',
+      'html',
+      '--theme',
+      themedFile,
+      '--output',
+      themedOut
+    ], { encoding: 'utf8' });
+
+    assert.strictEqual(result.status, 0, result.stderr || result.stdout);
+    const html = fs.readFileSync(themedOut, 'utf8');
+    assert.match(html, /--color-primary:\s*#112233\s*!important;/);
+    assert.match(html, /--component-button-primary-backgroundColor:\s*#112233\s*!important;/);
+    assert.match(html, /data-kind="primary"/);
   });
 
   it('capture writes preview image using mock browser', () => {

@@ -72,6 +72,18 @@ describe('ExportService 単体テスト', () => {
       assert.ok(result.includes('Exported from'));
       assert.ok(result.includes('Mock export for html'));
     });
+
+    it('executeExportでThemeManagerのテーマパスをエクスポートオプションへ渡す', async () => {
+      global.cleanupMocks();
+      exportService = global.ExportServiceFactory.createForTest(global.vscode, {
+        themePath: '/workspace/sample/02-theme/textui-theme.yml'
+      });
+
+      await exportService.executeExport(testFilePath);
+      const lastOptions = exportService._testHelpers.getLastExportOptions();
+      assert.ok(lastOptions, 'exportFromFile の呼び出しオプションが記録されます');
+      assert.strictEqual(lastOptions.themePath, '/workspace/sample/02-theme/textui-theme.yml');
+    });
   });
 
   describe('ファイル拡張子の検証', () => {

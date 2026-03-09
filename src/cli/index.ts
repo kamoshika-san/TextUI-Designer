@@ -50,6 +50,18 @@ function parseTokenErrorMode(): TokenErrorMode {
   throw new Error(`invalid --token-on-error value: ${mode}. expected: error|warn|ignore`);
 }
 
+function parseThemePath(): string | undefined {
+  const raw = getArg('--theme');
+  if (!raw) {
+    return undefined;
+  }
+  const resolved = path.resolve(raw);
+  if (!fs.existsSync(resolved) || !fs.statSync(resolved).isFile()) {
+    throw new Error(`theme file not found: ${resolved}`);
+  }
+  return resolved;
+}
+
 function parseOptionalPositiveInt(flag: string): number | undefined {
   const value = getArg(flag);
   if (value === undefined) {
@@ -207,15 +219,25 @@ async function renderWithDeterministicCheck(params: {
   dsl: Parameters<typeof runExport>[0];
   provider: CliProvider;
   providerModulePath?: string;
+  themePath?: string;
   deterministic: boolean;
 }): Promise<string> {
   if (!params.deterministic) {
-    return runExport(params.dsl, params.provider, { providerModulePath: params.providerModulePath });
+    return runExport(params.dsl, params.provider, {
+      providerModulePath: params.providerModulePath,
+      themePath: params.themePath
+    });
   }
 
   const deterministicDsl = toDeterministicDsl(params.dsl);
-  const first = await runExport(deterministicDsl, params.provider, { providerModulePath: params.providerModulePath });
-  const second = await runExport(deterministicDsl, params.provider, { providerModulePath: params.providerModulePath });
+  const first = await runExport(deterministicDsl, params.provider, {
+    providerModulePath: params.providerModulePath,
+    themePath: params.themePath
+  });
+  const second = await runExport(deterministicDsl, params.provider, {
+    providerModulePath: params.providerModulePath,
+    themePath: params.themePath
+  });
   if (first !== second) {
     throw new Error('deterministic export check failed: provider output is not stable');
   }
@@ -227,6 +249,7 @@ async function applyAcrossFiles(params: {
   rootDir: string;
   provider: CliProvider;
   providerModulePath?: string;
+  themePath?: string;
   deterministic: boolean;
   tokenOnError: TokenErrorMode;
   autoApprove: boolean;
@@ -317,6 +340,7 @@ async function applyAcrossFiles(params: {
       dsl: tokenResolution.dsl,
       provider: params.provider,
       providerModulePath: params.providerModulePath,
+      themePath: params.themePath,
       deterministic: params.deterministic
     });
     ensureDirectoryForFile(outputPath);
@@ -357,6 +381,7 @@ async function applyAcrossFiles(params: {
       files: results,
       changes: totalChanges,
       deterministic: params.deterministic,
+      themePath: params.themePath,
       tokenOnError: params.tokenOnError,
       tokenWarnings: totalTokenWarnings
     });
@@ -384,7 +409,7 @@ async function run(): Promise<ExitCode> {
 
   if (!command || command === 'help' || command === '--help' || command === '-h') {
     process.stdout.write('Usage: textui <validate|plan|apply|export|capture|import|state|providers|version> ...\n');
-    process.stdout.write('Options: --provider <name> --provider-module <path> --file <path> --dir <path> --json --token-on-error <error|warn|ignore>\n');
+    process.stdout.write('Options: --provider <name> --provider-module <path> --theme <path> --file <path> --dir <path> --json --token-on-error <error|warn|ignore>\n');
     process.stdout.write('Capture: textui capture --file <path> [--output <png>] [--width <px>] [--height <px>] [--scale <n>] [--wait-ms <ms>] [--browser <path>] [--json]\n');
     process.stdout.write('Import: textui import openapi --input <openapi.(yml|yaml|json)> [--operation <operationId>] [--all] [--output <file>|--output-dir <dir>] [--json]\n');
     return 0;
@@ -727,6 +752,7 @@ async function run(): Promise<ExitCode> {
 
   const providerModulePath = getArg('--provider-module');
   const provider = (getArg('--provider') ?? 'html') as CliProvider;
+  const themePath = parseThemePath();
 
   if (command === 'export') {
     const filePath = resolveDslFile(fileArg);
@@ -760,6 +786,7 @@ async function run(): Promise<ExitCode> {
       dsl: tokenResolution.dsl,
       provider,
       providerModulePath,
+      themePath,
       deterministic
     });
     const providerExtension = await getProviderExtension(provider, { providerModulePath });
@@ -773,6 +800,7 @@ async function run(): Promise<ExitCode> {
         provider,
         bytes: Buffer.byteLength(content, 'utf8'),
         deterministic,
+        themePath,
         tokenOnError,
         tokenWarnings: tokenResolution.issues.length
       });
@@ -801,6 +829,7 @@ async function run(): Promise<ExitCode> {
         rootDir: path.resolve(dirArg),
         provider,
         providerModulePath,
+        themePath,
         deterministic,
         tokenOnError,
         autoApprove: hasFlag('--auto-approve'),
@@ -843,6 +872,7 @@ async function run(): Promise<ExitCode> {
       dsl: tokenResolution.dsl,
       provider,
       providerModulePath,
+      themePath,
       deterministic
     });
     const providerExtension = await getProviderExtension(provider, { providerModulePath });
@@ -875,6 +905,7 @@ async function run(): Promise<ExitCode> {
         state: statePath,
         changes: plan.changes.length,
         deterministic,
+        themePath,
         tokenOnError,
         tokenWarnings: tokenResolution.issues.length
       });

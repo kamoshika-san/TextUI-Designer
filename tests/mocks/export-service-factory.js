@@ -11,8 +11,11 @@ class ExportServiceFactory {
       cacheTTL: 300000,
       maxCacheSize: 100,
       monitoringEnabled: true,
+      themePath: undefined,
       ...options
     };
+
+    let lastExportOptions = null;
 
     // Mock ExportManagerを作成
     const mockExportManager = {
@@ -22,6 +25,7 @@ class ExportServiceFactory {
         return extensions[format] || '.txt';
       },
       exportFromFile: async (filePath, options) => {
+        lastExportOptions = options;
         // モックの実装
         return `<!-- Exported from ${filePath} -->\n<div>Mock export for ${options.format}</div>`;
       },
@@ -77,12 +81,17 @@ class ExportServiceFactory {
 
     // ExportServiceを作成
     const { ExportService } = require('../../out/services/export-service.js');
-    const exportService = new ExportService(mockExportManager);
+    const mockThemeManager = {
+      getThemePath: () => defaultOptions.themePath
+    };
+    const exportService = new ExportService(mockExportManager, mockThemeManager);
 
     // テスト用のヘルパーメソッドを追加
     exportService._testHelpers = {
       mockExportManager,
+      mockThemeManager,
       extendedVscode,
+      getLastExportOptions: () => lastExportOptions,
       resetAllMocks: () => {
         // ファクトリパターンでは基本的にリセット不要
         // 必要に応じて状態のリセット処理を追加

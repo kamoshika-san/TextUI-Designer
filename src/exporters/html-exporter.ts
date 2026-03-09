@@ -9,6 +9,9 @@ import type {
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
 import { StyleManager } from '../utils/style-manager';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as YAML from 'yaml';
 
 export class HtmlExporter extends BaseComponentRenderer {
   constructor() {
@@ -18,6 +21,7 @@ export class HtmlExporter extends BaseComponentRenderer {
   async export(dsl: TextUIDSL, options: ExportOptions): Promise<string> {
     const components = dsl.page?.components || [];
     const componentCode = components.map((comp, index) => this.renderComponent(comp, index)).join('\n');
+    const themeStyles = this.buildThemeStyles(options.themePath);
     
     return `<!DOCTYPE html>
 <html lang="ja">
@@ -88,6 +92,7 @@ export class HtmlExporter extends BaseComponentRenderer {
       background-color: #3b82f6 !important; /* blue-500 */
       color: #ffffff !important;
     }
+${themeStyles}
   </style>
 </head>
 <body class="bg-gray-900 text-gray-300 min-h-screen">
@@ -96,6 +101,205 @@ ${componentCode}
   </div>
 </body>
 </html>`;
+  }
+
+  private buildThemeStyles(themePath?: string): string {
+    if (!themePath) {
+      return '';
+    }
+
+    try {
+      const theme = this.loadThemeDefinition(themePath, []);
+      const tokens = this.extractThemeSection(theme, 'tokens');
+      const components = this.extractThemeSection(theme, 'components');
+      const tokenVars = this.flattenTokens(tokens);
+      const componentVars = this.flattenComponentVars(components);
+      const allVars = { ...tokenVars, ...componentVars };
+
+      if (Object.keys(allVars).length === 0) {
+        return '';
+      }
+
+      const varLines = Object.entries(allVars)
+        .map(([key, value]) => `  --${key}: ${value} !important;`)
+        .join('\n');
+
+      return `
+    /* textui-theme.yml から反映されたテーマ */
+    :root {
+${varLines}
+    }
+
+    body {
+      background-color: var(--color-background, var(--colors-background, #1e1e1e)) !important;
+      color: var(--color-text-primary, var(--colors-text-primary, #cccccc)) !important;
+      font-family: var(--typography-fontFamily, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
+      font-size: var(--typography-fontSize-base, 16px) !important;
+    }
+
+    h1, h2, h3, p, small {
+      color: var(--color-text-primary, var(--colors-text-primary, inherit)) !important;
+    }
+
+    label {
+      color: var(--color-text-secondary, var(--colors-text-secondary, inherit)) !important;
+    }
+
+    input,
+    textarea,
+    select {
+      background-color: var(--color-surface, var(--colors-surface, #1f2937)) !important;
+      color: var(--color-text-primary, var(--colors-text-primary, #d1d5db)) !important;
+      border-color: var(--color-secondary, var(--colors-secondary, #4b5563)) !important;
+      border-radius: var(--borderRadius-md, 0.375rem) !important;
+    }
+
+    button[data-kind="primary"] {
+      background-color: var(--component-button-primary-backgroundColor, var(--color-primary, var(--colors-primary, #2563eb))) !important;
+      color: var(--component-button-primary-color, var(--color-text-primary, var(--colors-text-primary, #ffffff))) !important;
+      border-radius: var(--component-button-primary-borderRadius, var(--borderRadius-md, 0.375rem)) !important;
+      border: var(--component-button-primary-border, none) !important;
+    }
+
+    button[data-kind="secondary"] {
+      background-color: var(--component-button-secondary-backgroundColor, var(--color-secondary, var(--colors-secondary, #374151))) !important;
+      color: var(--component-button-secondary-color, var(--color-text-primary, var(--colors-text-primary, #d1d5db))) !important;
+      border-radius: var(--component-button-secondary-borderRadius, var(--borderRadius-md, 0.375rem)) !important;
+      border: var(--component-button-secondary-border, none) !important;
+    }
+
+    button[data-kind="submit"] {
+      background-color: var(--component-button-submit-backgroundColor, var(--color-success, var(--colors-success, #16a34a))) !important;
+      color: var(--component-button-submit-color, var(--color-text-primary, var(--colors-text-primary, #ffffff))) !important;
+      border-radius: var(--component-button-submit-borderRadius, var(--borderRadius-md, 0.375rem)) !important;
+      border: var(--component-button-submit-border, none) !important;
+    }
+
+    [data-alert-variant="info"] {
+      background-color: var(--component-alert-info-backgroundColor, rgba(59, 130, 246, 0.1)) !important;
+      color: var(--component-alert-info-color, var(--color-primary, var(--colors-primary, #60a5fa))) !important;
+      border-color: var(--component-alert-info-borderColor, var(--color-primary, var(--colors-primary, #3b82f6))) !important;
+    }
+
+    [data-alert-variant="success"] {
+      background-color: var(--component-alert-success-backgroundColor, rgba(34, 197, 94, 0.1)) !important;
+      color: var(--component-alert-success-color, var(--color-success, var(--colors-success, #4ade80))) !important;
+      border-color: var(--component-alert-success-borderColor, var(--color-success, var(--colors-success, #22c55e))) !important;
+    }
+
+    [data-alert-variant="warning"] {
+      background-color: var(--component-alert-warning-backgroundColor, rgba(245, 158, 11, 0.1)) !important;
+      color: var(--component-alert-warning-color, var(--color-warning, var(--colors-warning, #facc15))) !important;
+      border-color: var(--component-alert-warning-borderColor, var(--color-warning, var(--colors-warning, #eab308))) !important;
+    }
+
+    [data-alert-variant="error"] {
+      background-color: var(--component-alert-error-backgroundColor, rgba(239, 68, 68, 0.1)) !important;
+      color: var(--component-alert-error-color, var(--color-error, var(--colors-error, #f87171))) !important;
+      border-color: var(--component-alert-error-borderColor, var(--color-error, var(--colors-error, #ef4444))) !important;
+    }`;
+    } catch (error) {
+      console.warn(`[HtmlExporter] テーマ読み込みに失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+      return '';
+    }
+  }
+
+  private loadThemeDefinition(themePath: string, chain: string[]): unknown {
+    const absolutePath = path.resolve(themePath);
+    if (chain.includes(absolutePath)) {
+      throw new Error(`テーマ継承で循環参照を検出しました: ${[...chain, absolutePath].join(' -> ')}`);
+    }
+    const raw = fs.readFileSync(absolutePath, 'utf8');
+    const parsed = YAML.parse(raw);
+    if (!this.isPlainObject(parsed)) {
+      return parsed;
+    }
+    const themeRoot = parsed.theme;
+    if (!this.isPlainObject(themeRoot)) {
+      return parsed;
+    }
+    const extendsPath = typeof themeRoot.extends === 'string' ? themeRoot.extends.trim() : '';
+    if (!extendsPath || extendsPath.startsWith('npm:')) {
+      return parsed;
+    }
+    const parentPath = path.resolve(path.dirname(absolutePath), extendsPath);
+    const parent = this.loadThemeDefinition(parentPath, [...chain, absolutePath]);
+    return this.deepMerge(parent, parsed);
+  }
+
+  private deepMerge(base: unknown, override: unknown): unknown {
+    if (Array.isArray(base) || Array.isArray(override)) {
+      return override ?? base;
+    }
+    if (!this.isPlainObject(base) || !this.isPlainObject(override)) {
+      return override ?? base;
+    }
+    const result: Record<string, unknown> = { ...base };
+    Object.entries(override).forEach(([key, value]) => {
+      result[key] = this.deepMerge((base as Record<string, unknown>)[key], value);
+    });
+    return result;
+  }
+
+  private extractThemeSection(themeDefinition: unknown, key: 'tokens' | 'components'): Record<string, unknown> {
+    if (!this.isPlainObject(themeDefinition) || !this.isPlainObject(themeDefinition.theme)) {
+      return {};
+    }
+    const section = (themeDefinition.theme as Record<string, unknown>)[key];
+    return this.isPlainObject(section) ? section : {};
+  }
+
+  private flattenTokens(obj: Record<string, unknown>, prefix = ''): Record<string, string> {
+    const result: Record<string, string> = {};
+    Object.entries(obj).forEach(([key, value]) => {
+      const nextKey = prefix ? `${prefix}-${key}` : key;
+      if (this.isTokenLeaf(value)) {
+        result[nextKey] = value.value;
+        return;
+      }
+      if (this.isPlainObject(value)) {
+        Object.assign(result, this.flattenTokens(value, nextKey));
+        return;
+      }
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        result[nextKey] = String(value);
+      }
+    });
+    return result;
+  }
+
+  private flattenComponentVars(components: Record<string, unknown>): Record<string, string> {
+    const result: Record<string, string> = {};
+    Object.entries(components).forEach(([componentName, variants]) => {
+      if (!this.isPlainObject(variants)) {
+        return;
+      }
+      Object.entries(variants).forEach(([variantName, styles]) => {
+        if (!this.isPlainObject(styles)) {
+          return;
+        }
+        Object.entries(styles).forEach(([propertyName, value]) => {
+          if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+            result[`component-${componentName}-${variantName}-${propertyName}`] = String(value);
+          }
+        });
+      });
+    });
+    return result;
+  }
+
+  private isTokenLeaf(value: unknown): value is { value: string } {
+    return Boolean(
+      value &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      Object.prototype.hasOwnProperty.call(value, 'value') &&
+      typeof (value as { value: unknown }).value === 'string'
+    );
+  }
+
+  private isPlainObject(value: unknown): value is Record<string, unknown> {
+    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
   }
 
   getFileExtension(): string {
@@ -158,7 +362,8 @@ ${componentCode}
     const typeAttr = submit ? ' type="submit"' : '';
     
     const tokenStyle = this.getHtmlTokenStyleAttr('Button', token);
-    return `    <button${typeAttr} class="${kindClasses[kind as keyof typeof kindClasses]} ${disabledClass}"${disabledAttr}${tokenStyle}>${safeLabel}</button>`;
+    const safeKind = this.escapeAttribute(kind);
+    return `    <button${typeAttr} data-kind="${safeKind}" class="${kindClasses[kind as keyof typeof kindClasses]} ${disabledClass}"${disabledAttr}${tokenStyle}>${safeLabel}</button>`;
   }
 
   protected renderCheckbox(props: CheckboxComponent, key: number): string {
@@ -303,11 +508,12 @@ ${componentCode}
     const { message, variant = 'info', title, token } = props;
     const safeTitle = title ? this.escapeHtml(title) : '';
     const safeMessage = this.escapeHtml(message ?? '');
+    const safeVariant = this.escapeAttribute(variant);
     const styleManager = this.getStyleManager();
     const variantClasses = styleManager.getAlertVariantClasses(this.format);
     
     const tokenStyle = this.getHtmlTokenStyleAttr('Alert', token);
-    let code = `    <div class="p-4 border rounded-md ${variantClasses[variant as keyof typeof variantClasses]}"${tokenStyle}>`;
+    let code = `    <div data-alert-variant="${safeVariant}" class="p-4 border rounded-md ${variantClasses[variant as keyof typeof variantClasses]}"${tokenStyle}>`;
     if (title) {
       code += `\n      <h3 class="text-sm font-medium mb-1">${safeTitle}</h3>`;
     }

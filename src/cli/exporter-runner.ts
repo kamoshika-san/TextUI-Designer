@@ -9,6 +9,10 @@ export interface ProviderLookupOptions {
   providerModulePath?: string;
 }
 
+export interface RunExportOptions extends ProviderLookupOptions {
+  themePath?: string;
+}
+
 const externalProviderCache = new Map<string, Promise<CliProviderDefinition>>();
 
 function isProviderDefinition(value: unknown): value is CliProviderDefinition {
@@ -103,12 +107,17 @@ export async function getSupportedProviderNames(options: ProviderLookupOptions =
 export async function runExport(
   dsl: TextUIDSL,
   provider: CliProvider,
-  options: ProviderLookupOptions = {}
+  options: RunExportOptions = {}
 ): Promise<string> {
-  const definition = await resolveProviderDefinition(provider, options);
+  const definition = await resolveProviderDefinition(provider, {
+    providerModulePath: options.providerModulePath
+  });
   if (!definition) {
     throw new Error(`unsupported provider: ${provider}`);
   }
 
-  return definition.render(dsl);
+  return definition.render(dsl, {
+    providerModulePath: options.providerModulePath,
+    themePath: options.themePath
+  });
 }

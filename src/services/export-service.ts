@@ -3,7 +3,7 @@ import { ErrorHandler } from '../utils/error-handler';
 import { ConfigManager } from '../utils/config-manager';
 import { PerformanceMonitor } from '../utils/performance-monitor';
 import path from 'path';
-import type { IExportManager, IExportService } from '../types';
+import type { IExportManager, IExportService, IThemeManager } from '../types';
 
 /**
  * エクスポート処理を担当するサービス
@@ -11,10 +11,12 @@ import type { IExportManager, IExportService } from '../types';
 export class ExportService implements IExportService {
   private exportManager: IExportManager;
   private performanceMonitor: PerformanceMonitor;
+  private themeManager?: IThemeManager;
 
-  constructor(exportManager: IExportManager) {
+  constructor(exportManager: IExportManager, themeManager?: IThemeManager) {
     this.exportManager = exportManager;
     this.performanceMonitor = PerformanceMonitor.getInstance();
+    this.themeManager = themeManager;
   }
 
   /**
@@ -103,7 +105,8 @@ export class ExportService implements IExportService {
       const content = await this.exportManager.exportFromFile(filePath, {
         format,
         outputPath: outputUri.fsPath,
-        fileName: path.basename(outputUri.fsPath)
+        fileName: path.basename(outputUri.fsPath),
+        themePath: this.themeManager?.getThemePath()
       });
 
       await vscode.workspace.fs.writeFile(outputUri, Buffer.from(content, 'utf-8'));

@@ -1,10 +1,15 @@
 import type { TextUIDSL } from '../renderer/types';
 
+export interface CliRenderOptions {
+  providerModulePath?: string;
+  themePath?: string;
+}
+
 export interface CliProviderDefinition {
   name: string;
   extension: string;
   version: string;
-  render: (dsl: TextUIDSL) => Promise<string>;
+  render: (dsl: TextUIDSL, options?: CliRenderOptions) => Promise<string>;
 }
 
 const BUILTIN_PROVIDERS: CliProviderDefinition[] = [
@@ -12,9 +17,12 @@ const BUILTIN_PROVIDERS: CliProviderDefinition[] = [
     name: 'html',
     extension: '.html',
     version: '1.0.0',
-    render: async (dsl: TextUIDSL) => {
+    render: async (dsl: TextUIDSL, options?: CliRenderOptions) => {
       const { HtmlExporter } = await import('../exporters/html-exporter');
-      return new HtmlExporter().export(dsl, { format: 'html' });
+      return new HtmlExporter().export(dsl, {
+        format: 'html',
+        themePath: options?.themePath
+      });
     }
   },
   {

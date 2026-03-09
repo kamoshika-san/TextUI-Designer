@@ -89,6 +89,7 @@ theme:
 ```
 
 テーマ保存時はプレビューへ即時反映されます。
+また、プレビューで選択中のテーマは「TextUI: Export」実行時のHTML成果物にも反映されます。
 
 ---
 
@@ -146,6 +147,9 @@ npx textui import openapi --input openapi.yaml --all --output-dir generated/from
 npx textui export --file sample/01-basic/sample.tui.yml --provider vue --output generated/App.vue
 npx textui export --file sample/01-basic/sample.tui.yml --provider svelte --output generated/App.svelte
 
+# HTML出力時にテーマを明示適用
+npx textui export --file sample/01-basic/sample.tui.yml --provider html --theme sample/02-theme/textui-theme.yml --output generated/themed.html
+
 # プレビュー画像(PNG)を出力
 npx textui capture --file sample/01-basic/sample.tui.yml --output generated/sample.preview.png
 ```
@@ -156,6 +160,8 @@ MCPでは次の2通りでプレビュー画像を出力できます。
 
 - `capture_preview` ツールを直接呼び出す
 - `run_cli` で `["capture", "--file", "...", "--json"]` を実行する
+
+HTML出力にテーマを適用したい場合は、`run_cli` で `--theme` を渡してください。
 
 ---
 

@@ -28,6 +28,7 @@ export interface GenerateUiRequest {
   components?: ComponentBlueprint[];
   format?: string;
   providerModulePath?: string;
+  themePath?: string;
 }
 
 export interface CoreDiagnostic extends ValidationIssue {
@@ -85,7 +86,8 @@ export class TextUICoreEngine {
     let exportedCode: string | undefined;
     if (request.format) {
       exportedCode = await runExport(dsl, request.format, {
-        providerModulePath: request.providerModulePath
+        providerModulePath: request.providerModulePath,
+        themePath: request.themePath
       });
     }
 

@@ -75,6 +75,7 @@ export interface ExportRequest {
   format: string;
   outputPath?: string;
   fileName?: string;
+  themePath?: string;
 }
 
 export interface IRegisteredExporter {
