@@ -33,6 +33,13 @@ export type ComponentHandler = (props: unknown, key: number) => string;
 export abstract class BaseComponentRenderer implements Exporter {
   protected format: ExportFormat;
   private componentHandlers: Map<string, ComponentHandler> = new Map();
+  private static readonly SPACER_SIZE_MAP: Record<'xs' | 'sm' | 'md' | 'lg' | 'xl', string> = {
+    xs: '0.25rem',
+    sm: '0.5rem',
+    md: '1rem',
+    lg: '1.5rem',
+    xl: '2rem'
+  };
   private static readonly TOKEN_STYLE_PROPERTY_MAP: Record<string, string> = {
     Text: 'color',
     Input: 'border-color',
@@ -202,6 +209,23 @@ export abstract class BaseComponentRenderer implements Exporter {
       const childCode = this.renderComponent(child, index);
       return this.adjustIndentation(childCode, baseIndent);
     }).join('\n');
+  }
+
+  protected resolveSpacerDimensions(props: SpacerComponent): { width: string; height: string } {
+    const { axis = 'vertical', size = 'md', width, height, token } = props;
+    const fallbackSize = token || BaseComponentRenderer.SPACER_SIZE_MAP[size];
+    return {
+      width: width || (axis === 'horizontal' ? fallbackSize : '100%'),
+      height: height || (axis === 'horizontal' ? '1px' : fallbackSize)
+    };
+  }
+
+  protected resolveActiveTabIndex(defaultTab: number, itemCount: number): number {
+    return Math.min(Math.max(defaultTab, 0), Math.max(itemCount - 1, 0));
+  }
+
+  protected toTableCellText(value: unknown): string {
+    return value === null || value === undefined ? '' : String(value);
   }
 
   protected getHtmlTokenStyleAttr(componentType: string, token?: string): string {

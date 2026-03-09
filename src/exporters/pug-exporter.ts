@@ -157,17 +157,7 @@ ${componentCode}`;
   }
 
   protected renderSpacer(props: SpacerComponent, key: number): string {
-    const { axis = 'vertical', size = 'md', width, height, token } = props;
-    const sizeMap: Record<'xs' | 'sm' | 'md' | 'lg' | 'xl', string> = {
-      xs: '0.25rem',
-      sm: '0.5rem',
-      md: '1rem',
-      lg: '1.5rem',
-      xl: '2rem'
-    };
-    const fallbackSize = token || sizeMap[size];
-    const resolvedWidth = width || (axis === 'horizontal' ? fallbackSize : '100%');
-    const resolvedHeight = height || (axis === 'horizontal' ? '1px' : fallbackSize);
+    const { width: resolvedWidth, height: resolvedHeight } = this.resolveSpacerDimensions(props);
 
     return `      .textui-spacer(style="width: ${resolvedWidth}; height: ${resolvedHeight}; flex-shrink: 0;" aria-hidden="true")`;
   }
@@ -224,7 +214,7 @@ ${indentedCode}`;
 
   protected renderTabs(props: TabsComponent, key: number): string {
     const { defaultTab = 0, items = [], token } = props;
-    const activeIndex = Math.min(Math.max(defaultTab, 0), Math.max(items.length - 1, 0));
+    const activeIndex = this.resolveActiveTabIndex(defaultTab, items.length);
     const tokenStyle = this.getPugTokenStyleAttr('Tabs', token).trim();
 
     let code = `      .textui-tabs.border.border-gray-300.rounded-md.overflow-hidden${tokenStyle ? `(${tokenStyle})` : ''}`;
@@ -326,8 +316,7 @@ ${treeCode}`;
       const stripedClass = striped && rowIndex % 2 === 1 ? '.bg-gray-50' : '';
       code += `\n            tr${stripedClass}`;
       columns.forEach(column => {
-        const rawValue = row[column.key];
-        const value = rawValue === null || rawValue === undefined ? '' : String(rawValue);
+        const value = this.toTableCellText(row[column.key]);
         code += `\n              td.px-4.py-2.align-top.text-gray-700 ${value}`;
       });
     });
