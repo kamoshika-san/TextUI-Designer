@@ -54,6 +54,7 @@ module.exports = {
     fs.writeFileSync(captureMockBrowser, `#!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
+const { fileURLToPath } = require('url');
 const screenshotArg = process.argv.find(arg => arg.startsWith('--screenshot='));
 if (process.argv.includes('--version')) {
   process.stdout.write('Google Chrome 999.0.0');
@@ -62,6 +63,20 @@ if (process.argv.includes('--version')) {
 if (!screenshotArg) {
   process.stderr.write('missing --screenshot');
   process.exit(2);
+}
+const expectedFragment = process.env.TEXTUI_CAPTURE_EXPECT_HTML_FRAGMENT;
+if (expectedFragment) {
+  const targetUrl = process.argv.find(arg => arg.startsWith('file://'));
+  if (!targetUrl) {
+    process.stderr.write('missing file URL target');
+    process.exit(3);
+  }
+  const htmlPath = fileURLToPath(targetUrl);
+  const html = fs.readFileSync(htmlPath, 'utf8');
+  if (!html.includes(expectedFragment)) {
+    process.stderr.write('expected HTML fragment was not found');
+    process.exit(4);
+  }
 }
 const target = screenshotArg.slice('--screenshot='.length);
 fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -553,6 +568,58 @@ theme:
     assert.strictEqual(parsed.captured, true);
     assert.ok(fs.existsSync(captureOutFile));
     assert.ok(parsed.browserPath.endsWith('google-chrome'));
+  });
+
+  it('capture --theme applies theme styles before screenshot', () => {
+    const themedDsl = path.join(tmpDir, 'theme-capture.tui.yml');
+    const themedFile = path.join(tmpDir, 'capture-theme.yml');
+    const themedOut = path.join(tmpDir, 'theme-preview.png');
+    fs.writeFileSync(themedDsl, `
+page:
+  id: theme-capture
+  title: "Theme Capture"
+  layout: vertical
+  components:
+    - Button:
+        label: "送信"
+        kind: primary
+`, 'utf8');
+    fs.writeFileSync(themedFile, `
+theme:
+  name: "Capture Theme"
+  tokens:
+    color:
+      primary: "#445566"
+`, 'utf8');
+
+    const result = spawnSync('node', [
+      cliPath,
+      'capture',
+      '--file',
+      themedDsl,
+      '--theme',
+      themedFile,
+      '--output',
+      themedOut,
+      '--browser',
+      'google-chrome',
+      '--wait-ms',
+      '0',
+      '--json'
+    ], {
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        PATH: `${tmpDir}${path.delimiter}${process.env.PATH || ''}`,
+        TEXTUI_CAPTURE_EXPECT_HTML_FRAGMENT: '--color-primary: #445566 !important;'
+      }
+    });
+
+    assert.strictEqual(result.status, 0, result.stderr || result.stdout);
+    const parsed = JSON.parse(result.stdout);
+    assert.strictEqual(parsed.captured, true);
+    assert.ok(fs.existsSync(themedOut));
+    assert.strictEqual(parsed.themePath, path.resolve(themedFile));
   });
 
   it('export resolves token value into HTML inline style', () => {

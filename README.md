@@ -150,18 +150,18 @@ npx textui export --file sample/01-basic/sample.tui.yml --provider svelte --outp
 # HTML出力時にテーマを明示適用
 npx textui export --file sample/01-basic/sample.tui.yml --provider html --theme sample/02-theme/textui-theme.yml --output generated/themed.html
 
-# プレビュー画像(PNG)を出力
-npx textui capture --file sample/01-basic/sample.tui.yml --output generated/sample.preview.png
+# プレビュー画像(PNG)を出力（テーマ適用可）
+npx textui capture --file sample/01-basic/sample.tui.yml --theme sample/02-theme/textui-theme.yml --output generated/sample.preview.png
 ```
 
 ### MCP
 
-MCPでは次の2通りでプレビュー画像を出力できます。
+MCPでは次の2通りでプレビュー画像を出力できます（どちらもテーマ指定可）。
 
-- `capture_preview` ツールを直接呼び出す
-- `run_cli` で `["capture", "--file", "...", "--json"]` を実行する
+- `capture_preview` ツールを直接呼び出す（`themePath` を指定）
+- `run_cli` で `["capture", "--file", "...", "--theme", "...", "--json"]` を実行する
 
-HTML出力にテーマを適用したい場合は、`run_cli` で `--theme` を渡してください。
+HTML出力・プレビュー画像キャプチャーともに、テーマを適用したい場合は `--theme`（`capture_preview` では `themePath`）を渡してください。
 
 ---
 

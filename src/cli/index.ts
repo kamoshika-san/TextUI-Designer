@@ -410,7 +410,7 @@ async function run(): Promise<ExitCode> {
   if (!command || command === 'help' || command === '--help' || command === '-h') {
     process.stdout.write('Usage: textui <validate|plan|apply|export|capture|import|state|providers|version> ...\n');
     process.stdout.write('Options: --provider <name> --provider-module <path> --theme <path> --file <path> --dir <path> --json --token-on-error <error|warn|ignore>\n');
-    process.stdout.write('Capture: textui capture --file <path> [--output <png>] [--width <px>] [--height <px>] [--scale <n>] [--wait-ms <ms>] [--browser <path|name>] [--allow-no-sandbox] [--json]\n');
+    process.stdout.write('Capture: textui capture --file <path> [--output <png>] [--theme <path>] [--width <px>] [--height <px>] [--scale <n>] [--wait-ms <ms>] [--browser <path|name>] [--allow-no-sandbox] [--json]\n');
     process.stdout.write('Import: textui import openapi --input <openapi.(yml|yaml|json)> [--operation <operationId>] [--all] [--output <file>|--output-dir <dir>] [--json]\n');
     return 0;
   }
@@ -620,6 +620,7 @@ async function run(): Promise<ExitCode> {
     }
 
     const output = path.resolve(getArg('--output') ?? `generated/${stripDslExtension(path.basename(filePath))}.preview.png`);
+    const themePath = parseThemePath();
     const width = parseOptionalPositiveInt('--width');
     const height = parseOptionalPositiveInt('--height');
     const scale = parseOptionalPositiveNumber('--scale');
@@ -630,6 +631,7 @@ async function run(): Promise<ExitCode> {
 
     const result = await capturePreviewImageFromDsl(loaded.dsl, {
       outputPath: output,
+      themePath,
       width,
       height,
       scale,
@@ -647,7 +649,8 @@ async function run(): Promise<ExitCode> {
         bytes,
         width: result.width,
         height: result.height,
-        browserPath: result.browserPath
+        browserPath: result.browserPath,
+        themePath
       });
     } else {
       process.stdout.write(`Captured preview image: ${output}\n`);
@@ -655,6 +658,9 @@ async function run(): Promise<ExitCode> {
       process.stdout.write(`  size: ${result.width}x${result.height}\n`);
       process.stdout.write(`  bytes: ${bytes}\n`);
       process.stdout.write(`  browser: ${result.browserPath}\n`);
+      if (themePath) {
+        process.stdout.write(`  theme: ${themePath}\n`);
+      }
     }
     return 0;
   }

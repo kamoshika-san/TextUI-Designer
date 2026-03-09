@@ -165,6 +165,10 @@ const TOOLS: ToolDefinition[] = [
           type: 'string',
           description: '出力PNGファイルパス'
         },
+        themePath: {
+          type: 'string',
+          description: '適用するテーマファイルパス（CLIの --theme に相当）'
+        },
         cwd: {
           type: 'string',
           description: '相対パス解決に使うカレントディレクトリ'
@@ -450,12 +454,16 @@ export class TextUiMcpServer {
 
     const cliArgs: string[] = ['capture', '--file', dslFile, '--json'];
     const output = this.getObjectValue(args, 'output');
+    const themePath = this.getObjectValue(args, 'themePath');
     const width = this.getObjectNumber(args, 'width');
     const height = this.getObjectNumber(args, 'height');
     const scale = this.getObjectNumber(args, 'scale');
     const waitMs = this.getObjectNumber(args, 'waitMs');
     if (output) {
       cliArgs.push('--output', output);
+    }
+    if (themePath) {
+      cliArgs.push('--theme', themePath);
     }
     if (width !== undefined) {
       cliArgs.push('--width', String(width));
