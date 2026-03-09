@@ -39,6 +39,51 @@ export class SchemaManager implements ISchemaManager {
   private readonly cacheTTL: number;
   private readonly verboseLogging: boolean;
 
+  private readonly schemaLoadConfigs = {
+    main: {
+      getPath: () => this.schemaPath,
+      getCache: () => this.schemaCache,
+      setCache: (schema: SchemaDefinition) => {
+        this.schemaCache = schema;
+      },
+      getLastLoad: () => this.lastSchemaLoad,
+      setLastLoad: (value: number) => {
+        this.lastSchemaLoad = value;
+      },
+      cacheHitLog: '[SchemaManager] キャッシュされたスキーマを使用',
+      cacheSetLog: '[SchemaManager] スキーマをキャッシュに保存',
+      readErrorPrefix: 'スキーマファイルの読み込みに失敗しました'
+    },
+    template: {
+      getPath: () => this.templateSchemaPath,
+      getCache: () => this.templateSchemaCache,
+      setCache: (schema: SchemaDefinition) => {
+        this.templateSchemaCache = schema;
+      },
+      getLastLoad: () => this.lastTemplateSchemaLoad,
+      setLastLoad: (value: number) => {
+        this.lastTemplateSchemaLoad = value;
+      },
+      cacheHitLog: '[SchemaManager] キャッシュされたテンプレートスキーマを使用',
+      cacheSetLog: '[SchemaManager] テンプレートスキーマをキャッシュに保存',
+      readErrorPrefix: 'テンプレートスキーマファイルの読み込みに失敗しました'
+    },
+    theme: {
+      getPath: () => this.themeSchemaPath,
+      getCache: () => this.themeSchemaCache,
+      setCache: (schema: SchemaDefinition) => {
+        this.themeSchemaCache = schema;
+      },
+      getLastLoad: () => this.lastThemeSchemaLoad,
+      setLastLoad: (value: number) => {
+        this.lastThemeSchemaLoad = value;
+      },
+      cacheHitLog: '[SchemaManager] キャッシュされたテーマスキーマを使用',
+      cacheSetLog: '[SchemaManager] テーマスキーマをキャッシュに保存',
+      readErrorPrefix: 'テーマスキーマファイルの読み込みに失敗しました'
+    }
+  } as const;
+
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
     this.verboseLogging = process.env.TEXTUI_SCHEMA_DEBUG === 'true';
@@ -263,72 +308,44 @@ export class SchemaManager implements ISchemaManager {
    * スキーマの内容を読み込み（キャッシュ付き）
    */
   async loadSchema(): Promise<SchemaDefinition> {
-    const now = Date.now();
-    
-    // キャッシュチェック
-    if (this.schemaCache && (now - this.lastSchemaLoad) < this.cacheTTL) {
-      this.debug('[SchemaManager] キャッシュされたスキーマを使用');
-      return this.schemaCache;
-    }
-
-    try {
-      const content = fs.readFileSync(this.schemaPath, 'utf-8');
-      const parsedSchema = JSON.parse(content) as SchemaDefinition;
-      this.validateSchemaConsistency(parsedSchema);
-      this.schemaCache = parsedSchema;
-      this.lastSchemaLoad = now;
-      this.debug('[SchemaManager] スキーマをキャッシュに保存');
-      return parsedSchema;
-    } catch (error) {
-      throw new Error(`スキーマファイルの読み込みに失敗しました: ${error}`);
-    }
+    const schema = this.loadSchemaWithCache('main');
+    this.validateSchemaConsistency(schema);
+    return schema;
   }
 
   /**
    * テンプレートスキーマの内容を読み込み（キャッシュ付き）
    */
   async loadTemplateSchema(): Promise<SchemaDefinition> {
-    const now = Date.now();
-    
-    // キャッシュチェック
-    if (this.templateSchemaCache && (now - this.lastTemplateSchemaLoad) < this.cacheTTL) {
-      this.debug('[SchemaManager] キャッシュされたテンプレートスキーマを使用');
-      return this.templateSchemaCache;
-    }
-
-    try {
-      const content = fs.readFileSync(this.templateSchemaPath, 'utf-8');
-      const parsedSchema = JSON.parse(content) as SchemaDefinition;
-      this.templateSchemaCache = parsedSchema;
-      this.lastTemplateSchemaLoad = now;
-      this.debug('[SchemaManager] テンプレートスキーマをキャッシュに保存');
-      return parsedSchema;
-    } catch (error) {
-      throw new Error(`テンプレートスキーマファイルの読み込みに失敗しました: ${error}`);
-    }
+    return this.loadSchemaWithCache('template');
   }
 
   /**
    * テーマスキーマの内容を読み込み（キャッシュ付き）
    */
   async loadThemeSchema(): Promise<SchemaDefinition> {
+    return this.loadSchemaWithCache('theme');
+  }
+
+  private loadSchemaWithCache(kind: keyof typeof this.schemaLoadConfigs): SchemaDefinition {
+    const config = this.schemaLoadConfigs[kind];
     const now = Date.now();
-    
-    // キャッシュチェック
-    if (this.themeSchemaCache && (now - this.lastThemeSchemaLoad) < this.cacheTTL) {
-      this.debug('[SchemaManager] キャッシュされたテーマスキーマを使用');
-      return this.themeSchemaCache;
+
+    const cached = config.getCache();
+    if (cached && (now - config.getLastLoad()) < this.cacheTTL) {
+      this.debug(config.cacheHitLog);
+      return cached;
     }
 
     try {
-      const content = fs.readFileSync(this.themeSchemaPath, 'utf-8');
+      const content = fs.readFileSync(config.getPath(), 'utf-8');
       const parsedSchema = JSON.parse(content) as SchemaDefinition;
-      this.themeSchemaCache = parsedSchema;
-      this.lastThemeSchemaLoad = now;
-      this.debug('[SchemaManager] テーマスキーマをキャッシュに保存');
+      config.setCache(parsedSchema);
+      config.setLastLoad(now);
+      this.debug(config.cacheSetLog);
       return parsedSchema;
     } catch (error) {
-      throw new Error(`テーマスキーマファイルの読み込みに失敗しました: ${error}`);
+      throw new Error(`${config.readErrorPrefix}: ${error}`);
     }
   }
 

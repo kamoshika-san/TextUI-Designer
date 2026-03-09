@@ -7,6 +7,13 @@ import type { TextUIDSL, ComponentDef } from './types';
 import { getVSCodeApi, type ElectronModule } from './vscode-api';
 import { createComponentKeys, hashString, mergeDslWithPrevious } from './preview-diff';
 import { createErrorGuidance, type ErrorInfo } from './error-guidance';
+import {
+  formatSchemaErrors,
+  mapDetailedSchemaError,
+  mapParseError,
+  mapSchemaValidationError,
+  mapSimpleError
+} from './error-mappers';
 
 // HTMLテンプレートで既に取得されているvscodeオブジェクトを使用
 const vscodeApi = getVSCodeApi();
@@ -27,18 +34,16 @@ const isDevelopmentMode = Boolean(
   window.location.search.includes('textui-dev=true')
 );
 
-function formatSchemaErrors(errors: unknown): string {
-  if (!Array.isArray(errors)) {
-    return '';
+function applyThemeVariables(css: unknown): void {
+  console.log('[React] theme-variablesメッセージを受信:', css);
+  const styleEl = document.getElementById('theme-vars');
+  if (!styleEl) {
+    console.error('[React] theme-vars要素が見つかりません');
+    return;
   }
-  return errors.map(errorItem => {
-    if (!isRecord(errorItem)) {
-      return '- 不明なスキーマエラー';
-    }
-    const instancePath = typeof errorItem.instancePath === 'string' ? errorItem.instancePath : '';
-    const message = typeof errorItem.message === 'string' ? errorItem.message : '';
-    return `- ${instancePath} ${message}`.trim();
-  }).join('\n');
+  console.log('[React] theme-vars要素が見つかりました。CSSを適用します');
+  styleEl.textContent = typeof css === 'string' ? css : '';
+  console.log('[React] CSS変数を適用しました');
 }
 
 
@@ -102,66 +107,57 @@ const App: React.FC = () => {
       vscodeApi.postMessage({ type: 'webview-ready' });
     }
 
+    const messageHandlers: Record<string, (payload: Record<string, unknown>) => void> = {
+      json: payload => {
+        console.log('[React] JSONデータを受信:', payload.json);
+        applyDslUpdate(payload.json as TextUIDSL);
+        setError(null);
+      },
+      update: payload => {
+        console.log('[React] 更新データを受信:', payload.data);
+        applyDslUpdate(payload.data as TextUIDSL);
+        setError(null);
+      },
+      error: payload => {
+        console.log('[React] エラーメッセージを受信:', payload.error);
+        setError(mapSimpleError(payload));
+      },
+      'schema-error': payload => {
+        console.log('[React] スキーマエラーメッセージを受信:', payload.errors);
+        const schemaErrors = formatSchemaErrors(payload.errors);
+        setError(mapSchemaValidationError(payload, schemaErrors));
+      },
+      'theme-change': payload => {
+        console.log('[React] テーマ変更メッセージを受信:', payload.theme);
+        // テーマ変更はThemeToggleコンポーネントで処理される
+      },
+      'theme-variables': payload => {
+        applyThemeVariables(payload.css);
+      },
+      parseError: payload => {
+        console.log('[React] 詳細パースエラーメッセージを受信:', payload.error);
+        setError(mapParseError(payload));
+      },
+      schemaError: payload => {
+        console.log('[React] 詳細スキーマエラーメッセージを受信:', payload.error);
+        setError(mapDetailedSchemaError(payload));
+      },
+      clearError: () => {
+        console.log('[React] エラー状態クリアメッセージを受信');
+        setError(null);
+      }
+    };
+
     const onMessage = (event: MessageEvent<unknown>) => {
       const message = event.data;
       if (!isRecord(message) || typeof message.type !== 'string') {
         return;
       }
       console.log('[React] メッセージを受信:', message);
-      
-      if (message.type === 'json') {
-        console.log('[React] JSONデータを受信:', message.json);
-        applyDslUpdate(message.json as TextUIDSL);
-        setError(null);
-      } else if (message.type === 'update') {
-        console.log('[React] 更新データを受信:', message.data);
-        applyDslUpdate(message.data as TextUIDSL);
-        setError(null);
-      } else if (message.type === 'error') {
-        console.log('[React] エラーメッセージを受信:', message.error);
-        setError({
-          type: 'simple',
-          message: typeof message.error === 'string' ? message.error : '不明なエラー'
-        });
-      } else if (message.type === 'schema-error') {
-        console.log('[React] スキーマエラーメッセージを受信:', message.errors);
-        const schemaErrors = formatSchemaErrors(message.errors);
-        setError({
-          type: 'simple',
-          message: `スキーマバリデーションエラー:\n${schemaErrors}`
-        });
-      } else if (message.type === 'theme-change') {
-        console.log('[React] テーマ変更メッセージを受信:', message.theme);
-        // テーマ変更はThemeToggleコンポーネントで処理される
-      } else if (message.type === 'theme-variables') {
-        console.log('[React] theme-variablesメッセージを受信:', message.css);
-        const styleEl = document.getElementById('theme-vars');
-        if (styleEl) {
-          console.log('[React] theme-vars要素が見つかりました。CSSを適用します');
-          styleEl.textContent = message.css;
-          console.log('[React] CSS変数を適用しました');
-        } else {
-          console.error('[React] theme-vars要素が見つかりません');
-        }
-      } else if (message.type === 'parseError') {
-        console.log('[React] 詳細パースエラーメッセージを受信:', message.error);
-        setError({
-          type: 'parse',
-          details: message.error as ErrorInfo['details'],
-          fileName: typeof message.fileName === 'string' ? message.fileName : undefined,
-          content: typeof message.content === 'string' ? message.content : undefined
-        });
-      } else if (message.type === 'schemaError') {
-        console.log('[React] 詳細スキーマエラーメッセージを受信:', message.error);
-        setError({
-          type: 'schema',
-          details: message.error as ErrorInfo['details'],
-          fileName: typeof message.fileName === 'string' ? message.fileName : undefined,
-          content: typeof message.content === 'string' ? message.content : undefined
-        });
-      } else if (message.type === 'clearError') {
-        console.log('[React] エラー状態クリアメッセージを受信');
-        setError(null);
+
+      const handler = messageHandlers[message.type];
+      if (handler) {
+        handler(message);
       } else {
         console.log('[React] 未対応のメッセージタイプ:', message.type);
       }

@@ -3,6 +3,9 @@ import * as YAML from 'yaml';
 import Ajv, { ErrorObject } from 'ajv';
 import { TextUIMemoryTracker } from '../utils/textui-memory-tracker';
 import { ISchemaManager, SchemaDefinition } from '../types';
+import { suggestSimilarKeys } from './diagnostics/key-suggestion';
+import { buildDiagnosticTemplate } from './diagnostics/template-builder';
+import { resolveDiagnosticLocation, resolveDiagnosticRange } from './diagnostics/range-resolver';
 
 type DiagnosticCacheEntry = {
   content: string;
@@ -12,18 +15,6 @@ type DiagnosticCacheEntry = {
 
 type ValidationSchemaKind = 'main' | 'template' | 'theme';
 
-type DiagnosticMessageTemplate = {
-  code: string;
-  summary: string;
-  cause: string;
-  fix: string;
-  severity: vscode.DiagnosticSeverity;
-};
-
-type KeySuggestion = {
-  key: string;
-  distance: number;
-};
 
 /**
  * 診断管理サービス
@@ -250,9 +241,10 @@ export class DiagnosticManager {
     const diagnostics: vscode.Diagnostic[] = [];
 
     for (const err of errors) {
-      const range = this.resolveDiagnosticRange(err, text, document);
-      const location = this.resolveDiagnosticLocation(err);
-      const template = this.buildDiagnosticTemplate(err, location, schema);
+      const range = resolveDiagnosticRange(err, text, document);
+      const location = resolveDiagnosticLocation(err);
+      const suggestedKeys = this.collectSuggestedKeys(err, schema);
+      const template = buildDiagnosticTemplate(err, suggestedKeys);
       const message = [
         `[${template.code}] ${template.summary}`,
         `原因: ${template.cause}`,
@@ -271,169 +263,14 @@ export class DiagnosticManager {
     return diagnostics;
   }
 
-  private resolveDiagnosticRange(
-    error: ErrorObject,
-    text: string,
-    document: vscode.TextDocument
-  ): vscode.Range {
-    const pointerParts = (error.instancePath || '').split('/').filter(Boolean);
-    const fallbackRange = new vscode.Range(0, 0, 0, 1);
-
-    if (error.keyword === 'required') {
-      const missingProperty = (error.params as { missingProperty?: string }).missingProperty;
-      if (missingProperty) {
-        const existingPath = [...pointerParts, missingProperty];
-        const byPath = this.findRangeByPath(existingPath, text, document);
-        if (byPath) {
-          return byPath;
-        }
-      }
-    }
-
-    if (error.keyword === 'additionalProperties') {
-      const additionalProperty = (error.params as { additionalProperty?: string }).additionalProperty;
-      if (additionalProperty) {
-        const additionalPath = [...pointerParts, additionalProperty];
-        const byPath = this.findRangeByPath(additionalPath, text, document);
-        if (byPath) {
-          return byPath;
-        }
-      }
-    }
-
-    const byInstancePath = this.findRangeByPath(pointerParts, text, document);
-    return byInstancePath || fallbackRange;
-  }
-
-  private findRangeByPath(pathParts: string[], text: string, document: vscode.TextDocument): vscode.Range | null {
-    for (let i = pathParts.length - 1; i >= 0; i -= 1) {
-      const key = pathParts[i];
-      if (!key || /^\d+$/.test(key)) {
-        continue;
-      }
-
-      const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`^\\s*${escapedKey}:`, 'm');
-      const match = text.match(regex);
-      if (!match) {
-        continue;
-      }
-
-      const start = match.index ?? text.indexOf(match[0]);
-      const startPos = document.positionAt(start);
-      const endPos = document.positionAt(start + match[0].length);
-      return new vscode.Range(startPos, endPos);
-    }
-
-    return null;
-  }
-
-  private resolveDiagnosticLocation(error: ErrorObject): string {
-    const path = error.instancePath && error.instancePath.length > 0 ? error.instancePath : '/';
-    if (error.keyword === 'required') {
-      const missingProperty = (error.params as { missingProperty?: string }).missingProperty;
-      if (missingProperty) {
-        return `${path}/${missingProperty}`.replace(/\/\//g, '/');
-      }
-    }
-    if (error.keyword === 'additionalProperties') {
-      const additionalProperty = (error.params as { additionalProperty?: string }).additionalProperty;
-      if (additionalProperty) {
-        return `${path}/${additionalProperty}`.replace(/\/\//g, '/');
-      }
-    }
-    return path;
-  }
-
-  private buildDiagnosticTemplate(error: ErrorObject, location: string, schema: SchemaDefinition): DiagnosticMessageTemplate {
-    switch (error.keyword) {
-      case 'required': {
-        const missingProperty = (error.params as { missingProperty?: string }).missingProperty || 'unknown';
-        return {
-          code: 'TUI001',
-          summary: `必須キー "${missingProperty}" が不足しています。`,
-          cause: `このオブジェクトでは "${missingProperty}" が必須ですが、定義されていません。`,
-          fix: `"${missingProperty}" キーを追加し、必要な値を設定してください。`,
-          severity: vscode.DiagnosticSeverity.Error
-        };
-      }
-      case 'type': {
-        const expectedType = (error.params as { type?: string }).type || 'unknown';
-        return {
-          code: 'TUI002',
-          summary: '値の型が一致していません。',
-          cause: `このキーには ${expectedType} 型が必要ですが、別の型が指定されています。`,
-          fix: `値を ${expectedType} 型に修正してください。`,
-          severity: vscode.DiagnosticSeverity.Error
-        };
-      }
-      case 'additionalProperties': {
-        const additionalProperty = (error.params as { additionalProperty?: string }).additionalProperty || 'unknown';
-        const suggestedKeys = this.suggestSimilarKeys(error, additionalProperty, schema);
-        const suggestionText = suggestedKeys.length > 0
-          ? `候補: ${suggestedKeys.map(key => `"${key}"`).join(', ')}。`
-          : '';
-
-        return {
-          code: 'TUI003',
-          summary: `未定義のキー "${additionalProperty}" が含まれています。`,
-          cause: 'スキーマで定義されていないキーが指定されています。',
-          fix: `キー名を見直すか、不要であれば "${additionalProperty}" を削除してください。${suggestionText}`,
-          severity: vscode.DiagnosticSeverity.Warning
-        };
-      }
-      case 'enum': {
-        const allowedValues = (error.params as { allowedValues?: unknown[] }).allowedValues;
-        const allowed = Array.isArray(allowedValues) ? allowedValues.join(', ') : '定義済みの値';
-        return {
-          code: 'TUI004',
-          summary: '許可されていない値が指定されています。',
-          cause: `このキーには決められた値のみ指定できます（許可値: ${allowed}）。`,
-          fix: `値を次のいずれかに変更してください: ${allowed}。`,
-          severity: vscode.DiagnosticSeverity.Error
-        };
-      }
-      default:
-        return {
-          code: 'TUI999',
-          summary: 'DSLスキーマに一致しない記述があります。',
-          cause: error.message || 'スキーマ違反が検出されました。',
-          fix: '該当箇所をスキーマ定義に合わせて修正してください。',
-          severity: vscode.DiagnosticSeverity.Information
-        };
-    }
-  }
-
-  private suggestSimilarKeys(error: ErrorObject, invalidKey: string, schema: SchemaDefinition): string[] {
-    const candidateKeys = this.extractCandidateKeys(error, schema);
-    if (candidateKeys.length === 0 || !invalidKey) {
+  private collectSuggestedKeys(error: ErrorObject, schema: SchemaDefinition): string[] {
+    if (error.keyword !== 'additionalProperties') {
       return [];
     }
 
-    const invalidKeyLower = invalidKey.toLowerCase();
-    const maxAllowedDistance = Math.max(1, Math.floor(invalidKey.length * 0.4));
-
-    const suggestions: KeySuggestion[] = candidateKeys
-      .map(key => {
-        const distance = this.levenshteinDistance(invalidKeyLower, key.toLowerCase());
-        return { key, distance };
-      })
-      .filter(({ key, distance }) => {
-        if (distance <= maxAllowedDistance) {
-          return true;
-        }
-
-        // 先頭一致は入力途中のタイポとして扱う
-        return key.toLowerCase().startsWith(invalidKeyLower) || invalidKeyLower.startsWith(key.toLowerCase());
-      })
-      .sort((a, b) => {
-        if (a.distance !== b.distance) {
-          return a.distance - b.distance;
-        }
-        return a.key.localeCompare(b.key);
-      });
-
-    return suggestions.slice(0, 3).map(item => item.key);
+    const additionalProperty = (error.params as { additionalProperty?: string }).additionalProperty || '';
+    const candidateKeys = this.extractCandidateKeys(error, schema);
+    return suggestSimilarKeys(additionalProperty, candidateKeys);
   }
 
   private extractCandidateKeys(error: ErrorObject, schema: SchemaDefinition): string[] {
@@ -475,45 +312,6 @@ export class DiagnosticManager {
     }
 
     return current;
-  }
-
-  private levenshteinDistance(a: string, b: string): number {
-    if (a === b) {
-      return 0;
-    }
-
-    if (a.length === 0) {
-      return b.length;
-    }
-
-    if (b.length === 0) {
-      return a.length;
-    }
-
-    const rows = a.length + 1;
-    const cols = b.length + 1;
-    const matrix: number[][] = Array.from({ length: rows }, () => new Array<number>(cols).fill(0));
-
-    for (let i = 0; i < rows; i += 1) {
-      matrix[i][0] = i;
-    }
-
-    for (let j = 0; j < cols; j += 1) {
-      matrix[0][j] = j;
-    }
-
-    for (let i = 1; i < rows; i += 1) {
-      for (let j = 1; j < cols; j += 1) {
-        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j - 1] + cost
-        );
-      }
-    }
-
-    return matrix[a.length][b.length];
   }
 
   /**
