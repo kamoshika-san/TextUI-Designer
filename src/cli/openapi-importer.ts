@@ -207,6 +207,33 @@ function getRequestBodySchema(operation: OperationObject): OpenApiSchema | undef
   return first?.schema;
 }
 
+
+function createSelectField(name: string, label: string, required: boolean, options: unknown[], multiple: boolean = false): FieldDescriptor {
+  return {
+    kind: 'Select',
+    name,
+    label,
+    required,
+    multiple,
+    options: options.map(item => ({ label: String(item), value: String(item) }))
+  };
+}
+
+function createInputField(
+  name: string,
+  label: string,
+  required: boolean,
+  inputType: FieldDescriptor['inputType'] = 'text'
+): FieldDescriptor {
+  return {
+    kind: 'Input',
+    name,
+    label,
+    required,
+    inputType
+  };
+}
+
 function mapSchemaToField(
   name: string,
   schema: OpenApiSchema,
@@ -217,34 +244,15 @@ function mapSchemaToField(
   const label = toLabel(name);
 
   if (Array.isArray(resolved.enum) && resolved.enum.length > 0) {
-    return {
-      kind: 'Select',
-      name,
-      label,
-      required,
-      options: resolved.enum.map(item => ({ label: String(item), value: String(item) }))
-    };
+    return createSelectField(name, label, required, resolved.enum);
   }
 
   if (resolved.type === 'array' && resolved.items) {
     const item = resolveSchema(resolved.items, document);
     if (Array.isArray(item.enum) && item.enum.length > 0) {
-      return {
-        kind: 'Select',
-        name,
-        label,
-        required,
-        multiple: true,
-        options: item.enum.map(option => ({ label: String(option), value: String(option) }))
-      };
+      return createSelectField(name, label, required, item.enum, true);
     }
-    return {
-      kind: 'Input',
-      name,
-      label,
-      required,
-      inputType: 'multiline'
-    };
+    return createInputField(name, label, required, 'multiline');
   }
 
   if (resolved.type === 'boolean') {
@@ -257,33 +265,15 @@ function mapSchemaToField(
   }
 
   if (resolved.type === 'integer' || resolved.type === 'number') {
-    return {
-      kind: 'Input',
-      name,
-      label,
-      required,
-      inputType: 'number'
-    };
+    return createInputField(name, label, required, 'number');
   }
 
   if (resolved.type === 'string' && resolved.format === 'email') {
-    return {
-      kind: 'Input',
-      name,
-      label,
-      required,
-      inputType: 'email'
-    };
+    return createInputField(name, label, required, 'email');
   }
 
   if (resolved.type === 'string' && resolved.format === 'password') {
-    return {
-      kind: 'Input',
-      name,
-      label,
-      required,
-      inputType: 'password'
-    };
+    return createInputField(name, label, required, 'password');
   }
 
   if (resolved.type === 'string' && (resolved.format === 'date' || resolved.format === 'date-time')) {
@@ -296,23 +286,12 @@ function mapSchemaToField(
   }
 
   if (resolved.type === 'object' || resolved.properties) {
-    return {
-      kind: 'Input',
-      name,
-      label,
-      required,
-      inputType: 'multiline'
-    };
+    return createInputField(name, label, required, 'multiline');
   }
 
-  return {
-    kind: 'Input',
-    name,
-    label,
-    required,
-    inputType: 'text'
-  };
+  return createInputField(name, label, required, 'text');
 }
+
 
 function buildOperationList(document: OpenApiDocument): ResolvedOperation[] {
   const paths = document.paths;
@@ -399,6 +378,49 @@ function buildFieldDescriptors(operation: ResolvedOperation, document: OpenApiDo
   return fields;
 }
 
+
+function buildFormFieldComponent(field: FieldDescriptor): Record<string, unknown> {
+  if (field.kind === 'Checkbox') {
+    return {
+      Checkbox: {
+        label: field.label,
+        name: field.name,
+        required: field.required
+      }
+    };
+  }
+
+  if (field.kind === 'Select') {
+    return {
+      Select: {
+        label: field.label,
+        name: field.name,
+        options: field.options ?? [],
+        multiple: Boolean(field.multiple)
+      }
+    };
+  }
+
+  if (field.kind === 'DatePicker') {
+    return {
+      DatePicker: {
+        label: field.label,
+        name: field.name,
+        required: field.required
+      }
+    };
+  }
+
+  return {
+    Input: {
+      label: field.label,
+      name: field.name,
+      type: field.inputType ?? 'text',
+      required: field.required
+    }
+  };
+}
+
 function buildDsl(operation: ResolvedOperation, fields: FieldDescriptor[]): TextUIDSL {
   if (fields.length === 0) {
     throw new Error(`operation has no importable fields: ${operation.operationId}`);
@@ -407,47 +429,7 @@ function buildDsl(operation: ResolvedOperation, fields: FieldDescriptor[]): Text
   const pageId = sanitizeId(operation.operationId);
   const title = operation.operation.summary ?? operation.operationId;
 
-  const formFields = fields.map(field => {
-    if (field.kind === 'Checkbox') {
-      return {
-        Checkbox: {
-          label: field.label,
-          name: field.name,
-          required: field.required
-        }
-      };
-    }
-
-    if (field.kind === 'Select') {
-      return {
-        Select: {
-          label: field.label,
-          name: field.name,
-          options: field.options ?? [],
-          multiple: Boolean(field.multiple)
-        }
-      };
-    }
-
-    if (field.kind === 'DatePicker') {
-      return {
-        DatePicker: {
-          label: field.label,
-          name: field.name,
-          required: field.required
-        }
-      };
-    }
-
-    return {
-      Input: {
-        label: field.label,
-        name: field.name,
-        type: field.inputType ?? 'text',
-        required: field.required
-      }
-    };
-  });
+  const formFields = fields.map(buildFormFieldComponent);
 
   return {
     page: {
@@ -481,23 +463,40 @@ function buildDsl(operation: ResolvedOperation, fields: FieldDescriptor[]): Text
   };
 }
 
+
+function toSourceOperation(operation: ResolvedOperation): string {
+  return `${operation.method.toUpperCase()} ${operation.path}`;
+}
+
+function createImportResult(operation: ResolvedOperation, document: OpenApiDocument): OpenApiImportResult | null {
+  const fields = buildFieldDescriptors(operation, document);
+  if (fields.length === 0) {
+    return null;
+  }
+
+  const dsl = buildDsl(operation, fields);
+  const yaml = YAML.stringify(dsl, { lineWidth: 0 });
+
+  return {
+    dsl,
+    yaml,
+    operationId: operation.operationId,
+    sourceOperation: toSourceOperation(operation),
+    fields: fields.length
+  };
+}
+
 export function importOpenApiToDsl(params: {
   inputPath: string;
   operationId?: string;
 }): OpenApiImportResult {
   const document = loadOpenApiFile(params.inputPath);
   const selected = selectOperation(document, params.operationId);
-  const fields = buildFieldDescriptors(selected, document);
-  const dsl = buildDsl(selected, fields);
-  const yaml = YAML.stringify(dsl, { lineWidth: 0 });
-
-  return {
-    dsl,
-    yaml,
-    operationId: selected.operationId,
-    sourceOperation: `${selected.method.toUpperCase()} ${selected.path}`,
-    fields: fields.length
-  };
+  const result = createImportResult(selected, document);
+  if (!result) {
+    throw new Error(`operation has no importable fields: ${selected.operationId}`);
+  }
+  return result;
 }
 
 export function importAllOpenApiToDsl(params: {
@@ -511,19 +510,10 @@ export function importAllOpenApiToDsl(params: {
 
   const results: OpenApiImportResult[] = [];
   for (const operation of operations) {
-    const fields = buildFieldDescriptors(operation, document);
-    if (fields.length === 0) {
-      continue;
+    const result = createImportResult(operation, document);
+    if (result) {
+      results.push(result);
     }
-    const dsl = buildDsl(operation, fields);
-    const yaml = YAML.stringify(dsl, { lineWidth: 0 });
-    results.push({
-      dsl,
-      yaml,
-      operationId: operation.operationId,
-      sourceOperation: `${operation.method.toUpperCase()} ${operation.path}`,
-      fields: fields.length
-    });
   }
 
   if (results.length === 0) {

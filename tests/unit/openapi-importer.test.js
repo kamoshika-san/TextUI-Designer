@@ -178,6 +178,37 @@ paths:
     assert.strictEqual(hasDryRunCheckbox, true);
   });
 
+
+  it('returns exit code 1 when --operation has no importable fields', () => {
+    const openapiPath = path.join(tmpDir, 'empty-operation.yml');
+    fs.writeFileSync(openapiPath, `
+openapi: 3.0.3
+info:
+  title: Empty API
+  version: 1.0.0
+paths:
+  /users:
+    post:
+      operationId: createUser
+      summary: "Create user without fields"
+`, 'utf8');
+
+    const imported = spawnSync('node', [
+      cliPath,
+      'import',
+      'openapi',
+      '--input',
+      openapiPath,
+      '--operation',
+      'createUser',
+      '--output',
+      path.join(tmpDir, 'not-created.tui.yml')
+    ], { encoding: 'utf8' });
+
+    assert.strictEqual(imported.status, 1);
+    assert.match(imported.stderr, /operation has no importable fields/);
+  });
+
   it('returns exit code 1 when --operation does not exist', () => {
     const openapiPath = path.join(tmpDir, 'single-openapi.yml');
     fs.writeFileSync(openapiPath, `
