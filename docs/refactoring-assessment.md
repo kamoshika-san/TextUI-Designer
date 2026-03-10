@@ -1,41 +1,73 @@
-# リファクタリング評価レポート（2026-03-10 更新）
+# リファクタリング評価レポート
 
-## 現在の状態（結論）
+作成日: 2026-03-10
 
-- P1/P2で計画していた CLI 周辺の高頻度変更ポイント（`validator.ts` / `command-support.ts`）は、責務分離と単一ソース化が完了しました。
-- 一方で、当初の評価ドキュメントと実装実態に差分が出ているため、優先度を再整理して **P3（計画同期）** を反映します。
+## 実施内容
 
-## 実施済み（完了）
+- 既存のlint/テスト実行で品質ゲートを再確認
+- `src/` の規模が大きいファイルを中心に責務分割余地を確認
+- 既存の設計上の重複・条件分岐の集中箇所を抽出
 
-### P1 完了: DSL validator の単一ソース化 + キャッシュ最適化
+## 現状サマリー
 
-- `KNOWN_COMPONENTS` の重複定義を廃止し、`BUILT_IN_COMPONENTS` を参照する構成へ移行。
-- Ajv コンパイル結果を `cachedDslValidator` で再利用し、`validateDsl()` の呼び出しごとの再コンパイルを解消。
+- `npm run lint` は成功（警告 0）
+- `npm run test:all` は成功（unit/integration/e2e/regression 全通過）
+- 回帰を壊す緊急度の高い不具合は見つかっていない
 
-### P2 完了: CLI サポート層の責務分離（段階1）
+## 優先度つきリファクタリング候補
 
-- `command-support.ts` からバッチ出力/状態ファイルのパス解決を `batch-path-resolver.ts` へ抽出。
-- `command-support.ts` から引数/オプション解析を `arg-options.ts` へ抽出（後方互換のため再エクスポート維持）。
+### P1: `src/cli/validator.ts` の責務分割
 
-## P3 対応（今回）: 計画ドキュメントの同期
+`validator.ts` は以下を単一ファイルで担当しており、変更影響範囲が広い状態です。
 
-### 背景
+- JSON Schema 検証
+- コンポーネント走査
+- テーマ継承読み込み
+- token 解決/循環検出
 
-- 旧版ドキュメントでは `ServiceInitializer` 分離や `YamlParser` 再分割を最優先としていましたが、実装側では CLI 層の分離が先行して完了済みです。
-- そのため、次フェーズを誤認しないよう、現状に合わせて優先順位を更新します。
+特に `collectFromComponentArray` ではコンポーネント種別ごとの再帰処理が直列で増えており、今後コンポーネント種別が増えるほど分岐が肥大化しやすいです。
 
-### 更新後の優先順位（次アクション）
+**提案分割**
 
-1. **P1: `YamlParser` のさらなる縮小**
-   - 既存の `YamlContentReader` / `YamlIncludeResolver` / `YamlSchemaValidator` 活用を前提に、エラー整形責務を段階抽出してテスト容易性を上げる。
-2. **P2: `ServiceInitializer` のライフサイクル可視化**
-   - 生成・起動・クリーンアップを明示的フェーズ化し、部分失敗時の扱いを明文化。
-3. **P2: `ConfigManager` 設定定義の一元化**
-   - 設定キー/既定値/リセット対象を同一定義から導出可能にする。
-4. **P3: `command-support` の追加分割（必要時）**
-   - `apply` 実行フローの副作用境界を分離し、テストの粒度をさらに上げる。
+- `validator/schema-validator.ts`（Ajv関連）
+- `validator/component-walker.ts`（コンポーネント列挙）
+- `validator/theme-token-loader.ts`（theme探索/extends解決）
+- `validator/token-resolver.ts`（token index/循環検知）
 
-## 運用ルール（継続）
+### P1: `src/cli/openapi-importer.ts` のレイヤー分離
 
-- 1PR あたり 1責務の抽出を基本とし、機能変更と構造変更を混在させない。
-- 各段階で `lint + test` を実行し、回帰を確認してから次の分割へ進む。
+OpenAPI読み込み、schema解決、field推論、DSL構築までを1ファイルで実装しており、テスト粒度が粗くなりやすい構造です。
+
+**提案分割**
+
+- `openapi-loader.ts`（読み込み/parse）
+- `openapi-schema-resolver.ts`（`$ref`/`allOf`/`oneOf`）
+- `openapi-field-mapper.ts`（Form field 推論）
+- `openapi-dsl-builder.ts`（最終DSL組み立て）
+
+### P2: exporter間の共通化強化
+
+`html/react/pug` exporter がそれぞれ大きく、属性組み立て・ラベル付きフィールド描画などの共通ロジックが散在しています。`BaseComponentRenderer` はあるものの、UI要素ごとの「描画手順」共通化を追加するとメンテナンスコストが下げられます。
+
+**提案**
+
+- フィールドラッパー/属性ビルダーの共通ユーティリティ拡張
+- component別に render spec を寄せる（テンプレート/戦略パターン）
+
+### P3: テストのノイズ削減
+
+現状テストは大量ログが標準出力に出ており、失敗時の本質ログを追いにくくなっています。
+
+**提案**
+
+- `LOG_LEVEL=test` で冗長ログを抑制する仕組み追加
+- 主要アサーションに関係するログのみを出す設計へ整理
+
+## 実行計画（最小リスク）
+
+1. `validator.ts` の分割（内部API互換を保つ）
+2. `openapi-importer.ts` の分割（公開関数は維持）
+3. exporter共通化（snapshot/regressionテスト追加）
+4. テストログ抑制（CIの可読性改善）
+
+各段階で `npm run lint` と `npm run test:all` を実行し、回帰を防止する。
