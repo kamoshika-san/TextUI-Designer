@@ -15,79 +15,32 @@ import {
   type CliProvider
 } from './exporter-runner';
 import { resolveDslTokens, type TokenErrorMode } from './theme-token-resolver';
+import { resolveBatchOutputPath, resolveBatchStatePath } from './batch-path-resolver';
+import {
+  getArg,
+  hasFlag,
+  parseOptionalNonNegativeInt,
+  parseOptionalPositiveInt,
+  parseOptionalPositiveNumber,
+  parseThemePath,
+  parseTokenErrorMode
+} from './arg-options';
 import type { CliState, ExitCode, PlanSummary, ValidationSummary } from './types';
 import { sha256, stableStringify } from './utils';
 
-export function getArg(flag: string): string | undefined {
-  const index = process.argv.indexOf(flag);
-  if (index === -1) {
-    return undefined;
-  }
-  return process.argv[index + 1];
-}
+export {
+  getArg,
+  hasFlag,
+  parseOptionalNonNegativeInt,
+  parseOptionalPositiveInt,
+  parseOptionalPositiveNumber,
+  parseThemePath,
+  parseTokenErrorMode
+};
 
-export function hasFlag(flag: string): boolean {
-  return process.argv.includes(flag);
-}
 
 export function printJson(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
-}
-
-export function parseTokenErrorMode(): TokenErrorMode {
-  const mode = (getArg('--token-on-error') ?? 'error').toLowerCase();
-  if (mode === 'error' || mode === 'warn' || mode === 'ignore') {
-    return mode;
-  }
-  throw new Error(`invalid --token-on-error value: ${mode}. expected: error|warn|ignore`);
-}
-
-export function parseThemePath(): string | undefined {
-  const raw = getArg('--theme');
-  if (!raw) {
-    return undefined;
-  }
-  const resolved = path.resolve(raw);
-  if (!fs.existsSync(resolved) || !fs.statSync(resolved).isFile()) {
-    throw new Error(`theme file not found: ${resolved}`);
-  }
-  return resolved;
-}
-
-export function parseOptionalPositiveInt(flag: string): number | undefined {
-  const value = getArg(flag);
-  if (value === undefined) {
-    return undefined;
-  }
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed <= 0) {
-    throw new Error(`invalid ${flag} value: ${value}. expected positive integer`);
-  }
-  return parsed;
-}
-
-export function parseOptionalPositiveNumber(flag: string): number | undefined {
-  const value = getArg(flag);
-  if (value === undefined) {
-    return undefined;
-  }
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new Error(`invalid ${flag} value: ${value}. expected positive number`);
-  }
-  return parsed;
-}
-
-export function parseOptionalNonNegativeInt(flag: string): number | undefined {
-  const value = getArg(flag);
-  if (value === undefined) {
-    return undefined;
-  }
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 0) {
-    throw new Error(`invalid ${flag} value: ${value}. expected non-negative integer`);
-  }
-  return parsed;
 }
 
 export function emitTokenWarnings(warnings: Array<{ path: string; message: string }>): void {
@@ -170,41 +123,6 @@ export function getStateFingerprint(state: CliState | null): string {
 
 function toDeterministicDsl<T>(dsl: T): T {
   return JSON.parse(stableStringify(dsl)) as T;
-}
-
-function stripDslExtension(filePath: string): string {
-  return filePath.replace(/\.tui\.ya?ml$/i, '');
-}
-
-function assertDirectoryTarget(targetPath: string, flagName: '--output' | '--state'): void {
-  if (fs.existsSync(targetPath) && !fs.statSync(targetPath).isDirectory()) {
-    throw new Error(`${flagName} must be a directory when used with --dir: ${targetPath}`);
-  }
-}
-
-function resolveBatchOutputPath(params: {
-  filePath: string;
-  rootDir: string;
-  providerExtension: string;
-  outputArg?: string;
-}): string {
-  const outputRoot = path.resolve(params.outputArg ?? 'generated');
-  assertDirectoryTarget(outputRoot, '--output');
-  const relativeDslPath = path.relative(params.rootDir, params.filePath);
-  const outputBase = stripDslExtension(relativeDslPath);
-  return path.join(outputRoot, `${outputBase}${params.providerExtension}`);
-}
-
-function resolveBatchStatePath(params: {
-  filePath: string;
-  rootDir: string;
-  stateArg?: string;
-}): string {
-  const stateRoot = path.resolve(params.stateArg ?? '.textui/state');
-  assertDirectoryTarget(stateRoot, '--state');
-  const relativeDslPath = path.relative(params.rootDir, params.filePath);
-  const stateBase = stripDslExtension(relativeDslPath);
-  return path.join(stateRoot, `${stateBase}.state.json`);
 }
 
 export async function renderWithDeterministicCheck(params: {

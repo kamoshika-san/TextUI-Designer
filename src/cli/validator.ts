@@ -1,8 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
-import Ajv from 'ajv';
+import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv';
 import type { ValidationResult, ValidationIssue } from './types';
+import { BUILT_IN_COMPONENTS } from '../registry/component-manifest';
 
 interface ComponentEntry {
   type: string;
@@ -24,24 +25,9 @@ type ResolveResult =
   | { ok: true; value: unknown }
   | { ok: false; kind: 'undefined' | 'type' | 'cycle'; tokenPath: string; cycle?: string[] };
 
-const KNOWN_COMPONENTS = new Set([
-  'Text',
-  'Input',
-  'Button',
-  'Form',
-  'Checkbox',
-  'Radio',
-  'Select',
-  'DatePicker',
-  'Divider',
-  'Spacer',
-  'Container',
-  'Alert',
-  'Accordion',
-  'Tabs',
-  'TreeView',
-  'Table'
-]);
+const KNOWN_COMPONENTS = new Set<string>(BUILT_IN_COMPONENTS);
+
+let cachedDslValidator: ValidateFunction | null = null;
 
 const TOKEN_REF_PATTERN = /^\{([A-Za-z0-9_.-]+)\}$/;
 
@@ -49,17 +35,12 @@ export function validateDsl(
   dsl: unknown,
   options: { sourcePath?: string; skipTokenValidation?: boolean } = {}
 ): ValidationResult {
-  const schemaPath = path.resolve(__dirname, '../../schemas/schema.json');
-  const schemaRaw = fs.readFileSync(schemaPath, 'utf8');
-  const schema = JSON.parse(schemaRaw);
-
-  const ajv = new Ajv({ allErrors: true, strict: false });
-  const validate = ajv.compile(schema);
+  const validate = getDslValidator();
   const valid = validate(dsl);
 
   const issues: ValidationIssue[] = [];
   if (!valid && validate.errors) {
-    validate.errors.forEach(error => {
+    validate.errors.forEach((error: ErrorObject) => {
       issues.push({
         level: 'error',
         message: error.message || 'schema validation error',
@@ -74,6 +55,20 @@ export function validateDsl(
     valid: issues.every(issue => issue.level !== 'error'),
     issues
   };
+}
+
+function getDslValidator(): ValidateFunction {
+  if (cachedDslValidator) {
+    return cachedDslValidator;
+  }
+
+  const schemaPath = path.resolve(__dirname, '../../schemas/schema.json');
+  const schemaRaw = fs.readFileSync(schemaPath, 'utf8');
+  const schema = JSON.parse(schemaRaw);
+  const ajv = new Ajv({ allErrors: true, strict: false });
+
+  cachedDslValidator = ajv.compile(schema);
+  return cachedDslValidator;
 }
 
 function validateSemanticRules(dsl: unknown, sourcePath?: string, skipTokenValidation: boolean = false): ValidationIssue[] {
