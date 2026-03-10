@@ -266,4 +266,73 @@ export abstract class BaseComponentRenderer implements Exporter {
   protected escapeAttribute(value: unknown): string {
     return this.escapeHtml(value);
   }
+
+
+
+  protected buildLabeledFieldBlock(
+    label: string | undefined,
+    fieldContent: string,
+    wrapperStart: string,
+    wrapperEnd: string,
+    buildLabelLine: (safeLabel: string) => string
+  ): string {
+    let code = wrapperStart;
+    if (label) {
+      code += `
+${buildLabelLine(this.escapeHtml(label))}`;
+    }
+    code += `
+${fieldContent}`;
+    if (wrapperEnd) {
+      code += `
+${wrapperEnd}`;
+    }
+    return code;
+  }
+
+  protected buildControlRowWithLabel(
+    label: string | undefined,
+    controlContent: string,
+    rowStart: string,
+    rowEnd: string,
+    buildLabelLine: (safeLabel: string) => string
+  ): string {
+    let code = rowStart;
+    code += `
+${controlContent}`;
+    if (label) {
+      code += `
+${buildLabelLine(this.escapeHtml(label))}`;
+    }
+    if (rowEnd) {
+      code += `
+${rowEnd}`;
+    }
+    return code;
+  }
+
+  protected buildBooleanAttr(name: string, enabled: boolean): string {
+    return enabled ? ` ${name}` : '';
+  }
+
+  protected buildValueAttr(name: string, value: string | undefined): string {
+    if (!value) {
+      return '';
+    }
+
+    return ` ${name}="${this.escapeAttribute(value)}"`;
+  }
+
+  protected buildAttrs(attrs: Record<string, string | boolean | undefined>): string {
+    return Object.entries(attrs)
+      .map(([name, value]) => {
+        if (typeof value === 'boolean') {
+          return this.buildBooleanAttr(name, value);
+        }
+
+        return this.buildValueAttr(name, value);
+      })
+      .join('');
+  }
+
 }

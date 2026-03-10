@@ -7,6 +7,9 @@ const { expect } = require('chai');
 
 // テスト環境変数を設定
 process.env.NODE_ENV = 'test';
+if (!process.env.TEXTUI_LOG_LEVEL) {
+  process.env.TEXTUI_LOG_LEVEL = 'error';
+}
 
 // コンソールメソッドを保護
 const originalConsole = {
@@ -17,40 +20,88 @@ const originalConsole = {
   debug: console.debug.bind(console)
 };
 
+
+const NOISY_LOG_PATTERNS = [
+  /^\[CommandManager\]/,
+  /^\[CacheManager\]/,
+  /^\[UpdateQueueManager\]/,
+  /^\[WebView(?:ErrorHandler|UpdateManager)?\]/,
+  /^\[YamlParser\]/,
+  /^\[PerformanceMonitor\]/,
+  /^\[TextUIMemoryTracker\]/,
+  /^strict mode:/
+];
+
+const shouldSuppressTestLog = (args) => {
+  if (process.env.TEXTUI_TEST_VERBOSE === '1') {
+    return false;
+  }
+
+  const message = args
+    .map((arg) => (typeof arg === 'string' ? arg : ''))
+    .find((text) => text.length > 0) || '';
+
+  return NOISY_LOG_PATTERNS.some((pattern) => pattern.test(message));
+};
+
+const filteredConsole = {
+  log: (...args) => {
+    if (!shouldSuppressTestLog(args)) {
+      originalConsole.log(...args);
+    }
+  },
+  error: (...args) => originalConsole.error(...args),
+  warn: (...args) => {
+    if (!shouldSuppressTestLog(args)) {
+      originalConsole.warn(...args);
+    }
+  },
+  info: (...args) => {
+    if (!shouldSuppressTestLog(args)) {
+      originalConsole.info(...args);
+    }
+  },
+  debug: (...args) => {
+    if (!shouldSuppressTestLog(args)) {
+      originalConsole.debug(...args);
+    }
+  }
+};
+
 // コンソールメソッドを強制的に保護
 Object.defineProperty(global, 'console', {
-  value: originalConsole,
+  value: filteredConsole,
   writable: false,
   configurable: false
 });
 
 // Node.jsのconsoleも保護
 Object.defineProperty(console, 'log', {
-  value: originalConsole.log,
+  value: filteredConsole.log,
   writable: false,
   configurable: false
 });
 
 Object.defineProperty(console, 'error', {
-  value: originalConsole.error,
+  value: filteredConsole.error,
   writable: false,
   configurable: false
 });
 
 Object.defineProperty(console, 'warn', {
-  value: originalConsole.warn,
+  value: filteredConsole.warn,
   writable: false,
   configurable: false
 });
 
 Object.defineProperty(console, 'info', {
-  value: originalConsole.info,
+  value: filteredConsole.info,
   writable: false,
   configurable: false
 });
 
 Object.defineProperty(console, 'debug', {
-  value: originalConsole.debug,
+  value: filteredConsole.debug,
   writable: false,
   configurable: false
 });
@@ -73,7 +124,7 @@ Module.prototype.require = function(id) {
 global.vscode = mockVscode;
 
 // コンソールメソッドをグローバルに保護
-global.console = originalConsole;
+global.console = filteredConsole;
 
 // Chaiの設定
 global.expect = expect;
@@ -191,7 +242,7 @@ global.cleanupMocks = () => {
   }
   
   // コンソールメソッドを復元
-  global.console = originalConsole;
+  global.console = filteredConsole;
 };
 
 // 初回セットアップでもファクトリを設定

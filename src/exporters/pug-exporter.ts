@@ -48,17 +48,18 @@ ${componentCode}`;
   protected renderInput(props: InputComponent, key: number): string {
     const { label, placeholder, type = 'text', required = false, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
-    const requiredAttr = required ? 'required' : '';
-    const disabledAttr = disabled ? 'disabled' : '';
     const tokenStyle = this.getPugTokenStyleAttr('Input', token).trim();
-    
-    let code = `      .mb-4`;
-    if (label) {
-      code += `\n        label.block.text-sm.font-medium.text-gray-700.mb-2 ${label}`;
-    }
-    code += `\n        input(type="${type}" placeholder="${placeholder || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}" ${requiredAttr} ${disabledAttr}${tokenStyle ? ` ${tokenStyle}` : ''})`;
-    
-    return code;
+    const inputAttrs = this.buildAttrs({ required, disabled });
+
+    const inputCode = `        input(type="${type}" placeholder="${placeholder || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${inputAttrs}${tokenStyle ? ` ${tokenStyle}` : ''})`;
+
+    return this.buildLabeledFieldBlock(
+      label,
+      inputCode,
+      '      .mb-4',
+      '',
+      safeLabel => `        label.block.text-sm.font-medium.text-gray-700.mb-2 ${safeLabel}`
+    );
   }
 
   protected renderButton(props: ButtonComponent, key: number): string {
@@ -80,67 +81,79 @@ ${componentCode}`;
   protected renderCheckbox(props: CheckboxComponent, key: number): string {
     const { label, checked = false, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
-    const checkedAttr = checked ? 'checked' : '';
-    const disabledAttr = disabled ? 'disabled' : '';
     const tokenStyle = this.getPugTokenStyleAttr('Checkbox', token).trim();
-    
-    return `      .flex.items-center.mb-4
-        input(type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${disabledClass}" ${checkedAttr} ${disabledAttr}${tokenStyle ? ` ${tokenStyle}` : ''})
-        label.ml-2.block.text-sm.text-gray-900 ${label}`;
+    const checkboxAttrs = this.buildAttrs({ checked, disabled });
+    const checkboxInput = `        input(type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${disabledClass}"${checkboxAttrs}${tokenStyle ? ` ${tokenStyle}` : ''})`;
+
+    return this.buildControlRowWithLabel(
+      label,
+      checkboxInput,
+      '      .flex.items-center.mb-4',
+      '',
+      safeLabel => `        label.ml-2.block.text-sm.text-gray-900 ${safeLabel}`
+    );
   }
+
 
   protected renderRadio(props: RadioComponent, key: number): string {
     const { label, value, name, checked = false, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
-    const checkedAttr = checked ? 'checked' : '';
-    const disabledAttr = disabled ? 'disabled' : '';
     const tokenStyle = this.getPugTokenStyleAttr('Radio', token).trim();
-    
-    return `      .flex.items-center.mb-4
-        input(type="radio" name="${name || 'radio'}" value="${value || ''}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 ${disabledClass}" ${checkedAttr} ${disabledAttr}${tokenStyle ? ` ${tokenStyle}` : ''})
-        label.ml-2.block.text-sm.text-gray-900 ${label}`;
+    const radioAttrs = this.buildAttrs({ checked, disabled });
+    const radioInput = `        input(type="radio" name="${name || 'radio'}" value="${value || ''}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 ${disabledClass}"${radioAttrs}${tokenStyle ? ` ${tokenStyle}` : ''})`;
+
+    return this.buildControlRowWithLabel(
+      label,
+      radioInput,
+      '      .flex.items-center.mb-4',
+      '',
+      safeLabel => `        label.ml-2.block.text-sm.text-gray-900 ${safeLabel}`
+    );
   }
+
 
   protected renderSelect(props: SelectComponent, key: number): string {
     const { label, options = [], placeholder, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
-    const disabledAttr = disabled ? 'disabled' : '';
     const tokenStyle = this.getPugTokenStyleAttr('Select', token).trim();
-    
-    let code = `      .mb-4`;
-    if (label) {
-      code += `\n        label.block.text-sm.font-medium.text-gray-700.mb-2 ${label}`;
-    }
-    code += `\n        select(class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}" ${disabledAttr}${tokenStyle ? ` ${tokenStyle}` : ''})`;
-    
+    const selectAttrs = this.buildAttrs({ disabled });
+
+    let selectCode = `        select(class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${selectAttrs}${tokenStyle ? ` ${tokenStyle}` : ''})`;
+
     if (placeholder) {
-      code += `\n          option(value="") ${placeholder}`;
+      selectCode += `
+          option(value="") ${placeholder}`;
     }
-    
+
     options.forEach((opt: SelectOption) => {
-      code += `\n          option(value="${opt.value}") ${opt.label}`;
+      selectCode += `
+          option(value="${opt.value}") ${opt.label}`;
     });
-    
-    return code;
+
+    return this.buildLabeledFieldBlock(
+      label,
+      selectCode,
+      '      .mb-4',
+      '',
+      safeLabel => `        label.block.text-sm.font-medium.text-gray-700.mb-2 ${safeLabel}`
+    );
   }
 
   protected renderDatePicker(props: DatePickerComponent, key: number): string {
     const { label, name = 'date', required = false, disabled = false, min, max, value, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
-    const requiredAttr = required ? 'required' : '';
-    const disabledAttr = disabled ? 'disabled' : '';
-    const minAttr = min ? `min="${min}"` : '';
-    const maxAttr = max ? `max="${max}"` : '';
-    const valueAttr = value ? `value="${value}"` : '';
     const tokenStyle = this.getPugTokenStyleAttr('DatePicker', token).trim();
+    const dateInputAttrs = this.buildAttrs({ required, disabled, min, max, value });
 
-    let code = `      .mb-4`;
-    if (label) {
-      code += `\n        label.block.text-sm.font-medium.text-gray-700.mb-2(for="${name}") ${label}`;
-    }
-    code += `\n        input(type="date" id="${name}" name="${name}" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}" ${requiredAttr} ${disabledAttr} ${minAttr} ${maxAttr} ${valueAttr}${tokenStyle ? ` ${tokenStyle}` : ''})`;
+    const dateInputCode = `        input(type="date" id="${name}" name="${name}" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${dateInputAttrs}${tokenStyle ? ` ${tokenStyle}` : ''})`;
 
-    return code;
+    return this.buildLabeledFieldBlock(
+      label,
+      dateInputCode,
+      '      .mb-4',
+      '',
+      safeLabel => `        label.block.text-sm.font-medium.text-gray-700.mb-2(for="${name}") ${safeLabel}`
+    );
   }
 
   protected renderDivider(props: DividerComponent, key: number): string {
