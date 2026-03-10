@@ -71,6 +71,69 @@ describe('高優先度課題: 拡張性・柔軟性', () => {
     assert.strictEqual(ConfigManager.isSupportedFile('/tmp/example.tui.yaml'), false);
   });
 
+  it('ConfigManager.getConfigurationSchema は customTemplates を object 配列として定義する', () => {
+    const schema = ConfigManager.getConfigurationSchema();
+    const customTemplates = schema.properties['templates.customTemplates'];
+
+    assert.strictEqual(customTemplates.type, 'array');
+    assert.strictEqual(customTemplates.items.type, 'object');
+    assert.deepStrictEqual(customTemplates.items.required, ['name', 'path']);
+    assert.strictEqual(customTemplates.items.properties.name.type, 'string');
+    assert.strictEqual(customTemplates.items.properties.path.type, 'string');
+  });
+
+
+
+  it('ConfigManager.getConfigurationSchema は package.json の設定プロパティ全体と整合する', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const packageJson = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
+    const packageProperties = packageJson.contributes.configuration.properties;
+
+    const normalize = (properties) => {
+      const normalized = {};
+      for (const [fullKey, value] of Object.entries(properties)) {
+        if (!fullKey.startsWith('textui-designer.')) {
+          continue;
+        }
+        const key = fullKey.replace('textui-designer.', '');
+        normalized[key] = {
+          type: value.type,
+          default: value.default,
+          description: value.description,
+          enum: value.enum,
+          minimum: value.minimum,
+          maximum: value.maximum,
+          required: value.required,
+          items: value.items
+        };
+      }
+      return normalized;
+    };
+
+    const pickComparableProps = (properties) => {
+      const comparable = {};
+      for (const [key, value] of Object.entries(properties)) {
+        comparable[key] = {
+          type: value.type,
+          default: value.default,
+          description: value.description,
+          enum: value.enum,
+          minimum: value.minimum,
+          maximum: value.maximum,
+          required: value.required,
+          items: value.items
+        };
+      }
+      return comparable;
+    };
+
+    const expected = normalize(packageProperties);
+    const actual = pickComparableProps(ConfigManager.getConfigurationSchema().properties);
+
+    assert.deepStrictEqual(actual, expected);
+  });
+
   it('CompletionProvider は設定拡張子を使って補完対象を判定する', async () => {
     ConfigManager.setConfigProvider(
       createConfigProvider({
