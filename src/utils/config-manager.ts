@@ -5,6 +5,38 @@ export type ConfigProvider = (section: string) => {
   update(key: string, value: unknown, target?: boolean | vscode.ConfigurationTarget | null): Thenable<void>;
 };
 
+type SettingsDefaults = {
+  'supportedFileExtensions': string[];
+  'autoPreview.enabled': boolean;
+  'devTools.enabled': boolean;
+  'webview.disableThemeVariables': boolean;
+  'webview.theme': string;
+  'webview.fontSize': number;
+  'export.defaultFormat': string;
+  'export.includeComments': boolean;
+  'export.minify': boolean;
+  'diagnostics.enabled': boolean;
+  'diagnostics.maxProblems': number;
+  'diagnostics.validateOnSave': boolean;
+  'diagnostics.validateOnChange': boolean;
+  'schema.validation.enabled': boolean;
+  'schema.autoReload': boolean;
+  'templates.defaultLocation': string;
+  'templates.customTemplates': unknown[];
+  'performance.webviewDebounceDelay': number;
+  'performance.diagnosticDebounceDelay': number;
+  'performance.completionDebounceDelay': number;
+  'performance.cacheTTL': number;
+  'performance.schemaCacheTTL': number;
+  'performance.memoryMonitorInterval': number;
+  'performance.enablePerformanceLogs': boolean;
+  'performance.minUpdateInterval': number;
+  'performance.maxConcurrentOperations': number;
+  'performance.enableMemoryTracking': boolean;
+  'performance.memoryMeasurementInterval': number;
+  'performance.memoryCleanupInterval': number;
+};
+
 /**
  * 設定管理ユーティリティ
  *
@@ -13,6 +45,38 @@ export type ConfigProvider = (section: string) => {
  */
 export class ConfigManager {
   static readonly CONFIG_SECTION = 'textui-designer';
+
+  private static readonly SETTINGS_DEFAULTS: SettingsDefaults = {
+    'supportedFileExtensions': ['.tui.yml', '.tui.yaml'],
+    'autoPreview.enabled': false,
+    'devTools.enabled': false,
+    'webview.disableThemeVariables': true,
+    'webview.theme': 'auto',
+    'webview.fontSize': 14,
+    'export.defaultFormat': 'html',
+    'export.includeComments': true,
+    'export.minify': false,
+    'diagnostics.enabled': true,
+    'diagnostics.maxProblems': 100,
+    'diagnostics.validateOnSave': true,
+    'diagnostics.validateOnChange': true,
+    'schema.validation.enabled': true,
+    'schema.autoReload': true,
+    'templates.defaultLocation': '',
+    'templates.customTemplates': [],
+    'performance.webviewDebounceDelay': 300,
+    'performance.diagnosticDebounceDelay': 500,
+    'performance.completionDebounceDelay': 200,
+    'performance.cacheTTL': 30000,
+    'performance.schemaCacheTTL': 60000,
+    'performance.memoryMonitorInterval': 30000,
+    'performance.enablePerformanceLogs': true,
+    'performance.minUpdateInterval': 100,
+    'performance.maxConcurrentOperations': 2,
+    'performance.enableMemoryTracking': false,
+    'performance.memoryMeasurementInterval': 5000,
+    'performance.memoryCleanupInterval': 30000
+  };
 
   private static configProvider: ConfigProvider | null = null;
 
@@ -63,7 +127,7 @@ export class ConfigManager {
    * サポートされているファイル拡張子
    */
   static getSupportedFileExtensions(): string[] {
-    return this.get('supportedFileExtensions', ['.tui.yml', '.tui.yaml']);
+    return this.getDefaultValue('supportedFileExtensions');
   }
 
   /**
@@ -80,7 +144,7 @@ export class ConfigManager {
    * 自動プレビューが有効かチェック
    */
   static isAutoPreviewEnabled(): boolean {
-    const value = this.get('autoPreview.enabled', false);
+    const value = this.getDefaultValue('autoPreview.enabled');
     return value;
   }
 
@@ -88,7 +152,7 @@ export class ConfigManager {
    * 開発者ツールが有効かチェック
    */
   static isDevToolsEnabled(): boolean {
-    return this.get('devTools.enabled', false);
+    return this.getDefaultValue('devTools.enabled');
   }
 
   /**
@@ -96,9 +160,9 @@ export class ConfigManager {
    */
   static getWebViewSettings() {
     return {
-      disableThemeVariables: this.get('webview.disableThemeVariables', true),
-      theme: this.get('webview.theme', 'auto'),
-      fontSize: this.get('webview.fontSize', 14)
+      disableThemeVariables: this.getDefaultValue('webview.disableThemeVariables'),
+      theme: this.getDefaultValue('webview.theme'),
+      fontSize: this.getDefaultValue('webview.fontSize')
     };
   }
 
@@ -107,9 +171,9 @@ export class ConfigManager {
    */
   static getExportSettings() {
     return {
-      defaultFormat: this.get('export.defaultFormat', 'html'),
-      includeComments: this.get('export.includeComments', true),
-      minify: this.get('export.minify', false)
+      defaultFormat: this.getDefaultValue('export.defaultFormat'),
+      includeComments: this.getDefaultValue('export.includeComments'),
+      minify: this.getDefaultValue('export.minify')
     };
   }
 
@@ -118,10 +182,10 @@ export class ConfigManager {
    */
   static getDiagnosticSettings() {
     return {
-      enabled: this.get('diagnostics.enabled', true),
-      maxProblems: this.get('diagnostics.maxProblems', 100),
-      validateOnSave: this.get('diagnostics.validateOnSave', true),
-      validateOnChange: this.get('diagnostics.validateOnChange', true)
+      enabled: this.getDefaultValue('diagnostics.enabled'),
+      maxProblems: this.getDefaultValue('diagnostics.maxProblems'),
+      validateOnSave: this.getDefaultValue('diagnostics.validateOnSave'),
+      validateOnChange: this.getDefaultValue('diagnostics.validateOnChange')
     };
   }
 
@@ -130,8 +194,8 @@ export class ConfigManager {
    */
   static getSchemaSettings() {
     return {
-      validationEnabled: this.get('schema.validation.enabled', true),
-      autoReload: this.get('schema.autoReload', true)
+      validationEnabled: this.getDefaultValue('schema.validation.enabled'),
+      autoReload: this.getDefaultValue('schema.autoReload')
     };
   }
 
@@ -140,8 +204,8 @@ export class ConfigManager {
    */
   static getTemplateSettings() {
     return {
-      defaultLocation: this.get('templates.defaultLocation', ''),
-      customTemplates: this.get('templates.customTemplates', [])
+      defaultLocation: this.getDefaultValue('templates.defaultLocation'),
+      customTemplates: this.getDefaultValue('templates.customTemplates')
     };
   }
 
@@ -151,29 +215,29 @@ export class ConfigManager {
   static getPerformanceSettings() {
     return {
       // WebView更新のデバウンス時間（ミリ秒）- よりリアルタイムに近い更新
-      webviewDebounceDelay: this.get('performance.webviewDebounceDelay', 300),
+      webviewDebounceDelay: this.getDefaultValue('performance.webviewDebounceDelay'),
       // 診断のデバウンス時間（ミリ秒）- よりリアルタイムに近い更新
-      diagnosticDebounceDelay: this.get('performance.diagnosticDebounceDelay', 500),
+      diagnosticDebounceDelay: this.getDefaultValue('performance.diagnosticDebounceDelay'),
       // 補完のデバウンス時間（ミリ秒）
-      completionDebounceDelay: this.get('performance.completionDebounceDelay', 200),
+      completionDebounceDelay: this.getDefaultValue('performance.completionDebounceDelay'),
       // キャッシュの有効期限（ミリ秒）- より短くしてリアルタイム性を向上
-      cacheTTL: this.get('performance.cacheTTL', 30000),
+      cacheTTL: this.getDefaultValue('performance.cacheTTL'),
       // スキーマキャッシュの有効期限（ミリ秒）
-      schemaCacheTTL: this.get('performance.schemaCacheTTL', 60000),
+      schemaCacheTTL: this.getDefaultValue('performance.schemaCacheTTL'),
       // メモリ使用量の監視間隔（ミリ秒、開発時のみ）
-      memoryMonitorInterval: this.get('performance.memoryMonitorInterval', 30000),
+      memoryMonitorInterval: this.getDefaultValue('performance.memoryMonitorInterval'),
       // パフォーマンスログの有効化
-      enablePerformanceLogs: this.get('performance.enablePerformanceLogs', true),
+      enablePerformanceLogs: this.getDefaultValue('performance.enablePerformanceLogs'),
       // 最小更新間隔（ミリ秒）- より短くしてリアルタイム性を向上
-      minUpdateInterval: this.get('performance.minUpdateInterval', 100),
+      minUpdateInterval: this.getDefaultValue('performance.minUpdateInterval'),
       // 最大同時処理数 - より多くしてレスポンス性を向上
-      maxConcurrentOperations: this.get('performance.maxConcurrentOperations', 2),
+      maxConcurrentOperations: this.getDefaultValue('performance.maxConcurrentOperations'),
       // メモリ追跡の有効化
-      enableMemoryTracking: this.get('performance.enableMemoryTracking', false),
+      enableMemoryTracking: this.getDefaultValue('performance.enableMemoryTracking'),
       // メモリ測定間隔（ミリ秒）
-      memoryMeasurementInterval: this.get('performance.memoryMeasurementInterval', 5000),
+      memoryMeasurementInterval: this.getDefaultValue('performance.memoryMeasurementInterval'),
       // メモリクリーンアップ間隔（ミリ秒）
-      memoryCleanupInterval: this.get('performance.memoryCleanupInterval', 30000)
+      memoryCleanupInterval: this.getDefaultValue('performance.memoryCleanupInterval')
     };
   }
 
@@ -181,42 +245,22 @@ export class ConfigManager {
    * 設定をリセット
    */
   static async resetConfiguration(): Promise<void> {
-    const config = vscode.workspace.getConfiguration(this.CONFIG_SECTION);
-    await config.update('supportedFileExtensions', undefined);
-    await config.update('autoPreview.enabled', undefined);
-    await config.update('devTools.enabled', undefined);
-    await config.update('webview.disableThemeVariables', undefined);
-    await config.update('export.defaultFormat', undefined);
-    await config.update('export.includeComments', undefined);
-    await config.update('export.minify', undefined);
-    await config.update('diagnostics.enabled', undefined);
-    await config.update('diagnostics.maxProblems', undefined);
-    await config.update('diagnostics.validateOnSave', undefined);
-    await config.update('diagnostics.validateOnChange', undefined);
-    await config.update('schema.validation.enabled', undefined);
-    await config.update('schema.autoReload', undefined);
-    await config.update('webview.theme', undefined);
-    await config.update('webview.fontSize', undefined);
-    await config.update('templates.defaultLocation', undefined);
-    await config.update('templates.customTemplates', undefined);
-    await config.update('performance.webviewDebounceDelay', undefined);
-    await config.update('performance.diagnosticDebounceDelay', undefined);
-    await config.update('performance.completionDebounceDelay', undefined);
-    await config.update('performance.cacheTTL', undefined);
-    await config.update('performance.schemaCacheTTL', undefined);
-    await config.update('performance.memoryMonitorInterval', undefined);
-    await config.update('performance.enablePerformanceLogs', undefined);
-    await config.update('performance.minUpdateInterval', undefined);
-    await config.update('performance.maxConcurrentOperations', undefined);
-    await config.update('performance.enableMemoryTracking', undefined);
-    await config.update('performance.memoryMeasurementInterval', undefined);
-    await config.update('performance.memoryCleanupInterval', undefined);
+    const config = this.getConfig();
+    for (const key of Object.keys(this.SETTINGS_DEFAULTS) as Array<keyof SettingsDefaults>) {
+      await config.update(key, undefined);
+    }
+  }
+
+  private static getDefaultValue<K extends keyof SettingsDefaults>(key: K): SettingsDefaults[K] {
+    return this.get(key, this.SETTINGS_DEFAULTS[key]);
   }
 
   /**
    * 設定スキーマを取得
    */
   static getConfigurationSchema(): Record<string, unknown> {
+    const defaultValue = <K extends keyof SettingsDefaults>(key: K): SettingsDefaults[K] => this.SETTINGS_DEFAULTS[key];
+
     return {
       type: 'object',
       title: 'TextUI Designer',
@@ -224,136 +268,151 @@ export class ConfigManager {
         'supportedFileExtensions': {
           type: 'array',
           items: { type: 'string' },
-          default: ['.tui.yml', '.tui.yaml'],
+          default: defaultValue('supportedFileExtensions'),
           description: 'サポートするファイル拡張子'
         },
         'autoPreview.enabled': {
           type: 'boolean',
-          default: false,
+          default: defaultValue('autoPreview.enabled'),
           description: 'ファイルを開いた時に自動的にプレビューを表示'
         },
         'devTools.enabled': {
           type: 'boolean',
-          default: false,
+          default: defaultValue('devTools.enabled'),
           description: '開発者ツールの有効化'
         },
         'webview.disableThemeVariables': {
           type: 'boolean',
-          default: true,
+          default: defaultValue('webview.disableThemeVariables'),
           description: 'VS Codeのテーマ変数を無効化して独自スタイルを使用'
         },
         'webview.theme': {
           type: 'string',
           enum: ['auto', 'light', 'dark'],
-          default: 'auto',
+          default: defaultValue('webview.theme'),
           description: 'WebViewのテーマ'
         },
         'webview.fontSize': {
           type: 'number',
-          default: 14,
+          default: defaultValue('webview.fontSize'),
           description: 'WebViewのフォントサイズ'
         },
         'export.defaultFormat': {
           type: 'string',
           enum: ['html', 'react', 'pug'],
-          default: 'html',
+          default: defaultValue('export.defaultFormat'),
           description: 'デフォルトのエクスポート形式'
         },
         'export.includeComments': {
           type: 'boolean',
-          default: true,
+          default: defaultValue('export.includeComments'),
           description: 'エクスポート時にコメントを含める'
         },
         'export.minify': {
           type: 'boolean',
-          default: false,
+          default: defaultValue('export.minify'),
           description: 'エクスポート時にコードを圧縮'
         },
         'diagnostics.enabled': {
           type: 'boolean',
-          default: true,
+          default: defaultValue('diagnostics.enabled'),
           description: '診断機能の有効化'
         },
         'diagnostics.maxProblems': {
           type: 'number',
-          default: 100,
+          default: defaultValue('diagnostics.maxProblems'),
           description: '最大診断問題数'
         },
         'diagnostics.validateOnSave': {
           type: 'boolean',
-          default: true,
+          default: defaultValue('diagnostics.validateOnSave'),
           description: '保存時に診断を実行'
         },
         'diagnostics.validateOnChange': {
           type: 'boolean',
-          default: true,
+          default: defaultValue('diagnostics.validateOnChange'),
           description: '変更時に診断を実行'
         },
         'schema.validation.enabled': {
           type: 'boolean',
-          default: true,
+          default: defaultValue('schema.validation.enabled'),
           description: 'スキーマ検証の有効化'
         },
         'schema.autoReload': {
           type: 'boolean',
-          default: true,
+          default: defaultValue('schema.autoReload'),
           description: 'スキーマの自動再読み込み'
         },
         'templates.defaultLocation': {
           type: 'string',
-          default: '',
+          default: defaultValue('templates.defaultLocation'),
           description: 'テンプレートのデフォルト保存場所'
         },
         'templates.customTemplates': {
           type: 'array',
           items: { type: 'string' },
-          default: [],
+          default: defaultValue('templates.customTemplates'),
           description: 'カスタムテンプレートファイルのパス'
         },
         'performance.webviewDebounceDelay': {
           type: 'number',
-          default: 300,
+          default: defaultValue('performance.webviewDebounceDelay'),
           description: 'WebView更新のデバウンス時間（ミリ秒）'
         },
         'performance.diagnosticDebounceDelay': {
           type: 'number',
-          default: 500,
+          default: defaultValue('performance.diagnosticDebounceDelay'),
           description: '診断のデバウンス時間（ミリ秒）'
         },
         'performance.completionDebounceDelay': {
           type: 'number',
-          default: 200,
+          default: defaultValue('performance.completionDebounceDelay'),
           description: '補完のデバウンス時間（ミリ秒）'
         },
         'performance.cacheTTL': {
           type: 'number',
-          default: 30000,
+          default: defaultValue('performance.cacheTTL'),
           description: 'キャッシュの有効期限（ミリ秒）'
         },
         'performance.schemaCacheTTL': {
           type: 'number',
-          default: 60000,
+          default: defaultValue('performance.schemaCacheTTL'),
           description: 'スキーマキャッシュの有効期限（ミリ秒）'
         },
         'performance.memoryMonitorInterval': {
           type: 'number',
-          default: 30000,
+          default: defaultValue('performance.memoryMonitorInterval'),
           description: 'メモリ使用量の監視間隔（ミリ秒、開発時のみ）'
         },
         'performance.enablePerformanceLogs': {
           type: 'boolean',
-          default: true,
+          default: defaultValue('performance.enablePerformanceLogs'),
           description: 'パフォーマンスログの有効化'
         },
         'performance.minUpdateInterval': {
           type: 'number',
-          default: 100,
+          default: defaultValue('performance.minUpdateInterval'),
           description: '最小更新間隔（ミリ秒）'
         },
         'performance.maxConcurrentOperations': {
           type: 'number',
-          default: 2,
+          default: defaultValue('performance.maxConcurrentOperations'),
           description: '最大同時処理数'
+        },
+        'performance.enableMemoryTracking': {
+          type: 'boolean',
+          default: defaultValue('performance.enableMemoryTracking'),
+          description: 'メモリ追跡の有効化'
+        },
+        'performance.memoryMeasurementInterval': {
+          type: 'number',
+          default: defaultValue('performance.memoryMeasurementInterval'),
+          description: 'メモリ測定間隔（ミリ秒）'
+        },
+        'performance.memoryCleanupInterval': {
+          type: 'number',
+          default: defaultValue('performance.memoryCleanupInterval'),
+          description: 'メモリクリーンアップ間隔（ミリ秒）'
         }
       }
     };

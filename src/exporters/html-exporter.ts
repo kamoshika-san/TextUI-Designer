@@ -77,7 +77,11 @@ export class HtmlExporter extends BaseComponentRenderer {
     const disabledClass = this.getDisabledClass(disabled);
     
     const tokenStyle = this.getHtmlTokenStyleAttr('Input', token);
-    const inputHtml = `      <input type="${safeType}" placeholder="${safePlaceholder}" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${this.buildBooleanAttr('required', required)}${this.buildBooleanAttr('disabled', disabled)}${tokenStyle}>`;
+    const inputAttrs = this.buildHtmlAttrs({
+      required,
+      disabled
+    });
+    const inputHtml = `      <input type="${safeType}" placeholder="${safePlaceholder}" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${inputAttrs}${tokenStyle}>`;
 
     return this.renderLabeledFieldWrapper(label, inputHtml);
   }
@@ -88,24 +92,23 @@ export class HtmlExporter extends BaseComponentRenderer {
     const styleManager = this.getStyleManager();
     const kindClasses = styleManager.getKindClasses(this.format);
     const disabledClass = this.getDisabledClass(disabled);
-    const disabledAttr = disabled ? ' disabled' : '';
     const typeAttr = submit ? ' type="submit"' : '';
+    const buttonAttrs = this.buildHtmlAttrs({ disabled });
     
     const tokenStyle = this.getHtmlTokenStyleAttr('Button', token);
     const safeKind = this.escapeAttribute(kind);
-    return `    <button${typeAttr} data-kind="${safeKind}" class="${kindClasses[kind as keyof typeof kindClasses]} ${disabledClass}"${disabledAttr}${tokenStyle}>${safeLabel}</button>`;
+    return `    <button${typeAttr} data-kind="${safeKind}" class="${kindClasses[kind as keyof typeof kindClasses]} ${disabledClass}"${buttonAttrs}${tokenStyle}>${safeLabel}</button>`;
   }
 
   protected renderCheckbox(props: CheckboxComponent, key: number): string {
     const { label, checked = false, disabled = false, token } = props;
     const safeLabel = this.escapeHtml(label ?? '');
     const disabledClass = this.getDisabledClass(disabled);
-    const checkedAttr = checked ? ' checked' : '';
-    const disabledAttr = disabled ? ' disabled' : '';
+    const checkboxAttrs = this.buildHtmlAttrs({ checked, disabled });
     
     const tokenStyle = this.getHtmlTokenStyleAttr('Checkbox', token);
     return `    <div class="flex items-center mb-4">
-      <input type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-800 ${disabledClass}"${checkedAttr}${disabledAttr}${tokenStyle}>
+      <input type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-800 ${disabledClass}"${checkboxAttrs}${tokenStyle}>
       <label class="ml-2 block text-sm text-gray-400">${safeLabel}</label>
     </div>`;
   }
@@ -116,7 +119,6 @@ export class HtmlExporter extends BaseComponentRenderer {
     const safeLabel = label ? this.escapeHtml(label) : '';
     const safeGroupName = this.escapeAttribute(name || 'radio');
     const disabledClass = this.getDisabledClass(disabled);
-    const disabledAttr = disabled ? ' disabled' : '';
     
     let code = `    <div class="mb-4">`;
     if (label) {
@@ -126,18 +128,18 @@ export class HtmlExporter extends BaseComponentRenderer {
     // options配列がある場合は、各オプションをラジオボタンとしてレンダリング
     if (options && options.length > 0) {
       options.forEach((opt: RadioOption, index: number) => {
-        const checkedAttr = opt.checked ? ' checked' : '';
+        const radioAttrs = this.buildHtmlAttrs({ checked: Boolean(opt.checked), disabled });
         code += `\n      <div class="flex items-center mb-2">
-        <input type="radio" name="${safeGroupName}" value="${this.escapeAttribute(opt.value || '')}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 bg-gray-800 ${disabledClass}"${checkedAttr}${disabledAttr}${tokenStyle}>
+        <input type="radio" name="${safeGroupName}" value="${this.escapeAttribute(opt.value || '')}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 bg-gray-800 ${disabledClass}"${radioAttrs}${tokenStyle}>
         <label class="ml-2 block text-sm text-gray-400">${this.escapeHtml(opt.label ?? '')}</label>
       </div>`;
       });
     } else {
       // 単一のラジオボタン（後方互換性のため）
       const { value, checked = false } = props;
-      const checkedAttr = checked ? ' checked' : '';
+      const radioAttrs = this.buildHtmlAttrs({ checked, disabled });
       code += `\n      <div class="flex items-center mb-2">
-        <input type="radio" name="${safeGroupName}" value="${this.escapeAttribute(value || '')}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 bg-gray-800 ${disabledClass}"${checkedAttr}${disabledAttr}${tokenStyle}>
+        <input type="radio" name="${safeGroupName}" value="${this.escapeAttribute(value || '')}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 bg-gray-800 ${disabledClass}"${radioAttrs}${tokenStyle}>
         <label class="ml-2 block text-sm text-gray-400">${safeLabel}</label>
       </div>`;
     }
@@ -156,14 +158,19 @@ export class HtmlExporter extends BaseComponentRenderer {
       ? `w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-32 ${disabledClass}`
       : `w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}`;
     
-    let selectHtml = `      <select class="${selectClass}"${this.buildBooleanAttr('disabled', disabled)}${this.buildBooleanAttr('multiple', multiple)}${tokenStyle}>`;
+    const selectAttrs = this.buildHtmlAttrs({
+      disabled,
+      multiple
+    });
+    let selectHtml = `      <select class="${selectClass}"${selectAttrs}${tokenStyle}>`;
     
     if (placeholder && !multiple) {
       selectHtml += `\n        <option value="" class="bg-gray-800 text-gray-400">${this.escapeHtml(placeholder)}</option>`;
     }
     
     options.forEach((opt: SelectOption) => {
-      selectHtml += `\n        <option value="${this.escapeAttribute(opt.value)}" class="bg-gray-800 text-gray-400"${this.buildBooleanAttr('selected', Boolean(opt.selected))}>${this.escapeHtml(opt.label)}</option>`;
+      const optionAttrs = this.buildHtmlAttrs({ selected: Boolean(opt.selected) });
+      selectHtml += `\n        <option value="${this.escapeAttribute(opt.value)}" class="bg-gray-800 text-gray-400"${optionAttrs}>${this.escapeHtml(opt.label)}</option>`;
     });
     
     selectHtml += `\n      </select>`;
@@ -177,7 +184,14 @@ export class HtmlExporter extends BaseComponentRenderer {
     const disabledClass = this.getDisabledClass(disabled);
     const tokenStyle = this.getHtmlTokenStyleAttr('DatePicker', token);
 
-    const inputHtml = `      <input id="${safeName}" name="${safeName}" type="date" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${this.buildBooleanAttr('required', required)}${this.buildBooleanAttr('disabled', disabled)}${this.buildValueAttr('min', min)}${this.buildValueAttr('max', max)}${this.buildValueAttr('value', value)}${tokenStyle}>`;
+    const dateInputAttrs = this.buildHtmlAttrs({
+      required,
+      disabled,
+      min,
+      max,
+      value
+    });
+    const inputHtml = `      <input id="${safeName}" name="${safeName}" type="date" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${dateInputAttrs}${tokenStyle}>`;
 
     return this.renderLabeledFieldWrapper(label, inputHtml, safeName);
   }
@@ -204,6 +218,18 @@ export class HtmlExporter extends BaseComponentRenderer {
     }
 
     return ` ${name}="${this.escapeAttribute(value)}"`;
+  }
+
+  private buildHtmlAttrs(attrs: Record<string, string | boolean | undefined>): string {
+    return Object.entries(attrs)
+      .map(([name, value]) => {
+        if (typeof value === 'boolean') {
+          return this.buildBooleanAttr(name, value);
+        }
+
+        return this.buildValueAttr(name, value);
+      })
+      .join('');
   }
 
   protected renderDivider(props: DividerComponent, key: number): string {

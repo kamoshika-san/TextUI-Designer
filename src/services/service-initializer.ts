@@ -75,6 +75,7 @@ export class ServiceInitializer {
 
     } catch (error) {
       console.error('[ServiceInitializer] サービス初期化中にエラーが発生しました:', error);
+      await this.cleanup();
       throw error;
     }
   }
