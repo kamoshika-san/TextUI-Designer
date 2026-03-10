@@ -1,65 +1,41 @@
-# リファクタリング評価レポート（2026-03-09 更新）
+# リファクタリング評価レポート（2026-03-10 更新）
 
 ## 現在の状態（結論）
 
-- `npm run lint` / `npm test` はともに通過し、現時点で**機能破綻を示す兆候は見つかりません**。
-- 一方で、今後の機能追加時に変更衝突が起きやすい「責務集中ポイント」はまだ残っています。
+- P1/P2で計画していた CLI 周辺の高頻度変更ポイント（`validator.ts` / `command-support.ts`）は、責務分離と単一ソース化が完了しました。
+- 一方で、当初の評価ドキュメントと実装実態に差分が出ているため、優先度を再整理して **P3（計画同期）** を反映します。
 
-## 優先度付きリファクタリング候補
+## 実施済み（完了）
 
-### P1: `YamlParser` の責務分離（パース・include解決・スキーマ検証）
+### P1 完了: DSL validator の単一ソース化 + キャッシュ最適化
 
-**観測**
-- `parseYamlFile()` が I/O 選択、サイズ検証、パース、`$include` 解決、スキーマ検証までを直列で実行しています。
-- `validateYamlSchema()` 内で毎回 `new Ajv()` を生成しており、連続更新時に不要な初期化コストが発生し得ます。
+- `KNOWN_COMPONENTS` の重複定義を廃止し、`BUILT_IN_COMPONENTS` を参照する構成へ移行。
+- Ajv コンパイル結果を `cachedDslValidator` で再利用し、`validateDsl()` の呼び出しごとの再コンパイルを解消。
 
-**提案**
-- `YamlContentReader`（入力取得）
-- `IncludeResolver`（`$include` 展開 + 循環検出）
-- `SchemaValidator`（Ajvインスタンスをキャッシュ）
+### P2 完了: CLI サポート層の責務分離（段階1）
 
-に分割し、`YamlParser` はオーケストレーション専用に縮小。
+- `command-support.ts` からバッチ出力/状態ファイルのパス解決を `batch-path-resolver.ts` へ抽出。
+- `command-support.ts` から引数/オプション解析を `arg-options.ts` へ抽出（後方互換のため再エクスポート維持）。
 
----
+## P3 対応（今回）: 計画ドキュメントの同期
 
-### P1: `ServiceInitializer` の生成責務と起動責務の分離
+### 背景
 
-**観測**
-- `initialize()` の中で DI（各サービス生成）・初期化順序制御・MCP設定・テーマ監視開始までを一括実行しています。
-- 失敗時のロールバック戦略が暗黙的で、今後依存が増えると部分失敗の扱いが複雑化します。
+- 旧版ドキュメントでは `ServiceInitializer` 分離や `YamlParser` 再分割を最優先としていましたが、実装側では CLI 層の分離が先行して完了済みです。
+- そのため、次フェーズを誤認しないよう、現状に合わせて優先順位を更新します。
 
-**提案**
-- `ServiceFactory`（生成のみ）
-- `ServiceLifecycle`（initialize/cleanup の順序制御）
-- `BootstrapTasks`（MCP設定やテーマ監視の起動）
+### 更新後の優先順位（次アクション）
 
-に分割して、起動フローの可視性を上げる。
+1. **P1: `YamlParser` のさらなる縮小**
+   - 既存の `YamlContentReader` / `YamlIncludeResolver` / `YamlSchemaValidator` 活用を前提に、エラー整形責務を段階抽出してテスト容易性を上げる。
+2. **P2: `ServiceInitializer` のライフサイクル可視化**
+   - 生成・起動・クリーンアップを明示的フェーズ化し、部分失敗時の扱いを明文化。
+3. **P2: `ConfigManager` 設定定義の一元化**
+   - 設定キー/既定値/リセット対象を同一定義から導出可能にする。
+4. **P3: `command-support` の追加分割（必要時）**
+   - `apply` 実行フローの副作用境界を分離し、テストの粒度をさらに上げる。
 
----
+## 運用ルール（継続）
 
-### P2: `HtmlExporter` のマークアップ生成重複の共通化
-
-**観測**
-- `renderInput` / `renderSelect` / `renderDatePicker` で「ラベル + フィールド + disabled/required 属性付与」の定型処理が繰り返されています。
-- 文字列テンプレート連結（`let code += ...`）が多く、差分レビュー時にロジック変更とマークアップ変更が混ざりやすいです。
-
-**提案**
-- `renderLabeledField({ label, fieldHtml })` のような小ヘルパーを導入。
-- 属性組み立ては `buildHtmlAttrs()` を設けて共通化（disabled/required/min/max/value など）。
-
----
-
-### P2: `ConfigManager` の設定定義の単一化
-
-**観測**
-- `getPerformanceSettings()` のデフォルト値群と `resetConfiguration()` のキー列挙が別管理で、設定追加時に更新漏れリスクがあります。
-- `package.json` 側の contributes.configuration とも実質的に二重管理になるため、将来的に整合性崩れが起きやすい構造です。
-
-**提案**
-- 設定キー定義を `const SETTINGS = {...}` に集約。
-- `get*Settings()`・`resetConfiguration()`・（必要なら）スキーマ生成を同じ定義から導出する。
-
-## 今回は見送りでよい項目
-
-- 既存テストは広範囲をカバーしており、すぐに全面的な再分割を行うよりも、上記 P1 から段階的に進めるのが安全です。
-- 特に `YamlParser` と `ServiceInitializer` は依存点が多いため、1PRで一気に触るより「抽出 → 既存呼び出し置換 → テスト補強」の3段階を推奨します。
+- 1PR あたり 1責務の抽出を基本とし、機能変更と構造変更を混在させない。
+- 各段階で `lint + test` を実行し、回帰を確認してから次の分割へ進む。
