@@ -48,17 +48,25 @@ ${componentCode}
     const disabledClass = this.getDisabledClass(disabled);
     const tokenStyle = this.getReactTokenStyleProp('Input', token);
     
-    return `      <div key={${key}} className="mb-4">
-        ${label ? `<label className="block text-sm font-medium text-gray-700 mb-2">${label}</label>` : ''}
-        <input
+    const inputAttrs = this.buildAttrs({
+      required,
+      disabled
+    });
+
+    const inputHtml = `        <input
           type="${type}"
-          placeholder="${placeholder || ''}"
-          ${required ? 'required' : ''}
-          ${disabled ? 'disabled' : ''}
+          placeholder="${placeholder || ''}"${inputAttrs}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"
           ${tokenStyle.trim()}
-        />
-      </div>`;
+        />`;
+
+    return this.buildLabeledFieldBlock(
+      label,
+      inputHtml,
+      `      <div key={${key}} className="mb-4">`,
+      '      </div>',
+      safeLabel => `        <label className="block text-sm font-medium text-gray-700 mb-2">${safeLabel}</label>`
+    );
   }
 
   protected renderButton(props: ButtonComponent, key: number): string {
@@ -82,41 +90,47 @@ ${componentCode}
     const { label, checked = false, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
     const tokenStyle = this.getReactTokenStyleProp('Checkbox', token);
-    
-    return `      <div key={${key}} className="flex items-center mb-4">
-        <input
+    const checkboxAttrs = this.buildAttrs({ disabled });
+    const checkboxInput = `        <input
           type="checkbox"
-          defaultChecked={${checked}}
-          ${disabled ? 'disabled' : ''}
+          defaultChecked={${checked}}${checkboxAttrs}
           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${disabledClass}"
           ${tokenStyle.trim()}
-        />
-        <label className="ml-2 block text-sm text-gray-900">
-          ${label}
-        </label>
-      </div>`;
+        />`;
+
+    return this.buildControlRowWithLabel(
+      label,
+      checkboxInput,
+      `      <div key={${key}} className="flex items-center mb-4">`,
+      '      </div>',
+      safeLabel => `        <label className="ml-2 block text-sm text-gray-900">${safeLabel}</label>`
+    );
   }
+
 
   protected renderRadio(props: RadioComponent, key: number): string {
     const { label, value, name, checked = false, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
     const tokenStyle = this.getReactTokenStyleProp('Radio', token);
-    
-    return `      <div key={${key}} className="flex items-center mb-4">
-        <input
+    const radioAttrs = this.buildAttrs({ disabled });
+    const radioInput = `        <input
           type="radio"
           name="${name || 'radio'}"
           value="${value || ''}"
-          defaultChecked={${checked}}
-          ${disabled ? 'disabled' : ''}
+          defaultChecked={${checked}}${radioAttrs}
           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 ${disabledClass}"
           ${tokenStyle.trim()}
-        />
-        <label className="ml-2 block text-sm text-gray-900">
-          ${label}
-        </label>
-      </div>`;
+        />`;
+
+    return this.buildControlRowWithLabel(
+      label,
+      radioInput,
+      `      <div key={${key}} className="flex items-center mb-4">`,
+      '      </div>',
+      safeLabel => `        <label className="ml-2 block text-sm text-gray-900">${safeLabel}</label>`
+    );
   }
+
 
   protected renderSelect(props: SelectComponent, key: number): string {
     const { label, options = [], placeholder, disabled = false, token } = props;
@@ -126,17 +140,23 @@ ${componentCode}
       `          <option key="${opt.value}" value="${opt.value}">${opt.label}</option>`
     ).join('\n');
     
-    return `      <div key={${key}} className="mb-4">
-        ${label ? `<label className="block text-sm font-medium text-gray-700 mb-2">${label}</label>` : ''}
-        <select
-          ${disabled ? 'disabled' : ''}
+    const selectAttrs = this.buildAttrs({ disabled });
+
+    const selectHtml = `        <select${selectAttrs}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"
           ${tokenStyle.trim()}
         >
           ${placeholder ? `<option value="">${placeholder}</option>` : ''}
 ${optionsCode}
-        </select>
-      </div>`;
+        </select>`;
+
+    return this.buildLabeledFieldBlock(
+      label,
+      selectHtml,
+      `      <div key={${key}} className="mb-4">`,
+      '      </div>',
+      safeLabel => `        <label className="block text-sm font-medium text-gray-700 mb-2">${safeLabel}</label>`
+    );
   }
 
   protected renderDatePicker(props: DatePickerComponent, key: number): string {
@@ -144,21 +164,29 @@ ${optionsCode}
     const disabledClass = this.getDisabledClass(disabled);
     const tokenStyle = this.getReactTokenStyleProp('DatePicker', token);
 
-    return `      <div key={${key}} className="mb-4">
-        ${label ? `<label htmlFor="${name}" className="block text-sm font-medium text-gray-700 mb-2">${label}</label>` : ''}
-        <input
+    const dateInputAttrs = this.buildAttrs({
+      required,
+      disabled,
+      min,
+      max,
+      defaultValue: value
+    });
+
+    const dateInputHtml = `        <input
           id="${name}"
           name="${name}"
-          type="date"
-          ${required ? 'required' : ''}
-          ${disabled ? 'disabled' : ''}
-          ${min ? `min="${min}"` : ''}
-          ${max ? `max="${max}"` : ''}
-          ${value ? `defaultValue="${value}"` : ''}
+          type="date"${dateInputAttrs}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"
           ${tokenStyle.trim()}
-        />
-      </div>`;
+        />`;
+
+    return this.buildLabeledFieldBlock(
+      label,
+      dateInputHtml,
+      `      <div key={${key}} className="mb-4">`,
+      '      </div>',
+      safeLabel => `        <label htmlFor="${name}" className="block text-sm font-medium text-gray-700 mb-2">${safeLabel}</label>`
+    );
   }
 
   protected renderDivider(props: DividerComponent, key: number): string {
