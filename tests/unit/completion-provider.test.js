@@ -143,7 +143,8 @@ describe('TextUICompletionProvider', () => {
       const schema = {};
       const isTemplate = false;
 
-      const result = completionProvider.generateCompletionItemsFromSchema(linePrefix, position, currentWord, schema, isTemplate);
+      const analysisContext = completionProvider.analyzeContext(linePrefix, position);
+      const result = completionProvider.generateCompletionItemsFromSchema(analysisContext);
 
       expect(result).to.be.an('array');
       expect(result.length).to.be.greaterThan(0);
@@ -158,8 +159,8 @@ describe('TextUICompletionProvider', () => {
       const schema = {};
       const isTemplate = false;
 
-      const context = completionProvider.analyzeContext(linePrefix, position);
-      const result = completionProvider.generateCompletionItemsFromSchema(linePrefix, position, currentWord, schema, isTemplate);
+      const analysisContext = completionProvider.analyzeContext(linePrefix, position);
+      const result = completionProvider.generateCompletionItemsFromSchema(analysisContext);
 
       expect(result).to.be.an('array');
       expect(result.length).to.be.greaterThan(0);
@@ -174,8 +175,8 @@ describe('TextUICompletionProvider', () => {
       const schema = {};
       const isTemplate = false;
 
-      const context = completionProvider.analyzeContext(linePrefix, position);
-      const result = completionProvider.generateCompletionItemsFromSchema(linePrefix, position, currentWord, schema, isTemplate);
+      const analysisContext = completionProvider.analyzeContext(linePrefix, position);
+      const result = completionProvider.generateCompletionItemsFromSchema(analysisContext);
 
       expect(result).to.be.an('array');
       expect(result.length).to.be.greaterThan(0);
@@ -190,7 +191,8 @@ describe('TextUICompletionProvider', () => {
       const schema = {};
       const isTemplate = false;
 
-      const result = completionProvider.generateCompletionItemsFromSchema(linePrefix, position, currentWord, schema, isTemplate);
+      const analysisContext = completionProvider.analyzeContext(linePrefix, position);
+      const result = completionProvider.generateCompletionItemsFromSchema(analysisContext);
 
       expect(result).to.be.an('array');
       expect(result.length).to.be.greaterThan(0);
