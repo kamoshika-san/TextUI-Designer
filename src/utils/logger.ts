@@ -1,63 +1,69 @@
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
-const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
+const LOGGER_PREFIX = '[TextUI]';
+const LOG_LEVEL_ORDER: Record<LogLevel, number> = {
   debug: 10,
   info: 20,
   warn: 30,
-  error: 40,
-  silent: 50
+  error: 40
 };
 
-function normalizeLogLevel(value: string | undefined): LogLevel {
-  if (!value) {
-    return process.env.NODE_ENV === 'development' ? 'debug' : 'info';
-  }
-
-  const normalized = value.trim().toLowerCase();
-  if (normalized === 'debug' || normalized === 'info' || normalized === 'warn' || normalized === 'error' || normalized === 'silent') {
-    return normalized;
-  }
-
-  return process.env.NODE_ENV === 'development' ? 'debug' : 'info';
-}
-
 export class Logger {
-  private readonly scope: string;
-
-  constructor(scope: string) {
-    this.scope = scope;
-  }
-
-  private shouldLog(level: LogLevel): boolean {
-    const current = normalizeLogLevel(process.env.TEXTUI_LOG_LEVEL);
-    return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[current];
-  }
+  constructor(private readonly scope: string) {}
 
   debug(message: string, ...args: unknown[]): void {
-    if (!this.shouldLog('debug')) {
-      return;
-    }
-    console.log(`[${this.scope}] ${message}`, ...args);
+    this.write('debug', message, ...args);
   }
 
   info(message: string, ...args: unknown[]): void {
-    if (!this.shouldLog('info')) {
-      return;
-    }
-    console.info(`[${this.scope}] ${message}`, ...args);
+    this.write('info', message, ...args);
   }
 
   warn(message: string, ...args: unknown[]): void {
-    if (!this.shouldLog('warn')) {
-      return;
-    }
-    console.warn(`[${this.scope}] ${message}`, ...args);
+    this.write('warn', message, ...args);
   }
 
   error(message: string, ...args: unknown[]): void {
-    if (!this.shouldLog('error')) {
+    this.write('error', message, ...args);
+  }
+
+  shouldLog(level: LogLevel): boolean {
+    const threshold = this.resolveThreshold();
+    return LOG_LEVEL_ORDER[level] >= LOG_LEVEL_ORDER[threshold];
+  }
+
+  private resolveThreshold(): LogLevel {
+    const configured = process.env.TEXTUI_LOG_LEVEL?.toLowerCase();
+    if (configured && this.isLogLevel(configured)) {
+      return configured;
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      return 'debug';
+    }
+    return 'info';
+  }
+
+  private isLogLevel(value: string): value is LogLevel {
+    return value === 'debug' || value === 'info' || value === 'warn' || value === 'error';
+  }
+
+  private write(level: LogLevel, message: string, ...args: unknown[]): void {
+    if (!this.shouldLog(level)) {
       return;
     }
-    console.error(`[${this.scope}] ${message}`, ...args);
+
+    const formattedMessage = `${LOGGER_PREFIX}[${this.scope}] ${message}`;
+    switch (level) {
+      case 'debug':
+      case 'info':
+        console.log(formattedMessage, ...args);
+        return;
+      case 'warn':
+        console.warn(formattedMessage, ...args);
+        return;
+      case 'error':
+        console.error(formattedMessage, ...args);
+    }
   }
 }

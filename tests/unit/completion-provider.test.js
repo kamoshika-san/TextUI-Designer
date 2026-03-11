@@ -2,7 +2,7 @@ const { describe, it, beforeEach, afterEach } = require('mocha');
 const { expect } = require('chai');
 const sinon = require('sinon');
 
-// VSCode APIのモック
+// VSCode APIスタブ
 const mockVSCode = {
   CompletionItem: class {
     constructor(label, kind) {
@@ -38,370 +38,13 @@ const mockVSCode = {
   }
 };
 
-// グローバルにvscodeをモック
+// グローバルにvscodeスタブを注入
 global.vscode = mockVSCode;
 
-// モックされたvscodeを使用
+// 注入済みvscodeを参照
 const vscode = global.vscode;
 
-// TextUICompletionProviderクラスをモック
-class MockTextUICompletionProvider {
-  constructor(schemaManager) {
-    this.schemaManager = schemaManager;
-    this.schemaCache = null;
-    this.lastSchemaLoad = 0;
-    this.completionCache = new Map();
-    this.CACHE_TTL = 10000;
-    this.completionTimeout = null;
-  }
-
-  async provideCompletionItems(document, position, token, context) {
-    if (this.completionTimeout) {
-      clearTimeout(this.completionTimeout);
-    }
-
-    return new Promise((resolve) => {
-      this.completionTimeout = setTimeout(async () => {
-        try {
-          const items = await this.generateCompletionItems(document, position, context);
-          resolve(items);
-        } catch (error) {
-          console.error('[CompletionProvider] 補完処理でエラーが発生しました:', error);
-          resolve([]);
-        }
-      }, 150);
-    });
-  }
-
-  async generateCompletionItems(document, position, context) {
-    const text = document.getText();
-    const linePrefix = text.substring(document.offsetAt(new vscode.Position(position.line, 0)), document.offsetAt(position));
-    const currentWord = this.getCurrentWord(linePrefix);
-    const isTemplate = /\.template\.(ya?ml|json)$/.test(document.fileName);
-    
-    if (!document.fileName.endsWith('.tui.yml') && !isTemplate) {
-      return [];
-    }
-    
-    try {
-      const cacheKey = this.generateCacheKey(document, position, context, isTemplate);
-      const now = Date.now();
-      
-      const cached = this.completionCache.get(cacheKey);
-      if (cached && (now - cached.timestamp) < this.CACHE_TTL) {
-        return cached.items;
-      }
-
-      // YAMLパース処理をシミュレート
-      const yaml = await new Promise((resolve, reject) => {
-        setImmediate(() => {
-          try {
-            // 簡単なYAMLパースシミュレーション
-            if (text.includes('invalid')) {
-              reject(new Error('YAML parse error'));
-            } else {
-              resolve({});
-            }
-          } catch (error) {
-            reject(error);
-          }
-        });
-      });
-      
-      if (!this.schemaCache || (now - this.lastSchemaLoad) > this.CACHE_TTL) {
-        this.schemaCache = this.schemaManager.loadSchema();
-        this.lastSchemaLoad = now;
-      }
-      
-      const items = this.generateCompletionItemsFromSchema(linePrefix, position, currentWord, this.schemaCache, isTemplate);
-      
-      this.completionCache.set(cacheKey, {
-        items: items,
-        timestamp: now
-      });
-      
-      return items;
-    } catch (error) {
-      return this.getBasicCompletions(linePrefix, position, currentWord);
-    }
-  }
-
-  generateCacheKey(document, position, context, isTemplate) {
-    const text = document.getText();
-    const linePrefix = text.substring(document.offsetAt(new vscode.Position(position.line, 0)), document.offsetAt(position));
-    const triggerChar = context.triggerCharacter || '';
-    
-    return `${document.uri.toString()}:${position.line}:${position.character}:${isTemplate}:${triggerChar}:${linePrefix}`;
-  }
-
-  generateCompletionItemsFromSchema(linePrefix, position, currentWord, schema, isTemplate) {
-    const items = [];
-    const context = this.analyzeContext(linePrefix, position);
-    
-    switch (context.type) {
-      case 'component-list':
-        items.push(...this.getComponentCompletions());
-        break;
-      case 'component-properties':
-        items.push(...this.getComponentPropertyCompletions(context.componentName));
-        break;
-      case 'property-value':
-        items.push(...this.getPropertyValueCompletions(context.propertyName, context.componentName));
-        break;
-      case 'root-level':
-        items.push(...this.getRootLevelCompletions());
-        break;
-    }
-
-    return items;
-  }
-
-  analyzeContext(linePrefix, position) {
-    const lines = linePrefix.split('\n');
-    const currentLine = lines[lines.length - 1];
-    const indentLevel = this.getIndentLevel(currentLine);
-    
-    // ハイフンの後（コンポーネントリスト）
-    if (currentLine.trim().endsWith('-') || currentLine.trim() === '-') {
-      return { type: 'component-list' };
-    }
-    
-    // ルートレベル
-    if (indentLevel === 0) {
-      return { type: 'root-level' };
-    }
-    
-    // プロパティ値の行（例: variant: ...）を先に判定
-    const propertyMatch = currentLine.match(/^\s*(\w+):\s*(.*)$/);
-    if (propertyMatch) {
-      const propertyName = propertyMatch[1];
-      const componentName = this.findParentComponent(lines, lines.length - 1);
-      if (componentName) {
-        return { type: 'property-value', propertyName, componentName };
-      }
-    }
-    
-    // コンポーネント名の行（- Text: も含む）
-    const componentMatch = currentLine.match(/^-?\s*(\w+):\s*$/);
-    if (componentMatch) {
-      const componentName = this.findParentComponent(lines, lines.length - 1);
-      if (componentName) {
-        return { type: 'property-value', propertyName: componentMatch[1], componentName };
-      } else {
-        return { type: 'component-properties', componentName: componentMatch[1] };
-      }
-    }
-    
-    // 空白行やその他の行で、親コンポーネントのプロパティ入力中
-    const componentName = this.findParentComponent(lines, lines.length - 1);
-    if (componentName) {
-      return { type: 'component-properties', componentName };
-    }
-    
-    return { type: 'root-level' };
-  }
-
-  getIndentLevel(line) {
-    const match = line.match(/^(\s*)/);
-    return match ? match[1].length : 0;
-  }
-
-  findParentComponent(lines, currentIndex) {
-    // プロパティ行や空白行の場合、currentIndexから上に遡って最初のコンポーネント行を返す
-    for (let i = currentIndex - 1; i >= 0; i--) {
-      const line = lines[i];
-      if (line.trim() === '') continue;
-      const match = line.match(/^\s*-?\s*(\w+):\s*$/);
-      if (match && match[1] !== 'components' && match[1] !== 'page') {
-        return match[1];
-      }
-    }
-    return undefined;
-  }
-
-  getComponentCompletions() {
-    const components = [
-      { name: 'Text', description: 'テキストコンポーネント' },
-      { name: 'Input', description: '入力フィールド' },
-      { name: 'Button', description: 'ボタン' },
-      { name: 'Checkbox', description: 'チェックボックス' },
-      { name: 'Radio', description: 'ラジオボタン' },
-      { name: 'Select', description: 'セレクトボックス' },
-      { name: 'Divider', description: '区切り線' },
-      { name: 'Alert', description: 'アラート' },
-      { name: 'Container', description: 'コンテナ' },
-      { name: 'Form', description: 'フォーム' }
-    ];
-    return components.map(comp => {
-      const item = new vscode.CompletionItem(comp.name, vscode.CompletionItemKind.Class);
-      item.detail = comp.description;
-      item.insertText = `${comp.name}:\n    `;
-      item.sortText = `0${comp.name}`;
-      return item;
-    });
-  }
-
-  getComponentPropertyCompletions(componentName) {
-    if (!componentName) return [];
-    const properties = this.getComponentProperties(componentName);
-    return properties.map(prop => {
-      const item = new vscode.CompletionItem(prop.name, vscode.CompletionItemKind.Property);
-      item.detail = prop.description;
-      item.insertText = `${prop.name}: `;
-      item.sortText = `0${prop.name}`;
-      return item;
-    });
-  }
-
-  getPropertyValueCompletions(propertyName, componentName) {
-    if (!propertyName || !componentName) return [];
-    const values = this.getPropertyValues(propertyName, componentName);
-    return values.map(val => {
-      const item = new vscode.CompletionItem(val.value, vscode.CompletionItemKind.Value);
-      item.detail = val.description;
-      item.insertText = val.value;
-      item.sortText = `0${val.value}`;
-      return item;
-    });
-  }
-
-  getRootLevelCompletions() {
-    const items = [];
-    const pageItem = new vscode.CompletionItem('page', vscode.CompletionItemKind.Module);
-    pageItem.detail = 'ページ定義';
-    pageItem.insertText = 'page:\n  id: \n  title: \n  layout: vertical\n  components:\n    - ';
-    pageItem.sortText = '0page';
-    items.push(pageItem);
-    return items;
-  }
-
-  getBasicCompletions(linePrefix, position, currentWord) {
-    const items = [];
-    const basicItems = [
-      { name: 'page', description: 'ページ定義' },
-      { name: 'id', description: 'ID' },
-      { name: 'title', description: 'タイトル' },
-      { name: 'layout', description: 'レイアウト' },
-      { name: 'components', description: 'コンポーネントリスト' }
-    ];
-    basicItems.forEach(item => {
-      const completionItem = new vscode.CompletionItem(item.name, vscode.CompletionItemKind.Field);
-      completionItem.detail = item.description;
-      completionItem.insertText = `${item.name}: `;
-      items.push(completionItem);
-    });
-    return items;
-  }
-
-  getComponentProperties(componentName) {
-    const properties = {
-      Text: [
-        { name: 'variant', description: 'テキストの種類（h1, h2, h3, p, span）' },
-        { name: 'value', description: 'テキストの内容' },
-        { name: 'className', description: 'CSSクラス名' }
-      ],
-      Input: [
-        { name: 'type', description: '入力タイプ（text, email, password, number）' },
-        { name: 'placeholder', description: 'プレースホルダーテキスト' },
-        { name: 'value', description: '初期値' },
-        { name: 'required', description: '必須入力' },
-        { name: 'className', description: 'CSSクラス名' }
-      ],
-      Button: [
-        { name: 'variant', description: 'ボタンの種類（primary, secondary, outline）' },
-        { name: 'text', description: 'ボタンのテキスト' },
-        { name: 'onClick', description: 'クリック時の処理' },
-        { name: 'disabled', description: '無効化' },
-        { name: 'className', description: 'CSSクラス名' }
-      ],
-      Checkbox: [
-        { name: 'label', description: 'チェックボックスのラベル' },
-        { name: 'checked', description: 'チェック状態' },
-        { name: 'onChange', description: '変更時の処理' },
-        { name: 'className', description: 'CSSクラス名' }
-      ],
-      Radio: [
-        { name: 'name', description: 'ラジオボタングループ名' },
-        { name: 'options', description: '選択肢の配列' },
-        { name: 'value', description: '選択された値' },
-        { name: 'onChange', description: '変更時の処理' },
-        { name: 'className', description: 'CSSクラス名' }
-      ],
-      Select: [
-        { name: 'options', description: '選択肢の配列' },
-        { name: 'value', description: '選択された値' },
-        { name: 'placeholder', description: 'プレースホルダーテキスト' },
-        { name: 'onChange', description: '変更時の処理' },
-        { name: 'className', description: 'CSSクラス名' }
-      ],
-      Divider: [
-        { name: 'orientation', description: '区切り線の方向（horizontal, vertical）' },
-        { name: 'className', description: 'CSSクラス名' }
-      ],
-      Alert: [
-        { name: 'variant', description: 'アラートの種類（info, success, warning, error）' },
-        { name: 'title', description: 'アラートのタイトル' },
-        { name: 'message', description: 'アラートのメッセージ' },
-        { name: 'className', description: 'CSSクラス名' }
-      ],
-      Container: [
-        { name: 'layout', description: 'レイアウト（vertical, horizontal）' },
-        { name: 'spacing', description: '要素間の間隔' },
-        { name: 'className', description: 'CSSクラス名' }
-      ],
-      Form: [
-        { name: 'onSubmit', description: '送信時の処理' },
-        { name: 'className', description: 'CSSクラス名' }
-      ]
-    };
-    return properties[componentName] || [];
-  }
-
-  getPropertyValues(propertyName, componentName) {
-    const values = {
-      variant: [
-        { value: 'h1', description: '見出し1' },
-        { value: 'h2', description: '見出し2' },
-        { value: 'h3', description: '見出し3' },
-        { value: 'p', description: '段落' },
-        { value: 'span', description: 'インライン' },
-        { value: 'primary', description: 'プライマリ' },
-        { value: 'secondary', description: 'セカンダリ' },
-        { value: 'outline', description: 'アウトライン' },
-        { value: 'info', description: '情報' },
-        { value: 'success', description: '成功' },
-        { value: 'warning', description: '警告' },
-        { value: 'error', description: 'エラー' }
-      ],
-      type: [
-        { value: 'text', description: 'テキスト' },
-        { value: 'email', description: 'メールアドレス' },
-        { value: 'password', description: 'パスワード' },
-        { value: 'number', description: '数値' }
-      ],
-      layout: [
-        { value: 'vertical', description: '縦並び' },
-        { value: 'horizontal', description: '横並び' }
-      ],
-      orientation: [
-        { value: 'horizontal', description: '水平' },
-        { value: 'vertical', description: '垂直' }
-      ]
-    };
-    return values[propertyName] || [];
-  }
-
-  clearCache() {
-    this.completionCache.clear();
-    this.schemaCache = null;
-    this.lastSchemaLoad = 0;
-  }
-
-  getCurrentWord(linePrefix) {
-    const words = linePrefix.trim().split(/\s+/);
-    return words[words.length - 1] || '';
-  }
-}
+const { TextUICompletionProvider } = require('../../out/services/completion-provider');
 
 describe('TextUICompletionProvider', () => {
   let completionProvider;
@@ -434,7 +77,7 @@ describe('TextUICompletionProvider', () => {
     // Tokenのモック
     mockToken = new vscode.CancellationToken();
 
-    completionProvider = new MockTextUICompletionProvider(mockSchemaManager);
+    completionProvider = new TextUICompletionProvider(mockSchemaManager);
   });
 
   afterEach(() => {
@@ -449,8 +92,7 @@ describe('TextUICompletionProvider', () => {
       const clock = sinon.useFakeTimers();
       
       mockDocument.getText.returns('page:\n  components:\n    - ');
-      mockDocument.offsetAt.onFirstCall().returns(0);
-      mockDocument.offsetAt.onSecondCall().returns(20);
+      mockDocument.offsetAt.callsFake(position => position.character);
 
       const promise = completionProvider.provideCompletionItems(mockDocument, mockPosition, mockToken, mockContext);
       await clock.runAllAsync();
@@ -474,8 +116,7 @@ describe('TextUICompletionProvider', () => {
     it('テンプレートファイルでも補完を提供する', async () => {
       mockDocument.fileName = 'test.template.yml';
       mockDocument.getText.returns('page:\n  components:\n    - ');
-      mockDocument.offsetAt.onFirstCall().returns(0);
-      mockDocument.offsetAt.onSecondCall().returns(20);
+      mockDocument.offsetAt.callsFake(position => position.character);
 
       const result = await completionProvider.provideCompletionItems(mockDocument, mockPosition, mockToken, mockContext);
       
@@ -485,8 +126,7 @@ describe('TextUICompletionProvider', () => {
 
     it('エラー時は基本的な補完を提供する', async () => {
       mockDocument.getText.returns('invalid yaml content');
-      mockDocument.offsetAt.onFirstCall().returns(0);
-      mockDocument.offsetAt.onSecondCall().returns(10);
+      mockDocument.offsetAt.callsFake(position => position.character);
 
       const result = await completionProvider.provideCompletionItems(mockDocument, mockPosition, mockToken, mockContext);
       
@@ -625,7 +265,7 @@ describe('TextUICompletionProvider', () => {
       const variantProperty = result.find(item => item.label === 'variant');
       expect(variantProperty).to.exist;
       expect(variantProperty.kind).to.equal(vscode.CompletionItemKind.Property);
-      expect(variantProperty.detail).to.include('テキストの種類');
+      expect(variantProperty.detail).to.include('テキスト');
     });
 
     it('存在しないコンポーネントでは空配列を返す', () => {
@@ -793,8 +433,7 @@ describe('TextUICompletionProvider', () => {
   describe('エラーハンドリング', () => {
     it('YAMLパースエラー時に基本的な補完を提供する', async () => {
       mockDocument.getText.returns('invalid: yaml: content:');
-      mockDocument.offsetAt.onFirstCall().returns(0);
-      mockDocument.offsetAt.onSecondCall().returns(10);
+      mockDocument.offsetAt.callsFake(position => position.character);
 
       const result = await completionProvider.provideCompletionItems(mockDocument, mockPosition, mockToken, mockContext);
 

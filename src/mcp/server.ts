@@ -9,14 +9,71 @@ const SERVER_INFO = {
   version: '0.1.0'
 } as const;
 
+const RESOURCE_DEFINITIONS = [
+  {
+    uri: 'textui://schema/main',
+    name: 'TextUI Main Schema',
+    description: 'DSL本体のJSON Schema',
+    mimeType: 'application/json'
+  },
+  {
+    uri: 'textui://schema/template',
+    name: 'TextUI Template Schema',
+    description: 'テンプレート定義のJSON Schema',
+    mimeType: 'application/json'
+  },
+  {
+    uri: 'textui://schema/theme',
+    name: 'TextUI Theme Schema',
+    description: 'テーマ定義のJSON Schema',
+    mimeType: 'application/json'
+  },
+  {
+    uri: 'textui://components/catalog',
+    name: 'TextUI Components Catalog',
+    description: '利用可能コンポーネント一覧',
+    mimeType: 'application/json'
+  },
+  {
+    uri: 'textui://cli/run',
+    name: 'TextUI CLI Runner Resource',
+    description: 'resource-onlyクライアント向け。queryでCLIを実行します（args/cwd/timeoutMs/parseJson）。',
+    mimeType: 'application/json'
+  }
+] as const;
+
+const PROMPT_DEFINITIONS = [
+  {
+    name: 'design_screen',
+    description: '要件からTextUI DSLを設計するための指示テンプレート'
+  },
+  {
+    name: 'fix_validation_error',
+    description: '診断結果からDSL修正案を作るための指示テンプレート'
+  }
+] as const;
+
+type RequestHandler = (params: unknown) => Promise<unknown>;
+
 
 export class TextUiMcpServer {
   private coreEnginePromise: Promise<import('../core/textui-core-engine').TextUICoreEngine> | null = null;
   private catalogPromise: Promise<ReturnType<typeof import('../core/component-catalog').getTextUiComponentCatalog>> | null = null;
   private readonly cliRunner: CliRunner;
+  private readonly requestHandlers: Record<string, RequestHandler>;
 
   constructor() {
     this.cliRunner = new CliRunner();
+    this.requestHandlers = {
+      initialize: params => this.handleInitialize(params),
+      ping: async () => ({}),
+      'tools/list': async () => ({ tools: TOOLS }),
+      'tools/call': params => this.handleToolCall(params),
+      'resources/list': async () => ({ resources: RESOURCE_DEFINITIONS }),
+      'resources/read': params => this.handleResourcesRead(params),
+      'prompts/list': async () => ({ prompts: PROMPT_DEFINITIONS }),
+      'prompts/get': params => this.handlePromptsGet(params)
+    };
   }
 
   private async getCoreEngine(): Promise<import('../core/textui-core-engine').TextUICoreEngine> {
@@ -64,120 +121,58 @@ export class TextUiMcpServer {
   }
 
   private async dispatch(method: string, params: unknown): Promise<unknown> {
-    if (method === 'initialize') {
-      const protocolVersion = this.getObjectValue(params, 'protocolVersion') ?? '2024-11-05';
-      return {
-        protocolVersion,
-        capabilities: {
-          tools: {
-            listChanged: false
-          },
-          resources: {
-            subscribe: false,
-            listChanged: false
-          },
-          prompts: {
-            listChanged: false
-          }
+    const handler = this.requestHandlers[method];
+    if (!handler) {
+      throw new Error(`Method not found: ${method}`);
+    }
+    return handler(params);
+  }
+
+  private async handleInitialize(params: unknown): Promise<unknown> {
+    const protocolVersion = this.getObjectValue(params, 'protocolVersion') ?? '2024-11-05';
+    return {
+      protocolVersion,
+      capabilities: {
+        tools: {
+          listChanged: false
         },
-        serverInfo: SERVER_INFO
-      };
+        resources: {
+          subscribe: false,
+          listChanged: false
+        },
+        prompts: {
+          listChanged: false
+        }
+      },
+      serverInfo: SERVER_INFO
+    };
+  }
+
+  private async handleResourcesRead(params: unknown): Promise<unknown> {
+    const uri = this.getObjectValue(params, 'uri');
+    if (!uri) {
+      throw new Error('resources/read requires uri');
     }
 
-    if (method === 'ping') {
-      return {};
+    const payload = await this.readResource(uri);
+    return {
+      contents: [
+        {
+          uri,
+          mimeType: 'application/json',
+          text: JSON.stringify(payload, null, 2)
+        }
+      ]
+    };
+  }
+
+  private async handlePromptsGet(params: unknown): Promise<unknown> {
+    const name = this.getObjectValue(params, 'name');
+    const argumentsValue = this.getObject(params, 'arguments');
+    if (!name) {
+      throw new Error('prompts/get requires name');
     }
-
-    if (method === 'tools/list') {
-      return {
-        tools: TOOLS
-      };
-    }
-
-    if (method === 'tools/call') {
-      return this.handleToolCall(params);
-    }
-
-    if (method === 'resources/list') {
-      return {
-        resources: [
-          {
-            uri: 'textui://schema/main',
-            name: 'TextUI Main Schema',
-            description: 'DSL本体のJSON Schema',
-            mimeType: 'application/json'
-          },
-          {
-            uri: 'textui://schema/template',
-            name: 'TextUI Template Schema',
-            description: 'テンプレート定義のJSON Schema',
-            mimeType: 'application/json'
-          },
-          {
-            uri: 'textui://schema/theme',
-            name: 'TextUI Theme Schema',
-            description: 'テーマ定義のJSON Schema',
-            mimeType: 'application/json'
-          },
-          {
-            uri: 'textui://components/catalog',
-            name: 'TextUI Components Catalog',
-            description: '利用可能コンポーネント一覧',
-            mimeType: 'application/json'
-          },
-          {
-            uri: 'textui://cli/run',
-            name: 'TextUI CLI Runner Resource',
-            description: 'resource-onlyクライアント向け。queryでCLIを実行します（args/cwd/timeoutMs/parseJson）。',
-            mimeType: 'application/json'
-          }
-        ]
-      };
-    }
-
-    if (method === 'resources/read') {
-      const uri = this.getObjectValue(params, 'uri');
-      if (!uri) {
-        throw new Error('resources/read requires uri');
-      }
-
-      const payload = await this.readResource(uri);
-      return {
-        contents: [
-          {
-            uri,
-            mimeType: 'application/json',
-            text: JSON.stringify(payload, null, 2)
-          }
-        ]
-      };
-    }
-
-    if (method === 'prompts/list') {
-      return {
-        prompts: [
-          {
-            name: 'design_screen',
-            description: '要件からTextUI DSLを設計するための指示テンプレート'
-          },
-          {
-            name: 'fix_validation_error',
-            description: '診断結果からDSL修正案を作るための指示テンプレート'
-          }
-        ]
-      };
-    }
-
-    if (method === 'prompts/get') {
-      const name = this.getObjectValue(params, 'name');
-      const argumentsValue = this.getObject(params, 'arguments');
-      if (!name) {
-        throw new Error('prompts/get requires name');
-      }
-      return this.getPrompt(name, argumentsValue);
-    }
-
-    throw new Error(`Method not found: ${method}`);
+    return this.getPrompt(name, argumentsValue);
   }
 
   private async handleToolCall(params: unknown): Promise<unknown> {

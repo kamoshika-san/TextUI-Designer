@@ -72,14 +72,13 @@ export class ServiceFactory {
     const diagnosticManager: IDiagnosticManager = new DiagnosticManager(schemaManager);
     const completionProvider: ICompletionProvider = new TextUICompletionProvider(schemaManager);
 
-    const commandManager: ICommandManager = new CommandManager(
-      this.context,
+    const commandManager: ICommandManager = new CommandManager(this.context, {
       webViewManager,
       exportService,
       templateService,
       settingsService,
       schemaManager
-    );
+    });
 
     return {
       schemaManager,
