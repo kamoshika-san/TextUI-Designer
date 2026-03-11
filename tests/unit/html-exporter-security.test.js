@@ -10,6 +10,8 @@ describe('HtmlExporter security', () => {
           { Text: { value: '<img src=x onerror=alert(1)>' } },
           { Input: { label: '<b>label</b>', placeholder: '" onfocus="alert(1)' } },
           { Button: { label: '<script>alert(1)</script>' } },
+
+          { Tabs: { items: [{ label: '<svg onload=alert(1)>' }] } },
           { Alert: { title: '<u>title</u>', message: '<iframe src=javascript:alert(1)></iframe>' } }
         ]
       }
@@ -21,9 +23,11 @@ describe('HtmlExporter security', () => {
     assert.ok(html.includes('&lt;b&gt;label&lt;/b&gt;'));
     assert.ok(html.includes('&quot; onfocus=&quot;alert(1)'));
     assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));
+    assert.ok(html.includes('&lt;svg onload=alert(1)&gt;'));
     assert.ok(html.includes('&lt;iframe src=javascript:alert(1)&gt;&lt;/iframe&gt;'));
 
     assert.ok(!html.includes('<script>alert(1)</script>'));
+    assert.ok(!html.includes('<svg onload=alert(1)>'));
     assert.ok(!html.includes('<iframe src=javascript:alert(1)></iframe>'));
   });
 });
