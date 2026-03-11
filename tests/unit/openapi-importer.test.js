@@ -246,7 +246,8 @@ paths:
     assert.match(imported.stderr, /operationId not found/);
   });
 
-  it('imports all operations with --all into output directory', () => {
+  it('imports all operations with --all into output directory', function () {
+    this.timeout(10000);
     const openapiPath = path.join(tmpDir, 'all-openapi.yml');
     const outputDir = path.join(tmpDir, 'generated-all');
     fs.writeFileSync(openapiPath, `

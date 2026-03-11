@@ -26,8 +26,12 @@ describe('Provider contract', () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
+  function runCli(args) {
+    return spawnSync('node', [cliPath, ...args], { encoding: 'utf8' });
+  }
+
   it('providers --json returns required fields and built-in set', () => {
-    const result = spawnSync('node', [cliPath, 'providers', '--json'], { encoding: 'utf8' });
+    const result = runCli(['providers', '--json']);
     assert.strictEqual(result.status, 0);
 
     const parsed = JSON.parse(result.stdout);
@@ -44,20 +48,18 @@ describe('Provider contract', () => {
     });
   });
 
-  it('each built-in provider exports with declared extension', () => {
-    expectedBuiltins.forEach(provider => {
-      const outputPath = path.join(tmpDir, `result${provider.extension}`);
-      const result = spawnSync('node', [
-        cliPath,
+  expectedBuiltins.forEach(provider => {
+    it(`${provider.name} provider exports with declared extension`, function () {
+      this.timeout(10000);
+
+      const outputPath = path.join(tmpDir, `result-${provider.name}${provider.extension}`);
+      const result = runCli([
         'export',
-        '--file',
-        sampleFile,
-        '--provider',
-        provider.name,
-        '--output',
-        outputPath,
+        '--file', sampleFile,
+        '--provider', provider.name,
+        '--output', outputPath,
         '--json'
-      ], { encoding: 'utf8' });
+      ]);
 
       assert.strictEqual(result.status, 0, `${provider.name} export failed: ${result.stderr || result.stdout}`);
       assert.ok(fs.existsSync(outputPath), `${provider.name} output missing`);

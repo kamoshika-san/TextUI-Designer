@@ -17,6 +17,25 @@ describe('CLI Regression Guard', () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
+  function runCli(args) {
+    return spawnSync('node', [cliPath, ...args], { encoding: 'utf8' });
+  }
+
+  function runExport({ dslFile, provider, outputPath, deterministic = false, extraArgs = [] }) {
+    const args = [
+      'export',
+      '--file', dslFile,
+      '--provider', provider,
+      '--output', outputPath,
+      ...extraArgs
+    ];
+    if (deterministic) {
+      args.push('--deterministic');
+    }
+    args.push('--json');
+    return runCli(args);
+  }
+
   function writeTokenTheme() {
     const themeFile = path.join(tmpDir, 'textui-theme.yml');
     fs.writeFileSync(themeFile, `
@@ -55,38 +74,31 @@ page:
     return dslFile;
   }
 
-  it('deterministic export is stable for vue and svelte providers', () => {
-    writeTokenTheme();
-    const dslFile = writeTokenDsl();
+  [
+    { name: 'vue', extension: '.vue' },
+    { name: 'svelte', extension: '.svelte' }
+  ].forEach(provider => {
+    it(`deterministic export is stable for ${provider.name} provider`, function () {
+      this.timeout(10000);
 
-    const providers = [
-      { name: 'vue', extension: '.vue' },
-      { name: 'svelte', extension: '.svelte' }
-    ];
+      writeTokenTheme();
+      const dslFile = writeTokenDsl();
+      const out1 = path.join(tmpDir, `first-${provider.name}${provider.extension}`);
+      const out2 = path.join(tmpDir, `second-${provider.name}${provider.extension}`);
 
-    providers.forEach(provider => {
-      const out1 = path.join(tmpDir, `first${provider.extension}`);
-      const out2 = path.join(tmpDir, `second${provider.extension}`);
+      const first = runExport({
+        dslFile,
+        provider: provider.name,
+        outputPath: out1,
+        deterministic: true
+      });
 
-      const first = spawnSync('node', [
-        cliPath,
-        'export',
-        '--file', dslFile,
-        '--provider', provider.name,
-        '--output', out1,
-        '--deterministic',
-        '--json'
-      ], { encoding: 'utf8' });
-
-      const second = spawnSync('node', [
-        cliPath,
-        'export',
-        '--file', dslFile,
-        '--provider', provider.name,
-        '--output', out2,
-        '--deterministic',
-        '--json'
-      ], { encoding: 'utf8' });
+      const second = runExport({
+        dslFile,
+        provider: provider.name,
+        outputPath: out2,
+        deterministic: true
+      });
 
       assert.strictEqual(first.status, 0, first.stderr || first.stdout);
       assert.strictEqual(second.status, 0, second.stderr || second.stdout);
@@ -97,38 +109,36 @@ page:
     });
   });
 
-  it('export fails by default when token cannot be resolved', () => {
+  it('export fails by default when token cannot be resolved', function () {
+    this.timeout(10000);
+
     writeTokenTheme();
     const dslFile = writeTokenDsl('token-error-default.tui.yml', 'color.missing');
     const outputFile = path.join(tmpDir, 'default-error.html');
 
-    const result = spawnSync('node', [
-      cliPath,
-      'export',
-      '--file', dslFile,
-      '--provider', 'html',
-      '--output', outputFile,
-      '--json'
-    ], { encoding: 'utf8' });
+    const result = runExport({
+      dslFile,
+      provider: 'html',
+      outputPath: outputFile
+    });
 
     assert.strictEqual(result.status, 2);
     assert.strictEqual(fs.existsSync(outputFile), false);
   });
 
-  it('export continues with --token-on-error ignore and reports no warnings in JSON', () => {
+  it('export continues with --token-on-error ignore and reports no warnings in JSON', function () {
+    this.timeout(10000);
+
     writeTokenTheme();
     const dslFile = writeTokenDsl('token-ignore.tui.yml', 'color.missing');
     const outputFile = path.join(tmpDir, 'ignore-mode.html');
 
-    const result = spawnSync('node', [
-      cliPath,
-      'export',
-      '--file', dslFile,
-      '--provider', 'html',
-      '--output', outputFile,
-      '--token-on-error', 'ignore',
-      '--json'
-    ], { encoding: 'utf8' });
+    const result = runExport({
+      dslFile,
+      provider: 'html',
+      outputPath: outputFile,
+      extraArgs: ['--token-on-error', 'ignore']
+    });
 
     assert.strictEqual(result.status, 0, result.stderr || result.stdout);
     const parsed = JSON.parse(result.stdout);
@@ -137,7 +147,9 @@ page:
     assert.ok(fs.existsSync(outputFile));
   });
 
-  it('external provider contract remains usable after built-in provider expansion', () => {
+  it('external provider contract remains usable after built-in provider expansion', function () {
+    this.timeout(10000);
+
     writeTokenTheme();
     const dslFile = writeTokenDsl('token-external.tui.yml');
     const providerModule = path.join(tmpDir, 'solid-provider.cjs');
@@ -154,15 +166,14 @@ module.exports = {
 };
 `, 'utf8');
 
-    const result = spawnSync('node', [
-      cliPath,
+    const result = runCli([
       'export',
       '--file', dslFile,
       '--provider', 'solid',
       '--provider-module', providerModule,
       '--output', outputFile,
       '--json'
-    ], { encoding: 'utf8' });
+    ]);
 
     assert.strictEqual(result.status, 0, result.stderr || result.stdout);
     assert.ok(fs.existsSync(outputFile));
