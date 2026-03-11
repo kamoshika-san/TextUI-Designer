@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { McpBootstrapService } from './mcp-bootstrap-service';
 import { ServiceFactory } from './service-factory';
+import { Logger } from '../utils/logger';
 import type {
   ISchemaManager,
   IThemeManager,
@@ -53,6 +54,7 @@ export class ServiceInitializer {
   private context: vscode.ExtensionContext;
   private services: ExtensionServices | null = null;
   private factoryOverrides: ServiceFactoryOverrides;
+  private readonly logger = new Logger('ServiceInitializer');
 
   constructor(context: vscode.ExtensionContext, factoryOverrides?: ServiceFactoryOverrides) {
     this.context = context;
@@ -63,18 +65,18 @@ export class ServiceInitializer {
    * 全サービスの初期化
    */
   async initialize(): Promise<ExtensionServices> {
-    console.log('[ServiceInitializer] サービス初期化開始');
+    this.logger.info('サービス初期化開始');
 
     try {
       this.services = this.createServices();
 
       await this.initializeRuntime(this.services);
 
-      console.log('[ServiceInitializer] 全サービス初期化完了');
+      this.logger.info('全サービス初期化完了');
       return this.services;
 
     } catch (error) {
-      console.error('[ServiceInitializer] サービス初期化中にエラーが発生しました:', error);
+      this.logger.error('サービス初期化中にエラーが発生しました:', error);
       await this.cleanup();
       throw error;
     }
@@ -84,7 +86,7 @@ export class ServiceInitializer {
    * 全サービスのクリーンアップ
    */
   async cleanup(): Promise<void> {
-    console.log('[ServiceInitializer] サービスクリーンアップ開始');
+    this.logger.info('サービスクリーンアップ開始');
 
     try {
       if (this.services) {
@@ -102,10 +104,10 @@ export class ServiceInitializer {
         this.services = null;
       }
 
-      console.log('[ServiceInitializer] サービスクリーンアップ完了');
+      this.logger.info('サービスクリーンアップ完了');
 
     } catch (error) {
-      console.error('[ServiceInitializer] サービスクリーンアップ中にエラーが発生しました:', error);
+      this.logger.error('サービスクリーンアップ中にエラーが発生しました:', error);
     }
   }
 
@@ -139,12 +141,12 @@ export class ServiceInitializer {
       const mcpBootstrap = new McpBootstrapService(this.context);
       const result = await mcpBootstrap.ensureConfigured();
       if (result.updated) {
-        console.log('[ServiceInitializer] MCP設定を更新しました:', result.updatedFiles.join(', '));
+        this.logger.info(`MCP設定を更新しました: ${result.updatedFiles.join(', ')}`);
       } else if (result.reason) {
-        console.log(`[ServiceInitializer] MCP設定をスキップ: ${result.reason}`);
+        this.logger.info(`MCP設定をスキップ: ${result.reason}`);
       }
     } catch (error) {
-      console.warn('[ServiceInitializer] MCP設定中にエラーが発生しました:', error);
+      this.logger.warn('MCP設定中にエラーが発生しました:', error);
     }
   }
 } 

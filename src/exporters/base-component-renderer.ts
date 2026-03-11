@@ -196,6 +196,11 @@ export abstract class BaseComponentRenderer implements Exporter {
     return StyleManager;
   }
 
+  protected renderPageComponents(dsl: TextUIDSL, separator: string = '\n'): string {
+    const components = dsl.page?.components || [];
+    return components.map((comp, index) => this.renderComponent(comp, index)).join(separator);
+  }
+
   protected getDisabledClass(disabled: boolean = false): string {
     return disabled ? 'opacity-50 cursor-not-allowed' : '';
   }
@@ -244,6 +249,17 @@ export abstract class BaseComponentRenderer implements Exporter {
     return ` style="${property}: ${this.escapeAttribute(token)};"`;
   }
 
+  protected getPugTokenStyleSuffix(componentType: string, token?: string): string {
+    const tokenStyle = this.getPugTokenStyleAttr(componentType, token).trim();
+    return tokenStyle ? ` ${tokenStyle}` : '';
+  }
+
+
+  protected getPugTokenStyleModifier(componentType: string, token?: string): string {
+    const tokenStyle = this.getPugTokenStyleAttr(componentType, token).trim();
+    return tokenStyle ? `(${tokenStyle})` : '';
+  }
+
   protected getReactTokenStyleProp(componentType: string, token?: string): string {
     const property = BaseComponentRenderer.TOKEN_STYLE_PROPERTY_MAP[componentType];
     if (!property || !token) {
@@ -252,6 +268,10 @@ export abstract class BaseComponentRenderer implements Exporter {
 
     const reactProperty = property.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
     return ` style={{ ${reactProperty}: ${JSON.stringify(token)} }}`;
+  }
+
+  protected getReactTokenStyleInline(componentType: string, token?: string): string {
+    return this.getReactTokenStyleProp(componentType, token).trim();
   }
 
   protected escapeHtml(value: unknown): string {

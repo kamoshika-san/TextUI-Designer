@@ -164,14 +164,13 @@ class CommandManagerFactory {
       extensionUri: { fsPath: __dirname + '/../../' }
     };
 
-    const commandManager = new CommandManager(
-      mockContext,
-      mockWebViewManager,
-      mockExportService,
-      mockTemplateService,
-      mockSettingsService,
-      mockSchemaManager
-    );
+    const commandManager = new CommandManager(mockContext, {
+      webViewManager: mockWebViewManager,
+      exportService: mockExportService,
+      templateService: mockTemplateService,
+      settingsService: mockSettingsService,
+      schemaManager: mockSchemaManager
+    });
 
     // テスト用のヘルパーメソッドを追加
     commandManager._testHelpers = {

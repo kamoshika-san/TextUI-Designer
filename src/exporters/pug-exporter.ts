@@ -15,8 +15,7 @@ export class PugExporter extends BaseComponentRenderer {
   }
 
   async export(dsl: TextUIDSL, options: ExportOptions): Promise<string> {
-    const components = dsl.page?.components || [];
-    const componentCode = components.map((comp, index) => this.renderComponent(comp, index)).join('\n');
+    const componentCode = this.renderPageComponents(dsl);
     
     return `doctype html
 html(lang="ja")
@@ -40,18 +39,18 @@ ${componentCode}`;
     const styleManager = this.getStyleManager();
     const sizeClasses = styleManager.getSizeClasses(this.format);
     const weightClasses = styleManager.getWeightClasses(this.format);
-    const tokenStyle = this.getPugTokenStyleAttr('Text', token).trim();
+    const tokenStyle = this.getPugTokenStyleSuffix('Text', token);
     
-    return `      p(class="${sizeClasses[size as keyof typeof sizeClasses]} ${weightClasses[weight as keyof typeof weightClasses]} ${color}"${tokenStyle ? ` ${tokenStyle}` : ''}) ${value}`;
+    return `      p(class="${sizeClasses[size as keyof typeof sizeClasses]} ${weightClasses[weight as keyof typeof weightClasses]} ${color}"${tokenStyle}) ${value}`;
   }
 
   protected renderInput(props: InputComponent, key: number): string {
     const { label, placeholder, type = 'text', required = false, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
-    const tokenStyle = this.getPugTokenStyleAttr('Input', token).trim();
+    const tokenStyle = this.getPugTokenStyleSuffix('Input', token);
     const inputAttrs = this.buildAttrs({ required, disabled });
 
-    const inputCode = `        input(type="${type}" placeholder="${placeholder || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${inputAttrs}${tokenStyle ? ` ${tokenStyle}` : ''})`;
+    const inputCode = `        input(type="${type}" placeholder="${placeholder || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${inputAttrs}${tokenStyle})`;
 
     return this.buildLabeledFieldBlock(
       label,
@@ -73,17 +72,17 @@ ${componentCode}`;
     };
     const disabledClass = this.getDisabledClass(disabled);
     const disabledAttr = disabled ? 'disabled' : '';
-    const tokenStyle = this.getPugTokenStyleAttr('Button', token).trim();
+    const tokenStyle = this.getPugTokenStyleSuffix('Button', token);
     
-    return `      button(class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${variantClasses[kind as keyof typeof variantClasses]} ${sizeClasses[size as keyof typeof sizeClasses]} ${disabledClass} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" ${disabledAttr}${tokenStyle ? ` ${tokenStyle}` : ''}) ${label}`;
+    return `      button(class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${variantClasses[kind as keyof typeof variantClasses]} ${sizeClasses[size as keyof typeof sizeClasses]} ${disabledClass} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" ${disabledAttr}${tokenStyle}) ${label}`;
   }
 
   protected renderCheckbox(props: CheckboxComponent, key: number): string {
     const { label, checked = false, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
-    const tokenStyle = this.getPugTokenStyleAttr('Checkbox', token).trim();
+    const tokenStyle = this.getPugTokenStyleSuffix('Checkbox', token);
     const checkboxAttrs = this.buildAttrs({ checked, disabled });
-    const checkboxInput = `        input(type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${disabledClass}"${checkboxAttrs}${tokenStyle ? ` ${tokenStyle}` : ''})`;
+    const checkboxInput = `        input(type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${disabledClass}"${checkboxAttrs}${tokenStyle})`;
 
     return this.buildControlRowWithLabel(
       label,
@@ -98,9 +97,9 @@ ${componentCode}`;
   protected renderRadio(props: RadioComponent, key: number): string {
     const { label, value, name, checked = false, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
-    const tokenStyle = this.getPugTokenStyleAttr('Radio', token).trim();
+    const tokenStyle = this.getPugTokenStyleSuffix('Radio', token);
     const radioAttrs = this.buildAttrs({ checked, disabled });
-    const radioInput = `        input(type="radio" name="${name || 'radio'}" value="${value || ''}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 ${disabledClass}"${radioAttrs}${tokenStyle ? ` ${tokenStyle}` : ''})`;
+    const radioInput = `        input(type="radio" name="${name || 'radio'}" value="${value || ''}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 ${disabledClass}"${radioAttrs}${tokenStyle})`;
 
     return this.buildControlRowWithLabel(
       label,
@@ -115,10 +114,10 @@ ${componentCode}`;
   protected renderSelect(props: SelectComponent, key: number): string {
     const { label, options = [], placeholder, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
-    const tokenStyle = this.getPugTokenStyleAttr('Select', token).trim();
+    const tokenStyle = this.getPugTokenStyleSuffix('Select', token);
     const selectAttrs = this.buildAttrs({ disabled });
 
-    let selectCode = `        select(class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${selectAttrs}${tokenStyle ? ` ${tokenStyle}` : ''})`;
+    let selectCode = `        select(class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${selectAttrs}${tokenStyle})`;
 
     if (placeholder) {
       selectCode += `
@@ -142,10 +141,10 @@ ${componentCode}`;
   protected renderDatePicker(props: DatePickerComponent, key: number): string {
     const { label, name = 'date', required = false, disabled = false, min, max, value, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
-    const tokenStyle = this.getPugTokenStyleAttr('DatePicker', token).trim();
+    const tokenStyle = this.getPugTokenStyleSuffix('DatePicker', token);
     const dateInputAttrs = this.buildAttrs({ required, disabled, min, max, value });
 
-    const dateInputCode = `        input(type="date" id="${name}" name="${name}" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${dateInputAttrs}${tokenStyle ? ` ${tokenStyle}` : ''})`;
+    const dateInputCode = `        input(type="date" id="${name}" name="${name}" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${dateInputAttrs}${tokenStyle})`;
 
     return this.buildLabeledFieldBlock(
       label,
@@ -160,13 +159,14 @@ ${componentCode}`;
     const { orientation = 'horizontal', spacing = 'md', token } = props;
     const styleManager = this.getStyleManager();
     const spacingClasses = styleManager.getSpacingClasses(this.format);
-    const tokenStyle = this.getPugTokenStyleAttr('Divider', token).trim();
+    const tokenStyle = this.getPugTokenStyleSuffix('Divider', token);
+    const tokenStyleModifier = this.getPugTokenStyleModifier('Divider', token);
     
     if (orientation === 'vertical') {
-      return `      .inline-block.w-px.h-6.bg-gray-300.mx-4${tokenStyle ? `(${tokenStyle})` : ''}`;
+      return `      .inline-block.w-px.h-6.bg-gray-300.mx-4${tokenStyleModifier}`;
     }
     
-    return `      hr(class="border-gray-300 ${spacingClasses[spacing as keyof typeof spacingClasses]}"${tokenStyle ? ` ${tokenStyle}` : ''})`;
+    return `      hr(class="border-gray-300 ${spacingClasses[spacing as keyof typeof spacingClasses]}"${tokenStyle})`;
   }
 
   protected renderSpacer(props: SpacerComponent, key: number): string {
@@ -179,9 +179,9 @@ ${componentCode}`;
     const { message, variant = 'info', title, token } = props;
     const styleManager = this.getStyleManager();
     const variantClasses = styleManager.getAlertVariantClasses(this.format);
-    const tokenStyle = this.getPugTokenStyleAttr('Alert', token).trim();
+    const tokenStyle = this.getPugTokenStyleSuffix('Alert', token);
     
-    let code = `      .p-4.border.rounded-md(class="${variantClasses[variant as keyof typeof variantClasses]}"${tokenStyle ? ` ${tokenStyle}` : ''})`;
+    let code = `      .p-4.border.rounded-md(class="${variantClasses[variant as keyof typeof variantClasses]}"${tokenStyle})`;
     if (title) {
       code += `\n        h3.text-sm.font-medium.mb-1 ${title}`;
     }
@@ -193,9 +193,9 @@ ${componentCode}`;
 
   protected renderAccordion(props: AccordionComponent, key: number): string {
     const { allowMultiple = false, items = [], token } = props;
-    const tokenStyle = this.getPugTokenStyleAttr('Accordion', token).trim();
+    const tokenStyle = this.getPugTokenStyleSuffix('Accordion', token);
 
-    let code = `      .textui-accordion.border.border-gray-300.rounded-md.divide-y.divide-gray-200(data-allow-multiple="${allowMultiple ? 'true' : 'false'}"${tokenStyle ? ` ${tokenStyle}` : ''})`;
+    let code = `      .textui-accordion.border.border-gray-300.rounded-md.divide-y.divide-gray-200(data-allow-multiple="${allowMultiple ? 'true' : 'false'}"${tokenStyle})`;
     items.forEach((item, index) => {
       const itemComponents = item.components || [];
       code += `
@@ -228,9 +228,9 @@ ${indentedCode}`;
   protected renderTabs(props: TabsComponent, key: number): string {
     const { defaultTab = 0, items = [], token } = props;
     const activeIndex = this.resolveActiveTabIndex(defaultTab, items.length);
-    const tokenStyle = this.getPugTokenStyleAttr('Tabs', token).trim();
+    const tokenStyleModifier = this.getPugTokenStyleModifier('Tabs', token);
 
-    let code = `      .textui-tabs.border.border-gray-300.rounded-md.overflow-hidden${tokenStyle ? `(${tokenStyle})` : ''}`;
+    let code = `      .textui-tabs.border.border-gray-300.rounded-md.overflow-hidden${tokenStyleModifier}`;
     code += `\n        .flex.border-b.border-gray-300`;
     items.forEach((item, index) => {
       const activeClass = index === activeIndex ? 'bg-gray-200 text-gray-900' : 'bg-gray-100 text-gray-700';
@@ -251,7 +251,7 @@ ${indentedCode}`;
 
   protected renderTreeView(props: TreeViewComponent, key: number): string {
     const { items = [], showLines = true, expandAll = false, token } = props;
-    const tokenStyle = this.getPugTokenStyleAttr('TreeView', token).trim();
+    const tokenStyleModifier = this.getPugTokenStyleModifier('TreeView', token);
     const listClass = showLines ? 'with-lines' : 'without-lines';
 
     const renderNodeList = (
@@ -302,19 +302,19 @@ ${nodeCode}`;
     };
 
     const treeCode = renderNodeList(items, `tree-${key}`, 0, '        ');
-    return `      .textui-treeview${tokenStyle ? `(${tokenStyle})` : ''}
+    return `      .textui-treeview${tokenStyleModifier}
 ${treeCode}`;
   }
 
   protected renderTable(props: TableComponent, key: number): string {
     const { columns = [], rows = [], striped = false, token } = props;
-    const tokenStyle = this.getPugTokenStyleAttr('Table', token).trim();
+    const tokenStyleModifier = this.getPugTokenStyleModifier('Table', token);
 
     if (columns.length === 0) {
       return `      .text-sm.text-yellow-700.border.border-yellow-400.rounded-md.px-3.py-2 Table の columns が未定義です`;
     }
 
-    let code = `      .overflow-x-auto.border.border-gray-300.rounded-md${tokenStyle ? `(${tokenStyle})` : ''}`;
+    let code = `      .overflow-x-auto.border.border-gray-300.rounded-md${tokenStyleModifier}`;
     code += `\n        table.min-w-full.divide-y.divide-gray-200.text-sm.text-gray-900`;
     code += `\n          thead.bg-gray-100`;
     code += `\n            tr`;
@@ -345,8 +345,8 @@ ${treeCode}`;
       'grid': 'grid grid-cols-1 gap-4'
     };
     
-    const tokenStyle = this.getPugTokenStyleAttr('Container', token).trim();
-    let code = `      .${layoutClasses[layout as keyof typeof layoutClasses]}${tokenStyle ? `(${tokenStyle})` : ''}`;
+    const tokenStyleModifier = this.getPugTokenStyleModifier('Container', token);
+    let code = `      .${layoutClasses[layout as keyof typeof layoutClasses]}${tokenStyleModifier}`;
     (components || []).forEach((child: ComponentDef, index: number) => {
       const childCode = this.renderComponent(child, index);
       const indentedCode = childCode.split('\n').map(line => `  ${line}`).join('\n');
@@ -358,9 +358,9 @@ ${treeCode}`;
 
   protected renderForm(props: FormComponent, key: number): string {
     const { id, fields = [], actions = [], token } = props;
-    const tokenStyle = this.getPugTokenStyleAttr('Form', token).trim();
+    const tokenStyle = this.getPugTokenStyleSuffix('Form', token);
     
-    let code = `      form(id="${id}" class="space-y-4"${tokenStyle ? ` ${tokenStyle}` : ''})`;
+    let code = `      form(id="${id}" class="space-y-4"${tokenStyle})`;
     
     fields.forEach((field: FormField, index: number) => {
       const fieldCode = this.renderFormField(field, index);

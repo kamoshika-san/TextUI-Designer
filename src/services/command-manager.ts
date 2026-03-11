@@ -4,6 +4,7 @@ import { ErrorHandler } from '../utils/error-handler';
 import { ConfigManager } from '../utils/config-manager';
 import { RuntimeInspectionService } from './runtime-inspection-service';
 import { capturePreviewImageFromDslFile } from '../utils/preview-capture';
+import { Logger } from '../utils/logger';
 import type {
   ICommandManager,
   IWebViewManager,
@@ -13,6 +14,16 @@ import type {
   ISchemaManager
 } from '../types';
 import { createCommandDefinitions, type CommandHandler } from './command-catalog';
+
+export interface CommandManagerDependencies {
+  webViewManager: IWebViewManager;
+  exportService: IExportService;
+  templateService: ITemplateService;
+  settingsService: ISettingsService;
+  schemaManager: ISchemaManager;
+  runtimeInspectionService?: RuntimeInspectionService;
+}
+
 
 /**
  * コマンド管理サービス
@@ -26,30 +37,27 @@ export class CommandManager implements ICommandManager {
   private settingsService: ISettingsService;
   private schemaManager: ISchemaManager;
   private runtimeInspectionService: RuntimeInspectionService;
+  private readonly logger = new Logger('CommandManager');
   private commandDisposables: vscode.Disposable[] = [];
 
   constructor(
     context: vscode.ExtensionContext,
-    webViewManager: IWebViewManager,
-    exportService: IExportService,
-    templateService: ITemplateService,
-    settingsService: ISettingsService,
-    schemaManager: ISchemaManager
+    dependencies: CommandManagerDependencies
   ) {
     this.context = context;
-    this.webViewManager = webViewManager;
-    this.exportService = exportService;
-    this.templateService = templateService;
-    this.settingsService = settingsService;
-    this.schemaManager = schemaManager;
-    this.runtimeInspectionService = new RuntimeInspectionService();
+    this.webViewManager = dependencies.webViewManager;
+    this.exportService = dependencies.exportService;
+    this.templateService = dependencies.templateService;
+    this.settingsService = dependencies.settingsService;
+    this.schemaManager = dependencies.schemaManager;
+    this.runtimeInspectionService = dependencies.runtimeInspectionService ?? new RuntimeInspectionService();
   }
 
   /**
    * コマンドを登録
    */
   registerCommands(): void {
-    console.log('[CommandManager] コマンド登録を開始');
+    this.logger.info('コマンド登録を開始');
 
     const commandDefinitions = createCommandDefinitions({
       openPreviewWithCheck: () => this.openPreviewWithCheck(),
@@ -78,7 +86,7 @@ export class CommandManager implements ICommandManager {
       this.registerCommand(command, callback);
     }
 
-    console.log('[CommandManager] コマンド登録完了');
+    this.logger.info('コマンド登録完了');
   }
 
   /**
@@ -88,7 +96,7 @@ export class CommandManager implements ICommandManager {
     const result = await ErrorHandler.executeSafely(async () => {
       const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
       const message = `自動プレビュー設定: ${autoPreviewEnabled ? 'ON' : 'OFF'}`;
-      console.log(`[CommandManager] ${message}`);
+      this.logger.info(message);
       ErrorHandler.showInfo(message);
     }, '自動プレビュー設定の確認に失敗しました');
 
@@ -102,11 +110,11 @@ export class CommandManager implements ICommandManager {
    * コマンドを登録
    */
   private registerCommand(command: string, callback: CommandHandler): void {
-    console.log(`[CommandManager] コマンドを登録: ${command}`);
+    this.logger.debug(`コマンドを登録: ${command}`);
     const disposable = vscode.commands.registerCommand(command, callback);
     this.commandDisposables.push(disposable);
     this.context.subscriptions.push(disposable);
-    console.log(`[CommandManager] コマンド登録成功: ${command}`);
+    this.logger.debug(`コマンド登録成功: ${command}`);
   }
 
   /**
@@ -117,7 +125,7 @@ export class CommandManager implements ICommandManager {
       try {
         disposable.dispose();
       } catch (error) {
-        console.warn('[CommandManager] disposable解放時にエラーが発生しました:', error);
+        this.logger.warn('disposable解放時にエラーが発生しました:', error);
       }
     });
     this.commandDisposables = [];
@@ -127,14 +135,14 @@ export class CommandManager implements ICommandManager {
    * プレビューを開く（ユーザーの明示的な指示による実行）
    */
   private async openPreviewWithCheck(): Promise<void> {
-    console.log('[CommandManager] openPreviewWithCheck が呼び出されました');
+    this.logger.debug('openPreviewWithCheck が呼び出されました');
     try {
-      console.log('[CommandManager] WebViewManager.openPreview を呼び出します');
+      this.logger.debug('WebViewManager.openPreview を呼び出します');
       // ユーザーが明示的にコマンドを実行した場合は、Auto Preview設定に関係なくプレビューを開く
       await this.webViewManager.openPreview();
-      console.log('[CommandManager] WebViewManager.openPreview が完了しました');
+      this.logger.debug('WebViewManager.openPreview が完了しました');
     } catch (error) {
-      console.error('[CommandManager] プレビュー表示エラー:', error);
+      this.logger.error('プレビュー表示エラー:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       vscode.window.showErrorMessage(`プレビューの表示に失敗しました: ${errorMessage}`);
     }

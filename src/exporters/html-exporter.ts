@@ -19,8 +19,7 @@ export class HtmlExporter extends BaseComponentRenderer {
   }
 
   async export(dsl: TextUIDSL, options: ExportOptions): Promise<string> {
-    const components = dsl.page?.components || [];
-    const componentCode = components.map((comp, index) => this.renderComponent(comp, index)).join('\n');
+    const componentCode = this.renderPageComponents(dsl);
     const themeStyles = this.buildThemeStyles(options.themePath);
     
     return buildHtmlDocument(componentCode, themeStyles);

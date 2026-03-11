@@ -4,6 +4,7 @@ import { ISchemaManager, SchemaDefinition } from '../types';
 import { BUILT_IN_COMPONENTS } from '../registry/component-registry';
 import { ConfigManager } from '../utils/config-manager';
 import { COMPONENT_DESCRIPTIONS, COMPONENT_PROPERTIES } from './completion-component-catalog';
+import { Logger } from '../utils/logger';
 
 /**
  * 補完プロバイダー
@@ -23,6 +24,69 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     Module: 3,
     Field: 5
   };
+
+  private buildCompletionRequestContext(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    context: vscode.CompletionContext
+  ): {
+    text: string;
+    linePrefix: string;
+    currentWord: string;
+    isTemplate: boolean;
+    cacheKey: string;
+  } {
+    const text = document.getText();
+    const linePrefix = text.substring(document.offsetAt(this.createPosition(position.line, 0)), document.offsetAt(position));
+    const currentWord = this.getCurrentWord(linePrefix);
+    const isTemplate = /\.template\.(ya?ml|json)$/.test(document.fileName);
+    const cacheKey = this.generateCacheKey(document, position, context, isTemplate);
+    return { text, linePrefix, currentWord, isTemplate, cacheKey };
+  }
+
+  private shouldProvideCompletions(document: vscode.TextDocument, isTemplate: boolean): boolean {
+    return ConfigManager.isSupportedFile(document.fileName) || isTemplate;
+  }
+
+  private getCachedCompletionItems(cacheKey: string, now: number): vscode.CompletionItem[] | undefined {
+    const cached = this.completionCache.get(cacheKey);
+    if (cached && (now - cached.timestamp) < this.CACHE_TTL) {
+      this.logger.debug('キャッシュされた補完候補を使用');
+      return cached.items;
+    }
+    return undefined;
+  }
+
+  private setCachedCompletionItems(cacheKey: string, items: vscode.CompletionItem[], now: number): void {
+    this.completionCache.set(cacheKey, {
+      items,
+      timestamp: now
+    });
+  }
+
+  private async parseYamlForSyntaxValidation(text: string): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      setImmediate(() => {
+        try {
+          YAML.parse(text);
+          resolve();
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+  }
+
+  private async loadSchemaWithCache(now: number): Promise<SchemaDefinition> {
+    if (!this.schemaCache || (now - this.lastSchemaLoad) > this.CACHE_TTL) {
+      this.schemaCache = await this.schemaManager.loadSchema();
+      this.lastSchemaLoad = now;
+    }
+    return this.schemaCache;
+  }
+
+
+  private readonly logger = new Logger('CompletionProvider');
 
   constructor(schemaManager: ISchemaManager) {
     this.schemaManager = schemaManager;
@@ -49,7 +113,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
           const items = await this.generateCompletionItems(document, position, context);
           resolve(items);
         } catch (error) {
-          console.error('[CompletionProvider] 補完処理でエラーが発生しました:', error);
+          this.logger.error('補完処理でエラーが発生しました:', error);
           resolve([]);
         }
       }, 150);
@@ -64,57 +128,33 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     position: vscode.Position,
     context: vscode.CompletionContext
   ): Promise<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
-    const text = document.getText();
-    const linePrefix = text.substring(document.offsetAt(this.createPosition(position.line, 0)), document.offsetAt(position));
-    const currentWord = this.getCurrentWord(linePrefix);
-    const isTemplate = /\.template\.(ya?ml|json)$/.test(document.fileName);
-    
-    if (!ConfigManager.isSupportedFile(document.fileName) && !isTemplate) {
+    const requestContext = this.buildCompletionRequestContext(document, position, context);
+
+    if (!this.shouldProvideCompletions(document, requestContext.isTemplate)) {
       return [];
     }
-    
+
     try {
-      // キャッシュキーを生成
-      const cacheKey = this.generateCacheKey(document, position, context, isTemplate);
       const now = Date.now();
-      
-      // キャッシュチェック
-      const cached = this.completionCache.get(cacheKey);
-      if (cached && (now - cached.timestamp) < this.CACHE_TTL) {
-        console.log('[CompletionProvider] キャッシュされた補完候補を使用');
-        return cached.items;
+      const cachedItems = this.getCachedCompletionItems(requestContext.cacheKey, now);
+      if (cachedItems) {
+        return cachedItems;
       }
 
-      // YAMLパース処理を非同期で実行（ブロッキングを防ぐ）
-      const yaml = await new Promise((resolve, reject) => {
-        setImmediate(() => {
-          try {
-            const parsed = YAML.parse(text);
-            resolve(parsed);
-          } catch (error) {
-            reject(error);
-          }
-        });
-      });
-      
-      // スキーマキャッシュの更新チェック
-      if (!this.schemaCache || (now - this.lastSchemaLoad) > this.CACHE_TTL) {
-        this.schemaCache = await this.schemaManager.loadSchema();
-        this.lastSchemaLoad = now;
-      }
-      
-      const items = this.generateCompletionItemsFromSchema(linePrefix, position, currentWord, this.schemaCache, isTemplate);
-      
-      // キャッシュを更新
-      this.completionCache.set(cacheKey, {
-        items: items,
-        timestamp: now
-      });
-      
+      await this.parseYamlForSyntaxValidation(requestContext.text);
+      const schema = await this.loadSchemaWithCache(now);
+      const items = this.generateCompletionItemsFromSchema(
+        requestContext.linePrefix,
+        position,
+        requestContext.currentWord,
+        schema,
+        requestContext.isTemplate
+      );
+
+      this.setCachedCompletionItems(requestContext.cacheKey, items, now);
       return items;
     } catch (error) {
-      // YAMLパースエラーの場合は基本的な補完を提供
-      return this.getBasicCompletions(linePrefix, position, currentWord);
+      return this.getBasicCompletions(requestContext.linePrefix, position, requestContext.currentWord);
     }
   }
 

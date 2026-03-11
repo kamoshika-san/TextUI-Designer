@@ -85,14 +85,13 @@ describe('CommandManager 統合テスト', () => {
 
     // CommandManagerをインポートしてテスト用インスタンスを作成
     const { CommandManager } = require('../../out/services/command-manager');
-    commandManager = new CommandManager(
-      mockContext,
-      mockWebViewManager,
-      mockExportService,
-      mockTemplateService,
-      mockSettingsService,
-      mockSchemaManager
-    );
+    commandManager = new CommandManager(mockContext, {
+      webViewManager: mockWebViewManager,
+      exportService: mockExportService,
+      templateService: mockTemplateService,
+      settingsService: mockSettingsService,
+      schemaManager: mockSchemaManager
+    });
   });
 
   after(async () => {

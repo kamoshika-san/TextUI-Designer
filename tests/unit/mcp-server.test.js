@@ -246,4 +246,42 @@ theme:
     assert.ok(response.error);
     assert.match(response.error.message, /does not allow --browser or --allow-no-sandbox/);
   });
+
+  it('resources/list と prompts/list が定義済みメタデータを返す', async () => {
+    const server = new TextUiMcpServer();
+
+    const resources = await server.handleMessage({
+      jsonrpc: '2.0',
+      id: 9,
+      method: 'resources/list'
+    });
+    const prompts = await server.handleMessage({
+      jsonrpc: '2.0',
+      id: 10,
+      method: 'prompts/list'
+    });
+
+    assert.ok(resources.result);
+    assert.ok(Array.isArray(resources.result.resources));
+    assert.ok(resources.result.resources.some(resource => resource.uri === 'textui://schema/main'));
+    assert.ok(resources.result.resources.some(resource => resource.uri === 'textui://cli/run'));
+
+    assert.ok(prompts.result);
+    assert.ok(Array.isArray(prompts.result.prompts));
+    assert.ok(prompts.result.prompts.some(prompt => prompt.name === 'design_screen'));
+    assert.ok(prompts.result.prompts.some(prompt => prompt.name === 'fix_validation_error'));
+  });
+
+  it('未対応メソッドで Method not found を返す', async () => {
+    const server = new TextUiMcpServer();
+    const response = await server.handleMessage({
+      jsonrpc: '2.0',
+      id: 11,
+      method: 'unknown/method'
+    });
+
+    assert.ok(response.error);
+    assert.match(response.error.message, /Method not found: unknown\/method/);
+  });
+
 });

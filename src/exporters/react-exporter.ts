@@ -14,8 +14,7 @@ export class ReactExporter extends BaseComponentRenderer {
   }
 
   async export(dsl: TextUIDSL, options: ExportOptions): Promise<string> {
-    const components = dsl.page?.components || [];
-    const componentCode = components.map((comp, index) => this.renderComponent(comp, index)).join('\n\n');
+    const componentCode = this.renderPageComponents(dsl, '\n\n');
     
     return `import React from 'react';
 
@@ -39,14 +38,14 @@ ${componentCode}
     const styleManager = this.getStyleManager();
     const config = styleManager.getTextVariantConfig(variant, this.format);
     
-    const tokenStyle = this.getReactTokenStyleProp('Text', token);
+    const tokenStyle = this.getReactTokenStyleInline('Text', token);
     return `      <${config.element} key={${key}} className="${config.className}"${tokenStyle}>${value}</${config.element}>`;
   }
 
   protected renderInput(props: InputComponent, key: number): string {
     const { label, placeholder, type = 'text', required = false, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
-    const tokenStyle = this.getReactTokenStyleProp('Input', token);
+    const tokenStyle = this.getReactTokenStyleInline('Input', token);
     
     const inputAttrs = this.buildAttrs({
       required,
@@ -57,7 +56,7 @@ ${componentCode}
           type="${type}"
           placeholder="${placeholder || ''}"${inputAttrs}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"
-          ${tokenStyle.trim()}
+          ${tokenStyle}
         />`;
 
     return this.buildLabeledFieldBlock(
@@ -76,11 +75,11 @@ ${componentCode}
     const styleManager = this.getStyleManager();
     const className = styleManager.getButtonKindClass(kind, this.format);
     
-    const tokenStyle = this.getReactTokenStyleProp('Button', token);
+    const tokenStyle = this.getReactTokenStyleInline('Button', token);
     return `      <button
         key={${key}}
         className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${className} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        ${tokenStyle.trim()}
+        ${tokenStyle}
       >
         ${label}
       </button>`;
@@ -89,13 +88,13 @@ ${componentCode}
   protected renderCheckbox(props: CheckboxComponent, key: number): string {
     const { label, checked = false, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
-    const tokenStyle = this.getReactTokenStyleProp('Checkbox', token);
+    const tokenStyle = this.getReactTokenStyleInline('Checkbox', token);
     const checkboxAttrs = this.buildAttrs({ disabled });
     const checkboxInput = `        <input
           type="checkbox"
           defaultChecked={${checked}}${checkboxAttrs}
           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${disabledClass}"
-          ${tokenStyle.trim()}
+          ${tokenStyle}
         />`;
 
     return this.buildControlRowWithLabel(
@@ -111,7 +110,7 @@ ${componentCode}
   protected renderRadio(props: RadioComponent, key: number): string {
     const { label, value, name, checked = false, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
-    const tokenStyle = this.getReactTokenStyleProp('Radio', token);
+    const tokenStyle = this.getReactTokenStyleInline('Radio', token);
     const radioAttrs = this.buildAttrs({ disabled });
     const radioInput = `        <input
           type="radio"
@@ -119,7 +118,7 @@ ${componentCode}
           value="${value || ''}"
           defaultChecked={${checked}}${radioAttrs}
           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 ${disabledClass}"
-          ${tokenStyle.trim()}
+          ${tokenStyle}
         />`;
 
     return this.buildControlRowWithLabel(
@@ -135,7 +134,7 @@ ${componentCode}
   protected renderSelect(props: SelectComponent, key: number): string {
     const { label, options = [], placeholder, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
-    const tokenStyle = this.getReactTokenStyleProp('Select', token);
+    const tokenStyle = this.getReactTokenStyleInline('Select', token);
     const optionsCode = options.map((opt: SelectOption) => 
       `          <option key="${opt.value}" value="${opt.value}">${opt.label}</option>`
     ).join('\n');
@@ -144,7 +143,7 @@ ${componentCode}
 
     const selectHtml = `        <select${selectAttrs}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"
-          ${tokenStyle.trim()}
+          ${tokenStyle}
         >
           ${placeholder ? `<option value="">${placeholder}</option>` : ''}
 ${optionsCode}
@@ -162,7 +161,7 @@ ${optionsCode}
   protected renderDatePicker(props: DatePickerComponent, key: number): string {
     const { label, name = 'date', required = false, disabled = false, min, max, value, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
-    const tokenStyle = this.getReactTokenStyleProp('DatePicker', token);
+    const tokenStyle = this.getReactTokenStyleInline('DatePicker', token);
 
     const dateInputAttrs = this.buildAttrs({
       required,
@@ -177,7 +176,7 @@ ${optionsCode}
           name="${name}"
           type="date"${dateInputAttrs}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"
-          ${tokenStyle.trim()}
+          ${tokenStyle}
         />`;
 
     return this.buildLabeledFieldBlock(
@@ -193,7 +192,7 @@ ${optionsCode}
     const { orientation = 'horizontal', spacing = 'md', token } = props;
     const styleManager = this.getStyleManager();
     const spacingClasses = styleManager.getSpacingClasses(this.format);
-    const tokenStyle = this.getReactTokenStyleProp('Divider', token);
+    const tokenStyle = this.getReactTokenStyleInline('Divider', token);
     
     if (orientation === 'vertical') {
       return `      <div key={${key}} className="inline-block w-px h-6 bg-gray-300 mx-4"${tokenStyle}></div>`;
@@ -215,7 +214,7 @@ ${optionsCode}
     const styleManager = this.getStyleManager();
     const variantClasses = styleManager.getAlertVariantClasses(this.format);
     const className = variantClasses[variant as keyof typeof variantClasses] || variantClasses.info;
-    const tokenStyle = this.getReactTokenStyleProp('Alert', token);
+    const tokenStyle = this.getReactTokenStyleInline('Alert', token);
     
     return `      <div key={${key}} className="p-4 border rounded-md ${className}"${tokenStyle}>
         <p className="text-sm">${message}</p>
@@ -225,7 +224,7 @@ ${optionsCode}
 
   protected renderAccordion(props: AccordionComponent, key: number): string {
     const { allowMultiple = false, items = [], token } = props;
-    const tokenStyle = this.getReactTokenStyleProp('Accordion', token);
+    const tokenStyle = this.getReactTokenStyleInline('Accordion', token);
 
     const itemsCode = items
       .map((item, index) => {
@@ -259,7 +258,7 @@ ${itemsCode}
   protected renderTabs(props: TabsComponent, key: number): string {
     const { defaultTab = 0, items = [], token } = props;
     const activeIndex = this.resolveActiveTabIndex(defaultTab, items.length);
-    const tokenStyle = this.getReactTokenStyleProp('Tabs', token);
+    const tokenStyle = this.getReactTokenStyleInline('Tabs', token);
 
     const tabsHeader = items
       .map((item, index) => `        <button type="button" className="px-4 py-2 text-sm border-r border-gray-700 last:border-r-0 ${index === activeIndex ? 'bg-gray-800 text-white' : 'bg-gray-900 text-gray-300'} ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}" ${item.disabled ? 'disabled' : ''}>${item.label}</button>`)
@@ -281,7 +280,7 @@ ${panelItems}
 
   protected renderTreeView(props: TreeViewComponent, key: number): string {
     const { items = [], showLines = true, expandAll = false, token } = props;
-    const tokenStyle = this.getReactTokenStyleProp('TreeView', token);
+    const tokenStyle = this.getReactTokenStyleInline('TreeView', token);
     const listClass = showLines ? 'textui-treeview-list with-lines' : 'textui-treeview-list without-lines';
 
     const renderNodeList = (
@@ -346,7 +345,7 @@ ${treeCode}
 
   protected renderTable(props: TableComponent, key: number): string {
     const { columns = [], rows = [], striped = false, token } = props;
-    const tokenStyle = this.getReactTokenStyleProp('Table', token);
+    const tokenStyle = this.getReactTokenStyleInline('Table', token);
 
     if (columns.length === 0) {
       return `      <div key={${key}} className="text-sm text-yellow-700 border border-yellow-400 rounded-md px-3 py-2">Table の columns が未定義です</div>`;
@@ -390,7 +389,7 @@ ${bodyCode}
       'horizontal': 'flex space-x-4',
       'grid': 'grid grid-cols-1 gap-4'
     };
-    const tokenStyle = this.getReactTokenStyleProp('Container', token);
+    const tokenStyle = this.getReactTokenStyleInline('Container', token);
     
     const childrenCode = components.map((child: ComponentDef, index: number) => 
       this.renderComponent(child, index)
@@ -403,7 +402,7 @@ ${childrenCode}
 
   protected renderForm(props: FormComponent, key: number): string {
     const { id, fields = [], actions = [], token } = props;
-    const tokenStyle = this.getReactTokenStyleProp('Form', token);
+    const tokenStyle = this.getReactTokenStyleInline('Form', token);
     
     const fieldsCode = fields
       .map((field: FormField, index: number) => this.renderFormField(field, index))
