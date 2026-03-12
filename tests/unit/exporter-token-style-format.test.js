@@ -1,6 +1,7 @@
 const assert = require('assert');
 const { PugExporter } = require('../../out/exporters/pug-exporter');
 const { ReactExporter } = require('../../out/exporters/react-exporter');
+const { HtmlExporter } = require('../../out/exporters/html-exporter');
 
 describe('Exporter token style formatting', () => {
   it('PugExporter: class shorthand components inject token style modifier only when token exists', async () => {
@@ -39,5 +40,22 @@ describe('Exporter token style formatting', () => {
 
     assert.ok(!react.includes('undefined'));
     assert.ok(react.includes('style={{ borderColor: "var(--token-input)" }}'));
+  });
+
+  it('HtmlExporter: token style attribute is injected only when token exists', async () => {
+    const exporter = new HtmlExporter();
+    const dsl = {
+      page: {
+        components: [
+          { Divider: { orientation: 'horizontal' } },
+          { Divider: { orientation: 'horizontal', token: 'var(--token-divider)' } }
+        ]
+      }
+    };
+
+    const html = await exporter.export(dsl, { format: 'html' });
+
+    assert.ok(html.includes('<hr class="border-gray-700 my-4">'));
+    assert.ok(html.includes('<hr class="border-gray-700 my-4" style="border-color: var(--token-divider);">'));
   });
 });
