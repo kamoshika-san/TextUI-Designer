@@ -1,19 +1,13 @@
 import * as vscode from 'vscode';
-import * as YAML from 'yaml';
-import Ajv, { ErrorObject } from 'ajv';
+import { ErrorObject } from 'ajv';
 import { TextUIMemoryTracker } from '../utils/textui-memory-tracker';
 import { ISchemaManager, SchemaDefinition } from '../types';
 import { suggestSimilarKeys } from './diagnostics/key-suggestion';
 import { buildDiagnosticTemplate } from './diagnostics/template-builder';
 import { resolveDiagnosticLocation, resolveDiagnosticRange } from './diagnostics/range-resolver';
-
-type DiagnosticCacheEntry = {
-  content: string;
-  diagnostics: vscode.Diagnostic[];
-  timestamp: number;
-};
-
-type ValidationSchemaKind = 'main' | 'template' | 'theme';
+import { DiagnosticCacheStore, type DiagnosticCacheEntry } from './diagnostics/diagnostic-cache-store';
+import { DiagnosticScheduler } from './diagnostics/diagnostic-scheduler';
+import { DiagnosticValidationEngine, type ValidationSchemaKind } from './diagnostics/diagnostic-validation-engine';
 
 
 /**
@@ -22,50 +16,31 @@ type ValidationSchemaKind = 'main' | 'template' | 'theme';
  */
 export class DiagnosticManager {
   private diagnosticCollection: vscode.DiagnosticCollection;
-  private schemaManager: ISchemaManager;
   private validationCache: Map<string, DiagnosticCacheEntry> = new Map();
-  private validationTimeouts: Map<string, NodeJS.Timeout> = new Map();
-  private ajvInstance: Ajv | null = null;
-  private schemaCaches: Record<ValidationSchemaKind, SchemaDefinition | null> = {
-    main: null,
-    template: null,
-    theme: null
-  };
-  private lastSchemaLoads: Record<ValidationSchemaKind, number> = {
-    main: 0,
-    template: 0,
-    theme: 0
-  };
   private readonly CACHE_TTL = 5000; // 5秒
-  private readonly DEBOUNCE_DELAY = 500; // 500ms
-  private diagnosticTimeout: NodeJS.Timeout | null = null;
+  private readonly DEBOUNCE_DELAY = 300;
   private readonly MAX_CACHE_SIZE = 100; // キャッシュサイズ制限
   private readonly MAX_CACHE_AGE = 30000; // 30秒でキャッシュをクリア
   private memoryTracker: TextUIMemoryTracker;
+  private cacheStore: DiagnosticCacheStore;
+  private scheduler: DiagnosticScheduler;
+  private validationEngine: DiagnosticValidationEngine;
 
   constructor(schemaManager: ISchemaManager) {
     this.diagnosticCollection = vscode.languages.createDiagnosticCollection('textui-designer');
-    this.schemaManager = schemaManager;
     this.memoryTracker = TextUIMemoryTracker.getInstance();
+    this.cacheStore = new DiagnosticCacheStore(this.validationCache, this.MAX_CACHE_SIZE, this.MAX_CACHE_AGE);
+    this.scheduler = new DiagnosticScheduler();
+    this.validationEngine = new DiagnosticValidationEngine(schemaManager, this.CACHE_TTL);
   }
 
   /**
    * 診断を実行（デバウンス付き）
    */
   async validateAndReportDiagnostics(document: vscode.TextDocument): Promise<void> {
-    // 既存のタイマーをクリア
-    if (this.diagnosticTimeout) {
-      clearTimeout(this.diagnosticTimeout);
-    }
-
-    // より短いデバウンス時間（300ms）でリアルタイム性を向上
-    this.diagnosticTimeout = setTimeout(async () => {
-      try {
-        await this.performDiagnostics(document);
-      } catch (error) {
-        console.error('[DiagnosticManager] 診断処理でエラーが発生しました:', error);
-      }
-    }, 300);
+    this.scheduler.schedule(async () => {
+      await this.performDiagnostics(document);
+    }, this.DEBOUNCE_DELAY);
   }
 
   /**
@@ -75,19 +50,11 @@ export class DiagnosticManager {
     const text = document.getText();
     const uri = document.uri.toString();
     
-    // 古いキャッシュをクリーンアップ
-    this.cleanupOldCache();
-    
-    // キャッシュサイズ制限をチェック
-    if (this.validationCache.size >= this.MAX_CACHE_SIZE) {
-      console.log('[DiagnosticManager] キャッシュサイズ制限に達したため、古いキャッシュをクリアします');
-      this.cleanupOldCache(true); // 強制クリーンアップ
-    }
-    
-    // キャッシュをチェック
-    const cacheKey = uri;
-    const cached = this.validationCache.get(cacheKey);
-    if (cached && cached.content === text && Date.now() - cached.timestamp < this.CACHE_TTL) {
+    this.cacheStore.cleanupOldCache();
+    this.cacheStore.ensureCapacity();
+
+    const cached = this.cacheStore.getFresh(uri, text, this.CACHE_TTL);
+    if (cached) {
       this.diagnosticCollection.set(document.uri, cached.diagnostics);
       return;
     }
@@ -104,76 +71,35 @@ export class DiagnosticManager {
     const uri = document.uri.toString();
     const now = Date.now();
 
-    // キャッシュチェック
-    const cached = this.validationCache.get(uri);
-    if (cached && cached.content === text && (now - cached.timestamp) < this.CACHE_TTL) {
+    const cached = this.cacheStore.getFresh(uri, text, this.CACHE_TTL, now);
+    if (cached) {
       console.log('[DiagnosticManager] キャッシュされた診断結果を使用');
       this.diagnosticCollection.set(document.uri, cached.diagnostics);
       return;
     }
 
+    const result = await this.validationEngine.validateText(text, schemaKind);
     let diagnostics: vscode.Diagnostic[] = [];
 
-    try {
-      // YAMLパース処理を非同期で実行（ブロッキングを防ぐ）
-      const yaml = await new Promise((resolve, reject) => {
-        setImmediate(() => {
-          try {
-            const parsed = YAML.parse(text);
-            resolve(parsed);
-          } catch (error) {
-            reject(error);
-          }
-        });
-      });
-      
-      // スキーマキャッシュの更新チェック
-      if (!this.schemaCaches[schemaKind] || (now - this.lastSchemaLoads[schemaKind]) > this.CACHE_TTL) {
-        this.schemaCaches[schemaKind] = await this.loadSchemaByKind(schemaKind);
-        this.lastSchemaLoads[schemaKind] = now;
-        
-        // 古いAjvインスタンスを破棄して新しいインスタンスを作成
-        if (this.ajvInstance) {
-          this.ajvInstance = null;
-        }
-        this.ajvInstance = new Ajv({ allErrors: true, allowUnionTypes: true });
-      }
-
-      if (!this.ajvInstance) {
-        this.ajvInstance = new Ajv({ allErrors: true, allowUnionTypes: true });
-      }
-      
-      const schema = this.schemaCaches[schemaKind];
-      if (!schema) {
-        throw new Error('スキーマキャッシュが初期化されていません');
-      }
-
-      const validate = this.ajvInstance.compile(schema);
-
-      const valid = validate(yaml);
-      if (!valid && validate.errors) {
-        diagnostics = this.createDiagnosticsFromErrors(validate.errors, text, document, schema);
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+    if (result.errorMessage) {
       const diag = new vscode.Diagnostic(
         new vscode.Range(0, 0, 0, 1),
-        msg,
+        result.errorMessage,
         vscode.DiagnosticSeverity.Error
       );
       diagnostics.push(diag);
+    } else if (result.errors && result.schema) {
+      diagnostics = this.createDiagnosticsFromErrors(result.errors, text, document, result.schema);
     }
 
-    // キャッシュを更新
     const cacheEntry = {
       content: text,
       timestamp: now,
-      diagnostics: diagnostics
+      diagnostics
     };
-    
-    this.validationCache.set(uri, cacheEntry);
 
-    // 診断キャッシュエントリのメモリ追跡
+    this.cacheStore.set(uri, cacheEntry);
+
     const entrySize = this.estimateDiagnosticCacheSize(cacheEntry);
     this.memoryTracker.trackDiagnosticsObject(cacheEntry, entrySize, {
       uri,
@@ -211,23 +137,6 @@ export class DiagnosticManager {
     return 'main';
   }
 
-  private async loadSchemaByKind(schemaKind: ValidationSchemaKind): Promise<SchemaDefinition> {
-    switch (schemaKind) {
-      case 'template':
-        if (typeof this.schemaManager.loadTemplateSchema === 'function') {
-          return await this.schemaManager.loadTemplateSchema();
-        }
-        return await this.schemaManager.loadSchema();
-      case 'theme':
-        if (typeof this.schemaManager.loadThemeSchema === 'function') {
-          return await this.schemaManager.loadThemeSchema();
-        }
-        return await this.schemaManager.loadSchema();
-      case 'main':
-      default:
-        return await this.schemaManager.loadSchema();
-    }
-  }
 
   /**
    * エラーから診断情報を作成
@@ -319,9 +228,7 @@ export class DiagnosticManager {
    */
   clearDiagnostics(): void {
     this.diagnosticCollection.clear();
-    this.validationCache.clear();
-    this.validationTimeouts.forEach(timeout => clearTimeout(timeout));
-    this.validationTimeouts.clear();
+    this.cacheStore.clear();
   }
 
   /**
@@ -330,44 +237,16 @@ export class DiagnosticManager {
   clearDiagnosticsForUri(uri: vscode.Uri): void {
     const uriString = uri.toString();
     this.diagnosticCollection.delete(uri);
-    this.validationCache.delete(uriString);
-
-    // 旧実装で残る uri:hash 形式のキーも削除して不整合を防ぐ
-    const legacyKeyPrefix = `${uriString}:`;
-    for (const cacheKey of this.validationCache.keys()) {
-      if (cacheKey.startsWith(legacyKeyPrefix)) {
-        this.validationCache.delete(cacheKey);
-      }
-    }
-    
-    const timeout = this.validationTimeouts.get(uriString);
-    if (timeout) {
-      clearTimeout(timeout);
-      this.validationTimeouts.delete(uriString);
-    }
+    this.cacheStore.delete(uriString);
+    this.cacheStore.clearLegacyKeys(uriString);
   }
 
   /**
    * キャッシュをクリア
    */
   clearCache(): void {
-    this.validationCache.clear();
-    this.schemaCaches = {
-      main: null,
-      template: null,
-      theme: null
-    };
-    this.lastSchemaLoads = {
-      main: 0,
-      template: 0,
-      theme: 0
-    };
-    
-    // Ajvインスタンスを適切に破棄
-    if (this.ajvInstance) {
-      this.ajvInstance = null;
-    }
-    
+    this.cacheStore.clear();
+    this.validationEngine.clearCache();
   }
 
   /**
@@ -376,32 +255,11 @@ export class DiagnosticManager {
   dispose(): void {
     this.clearDiagnostics();
     
-    // 診断タイマーをクリア
-    if (this.diagnosticTimeout) {
-      clearTimeout(this.diagnosticTimeout);
-      this.diagnosticTimeout = null;
-    }
-    
+    this.scheduler.clear();
+
     this.diagnosticCollection.dispose();
   }
 
-  /**
-   * 古いキャッシュをクリーンアップ
-   */
-  private cleanupOldCache(force: boolean = false): void {
-    const now = Date.now();
-    const oldCache = [];
-
-    for (const [key, { timestamp }] of this.validationCache) {
-      if (force || (now - timestamp > this.MAX_CACHE_AGE)) {
-        oldCache.push(key);
-      }
-    }
-
-    for (const key of oldCache) {
-      this.validationCache.delete(key);
-    }
-  }
 
   /**
    * 診断キャッシュエントリのメモリサイズを推定

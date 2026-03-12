@@ -233,40 +233,61 @@ export abstract class BaseComponentRenderer implements Exporter {
     return value === null || value === undefined ? '' : String(value);
   }
 
+  private resolveTokenStyleProperty(componentType: string): string | undefined {
+    return BaseComponentRenderer.TOKEN_STYLE_PROPERTY_MAP[componentType];
+  }
+
+  private buildInlineCssDeclaration(property: string, token: string): string {
+    return `${property}: ${this.escapeAttribute(token)};`;
+  }
+
+  private toReactStyleProperty(property: string): string {
+    return property.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
+  }
+
   protected getHtmlTokenStyleAttr(componentType: string, token?: string): string {
-    const property = BaseComponentRenderer.TOKEN_STYLE_PROPERTY_MAP[componentType];
-    if (!property || !token) {
-      return '';
-    }
-    return ` style="${property}: ${this.escapeAttribute(token)};"`;
+    return this.buildTokenStyleAttr(componentType, token, 'raw');
   }
 
   protected getPugTokenStyleAttr(componentType: string, token?: string): string {
-    const property = BaseComponentRenderer.TOKEN_STYLE_PROPERTY_MAP[componentType];
-    if (!property || !token) {
-      return '';
-    }
-    return ` style="${property}: ${this.escapeAttribute(token)};"`;
+    return this.buildTokenStyleAttr(componentType, token, 'raw');
   }
 
   protected getPugTokenStyleSuffix(componentType: string, token?: string): string {
-    const tokenStyle = this.getPugTokenStyleAttr(componentType, token).trim();
-    return tokenStyle ? ` ${tokenStyle}` : '';
+    return this.buildTokenStyleAttr(componentType, token, 'suffix');
   }
-
 
   protected getPugTokenStyleModifier(componentType: string, token?: string): string {
-    const tokenStyle = this.getPugTokenStyleAttr(componentType, token).trim();
-    return tokenStyle ? `(${tokenStyle})` : '';
+    return this.buildTokenStyleAttr(componentType, token, 'modifier');
   }
 
-  protected getReactTokenStyleProp(componentType: string, token?: string): string {
-    const property = BaseComponentRenderer.TOKEN_STYLE_PROPERTY_MAP[componentType];
+  private buildTokenStyleAttr(
+    componentType: string,
+    token: string | undefined,
+    mode: 'raw' | 'suffix' | 'modifier'
+  ): string {
+    const property = this.resolveTokenStyleProperty(componentType);
     if (!property || !token) {
       return '';
     }
 
-    const reactProperty = property.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
+    const raw = ` style="${this.buildInlineCssDeclaration(property, token)}"`;
+    if (mode === 'suffix') {
+      return raw;
+    }
+    if (mode === 'modifier') {
+      return `(${raw.trim()})`;
+    }
+    return raw;
+  }
+
+  protected getReactTokenStyleProp(componentType: string, token?: string): string {
+    const property = this.resolveTokenStyleProperty(componentType);
+    if (!property || !token) {
+      return '';
+    }
+
+    const reactProperty = this.toReactStyleProperty(property);
     return ` style={{ ${reactProperty}: ${JSON.stringify(token)} }}`;
   }
 
