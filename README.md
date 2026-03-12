@@ -121,7 +121,9 @@ npm run compile          # TypeScript コンパイル
 npm run build-webview    # WebView (Vite) ビルド
 npm run lint             # ESLint
 npm test                 # pretest + unit test
+npm run test:quick       # ローカル高速確認（compile + unit）
 npm run test:all         # unit / integration / e2e / regression
+npm run test:all:ci      # CI向け（compile + lint + all tests）
 npm run package          # extension package build
 ```
 
