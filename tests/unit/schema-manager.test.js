@@ -218,6 +218,16 @@ describe('SchemaManager', () => {
     }
   });
 
+
+  it('loadSchema()はキャッシュTTL内で再読み込みしない', async () => {
+    const readSpy = sinon.spy(fs, 'readFileSync');
+    await schemaManager.loadSchema();
+    await schemaManager.loadSchema();
+
+    const targetReads = readSpy.getCalls().filter(call => call.args[0] === testSchemaPath);
+    expect(targetReads.length).to.equal(1);
+  });
+
   it('無効なJSONファイルの場合はエラー', async () => {
     const tempPath = path.join(__dirname, 'temp-invalid-schema.json');
     fs.writeFileSync(tempPath, 'invalid json content');

@@ -129,6 +129,22 @@ npm run package          # extension package build
 
 CI運用テンプレート（DSL validate + plan）は `docs/CI_TEMPLATE.md` を参照してください。
 
+
+### コアモジュール依存関係（責務分割）
+
+```text
+TextUICoreEngine
+  ├─ TextUiCoreComponentBuilder（ドメイン: コンポーネント正規化）
+  └─ textui-core-helpers（I/O + 解析 + 整形）
+
+ReactExporter
+  └─ react-template-renderer（表示/整形: JSXテンプレート生成）
+
+SchemaManager
+  ├─ SchemaCacheStore（ロード/キャッシュ）
+  └─ schema-validator（検証）
+```
+
 ### CLI
 
 ```bash

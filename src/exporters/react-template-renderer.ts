@@ -1,0 +1,179 @@
+import type { ComponentDef, AccordionComponent, TabsComponent, TreeViewComponent, TableComponent, ContainerComponent, FormComponent, FormField, FormAction } from '../renderer/types';
+
+interface RenderContext {
+  renderComponent: (component: ComponentDef, key: number) => string;
+  adjustIndentation: (source: string, indent: string) => string;
+  toTableCellText: (value: unknown) => string;
+}
+
+export function renderAccordionTemplate(props: AccordionComponent, key: number, tokenStyle: string, context: RenderContext): string {
+  const { allowMultiple = false, items = [] } = props;
+
+  const itemsCode = items
+    .map((item, index) => {
+      const itemChildren = item.components || [];
+      const nestedCode = itemChildren
+        .map((component: ComponentDef, childIndex: number) =>
+          context.adjustIndentation(context.renderComponent(component, index * 1000 + childIndex), '            ')
+        )
+        .join('\n');
+      const contentCode = nestedCode || `            ${item.content ?? ''}`;
+
+      return `        <details key={${index}} className="border-b border-gray-200 last:border-b-0" ${item.open ? 'open' : ''}>
+          <summary className="px-4 py-3 text-sm font-medium cursor-pointer">${item.title}</summary>
+          <div className="px-4 pb-4 text-sm text-gray-600">
+${contentCode}
+          </div>
+        </details>`;
+    })
+    .join('\n');
+
+  return `      <div key={${key}} className="border border-gray-300 rounded-md divide-y divide-gray-200" data-allow-multiple={${allowMultiple}}${tokenStyle}>
+${itemsCode}
+      </div>`;
+}
+
+export function renderTabsTemplate(props: TabsComponent, key: number, tokenStyle: string, resolveActiveTabIndex: (defaultTab: number | undefined, length: number) => number, context: RenderContext): string {
+  const { defaultTab = 0, items = [] } = props;
+  const activeIndex = resolveActiveTabIndex(defaultTab, items.length);
+
+  const tabsHeader = items
+    .map((item, index) => `        <button type="button" className="px-4 py-2 text-sm border-r border-gray-700 last:border-r-0 ${index === activeIndex ? 'bg-gray-800 text-white' : 'bg-gray-900 text-gray-300'} ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}" ${item.disabled ? 'disabled' : ''}>${item.label}</button>`)
+    .join('\n');
+
+  const panelItems = (items[activeIndex]?.components || [])
+    .map((component: ComponentDef, index: number) => context.renderComponent(component, index))
+    .join('\n');
+
+  return `      <div key={${key}} className="textui-tabs border border-gray-300 rounded-md overflow-hidden"${tokenStyle}>
+        <div className="flex border-b border-gray-300">
+${tabsHeader}
+        </div>
+        <div className="p-4 space-y-3">
+${panelItems}
+        </div>
+      </div>`;
+}
+
+export function renderTreeViewTemplate(props: TreeViewComponent, key: number, tokenStyle: string, context: RenderContext): string {
+  const { items = [], showLines = true, expandAll = false } = props;
+  const listClass = showLines ? 'textui-treeview-list with-lines' : 'textui-treeview-list without-lines';
+
+  const renderNodeList = (nodes: TreeViewComponent['items'], path: string, depth: number, indent: string): string => {
+    const nodeCode = nodes.map((node, index) => {
+      const children = node.children || [];
+      const components = node.components || [];
+      const hasChildren = children.length > 0 || components.length > 0;
+      const label = `${node.icon ? `${node.icon} ` : ''}${node.label ?? ''}`;
+      const nodeIndent = `${indent}  `;
+
+      if (!hasChildren) {
+        return `${nodeIndent}<li className="textui-treeview-item">
+${nodeIndent}  <div className="textui-treeview-label-row">
+${nodeIndent}    <span className="textui-treeview-toggle placeholder">•</span>
+${nodeIndent}    <span className="textui-treeview-label">${label}</span>
+${nodeIndent}  </div>
+${nodeIndent}</li>`;
+      }
+
+      const openAttr = expandAll || node.expanded ? ' open' : '';
+      const componentCode = components
+        .map((component: ComponentDef, componentIndex: number) =>
+          context.renderComponent(component, key * 100000 + depth * 1000 + index * 100 + componentIndex)
+        )
+        .map(code => code.split('\n').map(line => `${nodeIndent}      ${line}`).join('\n'))
+        .join('\n');
+
+      const childrenCode = children.length > 0
+        ? renderNodeList(children, `${path}-${index}`, depth + 1, `${nodeIndent}      `)
+        : '';
+
+      const bodyCode = [componentCode, childrenCode].filter(Boolean).join('\n');
+
+      return `${nodeIndent}<li className="textui-treeview-item">
+${nodeIndent}  <details${openAttr}>
+${nodeIndent}    <summary className="textui-treeview-label-row">
+${nodeIndent}      <span className="textui-treeview-toggle">▸</span>
+${nodeIndent}      <span className="textui-treeview-label">${label}</span>
+${nodeIndent}    </summary>
+${nodeIndent}    <div className="textui-treeview-children">
+${bodyCode}
+${nodeIndent}    </div>
+${nodeIndent}  </details>
+${nodeIndent}</li>`;
+    }).join('\n');
+
+    return `${indent}<ul className="${listClass}">
+${nodeCode}
+${indent}</ul>`;
+  };
+
+  const treeCode = renderNodeList(items, `tree-${key}`, 0, '        ');
+  return `      <div key={${key}} className="textui-treeview"${tokenStyle}>
+${treeCode}
+      </div>`;
+}
+
+export function renderTableTemplate(props: TableComponent, key: number, tokenStyle: string, context: RenderContext): string {
+  const { columns = [], rows = [], striped = false } = props;
+
+  if (columns.length === 0) {
+    return `      <div key={${key}} className="text-sm text-yellow-700 border border-yellow-400 rounded-md px-3 py-2">Table の columns が未定義です</div>`;
+  }
+
+  const headerCode = columns
+    .map(column => `              <th key="${column.key}" className="px-4 py-2 text-left font-semibold text-gray-900">${column.header}</th>`)
+    .join('\n');
+
+  const bodyCode = rows
+    .map((row, rowIndex) => {
+      const cells = columns
+        .map(column => `              <td key="${rowIndex}-${column.key}" className="px-4 py-2 align-top text-gray-700">${context.toTableCellText(row[column.key])}</td>`)
+        .join('\n');
+
+      return `            <tr key={${rowIndex}} className={${striped} && ${rowIndex} % 2 === 1 ? 'bg-gray-50' : ''}>\n${cells}\n            </tr>`;
+    })
+    .join('\n');
+
+  return `      <div key={${key}} className="overflow-x-auto border border-gray-300 rounded-md"${tokenStyle}>
+        <table className="min-w-full divide-y divide-gray-200 text-sm text-gray-900">
+          <thead className="bg-gray-100">
+            <tr>
+${headerCode}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 bg-white">
+${bodyCode}
+          </tbody>
+        </table>
+      </div>`;
+}
+
+export function renderContainerTemplate(props: ContainerComponent, key: number, tokenStyle: string, context: RenderContext): string {
+  const { layout = 'vertical', components = [] } = props;
+  const layoutClasses = {
+    vertical: 'flex flex-col space-y-4',
+    horizontal: 'flex space-x-4',
+    grid: 'grid grid-cols-1 gap-4'
+  };
+
+  const childrenCode = components.map((child: ComponentDef, index: number) => context.renderComponent(child, index)).join('\n');
+
+  return `      <div key={${key}} className="${layoutClasses[layout as keyof typeof layoutClasses]}"${tokenStyle}>
+${childrenCode}
+      </div>`;
+}
+
+export function renderFormTemplate(props: FormComponent, key: number, tokenStyle: string, renderFormField: (field: FormField, index: number) => string, renderFormAction: (action: FormAction, index: number) => string): string {
+  const { id, fields = [], actions = [] } = props;
+
+  const fieldsCode = fields.map((field: FormField, index: number) => renderFormField(field, index)).filter(code => code !== '').join('\n');
+  const actionsCode = actions.map((action: FormAction, index: number) => renderFormAction(action, index)).filter(code => code !== '').join('\n');
+
+  return `      <form key={${key}} id="${id}" className="space-y-4"${tokenStyle}>
+${fieldsCode}
+        <div className="flex space-x-4">
+${actionsCode}
+        </div>
+      </form>`;
+}
