@@ -330,7 +330,8 @@ async function runBrowserCapture(params: {
       }
     }
 
-    const execution = await runProcess(params.browserPath, args);
+    const maxExecutionMs = Math.max(15000, params.waitMs + 10000);
+    const execution = await runProcess(params.browserPath, args, maxExecutionMs);
     if (execution.code === 0) {
       return execution;
     }
@@ -340,11 +341,25 @@ async function runBrowserCapture(params: {
   return lastResult ?? { code: 1, stdout: '', stderr: 'unknown browser execution error' };
 }
 
-function runProcess(command: string, args: string[]): Promise<CaptureExecutionResult> {
+function runProcess(command: string, args: string[], timeoutMs: number): Promise<CaptureExecutionResult> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';
     let stderr = '';
+    let settled = false;
+
+    const timeoutHandle = setTimeout(() => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      child.kill('SIGKILL');
+      resolve({
+        code: 1,
+        stdout,
+        stderr: `${stderr}capture failed: browser process timed out after ${timeoutMs}ms`.trim()
+      });
+    }, timeoutMs);
 
     child.stdout.on('data', chunk => {
       stdout += chunk.toString();
@@ -353,9 +368,19 @@ function runProcess(command: string, args: string[]): Promise<CaptureExecutionRe
       stderr += chunk.toString();
     });
     child.on('error', error => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timeoutHandle);
       reject(error);
     });
     child.on('close', code => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timeoutHandle);
       resolve({
         code: code ?? 1,
         stdout,

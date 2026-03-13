@@ -552,7 +552,7 @@ theme:
       '--output',
       captureOutFile,
       '--browser',
-      'google-chrome',
+      captureMockBrowser,
       '--wait-ms',
       '0',
       '--json'
@@ -604,7 +604,7 @@ theme:
       '--output',
       themedOut,
       '--browser',
-      'google-chrome',
+      captureMockBrowser,
       '--wait-ms',
       '0',
       '--json'
