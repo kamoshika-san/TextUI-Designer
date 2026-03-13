@@ -32,6 +32,14 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
+    - name: TypeScript strict checks (warning mode)
+      if: vars.TS_STRICT_FAIL_MODE == 'false'
+      run: npm run typecheck:strict:warn
+
+    - name: TypeScript strict checks (fail mode)
+      if: vars.TS_STRICT_FAIL_MODE != 'false'
+      run: npm run typecheck:strict
+
     - name: Pretest checks (compile + lint)
       run: npm run pretest:ci
 

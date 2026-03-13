@@ -110,7 +110,7 @@ export class TemplateService {
   /**
    * テンプレートファイルを作成
    */
-  private async createTemplateFile(uri: vscode.Uri, content: string): Promise<void> {
+  private async createTemplateFile(_uri: vscode.Uri, content: string): Promise<void> {
     const document = await vscode.workspace.openTextDocument({
       content,
       language: 'yaml'
@@ -123,8 +123,8 @@ export class TemplateService {
   /**
    * テンプレート内容を読み込み
    */
-  private async loadTemplateContent(uri: vscode.Uri): Promise<string> {
-    const document = await vscode.workspace.openTextDocument(uri);
+  private async loadTemplateContent(_uri: vscode.Uri): Promise<string> {
+    const document = await vscode.workspace.openTextDocument(_uri);
     return document.getText();
   }
 

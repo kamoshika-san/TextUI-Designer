@@ -393,7 +393,7 @@ export class SchemaManager implements ISchemaManager {
       
       // 指定されたパターンに一致するスキーマを削除
       const filteredSchemas = Object.fromEntries(
-        Object.entries(currentSchemas).filter(([uri, patterns]) => 
+        Object.entries(currentSchemas).filter(([_uri, patterns]) => 
           !patterns.includes(filePattern)
         )
       );

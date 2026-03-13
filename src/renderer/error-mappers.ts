@@ -10,7 +10,7 @@ export function mapSimpleError(payload: Record<string, unknown>): ErrorInfo {
   };
 }
 
-export function mapSchemaValidationError(payload: Record<string, unknown>, schemaErrors: string): ErrorInfo {
+export function mapSchemaValidationError(_payload: Record<string, unknown>, schemaErrors: string): ErrorInfo {
   return {
     type: 'simple',
     message: `スキーマバリデーションエラー:\n${schemaErrors}`

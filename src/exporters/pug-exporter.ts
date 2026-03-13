@@ -14,7 +14,7 @@ export class PugExporter extends BaseComponentRenderer {
     super('pug');
   }
 
-  async export(dsl: TextUIDSL, options: ExportOptions): Promise<string> {
+  async export(dsl: TextUIDSL, _options: ExportOptions): Promise<string> {
     const componentCode = this.renderPageComponents(dsl);
     
     return `doctype html
@@ -34,7 +34,7 @@ ${componentCode}`;
     return '.pug';
   }
 
-  protected renderText(props: TextComponent, key: number): string {
+  protected renderText(props: TextComponent, _key: number): string {
     const { value, size = 'base', weight = 'normal', color = 'text-gray-900', token } = props;
     const styleManager = this.getStyleManager();
     const sizeClasses = styleManager.getSizeClasses(this.format);
@@ -44,7 +44,7 @@ ${componentCode}`;
     return `      p(class="${sizeClasses[size as keyof typeof sizeClasses]} ${weightClasses[weight as keyof typeof weightClasses]} ${color}"${tokenStyle}) ${value}`;
   }
 
-  protected renderInput(props: InputComponent, key: number): string {
+  protected renderInput(props: InputComponent, _key: number): string {
     const { label, placeholder, type = 'text', required = false, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
     const tokenStyle = this.getPugTokenStyleSuffix('Input', token);
@@ -61,7 +61,7 @@ ${componentCode}`;
     );
   }
 
-  protected renderButton(props: ButtonComponent, key: number): string {
+  protected renderButton(props: ButtonComponent, _key: number): string {
     const { label, kind = 'primary', size = 'md', disabled = false, token } = props;
     const styleManager = this.getStyleManager();
     const variantClasses = styleManager.getKindClasses(this.format);
@@ -77,7 +77,7 @@ ${componentCode}`;
     return `      button(class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${variantClasses[kind as keyof typeof variantClasses]} ${sizeClasses[size as keyof typeof sizeClasses]} ${disabledClass} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" ${disabledAttr}${tokenStyle}) ${label}`;
   }
 
-  protected renderCheckbox(props: CheckboxComponent, key: number): string {
+  protected renderCheckbox(props: CheckboxComponent, _key: number): string {
     const { label, checked = false, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
     const tokenStyle = this.getPugTokenStyleSuffix('Checkbox', token);
@@ -94,7 +94,7 @@ ${componentCode}`;
   }
 
 
-  protected renderRadio(props: RadioComponent, key: number): string {
+  protected renderRadio(props: RadioComponent, _key: number): string {
     const { label, value, name, checked = false, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
     const tokenStyle = this.getPugTokenStyleSuffix('Radio', token);
@@ -111,7 +111,7 @@ ${componentCode}`;
   }
 
 
-  protected renderSelect(props: SelectComponent, key: number): string {
+  protected renderSelect(props: SelectComponent, _key: number): string {
     const { label, options = [], placeholder, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
     const tokenStyle = this.getPugTokenStyleSuffix('Select', token);
@@ -138,7 +138,7 @@ ${componentCode}`;
     );
   }
 
-  protected renderDatePicker(props: DatePickerComponent, key: number): string {
+  protected renderDatePicker(props: DatePickerComponent, _key: number): string {
     const { label, name = 'date', required = false, disabled = false, min, max, value, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
     const tokenStyle = this.getPugTokenStyleSuffix('DatePicker', token);
@@ -155,7 +155,7 @@ ${componentCode}`;
     );
   }
 
-  protected renderDivider(props: DividerComponent, key: number): string {
+  protected renderDivider(props: DividerComponent, _key: number): string {
     const { orientation = 'horizontal', spacing = 'md', token } = props;
     const styleManager = this.getStyleManager();
     const spacingClasses = styleManager.getSpacingClasses(this.format);
@@ -169,13 +169,13 @@ ${componentCode}`;
     return `      hr(class="border-gray-300 ${spacingClasses[spacing as keyof typeof spacingClasses]}"${tokenStyle})`;
   }
 
-  protected renderSpacer(props: SpacerComponent, key: number): string {
+  protected renderSpacer(props: SpacerComponent, _key: number): string {
     const { width: resolvedWidth, height: resolvedHeight } = this.resolveSpacerDimensions(props);
 
     return `      .textui-spacer(style="width: ${resolvedWidth}; height: ${resolvedHeight}; flex-shrink: 0;" aria-hidden="true")`;
   }
 
-  protected renderAlert(props: AlertComponent, key: number): string {
+  protected renderAlert(props: AlertComponent, _key: number): string {
     const { message, variant = 'info', title, token } = props;
     const styleManager = this.getStyleManager();
     const variantClasses = styleManager.getAlertVariantClasses(this.format);
@@ -191,7 +191,7 @@ ${componentCode}`;
   }
 
 
-  protected renderAccordion(props: AccordionComponent, key: number): string {
+  protected renderAccordion(props: AccordionComponent, _key: number): string {
     const { allowMultiple = false, items = [], token } = props;
     const tokenStyle = this.getPugTokenStyleSuffix('Accordion', token);
 
@@ -225,7 +225,7 @@ ${indentedCode}`;
 
 
 
-  protected renderTabs(props: TabsComponent, key: number): string {
+  protected renderTabs(props: TabsComponent, _key: number): string {
     const { defaultTab = 0, items = [], token } = props;
     const activeIndex = this.resolveActiveTabIndex(defaultTab, items.length);
     const tokenStyleModifier = this.getPugTokenStyleModifier('Tabs', token);
@@ -249,7 +249,7 @@ ${indentedCode}`;
     return code;
   }
 
-  protected renderTreeView(props: TreeViewComponent, key: number): string {
+  protected renderTreeView(props: TreeViewComponent, _key: number): string {
     const { items = [], showLines = true, expandAll = false, token } = props;
     const tokenStyleModifier = this.getPugTokenStyleModifier('TreeView', token);
     const listClass = showLines ? 'with-lines' : 'without-lines';
@@ -277,7 +277,7 @@ ${nodeIndent}    span.textui-treeview-label ${label}`;
         const shouldOpen = expandAll || node.expanded;
         const componentCode = components
           .map((component: ComponentDef, componentIndex: number) =>
-            this.renderComponent(component, key * 100000 + depth * 1000 + index * 100 + componentIndex)
+            this.renderComponent(component, _key * 100000 + depth * 1000 + index * 100 + componentIndex)
           )
           .map(code => code.split('\n').map(line => `${nodeIndent}      ${line}`).join('\n'))
           .join('\n');
@@ -301,12 +301,12 @@ ${bodyCode}`;
 ${nodeCode}`;
     };
 
-    const treeCode = renderNodeList(items, `tree-${key}`, 0, '        ');
+    const treeCode = renderNodeList(items, `tree-${_key}`, 0, '        ');
     return `      .textui-treeview${tokenStyleModifier}
 ${treeCode}`;
   }
 
-  protected renderTable(props: TableComponent, key: number): string {
+  protected renderTable(props: TableComponent, _key: number): string {
     const { columns = [], rows = [], striped = false, token } = props;
     const tokenStyleModifier = this.getPugTokenStyleModifier('Table', token);
 
@@ -337,7 +337,7 @@ ${treeCode}`;
     return code;
   }
 
-  protected renderContainer(props: ContainerComponent, key: number): string {
+  protected renderContainer(props: ContainerComponent, _key: number): string {
     const { layout = 'vertical', components = [], token } = props;
     const layoutClasses = {
       'vertical': 'flex flex-col space-y-4',
@@ -356,7 +356,7 @@ ${treeCode}`;
     return code;
   }
 
-  protected renderForm(props: FormComponent, key: number): string {
+  protected renderForm(props: FormComponent, _key: number): string {
     const { id, fields = [], actions = [], token } = props;
     const tokenStyle = this.getPugTokenStyleSuffix('Form', token);
     
