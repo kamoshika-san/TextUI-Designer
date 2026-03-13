@@ -23,6 +23,7 @@ import type {
 import type { ExportOptions, Exporter } from './index';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';
 import { getComponentName, BUILT_IN_COMPONENTS, type BuiltInComponentName } from '../registry/component-registry';
+import { AttributeSerializer, type ExporterAstNode, renderExporterAst } from './exporter-ast';
 
 export type ComponentHandler = (props: unknown, key: number) => string;
 
@@ -33,6 +34,7 @@ export type ComponentHandler = (props: unknown, key: number) => string;
 export abstract class BaseComponentRenderer implements Exporter {
   protected format: ExportFormat;
   private componentHandlers: Map<string, ComponentHandler> = new Map();
+  private readonly attributeSerializer: AttributeSerializer;
   private static readonly SPACER_SIZE_MAP: Record<'xs' | 'sm' | 'md' | 'lg' | 'xl', string> = {
     xs: '0.25rem',
     sm: '0.5rem',
@@ -61,6 +63,7 @@ export abstract class BaseComponentRenderer implements Exporter {
 
   constructor(format: ExportFormat) {
     this.format = format;
+    this.attributeSerializer = new AttributeSerializer(value => this.escapeAttribute(value));
     this.initializeHandlers();
   }
 
@@ -216,6 +219,10 @@ export abstract class BaseComponentRenderer implements Exporter {
     }).join('\n');
   }
 
+  protected renderAst(node: ExporterAstNode, indentUnit: string = '  ', baseDepth: number = 0): string {
+    return renderExporterAst(node, indentUnit, baseDepth);
+  }
+
   protected resolveSpacerDimensions(props: SpacerComponent): { width: string; height: string } {
     const { axis = 'vertical', size = 'md', width, height, token } = props;
     const fallbackSize = token || BaseComponentRenderer.SPACER_SIZE_MAP[size];
@@ -352,28 +359,9 @@ ${rowEnd}`;
     return code;
   }
 
-  protected buildBooleanAttr(name: string, enabled: boolean): string {
-    return enabled ? ` ${name}` : '';
-  }
-
-  protected buildValueAttr(name: string, value: string | undefined): string {
-    if (!value) {
-      return '';
-    }
-
-    return ` ${name}="${this.escapeAttribute(value)}"`;
-  }
 
   protected buildAttrs(attrs: Record<string, string | boolean | undefined>): string {
-    return Object.entries(attrs)
-      .map(([name, value]) => {
-        if (typeof value === 'boolean') {
-          return this.buildBooleanAttr(name, value);
-        }
-
-        return this.buildValueAttr(name, value);
-      })
-      .join('');
+    return this.attributeSerializer.serialize(attrs);
   }
 
 }
