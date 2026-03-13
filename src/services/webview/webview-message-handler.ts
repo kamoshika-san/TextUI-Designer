@@ -1,12 +1,20 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import * as vscode from 'vscode';
 import { WebViewLifecycleManager } from './webview-lifecycle-manager';
 import { WebViewUpdateManager } from './webview-update-manager';
-import { isWebViewMessage, type IThemeManager } from '../../types';
+import { isWebViewMessage, type IThemeManager, type WebViewMessage } from '../../types';
 import { ConfigManager } from '../../utils/config-manager';
 import { ThemeDiscoveryService } from './theme-discovery-service';
+import { ThemeSwitchService } from './theme-switch-service';
+import { VsCodeWindowAdapter } from './vscode-window-adapter';
 import { YamlPointerResolver } from './yaml-pointer-resolver';
+
+type MessageType = 'export' | 'jump-to-dsl' | 'webview-ready' | 'theme-switch' | 'get-themes';
+type MessageHandler = (message: WebViewMessage) => Promise<void>;
+
+interface WebViewMessageHandlerDependencies {
+  themeSwitchService?: ThemeSwitchService;
+  windowAdapter?: VsCodeWindowAdapter;
+}
 
 /**
  * WebViewとのメッセージ通信を担当
@@ -19,12 +27,16 @@ export class WebViewMessageHandler {
   private context: vscode.ExtensionContext;
   private readonly themeDiscoveryService: ThemeDiscoveryService;
   private readonly yamlPointerResolver: YamlPointerResolver;
+  private readonly themeSwitchService: ThemeSwitchService;
+  private readonly windowAdapter: VsCodeWindowAdapter;
+  private readonly messageHandlers: Record<MessageType, MessageHandler>;
 
   constructor(
     context: vscode.ExtensionContext,
     lifecycleManager: WebViewLifecycleManager,
     updateManager: WebViewUpdateManager,
-    themeManager?: IThemeManager
+    themeManager?: IThemeManager,
+    dependencies: WebViewMessageHandlerDependencies = {}
   ) {
     this.context = context;
     this.lifecycleManager = lifecycleManager;
@@ -32,6 +44,15 @@ export class WebViewMessageHandler {
     this.themeManager = themeManager;
     this.themeDiscoveryService = new ThemeDiscoveryService(() => this.updateManager.getLastTuiFile());
     this.yamlPointerResolver = new YamlPointerResolver();
+    this.themeSwitchService = dependencies.themeSwitchService ?? new ThemeSwitchService();
+    this.windowAdapter = dependencies.windowAdapter ?? new VsCodeWindowAdapter();
+    this.messageHandlers = {
+      'export': async () => this.handleExportMessage(),
+      'jump-to-dsl': async (message) => this.handleJumpToDslMessage(message),
+      'webview-ready': async () => this.handleWebViewReady(),
+      'theme-switch': async (message) => this.handleThemeSwitchMessage(message),
+      'get-themes': async () => this.handleGetThemes()
+    };
   }
 
   /**
@@ -61,29 +82,12 @@ export class WebViewMessageHandler {
       return;
     }
 
-    switch (message.type) {
-      case 'export':
-        await this.handleExportMessage();
-        break;
-      case 'jump-to-dsl':
-        await this.handleJumpToDslMessage(message as Record<string, unknown>);
-        break;
-      case 'webview-ready':
-        await this.handleWebViewReady();
-        break;
-      case 'theme-switch':
-        if (typeof message.themePath === 'string') {
-          await this.handleThemeSwitch(message.themePath);
-        } else {
-          console.warn('[WebViewMessageHandler] theme-switch の themePath が無効です');
-        }
-        break;
-      case 'get-themes':
-        await this.handleGetThemes();
-        break;
-      default:
-        console.warn('[WebViewMessageHandler] 未知のメッセージタイプ:', message.type);
+    if (!this.isMessageType(message.type)) {
+      console.warn('[WebViewMessageHandler] 未知のメッセージタイプ:', message.type);
+      return;
     }
+
+    await this.messageHandlers[message.type](message);
   }
 
   private async handleJumpToDslMessage(message: Record<string, unknown>): Promise<void> {
@@ -97,7 +101,7 @@ export class WebViewMessageHandler {
 
     const targetFile = this.resolveActiveTuiPath();
     if (!targetFile) {
-      vscode.window.showWarningMessage('ジャンプ先のDSLファイルが見つかりません。*.tui.yml を開いてください。');
+      this.windowAdapter.showWarningMessage('ジャンプ先のDSLファイルが見つかりません。*.tui.yml を開いてください。');
       return;
     }
 
@@ -107,7 +111,7 @@ export class WebViewMessageHandler {
       const position = this.yamlPointerResolver.resolvePosition(document, dslPath);
 
       if (!position) {
-        vscode.window.showWarningMessage(`DSLパスを解決できませんでした: ${dslPath}`);
+        this.windowAdapter.showWarningMessage(`DSLパスを解決できませんでした: ${dslPath}`);
         return;
       }
 
@@ -115,8 +119,12 @@ export class WebViewMessageHandler {
       console.log(`[WebViewMessageHandler] ${componentName} を DSL にジャンプ: ${dslPath}`);
     } catch (error) {
       console.error('[WebViewMessageHandler] jump-to-dsl エラー:', error);
-      vscode.window.showErrorMessage(`DSLジャンプに失敗しました: ${error}`);
+      this.windowAdapter.showErrorMessage(`DSLジャンプに失敗しました: ${error}`);
     }
+  }
+
+  private isMessageType(type: string): type is MessageType {
+    return type in this.messageHandlers;
   }
 
   /**
@@ -125,13 +133,13 @@ export class WebViewMessageHandler {
   private async handleExportMessage(): Promise<void> {
     console.log('[WebViewMessageHandler] エクスポートメッセージを受信');
     const lastTuiFile = this.updateManager.getLastTuiFile();
-    
+
     if (lastTuiFile) {
       console.log(`[WebViewMessageHandler] エクスポート用ファイル: ${lastTuiFile}`);
       await vscode.commands.executeCommand('textui-designer.export', lastTuiFile);
     } else {
       console.log('[WebViewMessageHandler] エクスポート用ファイルが見つかりません');
-      vscode.window.showWarningMessage('エクスポートするファイルが見つかりません。先に.tui.ymlファイルを開いてください。');
+      this.windowAdapter.showWarningMessage('エクスポートするファイルが見つかりません。先に.tui.ymlファイルを開いてください。');
     }
   }
 
@@ -141,25 +149,28 @@ export class WebViewMessageHandler {
   private async handleWebViewReady(): Promise<void> {
     console.log('[WebViewMessageHandler] WebView準備完了メッセージを受信');
 
-    // 現在のVS Codeテーマをプレビューに送信（自動モードで正しくダーク/ライトを表示するため）
     const colorThemeKind = vscode.window.activeColorTheme?.kind;
     const lightThemeKind = vscode.ColorThemeKind?.Light;
     const initialTheme = colorThemeKind === lightThemeKind ? 'light' : 'dark';
     this.notifyThemeChange(initialTheme);
 
-    // プレビューを開いた直後は必ずYAMLを送信（自動プレビュー設定に依存しない）
     await this.updateManager.sendYamlToWebview(true);
-    
-    // テーマ変数を適用
+
     if (this.themeManager) {
       this.applyThemeVariables(this.themeManager.generateCSSVariables());
     }
-    
-    // 利用可能なテーマ一覧を送信
+
     await this.sendAvailableThemes();
-    
-    // フォーカスを戻す
     await this.returnFocusToEditor();
+  }
+
+  private async handleThemeSwitchMessage(message: WebViewMessage): Promise<void> {
+    if (typeof message.themePath !== 'string') {
+      console.warn('[WebViewMessageHandler] theme-switch の themePath が無効です');
+      return;
+    }
+
+    await this.handleThemeSwitch(message.themePath);
   }
 
   /**
@@ -178,39 +189,30 @@ export class WebViewMessageHandler {
     await this.sendAvailableThemes();
   }
 
-  /**
-   * テーマ用CSS変数をWebViewへ送信
-   */
   applyThemeVariables(css: string): void {
     const panel = this.lifecycleManager.getPanel();
     if (!panel) {
       return;
     }
-    
+
     panel.webview.postMessage({
       type: 'theme-variables',
       css
     });
   }
 
-  /**
-   * WebViewにテーマ変更を通知
-   */
   notifyThemeChange(theme: 'light' | 'dark'): void {
     const panel = this.lifecycleManager.getPanel();
     if (!panel) {
       return;
     }
-    
+
     panel.webview.postMessage({
       type: 'theme-change',
       theme: theme
     });
   }
 
-  /**
-   * 利用可能なテーマファイル一覧を検出して送信
-   */
   async sendAvailableThemes(): Promise<void> {
     const panel = this.lifecycleManager.getPanel();
     if (!panel || !panel.webview) {
@@ -219,8 +221,6 @@ export class WebViewMessageHandler {
 
     try {
       const themes = await this.themeDiscoveryService.detectAvailableThemes(this.themeManager);
-      
-      // WebViewに送信
       panel.webview.postMessage({
         type: 'available-themes',
         themes: themes
@@ -254,68 +254,25 @@ export class WebViewMessageHandler {
     }
 
     try {
-      if (!themePath) {
-        // デフォルトテーマに切り替え
-        console.log('[WebViewMessageHandler] デフォルトテーマに切り替え');
-        
-        // ThemeManagerの状態をクリア
-        this.themeManager.setThemePath(undefined);
-        
-        // デフォルトスタイルを適用（空文字でリセット）
-        this.applyThemeVariables('');
-        
-        // テーマ一覧を更新
-        await this.sendAvailableThemes();
-        
-        // プレビュー内容を更新（キャッシュを活用）
-        await this.updateManager.sendYamlToWebview(false);
-        
-        vscode.window.showInformationMessage('デフォルトテーマに切り替えました');
-        return;
-      }
+      const result = await this.themeSwitchService.switchTheme({
+        themeManager: this.themeManager,
+        themePath,
+        workspaceFolders: vscode.workspace.workspaceFolders
+      });
 
-      const workspaceFolders = vscode.workspace.workspaceFolders;
-      if (!workspaceFolders) {
-        console.log('[WebViewMessageHandler] ワークスペースフォルダが見つかりません');
-        return;
-      }
-
-      // 相対パスから絶対パスを構築
-      let fullThemePath = '';
-      for (const folder of workspaceFolders) {
-        const candidatePath = path.join(folder.uri.fsPath, themePath);
-        if (fs.existsSync(candidatePath)) {
-          fullThemePath = candidatePath;
-          break;
-        }
-      }
-
-      if (!fullThemePath) {
-        console.log('[WebViewMessageHandler] テーマファイルが見つかりません:', themePath);
-        vscode.window.showErrorMessage(`テーマファイルが見つかりません: ${themePath}`);
-        return;
-      }
-
-      console.log('[WebViewMessageHandler] テーマを切り替え:', fullThemePath);
-      
-      // ThemeManagerのテーマパスを更新して読み込み
-      this.themeManager.setThemePath(fullThemePath);
-      await this.themeManager.loadTheme();
-      const cssVariables = this.themeManager.generateCSSVariables();
-      
-      // WebViewにCSS変数を適用
-      this.applyThemeVariables(cssVariables);
-      
-      // テーマ一覧を更新（アクティブ状態を反映）
+      this.applyThemeVariables(result.cssVariables);
       await this.sendAvailableThemes();
-      
-      // プレビュー内容を更新（キャッシュを活用）
       await this.updateManager.sendYamlToWebview(false);
-      
-      vscode.window.showInformationMessage(`テーマを切り替えました: ${path.basename(themePath)}`);
+
+      if (result.notice.kind === 'info') {
+        this.windowAdapter.showInformationMessage(result.notice.message);
+        return;
+      }
+
+      this.windowAdapter.showErrorMessage(result.notice.message);
     } catch (error) {
       console.error('[WebViewMessageHandler] テーマ切り替えエラー:', error);
-      vscode.window.showErrorMessage(`テーマ切り替えに失敗しました: ${error}`);
+      this.windowAdapter.showErrorMessage(`テーマ切り替えに失敗しました: ${error}`);
     }
   }
 
@@ -346,7 +303,7 @@ export class WebViewMessageHandler {
     const shouldReturnFocus = Boolean(
       activeEditor && ConfigManager.isSupportedFile(activeEditor.document.fileName)
     );
-    
+
     if (shouldReturnFocus && activeEditor) {
       setTimeout(async () => {
         try {
