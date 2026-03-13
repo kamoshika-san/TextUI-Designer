@@ -65,7 +65,187 @@ export interface GenerateUiResponse {
   exportedCode?: string;
 }
 
+type ComponentItemsBlueprint = TreeViewBlueprintItem[] | Array<Record<string, unknown> & { components?: ComponentBlueprint[] }>;
+interface ComponentSpecContext {
+  buildComponent: (component: ComponentBlueprint) => ComponentDef;
+  buildComponentItems: (items: ComponentItemsBlueprint) => Array<Record<string, unknown>>;
+  buildTreeViewItems: (items: TreeViewBlueprintItem[]) => Array<Record<string, unknown>>;
+  toFieldName: (label: string) => string;
+}
+
+type ComponentSpecHandler = (props: Record<string, unknown>, component: ComponentBlueprint, context: ComponentSpecContext) => void;
+
+interface ComponentSpec {
+  applyDefaults?: ComponentSpecHandler;
+  resolveChildren?: ComponentSpecHandler;
+}
+
 const SUPPORTED_COMPONENTS = new Set(getTextUiComponentCatalog().map(item => item.name));
+
+const COMPONENT_SPECS = {
+  Container: {
+    resolveChildren: (props, component, context) => {
+      if (component.components) {
+        props.components = component.components.map(child => context.buildComponent(child));
+      }
+    }
+  },
+  Form: {
+    resolveChildren: (props, component, context) => {
+      if (component.fields) {
+        props.fields = component.fields.map(field => context.buildComponent(field));
+      } else if (!Array.isArray(props.fields)) {
+        props.fields = [];
+      }
+
+      if (component.actions) {
+        props.actions = component.actions.map(action => context.buildComponent(action));
+      }
+    }
+  },
+  Tabs: {
+    applyDefaults: props => {
+      if (!Array.isArray(props.items) || props.items.length === 0) {
+        props.items = [{ label: 'タブ1', components: [] }];
+      }
+    },
+    resolveChildren: (props, component, context) => {
+      if (component.items) {
+        props.items = context.buildComponentItems(component.items);
+      }
+    }
+  },
+  Accordion: {
+    applyDefaults: props => {
+      if (!Array.isArray(props.items) || props.items.length === 0) {
+        props.items = [{ title: 'セクション', content: '内容' }];
+      }
+    },
+    resolveChildren: (props, component, context) => {
+      if (component.items) {
+        props.items = context.buildComponentItems(component.items);
+      }
+    }
+  },
+  TreeView: {
+    applyDefaults: props => {
+      if (!Array.isArray(props.items) || props.items.length === 0) {
+        props.items = [{ label: 'ルート', expanded: true, children: [{ label: '子ノード' }] }];
+      }
+    },
+    resolveChildren: (props, component, context) => {
+      if (component.items) {
+        props.items = context.buildTreeViewItems(component.items as TreeViewBlueprintItem[]);
+      }
+    }
+  },
+  Text: {
+    applyDefaults: props => {
+      if (typeof props.value !== 'string' || !props.value.trim()) {
+        props.value = 'テキスト';
+      }
+    }
+  },
+  Input: {
+    applyDefaults: (props, _component, context) => {
+      if (typeof props.label !== 'string' || !props.label.trim()) {
+        props.label = '入力';
+      }
+      if (typeof props.name !== 'string' || !props.name.trim()) {
+        props.name = context.toFieldName(String(props.label));
+      }
+      if (typeof props.type !== 'string' || !props.type.trim()) {
+        props.type = 'text';
+      }
+    }
+  },
+  Button: {
+    applyDefaults: props => {
+      if (typeof props.label !== 'string' || !props.label.trim()) {
+        props.label = '実行';
+      }
+    }
+  },
+  Checkbox: {
+    applyDefaults: (props, _component, context) => {
+      if (typeof props.label !== 'string' || !props.label.trim()) {
+        props.label = '同意する';
+      }
+      if (typeof props.name !== 'string' || !props.name.trim()) {
+        props.name = context.toFieldName(String(props.label));
+      }
+    }
+  },
+  Radio: {
+    applyDefaults: props => {
+      if (typeof props.name !== 'string' || !props.name.trim()) {
+        props.name = 'radio';
+      }
+      if (!Array.isArray(props.options) || props.options.length === 0) {
+        props.options = [{ label: '選択肢1', value: 'option1' }];
+      }
+    }
+  },
+  Select: {
+    applyDefaults: props => {
+      if (typeof props.name !== 'string' || !props.name.trim()) {
+        props.name = 'select';
+      }
+      if (!Array.isArray(props.options) || props.options.length === 0) {
+        props.options = [{ label: '選択肢1', value: 'option1' }];
+      }
+    }
+  },
+  DatePicker: {
+    applyDefaults: props => {
+      if (typeof props.label !== 'string' || !props.label.trim()) {
+        props.label = '日付';
+      }
+      if (typeof props.name !== 'string' || !props.name.trim()) {
+        props.name = 'date';
+      }
+    }
+  },
+  Alert: {
+    applyDefaults: props => {
+      if (typeof props.message !== 'string' || !props.message.trim()) {
+        props.message = '通知メッセージ';
+      }
+    }
+  },
+  Table: {
+    applyDefaults: props => {
+      if (!Array.isArray(props.columns) || props.columns.length === 0) {
+        props.columns = [{ key: 'name', header: '名称' }];
+      }
+      if (!Array.isArray(props.rows) || props.rows.length === 0) {
+        props.rows = [{ name: 'サンプル' }];
+      }
+    }
+  }
+} satisfies Partial<Record<string, ComponentSpec>>;
+
+type ComponentSpecType = keyof typeof COMPONENT_SPECS;
+
+export function getComponentSpecTypesForTesting(): string[] {
+  return Object.keys(COMPONENT_SPECS);
+}
+
+export function getComponentSpecHandlerFlagsForTesting(): Record<string, { applyDefaults: boolean; resolveChildren: boolean }> {
+  return Object.fromEntries(
+    Object.entries(COMPONENT_SPECS).map(([type, spec]) => {
+      const normalized = spec as ComponentSpec;
+      return [type, {
+        applyDefaults: typeof normalized.applyDefaults === 'function',
+        resolveChildren: typeof normalized.resolveChildren === 'function'
+      }];
+    })
+  );
+}
+
+function isComponentSpecType(value: string): value is ComponentSpecType {
+  return value in COMPONENT_SPECS;
+}
 
 export class TextUICoreEngine {
   async generateUi(request: GenerateUiRequest): Promise<GenerateUiResponse> {
@@ -213,45 +393,18 @@ export class TextUICoreEngine {
     const props: Record<string, unknown> = {
       ...(component.props ?? {})
     };
-    this.applyRequiredDefaults(component.type, props);
-
-    if (component.type === 'Container' && component.components) {
-      props.components = component.components.map(child => this.buildComponent(child));
+    const spec = this.getComponentSpec(component.type);
+    const context: ComponentSpecContext = {
+      buildComponent: child => this.buildComponent(child),
+      buildComponentItems: items => this.buildComponentItems(items),
+      buildTreeViewItems: items => this.buildTreeViewItems(items),
+      toFieldName: label => this.toFieldName(label)
+    };
+    if (spec?.applyDefaults) {
+      spec.applyDefaults(props, component, context);
     }
-
-    if (component.type === 'Form') {
-      if (component.fields) {
-        props.fields = component.fields.map(field => this.buildComponent(field));
-      } else if (!Array.isArray(props.fields)) {
-        props.fields = [];
-      }
-      if (component.actions) {
-        props.actions = component.actions.map(action => this.buildComponent(action));
-      }
-    }
-
-    if (component.type === 'Tabs' && component.items) {
-      props.items = component.items.map(item => {
-        const next: Record<string, unknown> = { ...item };
-        if (item.components) {
-          next.components = item.components.map(child => this.buildComponent(child));
-        }
-        return next;
-      });
-    }
-
-    if (component.type === 'Accordion' && component.items) {
-      props.items = component.items.map(item => {
-        const next: Record<string, unknown> = { ...item };
-        if (item.components) {
-          next.components = item.components.map(child => this.buildComponent(child));
-        }
-        return next;
-      });
-    }
-
-    if (component.type === 'TreeView' && component.items) {
-      props.items = this.buildTreeViewItems(component.items as TreeViewBlueprintItem[]);
+    if (spec?.resolveChildren) {
+      spec.resolveChildren(props, component, context);
     }
 
     return {
@@ -333,110 +486,23 @@ export class TextUICoreEngine {
     return normalized || 'generated-page';
   }
 
-  private applyRequiredDefaults(componentType: string, props: Record<string, unknown>): void {
-    if (componentType === 'Text') {
-      if (typeof props.value !== 'string' || !props.value.trim()) {
-        props.value = 'テキスト';
-      }
-      return;
+  private getComponentSpec(componentType: string): ComponentSpec | undefined {
+    if (!isComponentSpecType(componentType)) {
+      return undefined;
     }
+    return COMPONENT_SPECS[componentType];
+  }
 
-    if (componentType === 'Input') {
-      if (typeof props.label !== 'string' || !props.label.trim()) {
-        props.label = '入力';
+  private buildComponentItems(
+    items: ComponentItemsBlueprint
+  ): Array<Record<string, unknown>> {
+    return items.map(item => {
+      const next: Record<string, unknown> = { ...item };
+      if (item.components) {
+        next.components = item.components.map(child => this.buildComponent(child));
       }
-      if (typeof props.name !== 'string' || !props.name.trim()) {
-        props.name = this.toFieldName(String(props.label));
-      }
-      if (typeof props.type !== 'string' || !props.type.trim()) {
-        props.type = 'text';
-      }
-      return;
-    }
-
-    if (componentType === 'Button') {
-      if (typeof props.label !== 'string' || !props.label.trim()) {
-        props.label = '実行';
-      }
-      return;
-    }
-
-    if (componentType === 'Checkbox') {
-      if (typeof props.label !== 'string' || !props.label.trim()) {
-        props.label = '同意する';
-      }
-      if (typeof props.name !== 'string' || !props.name.trim()) {
-        props.name = this.toFieldName(String(props.label));
-      }
-      return;
-    }
-
-    if (componentType === 'Radio') {
-      if (typeof props.name !== 'string' || !props.name.trim()) {
-        props.name = 'radio';
-      }
-      if (!Array.isArray(props.options) || props.options.length === 0) {
-        props.options = [{ label: '選択肢1', value: 'option1' }];
-      }
-      return;
-    }
-
-    if (componentType === 'Select') {
-      if (typeof props.name !== 'string' || !props.name.trim()) {
-        props.name = 'select';
-      }
-      if (!Array.isArray(props.options) || props.options.length === 0) {
-        props.options = [{ label: '選択肢1', value: 'option1' }];
-      }
-      return;
-    }
-
-    if (componentType === 'DatePicker') {
-      if (typeof props.label !== 'string' || !props.label.trim()) {
-        props.label = '日付';
-      }
-      if (typeof props.name !== 'string' || !props.name.trim()) {
-        props.name = 'date';
-      }
-      return;
-    }
-
-    if (componentType === 'Alert') {
-      if (typeof props.message !== 'string' || !props.message.trim()) {
-        props.message = '通知メッセージ';
-      }
-      return;
-    }
-
-    if (componentType === 'Accordion') {
-      if (!Array.isArray(props.items) || props.items.length === 0) {
-        props.items = [{ title: 'セクション', content: '内容' }];
-      }
-      return;
-    }
-
-    if (componentType === 'Tabs') {
-      if (!Array.isArray(props.items) || props.items.length === 0) {
-        props.items = [{ label: 'タブ1', components: [] }];
-      }
-      return;
-    }
-
-    if (componentType === 'TreeView') {
-      if (!Array.isArray(props.items) || props.items.length === 0) {
-        props.items = [{ label: 'ルート', expanded: true, children: [{ label: '子ノード' }] }];
-      }
-      return;
-    }
-
-    if (componentType === 'Table') {
-      if (!Array.isArray(props.columns) || props.columns.length === 0) {
-        props.columns = [{ key: 'name', header: '名称' }];
-      }
-      if (!Array.isArray(props.rows) || props.rows.length === 0) {
-        props.rows = [{ name: 'サンプル' }];
-      }
-    }
+      return next;
+    });
   }
 
   private toFieldName(label: string): string {

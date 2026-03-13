@@ -18,6 +18,17 @@ import {
 import { resolveSchemaPaths } from './schema/schema-path-resolver';
 import { validateSchemaConsistency } from './schema/schema-consistency-checker';
 
+type SchemaKind = 'main' | 'template' | 'theme';
+
+interface SchemaSlot {
+  getPath: () => string;
+  cache: SchemaDefinition | null;
+  lastLoad: number;
+  cacheHitLog: string;
+  cacheSetLog: string;
+  readErrorPrefix: string;
+}
+
 /**
  * スキーマ管理サービス
  * YAML/JSONスキーマの設定と管理を担当
@@ -27,59 +38,9 @@ export class SchemaManager implements ISchemaManager {
   private schemaPath: string;
   private templateSchemaPath: string;
   private themeSchemaPath: string;
-  private schemaCache: SchemaDefinition | null = null;
-  private templateSchemaCache: SchemaDefinition | null = null;
-  private themeSchemaCache: SchemaDefinition | null = null;
-  private lastSchemaLoad: number = 0;
-  private lastTemplateSchemaLoad: number = 0;
-  private lastThemeSchemaLoad: number = 0;
+  private readonly schemaSlots: Record<SchemaKind, SchemaSlot>;
   private readonly cacheTTL: number;
   private readonly verboseLogging: boolean;
-
-  private readonly schemaLoadConfigs = {
-    main: {
-      getPath: () => this.schemaPath,
-      getCache: () => this.schemaCache,
-      setCache: (schema: SchemaDefinition) => {
-        this.schemaCache = schema;
-      },
-      getLastLoad: () => this.lastSchemaLoad,
-      setLastLoad: (value: number) => {
-        this.lastSchemaLoad = value;
-      },
-      cacheHitLog: '[SchemaManager] キャッシュされたスキーマを使用',
-      cacheSetLog: '[SchemaManager] スキーマをキャッシュに保存',
-      readErrorPrefix: 'スキーマファイルの読み込みに失敗しました'
-    },
-    template: {
-      getPath: () => this.templateSchemaPath,
-      getCache: () => this.templateSchemaCache,
-      setCache: (schema: SchemaDefinition) => {
-        this.templateSchemaCache = schema;
-      },
-      getLastLoad: () => this.lastTemplateSchemaLoad,
-      setLastLoad: (value: number) => {
-        this.lastTemplateSchemaLoad = value;
-      },
-      cacheHitLog: '[SchemaManager] キャッシュされたテンプレートスキーマを使用',
-      cacheSetLog: '[SchemaManager] テンプレートスキーマをキャッシュに保存',
-      readErrorPrefix: 'テンプレートスキーマファイルの読み込みに失敗しました'
-    },
-    theme: {
-      getPath: () => this.themeSchemaPath,
-      getCache: () => this.themeSchemaCache,
-      setCache: (schema: SchemaDefinition) => {
-        this.themeSchemaCache = schema;
-      },
-      getLastLoad: () => this.lastThemeSchemaLoad,
-      setLastLoad: (value: number) => {
-        this.lastThemeSchemaLoad = value;
-      },
-      cacheHitLog: '[SchemaManager] キャッシュされたテーマスキーマを使用',
-      cacheSetLog: '[SchemaManager] テーマスキーマをキャッシュに保存',
-      readErrorPrefix: 'テーマスキーマファイルの読み込みに失敗しました'
-    }
-  } as const;
 
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
@@ -91,6 +52,32 @@ export class SchemaManager implements ISchemaManager {
     this.schemaPath = resolvedSchemaPaths.schemaPath;
     this.templateSchemaPath = resolvedSchemaPaths.templateSchemaPath;
     this.themeSchemaPath = resolvedSchemaPaths.themeSchemaPath;
+    this.schemaSlots = {
+      main: {
+        getPath: () => this.schemaPath,
+        cache: null,
+        lastLoad: 0,
+        cacheHitLog: '[SchemaManager] キャッシュされたスキーマを使用',
+        cacheSetLog: '[SchemaManager] スキーマをキャッシュに保存',
+        readErrorPrefix: 'スキーマファイルの読み込みに失敗しました'
+      },
+      template: {
+        getPath: () => this.templateSchemaPath,
+        cache: null,
+        lastLoad: 0,
+        cacheHitLog: '[SchemaManager] キャッシュされたテンプレートスキーマを使用',
+        cacheSetLog: '[SchemaManager] テンプレートスキーマをキャッシュに保存',
+        readErrorPrefix: 'テンプレートスキーマファイルの読み込みに失敗しました'
+      },
+      theme: {
+        getPath: () => this.themeSchemaPath,
+        cache: null,
+        lastLoad: 0,
+        cacheHitLog: '[SchemaManager] キャッシュされたテーマスキーマを使用',
+        cacheSetLog: '[SchemaManager] テーマスキーマをキャッシュに保存',
+        readErrorPrefix: 'テーマスキーマファイルの読み込みに失敗しました'
+      }
+    };
 
     if (!fs.existsSync(this.schemaPath)) {
       console.error('[SchemaManager] スキーマファイルが見つかりません。検索したパス:', resolvedSchemaPaths.searchedPaths);
@@ -247,25 +234,24 @@ export class SchemaManager implements ISchemaManager {
     return this.loadSchemaWithCache('theme');
   }
 
-  private loadSchemaWithCache(kind: keyof typeof this.schemaLoadConfigs): SchemaDefinition {
-    const config = this.schemaLoadConfigs[kind];
+  private loadSchemaWithCache(kind: SchemaKind): SchemaDefinition {
+    const slot = this.schemaSlots[kind];
     const now = Date.now();
 
-    const cached = config.getCache();
-    if (cached && (now - config.getLastLoad()) < this.cacheTTL) {
-      this.debug(config.cacheHitLog);
-      return cached;
+    if (slot.cache && (now - slot.lastLoad) < this.cacheTTL) {
+      this.debug(slot.cacheHitLog);
+      return slot.cache;
     }
 
     try {
-      const content = fs.readFileSync(config.getPath(), 'utf-8');
+      const content = fs.readFileSync(slot.getPath(), 'utf-8');
       const parsedSchema = JSON.parse(content) as SchemaDefinition;
-      config.setCache(parsedSchema);
-      config.setLastLoad(now);
-      this.debug(config.cacheSetLog);
+      slot.cache = parsedSchema;
+      slot.lastLoad = now;
+      this.debug(slot.cacheSetLog);
       return parsedSchema;
     } catch (error) {
-      throw new Error(`${config.readErrorPrefix}: ${error}`);
+      throw new Error(`${slot.readErrorPrefix}: ${error}`);
     }
   }
 
@@ -318,24 +304,22 @@ export class SchemaManager implements ISchemaManager {
     console.log('- スキーマパス:', this.schemaPath);
     console.log('- テンプレートスキーマパス:', this.templateSchemaPath);
     console.log('- テーマスキーマパス:', this.themeSchemaPath);
-    console.log('- スキーマキャッシュ:', this.schemaCache ? '有効' : '無効');
-    console.log('- テンプレートスキーマキャッシュ:', this.templateSchemaCache ? '有効' : '無効');
-    console.log('- テーマスキーマキャッシュ:', this.themeSchemaCache ? '有効' : '無効');
-    console.log('- 最終スキーマ読み込み:', new Date(this.lastSchemaLoad).toISOString());
-    console.log('- 最終テンプレートスキーマ読み込み:', new Date(this.lastTemplateSchemaLoad).toISOString());
-    console.log('- 最終テーマスキーマ読み込み:', new Date(this.lastThemeSchemaLoad).toISOString());
+    console.log('- スキーマキャッシュ:', this.schemaSlots.main.cache ? '有効' : '無効');
+    console.log('- テンプレートスキーマキャッシュ:', this.schemaSlots.template.cache ? '有効' : '無効');
+    console.log('- テーマスキーマキャッシュ:', this.schemaSlots.theme.cache ? '有効' : '無効');
+    console.log('- 最終スキーマ読み込み:', new Date(this.schemaSlots.main.lastLoad).toISOString());
+    console.log('- 最終テンプレートスキーマ読み込み:', new Date(this.schemaSlots.template.lastLoad).toISOString());
+    console.log('- 最終テーマスキーマ読み込み:', new Date(this.schemaSlots.theme.lastLoad).toISOString());
   }
 
   /**
    * キャッシュをクリア
    */
   clearCache(): void {
-    this.schemaCache = null;
-    this.templateSchemaCache = null;
-    this.themeSchemaCache = null;
-    this.lastSchemaLoad = 0;
-    this.lastTemplateSchemaLoad = 0;
-    this.lastThemeSchemaLoad = 0;
+    Object.values(this.schemaSlots).forEach(slot => {
+      slot.cache = null;
+      slot.lastLoad = 0;
+    });
     this.debug('[SchemaManager] スキーマキャッシュをクリアしました');
   }
 

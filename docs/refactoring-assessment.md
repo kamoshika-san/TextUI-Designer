@@ -1,103 +1,98 @@
 # Refactoring Assessment (2026-03-12)
 
-## 1) 現在の健全性チェック結果
+## 1) 今回の確認スコープ
 
-- `npm run lint` は成功（警告/エラーなし）。
-- `npm run test:all` は成功（unit/integration/e2e/regression を完走）。
-- 現時点でリグレッション兆候は見られず、リファクタリングは「品質改善・保守性改善」が主目的。
+- `src/` 配下の主要ホットスポット（行数上位ファイル）を対象に、責務分離・重複・分岐肥大の観点で確認。
+- 実装変更は行わず、現状評価と優先度付き候補の整理を実施。
 
-## 2) 優先度つきリファクタリング候補（進捗反映）
+## 2) 現状サマリ
 
-### P1: `DiagnosticManager` の責務分割（完了）
+- 既存のP1/P2（Diagnostics分割、Traversal抽象化、types分割、Exporter共通化）は概ね反映済み。
+- 現時点の主戦場は「機能不全修正」より「将来の変更コスト削減（保守性改善）」。
+- 特に Core / Theme / Schema / CLIサポート層で、責務が集約されやすい構造が残っている。
 
-対象: `src/services/diagnostic-manager.ts`
+## 3) 優先度つきリファクタリング候補（2026-03-12版）
+
+### P1: `TextUICoreEngine` のコンポーネント分岐を定義駆動へ移行
+
+対象: `src/core/textui-core-engine.ts`
 
 観点:
-- 単一クラスが「デバウンス制御・キャッシュ管理・YAMLパース・AJV管理・診断生成・メモリ追跡」を同時に担当しており責務が肥大化。
-- デバウンス値が定数 (`DEBOUNCE_DELAY = 500`) と実処理 (`setTimeout(..., 300)`) で不整合。
-- キャッシュ判定が複数箇所にあり、変更時の不整合リスクがある。
+- `buildComponent` で `Container/Form/Tabs/Accordion/TreeView` の構築分岐を逐次実装しており、コンポーネント種追加で条件分岐が伸びる構造。
+- `applyRequiredDefaults` も `componentType` ごとの長い分岐でデフォルト値を付与しており、ルール追加時に1メソッド集中で衝突しやすい。
 
 提案:
-- `DiagnosticScheduler`（debounce/throttle）
-- `DiagnosticValidationEngine`（YAML parse + AJV + schema cache）
-- `DiagnosticCacheStore`（TTL/LRU）
-- `DiagnosticManager` はオーケストレーション専任
+- 「子要素の取り回し（components/fields/actions/items）」と「必須デフォルト」を `ComponentSpec` へ移し、typeごとのハンドラを登録方式に。
+- `buildComponent` は共通オーケストレーションのみ担当し、各type固有処理を分離。
 
 期待効果:
-- 変更影響範囲の局所化
-- テスト粒度の向上（ユニットで挙動を分離検証しやすい）
+- 新コンポーネント追加時の差分局所化
+- テスト容易性向上（type単位で仕様確認しやすい）
 
 ---
 
-### P1: `theme-token-resolver` の走査ロジックをコンポーネントレジストリ連携へ（完了）
+### P1: `ThemeManager` のデータ定義とロード処理を分離
 
-対象: `src/cli/theme-token-resolver.ts`
+対象: `src/services/theme-manager.ts`
 
 観点:
-- トークン解決そのものに加え、コンポーネント木の再帰走査ルールを手続き的に内包している。
-- `Container/Form/Tabs/Accordion/TreeView` など構造ごとの分岐が増え、コンポーネント追加時の追従漏れリスクが高い。
+- `defaultTokens` / `defaultComponents` がクラス内に大きく内包され、I/O・継承解決・検証・merge責務と同居している。
+- `loadTheme` 周辺にログ/解決/検証/復旧が集約され、障害時の原因切り分けが難しくなりやすい。
 
 提案:
-- 走査ルールを `ComponentTraversalSpec` のような定義データに分離。
-- 可能なら `registry/component-registry` 側へ寄せて、CLIとExporterで再利用。
+- デフォルトテーマ定義を `src/theme/default-theme.ts` などへ切り出し。
+- `ThemeLoader`（ファイル解決・継承展開）と `ThemeMerger`（default + user merge）を分割。
+- `ThemeManager` は orchestrator + public API のみに縮退。
 
 期待効果:
-- 新コンポーネント追加時の変更点を最小化
-- `resolveDslTokens` の責務を「token解決」に集中
+- テーマ仕様変更時の影響範囲縮小
+- テーマ解決ロジックの単体テスト拡充
 
 ---
 
-### P2: `src/types/index.ts` の分割（完了）
+### P2: `SchemaManager` の3系統キャッシュを統一抽象へ寄せる
 
-対象: `src/types/index.ts`
+対象: `src/services/schema-manager.ts`
 
 観点:
-- schema/service/theme/cache/performance など複数ドメイン型が1ファイルに集約されている。
-- 依存方向が見えにくく、将来的に循環参照・import肥大化の温床になりやすい。
+- main/template/theme の cache・lastLoad・path が並列管理され、状態項目が増えるたびに更新漏れリスクがある。
+- 初期化・登録・読み込みの関心事が単一クラスで密結合。
 
 提案:
-- `src/types/schema.ts`
-- `src/types/services.ts`
-- `src/types/theme.ts`
-- `src/types/performance.ts`
-- `src/types/index.ts` は re-export のみ
+- `SchemaSlot`（path/cache/lastLoad）を `Record<'main'|'template'|'theme', ...>` で統一管理。
+- 読み込み/TTL判定/JSON parse を `SchemaRepository` 相当へ抽出。
+- VS Codeへの設定反映のみ `SchemaManager` 側に残す。
 
 期待効果:
-- 型定義変更時の認知負荷低減
-- ドメイン境界の可視化
+- スキーマ種別追加時の実装ミス防止
+- キャッシュ挙動の再利用性向上
 
 ---
 
-### P2: Exporter のトークンスタイル付与処理の共通化点検（完了）
+### P2: `command-support` のI/Oと業務ロジックを境界分離
 
-対象: `src/exporters/react-exporter.ts`, `src/exporters/pug-exporter.ts`, `src/exporters/base-component-renderer.ts`
+対象: `src/cli/command-support.ts`
 
 観点:
-- 各コンポーネント描画で token style の付与パターンが多く、形式別に重複しやすい。
-- 既にベースクラスは存在するが、出力形式差分以外の共通化余地が残る。
+- `validate/plan/apply` の制御に加えて、標準入出力フォーマット・ファイル配置決定・state競合判定が同居。
+- 将来コマンド追加時に同種処理（結果整形・エラーハンドリング）の重複が増える可能性。
 
 提案:
-- token style 解決の共通 API を base 側へ寄せる。
-- 各 exporter は「構文差分（React/Pug/HTML）」のみ担当。
+- `ApplyService`（純粋ロジック）と `CliReporter`（stdout/stderr/json出力）に分離。
+- `applyAcrossFiles` は orchestration のみにして、終了コード規約を明確化。
 
 期待効果:
-- 形式追加時の実装コスト削減
-- 既存形式間の挙動差異バグを抑制
+- CLI拡張時の回帰リスク低減
+- ロジック単体テストの追加容易化
 
-## 3) 実行順（更新）
+## 4) 推奨実行順
 
-1. ✅ `DiagnosticManager` 分割（完了）
-2. ✅ `theme-token-resolver` の走査戦略抽象化（完了）
-3. ✅ `types` 分割（完了）
-4. ✅ Exporter 共通化の仕上げ（完了）
+1. `TextUICoreEngine` の定義駆動化（P1）
+2. `ThemeManager` 分離（P1）
+3. `SchemaManager` キャッシュ統一（P2）
+4. `command-support` 境界分離（P2）
 
-## 4) 補足（今回の評価方針）
+## 5) 備考
 
-- まず健全性（lint/test）を再確認し、壊れていないことを前提に「将来の変更コストが高い箇所」を優先抽出。
-- 既存機能追加が活発な CLI / diagnostics / exporter を重点的に確認。
-
-
-## 5) 現在の状態
-
-- P1/P2で定義した主要リファクタ項目（Diagnostics責務分離、Traversal抽象化、types分割、Exporter token style共通化）は完了。
-- 次フェーズは、機能追加時の継続的な重複監視と、Exporterのテンプレート生成ヘルパーの段階的整理。
+- 今回は「評価依頼」対応のため、コード変更は行っていない。
+- 次段で実装に入る場合は、P1を小分けPR（1テーマ1PR）で進めると安全。
