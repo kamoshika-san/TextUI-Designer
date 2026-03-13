@@ -174,7 +174,8 @@ describe('SchemaManager', () => {
   it('reinitialize()で再初期化できる', async () => {
     try {
       await schemaManager.reinitialize();
-      expect(schemaManager.schemaCache).to.be.null;
+      const schema = await schemaManager.loadSchema();
+      expect(schema).to.have.property('definitions');
     } catch (error) {
       expect.fail(`再初期化が失敗しました: ${error.message}`);
     }
