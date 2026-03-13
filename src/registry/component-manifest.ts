@@ -22,7 +22,8 @@ export const BUILT_IN_COMPONENTS = [
   'Accordion',
   'Tabs',
   'TreeView',
-  'Table'
+  'Table',
+  'Link'
 ] as const;
 
 export type BuiltInComponentName = typeof BUILT_IN_COMPONENTS[number];
@@ -328,6 +329,17 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
       { name: 'rows', description: '行データ配列' },
       { name: 'striped', description: '行を交互色で表示', values: BOOLEAN_VALUES },
       { name: 'width', description: '横幅（例: 70%, 480px）' }
+    ]
+  },
+
+  Link: {
+    description: 'リンク',
+    schemaRef: '#/definitions/Link',
+    properties: [
+      { name: 'href', description: 'リンク先URL' },
+      { name: 'label', description: '表示テキスト' },
+      { name: 'target', description: 'リンクターゲット（例: _blank）' },
+      { name: 'token', description: '適用するデザイントークン参照' }
     ]
   },
 };

@@ -1,6 +1,7 @@
 import type {
   AlertComponent,
   DividerComponent,
+  LinkComponent,
   SpacerComponent,
   TextComponent
 } from '../../renderer/types';
@@ -31,6 +32,17 @@ export class HtmlTextualRenderer {
 
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('Text', token);
     return `    <${tag} class="${className}"${tokenStyle}>${safeValue}</${tag}>`;
+  }
+
+  renderLink(props: LinkComponent): string {
+    const { href, label, target, token } = props;
+    const safeHref = this.utils.escapeAttribute(href ?? '');
+    const safeLabel = this.utils.escapeHtml(label ?? '');
+    const safeTarget = target ? ` target="${this.utils.escapeAttribute(target)}"` : '';
+    const rel = target === '_blank' ? ' rel="noopener noreferrer"' : '';
+    const tokenStyle = this.utils.getHtmlTokenStyleAttr('Link', token);
+
+    return `    <a href="${safeHref}"${safeTarget}${rel} class="textui-link"${tokenStyle}>${safeLabel}</a>`;
   }
 
   renderDivider(props: DividerComponent): string {
