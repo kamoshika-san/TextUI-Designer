@@ -98,6 +98,16 @@
   font-size: var(--typography-fontSize-xs, 0.75rem);
 }
 
+/* Link */
+.textui-link {
+  color: var(--color-text-link, #0969da);
+  text-decoration: underline;
+}
+
+.textui-link:hover {
+  opacity: 0.85;
+}
+
 /* Alert */
 /* アラートコンポーネントの改善 */
 .textui-alert {

@@ -20,6 +20,7 @@ import { Accordion } from './components/Accordion';
 import { Tabs } from './components/Tabs';
 import { TreeView } from './components/TreeView';
 import { Table } from './components/Table';
+import { Link } from './components/Link';
 import type {
   ComponentDef,
   FormComponent,
@@ -39,7 +40,8 @@ import type {
   AccordionComponent,
   TabsComponent,
   TreeViewComponent,
-  TableComponent
+  TableComponent,
+  LinkComponent
 } from './types';
 import { getComponentName } from '../registry/component-registry';
 import { BUILT_IN_COMPONENTS, type BuiltInComponentName } from '../registry/component-registry';
@@ -108,6 +110,7 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
     />
   ),
   Table: (props, key) => <Table key={key} {...(props as unknown as TableComponent)} />,
+  Link: (props, key) => <Link key={key} {...(props as unknown as LinkComponent)} />,
   Container: (props, key) => {
     const containerProps = props as unknown as ContainerComponent;
     const children = containerProps.components;

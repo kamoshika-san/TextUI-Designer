@@ -2,11 +2,11 @@ import type {
   TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, SelectComponent, DatePickerComponent, DividerComponent, SpacerComponent, AlertComponent,
-  ContainerComponent, AccordionComponent, TabsComponent, TreeViewComponent, TableComponent, SelectOption
+  ContainerComponent, AccordionComponent, TabsComponent, TreeViewComponent, TableComponent, LinkComponent, SelectOption
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
-import { renderAlertTemplate, renderButtonTemplate, renderDividerTemplate, renderSpacerTemplate, renderTextTemplate } from './react-basic-renderer';
+import { renderAlertTemplate, renderButtonTemplate, renderDividerTemplate, renderLinkTemplate, renderSpacerTemplate, renderTextTemplate } from './react-basic-renderer';
 import { renderAccordionTemplate, renderContainerTemplate, renderFormTemplate, renderTableTemplate, renderTabsTemplate, renderTreeViewTemplate } from './react-template-renderer';
 
 export class ReactExporter extends BaseComponentRenderer {
@@ -222,6 +222,11 @@ ${optionsCode}
       adjustIndentation: (source, indent) => this.adjustIndentation(source, indent),
       toTableCellText: value => this.toTableCellText(value)
     });
+  }
+
+  protected renderLink(props: LinkComponent, key: number): string {
+    const tokenStyle = this.getReactTokenStyleInline('Link', props.token);
+    return renderLinkTemplate(props, key, tokenStyle);
   }
 
   protected renderContainer(props: ContainerComponent, key: number): string {

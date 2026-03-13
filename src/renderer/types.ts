@@ -39,6 +39,13 @@ export interface ButtonComponent {
   token?: string;
 }
 
+export interface LinkComponent {
+  href: string;
+  label: string;
+  target?: string;
+  token?: string;
+}
+
 export interface CheckboxComponent {
   label: string;
   name?: string;
@@ -103,6 +110,7 @@ export interface FormField {
   Alert?: AlertComponent;
   Container?: ContainerComponent;
   Table?: TableComponent;
+  Link?: LinkComponent;
 }
 
 export interface FormAction {
@@ -222,7 +230,8 @@ export type ComponentDef =
   | { Accordion: AccordionComponent }
   | { Tabs: TabsComponent }
   | { TreeView: TreeViewComponent }
-  | { Table: TableComponent };
+  | { Table: TableComponent }
+  | { Link: LinkComponent };
 
 export interface PageDef {
   id: string;
@@ -303,4 +312,8 @@ export function isTreeViewComponent(comp: ComponentDef): comp is { TreeView: Tre
 
 export function isTableComponent(comp: ComponentDef): comp is { Table: TableComponent } {
   return 'Table' in comp;
+}
+
+export function isLinkComponent(comp: ComponentDef): comp is { Link: LinkComponent } {
+  return 'Link' in comp;
 }
