@@ -104,7 +104,7 @@ export class YamlParser {
   /**
    * ファイルサイズを検証
    */
-  private validateFileSize(yamlContent: string, fileName: string): void {
+  private validateFileSize(yamlContent: string, _fileName: string): void {
     if (yamlContent.length > this.MAX_YAML_SIZE) {
       const error = new Error(`YAMLファイルが大きすぎます（${Math.round(yamlContent.length / 1024)}KB）。1MB以下にしてください。`);
       error.name = 'FileSizeError';
@@ -115,12 +115,12 @@ export class YamlParser {
   /**
    * YAMLスキーマバリデーションを実行
    */
-  private async validateYamlSchema(yaml: unknown, yamlContent: string, fileName: string): Promise<void> {
+  private async validateYamlSchema(yaml: unknown, _yamlContent: string, fileName: string): Promise<void> {
     try {
       const validationErrors = await this.schemaValidator.validate(yaml);
       if (validationErrors && validationErrors.length > 0) {
         console.warn('[YamlParser] スキーマバリデーションエラー:', validationErrors);
-        throw this.createSchemaError(validationErrors, yamlContent, fileName);
+        throw this.createSchemaError(validationErrors, _yamlContent, fileName);
       }
     } catch (error: unknown) {
       if (error instanceof Error && error.name === 'SchemaValidationError') {
@@ -167,7 +167,7 @@ export class YamlParser {
   /**
    * スキーマエラーを作成
    */
-  private createSchemaError(errors: ErrorObject[], yamlContent: string, fileName: string): Error {
+  private createSchemaError(errors: ErrorObject[], _yamlContent: string, fileName: string): Error {
     if (errors.length === 0) {
       return new Error('Unknown schema error');
     }
@@ -191,7 +191,7 @@ export class YamlParser {
   /**
    * パースエラー修正の提案を生成
    */
-  private generateParseErrorSuggestions(errorMessage: string, errorLine: string): string[] {
+  private generateParseErrorSuggestions(errorMessage: string, _errorLine: string): string[] {
     const suggestions: string[] = [];
     
     if (errorMessage.includes('duplicate key')) {

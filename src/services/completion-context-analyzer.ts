@@ -43,7 +43,7 @@ export class CompletionContextAnalyzer {
     return `${document.uri.toString()}:${position.line}:${position.character}:${isTemplate}:${triggerChar}:${linePrefix}`;
   }
 
-  analyzeContext(linePrefix: string, position: vscode.Position): CompletionAnalysisContext {
+  analyzeContext(linePrefix: string, _position: vscode.Position): CompletionAnalysisContext {
     const lines = linePrefix.split('\n');
     const currentLine = lines[lines.length - 1];
     const indentLevel = this.getIndentLevel(currentLine);

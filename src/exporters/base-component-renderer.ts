@@ -161,7 +161,7 @@ export abstract class BaseComponentRenderer implements Exporter {
     return Array.from(this.componentHandlers.keys());
   }
 
-  protected renderUnsupportedComponent(comp: ComponentDef, key: number): string {
+  protected renderUnsupportedComponent(comp: ComponentDef, _key: number): string {
     const componentName = getComponentName(comp as Record<string, unknown>) || 'unknown';
     switch (this.format) {
       case 'html':

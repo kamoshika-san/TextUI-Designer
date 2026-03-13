@@ -13,7 +13,7 @@ export class ReactExporter extends BaseComponentRenderer {
     super('react');
   }
 
-  async export(dsl: TextUIDSL, options: ExportOptions): Promise<string> {
+  async export(dsl: TextUIDSL, _options: ExportOptions): Promise<string> {
     const componentCode = this.renderPageComponents(dsl, '\n\n');
     
     return `import React from 'react';
