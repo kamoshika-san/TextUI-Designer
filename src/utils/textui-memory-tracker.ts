@@ -18,6 +18,65 @@ export interface MemoryTrackedObject {
   metadata?: Record<string, any>;
 }
 
+type MemoryCategory = MemoryTrackedObject['type'];
+
+type MemoryCategoryRegistry = Record<MemoryCategory, WeakMap<object, MemoryTrackedObject>>;
+
+interface TrackedReference {
+  ref: WeakRef<object>;
+  category: MemoryCategory;
+}
+
+class MemoryReportFormatter {
+  static format(metrics: TextUIMemoryMetrics, overhead: number, overheadPercentage: number): string {
+    return `
+=== TextUI Designer メモリ使用状況レポート ===
+最終測定: ${new Date(metrics.lastMeasured).toLocaleString()}
+
+▼ カテゴリ別メモリ使用量:
+  WebView関連:      ${metrics.webviewMemory.toFixed(2)} MB
+  YAML解析キャッシュ: ${metrics.yamlCacheMemory.toFixed(2)} MB
+  診断システム:      ${metrics.diagnosticsMemory.toFixed(2)} MB
+  レンダリングキャッシュ: ${metrics.renderCacheMemory.toFixed(2)} MB
+  
+▼ 総計:
+  追跡対象総メモリ:   ${metrics.totalTrackedMemory.toFixed(2)} MB
+
+▼ パフォーマンス:
+  測定オーバーヘッド:  ${overhead.toFixed(2)}ms
+  オーバーヘッド率:    ${overheadPercentage.toFixed(2)}%
+
+${this.generateRecommendations(metrics)}
+`;
+  }
+
+  private static generateRecommendations(metrics: TextUIMemoryMetrics): string {
+    const recommendations: string[] = [];
+
+    if (metrics.webviewMemory > 10) {
+      recommendations.push('• WebViewメモリが高めです。プレビューを一時的に閉じることを検討してください');
+    }
+
+    if (metrics.yamlCacheMemory > 5) {
+      recommendations.push('• YAMLキャッシュサイズが大きいです。キャッシュクリアを実行してください');
+    }
+
+    if (metrics.renderCacheMemory > 8) {
+      recommendations.push('• レンダリングキャッシュが大きいです。キャッシュ設定の見直しを推奨します');
+    }
+
+    if (metrics.totalTrackedMemory > 25) {
+      recommendations.push('• 総メモリ使用量が多めです。不要なファイルを閉じて拡張機能を再起動してください');
+    }
+
+    if (recommendations.length === 0) {
+      recommendations.push('• メモリ使用量は正常範囲内です');
+    }
+
+    return '\n▼ 推奨事項:\n' + recommendations.join('\n');
+  }
+}
+
 /**
  * TextUI Designer専用のメモリ追跡システム
  * WeakMapを使用してメモリリークを防止し、低オーバーヘッドでメモリ使用量を追跡
@@ -26,10 +85,12 @@ export class TextUIMemoryTracker {
   private static instance: TextUIMemoryTracker;
   
   // WeakMapを使用してメモリリークを防止
-  private webviewObjects = new WeakMap<object, MemoryTrackedObject>();
-  private yamlCacheObjects = new WeakMap<object, MemoryTrackedObject>();
-  private diagnosticsObjects = new WeakMap<object, MemoryTrackedObject>();
-  private renderCacheObjects = new WeakMap<object, MemoryTrackedObject>();
+  private categoryRegistry: MemoryCategoryRegistry = {
+    webview: new WeakMap<object, MemoryTrackedObject>(),
+    'yaml-cache': new WeakMap<object, MemoryTrackedObject>(),
+    diagnostics: new WeakMap<object, MemoryTrackedObject>(),
+    'render-cache': new WeakMap<object, MemoryTrackedObject>()
+  };
   
   // 集計データ（定期的に更新）
   private metrics: TextUIMemoryMetrics = {
@@ -42,7 +103,8 @@ export class TextUIMemoryTracker {
   };
   
   // 追跡対象オブジェクトの参照を保持（WeakMapの制約回避用）
-  private trackedObjects = new Set<WeakRef<object>>();
+  private trackedObjects = new Set<TrackedReference>();
+  private trackedReferenceIndex = new WeakMap<object, TrackedReference>();
   
   private isEnabled: boolean;
   private measurementInterval: NodeJS.Timeout | null = null;
@@ -127,24 +189,18 @@ export class TextUIMemoryTracker {
       metadata
     };
 
-    // 適切なWeakMapに追加
-    switch (type) {
-      case 'webview':
-        this.webviewObjects.set(obj, trackedObj);
-        break;
-      case 'yaml-cache':
-        this.yamlCacheObjects.set(obj, trackedObj);
-        break;
-      case 'diagnostics':
-        this.diagnosticsObjects.set(obj, trackedObj);
-        break;
-      case 'render-cache':
-        this.renderCacheObjects.set(obj, trackedObj);
-        break;
-    }
+    this.removeObjectFromOtherCategories(obj, type);
+    this.categoryRegistry[type].set(obj, trackedObj);
 
-    // WeakRefで参照を保持
-    this.trackedObjects.add(new WeakRef(obj));
+    // WeakRefで参照を保持（同一オブジェクトの重複登録を防ぐ）
+    const existingReference = this.trackedReferenceIndex.get(obj);
+    if (existingReference) {
+      existingReference.category = type;
+    } else {
+      const trackedReference: TrackedReference = { ref: new WeakRef(obj), category: type };
+      this.trackedObjects.add(trackedReference);
+      this.trackedReferenceIndex.set(obj, trackedReference);
+    }
     
     // 開発モードでログ出力
     if (this.isDevelopmentMode()) {
@@ -168,20 +224,7 @@ export class TextUIMemoryTracker {
     this.measurementStartTime = performance.now();
 
     try {
-      // 各カテゴリのメモリ使用量を計算
-      const webviewMemory = this.calculateCategoryMemory(this.webviewObjects);
-      const yamlCacheMemory = this.calculateCategoryMemory(this.yamlCacheObjects);
-      const diagnosticsMemory = this.calculateCategoryMemory(this.diagnosticsObjects);
-      const renderCacheMemory = this.calculateCategoryMemory(this.renderCacheObjects);
-
-      this.metrics = {
-        webviewMemory,
-        yamlCacheMemory,
-        diagnosticsMemory,
-        renderCacheMemory,
-        totalTrackedMemory: webviewMemory + yamlCacheMemory + diagnosticsMemory + renderCacheMemory,
-        lastMeasured: Date.now()
-      };
+      this.recomputeMetrics();
 
       // パフォーマンスオーバーヘッドを計算
       this.measurementOverhead = performance.now() - this.measurementStartTime;
@@ -195,26 +238,53 @@ export class TextUIMemoryTracker {
     }
   }
 
-  /**
-   * 特定カテゴリのメモリ使用量を計算
-   */
-  private calculateCategoryMemory(weakMap: WeakMap<object, MemoryTrackedObject>): number {
-    let totalSize = 0;
-    let validObjects = 0;
+  private recomputeMetrics(): void {
+    const categoryTotals: Record<MemoryCategory, number> = {
+      webview: 0,
+      'yaml-cache': 0,
+      diagnostics: 0,
+      'render-cache': 0
+    };
 
-    // WeakRefで保持している参照をチェック
-    for (const ref of this.trackedObjects) {
-      const obj = ref.deref();
-      if (obj && weakMap.has(obj)) {
-        const tracked = weakMap.get(obj);
-        if (tracked) {
-          totalSize += tracked.size;
-          validObjects++;
-        }
+    for (const trackedRef of this.trackedObjects) {
+      const obj = trackedRef.ref.deref();
+      if (!obj) {
+        continue;
       }
+
+      const trackedObject = this.categoryRegistry[trackedRef.category].get(obj);
+      if (!trackedObject) {
+        continue;
+      }
+
+      categoryTotals[trackedRef.category] += trackedObject.size;
     }
 
-    return totalSize / (1024 * 1024); // MB単位に変換
+    const webviewMemory = this.bytesToMb(categoryTotals.webview);
+    const yamlCacheMemory = this.bytesToMb(categoryTotals['yaml-cache']);
+    const diagnosticsMemory = this.bytesToMb(categoryTotals.diagnostics);
+    const renderCacheMemory = this.bytesToMb(categoryTotals['render-cache']);
+
+    this.metrics = {
+      webviewMemory,
+      yamlCacheMemory,
+      diagnosticsMemory,
+      renderCacheMemory,
+      totalTrackedMemory: webviewMemory + yamlCacheMemory + diagnosticsMemory + renderCacheMemory,
+      lastMeasured: Date.now()
+    };
+  }
+
+  private bytesToMb(bytes: number): number {
+    return bytes / (1024 * 1024);
+  }
+
+  private removeObjectFromOtherCategories(obj: object, targetCategory: MemoryCategory): void {
+    for (const [category, registry] of Object.entries(this.categoryRegistry) as [MemoryCategory, WeakMap<object, MemoryTrackedObject>][]) {
+      if (category !== targetCategory) {
+        registry.delete(obj);
+      }
+    }
   }
 
   /**
@@ -230,55 +300,7 @@ export class TextUIMemoryTracker {
   generateMemoryReport(): string {
     const metrics = this.getMetrics();
     const overhead = this.getMeasurementOverhead();
-
-    return `
-=== TextUI Designer メモリ使用状況レポート ===
-最終測定: ${new Date(metrics.lastMeasured).toLocaleString()}
-
-▼ カテゴリ別メモリ使用量:
-  WebView関連:      ${metrics.webviewMemory.toFixed(2)} MB
-  YAML解析キャッシュ: ${metrics.yamlCacheMemory.toFixed(2)} MB
-  診断システム:      ${metrics.diagnosticsMemory.toFixed(2)} MB
-  レンダリングキャッシュ: ${metrics.renderCacheMemory.toFixed(2)} MB
-  
-▼ 総計:
-  追跡対象総メモリ:   ${metrics.totalTrackedMemory.toFixed(2)} MB
-
-▼ パフォーマンス:
-  測定オーバーヘッド:  ${overhead.toFixed(2)}ms
-  オーバーヘッド率:    ${this.calculateOverheadPercentage().toFixed(2)}%
-
-${this.generateMemoryRecommendations(metrics)}
-`;
-  }
-
-  /**
-   * メモリ最適化の推奨事項を生成
-   */
-  private generateMemoryRecommendations(metrics: TextUIMemoryMetrics): string {
-    const recommendations: string[] = [];
-
-    if (metrics.webviewMemory > 10) {
-      recommendations.push('• WebViewメモリが高めです。プレビューを一時的に閉じることを検討してください');
-    }
-
-    if (metrics.yamlCacheMemory > 5) {
-      recommendations.push('• YAMLキャッシュサイズが大きいです。キャッシュクリアを実行してください');
-    }
-
-    if (metrics.renderCacheMemory > 8) {
-      recommendations.push('• レンダリングキャッシュが大きいです。キャッシュ設定の見直しを推奨します');
-    }
-
-    if (metrics.totalTrackedMemory > 25) {
-      recommendations.push('• 総メモリ使用量が多めです。不要なファイルを閉じて拡張機能を再起動してください');
-    }
-
-    if (recommendations.length === 0) {
-      recommendations.push('• メモリ使用量は正常範囲内です');
-    }
-
-    return '\n▼ 推奨事項:\n' + recommendations.join('\n');
+    return MemoryReportFormatter.format(metrics, overhead, this.calculateOverheadPercentage());
   }
 
   /**
@@ -319,11 +341,11 @@ ${this.generateMemoryRecommendations(metrics)}
    */
   private cleanupDeadReferences(): void {
     const initialSize = this.trackedObjects.size;
-    const validRefs = new Set<WeakRef<object>>();
+    const validRefs = new Set<TrackedReference>();
 
-    for (const ref of this.trackedObjects) {
-      if (ref.deref() !== undefined) {
-        validRefs.add(ref);
+    for (const trackedRef of this.trackedObjects) {
+      if (trackedRef.ref.deref() !== undefined) {
+        validRefs.add(trackedRef);
       }
     }
 
@@ -378,6 +400,13 @@ ${this.generateMemoryRecommendations(metrics)}
     }
 
     this.trackedObjects.clear();
+    this.trackedReferenceIndex = new WeakMap<object, TrackedReference>();
+    this.categoryRegistry = {
+      webview: new WeakMap<object, MemoryTrackedObject>(),
+      'yaml-cache': new WeakMap<object, MemoryTrackedObject>(),
+      diagnostics: new WeakMap<object, MemoryTrackedObject>(),
+      'render-cache': new WeakMap<object, MemoryTrackedObject>()
+    };
     console.log('[TextUIMemoryTracker] リソースをクリーンアップしました');
   }
 
