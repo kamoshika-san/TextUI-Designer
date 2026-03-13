@@ -1,98 +1,106 @@
-# Refactoring Assessment (2026-03-12)
+# Refactoring Assessment (2026-03-13)
 
 ## 1) 今回の確認スコープ
 
-- `src/` 配下の主要ホットスポット（行数上位ファイル）を対象に、責務分離・重複・分岐肥大の観点で確認。
-- 実装変更は行わず、現状評価と優先度付き候補の整理を実施。
+- `src/` 配下の高複雑度ファイル（行数上位）と、責務集中しやすい `services/` `utils/` `core/` を重点確認。
+- 既存実装の可読性・変更容易性・テストしやすさの観点で、優先度付きの改善候補を抽出。
+- **本ドキュメントは評価のみ**。実装変更は未実施。
 
-## 2) 現状サマリ
+## 2) 総評
 
-- 既存のP1/P2（Diagnostics分割、Traversal抽象化、types分割、Exporter共通化）は概ね反映済み。
-- 現時点の主戦場は「機能不全修正」より「将来の変更コスト削減（保守性改善）」。
-- 特に Core / Theme / Schema / CLIサポート層で、責務が集約されやすい構造が残っている。
+- 既に機能分割は進んでいるが、**オーケストレーション層に詳細ロジックが再集約**されている箇所が残る。
+- 直近で価値が高いのは、
+  1. テーマ処理の責務分割、
+  2. WebViewメッセージ処理のハンドラ登録化、
+  3. メモリトラッカーのカテゴリ別重複の削減。
+- いずれも「不具合修正」より「変更時の衝突/回帰を減らす」目的のリファクタリング。
 
-## 3) 優先度つきリファクタリング候補（2026-03-12版）
+## 3) 優先度付きリファクタリング候補
 
-### P1: `TextUICoreEngine` のコンポーネント分岐を定義駆動へ移行
-
-対象: `src/core/textui-core-engine.ts`
-
-観点:
-- `buildComponent` で `Container/Form/Tabs/Accordion/TreeView` の構築分岐を逐次実装しており、コンポーネント種追加で条件分岐が伸びる構造。
-- `applyRequiredDefaults` も `componentType` ごとの長い分岐でデフォルト値を付与しており、ルール追加時に1メソッド集中で衝突しやすい。
-
-提案:
-- 「子要素の取り回し（components/fields/actions/items）」と「必須デフォルト」を `ComponentSpec` へ移し、typeごとのハンドラを登録方式に。
-- `buildComponent` は共通オーケストレーションのみ担当し、各type固有処理を分離。
-
-期待効果:
-- 新コンポーネント追加時の差分局所化
-- テスト容易性向上（type単位で仕様確認しやすい）
-
----
-
-### P1: `ThemeManager` のデータ定義とロード処理を分離
+### P1: `ThemeManager` の「定義」「ロード」「変換」を分離
 
 対象: `src/services/theme-manager.ts`
 
 観点:
-- `defaultTokens` / `defaultComponents` がクラス内に大きく内包され、I/O・継承解決・検証・merge責務と同居している。
-- `loadTheme` 周辺にログ/解決/検証/復旧が集約され、障害時の原因切り分けが難しくなりやすい。
+- `defaultTokens` / `defaultComponents` の巨大な定義をクラス内で保持し、I/O・バリデーション・マージと同居している。
+- `loadTheme` が「読み込み/検証/フォールバック/マージ/ログ」を一括で担当し、障害切り分けが難しい。
+- `generateCSSVariables` にデバッグログとCSS生成が混在し、ユースケース別のテストが書きづらい。
 
 提案:
-- デフォルトテーマ定義を `src/theme/default-theme.ts` などへ切り出し。
-- `ThemeLoader`（ファイル解決・継承展開）と `ThemeMerger`（default + user merge）を分割。
-- `ThemeManager` は orchestrator + public API のみに縮退。
+- `src/theme/default-theme.ts` へデフォルト定義を移動。
+- `ThemeLoader`（ファイル解決 + 継承展開）/ `ThemeValidator` / `ThemeCssVariableBuilder` を分離。
+- `ThemeManager` は public API と依存連携のみ担当する façade に縮小。
 
 期待効果:
-- テーマ仕様変更時の影響範囲縮小
-- テーマ解決ロジックの単体テスト拡充
+- テーマ仕様追加時の変更範囲を局所化。
+- 継承・検証・CSS変換を単体で検証しやすくなる。
 
 ---
 
-### P2: `SchemaManager` の3系統キャッシュを統一抽象へ寄せる
+### P1: `WebViewMessageHandler` のメッセージ分岐をハンドラマップ化
 
-対象: `src/services/schema-manager.ts`
+対象: `src/services/webview/webview-message-handler.ts`
 
 観点:
-- main/template/theme の cache・lastLoad・path が並列管理され、状態項目が増えるたびに更新漏れリスクがある。
-- 初期化・登録・読み込みの関心事が単一クラスで密結合。
+- `handleMessage` の `switch` に複数メッセージ種別が集約され、機能追加のたびに本体が肥大化しやすい。
+- `switchTheme` が「入力解決」「ファイル探索」「ThemeManager操作」「UI通知」を一括実行している。
+- 結果として、個別機能（ジャンプ/テーマ切替/初期化）の単体テスト境界が曖昧。
 
 提案:
-- `SchemaSlot`（path/cache/lastLoad）を `Record<'main'|'template'|'theme', ...>` で統一管理。
-- 読み込み/TTL判定/JSON parse を `SchemaRepository` 相当へ抽出。
-- VS Codeへの設定反映のみ `SchemaManager` 側に残す。
+- `Record<MessageType, (msg) => Promise<void>>` 形式のハンドラレジストリを導入。
+- `ThemeSwitchService` を抽出し、`switchTheme` からパス解決と適用処理を分離。
+- `showInformationMessage` など UI 副作用を薄い adapter 経由にしてテスト容易化。
 
 期待効果:
-- スキーマ種別追加時の実装ミス防止
-- キャッシュ挙動の再利用性向上
+- メッセージ種追加時の差分を最小化。
+- 既存メッセージへの副作用回帰を抑制。
 
 ---
 
-### P2: `command-support` のI/Oと業務ロジックを境界分離
+### P2: `TextUIMemoryTracker` のカテゴリ重複と集計コストを整理
 
-対象: `src/cli/command-support.ts`
+対象: `src/utils/textui-memory-tracker.ts`
 
 観点:
-- `validate/plan/apply` の制御に加えて、標準入出力フォーマット・ファイル配置決定・state競合判定が同居。
-- 将来コマンド追加時に同種処理（結果整形・エラーハンドリング）の重複が増える可能性。
+- `webview/yaml/diagnostics/render` で WeakMap・trackメソッド・集計処理が横並び実装されており、拡張時に重複が増えやすい。
+- `calculateCategoryMemory` がカテゴリごとに `trackedObjects` 全走査するため、カテゴリ数増加時に計算コストが増大。
+- Singleton内部にタイマー制御・レポート生成・追跡ロジックが同居。
 
 提案:
-- `ApplyService`（純粋ロジック）と `CliReporter`（stdout/stderr/json出力）に分離。
-- `applyAcrossFiles` は orchestration のみにして、終了コード規約を明確化。
+- `MemoryCategoryRegistry`（`Record<Category, WeakMap<...>>`）へ統一。
+- 1回の走査でカテゴリ別合算を行う `recomputeMetrics()` を導入。
+- レポート文字列生成は `MemoryReportFormatter` に切り離し。
 
 期待効果:
-- CLI拡張時の回帰リスク低減
-- ロジック単体テストの追加容易化
+- カテゴリ追加時の実装負荷と抜け漏れを削減。
+- 測定処理の時間特性を安定化。
+
+---
+
+### P2: Exporter系のテンプレート/文字列構築責務を整理
+
+対象: `src/exporters/pug-exporter.ts`, `src/exporters/base-component-renderer.ts`
+
+観点:
+- 出力フォーマット固有処理と共通構造（属性組み立て・ネスト処理）がファイル間で分散。
+- 文字列連結ベースの組み立てロジックが多く、仕様変更時に差分追跡が難しい。
+
+提案:
+- `ExporterAst`（中間表現）を軽量導入し、Rendererごとの差異を最終段に限定。
+- 共通の `AttributeSerializer` / `IndentWriter` を抽出。
+
+期待効果:
+- 新フォーマット追加時の重複を減らし、回帰テスト観点を統一可能。
 
 ## 4) 推奨実行順
 
-1. `TextUICoreEngine` の定義駆動化（P1）
-2. `ThemeManager` 分離（P1）
-3. `SchemaManager` キャッシュ統一（P2）
-4. `command-support` 境界分離（P2）
+1. `ThemeManager` 分離（P1）
+2. `WebViewMessageHandler` ハンドラマップ化（P1）
+3. `TextUIMemoryTracker` 統一化（P2）
+4. Exporter共通化（P2）
 
-## 5) 備考
+## 5) 進め方（小さく安全に）
 
-- 今回は「評価依頼」対応のため、コード変更は行っていない。
-- 次段で実装に入る場合は、P1を小分けPR（1テーマ1PR）で進めると安全。
+- 1テーマ1PRで分割（例: `ThemeLoader` 抽出のみ → CSS Builder抽出）。
+- 各PRで「公開API非変更」を原則とし、回帰テストを先に追加。
+- 最後に `ThemeManager` / `WebViewMessageHandler` のファサード側を薄くする。
