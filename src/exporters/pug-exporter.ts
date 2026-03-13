@@ -8,6 +8,7 @@ import type {
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
 import { StyleManager } from '../utils/style-manager';
+import type { ExporterAstNode } from './exporter-ast';
 
 export class PugExporter extends BaseComponentRenderer {
   constructor() {
@@ -210,7 +211,7 @@ ${componentCode}`;
           .px-4.pb-4.text-sm.text-gray-600`;
         itemComponents.forEach((component: ComponentDef, childIndex: number) => {
           const childCode = this.renderComponent(component, index * 1000 + childIndex);
-          const indentedCode = childCode.split('\n').map(line => `  ${line}`).join('\n');
+          const indentedCode = this.adjustIndentation(childCode, '  ');
           code += `
 ${indentedCode}`;
         });
@@ -242,7 +243,7 @@ ${indentedCode}`;
     code += `\n        .p-4.space-y-3`;
     (items[activeIndex]?.components || []).forEach((component: ComponentDef, index: number) => {
       const itemCode = this.renderComponent(component, index);
-      const indentedCode = itemCode.split('\n').map(line => `  ${line}`).join('\n');
+      const indentedCode = this.adjustIndentation(itemCode, '  ');
       code += `\n${indentedCode}`;
     });
 
@@ -254,56 +255,65 @@ ${indentedCode}`;
     const tokenStyleModifier = this.getPugTokenStyleModifier('TreeView', token);
     const listClass = showLines ? 'with-lines' : 'without-lines';
 
-    const renderNodeList = (
-      nodes: TreeViewComponent['items'],
-      path: string,
-      depth: number,
-      indent: string
-    ): string => {
-      const nodeCode = nodes.map((node, index) => {
+    const buildNodeListAst = (nodes: TreeViewComponent['items'], depth: number): ExporterAstNode => ({
+      line: `ul.textui-treeview-list.${listClass}`,
+      children: nodes.map((node, index) => {
         const children = node.children || [];
         const components = node.components || [];
         const hasChildren = children.length > 0 || components.length > 0;
         const label = `${node.icon ? `${node.icon} ` : ''}${node.label ?? ''}`;
-        const nodeIndent = `${indent}  `;
 
         if (!hasChildren) {
-          return `${nodeIndent}li.textui-treeview-item
-${nodeIndent}  .textui-treeview-label-row
-${nodeIndent}    span.textui-treeview-toggle.placeholder •
-${nodeIndent}    span.textui-treeview-label ${label}`;
+          return {
+            line: 'li.textui-treeview-item',
+            children: [
+              {
+                line: '.textui-treeview-label-row',
+                children: [
+                  { line: 'span.textui-treeview-toggle.placeholder •' },
+                  { line: `span.textui-treeview-label ${label}` }
+                ]
+              }
+            ]
+          };
         }
 
         const shouldOpen = expandAll || node.expanded;
-        const componentCode = components
-          .map((component: ComponentDef, componentIndex: number) =>
-            this.renderComponent(component, _key * 100000 + depth * 1000 + index * 100 + componentIndex)
-          )
-          .map(code => code.split('\n').map(line => `${nodeIndent}      ${line}`).join('\n'))
-          .join('\n');
+        const componentChildren: ExporterAstNode[] = components.map((component: ComponentDef, componentIndex: number) => ({
+          line: this.renderComponent(component, _key * 100000 + depth * 1000 + index * 100 + componentIndex)
+        }));
+        const nestedChildren = children.length > 0 ? [buildNodeListAst(children, depth + 1)] : [];
 
-        const childrenCode = children.length > 0
-          ? renderNodeList(children, `${path}-${index}`, depth + 1, `${nodeIndent}      `)
-          : '';
+        return {
+          line: 'li.textui-treeview-item',
+          children: [
+            {
+              line: `details${shouldOpen ? '(open)' : ''}`,
+              children: [
+                {
+                  line: 'summary.textui-treeview-label-row',
+                  children: [
+                    { line: 'span.textui-treeview-toggle ▸' },
+                    { line: `span.textui-treeview-label ${label}` }
+                  ]
+                },
+                {
+                  line: '.textui-treeview-children',
+                  children: [...componentChildren, ...nestedChildren]
+                }
+              ]
+            }
+          ]
+        };
+      })
+    });
 
-        const bodyCode = [componentCode, childrenCode].filter(Boolean).join('\n');
-
-        return `${nodeIndent}li.textui-treeview-item
-${nodeIndent}  details${shouldOpen ? '(open)' : ''}
-${nodeIndent}    summary.textui-treeview-label-row
-${nodeIndent}      span.textui-treeview-toggle ▸
-${nodeIndent}      span.textui-treeview-label ${label}
-${nodeIndent}    .textui-treeview-children
-${bodyCode}`;
-      }).join('\n');
-
-      return `${indent}ul.textui-treeview-list.${listClass}
-${nodeCode}`;
+    const ast: ExporterAstNode = {
+      line: `.textui-treeview${tokenStyleModifier}`,
+      children: [buildNodeListAst(items, 0)]
     };
 
-    const treeCode = renderNodeList(items, `tree-${_key}`, 0, '        ');
-    return `      .textui-treeview${tokenStyleModifier}
-${treeCode}`;
+    return this.renderAst(ast, '  ', 3);
   }
 
   protected renderTable(props: TableComponent, _key: number): string {
@@ -349,7 +359,7 @@ ${treeCode}`;
     let code = `      .${layoutClasses[layout as keyof typeof layoutClasses]}${tokenStyleModifier}`;
     (components || []).forEach((child: ComponentDef, index: number) => {
       const childCode = this.renderComponent(child, index);
-      const indentedCode = childCode.split('\n').map(line => `  ${line}`).join('\n');
+      const indentedCode = this.adjustIndentation(childCode, '  ');
       code += `\n${indentedCode}`;
     });
     
@@ -365,7 +375,7 @@ ${treeCode}`;
     fields.forEach((field: FormField, index: number) => {
       const fieldCode = this.renderFormField(field, index);
       if (fieldCode) {
-        const indentedCode = fieldCode.split('\n').map(line => `  ${line}`).join('\n');
+        const indentedCode = this.adjustIndentation(fieldCode, '  ');
         code += `\n${indentedCode}`;
       }
     });
@@ -374,7 +384,7 @@ ${treeCode}`;
     actions.forEach((action: FormAction, index: number) => {
       const actionCode = this.renderFormAction(action, index);
       if (actionCode) {
-        const indentedCode = actionCode.split('\n').map(line => `  ${line}`).join('\n');
+        const indentedCode = this.adjustIndentation(actionCode, '  ');
         code += `\n${indentedCode}`;
       }
     });
