@@ -60,16 +60,32 @@ export function renderBadgeTemplate(props: BadgeComponent, key: number, tokenSty
 
 
 export function renderProgressTemplate(props: ProgressComponent, key: number): string {
-  const { value, label, showValue = true, variant = 'default' } = props;
-  const normalizedValue = Math.min(100, Math.max(0, value));
+  const { value = 0, segments, label, showValue = true, variant = 'default' } = props;
+  const normalizeValue = (raw: number): number => Math.min(100, Math.max(0, raw));
+  const normalizedValue = normalizeValue(value);
+  const hasSegments = Array.isArray(segments) && segments.length > 0;
+  const totalValue = hasSegments
+    ? segments.reduce((sum, segment) => sum + normalizeValue(segment.value), 0)
+    : normalizedValue;
+  const displayValue = Number(Math.min(100, totalValue).toFixed(1));
+
+  const fillMarkup = hasSegments
+    ? segments.map((segment, index) => {
+        const segmentVariant = segment.variant ?? variant;
+        const segmentWidth = `${normalizeValue(segment.value)}%`;
+        const segmentTitle = segment.label ? ` title=${JSON.stringify(segment.label)}` : '';
+        const segmentStyle = `{ width: ${JSON.stringify(segmentWidth)}, ...( ${segment.token ? `{ backgroundColor: ${JSON.stringify(segment.token)} }` : '{}'} ) }`;
+        return `          <div key={${index}} className="textui-progress-fill textui-progress-${segmentVariant}"${segmentTitle} style={${segmentStyle}}></div>`;
+      }).join('\n')
+    : `          <div className="textui-progress-fill textui-progress-${variant}" style={{ width: ${JSON.stringify(`${normalizedValue}%`)}, ...( ${props.token ? `{ backgroundColor: ${JSON.stringify(props.token)} }` : '{}'} ) }}></div>`;
 
   return `      <div key={${key}} className="textui-progress">
         ${(label || showValue) ? `<div className="textui-progress-header">
           <span className="textui-progress-label">${label ?? ''}</span>
-          ${showValue ? `<span className="textui-progress-value">${normalizedValue}%</span>` : ''}
+          ${showValue ? `<span className="textui-progress-value">${displayValue}%</span>` : ''}
         </div>` : ''}
         <div className="textui-progress-track">
-          <div className="textui-progress-fill textui-progress-${variant}" style={{ width: ${JSON.stringify(`${normalizedValue}%`)}, ...( ${props.token ? `{ backgroundColor: ${JSON.stringify(props.token)} }` : '{}'} ) }}></div>
+${fillMarkup}
         </div>
       </div>`;
 }

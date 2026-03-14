@@ -199,10 +199,10 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
   {
     name: 'Progress',
     description: 'Horizontal progress bar for percentages.',
-    requiredProps: ['value'],
-    optionalProps: ['label', 'showValue', 'variant', 'token'],
+    requiredProps: ['value または segments'],
+    optionalProps: ['segments', 'label', 'showValue', 'variant', 'token'],
     supportsChildren: false,
-    example: { Progress: { label: 'TypeScript', value: 66.8, showValue: true, variant: 'primary' } }
+    example: { Progress: { label: 'Languages', segments: [{ label: 'TypeScript', value: 54.5, variant: 'primary' }, { label: 'JavaScript', value: 43.6, variant: 'warning' }, { label: 'CSS', value: 1.8, variant: 'error' }], showValue: true } }
   },
   {
     name: 'Image',

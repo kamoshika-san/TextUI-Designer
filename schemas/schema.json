@@ -380,8 +380,17 @@
       "properties": {
         "Progress": {
           "type": "object",
-          "required": [
-            "value"
+          "anyOf": [
+            {
+              "required": [
+                "value"
+              ]
+            },
+            {
+              "required": [
+                "segments"
+              ]
+            }
           ],
           "properties": {
             "value": {
@@ -389,6 +398,46 @@
               "minimum": 0,
               "maximum": 100,
               "description": "割合（0-100）"
+            },
+            "segments": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": [
+                  "value"
+                ],
+                "properties": {
+                  "value": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "セグメントの割合（0-100）"
+                  },
+                  "label": {
+                    "type": "string",
+                    "description": "セグメントのラベル。"
+                  },
+                  "variant": {
+                    "type": "string",
+                    "enum": [
+                      "default",
+                      "primary",
+                      "success",
+                      "warning",
+                      "error"
+                    ],
+                    "default": "default",
+                    "description": "セグメントの見た目種別。"
+                  },
+                  "token": {
+                    "$ref": "#/definitions/tokenRef",
+                    "description": "セグメントに適用するデザイントークン参照。"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "description": "1本のバーを構成する複数セグメント。"
             },
             "label": {
               "type": "string",
@@ -417,9 +466,8 @@
             }
           },
           "additionalProperties": false,
-          "description": "割合表示用プログレスバー。\n利用可能な属性: value, label, showValue, variant, token"
-        }
-      },
+          "description": "割合表示用プログレスバー。\n利用可能な属性: value, segments, label, showValue, variant, token"
+        }      },
       "additionalProperties": false,
       "description": "割合表示用プログレスバー。"
     },

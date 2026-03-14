@@ -392,6 +392,7 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
     schemaRef: '#/definitions/Progress',
     properties: [
       { name: 'value', description: '割合（0-100）' },
+      { name: 'segments', description: '複数セグメント[{ value, label?, variant?, token? }]' },
       { name: 'label', description: '表示ラベル' },
       { name: 'showValue', description: 'パーセント表示', values: BOOLEAN_VALUES },
       {
