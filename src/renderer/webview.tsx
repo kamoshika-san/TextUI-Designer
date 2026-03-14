@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ThemeToggle } from './components/ThemeToggle';
 import { CustomThemeSelector } from './components/CustomThemeSelector';
@@ -11,6 +11,7 @@ import { ErrorPanel } from './components/ErrorPanel';
 import { ExportButton } from './components/ExportButton';
 import { useWebviewMessages } from './use-webview-messages';
 import { attachDevToolsListener } from './devtools-listener';
+import { getSharedLayoutStyles } from '../shared/layout-styles';
 
 const vscodeApi = getVSCodeApi();
 
@@ -22,6 +23,17 @@ const isDevelopmentMode = Boolean(
 const App: React.FC = () => {
   const [json, setJson] = useState<TextUIDSL | null>(null);
   const [error, setError] = useState<ErrorInfo | string | null>(null);
+
+  useEffect(() => {
+    const styleId = 'textui-shared-layout-styles';
+    if (document.getElementById(styleId)) {
+      return;
+    }
+    const styleEl = document.createElement('style');
+    styleEl.id = styleId;
+    styleEl.textContent = getSharedLayoutStyles();
+    document.head.appendChild(styleEl);
+  }, []);
 
   const applyDslUpdate = useCallback((incomingDsl: TextUIDSL) => {
     const startedAt = performance.now();
