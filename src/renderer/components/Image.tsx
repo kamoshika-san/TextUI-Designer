@@ -1,10 +1,11 @@
 import React from 'react';
 import { ImageComponent } from '../types';
 
-export const Image: React.FC<ImageComponent> = ({ src, alt, width, height, token }) => {
+export const Image: React.FC<ImageComponent> = ({ src, alt, width, height, variant = 'default', token }) => {
   const style: React.CSSProperties = {
     width,
     height,
+    ...(variant === 'avatar' ? { borderRadius: '50%' } : {}),
     ...(token ? { borderColor: token, borderStyle: 'solid', borderWidth: '1px' } : {})
   };
 

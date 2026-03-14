@@ -59,7 +59,7 @@ export function renderBadgeTemplate(props: BadgeComponent, key: number, tokenSty
 }
 
 export function renderImageTemplate(props: ImageComponent, key: number, tokenStyle: string): string {
-  const { src, alt = '', width, height } = props;
+  const { src, alt = '', width, height, variant = 'default' } = props;
   const stylePairs: string[] = [];
   if (width) {
     stylePairs.push(`width: ${JSON.stringify(width)}`);
@@ -68,5 +68,6 @@ export function renderImageTemplate(props: ImageComponent, key: number, tokenSty
     stylePairs.push(`height: ${JSON.stringify(height)}`);
   }
   const styleAttr = stylePairs.length > 0 ? ` style={{ ${stylePairs.join(', ')} }}` : '';
-  return `      <img key={${key}} src={${JSON.stringify(src)}} alt={${JSON.stringify(alt)}} className="textui-image"${styleAttr}${tokenStyle} />`;
+  const variantClass = variant === 'avatar' ? ' rounded-full' : '';
+  return `      <img key={${key}} src={${JSON.stringify(src)}} alt={${JSON.stringify(alt)}} className="textui-image${variantClass}"${styleAttr}${tokenStyle} />`;
 }

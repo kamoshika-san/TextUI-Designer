@@ -60,6 +60,7 @@ export interface ImageComponent {
   alt?: string;
   width?: string;
   height?: string;
+  variant?: 'default' | 'avatar';
   token?: string;
 }
 

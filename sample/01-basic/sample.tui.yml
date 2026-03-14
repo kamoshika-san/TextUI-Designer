@@ -108,6 +108,7 @@
         alt: "Sample image"
         width: "240px"
         height: "120px"
+        variant: "avatar"
     - Accordion:
         allowMultiple: true
         items:

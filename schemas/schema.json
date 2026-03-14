@@ -1100,13 +1100,21 @@
               "type": "string",
               "description": "画像の高さ（例: 100px, auto）。"
             },
+            "variant": {
+              "type": "string",
+              "enum": [
+                "default",
+                "avatar"
+              ],
+              "description": "画像の表示種別。avatar で角丸（円形）表示。"
+            },
             "token": {
               "$ref": "#/definitions/tokenRef",
               "description": "画像に適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
-          "description": "画像を表示するコンポーネント。利用可能な属性: src, alt, width, height, token"
+          "description": "画像を表示するコンポーネント。利用可能な属性: src, alt, width, height, variant, token"
         }
       },
       "additionalProperties": false,

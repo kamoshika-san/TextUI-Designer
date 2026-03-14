@@ -38,14 +38,15 @@ export class HtmlTextualRenderer {
 
 
   renderImage(props: ImageComponent): string {
-    const { src, alt, width, height, token } = props;
+    const { src, alt, width, height, variant = 'default', token } = props;
     const safeSrc = this.utils.escapeAttribute(src ?? '');
     const safeAlt = this.utils.escapeAttribute(alt ?? '');
     const widthAttr = width ? ` width="${this.utils.escapeAttribute(width)}"` : '';
     const heightAttr = height ? ` height="${this.utils.escapeAttribute(height)}"` : '';
+    const variantClass = variant === 'avatar' ? ' rounded-full' : '';
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('Image', token);
 
-    return `    <img src="${safeSrc}" alt="${safeAlt}" class="textui-image"${widthAttr}${heightAttr}${tokenStyle} />`;
+    return `    <img src="${safeSrc}" alt="${safeAlt}" class="textui-image${variantClass}"${widthAttr}${heightAttr}${tokenStyle} />`;
   }
 
   renderLink(props: LinkComponent): string {
