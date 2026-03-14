@@ -1,4 +1,4 @@
-import type { AlertComponent, BadgeComponent, ButtonComponent, DividerComponent, IconComponent, ImageComponent, LinkComponent, ProgressComponent, TextComponent } from '../renderer/types';
+import type { AlertComponent, BadgeComponent, ButtonComponent, DividerComponent, IconComponent, ImageComponent, LinkComponent, BreadcrumbComponent, ProgressComponent, TextComponent } from '../renderer/types';
 import type { StyleManager } from '../utils/style-manager';
 
 export function renderTextTemplate(props: TextComponent, key: number, tokenStyle: string, styleManager: typeof StyleManager, format: string): string {
@@ -57,6 +57,27 @@ export function renderLinkTemplate(props: LinkComponent, key: number, tokenStyle
 }
 
 
+
+
+export function renderBreadcrumbTemplate(props: BreadcrumbComponent, key: number, tokenStyle: string): string {
+  const { items = [], separator = '/' } = props;
+  const itemCode = items.map((item, index) => {
+    const isLast = index === items.length - 1;
+    const rel = item.target === '_blank' ? ' rel="noopener noreferrer"' : '';
+    const targetAttr = item.target ? ` target="${item.target}"` : '';
+    const content = item.href && !isLast
+      ? `<a className="textui-breadcrumb-link" href="${item.href}"${targetAttr}${rel}>${item.label}</a>`
+      : `<span className={${isLast} ? "textui-breadcrumb-current" : "textui-breadcrumb-label"}>${item.label}</span>`;
+
+    return `          <li key={${index}} className="textui-breadcrumb-item">${content}${!isLast ? `<span className="textui-breadcrumb-separator" aria-hidden="true">${separator}</span>` : ''}</li>`;
+  }).join('\n');
+
+  return `      <nav key={${key}} className="textui-breadcrumb" aria-label="Breadcrumb"${tokenStyle}>
+        <ol className="textui-breadcrumb-list">
+${itemCode}
+        </ol>
+      </nav>`;
+}
 
 export function renderBadgeTemplate(props: BadgeComponent, key: number, tokenStyle: string): string {
   const { label, variant = 'default', size = 'md' } = props;

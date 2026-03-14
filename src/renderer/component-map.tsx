@@ -21,6 +21,7 @@ import { Tabs } from './components/Tabs';
 import { TreeView } from './components/TreeView';
 import { Table } from './components/Table';
 import { Link } from './components/Link';
+import { Breadcrumb } from './components/Breadcrumb';
 import { Badge } from './components/Badge';
 import { Progress } from './components/Progress';
 import { Image } from './components/Image';
@@ -47,6 +48,7 @@ import type {
   TreeViewComponent,
   TableComponent,
   LinkComponent,
+  BreadcrumbComponent,
   BadgeComponent,
   ProgressComponent,
   ImageComponent,
@@ -131,6 +133,7 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
     />
   ),
   Link: (props, key) => <Link key={key} {...(props as unknown as LinkComponent)} />,
+  Breadcrumb: (props, key) => <Breadcrumb key={key} {...(props as unknown as BreadcrumbComponent)} />,
   Badge: (props, key) => <Badge key={key} {...(props as unknown as BadgeComponent)} />,
   Progress: (props, key) => <Progress key={key} {...(props as unknown as ProgressComponent)} />,
   Image: (props, key) => <Image key={key} {...(props as unknown as ImageComponent)} />,

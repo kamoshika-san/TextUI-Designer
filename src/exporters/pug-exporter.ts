@@ -2,7 +2,7 @@ import { isComponentDefValue, type TextUIDSL, type ComponentDef, type FormCompon
   type TextComponent, type InputComponent, type ButtonComponent, type CheckboxComponent,
   type RadioComponent, type SelectComponent, type DatePickerComponent, type SelectOption, type DividerComponent, type SpacerComponent,
   type AlertComponent, type ContainerComponent, type AccordionComponent,
-  type TabsComponent, type TreeViewComponent, type TableComponent, type LinkComponent, type BadgeComponent, type ProgressComponent, type ImageComponent, type IconComponent
+  type TabsComponent, type TreeViewComponent, type TableComponent, type LinkComponent, type BreadcrumbComponent, type BadgeComponent, type ProgressComponent, type ImageComponent, type IconComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -273,6 +273,34 @@ ${componentCode}`;
     const relAttr = target === '_blank' ? ' rel=\"noopener noreferrer\"' : '';
 
     return `      a(href=\"${this.escapeAttribute(href)}\"${targetAttr}${relAttr} class=\"textui-link\"${tokenStyle}) ${this.escapeHtml(label)}`;
+  }
+  protected renderBreadcrumb(props: BreadcrumbComponent, _key: number): string {
+    const { items = [], separator = '/', token } = props;
+    const tokenStyleModifier = this.getPugTokenStyleModifier('Breadcrumb', token);
+
+    let code = `      nav.textui-breadcrumb(aria-label="Breadcrumb"${tokenStyleModifier})`;
+    code += '\n        ol.textui-breadcrumb-list';
+
+    items.forEach((item, index) => {
+      const isLast = index === items.length - 1;
+      code += '\n          li.textui-breadcrumb-item';
+      if (item.href && !isLast) {
+        const targetAttr = item.target ? ` target="${this.escapeAttribute(item.target)}"` : '';
+        const relAttr = item.target === '_blank' ? ' rel="noopener noreferrer"' : '';
+        code += `
+            a.textui-breadcrumb-link(href="${this.escapeAttribute(item.href)}"${targetAttr}${relAttr}) ${this.escapeHtml(item.label)}`;
+      } else {
+        code += `
+            span(class="${isLast ? 'textui-breadcrumb-current' : 'textui-breadcrumb-label'}") ${this.escapeHtml(item.label)}`;
+      }
+
+      if (!isLast) {
+        code += `
+            span.textui-breadcrumb-separator(aria-hidden="true") ${this.escapeHtml(separator)}`;
+      }
+    });
+
+    return code;
   }
 
   protected renderAccordion(props: AccordionComponent, _key: number): string {

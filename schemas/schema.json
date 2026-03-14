@@ -106,6 +106,9 @@
           "$ref": "#/definitions/Link"
         },
         {
+          "$ref": "#/definitions/Breadcrumb"
+        },
+        {
           "$ref": "#/definitions/Badge"
         },
         {
@@ -338,7 +341,62 @@
       "additionalProperties": false,
       "description": "リンクコンポーネント。"
     },
-    "Badge": {
+        "Breadcrumb": {
+      "type": "object",
+      "required": [
+        "Breadcrumb"
+      ],
+      "properties": {
+        "Breadcrumb": {
+          "type": "object",
+          "required": [
+            "items"
+          ],
+          "properties": {
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": [
+                  "label"
+                ],
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "description": "項目表示テキスト。"
+                  },
+                  "href": {
+                    "type": "string",
+                    "description": "リンク先URL（省略時は非リンク表示）。"
+                  },
+                  "target": {
+                    "type": "string",
+                    "description": "リンクターゲット（例: _blank）。"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "description": "パンくずの階層項目配列。"
+            },
+            "separator": {
+              "type": "string",
+              "default": "/",
+              "description": "項目間セパレータ。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Breadcrumbに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "パンくずナビゲーション。"
+        }
+      },
+      "additionalProperties": false,
+      "description": "パンくずナビゲーション。"
+    },
+"Badge": {
       "type": "object",
       "required": [
         "Badge"

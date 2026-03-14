@@ -151,6 +151,17 @@ const COMPONENT_SPECS = {
       }
     }
   },
+
+  Breadcrumb: {
+    applyDefaults: props => {
+      if (!Array.isArray(props.items) || props.items.length === 0) {
+        props.items = [{ label: 'Home', href: '/' }, { label: 'Current' }];
+      }
+      if (typeof props.separator !== 'string' || !props.separator.trim()) {
+        props.separator = '/';
+      }
+    }
+  },
   Table: {
     applyDefaults: props => {
       if (!Array.isArray(props.columns) || props.columns.length === 0) {
