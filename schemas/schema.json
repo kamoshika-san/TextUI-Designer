@@ -478,7 +478,6 @@
         "Select": {
           "type": "object",
           "required": [
-            "label",
             "name",
             "options"
           ],
