@@ -12,7 +12,7 @@ export const Table: React.FC<TableComponent> = ({ columns = [], rows = [], strip
 
   return (
     <div className="overflow-x-auto border border-gray-700 rounded-md" style={width ? { width } : undefined}>
-      <table className="min-w-full divide-y divide-gray-700 text-sm text-gray-200">
+      <table className="min-w-full divide-y divide-gray-700 text-sm text-gray-200" style={{ tableLayout: 'fixed' }}>
         <thead className="bg-gray-800">
           <tr>
             {columns.map(column => (
