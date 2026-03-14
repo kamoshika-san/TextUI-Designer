@@ -147,6 +147,7 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
         width={containerProps.width}
         flexGrow={containerProps.flexGrow}
         minWidth={containerProps.minWidth}
+        token={containerProps.token}
       >
         {children
           ? children.map((child: ComponentDef, i: number) => renderRegisteredComponent(

@@ -48,7 +48,8 @@ describe('Exporter token style formatting', () => {
       page: {
         components: [
           { Divider: { orientation: 'horizontal' } },
-          { Divider: { orientation: 'horizontal', token: 'var(--token-divider)' } }
+          { Divider: { orientation: 'horizontal', token: 'var(--token-divider)' } },
+          { Container: { layout: 'vertical', token: 'var(--token-container-bg)', components: [] } }
         ]
       }
     };
@@ -57,5 +58,23 @@ describe('Exporter token style formatting', () => {
 
     assert.ok(html.includes('textui-divider my-4'), 'output contains divider with textui-divider and my-4');
     assert.ok(html.includes('textui-divider my-4') && html.includes('border-color: var(--token-divider)'));
+    assert.ok(html.includes('background-color: var(--token-container-bg)'));
   });
+
+  it('HtmlExporter: React render path also applies Container token as background-color', async () => {
+    const exporter = new HtmlExporter();
+    const dsl = {
+      page: {
+        components: [
+          { Container: { layout: 'vertical', token: 'rgb(245, 245, 245)', components: [{ Text: { value: 'inside' } }] } }
+        ]
+      }
+    };
+
+    const html = await exporter.export(dsl, { format: 'html' });
+
+    assert.ok(html.includes('background-color:rgb(245, 245, 245)') || html.includes('background-color: rgb(245, 245, 245)'));
+    assert.ok(html.includes('inside'));
+  });
+
 });

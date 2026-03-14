@@ -20,6 +20,7 @@ export const Container: React.FC<ContainerProps> = ({
   width,
   flexGrow,
   minWidth,
+  token,
   children
 }) => {
   const className = layoutClasses[layout];
@@ -32,11 +33,13 @@ export const Container: React.FC<ContainerProps> = ({
         flexBasis: width ?? 0,
         ...(width ? { width } : {}),
         ...(minWidth ? { minWidth } : {}),
+        ...(token ? { backgroundColor: token } : {}),
       }
-    : width || minWidth
+    : width || minWidth || token
       ? {
           ...(width ? { width } : {}),
           ...(minWidth ? { minWidth } : {}),
+          ...(token ? { backgroundColor: token } : {}),
         }
       : undefined;
 

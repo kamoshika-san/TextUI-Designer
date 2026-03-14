@@ -58,7 +58,7 @@ export abstract class BaseComponentRenderer implements Exporter {
     Divider: 'border-color',
     Spacer: 'height',
     Alert: 'border-color',
-    Container: 'border-color',
+    Container: 'background-color',
     Form: 'border-color',
     Accordion: 'border-color',
     Tabs: 'border-color',
