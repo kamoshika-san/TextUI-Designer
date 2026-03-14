@@ -46,6 +46,15 @@ export interface LinkComponent {
   token?: string;
 }
 
+export type BadgeVariant = 'default' | 'primary' | 'success' | 'warning' | 'error';
+
+export interface BadgeComponent {
+  label: string;
+  variant?: BadgeVariant;
+  size?: 'sm' | 'md';
+  token?: string;
+}
+
 export interface ImageComponent {
   src: string;
   alt?: string;
@@ -119,6 +128,7 @@ export interface FormField {
   Container?: ContainerComponent;
   Table?: TableComponent;
   Link?: LinkComponent;
+  Badge?: BadgeComponent;
   Image?: ImageComponent;
 }
 
@@ -241,6 +251,7 @@ export type ComponentDef =
   | { TreeView: TreeViewComponent }
   | { Table: TableComponent }
   | { Link: LinkComponent }
+  | { Badge: BadgeComponent }
   | { Image: ImageComponent };
 
 export interface PageDef {
@@ -328,6 +339,9 @@ export function isLinkComponent(comp: ComponentDef): comp is { Link: LinkCompone
   return 'Link' in comp;
 }
 
+export function isBadgeComponent(comp: ComponentDef): comp is { Badge: BadgeComponent } {
+  return 'Badge' in comp;
+}
 
 export function isImageComponent(comp: ComponentDef): comp is { Image: ImageComponent } {
   return 'Image' in comp;

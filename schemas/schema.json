@@ -106,6 +106,9 @@
           "$ref": "#/definitions/Link"
         },
         {
+          "$ref": "#/definitions/Badge"
+        },
+        {
           "$ref": "#/definitions/Image"
         }
       ]
@@ -317,6 +320,54 @@
       },
       "additionalProperties": false,
       "description": "リンクコンポーネント。"
+    },
+    "Badge": {
+      "type": "object",
+      "required": [
+        "Badge"
+      ],
+      "properties": {
+        "Badge": {
+          "type": "object",
+          "required": [
+            "label"
+          ],
+          "properties": {
+            "label": {
+              "type": "string",
+              "description": "バッジに表示するテキスト。"
+            },
+            "variant": {
+              "type": "string",
+              "enum": [
+                "default",
+                "primary",
+                "success",
+                "warning",
+                "error"
+              ],
+              "default": "default",
+              "description": "バッジの見た目種別。"
+            },
+            "size": {
+              "type": "string",
+              "enum": [
+                "sm",
+                "md"
+              ],
+              "description": "バッジサイズ。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Badgeに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "バッジ（チップ）コンポーネント。\n利用可能な属性: label, variant, size, token"
+        }
+      },
+      "additionalProperties": false,
+      "description": "バッジ（チップ）コンポーネント。"
     },
     "Checkbox": {
       "type": "object",

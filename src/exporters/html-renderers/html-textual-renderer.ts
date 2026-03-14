@@ -3,6 +3,7 @@ import type {
   DividerComponent,
   ImageComponent,
   LinkComponent,
+  BadgeComponent,
   SpacerComponent,
   TextComponent
 } from '../../renderer/types';
@@ -56,6 +57,16 @@ export class HtmlTextualRenderer {
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('Link', token);
 
     return `    <a href="${safeHref}"${safeTarget}${rel} class="textui-link"${tokenStyle}>${safeLabel}</a>`;
+  }
+
+  renderBadge(props: BadgeComponent): string {
+    const { label, variant = 'default', size = 'md', token } = props;
+    const safeLabel = this.utils.escapeHtml(label ?? '');
+    const safeVariant = this.utils.escapeAttribute(variant);
+    const safeSize = this.utils.escapeAttribute(size);
+    const tokenStyle = this.utils.getHtmlTokenStyleAttr('Badge', token);
+
+    return `    <span class="textui-badge textui-badge-${safeVariant} textui-badge-${safeSize}"${tokenStyle}>${safeLabel}</span>`;
   }
 
   renderDivider(props: DividerComponent): string {

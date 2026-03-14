@@ -24,6 +24,7 @@ export const BUILT_IN_COMPONENTS = [
   'TreeView',
   'Table',
   'Link',
+  'Badge',
   'Image'
 ] as const;
 
@@ -340,6 +341,34 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
       { name: 'href', description: 'リンク先URL' },
       { name: 'label', description: '表示テキスト' },
       { name: 'target', description: 'リンクターゲット（例: _blank）' },
+      { name: 'token', description: '適用するデザイントークン参照' }
+    ]
+  },
+
+  Badge: {
+    description: 'バッジ（チップ）',
+    schemaRef: '#/definitions/Badge',
+    properties: [
+      { name: 'label', description: '表示テキスト' },
+      {
+        name: 'variant',
+        description: '見た目種別',
+        values: [
+          { value: 'default', description: 'デフォルト' },
+          { value: 'primary', description: 'プライマリ' },
+          { value: 'success', description: '成功' },
+          { value: 'warning', description: '警告' },
+          { value: 'error', description: 'エラー' }
+        ]
+      },
+      {
+        name: 'size',
+        description: 'バッジサイズ',
+        values: [
+          { value: 'sm', description: '小' },
+          { value: 'md', description: '標準' }
+        ]
+      },
       { name: 'token', description: '適用するデザイントークン参照' }
     ]
   },

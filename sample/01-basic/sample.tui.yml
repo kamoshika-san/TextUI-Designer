@@ -9,6 +9,12 @@
     - Alert:
         variant: info
         message: "This sample includes every supported component."
+    - Badge:
+        label: "サンプル"
+        variant: "primary"
+    - Badge:
+        label: "チップ"
+        variant: "default"
     - Divider:
         orientation: horizontal
     - Spacer:

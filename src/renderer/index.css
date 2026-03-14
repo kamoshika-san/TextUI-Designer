@@ -109,6 +109,50 @@
 }
 
 
+.textui-badge {
+  display: inline-block;
+  padding: 0.25em 0.6em;
+  border-radius: 9999px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.textui-badge-default {
+  background-color: var(--color-surface, rgba(107, 114, 128, 0.25));
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.textui-badge-primary {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+.textui-badge-success {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+}
+
+.textui-badge-warning {
+  background-color: rgba(245, 158, 11, 0.22);
+  color: #fcd34d;
+}
+
+.textui-badge-error {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.textui-badge-sm {
+  font-size: 0.75rem;
+  padding: 0.15em 0.5em;
+}
+
+.textui-badge-md {
+  font-size: 0.875rem;
+  padding: 0.25em 0.6em;
+}
+
+
 .textui-image {
   display: block;
   max-width: 100%;
