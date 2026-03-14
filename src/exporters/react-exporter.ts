@@ -2,11 +2,11 @@ import type {
   TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, SelectComponent, DatePickerComponent, DividerComponent, SpacerComponent, AlertComponent,
-  ContainerComponent, AccordionComponent, TabsComponent, TreeViewComponent, TableComponent, LinkComponent, BadgeComponent, ProgressComponent, ImageComponent, SelectOption
+  ContainerComponent, AccordionComponent, TabsComponent, TreeViewComponent, TableComponent, LinkComponent, BadgeComponent, ProgressComponent, ImageComponent, IconComponent, SelectOption
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
-import { renderAlertTemplate, renderBadgeTemplate, renderButtonTemplate, renderDividerTemplate, renderImageTemplate, renderLinkTemplate, renderProgressTemplate, renderSpacerTemplate, renderTextTemplate } from './react-basic-renderer';
+import { renderAlertTemplate, renderBadgeTemplate, renderButtonTemplate, renderDividerTemplate, renderIconTemplate, renderImageTemplate, renderLinkTemplate, renderProgressTemplate, renderSpacerTemplate, renderTextTemplate } from './react-basic-renderer';
 import { renderAccordionTemplate, renderContainerTemplate, renderFormTemplate, renderTableTemplate, renderTabsTemplate, renderTreeViewTemplate } from './react-template-renderer';
 
 export class ReactExporter extends BaseComponentRenderer {
@@ -241,6 +241,11 @@ ${optionsCode}
   protected renderImage(props: ImageComponent, key: number): string {
     const tokenStyle = this.getReactTokenStyleInline('Image', props.token);
     return renderImageTemplate(props, key, tokenStyle);
+  }
+
+  protected renderIcon(props: IconComponent, key: number): string {
+    const tokenStyle = this.getReactTokenStyleInline('Icon', props.token);
+    return renderIconTemplate(props, key, tokenStyle);
   }
 
   protected renderContainer(props: ContainerComponent, key: number): string {

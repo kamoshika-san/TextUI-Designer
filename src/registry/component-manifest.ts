@@ -26,7 +26,8 @@ export const BUILT_IN_COMPONENTS = [
   'Link',
   'Badge',
   'Progress',
-  'Image'
+  'Image',
+  'Icon'
 ] as const;
 
 export type BuiltInComponentName = typeof BUILT_IN_COMPONENTS[number];
@@ -406,6 +407,16 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
           { value: 'error', description: 'エラー' }
         ]
       },
+      { name: 'token', description: '適用するデザイントークン参照' }
+    ]
+  },
+
+  Icon: {
+    description: 'アイコン表示。',
+    schemaRef: '#/definitions/Icon',
+    properties: [
+      { name: 'name', description: 'アイコン文字（例: 📁, ⭐, 👁）' },
+      { name: 'label', description: 'アイコン横に表示するラベル' },
       { name: 'token', description: '適用するデザイントークン参照' }
     ]
   }
