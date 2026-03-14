@@ -106,7 +106,8 @@ export class ExportService implements IExportService {
         format,
         outputPath: outputUri.fsPath,
         fileName: path.basename(outputUri.fsPath),
-        themePath: this.themeManager?.getThemePath()
+        themePath: this.themeManager?.getThemePath(),
+        sourcePath: filePath
       });
 
       await vscode.workspace.fs.writeFile(outputUri, Buffer.from(content, 'utf-8'));
