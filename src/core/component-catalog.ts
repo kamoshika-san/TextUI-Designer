@@ -189,6 +189,24 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
     example: { Link: { href: 'https://example.com', label: 'Open docs', target: '_blank' } }
   },
   {
+    name: 'Breadcrumb',
+    description: 'Breadcrumb hierarchy navigation.',
+    requiredProps: ['items', 'items[].label'],
+    optionalProps: ['separator', 'token', 'items[].href', 'items[].target'],
+    supportsChildren: false,
+    example: {
+      Breadcrumb: {
+        separator: '>',
+        items: [
+          { label: 'owner', href: 'https://github.com/owner' },
+          { label: 'repo', href: 'https://github.com/owner/repo' },
+          { label: 'issues' }
+        ]
+      }
+    }
+  },
+
+  {
     name: 'Badge',
     description: 'Tag/label pill (badge or chip).',
     requiredProps: ['label'],

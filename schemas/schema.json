@@ -106,6 +106,9 @@
           "$ref": "#/definitions/Link"
         },
         {
+          "$ref": "#/definitions/Breadcrumb"
+        },
+        {
           "$ref": "#/definitions/Badge"
         },
         {
@@ -323,6 +326,61 @@
       },
       "additionalProperties": false,
       "description": "リンクコンポーネント。"
+    },
+    "Breadcrumb": {
+      "type": "object",
+      "required": [
+        "Breadcrumb"
+      ],
+      "properties": {
+        "Breadcrumb": {
+          "type": "object",
+          "required": [
+            "items"
+          ],
+          "properties": {
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": [
+                  "label"
+                ],
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "description": "パンくずの表示テキスト。"
+                  },
+                  "href": {
+                    "type": "string",
+                    "description": "リンク先URL（末尾以外で指定可能）。"
+                  },
+                  "target": {
+                    "type": "string",
+                    "description": "リンクターゲット（例: _blank）。"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "description": "パンくずの階層項目一覧。"
+            },
+            "separator": {
+              "type": "string",
+              "description": "区切り文字（例: /, >）。",
+              "default": "/"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "パンくずに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "階層ナビゲーション（パンくず）を表示するコンポーネント。"
+        }
+      },
+      "additionalProperties": false,
+      "description": "階層ナビゲーション（パンくず）を表示するコンポーネント。"
     },
     "Badge": {
       "type": "object",

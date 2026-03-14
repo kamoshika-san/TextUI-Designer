@@ -2,7 +2,7 @@ import { isComponentDefValue, type TextUIDSL, type ComponentDef, type FormCompon
   type TextComponent, type InputComponent, type ButtonComponent, type CheckboxComponent,
   type RadioComponent, type SelectComponent, type DatePickerComponent, type SelectOption, type DividerComponent, type SpacerComponent,
   type AlertComponent, type ContainerComponent, type AccordionComponent,
-  type TabsComponent, type TreeViewComponent, type TableComponent, type LinkComponent, type BadgeComponent, type ProgressComponent, type ImageComponent
+  type TabsComponent, type TreeViewComponent, type TableComponent, type LinkComponent, type BreadcrumbComponent, type BadgeComponent, type ProgressComponent, type ImageComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -191,6 +191,34 @@ ${componentCode}`;
   }
 
 
+
+
+  protected renderBreadcrumb(props: BreadcrumbComponent, _key: number): string {
+    const { items = [], separator = '/', token } = props;
+    const tokenStyle = this.getPugTokenStyleSuffix('Breadcrumb', token);
+    let code = `      nav.textui-breadcrumb(aria-label="Breadcrumb"${tokenStyle})`;
+
+    items.forEach((item, index) => {
+      const isLast = index === items.length - 1;
+      code += `
+        span.textui-breadcrumb-item`;
+      if (item.href && !isLast) {
+        const targetAttr = item.target ? ` target="${this.escapeAttribute(item.target)}"` : '';
+        const relAttr = item.target === '_blank' ? ' rel="noopener noreferrer"' : '';
+        code += `
+          a.textui-breadcrumb-link(href="${this.escapeAttribute(item.href)}"${targetAttr}${relAttr}) ${this.escapeHtml(item.label)}`;
+      } else {
+        code += `
+          span(class="${isLast ? 'textui-breadcrumb-current' : 'textui-breadcrumb-label'}") ${this.escapeHtml(item.label)}`;
+      }
+      if (!isLast) {
+        code += `
+          span.textui-breadcrumb-separator(aria-hidden="true") ${this.escapeHtml(separator)}`;
+      }
+    });
+
+    return code;
+  }
 
   protected renderBadge(props: BadgeComponent, _key: number): string {
     const { label, variant = 'default', size = 'md', token } = props;

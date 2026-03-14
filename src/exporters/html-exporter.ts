@@ -19,6 +19,7 @@ import type {
   TreeViewComponent,
   TableComponent,
   LinkComponent,
+  BreadcrumbComponent,
   BadgeComponent,
   ProgressComponent,
   ImageComponent
@@ -140,6 +141,10 @@ export class HtmlExporter extends BaseComponentRenderer {
 
   protected renderLink(props: LinkComponent, _key: number): string {
     return this.textualRenderer.renderLink(props);
+  }
+
+  protected renderBreadcrumb(props: BreadcrumbComponent, _key: number): string {
+    return this.textualRenderer.renderBreadcrumb(props);
   }
 
   protected renderBadge(props: BadgeComponent, _key: number): string {

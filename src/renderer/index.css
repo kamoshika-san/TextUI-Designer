@@ -160,6 +160,44 @@
   padding: var(--component-badge-md-padding, 0.25em 0.6em);
 }
 
+
+.textui-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.textui-breadcrumb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.textui-breadcrumb-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.textui-breadcrumb-link:hover {
+  text-decoration: underline;
+}
+
+.textui-breadcrumb-label {
+  color: inherit;
+}
+
+.textui-breadcrumb-current {
+  color: var(--color-text-primary, #e5e7eb);
+  font-weight: 600;
+}
+
+.textui-breadcrumb-separator {
+  color: var(--color-text-muted, #6b7280);
+}
+
 /* 未対応コンポーネントのプレースホルダー */
 .textui-unsupported {
   display: inline-flex;

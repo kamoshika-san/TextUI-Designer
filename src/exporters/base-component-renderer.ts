@@ -20,6 +20,7 @@ import type {
   TreeViewComponent,
   TableComponent,
   LinkComponent,
+  BreadcrumbComponent,
   BadgeComponent,
   ProgressComponent,
   ImageComponent
@@ -64,6 +65,7 @@ export abstract class BaseComponentRenderer implements Exporter {
     TreeView: 'border-color',
     Table: 'border-color',
     Link: 'color',
+    Breadcrumb: 'color',
     Badge: 'background-color',
     Progress: 'background-color',
     Image: 'border-color'
@@ -98,6 +100,7 @@ export abstract class BaseComponentRenderer implements Exporter {
       TreeView: (props, key) => this.renderTreeView(props as TreeViewComponent, key),
       Table: (props, key) => this.renderTable(props as TableComponent, key),
       Link: (props, key) => this.renderLink(props as LinkComponent, key),
+      Breadcrumb: (props, key) => this.renderBreadcrumb(props as BreadcrumbComponent, key),
       Badge: (props, key) => this.renderBadge(props as BadgeComponent, key),
       Progress: (props, key) => this.renderProgress(props as ProgressComponent, key),
       Image: (props, key) => this.renderImage(props as ImageComponent, key)
@@ -207,6 +210,7 @@ export abstract class BaseComponentRenderer implements Exporter {
   protected abstract renderTreeView(props: TreeViewComponent, key: number): string;
   protected abstract renderTable(props: TableComponent, key: number): string;
   protected abstract renderLink(props: LinkComponent, key: number): string;
+  protected abstract renderBreadcrumb(props: BreadcrumbComponent, key: number): string;
   protected abstract renderBadge(props: BadgeComponent, key: number): string;
   protected abstract renderProgress(props: ProgressComponent, key: number): string;
   protected abstract renderImage(props: ImageComponent, key: number): string;

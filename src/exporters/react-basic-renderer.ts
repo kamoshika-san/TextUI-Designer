@@ -1,4 +1,4 @@
-import type { AlertComponent, BadgeComponent, ButtonComponent, DividerComponent, ImageComponent, LinkComponent, ProgressComponent, TextComponent } from '../renderer/types';
+import type { AlertComponent, BadgeComponent, BreadcrumbComponent, ButtonComponent, DividerComponent, ImageComponent, LinkComponent, ProgressComponent, TextComponent } from '../renderer/types';
 import type { StyleManager } from '../utils/style-manager';
 
 export function renderTextTemplate(props: TextComponent, key: number, tokenStyle: string, styleManager: typeof StyleManager, format: string): string {
@@ -52,6 +52,32 @@ export function renderLinkTemplate(props: LinkComponent, key: number, tokenStyle
 }
 
 
+
+
+export function renderBreadcrumbTemplate(props: BreadcrumbComponent, key: number, tokenStyle: string): string {
+  const { items = [], separator = '/' } = props;
+
+  const itemsMarkup = items
+    .map((item, index) => {
+      const isLast = index === items.length - 1;
+      const separatorMarkup = isLast
+        ? ''
+        : `<span className="textui-breadcrumb-separator" aria-hidden="true">${separator}</span>`;
+
+      if (item.href && !isLast) {
+        const rel = item.target === '_blank' ? ' rel="noopener noreferrer"' : '';
+        const targetAttr = item.target ? ` target="${item.target}"` : '';
+        return `          <span className="textui-breadcrumb-item"><a className="textui-breadcrumb-link" href="${item.href}"${targetAttr}${rel}>${item.label}</a>${separatorMarkup}</span>`;
+      }
+
+      return `          <span className="textui-breadcrumb-item"><span className="${isLast ? 'textui-breadcrumb-current' : 'textui-breadcrumb-label'}">${item.label}</span>${separatorMarkup}</span>`;
+    })
+    .join('\n');
+
+  return `      <nav key={${key}} className="textui-breadcrumb" aria-label="Breadcrumb"${tokenStyle}>
+${itemsMarkup}
+      </nav>`;
+}
 
 export function renderBadgeTemplate(props: BadgeComponent, key: number, tokenStyle: string): string {
   const { label, variant = 'default', size = 'md' } = props;

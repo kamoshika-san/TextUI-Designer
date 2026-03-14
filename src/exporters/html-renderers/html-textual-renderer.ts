@@ -3,6 +3,7 @@ import type {
   DividerComponent,
   ImageComponent,
   LinkComponent,
+  BreadcrumbComponent,
   BadgeComponent,
   ProgressComponent,
   SpacerComponent,
@@ -59,6 +60,36 @@ export class HtmlTextualRenderer {
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('Link', token);
 
     return `    <a href="${safeHref}"${safeTarget}${rel} class="textui-link"${tokenStyle}>${safeLabel}</a>`;
+  }
+
+
+  renderBreadcrumb(props: BreadcrumbComponent): string {
+    const { items = [], separator = '/', token } = props;
+    const tokenStyle = this.utils.getHtmlTokenStyleAttr('Breadcrumb', token);
+
+    const itemMarkup = items
+      .map((item, index) => {
+        const isLast = index === items.length - 1;
+        const label = this.utils.escapeHtml(item.label ?? '');
+        const separatorHtml = isLast
+          ? ''
+          : `<span class="textui-breadcrumb-separator" aria-hidden="true">${this.utils.escapeHtml(separator)}</span>`;
+
+        if (item.href && !isLast) {
+          const href = this.utils.escapeAttribute(item.href);
+          const target = item.target ? ` target="${this.utils.escapeAttribute(item.target)}"` : '';
+          const rel = item.target === '_blank' ? ' rel="noopener noreferrer"' : '';
+          return `      <span class="textui-breadcrumb-item"><a class="textui-breadcrumb-link" href="${href}"${target}${rel}>${label}</a>${separatorHtml}</span>`;
+        }
+
+        const cls = isLast ? 'textui-breadcrumb-current' : 'textui-breadcrumb-label';
+        return `      <span class="textui-breadcrumb-item"><span class="${cls}">${label}</span>${separatorHtml}</span>`;
+      })
+      .join('\n');
+
+    return `    <nav class="textui-breadcrumb" aria-label="Breadcrumb"${tokenStyle}>
+${itemMarkup}
+    </nav>`;
   }
 
   renderBadge(props: BadgeComponent): string {
