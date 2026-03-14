@@ -109,6 +109,9 @@
           "$ref": "#/definitions/Badge"
         },
         {
+          "$ref": "#/definitions/Progress"
+        },
+        {
           "$ref": "#/definitions/Image"
         }
       ]
@@ -368,6 +371,57 @@
       },
       "additionalProperties": false,
       "description": "バッジ（チップ）コンポーネント。"
+    },
+    "Progress": {
+      "type": "object",
+      "required": [
+        "Progress"
+      ],
+      "properties": {
+        "Progress": {
+          "type": "object",
+          "required": [
+            "value"
+          ],
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "割合（0-100）"
+            },
+            "label": {
+              "type": "string",
+              "description": "バーの左側に表示するラベル。"
+            },
+            "showValue": {
+              "type": "boolean",
+              "default": true,
+              "description": "true の場合は割合の数値を表示します。"
+            },
+            "variant": {
+              "type": "string",
+              "enum": [
+                "default",
+                "primary",
+                "success",
+                "warning",
+                "error"
+              ],
+              "default": "default",
+              "description": "プログレスバーの色種別。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Progressに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "割合表示用プログレスバー。\n利用可能な属性: value, label, showValue, variant, token"
+        }
+      },
+      "additionalProperties": false,
+      "description": "割合表示用プログレスバー。"
     },
     "Checkbox": {
       "type": "object",

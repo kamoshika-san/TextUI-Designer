@@ -3,7 +3,7 @@ import type {
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, SelectComponent, DatePickerComponent, SelectOption, DividerComponent, SpacerComponent,
   AlertComponent, ContainerComponent, AccordionComponent,
-  TabsComponent, TreeViewComponent, TableComponent, LinkComponent, BadgeComponent, ImageComponent
+  TabsComponent, TreeViewComponent, TableComponent, LinkComponent, BadgeComponent, ProgressComponent, ImageComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -197,6 +197,25 @@ ${componentCode}`;
     const { label, variant = 'default', size = 'md', token } = props;
     const tokenStyle = this.getPugTokenStyleSuffix('Badge', token);
     return `      span(class="textui-badge textui-badge-${this.escapeAttribute(variant)} textui-badge-${this.escapeAttribute(size)}"${tokenStyle}) ${this.escapeHtml(label)}`;
+  }
+
+
+  protected renderProgress(props: ProgressComponent, _key: number): string {
+    const { value, label, showValue = true, variant = 'default', token } = props;
+    const normalizedValue = Math.min(100, Math.max(0, value));
+    let code = '      .textui-progress';
+
+    if (label || showValue) {
+      code += '\n        .textui-progress-header';
+      code += `\n          span.textui-progress-label ${this.escapeHtml(label ?? '')}`;
+      if (showValue) {
+        code += `\n          span.textui-progress-value ${this.escapeHtml(`${normalizedValue}%`)}`;
+      }
+    }
+
+    code += `\n        .textui-progress-track`;
+    code += `\n          .textui-progress-fill.textui-progress-${this.escapeAttribute(variant)}(style="width: ${this.escapeAttribute(`${normalizedValue}%`)};${token ? ` background-color: ${this.escapeAttribute(token)};` : ''}")`;
+    return code;
   }
 
   protected renderImage(props: ImageComponent, _key: number): string {

@@ -20,6 +20,7 @@ import type {
   TableComponent,
   LinkComponent,
   BadgeComponent,
+  ProgressComponent,
   ImageComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
@@ -129,6 +130,10 @@ export class HtmlExporter extends BaseComponentRenderer {
 
   protected renderBadge(props: BadgeComponent, _key: number): string {
     return this.textualRenderer.renderBadge(props);
+  }
+
+  protected renderProgress(props: ProgressComponent, _key: number): string {
+    return this.textualRenderer.renderProgress(props);
   }
 
   protected renderImage(props: ImageComponent, _key: number): string {

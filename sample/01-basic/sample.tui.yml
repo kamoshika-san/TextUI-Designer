@@ -15,6 +15,21 @@
     - Badge:
         label: "チップ"
         variant: "default"
+    - Text:
+        variant: h3
+        value: "Languages"
+    - Progress:
+        label: "TypeScript"
+        value: 66.8
+        variant: primary
+    - Progress:
+        label: "JavaScript"
+        value: 21.4
+        variant: warning
+    - Progress:
+        label: "CSS"
+        value: 11.8
+        variant: success
     - Divider:
         orientation: horizontal
     - Spacer:

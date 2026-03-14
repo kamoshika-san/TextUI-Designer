@@ -153,6 +153,62 @@
 }
 
 
+
+
+.textui-progress {
+  width: 100%;
+  max-width: 32rem;
+  margin-bottom: 0.75rem;
+}
+
+.textui-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #d1d5db);
+}
+
+.textui-progress-label {
+  font-weight: 500;
+}
+
+.textui-progress-track {
+  width: 100%;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background-color: var(--color-surface, rgba(107, 114, 128, 0.25));
+  overflow: hidden;
+}
+
+.textui-progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.2s ease;
+  background-color: rgba(107, 114, 128, 0.7);
+}
+
+.textui-progress-default {
+  background-color: rgba(107, 114, 128, 0.7);
+}
+
+.textui-progress-primary {
+  background-color: #3b82f6;
+}
+
+.textui-progress-success {
+  background-color: #22c55e;
+}
+
+.textui-progress-warning {
+  background-color: #f59e0b;
+}
+
+.textui-progress-error {
+  background-color: #ef4444;
+}
 .textui-image {
   display: block;
   max-width: 100%;

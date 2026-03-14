@@ -21,6 +21,7 @@ import type {
   TableComponent,
   LinkComponent,
   BadgeComponent,
+  ProgressComponent,
   ImageComponent
 } from '../renderer/types';
 import type { ExportOptions, Exporter } from './index';
@@ -64,6 +65,7 @@ export abstract class BaseComponentRenderer implements Exporter {
     Table: 'border-color',
     Link: 'color',
     Badge: 'background-color',
+    Progress: 'background-color',
     Image: 'border-color'
   };
 
@@ -97,6 +99,7 @@ export abstract class BaseComponentRenderer implements Exporter {
       Table: (props, key) => this.renderTable(props as TableComponent, key),
       Link: (props, key) => this.renderLink(props as LinkComponent, key),
       Badge: (props, key) => this.renderBadge(props as BadgeComponent, key),
+      Progress: (props, key) => this.renderProgress(props as ProgressComponent, key),
       Image: (props, key) => this.renderImage(props as ImageComponent, key)
     };
 
@@ -205,6 +208,7 @@ export abstract class BaseComponentRenderer implements Exporter {
   protected abstract renderTable(props: TableComponent, key: number): string;
   protected abstract renderLink(props: LinkComponent, key: number): string;
   protected abstract renderBadge(props: BadgeComponent, key: number): string;
+  protected abstract renderProgress(props: ProgressComponent, key: number): string;
   protected abstract renderImage(props: ImageComponent, key: number): string;
 
   protected getStyleManager(): typeof StyleManager {

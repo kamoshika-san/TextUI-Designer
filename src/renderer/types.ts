@@ -63,6 +63,16 @@ export interface ImageComponent {
   token?: string;
 }
 
+export type ProgressVariant = 'default' | 'primary' | 'success' | 'warning' | 'error';
+
+export interface ProgressComponent {
+  value: number;
+  label?: string;
+  showValue?: boolean;
+  variant?: ProgressVariant;
+  token?: string;
+}
+
 export interface CheckboxComponent {
   label: string;
   name?: string;
@@ -129,6 +139,7 @@ export interface FormField {
   Table?: TableComponent;
   Link?: LinkComponent;
   Badge?: BadgeComponent;
+  Progress?: ProgressComponent;
   Image?: ImageComponent;
 }
 
@@ -252,6 +263,7 @@ export type ComponentDef =
   | { Table: TableComponent }
   | { Link: LinkComponent }
   | { Badge: BadgeComponent }
+  | { Progress: ProgressComponent }
   | { Image: ImageComponent };
 
 export interface PageDef {
@@ -341,6 +353,10 @@ export function isLinkComponent(comp: ComponentDef): comp is { Link: LinkCompone
 
 export function isBadgeComponent(comp: ComponentDef): comp is { Badge: BadgeComponent } {
   return 'Badge' in comp;
+}
+
+export function isProgressComponent(comp: ComponentDef): comp is { Progress: ProgressComponent } {
+  return 'Progress' in comp;
 }
 
 export function isImageComponent(comp: ComponentDef): comp is { Image: ImageComponent } {
