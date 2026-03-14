@@ -28,9 +28,9 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
     name: 'Button',
     description: 'Action button.',
     requiredProps: ['label'],
-    optionalProps: ['kind', 'submit', 'token'],
+    optionalProps: ['kind', 'submit', 'icon', 'iconPosition', 'token'],
     supportsChildren: false,
-    example: { Button: { label: 'Submit', kind: 'primary' } }
+    example: { Button: { icon: '⭐', label: 'Submit', kind: 'primary' } }
   },
   {
     name: 'Checkbox',
@@ -212,6 +212,16 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
     supportsChildren: false,
     example: { Image: { src: 'https://example.com/logo.png', alt: 'Company logo', width: '120px', height: 'auto' } }
   },
+
+  {
+    name: 'Icon',
+    description: 'Icon display (emoji/symbol).',
+    requiredProps: ['name'],
+    optionalProps: ['label', 'token'],
+    supportsChildren: false,
+    example: { Icon: { name: '📁', label: 'Folder' } }
+  },
+
   {
     name: 'Table',
     description: 'Tabular data display.',

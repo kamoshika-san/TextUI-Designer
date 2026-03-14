@@ -718,3 +718,23 @@ body.light {
   padding: var(--spacing-md, 1rem);
   gap: var(--spacing-sm, 0.75rem);
 }
+
+.textui-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.textui-button-icon {
+  line-height: 1;
+}
+
+.textui-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.textui-icon-glyph {
+  line-height: 1;
+}

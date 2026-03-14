@@ -5,7 +5,9 @@ type ButtonKind = 'primary' | 'secondary' | 'submit';
 
 interface ButtonProps extends ButtonComponent {
   kind?: ButtonKind;
-  label: string;
+  label?: string;
+  icon?: string;
+  iconPosition?: 'left' | 'right';
   submit?: boolean;
   disabled?: boolean;
   size?: 'sm' | 'md' | 'lg';
@@ -27,6 +29,8 @@ const sizeClasses: Record<string, string> = {
 export const Button: React.FC<ButtonProps> = ({
   kind = 'primary',
   label,
+  icon,
+  iconPosition = 'left',
   submit = false,
   disabled = false,
   size = 'md',
@@ -44,7 +48,9 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={disabled}
       onClick={onClick}
     >
-      {label}
+      {icon && iconPosition === 'left' ? <span className="textui-button-icon" aria-hidden="true">{icon}</span> : null}
+      {label ? <span className="textui-button-label">{label}</span> : null}
+      {icon && iconPosition === 'right' ? <span className="textui-button-icon" aria-hidden="true">{icon}</span> : null}
     </button>
   );
 }; 

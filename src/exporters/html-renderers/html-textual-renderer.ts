@@ -1,6 +1,7 @@
 import type {
   AlertComponent,
   DividerComponent,
+  IconComponent,
   ImageComponent,
   LinkComponent,
   BadgeComponent,
@@ -48,6 +49,15 @@ export class HtmlTextualRenderer {
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('Image', token);
 
     return `    <img src="${safeSrc}" alt="${safeAlt}" class="textui-image${variantClass}"${widthAttr}${heightAttr}${tokenStyle} />`;
+  }
+
+  renderIcon(props: IconComponent): string {
+    const { name, label, token } = props;
+    const safeName = this.utils.escapeHtml(name ?? '');
+    const safeAria = this.utils.escapeAttribute(label ?? name ?? '');
+    const safeLabel = this.utils.escapeHtml(label ?? '');
+    const tokenStyle = this.utils.getHtmlTokenStyleAttr('Icon', token);
+    return `    <span class="textui-icon" role="img" aria-label="${safeAria}"${tokenStyle}><span class="textui-icon-glyph">${safeName}</span>${label ? `<span class="textui-icon-label">${safeLabel}</span>` : ''}</span>`;
   }
 
   renderLink(props: LinkComponent): string {

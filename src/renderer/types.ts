@@ -32,10 +32,18 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonComponent {
   kind?: ButtonKind;
-  label: string;
+  label?: string;
+  icon?: string;
+  iconPosition?: 'left' | 'right';
   submit?: boolean;
   disabled?: boolean;
   size?: ButtonSize;
+  token?: string;
+}
+
+export interface IconComponent {
+  name: string;
+  label?: string;
   token?: string;
 }
 
@@ -142,6 +150,7 @@ export interface FormField {
   Badge?: BadgeComponent;
   Progress?: ProgressComponent;
   Image?: ImageComponent;
+  Icon?: IconComponent;
 }
 
 export interface FormAction {
@@ -271,7 +280,8 @@ export type ComponentDef =
   | { Link: LinkComponent }
   | { Badge: BadgeComponent }
   | { Progress: ProgressComponent }
-  | { Image: ImageComponent };
+  | { Image: ImageComponent }
+  | { Icon: IconComponent };
 
 export interface PageDef {
   id: string;

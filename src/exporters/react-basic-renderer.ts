@@ -1,4 +1,4 @@
-import type { AlertComponent, BadgeComponent, ButtonComponent, DividerComponent, ImageComponent, LinkComponent, ProgressComponent, TextComponent } from '../renderer/types';
+import type { AlertComponent, BadgeComponent, ButtonComponent, DividerComponent, IconComponent, ImageComponent, LinkComponent, ProgressComponent, TextComponent } from '../renderer/types';
 import type { StyleManager } from '../utils/style-manager';
 
 export function renderTextTemplate(props: TextComponent, key: number, tokenStyle: string, styleManager: typeof StyleManager, format: string): string {
@@ -8,14 +8,19 @@ export function renderTextTemplate(props: TextComponent, key: number, tokenStyle
 }
 
 export function renderButtonTemplate(props: ButtonComponent, key: number, tokenStyle: string, styleManager: typeof StyleManager, format: string): string {
-  const { label, kind = 'primary' } = props;
+  const { label, icon, iconPosition = 'left', kind = 'primary' } = props;
   const className = styleManager.getButtonKindClass(kind, format);
+  const content = [
+    icon && iconPosition === 'left' ? `<span className=\"textui-button-icon\" aria-hidden=\"true\">${icon}</span>` : '',
+    label ? `<span className=\"textui-button-label\">${label}</span>` : '',
+    icon && iconPosition === 'right' ? `<span className=\"textui-button-icon\" aria-hidden=\"true\">${icon}</span>` : ''
+  ].filter(Boolean).join('');
   return `      <button
         key={${key}}
         className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${className} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         ${tokenStyle}
       >
-        ${label}
+        ${content}
       </button>`;
 }
 
@@ -86,4 +91,9 @@ export function renderImageTemplate(props: ImageComponent, key: number, tokenSty
   const styleAttr = stylePairs.length > 0 ? ` style={{ ${stylePairs.join(', ')} }}` : '';
   const variantClass = variant === 'avatar' ? ' rounded-full' : '';
   return `      <img key={${key}} src={${JSON.stringify(src)}} alt={${JSON.stringify(alt)}} className="textui-image${variantClass}"${styleAttr}${tokenStyle} />`;
+}
+
+export function renderIconTemplate(props: IconComponent, key: number, tokenStyle: string): string {
+  const { name, label } = props;
+  return `      <span key={${key}} className="textui-icon" role="img" aria-label={${JSON.stringify(label || name)}}${tokenStyle}><span className="textui-icon-glyph">${name}</span>${label ? `<span className="textui-icon-label">${label}</span>` : ''}</span>`;
 }
