@@ -331,6 +331,7 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
       { name: 'columns', description: '列定義（key/header）配列' },
       { name: 'rows', description: '行データ配列' },
       { name: 'striped', description: '行を交互色で表示', values: BOOLEAN_VALUES },
+      { name: 'rowHover', description: '行ホバー時にハイライト表示', values: BOOLEAN_VALUES },
       { name: 'width', description: '横幅（例: 70%, 480px）' }
     ]
   },

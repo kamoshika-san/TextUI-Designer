@@ -216,7 +216,7 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
     name: 'Table',
     description: 'Tabular data display.',
     requiredProps: ['columns', 'rows', 'columns[].key', 'columns[].header'],
-    optionalProps: ['striped', 'width', 'token'],
+    optionalProps: ['striped', 'rowHover', 'width', 'token'],
     supportsChildren: false,
     example: {
       Table: {

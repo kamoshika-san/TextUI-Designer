@@ -125,7 +125,7 @@ ${treeCode}
   }
 
   renderTable(props: TableComponent): string {
-    const { columns = [], rows = [], striped = false, token } = props;
+    const { columns = [], rows = [], striped = false, rowHover = false, token } = props;
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('Table', token);
 
     if (columns.length === 0) {
@@ -141,7 +141,14 @@ ${treeCode}
 
     const bodyCode = rows
       .map((row, rowIndex) => {
-        const rowClass = striped && rowIndex % 2 === 1 ? ' class="bg-gray-800/70"' : '';
+        const rowClasses: string[] = [];
+        if (striped && rowIndex % 2 === 1) {
+          rowClasses.push('bg-gray-800/70');
+        }
+        if (rowHover) {
+          rowClasses.push('hover:bg-gray-800/80', 'transition-colors');
+        }
+        const rowClassAttr = rowClasses.length > 0 ? ` class="${rowClasses.join(' ')}"` : '';
         const cells = columns
           .map(column => {
             const widthStyle = column.width ? ` style="width: ${this.utils.escapeAttribute(column.width)}"` : '';
@@ -149,7 +156,7 @@ ${treeCode}
           })
           .join('\n');
 
-        return `        <tr${rowClass}>\n${cells}\n        </tr>`;
+        return `        <tr${rowClassAttr}>\n${cells}\n        </tr>`;
       })
       .join('\n');
 

@@ -15,7 +15,7 @@ describe('ReactExporter template rendering split', () => {
           { Accordion: { items: [{ title: 'A1', components: [{ Text: { value: 'A body' } }] }] } },
           { Tabs: { defaultTab: 0, items: [{ label: 't1', components: [{ Text: { value: 'tab body' } }] }] } },
           { TreeView: { items: [{ label: 'root', children: [{ label: 'child' }] }] } },
-          { Table: { columns: [{ key: 'name', header: 'Name' }], rows: [{ name: 'Alice' }] } }
+          { Table: { columns: [{ key: 'name', header: 'Name' }], rows: [{ name: 'Alice' }], rowHover: true } }
         ]
       }
     }, { format: 'react' });
@@ -25,5 +25,6 @@ describe('ReactExporter template rendering split', () => {
     assert.ok(code.includes('overflow-x-auto'));
     assert.ok(code.includes('<form key={1} id="f1"'));
     assert.ok(code.includes('inside'));
+    assert.ok(code.includes('hover:bg-gray-100 transition-colors'));
   });
 });

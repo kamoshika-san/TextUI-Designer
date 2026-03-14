@@ -233,6 +233,7 @@ export interface TableComponent {
   columns: TableColumn[];
   rows: Record<string, string | number | boolean | null>[];
   striped?: boolean;
+  rowHover?: boolean;
   width?: string;
   token?: string;
 }

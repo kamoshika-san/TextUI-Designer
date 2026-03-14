@@ -367,7 +367,7 @@ ${indentedCode}`;
   }
 
   protected renderTable(props: TableComponent, _key: number): string {
-    const { columns = [], rows = [], striped = false, token } = props;
+    const { columns = [], rows = [], striped = false, rowHover = false, token } = props;
     const tokenStyleModifier = this.getPugTokenStyleModifier('Table', token);
 
     if (columns.length === 0) {
@@ -387,11 +387,14 @@ ${indentedCode}`;
     code += `\n          tbody.divide-y.divide-gray-200.bg-white`;
 
     rows.forEach((row, rowIndex) => {
-      const stripedClass = striped && rowIndex % 2 === 1 ? '.bg-gray-50' : '';
-      code += `\n            tr${stripedClass}`;
+      const rowModifiers = [
+        striped && rowIndex % 2 === 1 ? '.bg-gray-50' : '',
+        rowHover ? '.hover\:bg-gray-100.transition-colors' : ''
+      ].join('');
+      code += `\n            tr${rowModifiers}`;
       columns.forEach(column => {
         const value = this.toTableCellText(row[column.key]);
-        const widthStyle = column.width ? `(style=\"width: ${this.escapeAttribute(column.width)}\")` : '';
+        const widthStyle = column.width ? `(style="width: ${this.escapeAttribute(column.width)}")` : '';
         code += `\n              td.px-4.py-2.align-top.text-gray-700${widthStyle} ${value}`;
       });
     });
