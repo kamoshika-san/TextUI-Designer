@@ -126,7 +126,12 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
     const context = extractRenderContext(props);
     const containerPath = context?.dslPath ?? '';
     return (
-      <Container key={key} layout={containerProps.layout || 'vertical'} width={containerProps.width}>
+      <Container
+        key={key}
+        layout={containerProps.layout || 'vertical'}
+        width={containerProps.width}
+        flexGrow={containerProps.flexGrow}
+      >
         {children
           ? children.map((child: ComponentDef, i: number) => renderRegisteredComponent(
               child,
