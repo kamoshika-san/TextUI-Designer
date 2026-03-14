@@ -14,14 +14,13 @@ import { renderRegisteredComponent } from '../renderer/component-map';
  */
 export function renderPageComponentsToStaticHtml(components: ComponentDef[]): string {
   const componentKeys = createComponentKeys(components);
-  const root = (
-    <div style={{ padding: 24 }}>
-      {components.map((comp, i) =>
-        renderRegisteredComponent(comp, componentKeys[i] ?? i, {
-          dslPath: `/page/components/${i}`
-        })
-      )}
-    </div>
+  const children = components.map((comp, i) =>
+    renderRegisteredComponent(comp, componentKeys[i] ?? i, {
+      dslPath: `/page/components/${i}`
+    })
   );
-  return renderToStaticMarkup(root);
+
+  return renderToStaticMarkup(
+    React.createElement('div', { style: { padding: 24 } }, ...children)
+  );
 }
