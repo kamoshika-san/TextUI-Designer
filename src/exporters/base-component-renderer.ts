@@ -20,6 +20,7 @@ import type {
   TreeViewComponent,
   TableComponent,
   LinkComponent,
+  BadgeComponent,
   ImageComponent
 } from '../renderer/types';
 import type { ExportOptions, Exporter } from './index';
@@ -62,6 +63,7 @@ export abstract class BaseComponentRenderer implements Exporter {
     TreeView: 'border-color',
     Table: 'border-color',
     Link: 'color',
+    Badge: 'background-color',
     Image: 'border-color'
   };
 
@@ -94,6 +96,7 @@ export abstract class BaseComponentRenderer implements Exporter {
       TreeView: (props, key) => this.renderTreeView(props as TreeViewComponent, key),
       Table: (props, key) => this.renderTable(props as TableComponent, key),
       Link: (props, key) => this.renderLink(props as LinkComponent, key),
+      Badge: (props, key) => this.renderBadge(props as BadgeComponent, key),
       Image: (props, key) => this.renderImage(props as ImageComponent, key)
     };
 
@@ -201,6 +204,7 @@ export abstract class BaseComponentRenderer implements Exporter {
   protected abstract renderTreeView(props: TreeViewComponent, key: number): string;
   protected abstract renderTable(props: TableComponent, key: number): string;
   protected abstract renderLink(props: LinkComponent, key: number): string;
+  protected abstract renderBadge(props: BadgeComponent, key: number): string;
   protected abstract renderImage(props: ImageComponent, key: number): string;
 
   protected getStyleManager(): typeof StyleManager {

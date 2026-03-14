@@ -21,6 +21,7 @@ import { Tabs } from './components/Tabs';
 import { TreeView } from './components/TreeView';
 import { Table } from './components/Table';
 import { Link } from './components/Link';
+import { Badge } from './components/Badge';
 import { Image } from './components/Image';
 import type {
   ComponentDef,
@@ -43,6 +44,7 @@ import type {
   TreeViewComponent,
   TableComponent,
   LinkComponent,
+  BadgeComponent,
   ImageComponent
 } from './types';
 import { getComponentName } from '../registry/component-registry';
@@ -113,6 +115,7 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
   ),
   Table: (props, key) => <Table key={key} {...(props as unknown as TableComponent)} />,
   Link: (props, key) => <Link key={key} {...(props as unknown as LinkComponent)} />,
+  Badge: (props, key) => <Badge key={key} {...(props as unknown as BadgeComponent)} />,
   Image: (props, key) => <Image key={key} {...(props as unknown as ImageComponent)} />,
   Container: (props, key) => {
     const containerProps = props as unknown as ContainerComponent;

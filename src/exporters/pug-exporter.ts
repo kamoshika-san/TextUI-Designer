@@ -3,7 +3,7 @@ import type {
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, SelectComponent, DatePickerComponent, SelectOption, DividerComponent, SpacerComponent,
   AlertComponent, ContainerComponent, AccordionComponent,
-  TabsComponent, TreeViewComponent, TableComponent, LinkComponent, ImageComponent
+  TabsComponent, TreeViewComponent, TableComponent, LinkComponent, BadgeComponent, ImageComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -191,6 +191,13 @@ ${componentCode}`;
     return code;
   }
 
+
+
+  protected renderBadge(props: BadgeComponent, _key: number): string {
+    const { label, variant = 'default', size = 'md', token } = props;
+    const tokenStyle = this.getPugTokenStyleSuffix('Badge', token);
+    return `      span(class="textui-badge textui-badge-${this.escapeAttribute(variant)} textui-badge-${this.escapeAttribute(size)}"${tokenStyle}) ${this.escapeHtml(label)}`;
+  }
 
   protected renderImage(props: ImageComponent, _key: number): string {
     const { src, alt = '', width, height, token } = props;

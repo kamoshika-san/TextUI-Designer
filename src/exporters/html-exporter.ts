@@ -17,6 +17,7 @@ import type {
   TreeViewComponent,
   TableComponent,
   LinkComponent,
+  BadgeComponent,
   ImageComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
@@ -120,6 +121,10 @@ export class HtmlExporter extends BaseComponentRenderer {
 
   protected renderLink(props: LinkComponent, _key: number): string {
     return this.textualRenderer.renderLink(props);
+  }
+
+  protected renderBadge(props: BadgeComponent, _key: number): string {
+    return this.textualRenderer.renderBadge(props);
   }
 
   protected renderImage(props: ImageComponent, _key: number): string {

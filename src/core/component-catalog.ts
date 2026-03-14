@@ -189,6 +189,14 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
     example: { Link: { href: 'https://example.com', label: 'Open docs', target: '_blank' } }
   },
   {
+    name: 'Badge',
+    description: 'Tag/label pill (badge or chip).',
+    requiredProps: ['label'],
+    optionalProps: ['variant', 'size', 'token'],
+    supportsChildren: false,
+    example: { Badge: { label: 'react', variant: 'default' } }
+  },
+  {
     name: 'Image',
     description: 'Image display.',
     requiredProps: ['src'],

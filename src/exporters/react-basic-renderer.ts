@@ -1,4 +1,4 @@
-import type { AlertComponent, ButtonComponent, DividerComponent, ImageComponent, LinkComponent, TextComponent } from '../renderer/types';
+import type { AlertComponent, BadgeComponent, ButtonComponent, DividerComponent, ImageComponent, LinkComponent, TextComponent } from '../renderer/types';
 import type { StyleManager } from '../utils/style-manager';
 
 export function renderTextTemplate(props: TextComponent, key: number, tokenStyle: string, styleManager: typeof StyleManager, format: string): string {
@@ -51,6 +51,12 @@ export function renderLinkTemplate(props: LinkComponent, key: number, tokenStyle
   return `      <a key={${key}} href=\"${href}\"${targetAttr}${rel} className=\"textui-link\"${tokenStyle}>${label}</a>`;
 }
 
+
+
+export function renderBadgeTemplate(props: BadgeComponent, key: number, tokenStyle: string): string {
+  const { label, variant = 'default', size = 'md' } = props;
+  return `      <span key={${key}} className="textui-badge textui-badge-${variant} textui-badge-${size}"${tokenStyle}>${label}</span>`;
+}
 
 export function renderImageTemplate(props: ImageComponent, key: number, tokenStyle: string): string {
   const { src, alt = '', width, height } = props;
