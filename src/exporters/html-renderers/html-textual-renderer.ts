@@ -4,6 +4,7 @@ import type {
   ImageComponent,
   LinkComponent,
   BadgeComponent,
+  ProgressComponent,
   SpacerComponent,
   TextComponent
 } from '../../renderer/types';
@@ -69,6 +70,17 @@ export class HtmlTextualRenderer {
     return `    <span class="textui-badge textui-badge-${safeVariant} textui-badge-${safeSize}"${tokenStyle}>${safeLabel}</span>`;
   }
 
+
+  renderProgress(props: ProgressComponent): string {
+    const { value, label, showValue = true, variant = 'default', token } = props;
+    const normalizedValue = Math.min(100, Math.max(0, value));
+    const safeVariant = this.utils.escapeAttribute(variant);
+    const labelBlock = (label || showValue)
+      ? `\n      <div class="textui-progress-header">\n        <span class="textui-progress-label">${this.utils.escapeHtml(label ?? '')}</span>\n        ${showValue ? `<span class="textui-progress-value">${normalizedValue}%</span>` : ''}\n      </div>`
+      : '';
+
+    return `    <div class="textui-progress">${labelBlock}\n      <div class="textui-progress-track">\n        <div class="textui-progress-fill textui-progress-${safeVariant}" style="width: ${this.utils.escapeAttribute(String(normalizedValue))}%;${token ? ` background-color: ${this.utils.escapeAttribute(token)};` : ''}"></div>\n      </div>\n    </div>`;
+  }
   renderDivider(props: DividerComponent): string {
     const { orientation = 'horizontal', spacing = 'md', token } = props;
     const spacingClasses = this.utils.getStyleManager().getSpacingClasses('html');

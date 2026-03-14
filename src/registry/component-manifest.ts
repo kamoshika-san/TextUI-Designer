@@ -25,6 +25,7 @@ export const BUILT_IN_COMPONENTS = [
   'Table',
   'Link',
   'Badge',
+  'Progress',
   'Image'
 ] as const;
 
@@ -381,6 +382,28 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
       { name: 'alt', description: '代替テキスト' },
       { name: 'width', description: '横幅（例: 200px, 50%）' },
       { name: 'height', description: '高さ（例: 100px, auto）' },
+      { name: 'token', description: '適用するデザイントークン参照' }
+    ]
+  },
+
+  Progress: {
+    description: '割合表示用プログレスバー',
+    schemaRef: '#/definitions/Progress',
+    properties: [
+      { name: 'value', description: '割合（0-100）' },
+      { name: 'label', description: '表示ラベル' },
+      { name: 'showValue', description: 'パーセント表示', values: BOOLEAN_VALUES },
+      {
+        name: 'variant',
+        description: '見た目種別',
+        values: [
+          { value: 'default', description: 'デフォルト' },
+          { value: 'primary', description: 'プライマリ' },
+          { value: 'success', description: '成功' },
+          { value: 'warning', description: '警告' },
+          { value: 'error', description: 'エラー' }
+        ]
+      },
       { name: 'token', description: '適用するデザイントークン参照' }
     ]
   }

@@ -1,4 +1,4 @@
-import type { AlertComponent, BadgeComponent, ButtonComponent, DividerComponent, ImageComponent, LinkComponent, TextComponent } from '../renderer/types';
+import type { AlertComponent, BadgeComponent, ButtonComponent, DividerComponent, ImageComponent, LinkComponent, ProgressComponent, TextComponent } from '../renderer/types';
 import type { StyleManager } from '../utils/style-manager';
 
 export function renderTextTemplate(props: TextComponent, key: number, tokenStyle: string, styleManager: typeof StyleManager, format: string): string {
@@ -56,6 +56,22 @@ export function renderLinkTemplate(props: LinkComponent, key: number, tokenStyle
 export function renderBadgeTemplate(props: BadgeComponent, key: number, tokenStyle: string): string {
   const { label, variant = 'default', size = 'md' } = props;
   return `      <span key={${key}} className="textui-badge textui-badge-${variant} textui-badge-${size}"${tokenStyle}>${label}</span>`;
+}
+
+
+export function renderProgressTemplate(props: ProgressComponent, key: number): string {
+  const { value, label, showValue = true, variant = 'default' } = props;
+  const normalizedValue = Math.min(100, Math.max(0, value));
+
+  return `      <div key={${key}} className="textui-progress">
+        ${(label || showValue) ? `<div className="textui-progress-header">
+          <span className="textui-progress-label">${label ?? ''}</span>
+          ${showValue ? `<span className="textui-progress-value">${normalizedValue}%</span>` : ''}
+        </div>` : ''}
+        <div className="textui-progress-track">
+          <div className="textui-progress-fill textui-progress-${variant}" style={{ width: ${JSON.stringify(`${normalizedValue}%`)}, ...( ${props.token ? `{ backgroundColor: ${JSON.stringify(props.token)} }` : '{}'} ) }}></div>
+        </div>
+      </div>`;
 }
 
 export function renderImageTemplate(props: ImageComponent, key: number, tokenStyle: string): string {

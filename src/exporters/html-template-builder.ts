@@ -90,6 +90,44 @@ export function buildHtmlDocument(componentCode: string, themeStyles: string): s
     .textui-badge-warning { background-color: rgba(245, 158, 11, 0.22); color: #fcd34d; }
     .textui-badge-error { background-color: rgba(239, 68, 68, 0.2); color: #fca5a5; }
 
+
+    .textui-progress {
+      display: block;
+      width: 100%;
+      max-width: 32rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .textui-progress-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.25rem;
+      font-size: 0.875rem;
+      color: #d1d5db;
+    }
+
+    .textui-progress-track {
+      width: 100%;
+      height: 0.5rem;
+      border-radius: 9999px;
+      background-color: rgba(107, 114, 128, 0.25);
+      overflow: hidden;
+    }
+
+    .textui-progress-fill {
+      height: 100%;
+      border-radius: 9999px;
+      transition: width 0.2s ease;
+      background-color: rgba(107, 114, 128, 0.7);
+    }
+
+    .textui-progress-default { background-color: rgba(107, 114, 128, 0.7); }
+    .textui-progress-primary { background-color: #3b82f6; }
+    .textui-progress-success { background-color: #22c55e; }
+    .textui-progress-warning { background-color: #f59e0b; }
+    .textui-progress-error { background-color: #ef4444; }
+
     /* フォーカス時のスタイル（選択項目のハイライトを妨げない） */
     select[multiple]:focus option:checked {
       background-color: #3b82f6 !important; /* blue-500 */

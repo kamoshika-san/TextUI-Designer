@@ -197,6 +197,14 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
     example: { Badge: { label: 'react', variant: 'default' } }
   },
   {
+    name: 'Progress',
+    description: 'Horizontal progress bar for percentages.',
+    requiredProps: ['value'],
+    optionalProps: ['label', 'showValue', 'variant', 'token'],
+    supportsChildren: false,
+    example: { Progress: { label: 'TypeScript', value: 66.8, showValue: true, variant: 'primary' } }
+  },
+  {
     name: 'Image',
     description: 'Image display.',
     requiredProps: ['src'],

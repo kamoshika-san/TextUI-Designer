@@ -2,11 +2,11 @@ import type {
   TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, SelectComponent, DatePickerComponent, DividerComponent, SpacerComponent, AlertComponent,
-  ContainerComponent, AccordionComponent, TabsComponent, TreeViewComponent, TableComponent, LinkComponent, BadgeComponent, ImageComponent, SelectOption
+  ContainerComponent, AccordionComponent, TabsComponent, TreeViewComponent, TableComponent, LinkComponent, BadgeComponent, ProgressComponent, ImageComponent, SelectOption
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
-import { renderAlertTemplate, renderBadgeTemplate, renderButtonTemplate, renderDividerTemplate, renderImageTemplate, renderLinkTemplate, renderSpacerTemplate, renderTextTemplate } from './react-basic-renderer';
+import { renderAlertTemplate, renderBadgeTemplate, renderButtonTemplate, renderDividerTemplate, renderImageTemplate, renderLinkTemplate, renderProgressTemplate, renderSpacerTemplate, renderTextTemplate } from './react-basic-renderer';
 import { renderAccordionTemplate, renderContainerTemplate, renderFormTemplate, renderTableTemplate, renderTabsTemplate, renderTreeViewTemplate } from './react-template-renderer';
 
 export class ReactExporter extends BaseComponentRenderer {
@@ -232,6 +232,10 @@ ${optionsCode}
   protected renderBadge(props: BadgeComponent, key: number): string {
     const tokenStyle = this.getReactTokenStyleInline('Badge', props.token);
     return renderBadgeTemplate(props, key, tokenStyle);
+  }
+
+  protected renderProgress(props: ProgressComponent, key: number): string {
+    return renderProgressTemplate(props, key);
   }
 
   protected renderImage(props: ImageComponent, key: number): string {
