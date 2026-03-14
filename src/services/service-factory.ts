@@ -77,7 +77,8 @@ export class ServiceFactory {
       exportService,
       templateService,
       settingsService,
-      schemaManager
+      schemaManager,
+      themeManager
     });
 
     return {

@@ -47,15 +47,15 @@ ${contentCode}
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('Tabs', token);
 
     const tabsHeader = items
-      .map((item, index) => `          <button type="button" class="px-4 py-2 text-sm border-r border-gray-300 last:border-r-0 ${index === activeIndex ? 'bg-gray-200 text-gray-900' : 'bg-gray-100 text-gray-700'} ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}" ${item.disabled ? 'disabled' : ''}>${this.utils.escapeHtml(item.label ?? '')}</button>`)
+      .map((item, index) => `          <button type="button" class="px-4 py-2 text-sm border-r border-gray-700 last:border-r-0 ${index === activeIndex ? 'bg-gray-800 text-white textui-tab-active' : 'bg-gray-900 text-gray-300'} ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}" ${item.disabled ? 'disabled' : ''}>${this.utils.escapeHtml(item.label ?? '')}</button>`)
       .join('\n');
 
     const panelItems = (items[activeIndex]?.components || [])
       .map((component: ComponentDef, index: number) => this.utils.renderComponent(component, index))
       .join('\n');
 
-    return `      <div class="textui-tabs border border-gray-300 rounded-md overflow-hidden" data-key="${key}"${tokenStyle}>
-        <div class="flex border-b border-gray-300">
+    return `      <div class="textui-tabs border border-gray-700 rounded-md overflow-hidden" data-key="${key}"${tokenStyle}>
+        <div class="flex border-b border-gray-700">
 ${tabsHeader}
         </div>
         <div class="p-4 space-y-3">
@@ -186,9 +186,9 @@ ${bodyCode}
 
     const styleChunks: string[] = [];
     if (typeof flexGrow === 'number') {
-      styleChunks.push(`flex-grow: ${this.utils.escapeAttribute(String(flexGrow))};`, 'flex-shrink: 0;', `flex-basis: ${this.utils.escapeAttribute(width ?? '0')};`);
+      styleChunks.push(`flex-grow: ${this.utils.escapeAttribute(String(flexGrow))};`, 'flex-shrink: 0;', 'flex-basis: 0;');
     }
-    if (width) {
+    if (width && typeof flexGrow !== 'number') {
       styleChunks.push(`width: ${this.utils.escapeAttribute(width)};`);
     }
     if (minWidth) {

@@ -11,7 +11,8 @@ import type {
   IExportService,
   ITemplateService,
   ISettingsService,
-  ISchemaManager
+  ISchemaManager,
+  IThemeManager
 } from '../types';
 import { createCommandDefinitions, type CommandHandler } from './command-catalog';
 
@@ -21,6 +22,7 @@ export interface CommandManagerDependencies {
   templateService: ITemplateService;
   settingsService: ISettingsService;
   schemaManager: ISchemaManager;
+  themeManager?: IThemeManager;
   runtimeInspectionService?: RuntimeInspectionService;
 }
 
@@ -36,6 +38,7 @@ export class CommandManager implements ICommandManager {
   private templateService: ITemplateService;
   private settingsService: ISettingsService;
   private schemaManager: ISchemaManager;
+  private themeManager?: IThemeManager;
   private runtimeInspectionService: RuntimeInspectionService;
   private readonly logger = new Logger('CommandManager');
   private commandDisposables: vscode.Disposable[] = [];
@@ -50,6 +53,7 @@ export class CommandManager implements ICommandManager {
     this.templateService = dependencies.templateService;
     this.settingsService = dependencies.settingsService;
     this.schemaManager = dependencies.schemaManager;
+    this.themeManager = dependencies.themeManager;
     this.runtimeInspectionService = dependencies.runtimeInspectionService ?? new RuntimeInspectionService();
   }
 
@@ -174,7 +178,8 @@ export class CommandManager implements ICommandManager {
 
     try {
       await capturePreviewImageFromDslFile(targetFile, {
-        outputPath: outputUri.fsPath
+        outputPath: outputUri.fsPath,
+        themePath: this.themeManager?.getThemePath()
       });
       vscode.window.showInformationMessage(`プレビュー画像を出力しました: ${outputUri.fsPath}`);
     } catch (error) {

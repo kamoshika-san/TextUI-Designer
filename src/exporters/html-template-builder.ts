@@ -1,4 +1,4 @@
-import { getSharedLayoutStyles } from '../shared/layout-styles';
+import { getSharedLayoutStyles, getExportCriticalLayoutUtilities } from '../shared/layout-styles';
 
 export function buildHtmlDocument(componentCode: string, themeStyles: string): string {
   return `<!DOCTYPE html>
@@ -7,14 +7,8 @@ export function buildHtmlDocument(componentCode: string, themeStyles: string): s
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TextUI Export</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* VS Codeテーマの影響を排除 */
-    :root {
-      all: unset;
-    }
-
-    /* 基本的なスタイルリセット（Tailwind CSSを妨げない程度） */
+    /* 基本的なスタイルリセット */
     *,
     *::before,
     *::after {
@@ -35,8 +29,8 @@ export function buildHtmlDocument(componentCode: string, themeStyles: string): s
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       font-size: 16px;
       line-height: 1.5;
-      color: #cccccc;
-      background-color: #1e1e1e;
+      color: rgb(209 213 219);
+      background-color: rgb(17 24 39);
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
@@ -67,25 +61,48 @@ export function buildHtmlDocument(componentCode: string, themeStyles: string): s
     }
 
 ${getSharedLayoutStyles()}
+${getExportCriticalLayoutUtilities()}
 
-
+    /* バッジ: 高さを最低限統一（sm は固定高さで Public とトピックを揃える） */
     .textui-badge {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       padding: 0.25em 0.6em;
       border-radius: 9999px;
-      font-size: 0.875rem;
       font-weight: 600;
-      line-height: 1.2;
+      line-height: 1;
+      box-sizing: border-box;
+      vertical-align: middle;
     }
 
     .textui-badge-sm {
       font-size: 0.75rem;
-      padding: 0.15em 0.5em;
+      height: 1.25rem;
+      padding: 0 0.5rem;
+      line-height: 1;
     }
 
     .textui-badge-md {
       font-size: 0.875rem;
+      min-height: 1.5rem;
       padding: 0.25em 0.6em;
+    }
+
+    /* Divider: WebView index.css と同一（余白は my-2 / my-4 / my-6 で指定） */
+    .textui-divider {
+      border: none;
+      border-top: 1px solid rgb(75 85 99);
+    }
+    .textui-divider.vertical {
+      margin-left: 1rem;
+      margin-right: 1rem;
+      border-top: none;
+      border-left: 1px solid rgb(75 85 99);
+      width: 0;
+      height: 1.5rem;
+      min-height: 1em;
+      vertical-align: middle;
     }
 
     .textui-badge-default { background-color: rgba(107, 114, 128, 0.25); color: #e5e7eb; }
@@ -94,6 +111,25 @@ ${getSharedLayoutStyles()}
     .textui-badge-warning { background-color: rgba(245, 158, 11, 0.22); color: #fcd34d; }
     .textui-badge-error { background-color: rgba(239, 68, 68, 0.2); color: #fca5a5; }
 
+
+    /* WebView Tabs.tsx と同一: アクティブ bg-gray-800 text-white / 非アクティブ bg-gray-900 text-gray-300 */
+    .textui-tabs {
+      border-color: rgb(55 65 81);
+    }
+    .textui-tabs .flex { display: flex; flex-wrap: nowrap; }
+    .textui-tabs .flex > button {
+      flex-shrink: 0;
+      min-height: 2.25rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      background-color: rgb(17 24 39);
+      color: rgb(209 213 219);
+    }
+    .textui-tabs .flex > button:last-child { border-right-width: 0; }
+    .textui-tabs .flex > button.textui-tab-active {
+      background-color: rgb(31 41 55);
+      color: rgb(255 255 255);
+    }
 
     .textui-progress {
       display: block;
@@ -104,6 +140,7 @@ ${getSharedLayoutStyles()}
 
     .textui-progress-header {
       display: flex;
+      align-items: center;
       justify-content: space-between;
       gap: 0.75rem;
       margin-bottom: 0.25rem;

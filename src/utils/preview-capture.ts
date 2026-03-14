@@ -10,6 +10,8 @@ import { HtmlExporter } from '../exporters/html-exporter';
 export interface PreviewCaptureOptions {
   outputPath: string;
   themePath?: string;
+  /** DSL ファイルパス（themePath 未指定時に同階層の textui-theme.yml を参照するために使用） */
+  dslFilePath?: string;
   width?: number;
   height?: number;
   scale?: number;
@@ -46,6 +48,24 @@ const ALLOWED_BROWSER_COMMANDS = new Set([
 ]);
 
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+const THEME_FILENAMES = ['textui-theme.yml', 'textui-theme.yaml'];
+
+function resolveThemePathForCapture(explicitThemePath?: string, dslFilePath?: string): string | undefined {
+  if (explicitThemePath && fs.existsSync(explicitThemePath)) {
+    return explicitThemePath;
+  }
+  if (!dslFilePath) {
+    return undefined;
+  }
+  const dir = path.dirname(dslFilePath);
+  for (const name of THEME_FILENAMES) {
+    const candidate = path.join(dir, name);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return undefined;
+}
 
 export async function capturePreviewImageFromDslFile(
   dslFilePath: string,
@@ -54,7 +74,7 @@ export async function capturePreviewImageFromDslFile(
   const sourcePath = path.resolve(dslFilePath);
   const raw = fs.readFileSync(sourcePath, 'utf8');
   const dsl = YAML.parse(raw) as TextUIDSL;
-  return capturePreviewImageFromDsl(dsl, options);
+  return capturePreviewImageFromDsl(dsl, { ...options, dslFilePath: sourcePath });
 }
 
 export async function capturePreviewImageFromDsl(
@@ -81,9 +101,10 @@ export async function capturePreviewImageFromDsl(
   const browserPath = resolveBrowserPath(options.browserPath);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
+  const themePath = resolveThemePathForCapture(options.themePath, options.dslFilePath);
   const html = await new HtmlExporter().export(dsl, {
     format: 'html',
-    themePath: options.themePath
+    themePath
   });
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-preview-capture-'));
   const htmlPath = path.join(tempDir, 'preview.html');
@@ -91,6 +112,22 @@ export async function capturePreviewImageFromDsl(
   try {
     fs.writeFileSync(htmlPath, html, 'utf8');
     const targetUrl = pathToFileURL(htmlPath).toString();
+
+    const puppeteerResult = await runPuppeteerFullPageCapture({
+      browserPath,
+      outputPath,
+      width,
+      height,
+      scale,
+      waitMs,
+      allowNoSandbox,
+      targetUrl
+    });
+
+    if (puppeteerResult) {
+      return puppeteerResult;
+    }
+
     const execution = await runBrowserCapture({
       browserPath,
       outputPath,
@@ -121,6 +158,92 @@ export async function capturePreviewImageFromDsl(
     };
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
+/**
+ * puppeteer-core でページ全体をキャプチャ。失敗時は null を返し呼び出し元で CLI にフォールバックする。
+ */
+async function runPuppeteerFullPageCapture(params: {
+  browserPath: string;
+  outputPath: string;
+  width: number;
+  height: number;
+  scale: number;
+  waitMs: number;
+  allowNoSandbox: boolean;
+  targetUrl: string;
+}): Promise<PreviewCaptureResult | null> {
+  let puppeteer: typeof import('puppeteer-core');
+  try {
+    puppeteer = await import('puppeteer-core');
+  } catch {
+    return null;
+  }
+
+  const launchOptions: import('puppeteer-core').LaunchOptions = {
+    executablePath: params.browserPath,
+    headless: true,
+    args: [
+      '--disable-gpu',
+      '--hide-scrollbars',
+      '--disable-extensions',
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage'
+    ]
+  };
+
+  let browser: import('puppeteer-core').Browser | undefined;
+  try {
+    browser = await puppeteer.launch(launchOptions);
+    const page = await browser.newPage();
+
+    await page.setViewport({
+      width: params.width,
+      height: params.height,
+      deviceScaleFactor: params.scale
+    });
+
+    await page.goto(params.targetUrl, {
+      waitUntil: 'networkidle0',
+      timeout: Math.max(10000, params.waitMs + 5000)
+    });
+
+    await new Promise(resolve => setTimeout(resolve, params.waitMs));
+
+    const dimensions = await page.evaluate(() => ({
+      width: Math.max(document.documentElement.scrollWidth, document.documentElement.clientWidth),
+      height: Math.max(document.documentElement.scrollHeight, document.documentElement.clientHeight)
+    }));
+
+    const viewportWidth = Math.max(dimensions.width, params.width);
+    const viewportHeight = Math.min(dimensions.height, 32767);
+    await page.setViewport({
+      width: viewportWidth,
+      height: Math.min(viewportHeight, 800),
+      deviceScaleFactor: params.scale
+    });
+
+    await page.screenshot({
+      path: params.outputPath,
+      fullPage: true,
+      type: 'png'
+    });
+
+    const resultHeight = dimensions.height > 0 ? dimensions.height : params.height;
+    return {
+      outputPath: params.outputPath,
+      browserPath: params.browserPath,
+      width: dimensions.width,
+      height: resultHeight
+    };
+  } catch {
+    return null;
+  } finally {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
   }
 }
 

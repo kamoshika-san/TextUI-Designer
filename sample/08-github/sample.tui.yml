@@ -22,21 +22,21 @@ page:
     - Divider:
         orientation: horizontal
         token: color.border.default
-    # Watch / Star / Fork
+    # Watch / Star / Fork（GitHub 風にカウント付き）
     - Container:
         layout: horizontal
         components:
           - Button:
               kind: secondary
-              label: "Watch"
+              label: "12  Watch"
               token: color.secondary
           - Button:
               kind: secondary
-              label: "Star"
+              label: "5  Star"
               token: color.secondary
           - Button:
               kind: secondary
-              label: "Fork"
+              label: "3  Fork"
               token: color.secondary
     - Spacer:
         axis: vertical
@@ -49,6 +49,7 @@ page:
           - Container:
               layout: vertical
               flexGrow: 7
+              width: "100%"
               components:
                 - Tabs:
                     defaultTab: 0
@@ -78,42 +79,46 @@ page:
                                     token: color.primary
                           - Divider:
                               token: color.border.default
-                          # ファイル一覧（画像のテーブル形式）
+                          # ファイル一覧（GitHub 風: フォルダは / 付き、ストライプ）
                           - Table:
                               token: color.border.default
+                              striped: true
                               columns:
                                 - key: name
                                   header: "Name"
-                                  width: "50%"
+                                  width: "55%"
                                 - key: lastCommit
-                                  header: "Last commit"
-                                  width: "35%"
+                                  header: "Last commit message"
+                                  width: "28%"
                                 - key: updated
                                   header: "Updated"
-                                  width: "15%"
+                                  width: "17%"
                               rows:
-                                - name: ".github"
+                                - name: ".github/"
                                   lastCommit: "Updated workflows"
                                   updated: "2 months ago"
-                                - name: "docs"
+                                - name: "docs/"
                                   lastCommit: "Updated docs"
                                   updated: "2 months ago"
-                                - name: "media"
+                                - name: "media/"
                                   lastCommit: "Update assets"
                                   updated: "1 month ago"
-                                - name: "sample"
+                                - name: "sample/"
                                   lastCommit: "Add sample 08 github"
                                   updated: "1 week ago"
-                                - name: "src"
+                                - name: "src/"
                                   lastCommit: "Refactor exporters"
                                   updated: "3 days ago"
-                                - name: "tests"
+                                - name: "tests/"
                                   lastCommit: "Add regression tests"
                                   updated: "1 month ago"
                                 - name: "AGENTS.md"
                                   lastCommit: "Update AGENTS"
                                   updated: "2 months ago"
                                 - name: "package.json"
+                                  lastCommit: "Bump deps"
+                                  updated: "2 months ago"
+                                - name: "package-lock.json"
                                   lastCommit: "Bump deps"
                                   updated: "2 months ago"
                                 - name: "README.md"
@@ -146,6 +151,8 @@ page:
                               variant: h3
                               value: "開発コマンド"
                               token: color.text.primary
+                          - Divider:
+                              token: color.border.default
                           - Table:
                               token: color.border.default
                               columns:
@@ -266,16 +273,28 @@ page:
                               variant: p
                               value: "Repository settings."
                               token: color.text.secondary
-          # 右サイドバー（画像の About / Releases / Packages / Languages）（約 30% 相当）
+          # 右サイドバー（About / Releases / Packages / Languages）（約 30% 相当）
           - Container:
               layout: vertical
               flexGrow: 3
+              width: "100%"
               token: color.background
               components:
-                - Text:
-                    variant: h3
-                    value: "About"
-                    token: color.text.primary
+                - Container:
+                    layout: horizontal
+                    components:
+                      - Text:
+                          variant: h3
+                          value: "About"
+                          token: color.text.primary
+                      - Badge:
+                          label: "Public"
+                          variant: default
+                          size: sm
+                          token: color.secondary
+                - Spacer:
+                    axis: vertical
+                    size: xs
                 - Text:
                     variant: p
                     value: "VS Code extension for designing text-based UIs with YAML/JSON DSL."
@@ -285,6 +304,7 @@ page:
                     label: "Repository"
                     target: "_blank"
                     token: color.text.link
+                # トピックはテーマの badge.default（GitHub 風の青ピル）を効かせるため token を付けない
                 - Container:
                     layout: horizontal
                     components:
@@ -292,22 +312,18 @@ page:
                           label: "react"
                           variant: default
                           size: sm
-                          token: color.secondary
                       - Badge:
                           label: "tailwind"
                           variant: default
                           size: sm
-                          token: color.secondary
                       - Badge:
                           label: "vscode-extension"
                           variant: default
                           size: sm
-                          token: color.secondary
                       - Badge:
                           label: "yaml"
                           variant: default
                           size: sm
-                          token: color.secondary
                 - Divider:
                     token: color.border.default
                 - Text:
@@ -318,6 +334,11 @@ page:
                     variant: p
                     value: "No releases published"
                     token: color.text.secondary
+                - Link:
+                    href: "https://github.com/kamoshika-san/TextUI-Designer/releases"
+                    label: "Create a new release"
+                    target: "_blank"
+                    token: color.text.link
                 - Divider:
                     token: color.border.default
                 - Text:
@@ -394,5 +415,23 @@ page:
               token: color.text.link
           - Text:
               variant: small
-              value: ". GitHub repository top page sample."
+              value: " · "
+              token: color.text.muted
+          - Link:
+              href: "https://docs.github.com/site-policy/github-terms"
+              label: "Terms"
+              target: "_blank"
+              token: color.text.link
+          - Text:
+              variant: small
+              value: " · "
+              token: color.text.muted
+          - Link:
+              href: "https://docs.github.com/site-policy/github-privacy-statement"
+              label: "Privacy"
+              target: "_blank"
+              token: color.text.link
+          - Text:
+              variant: small
+              value: " · GitHub repository top page sample."
               token: color.text.muted

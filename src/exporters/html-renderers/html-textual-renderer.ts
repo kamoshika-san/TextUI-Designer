@@ -85,13 +85,14 @@ export class HtmlTextualRenderer {
   renderDivider(props: DividerComponent): string {
     const { orientation = 'horizontal', spacing = 'md', token } = props;
     const spacingClasses = this.utils.getStyleManager().getSpacingClasses('html');
+    const spacingClass = spacingClasses[spacing as keyof typeof spacingClasses] ?? spacingClasses.md;
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('Divider', token);
 
     if (orientation === 'vertical') {
-      return `    <div class="inline-block w-px h-6 bg-gray-700 mx-4"${tokenStyle}></div>`;
+      return `    <div class="textui-divider vertical ${spacingClass}"${tokenStyle}></div>`;
     }
 
-    return `    <hr class="border-gray-700 ${spacingClasses[spacing as keyof typeof spacingClasses]}"${tokenStyle}>`;
+    return `    <hr class="textui-divider ${spacingClass}"${tokenStyle}>`;
   }
 
   renderSpacer(props: SpacerComponent): string {
