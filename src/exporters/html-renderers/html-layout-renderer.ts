@@ -161,7 +161,7 @@ ${treeCode}
       .join('\n');
 
     return `    <div class="overflow-x-auto border border-gray-700 rounded-md"${tokenStyle}>
-      <table class="min-w-full divide-y divide-gray-700 text-sm text-gray-200" style="table-layout: fixed">
+      <table class="min-w-full divide-y divide-gray-700 text-sm text-gray-200" style="table-layout: fixed;">
         <thead class="bg-gray-800">
           <tr>
 ${headerCode}

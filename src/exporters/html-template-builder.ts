@@ -42,8 +42,7 @@ export function buildHtmlDocument(componentCode: string, themeStyles: string): s
     .textui-container {
       width: 100%;
       max-width: none;
-      margin-left: 0;
-      margin-right: 0;
+      margin: 0;
       padding: var(--spacing-lg, 1.5rem);
       box-sizing: border-box;
       border-radius: var(--borderRadius-lg, 0.75rem);
