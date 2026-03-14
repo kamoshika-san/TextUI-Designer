@@ -105,11 +105,16 @@ type PuppeteerModuleLike = {
   launch: (options: PuppeteerLaunchOptions) => Promise<PuppeteerBrowserLike>;
 };
 
+type CdpSessionLike = {
+  send: <T = unknown>(method: string, params?: Record<string, unknown>) => Promise<T>;
+};
+
 type PuppeteerPageLike = {
   setViewport: (viewport: { width: number; height: number; deviceScaleFactor: number }) => Promise<void>;
   goto: (url: string, options: { waitUntil: string; timeout: number }) => Promise<void>;
   evaluate: <T>(fn: () => T) => Promise<T>;
   screenshot: (options: { path: string; fullPage: boolean; type: 'png' }) => Promise<void>;
+  createCDPSession?: () => Promise<CdpSessionLike>;
 };
 
 type PuppeteerBrowserLike = {
@@ -328,11 +333,44 @@ async function runPuppeteerFullPageCapture(params: {
       deviceScaleFactor: params.scale
     });
 
-    await page.screenshot({
-      path: params.outputPath,
-      fullPage: true,
-      type: 'png'
-    });
+    const cdpSession = page.createCDPSession ? await page.createCDPSession().catch(() => null) : null;
+    if (cdpSession) {
+      type LayoutMetricsResponse = {
+        contentSize?: {
+          x?: number;
+          y?: number;
+          width?: number;
+          height?: number;
+        };
+      };
+      const metrics = await cdpSession.send<LayoutMetricsResponse>('Page.getLayoutMetrics');
+      const clipWidth = Math.max(1, Math.ceil(metrics.contentSize?.width ?? viewportWidth));
+      const clipHeight = Math.max(1, Math.ceil(metrics.contentSize?.height ?? viewportHeight));
+      type CaptureScreenshotResponse = { data?: string };
+      const captured = await cdpSession.send<CaptureScreenshotResponse>('Page.captureScreenshot', {
+        format: 'png',
+        fromSurface: true,
+        captureBeyondViewport: true,
+        clip: {
+          x: 0,
+          y: 0,
+          width: clipWidth,
+          height: clipHeight,
+          scale: 1
+        }
+      });
+      const base64 = captured.data;
+      if (!base64) {
+        throw new Error('capture failed: CDP screenshot returned empty payload');
+      }
+      fs.writeFileSync(params.outputPath, Buffer.from(base64, 'base64'));
+    } else {
+      await page.screenshot({
+        path: params.outputPath,
+        fullPage: true,
+        type: 'png'
+      });
+    }
 
     const resultHeight = dimensions.height > 0 ? dimensions.height : params.height;
     return {
