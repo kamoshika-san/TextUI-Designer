@@ -66,8 +66,16 @@ export interface ImageComponent {
 
 export type ProgressVariant = 'default' | 'primary' | 'success' | 'warning' | 'error';
 
-export interface ProgressComponent {
+export interface ProgressSegment {
   value: number;
+  label?: string;
+  variant?: ProgressVariant;
+  token?: string;
+}
+
+export interface ProgressComponent {
+  value?: number;
+  segments?: ProgressSegment[];
   label?: string;
   showValue?: boolean;
   variant?: ProgressVariant;

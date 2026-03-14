@@ -200,20 +200,40 @@ ${componentCode}`;
 
 
   protected renderProgress(props: ProgressComponent, _key: number): string {
-    const { value, label, showValue = true, variant = 'default', token } = props;
-    const normalizedValue = Math.min(100, Math.max(0, value));
+    const { value = 0, segments, label, showValue = true, variant = 'default', token } = props;
+    const normalizeValue = (raw: number): number => Math.min(100, Math.max(0, raw));
+    const normalizedValue = normalizeValue(value);
+    const hasSegments = Array.isArray(segments) && segments.length > 0;
+    const totalValue = hasSegments
+      ? segments.reduce((sum, segment) => sum + normalizeValue(segment.value), 0)
+      : normalizedValue;
+    const displayValue = Number(Math.min(100, totalValue).toFixed(1));
     let code = '      .textui-progress';
 
     if (label || showValue) {
-      code += '\n        .textui-progress-header';
-      code += `\n          span.textui-progress-label ${this.escapeHtml(label ?? '')}`;
+      code += '\\n        .textui-progress-header';
+      code += `
+          span.textui-progress-label ${this.escapeHtml(label ?? '')}`;
       if (showValue) {
-        code += `\n          span.textui-progress-value ${this.escapeHtml(`${normalizedValue}%`)}`;
+        code += `
+          span.textui-progress-value ${this.escapeHtml(`${displayValue}%`)}`;
       }
     }
 
-    code += `\n        .textui-progress-track`;
-    code += `\n          .textui-progress-fill.textui-progress-${this.escapeAttribute(variant)}(style="width: ${this.escapeAttribute(`${normalizedValue}%`)};${token ? ` background-color: ${this.escapeAttribute(token)};` : ''}")`;
+    code += '\\n        .textui-progress-track';
+    if (hasSegments) {
+      segments.forEach(segment => {
+        const segmentVariant = this.escapeAttribute(segment.variant ?? variant);
+        const segmentToken = segment.token ? ` background-color: ${this.escapeAttribute(segment.token)};` : '';
+        const segmentTitle = segment.label ? ` title="${this.escapeAttribute(segment.label)}"` : '';
+        code += `
+          .textui-progress-fill.textui-progress-${segmentVariant}(style="width: ${this.escapeAttribute(`${normalizeValue(segment.value)}%`)};${segmentToken}"${segmentTitle})`;
+      });
+    } else {
+      code += `
+          .textui-progress-fill.textui-progress-${this.escapeAttribute(variant)}(style="width: ${this.escapeAttribute(`${normalizedValue}%`)};${token ? ` background-color: ${this.escapeAttribute(token)};` : ''}")`;
+    }
+
     return code;
   }
 
