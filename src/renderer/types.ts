@@ -54,6 +54,18 @@ export interface LinkComponent {
   token?: string;
 }
 
+export interface BreadcrumbItem {
+  label: string;
+  href?: string;
+  target?: string;
+}
+
+export interface BreadcrumbComponent {
+  items: BreadcrumbItem[];
+  separator?: string;
+  token?: string;
+}
+
 export type BadgeVariant = 'default' | 'primary' | 'success' | 'warning' | 'error';
 
 export interface BadgeComponent {
@@ -155,6 +167,7 @@ export interface FormField {
   Container?: ContainerComponent;
   Table?: TableComponent;
   Link?: LinkComponent;
+  Breadcrumb?: BreadcrumbComponent;
   Badge?: BadgeComponent;
   Progress?: ProgressComponent;
   Image?: ImageComponent;
@@ -286,6 +299,7 @@ export type ComponentDef =
   | { TreeView: TreeViewComponent }
   | { Table: TableComponent }
   | { Link: LinkComponent }
+  | { Breadcrumb: BreadcrumbComponent }
   | { Badge: BadgeComponent }
   | { Progress: ProgressComponent }
   | { Image: ImageComponent }
@@ -376,6 +390,10 @@ export function isLinkComponent(comp: ComponentDef): comp is { Link: LinkCompone
   return 'Link' in comp;
 }
 
+export function isBreadcrumbComponent(comp: ComponentDef): comp is { Breadcrumb: BreadcrumbComponent } {
+  return 'Breadcrumb' in comp;
+}
+
 export function isBadgeComponent(comp: ComponentDef): comp is { Badge: BadgeComponent } {
   return 'Badge' in comp;
 }
@@ -406,9 +424,11 @@ const COMPONENT_DEF_KEYS = new Set([
   'TreeView',
   'Table',
   'Link',
+  'Breadcrumb',
   'Badge',
   'Progress',
-  'Image'
+  'Image',
+  'Icon'
 ]);
 
 export function isComponentDefValue(value: unknown): value is ComponentDef {

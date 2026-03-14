@@ -24,6 +24,7 @@ export const BUILT_IN_COMPONENTS = [
   'TreeView',
   'Table',
   'Link',
+  'Breadcrumb',
   'Badge',
   'Progress',
   'Image',
@@ -344,6 +345,17 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
       { name: 'href', description: 'リンク先URL' },
       { name: 'label', description: '表示テキスト' },
       { name: 'target', description: 'リンクターゲット（例: _blank）' },
+      { name: 'token', description: '適用するデザイントークン参照' }
+    ]
+  },
+
+
+  Breadcrumb: {
+    description: 'パンくずリスト',
+    schemaRef: '#/definitions/Breadcrumb',
+    properties: [
+      { name: 'items', description: '階層項目配列（label, href?, target?）' },
+      { name: 'separator', description: '区切り文字（例: >, /）' },
       { name: 'token', description: '適用するデザイントークン参照' }
     ]
   },

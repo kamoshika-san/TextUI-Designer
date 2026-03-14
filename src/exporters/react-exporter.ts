@@ -2,11 +2,11 @@ import type {
   TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, SelectComponent, DatePickerComponent, DividerComponent, SpacerComponent, AlertComponent,
-  ContainerComponent, AccordionComponent, TabsComponent, TreeViewComponent, TableComponent, LinkComponent, BadgeComponent, ProgressComponent, ImageComponent, IconComponent, SelectOption
+  ContainerComponent, AccordionComponent, TabsComponent, TreeViewComponent, TableComponent, LinkComponent, BreadcrumbComponent, BadgeComponent, ProgressComponent, ImageComponent, IconComponent, SelectOption
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
-import { renderAlertTemplate, renderBadgeTemplate, renderButtonTemplate, renderDividerTemplate, renderIconTemplate, renderImageTemplate, renderLinkTemplate, renderProgressTemplate, renderSpacerTemplate, renderTextTemplate } from './react-basic-renderer';
+import { renderAlertTemplate, renderBadgeTemplate, renderBreadcrumbTemplate, renderButtonTemplate, renderDividerTemplate, renderIconTemplate, renderImageTemplate, renderLinkTemplate, renderProgressTemplate, renderSpacerTemplate, renderTextTemplate } from './react-basic-renderer';
 import { renderAccordionTemplate, renderContainerTemplate, renderFormTemplate, renderTableTemplate, renderTabsTemplate, renderTreeViewTemplate } from './react-template-renderer';
 
 export class ReactExporter extends BaseComponentRenderer {
@@ -227,6 +227,11 @@ ${optionsCode}
   protected renderLink(props: LinkComponent, key: number): string {
     const tokenStyle = this.getReactTokenStyleInline('Link', props.token);
     return renderLinkTemplate(props, key, tokenStyle);
+  }
+
+  protected renderBreadcrumb(props: BreadcrumbComponent, key: number): string {
+    const tokenStyle = this.getReactTokenStyleInline('Breadcrumb', props.token);
+    return renderBreadcrumbTemplate(props, key, tokenStyle);
   }
 
   protected renderBadge(props: BadgeComponent, key: number): string {

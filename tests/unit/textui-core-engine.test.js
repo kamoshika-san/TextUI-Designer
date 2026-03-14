@@ -218,7 +218,8 @@ page:
       'Select',
       'DatePicker',
       'Alert',
-      'Table'
+      'Table',
+      'Breadcrumb'
     ];
 
     const specTypes = getComponentSpecTypesForTesting();
