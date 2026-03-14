@@ -108,6 +108,14 @@
   opacity: 0.85;
 }
 
+
+.textui-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-color: var(--color-border-default, transparent);
+}
+
 /* Alert */
 /* アラートコンポーネントの改善 */
 .textui-alert {

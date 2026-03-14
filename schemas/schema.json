@@ -104,6 +104,9 @@
         },
         {
           "$ref": "#/definitions/Link"
+        },
+        {
+          "$ref": "#/definitions/Image"
         }
       ]
     },
@@ -1018,6 +1021,46 @@
       },
       "additionalProperties": false,
       "description": "表形式でデータを表示するコンポーネント。"
+    },
+    "Image": {
+      "type": "object",
+      "required": [
+        "Image"
+      ],
+      "properties": {
+        "Image": {
+          "type": "object",
+          "required": [
+            "src"
+          ],
+          "properties": {
+            "src": {
+              "type": "string",
+              "description": "画像のURLまたはパス。"
+            },
+            "alt": {
+              "type": "string",
+              "description": "画像の代替テキスト。"
+            },
+            "width": {
+              "type": "string",
+              "description": "画像の横幅（例: 200px, 50%）。"
+            },
+            "height": {
+              "type": "string",
+              "description": "画像の高さ（例: 100px, auto）。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "画像に適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "画像を表示するコンポーネント。利用可能な属性: src, alt, width, height, token"
+        }
+      },
+      "additionalProperties": false,
+      "description": "画像を表示するコンポーネント。"
     }
   },
   "additionalProperties": false

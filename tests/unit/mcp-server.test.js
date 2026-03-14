@@ -113,6 +113,26 @@ theme:
     assert.ok(response.result.contents[0].text.includes('schema'));
   });
 
+
+  it('resources/read textui://components/catalog にImageが含まれる', async () => {
+    const server = new TextUiMcpServer();
+    const response = await server.handleMessage({
+      jsonrpc: '2.0',
+      id: 42,
+      method: 'resources/read',
+      params: {
+        uri: 'textui://components/catalog'
+      }
+    });
+
+    assert.ok(response.result);
+    assert.ok(Array.isArray(response.result.contents));
+    const payload = JSON.parse(response.result.contents[0].text);
+    const image = payload.components.find(component => component.name === 'Image');
+    assert.ok(image);
+    assert.deepStrictEqual(image.requiredProps, ['src']);
+  });
+
   it('resources/read textui://cli/run で version を実行できる', async () => {
     const server = new TextUiMcpServer();
     const args = encodeURIComponent(JSON.stringify(['version']));

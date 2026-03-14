@@ -19,7 +19,8 @@ import type {
   TabsComponent,
   TreeViewComponent,
   TableComponent,
-  LinkComponent
+  LinkComponent,
+  ImageComponent
 } from '../renderer/types';
 import type { ExportOptions, Exporter } from './index';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';
@@ -60,7 +61,8 @@ export abstract class BaseComponentRenderer implements Exporter {
     Tabs: 'border-color',
     TreeView: 'border-color',
     Table: 'border-color',
-    Link: 'color'
+    Link: 'color',
+    Image: 'border-color'
   };
 
   constructor(format: ExportFormat) {
@@ -91,7 +93,8 @@ export abstract class BaseComponentRenderer implements Exporter {
       Tabs: (props, key) => this.renderTabs(props as TabsComponent, key),
       TreeView: (props, key) => this.renderTreeView(props as TreeViewComponent, key),
       Table: (props, key) => this.renderTable(props as TableComponent, key),
-      Link: (props, key) => this.renderLink(props as LinkComponent, key)
+      Link: (props, key) => this.renderLink(props as LinkComponent, key),
+      Image: (props, key) => this.renderImage(props as ImageComponent, key)
     };
 
     for (const componentName of BUILT_IN_COMPONENTS) {
@@ -198,6 +201,7 @@ export abstract class BaseComponentRenderer implements Exporter {
   protected abstract renderTreeView(props: TreeViewComponent, key: number): string;
   protected abstract renderTable(props: TableComponent, key: number): string;
   protected abstract renderLink(props: LinkComponent, key: number): string;
+  protected abstract renderImage(props: ImageComponent, key: number): string;
 
   protected getStyleManager(): typeof StyleManager {
     return StyleManager;

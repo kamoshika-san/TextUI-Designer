@@ -21,6 +21,7 @@ import { Tabs } from './components/Tabs';
 import { TreeView } from './components/TreeView';
 import { Table } from './components/Table';
 import { Link } from './components/Link';
+import { Image } from './components/Image';
 import type {
   ComponentDef,
   FormComponent,
@@ -41,7 +42,8 @@ import type {
   TabsComponent,
   TreeViewComponent,
   TableComponent,
-  LinkComponent
+  LinkComponent,
+  ImageComponent
 } from './types';
 import { getComponentName } from '../registry/component-registry';
 import { BUILT_IN_COMPONENTS, type BuiltInComponentName } from '../registry/component-registry';
@@ -111,6 +113,7 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
   ),
   Table: (props, key) => <Table key={key} {...(props as unknown as TableComponent)} />,
   Link: (props, key) => <Link key={key} {...(props as unknown as LinkComponent)} />,
+  Image: (props, key) => <Image key={key} {...(props as unknown as ImageComponent)} />,
   Container: (props, key) => {
     const containerProps = props as unknown as ContainerComponent;
     const children = containerProps.components;

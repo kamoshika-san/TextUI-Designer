@@ -59,11 +59,14 @@ page:
     assert.strictEqual(typeof result.value, 'object');
   });
 
-  it('listComponents はButton定義を含む', async () => {
+  it('listComponents はButton/Image定義を含む', async () => {
     const engine = new TextUICoreEngine();
     const result = await engine.listComponents();
     const button = result.components.find(component => component.name === 'Button');
+    const image = result.components.find(component => component.name === 'Image');
     assert.ok(button);
+    assert.ok(image);
+    assert.deepStrictEqual(image.requiredProps, ['src']);
     assert.ok(result.supportedProviders.includes('html'));
   });
 

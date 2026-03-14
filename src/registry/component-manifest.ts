@@ -23,7 +23,8 @@ export const BUILT_IN_COMPONENTS = [
   'Tabs',
   'TreeView',
   'Table',
-  'Link'
+  'Link',
+  'Image'
 ] as const;
 
 export type BuiltInComponentName = typeof BUILT_IN_COMPONENTS[number];
@@ -342,6 +343,18 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
       { name: 'token', description: '適用するデザイントークン参照' }
     ]
   },
+
+  Image: {
+    description: '画像',
+    schemaRef: '#/definitions/Image',
+    properties: [
+      { name: 'src', description: '画像のURLまたはパス' },
+      { name: 'alt', description: '代替テキスト' },
+      { name: 'width', description: '横幅（例: 200px, 50%）' },
+      { name: 'height', description: '高さ（例: 100px, auto）' },
+      { name: 'token', description: '適用するデザイントークン参照' }
+    ]
+  }
 };
 
 export function isBuiltInComponentName(name: string): name is BuiltInComponentName {
