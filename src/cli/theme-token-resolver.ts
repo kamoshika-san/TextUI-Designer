@@ -185,7 +185,7 @@ function loadThemeTokens(sourcePath: string): { tokens: Record<string, unknown> 
   }
 }
 
-function findNearestThemePath(sourcePath: string): string | null {
+export function findNearestThemePath(sourcePath: string): string | null {
   const candidates = ['textui-theme.yml', 'textui-theme.yaml'];
   let current = path.dirname(path.resolve(sourcePath));
 

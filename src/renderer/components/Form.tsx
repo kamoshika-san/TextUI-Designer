@@ -14,8 +14,8 @@ interface FormProps extends FormComponent {
 
 export const Form: React.FC<FormProps> = ({
   id,
-  fields,
-  actions,
+  fields: _fields,
+  actions: _actions,
   onSubmit,
   children,
 }) => {

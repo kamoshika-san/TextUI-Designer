@@ -68,7 +68,10 @@ describe('mcp-bootstrap-service', () => {
     assert.ok(parsed.servers['textui-designer']);
   });
 
-  it('resolveUserMcpJsonPath はLinuxのCode配下を解決できる', () => {
+  it('resolveUserMcpJsonPath はLinuxのCode配下を解決できる', function () {
+    if (process.platform !== 'linux') {
+      this.skip();
+    }
     const p = resolveUserMcpJsonPath({
       platform: 'linux',
       appName: 'Visual Studio Code',
@@ -78,7 +81,10 @@ describe('mcp-bootstrap-service', () => {
     assert.strictEqual(p, '/home/test-user/.config/Code/User/mcp.json');
   });
 
-  it('resolveUserCodexConfigPath はLinuxで~/.codex/config.tomlを返す', () => {
+  it('resolveUserCodexConfigPath はLinuxで~/.codex/config.tomlを返す', function () {
+    if (process.platform !== 'linux') {
+      this.skip();
+    }
     const p = resolveUserCodexConfigPath({
       homeDir: '/home/test-user',
       env: {}

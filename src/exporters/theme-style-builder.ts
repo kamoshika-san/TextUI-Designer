@@ -37,21 +37,25 @@ ${varLines}
       border-radius: var(--borderRadius-md, 0.375rem) !important;
     }
 
-    button[data-kind="primary"] {
+    /* ボタン: WebView 同一経路（.textui-button.*）とレガシー（data-kind）の両方に対応 */
+    button[data-kind="primary"],
+    .textui-button.primary {
       background-color: var(--component-button-primary-backgroundColor, var(--color-primary, var(--colors-primary, #2563eb))) !important;
       color: var(--component-button-primary-color, var(--color-text-primary, var(--colors-text-primary, #ffffff))) !important;
       border-radius: var(--component-button-primary-borderRadius, var(--borderRadius-md, 0.375rem)) !important;
       border: var(--component-button-primary-border, none) !important;
     }
 
-    button[data-kind="secondary"] {
+    button[data-kind="secondary"],
+    .textui-button.secondary {
       background-color: var(--component-button-secondary-backgroundColor, var(--color-secondary, var(--colors-secondary, #374151))) !important;
       color: var(--component-button-secondary-color, var(--color-text-primary, var(--colors-text-primary, #d1d5db))) !important;
       border-radius: var(--component-button-secondary-borderRadius, var(--borderRadius-md, 0.375rem)) !important;
       border: var(--component-button-secondary-border, none) !important;
     }
 
-    button[data-kind="submit"] {
+    button[data-kind="submit"],
+    .textui-button.submit {
       background-color: var(--component-button-submit-backgroundColor, var(--color-success, var(--colors-success, #16a34a))) !important;
       color: var(--component-button-submit-color, var(--color-text-primary, var(--colors-text-primary, #ffffff))) !important;
       border-radius: var(--component-button-submit-borderRadius, var(--borderRadius-md, 0.375rem)) !important;

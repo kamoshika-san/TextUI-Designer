@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getVSCodeApi } from '../vscode-api';
 
 interface Theme {
@@ -43,13 +43,13 @@ export const CustomThemeSelector: React.FC<CustomThemeSelectorProps> = ({ classN
   }, []);
 
   // テーマ切り替え処理
-  const handleThemeSwitch = (theme: Theme) => {
+  const handleThemeSwitch = (theme: Theme): void => {
     if (vscodeApi?.postMessage && !theme.isActive) {
       console.log('[CustomThemeSelector] テーマ切り替えを要求:', theme);
       setIsLoading(true);
       vscodeApi.postMessage({
-        type: 'theme-switch', 
-        themePath: theme.path 
+        type: 'theme-switch',
+        themePath: theme.path
       });
     }
     setIsOpen(false);
@@ -58,20 +58,17 @@ export const CustomThemeSelector: React.FC<CustomThemeSelectorProps> = ({ classN
   // アクティブなテーマを取得
   const activeTheme = themes.find(t => t.isActive) || themes[0];
 
-  // 外部クリックでドロップダウンを閉じる
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      if (!target.closest('.custom-theme-selector')) {
-        setIsOpen(false);
-      }
-    };
+  const handleClickOutside = useCallback((event: MouseEvent) => {
+    const target = event.target as Element;
+    if (!target.closest('.custom-theme-selector')) setIsOpen(false);
+  }, []);
 
-    if (isOpen) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-  }, [isOpen]);
+  // 外部クリックでドロップダウンを閉じる
+  useEffect((): void | (() => void) => {
+    if (!isOpen) return;
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isOpen, handleClickOutside]);
 
   if (themes.length === 0) {
     return null; // テーマがない場合は非表示

@@ -25,7 +25,8 @@ import type {
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
-import { buildHtmlDocument } from './html-template-builder';
+import { buildHtmlDocument, readWebviewCssIfPresent } from './html-template-builder';
+import { renderPageComponentsToStaticHtml } from './react-static-export';
 import { buildThemeStyleBlock } from './theme-style-builder';
 import { buildThemeVariables } from './theme-definition-resolver';
 import { HtmlFormRenderer } from './html-renderers/html-form-renderer';
@@ -50,9 +51,25 @@ export class HtmlExporter extends BaseComponentRenderer {
 
   async export(dsl: TextUIDSL, options: ExportOptions): Promise<string> {
     const normalizedDsl = this.resolveLocalImageSourcesForExport(dsl, options);
-    const componentCode = this.renderPageComponents(normalizedDsl);
     const themeStyles = this.buildThemeStyles(options.themePath);
 
+    // WebView と同じ React コンポーネント＋webviewCss で統一（テーマありでも同じ経路）
+    const useReact = options.useReactRender !== false;
+    if (useReact) {
+      try {
+        const components = normalizedDsl.page?.components ?? [];
+        const reactBody = renderPageComponentsToStaticHtml(components);
+        const webviewCss = readWebviewCssIfPresent();
+        return buildHtmlDocument(reactBody, themeStyles, {
+          webviewCss: webviewCss ?? undefined,
+          noWrap: true
+        });
+      } catch (_err) {
+        /* フォールバック: 従来の文字列レンダー */
+      }
+    }
+
+    const componentCode = this.renderPageComponents(normalizedDsl);
     return buildHtmlDocument(componentCode, themeStyles);
   }
 

@@ -1,8 +1,15 @@
 const assert = require('assert');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const { HtmlExporter } = require('../../out/exporters/html-exporter');
 
 describe('HtmlExporter security', () => {
   it('DSL由来の文字列をHTMLエスケープする', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-security-'));
+    const themeFile = path.join(tempDir, 'theme.yml');
+    fs.writeFileSync(themeFile, 'theme:\n  name: "Test"\n  version: "1.0.0"\n', 'utf8');
+
     const exporter = new HtmlExporter();
     const dsl = {
       page: {
@@ -17,7 +24,7 @@ describe('HtmlExporter security', () => {
       }
     };
 
-    const html = await exporter.export(dsl, { format: 'html' });
+    const html = await exporter.export(dsl, { format: 'html', themePath: themeFile });
 
     assert.ok(html.includes('&lt;img src=x onerror=alert(1)&gt;'));
     assert.ok(html.includes('&lt;b&gt;label&lt;/b&gt;'));

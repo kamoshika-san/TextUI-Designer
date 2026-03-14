@@ -669,6 +669,8 @@ page:
       tokenDslFile,
       '--provider',
       'html',
+      '--theme',
+      tokenThemeFile,
       '--output',
       tokenOutFile
     ], { encoding: 'utf8' });
@@ -879,30 +881,39 @@ page:
 
     const baseState = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
     let tick = 0;
+    let timer;
     const writeConflictState = () => {
-      const nextState = {
-        ...baseState,
-        meta: {
-          ...baseState.meta,
-          lastApply: new Date(Date.now() + 60_000 + tick).toISOString()
-        }
-      };
-      // 直接上書きすると読み手が途中状態を読むことがあり、CIでまれにJSONパースエラーになる。
-      // テストは「競合検知」を検証したいので、常に完全なJSONを原子的に差し替える。
-      const tempStatePath = `${stateFile}.tmp-${process.pid}-${tick}`;
-      fs.writeFileSync(tempStatePath, JSON.stringify(nextState, null, 2));
-      fs.renameSync(tempStatePath, stateFile);
-      tick += 1;
+      try {
+        const nextState = {
+          ...baseState,
+          meta: {
+            ...baseState.meta,
+            lastApply: new Date(Date.now() + 60_000 + tick).toISOString()
+          }
+        };
+        // 直接上書きすると読み手が途中状態を読むことがあり、CIでまれにJSONパースエラーになる。
+        // テストは「競合検知」を検証したいので、常に完全なJSONを原子的に差し替える。
+        const tempStatePath = `${stateFile}.tmp-${process.pid}-${tick}`;
+        fs.writeFileSync(tempStatePath, JSON.stringify(nextState, null, 2));
+        fs.renameSync(tempStatePath, stateFile);
+        tick += 1;
+      } catch (_err) {
+        // Windows で EPERM / ENOENT が出ることがあるため無視する
+      }
     };
 
     setTimeout(writeConflictState, 0);
-    const timer = setInterval(writeConflictState, 2);
+    timer = setInterval(writeConflictState, 2);
 
     const status = await new Promise(resolve => {
-      child.on('close', code => resolve(code));
+      child.on('close', code => {
+        if (timer) clearInterval(timer);
+        timer = null;
+        resolve(code);
+      });
     });
 
-    clearInterval(timer);
+    if (timer) clearInterval(timer);
     assert.strictEqual(status, 4);
     assert.match(stderr, /state conflict detected/);
   });

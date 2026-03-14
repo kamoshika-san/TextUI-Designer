@@ -1,13 +1,16 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { getSharedLayoutStyles, getExportCriticalLayoutUtilities } from '../shared/layout-styles';
 
-export function buildHtmlDocument(componentCode: string, themeStyles: string): string {
-  return `<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TextUI Export</title>
-  <style>
+export interface BuildHtmlDocumentOptions {
+  /** WebView ビルド済み CSS（media/assets/index-*.css）。指定時はこれを <style> に使い、従来のインライン CSS は使わない */
+  webviewCss?: string;
+  /** true のとき body 内に componentCode のみを入れ、外側の <div class="p-6"> でラップしない（React 静的レンダー出力用） */
+  noWrap?: boolean;
+}
+
+function getDefaultExportStyleBlock(): string {
+  return `
     /* 基本的なスタイルリセット */
     *,
     *::before,
@@ -174,13 +177,55 @@ ${getExportCriticalLayoutUtilities()}
       background-color: #3b82f6 !important; /* blue-500 */
       color: #ffffff !important;
     }
+`;
+}
+
+export function buildHtmlDocument(
+  componentCode: string,
+  themeStyles: string,
+  options?: BuildHtmlDocumentOptions
+): string {
+  const styleContent = options?.webviewCss ?? getDefaultExportStyleBlock();
+  const bodyContent = options?.noWrap
+    ? componentCode
+    : `  <div class="p-6">\n${componentCode}\n  </div>`;
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TextUI Export</title>
+  <style>
+${styleContent}
 ${themeStyles}
   </style>
 </head>
 <body class="bg-gray-900 text-gray-300 min-h-screen">
-  <div class="p-6">
-${componentCode}
-  </div>
+${bodyContent}
 </body>
 </html>`;
+}
+
+/**
+ * 拡張コードから media/assets を解決し、index-*.css を 1 件読み込む。
+ * 実行時 __dirname は out/exporters 想定（out/extension.js から require される場合は out）。
+ * @param fromDir - 基準ディレクトリ（例: __dirname）。省略時は html-template-builder の __dirname から推定
+ */
+export function readWebviewCssIfPresent(fromDir?: string): string | undefined {
+  try {
+    const base = fromDir ?? path.join(__dirname, '..', '..');
+    const assetsDir = path.join(base, 'media', 'assets');
+    if (!fs.existsSync(assetsDir)) {
+      return undefined;
+    }
+    const files = fs.readdirSync(assetsDir);
+    const cssFile = files.find((f) => f.startsWith('index-') && f.endsWith('.css'));
+    if (!cssFile) {
+      return undefined;
+    }
+    const cssPath = path.join(assetsDir, cssFile);
+    return fs.readFileSync(cssPath, 'utf8');
+  } catch {
+    return undefined;
+  }
 }

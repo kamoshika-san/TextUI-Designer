@@ -24,6 +24,7 @@ import { Link } from './components/Link';
 import { Badge } from './components/Badge';
 import { Progress } from './components/Progress';
 import { Image } from './components/Image';
+import { UnsupportedComponent } from './components/UnsupportedComponent';
 import type {
   ComponentDef,
   FormComponent,
@@ -64,6 +65,11 @@ interface RenderContext {
 
 const isComponentProps = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
+
+/** WebViewComponentRenderer の props を FormComponent として扱う（DSL 由来のため意図的なキャスト） */
+function toFormComponent(props: Record<string, unknown>): FormComponent {
+  return props as unknown as FormComponent;
+}
 
 function extractProps(
   component: Record<string, unknown>,
@@ -144,7 +150,7 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
     );
   },
   Form: (props, key) => {
-    const form = props as FormComponent;
+    const form = toFormComponent(props);
     const context = extractRenderContext(props);
     const formPath = context?.dslPath ?? '';
     return (
@@ -179,8 +185,19 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
   }
 };
 
-for (const componentName of BUILT_IN_COMPONENTS) {
-  registerRenderer(componentName, builtInRenderers[componentName]);
+function registerBuiltInComponentsImpl(): void {
+  for (const componentName of BUILT_IN_COMPONENTS) {
+    registerRenderer(componentName, builtInRenderers[componentName]);
+  }
+}
+
+registerBuiltInComponentsImpl();
+
+/**
+ * テスト等でレジストリがクリアされた後に組み込みコンポーネントを再登録する。
+ */
+export function registerBuiltInComponents(): void {
+  registerBuiltInComponentsImpl();
 }
 
 /**
@@ -189,7 +206,7 @@ for (const componentName of BUILT_IN_COMPONENTS) {
 function renderFormField(field: FormField, index: number, context?: RenderContext): React.ReactNode {
   const fieldRecord = field as unknown as Record<string, unknown>;
   const name = getComponentName(fieldRecord);
-  const props = extractProps(fieldRecord, name);
+  const props = extractProps(fieldRecord, name ?? null);
   const renderer = name ? getWebViewComponentRenderer(name) : undefined;
 
   if (name && props && renderer) {
@@ -202,6 +219,16 @@ function renderFormField(field: FormField, index: number, context?: RenderContex
  * ComponentDefをレンダリング（Mapベースのディスパッチ）
  * webview.tsx から呼び出されるメイン関数
  */
+/** DSL のキーが小文字（link / badge）の場合に PascalCase でレンダラーを探す */
+function resolveRenderer(name: string | undefined): WebViewComponentRenderer | undefined {
+  if (!name) return undefined;
+  const exact = getWebViewComponentRenderer(name);
+  if (exact) return exact;
+  if (name.length === 0) return undefined;
+  const pascal = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  return pascal !== name ? getWebViewComponentRenderer(pascal) : undefined;
+}
+
 export function renderRegisteredComponent(
   comp: ComponentDef,
   key: React.Key,
@@ -209,8 +236,8 @@ export function renderRegisteredComponent(
 ): React.ReactNode {
   const componentRecord = comp as unknown as Record<string, unknown>;
   const name = getComponentName(componentRecord);
-  const props = extractProps(componentRecord, name);
-  const renderer = name ? getWebViewComponentRenderer(name) : undefined;
+  const props = extractProps(componentRecord, name ?? null);
+  const renderer = resolveRenderer(name);
 
   if (name && props && renderer) {
     const rendered = renderer(attachRenderContext(props, context), key);
@@ -236,11 +263,30 @@ export function renderRegisteredComponent(
     );
   }
 
-  return (
-    <div key={key} style={{ color: 'orange' }}>
-      未対応コンポーネント: {name}
-    </div>
+  const fallback = (
+    <UnsupportedComponent key={key} componentName={name ?? 'Unknown'} props={props} />
   );
+
+  if (context?.dslPath) {
+    return (
+      <div
+        key={key}
+        className="textui-jump-target"
+        title={`Ctrl+Shift+クリックでDSLへジャンプ: ${context.dslPath}`}
+        onClick={(event) => {
+          if (!context.onJumpToDsl || !name) return;
+          if (!(event.ctrlKey && event.shiftKey)) return;
+          event.preventDefault();
+          event.stopPropagation();
+          context.onJumpToDsl(context.dslPath, name);
+        }}
+      >
+        {fallback}
+      </div>
+    );
+  }
+
+  return fallback;
 }
 
 /**

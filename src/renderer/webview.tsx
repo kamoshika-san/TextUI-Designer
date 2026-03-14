@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ThemeToggle } from './components/ThemeToggle';
 import { CustomThemeSelector } from './components/CustomThemeSelector';
-import { renderRegisteredComponent } from './component-map';
+import { renderRegisteredComponent, registerBuiltInComponents } from './component-map';
 import type { TextUIDSL, ComponentDef } from './types';
 import { getVSCodeApi } from './vscode-api';
 import { createComponentKeys, hashString, mergeDslWithPrevious } from './preview-diff';
@@ -23,6 +23,10 @@ const isDevelopmentMode = Boolean(
 const App: React.FC = () => {
   const [json, setJson] = useState<TextUIDSL | null>(null);
   const [error, setError] = useState<ErrorInfo | string | null>(null);
+
+  useEffect(() => {
+    registerBuiltInComponents();
+  }, []);
 
   useEffect(() => {
     const styleId = 'textui-shared-layout-styles';

@@ -10,15 +10,14 @@ interface RadioProps extends RadioComponent {
   options?: RadioOption[];
 }
 
-export const Radio: React.FC<RadioProps> = ({ 
-  label, 
-  name = 'radio', 
+export const Radio: React.FC<RadioProps> = ({
+  label,
+  name = 'radio',
   value: initialValue,
-  checked: initialChecked = false,
   disabled = false,
-  options = [] 
+  options = []
 }) => {
-  const [selectedValue, setSelectedValue] = useState(initialValue || '');
+  const [selectedValue, setSelectedValue] = useState(initialValue ?? '');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!disabled) {

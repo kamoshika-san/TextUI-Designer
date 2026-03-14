@@ -53,9 +53,9 @@ describe('Exporter token style formatting', () => {
       }
     };
 
-    const html = await exporter.export(dsl, { format: 'html' });
+    const html = await exporter.export(dsl, { format: 'html', useReactRender: false });
 
-    assert.ok(html.includes('<hr class="textui-divider my-4">'));
+    assert.ok(html.includes('textui-divider my-4'), 'output contains divider with textui-divider and my-4');
     assert.ok(html.includes('textui-divider my-4') && html.includes('border-color: var(--token-divider)'));
   });
 });

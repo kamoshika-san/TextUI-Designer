@@ -15,6 +15,9 @@ describe('HtmlExporter image copy', () => {
     const imagePath = path.join(sourceDir, 'assets', 'avatar.png');
     fs.writeFileSync(imagePath, 'image-bytes', 'utf8');
 
+    const themeFile = path.join(tempRoot, 'theme.yml');
+    fs.writeFileSync(themeFile, 'theme:\n  name: "Test"\n  version: "1.0.0"\n', 'utf8');
+
     const dsl = {
       page: {
         components: [{ Image: { src: './assets/avatar.png', alt: 'avatar' } }]
@@ -25,7 +28,8 @@ describe('HtmlExporter image copy', () => {
     const html = await exporter.export(dsl, {
       format: 'html',
       outputPath: path.join(outputDir, 'index.html'),
-      sourcePath: path.join(sourceDir, 'sample.tui.yml')
+      sourcePath: path.join(sourceDir, 'sample.tui.yml'),
+      themePath: themeFile
     });
 
     assert.ok(html.includes('src="images/avatar.png"'));

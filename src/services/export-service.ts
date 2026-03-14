@@ -86,9 +86,10 @@ export class ExportService implements IExportService {
    */
   private async selectOutputPath(format: string): Promise<vscode.Uri | undefined> {
     const extension = this.exportManager.getFileExtension(format);
+    const filterExt = extension.startsWith('.') ? extension.slice(1) : extension;
     return await vscode.window.showSaveDialog({
       filters: {
-        [`${format.toUpperCase()} Files`]: [extension]
+        [`${format.toUpperCase()} Files`]: [filterExt]
       }
     });
   }

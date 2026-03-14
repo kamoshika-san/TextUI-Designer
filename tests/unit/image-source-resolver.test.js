@@ -16,13 +16,15 @@ describe('image-source-resolver', () => {
       }
     };
 
+    const dslFileDir = path.join(path.sep, 'tmp', 'project');
     const result = resolveImageSourcesInDsl(dsl, {
-      dslFileDir: '/tmp/project',
-      fileExists: p => p.endsWith('assets/avatar.png'),
+      dslFileDir,
+      fileExists: p => p.endsWith(path.join('assets', 'avatar.png')) || p.endsWith('assets/avatar.png'),
       mapResolvedSrc: p => `resolved:${p}`
     });
 
-    assert.strictEqual(result.page.components[0].Image.src, 'resolved:/tmp/project/assets/avatar.png');
+    const expectedResolved = path.resolve(dslFileDir, 'assets/avatar.png');
+    assert.strictEqual(result.page.components[0].Image.src, `resolved:${expectedResolved}`);
     assert.strictEqual(result.page.components[1].Text.value, 'keep');
     assert.strictEqual(dsl.page.components[0].Image.src, 'assets/avatar.png');
   });

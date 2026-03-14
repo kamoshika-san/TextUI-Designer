@@ -15,6 +15,8 @@ export interface ExportOptions {
   fileName?: string;
   themePath?: string;
   sourcePath?: string;
+  /** false のときは最初から文字列レンダーでエクスポート（デフォルトは true＝React を試行） */
+  useReactRender?: boolean;
 }
 
 export interface Exporter {
