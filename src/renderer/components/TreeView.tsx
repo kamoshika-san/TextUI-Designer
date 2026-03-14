@@ -30,6 +30,34 @@ function collectInitialOpenState(
   return state;
 }
 
+export function collectExpandableNodePaths(
+  items: TreeViewItem[],
+  prefix: string = 'node'
+): string[] {
+  const paths: string[] = [];
+
+  items.forEach((item, index) => {
+    const path = `${prefix}-${index}`;
+    const children = item.children || [];
+    const components = item.components || [];
+    if (children.length > 0 || components.length > 0) {
+      paths.push(path);
+    }
+    if (children.length > 0) {
+      paths.push(...collectExpandableNodePaths(children, path));
+    }
+  });
+
+  return paths;
+}
+
+export function buildBulkOpenState(paths: string[], isOpen: boolean): Record<string, boolean> {
+  return paths.reduce<Record<string, boolean>>((state, path) => {
+    state[path] = isOpen;
+    return state;
+  }, {});
+}
+
 export const TreeView: React.FC<TreeViewProps> = ({
   items,
   showLines = true,
@@ -41,6 +69,9 @@ export const TreeView: React.FC<TreeViewProps> = ({
   const [openNodes, setOpenNodes] = useState<Record<string, boolean>>(
     collectInitialOpenState(items, expandAll)
   );
+  const expandableNodePaths = collectExpandableNodePaths(items);
+  const hasExpandableNodes = expandableNodePaths.length > 0;
+  const isAllExpanded = hasExpandableNodes && expandableNodePaths.every(path => openNodes[path]);
 
   useEffect(() => {
     setOpenNodes(collectInitialOpenState(items, expandAll));
@@ -50,6 +81,16 @@ export const TreeView: React.FC<TreeViewProps> = ({
     setOpenNodes(previous => ({
       ...previous,
       [path]: !previous[path]
+    }));
+  };
+
+  const setAllNodesOpenState = (isOpen: boolean) => {
+    if (!hasExpandableNodes) {
+      return;
+    }
+    setOpenNodes(previous => ({
+      ...previous,
+      ...buildBulkOpenState(expandableNodePaths, isOpen)
     }));
   };
 
@@ -103,7 +144,22 @@ export const TreeView: React.FC<TreeViewProps> = ({
     </ul>
   );
 
-  return <div className="textui-treeview">{renderNodes(items, 'node')}</div>;
+  return (
+    <div className="textui-treeview">
+      {hasExpandableNodes ? (
+        <div className="textui-treeview-actions">
+          <button
+            type="button"
+            className="textui-treeview-action-link"
+            onClick={() => setAllNodesOpenState(!isAllExpanded)}
+          >
+            {isAllExpanded ? 'Collapse all' : 'Expand all'}
+          </button>
+        </div>
+      ) : null}
+      {renderNodes(items, 'node')}
+    </div>
+  );
 };
 
 function toPointerPath(nodePath: string): string {
