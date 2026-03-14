@@ -55,6 +55,46 @@ const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
 const THEME_FILENAMES = ['textui-theme.yml', 'textui-theme.yaml'];
 
 
+
+export function expandScrollableContainersForCapture(
+  doc: Document = document,
+  win: Window = window
+): void {
+  const docEl = doc.documentElement;
+  const body = doc.body;
+  if (!docEl || !body) {
+    return;
+  }
+
+  const overflowRegex = /(auto|scroll|overlay)/;
+  const scrollableContainers: HTMLElement[] = [];
+
+  const allElements = Array.from(doc.querySelectorAll<HTMLElement>('*'));
+  for (const element of allElements) {
+    const style = win.getComputedStyle(element);
+    const hasScrollableOverflow =
+      overflowRegex.test(style.overflowY) || overflowRegex.test(style.overflow);
+    const overflowAmount = element.scrollHeight - element.clientHeight;
+    if (hasScrollableOverflow && overflowAmount > 1) {
+      scrollableContainers.push(element);
+    }
+  }
+
+  const expandElement = (target: HTMLElement): void => {
+    target.style.setProperty('overflow', 'visible', 'important');
+    target.style.setProperty('overflow-y', 'visible', 'important');
+    target.style.setProperty('max-height', 'none', 'important');
+    target.style.setProperty('height', 'auto', 'important');
+  };
+
+  expandElement(docEl);
+  expandElement(body);
+
+  for (const container of scrollableContainers) {
+    expandElement(container);
+  }
+}
+
 type PuppeteerLaunchOptions = {
   executablePath: string;
   headless: boolean;
@@ -257,6 +297,11 @@ async function runPuppeteerFullPageCapture(params: {
     });
 
     await new Promise(resolve => setTimeout(resolve, params.waitMs));
+
+    // プレビュー CSS で内部スクロール（overflow:auto 等 + 固定高）があると、
+    // fullPage スクリーンショットがビューポート分だけになる場合がある。
+    // そのため、実際に縦方向へオーバーフローしているコンテナを一時的に展開してから撮影する。
+    await page.evaluate(expandScrollableContainersForCapture);
 
     // 全コンテンツをレイアウトさせるため一度末尾へスクロールしてから高さを計測
     await page.evaluate(() => {
