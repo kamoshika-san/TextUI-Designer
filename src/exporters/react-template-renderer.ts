@@ -115,7 +115,7 @@ ${treeCode}
 }
 
 export function renderTableTemplate(props: TableComponent, key: number, tokenStyle: string, context: RenderContext): string {
-  const { columns = [], rows = [], striped = false } = props;
+  const { columns = [], rows = [], striped = false, rowHover = false } = props;
 
   if (columns.length === 0) {
     return `      <div key={${key}} className="text-sm text-yellow-700 border border-yellow-400 rounded-md px-3 py-2">Table の columns が未定義です</div>`;
@@ -131,7 +131,7 @@ export function renderTableTemplate(props: TableComponent, key: number, tokenSty
         .map(column => `              <td key="${rowIndex}-${column.key}" className="px-4 py-2 align-top text-gray-700"${column.width ? ` style={{ width: '${column.width}' }}` : ''}>${context.toTableCellText(row[column.key])}</td>`)
         .join('\n');
 
-      return `            <tr key={${rowIndex}} className={${striped} && ${rowIndex} % 2 === 1 ? 'bg-gray-50' : ''}>\n${cells}\n            </tr>`;
+      return `            <tr key={${rowIndex}} className={[${striped} && ${rowIndex} % 2 === 1 ? 'bg-gray-50' : '', ${rowHover} ? 'hover:bg-gray-100 transition-colors' : ''].filter(Boolean).join(' ')}>\n${cells}\n            </tr>`;
     })
     .join('\n');
 

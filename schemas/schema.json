@@ -1123,6 +1123,11 @@
               "default": false,
               "description": "true の場合は行を交互色で表示します。"
             },
+            "rowHover": {
+              "type": "boolean",
+              "default": false,
+              "description": "true の場合は行ホバー時にハイライト表示します。"
+            },
             "width": {
               "type": "string",
               "description": "横幅指定（例: 70%, 480px）。"
@@ -1133,7 +1138,7 @@
             }
           },
           "additionalProperties": false,
-          "description": "表形式でデータを表示するコンポーネント。\n利用可能な属性: columns, rows, striped"
+          "description": "表形式でデータを表示するコンポーネント。\n利用可能な属性: columns, rows, striped, rowHover"
         }
       },
       "additionalProperties": false,
