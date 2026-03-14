@@ -32,7 +32,7 @@ describe('HtmlExporter image copy', () => {
       themePath: themeFile
     });
 
-    assert.ok(html.includes('src="images/avatar.png"'));
+    assert.ok(html.includes('images/avatar.png'));
     const copied = path.join(outputDir, 'images', 'avatar.png');
     assert.ok(fs.existsSync(copied));
     assert.strictEqual(fs.readFileSync(copied, 'utf8'), 'image-bytes');

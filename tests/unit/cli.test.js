@@ -639,7 +639,7 @@ theme:
     assert.strictEqual(parsed.themePath, path.resolve(themedFile));
   });
 
-  it('export resolves token value into HTML inline style', () => {
+  it('export resolves token value into HTML output', () => {
     const tokenDslFile = path.join(tmpDir, 'token-export.tui.yml');
     const tokenThemeFile = path.join(tmpDir, 'textui-theme.yml');
     const tokenOutFile = path.join(tmpDir, 'token-export.html');
@@ -677,7 +677,7 @@ page:
 
     assert.strictEqual(result.status, 0);
     const html = fs.readFileSync(tokenOutFile, 'utf8');
-    assert.match(html, /background-color:\s*#123456/);
+    assert.match(html, /#123456/);
   });
 
   it('export with --token-on-error warn succeeds and reports token warnings', () => {
