@@ -33,6 +33,16 @@ describe('React static export (renderToStaticMarkup)', () => {
     assert.ok(html.includes('Body1'), 'default tab body content should be present');
   });
 
+
+  it('Container の token を背景色スタイルとして静的HTMLに出力する', () => {
+    const html = renderPageComponentsToStaticHtml([
+      { Container: { layout: 'vertical', token: 'rgb(240, 240, 240)', components: [{ Text: { value: 'inside' } }] } }
+    ]);
+
+    assert.ok(html.includes('background-color:rgb(240, 240, 240)') || html.includes('background-color: rgb(240, 240, 240)'));
+    assert.ok(html.includes('inside'));
+  });
+
   it('空の components で padding 付き div のみの HTML を返す', () => {
     const html = renderPageComponentsToStaticHtml([]);
     assert.ok(html.includes('padding:24px') || html.includes('padding: 24px'), 'root should have padding 24');
