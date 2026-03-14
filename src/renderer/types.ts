@@ -231,12 +231,14 @@ export interface TableColumn {
 
 export interface TableComponent {
   columns: TableColumn[];
-  rows: Record<string, string | number | boolean | null>[];
+  rows: Record<string, TableCellValue>[];
   striped?: boolean;
   rowHover?: boolean;
   width?: string;
   token?: string;
 }
+
+export type TableCellValue = string | number | boolean | null | ComponentDef;
 
 export type ContainerLayout = 'vertical' | 'horizontal' | 'flex' | 'grid';
 
@@ -366,4 +368,36 @@ export function isProgressComponent(comp: ComponentDef): comp is { Progress: Pro
 
 export function isImageComponent(comp: ComponentDef): comp is { Image: ImageComponent } {
   return 'Image' in comp;
+}
+
+const COMPONENT_DEF_KEYS = new Set([
+  'Text',
+  'Input',
+  'Button',
+  'Checkbox',
+  'Form',
+  'Container',
+  'Radio',
+  'Select',
+  'DatePicker',
+  'Divider',
+  'Spacer',
+  'Alert',
+  'Accordion',
+  'Tabs',
+  'TreeView',
+  'Table',
+  'Link',
+  'Badge',
+  'Progress',
+  'Image'
+]);
+
+export function isComponentDefValue(value: unknown): value is ComponentDef {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  const keys = Object.keys(value as Record<string, unknown>);
+  return keys.length === 1 && COMPONENT_DEF_KEYS.has(keys[0]);
 }

@@ -1105,15 +1105,22 @@
             },
             "rows": {
               "type": "array",
-              "description": "行データの配列。各オブジェクトのキーはcolumns[].keyに対応。",
+              "description": "行データの配列。各オブジェクトのキーはcolumns[].keyに対応。値には文字列/数値/真偽値/nullに加えてコンポーネント定義も指定可能。",
               "items": {
                 "type": "object",
                 "additionalProperties": {
-                  "type": [
-                    "string",
-                    "number",
-                    "boolean",
-                    "null"
+                  "anyOf": [
+                    {
+                      "type": [
+                        "string",
+                        "number",
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    {
+                      "$ref": "#/definitions/component"
+                    }
                   ]
                 }
               }

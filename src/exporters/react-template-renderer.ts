@@ -1,4 +1,4 @@
-import type { ComponentDef, AccordionComponent, TabsComponent, TreeViewComponent, TableComponent, ContainerComponent, FormComponent, FormField, FormAction } from '../renderer/types';
+import { isComponentDefValue, type ComponentDef, type AccordionComponent, type TabsComponent, type TreeViewComponent, type TableComponent, type ContainerComponent, type FormComponent, type FormField, type FormAction } from '../renderer/types';
 
 interface RenderContext {
   renderComponent: (component: ComponentDef, key: number) => string;
@@ -128,7 +128,13 @@ export function renderTableTemplate(props: TableComponent, key: number, tokenSty
   const bodyCode = rows
     .map((row, rowIndex) => {
       const cells = columns
-        .map(column => `              <td key="${rowIndex}-${column.key}" className="px-4 py-2 align-top text-gray-700"${column.width ? ` style={{ width: '${column.width}' }}` : ''}>${context.toTableCellText(row[column.key])}</td>`)
+        .map((column, columnIndex) => {
+          const cellValue = row[column.key];
+          const cellContent = isComponentDefValue(cellValue)
+            ? context.adjustIndentation(context.renderComponent(cellValue, rowIndex * 1000 + columnIndex), '                ')
+            : context.toTableCellText(cellValue);
+          return `              <td key="${rowIndex}-${column.key}" className="px-4 py-2 align-top text-gray-700"${column.width ? ` style={{ width: '${column.width}' }}` : ''}>${cellContent}</td>`;
+        })
         .join('\n');
 
       return `            <tr key={${rowIndex}} className={[${striped} && ${rowIndex} % 2 === 1 ? 'bg-gray-50' : '', ${rowHover} ? 'hover:bg-gray-100 transition-colors' : ''].filter(Boolean).join(' ')}>\n${cells}\n            </tr>`;

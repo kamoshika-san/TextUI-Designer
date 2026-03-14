@@ -121,7 +121,13 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
       onJumpToDsl={extractRenderContext(props)?.onJumpToDsl}
     />
   ),
-  Table: (props, key) => <Table key={key} {...(props as unknown as TableComponent)} />,
+  Table: (props, key) => (
+    <Table
+      key={key}
+      {...(props as unknown as TableComponent)}
+      renderComponent={(component, childKey) => renderRegisteredComponent(component, childKey, extractRenderContext(props))}
+    />
+  ),
   Link: (props, key) => <Link key={key} {...(props as unknown as LinkComponent)} />,
   Badge: (props, key) => <Badge key={key} {...(props as unknown as BadgeComponent)} />,
   Progress: (props, key) => <Progress key={key} {...(props as unknown as ProgressComponent)} />,
