@@ -326,6 +326,11 @@ function canExecuteBrowser(candidate: string): boolean {
   if (isPathLike(candidate) && !fs.existsSync(candidate)) {
     return false;
   }
+  // Windows: spawnSync(..., ['--version']) は Edge/Chrome のウィンドウを一瞬表示するため、存在チェックのみ行う。
+  // キャプチャは Playwright の chrome-headless-shell を使用するため、発見結果は表示用・フォールバック用で実行可否の厳密判定は不要。
+  if ((process.platform as NodeJS.Platform) === 'win32') {
+    return fs.existsSync(candidate);
+  }
   try {
     const result = spawnSync(candidate, ['--version'], { stdio: 'ignore' });
     return result.status === 0;
