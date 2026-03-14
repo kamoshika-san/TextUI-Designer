@@ -21,7 +21,8 @@ const BUILTIN_PROVIDERS: CliProviderDefinition[] = [
       const { HtmlExporter } = await import('../exporters/html-exporter');
       return new HtmlExporter().export(dsl, {
         format: 'html',
-        themePath: options?.themePath
+        themePath: options?.themePath,
+        useReactRender: true
       });
     }
   },

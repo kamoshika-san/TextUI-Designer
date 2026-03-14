@@ -59,7 +59,7 @@ export class ServiceFactory {
     const exportManager: IExportManager = f.createExportManager
       ? f.createExportManager()
       : new ExportManager();
-    const exportService: IExportService = new ExportService(exportManager, themeManager);
+    const exportService: IExportService = new ExportService(exportManager, themeManager, this.context.extensionPath);
 
     const templateService: ITemplateService = f.createTemplateService
       ? f.createTemplateService()

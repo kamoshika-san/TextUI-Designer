@@ -53,22 +53,19 @@ export class HtmlExporter extends BaseComponentRenderer {
     const normalizedDsl = this.resolveLocalImageSourcesForExport(dsl, options);
     const themeStyles = this.buildThemeStyles(options.themePath);
 
-    // WebView と同じ React コンポーネント＋webviewCss で統一（テーマありでも同じ経路）
+    // WebView と同じ React コンポーネント＋webviewCss で統一（Export/スクリーンショットも同一系統）
     const useReact = options.useReactRender !== false;
     if (useReact) {
-      try {
-        const components = normalizedDsl.page?.components ?? [];
-        const reactBody = renderPageComponentsToStaticHtml(components);
-        const webviewCss = readWebviewCssIfPresent();
-        return buildHtmlDocument(reactBody, themeStyles, {
-          webviewCss: webviewCss ?? undefined,
-          noWrap: true
-        });
-      } catch (_err) {
-        /* フォールバック: 従来の文字列レンダー */
-      }
+      const components = normalizedDsl.page?.components ?? [];
+      const reactBody = renderPageComponentsToStaticHtml(components);
+      const webviewCss = readWebviewCssIfPresent(options.extensionPath);
+      return buildHtmlDocument(reactBody, themeStyles, {
+        webviewCss: webviewCss ?? undefined,
+        noWrap: true
+      });
     }
 
+    // useReactRender: false のときのみ従来の文字列レンダー（HTML レンダラ系統）
     const componentCode = this.renderPageComponents(normalizedDsl);
     return buildHtmlDocument(componentCode, themeStyles);
   }

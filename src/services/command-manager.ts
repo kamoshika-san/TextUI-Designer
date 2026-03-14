@@ -179,7 +179,8 @@ export class CommandManager implements ICommandManager {
     try {
       await capturePreviewImageFromDslFile(targetFile, {
         outputPath: outputUri.fsPath,
-        themePath: this.themeManager?.getThemePath()
+        themePath: this.themeManager?.getThemePath(),
+        extensionPath: this.context.extensionPath
       });
       vscode.window.showInformationMessage(`プレビュー画像を出力しました: ${outputUri.fsPath}`);
     } catch (error) {

@@ -12,11 +12,13 @@ export class ExportService implements IExportService {
   private exportManager: IExportManager;
   private performanceMonitor: PerformanceMonitor;
   private themeManager?: IThemeManager;
+  private extensionPath?: string;
 
-  constructor(exportManager: IExportManager, themeManager?: IThemeManager) {
+  constructor(exportManager: IExportManager, themeManager?: IThemeManager, extensionPath?: string) {
     this.exportManager = exportManager;
     this.performanceMonitor = PerformanceMonitor.getInstance();
     this.themeManager = themeManager;
+    this.extensionPath = extensionPath;
   }
 
   /**
@@ -108,7 +110,8 @@ export class ExportService implements IExportService {
         outputPath: outputUri.fsPath,
         fileName: path.basename(outputUri.fsPath),
         themePath: this.themeManager?.getThemePath(),
-        sourcePath: filePath
+        sourcePath: filePath,
+        extensionPath: this.extensionPath
       });
 
       await vscode.workspace.fs.writeFile(outputUri, Buffer.from(content, 'utf-8'));

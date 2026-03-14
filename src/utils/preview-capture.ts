@@ -12,6 +12,8 @@ export interface PreviewCaptureOptions {
   themePath?: string;
   /** DSL ファイルパス（themePath 未指定時に同階層の textui-theme.yml を参照するために使用） */
   dslFilePath?: string;
+  /** 拡張ルートパス。指定時は WebView と同一 CSS をキャプチャ用 HTML に使用 */
+  extensionPath?: string;
   width?: number;
   height?: number;
   scale?: number;
@@ -104,7 +106,9 @@ export async function capturePreviewImageFromDsl(
   const themePath = resolveThemePathForCapture(options.themePath, options.dslFilePath);
   const html = await new HtmlExporter().export(dsl, {
     format: 'html',
-    themePath
+    themePath,
+    useReactRender: true,
+    extensionPath: options.extensionPath
   });
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-preview-capture-'));
   const htmlPath = path.join(tempDir, 'preview.html');

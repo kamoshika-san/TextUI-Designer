@@ -44,6 +44,8 @@ export interface ExportRequest {
   fileName?: string;
   themePath?: string;
   sourcePath?: string;
+  /** 拡張ルートパス。指定時は WebView と同一 CSS を HTML エクスポートに使用 */
+  extensionPath?: string;
 }
 
 export interface IRegisteredExporter {

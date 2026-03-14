@@ -208,24 +208,33 @@ ${bodyContent}
 
 /**
  * 拡張コードから media/assets を解決し、index-*.css を 1 件読み込む。
- * 実行時 __dirname は out/exporters 想定（out/extension.js から require される場合は out）。
- * @param fromDir - 基準ディレクトリ（例: __dirname）。省略時は html-template-builder の __dirname から推定
+ * WebView と同一 CSS を使うことで Export/スクリーンショットの見た目を統一する。
+ * - webpack バンドル時: __dirname は out/ になるため base = __dirname/..
+ * - 未バンドル時: __dirname は out/exporters の可能性があるため base = __dirname/../..
+ * @param fromDir - 基準ディレクトリ。省略時は __dirname から複数候補を試す
  */
 export function readWebviewCssIfPresent(fromDir?: string): string | undefined {
-  try {
-    const base = fromDir ?? path.join(__dirname, '..', '..');
-    const assetsDir = path.join(base, 'media', 'assets');
-    if (!fs.existsSync(assetsDir)) {
-      return undefined;
+  const candidates = fromDir
+    ? [path.join(fromDir, 'media', 'assets')]
+    : [
+        path.join(__dirname, '..', 'media', 'assets'),
+        path.join(__dirname, '..', '..', 'media', 'assets')
+      ];
+  for (const assetsDir of candidates) {
+    try {
+      if (!fs.existsSync(assetsDir)) {
+        continue;
+      }
+      const files = fs.readdirSync(assetsDir);
+      const cssFile = files.find((f) => f.startsWith('index-') && f.endsWith('.css'));
+      if (!cssFile) {
+        continue;
+      }
+      const cssPath = path.join(assetsDir, cssFile);
+      return fs.readFileSync(cssPath, 'utf8');
+    } catch {
+      continue;
     }
-    const files = fs.readdirSync(assetsDir);
-    const cssFile = files.find((f) => f.startsWith('index-') && f.endsWith('.css'));
-    if (!cssFile) {
-      return undefined;
-    }
-    const cssPath = path.join(assetsDir, cssFile);
-    return fs.readFileSync(cssPath, 'utf8');
-  } catch {
-    return undefined;
   }
+  return undefined;
 }
