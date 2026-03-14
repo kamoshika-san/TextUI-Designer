@@ -1,7 +1,12 @@
 import React from 'react';
-import type { TableComponent } from '../types';
+import type { ComponentDef, TableComponent } from '../types';
+import { isComponentDefValue } from '../types';
 
-export const Table: React.FC<TableComponent> = ({ columns = [], rows = [], striped = false, rowHover = false, width }) => {
+interface TableProps extends TableComponent {
+  renderComponent?: (component: ComponentDef, key: number) => React.ReactNode;
+}
+
+export const Table: React.FC<TableProps> = ({ columns = [], rows = [], striped = false, rowHover = false, width, renderComponent }) => {
   if (columns.length === 0) {
     return (
       <div className="text-sm text-yellow-300 border border-yellow-700 rounded-md px-3 py-2">
@@ -33,16 +38,21 @@ export const Table: React.FC<TableComponent> = ({ columns = [], rows = [], strip
               key={rowIndex}
               className={`${striped && rowIndex % 2 === 1 ? 'bg-gray-800/70' : ''} ${rowHover ? 'hover:bg-gray-800/80 transition-colors' : ''}`.trim()}
             >
-              {columns.map(column => {
+              {columns.map((column, columnIndex) => {
                 const rawValue = row[column.key];
-                const value = rawValue === null || rawValue === undefined ? '' : String(rawValue);
+                const cellContent = isComponentDefValue(rawValue) && renderComponent
+                  ? renderComponent(rawValue, rowIndex * 1000 + columnIndex)
+                  : rawValue === null || rawValue === undefined
+                    ? ''
+                    : String(rawValue);
+
                 return (
                   <td
                     key={`${rowIndex}-${column.key}`}
                     className="px-4 py-2 align-top text-gray-300"
                     style={column.width ? { width: column.width } : undefined}
                   >
-                    {value}
+                    {cellContent}
                   </td>
                 );
               })}

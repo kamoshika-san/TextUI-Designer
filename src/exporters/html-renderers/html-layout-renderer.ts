@@ -1,10 +1,11 @@
-import type {
-  AccordionComponent,
-  ComponentDef,
-  ContainerComponent,
-  TableComponent,
-  TabsComponent,
-  TreeViewComponent
+import {
+  isComponentDefValue,
+  type AccordionComponent,
+  type ComponentDef,
+  type ContainerComponent,
+  type TableComponent,
+  type TabsComponent,
+  type TreeViewComponent
 } from '../../renderer/types';
 import type { HtmlRendererUtils } from './html-renderer-utils';
 
@@ -150,9 +151,15 @@ ${treeCode}
         }
         const rowClassAttr = rowClasses.length > 0 ? ` class="${rowClasses.join(' ')}"` : '';
         const cells = columns
-          .map(column => {
+          .map((column, columnIndex) => {
             const widthStyle = column.width ? ` style="width: ${this.utils.escapeAttribute(column.width)}"` : '';
-            return `          <td class="px-4 py-2 align-top text-gray-300"${widthStyle}>${this.utils.escapeHtml(this.utils.toTableCellText(row[column.key]))}</td>`;
+            const cellValue = row[column.key];
+            const cellContent = isComponentDefValue(cellValue)
+              ? `
+${this.utils.renderComponent(cellValue, rowIndex * 1000 + columnIndex).split('\n').map(line => `            ${line}`).join('\n')}
+          `
+              : this.utils.escapeHtml(this.utils.toTableCellText(cellValue));
+            return `          <td class="px-4 py-2 align-top text-gray-300"${widthStyle}>${cellContent}</td>`;
           })
           .join('\n');
 

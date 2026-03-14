@@ -1,9 +1,8 @@
-import type {
-  TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
-  TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
-  RadioComponent, SelectComponent, DatePickerComponent, SelectOption, DividerComponent, SpacerComponent,
-  AlertComponent, ContainerComponent, AccordionComponent,
-  TabsComponent, TreeViewComponent, TableComponent, LinkComponent, BadgeComponent, ProgressComponent, ImageComponent
+import { isComponentDefValue, type TextUIDSL, type ComponentDef, type FormComponent, type FormField, type FormAction,
+  type TextComponent, type InputComponent, type ButtonComponent, type CheckboxComponent,
+  type RadioComponent, type SelectComponent, type DatePickerComponent, type SelectOption, type DividerComponent, type SpacerComponent,
+  type AlertComponent, type ContainerComponent, type AccordionComponent,
+  type TabsComponent, type TreeViewComponent, type TableComponent, type LinkComponent, type BadgeComponent, type ProgressComponent, type ImageComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -392,10 +391,20 @@ ${indentedCode}`;
         rowHover ? '.hover\:bg-gray-100.transition-colors' : ''
       ].join('');
       code += `\n            tr${rowModifiers}`;
-      columns.forEach(column => {
-        const value = this.toTableCellText(row[column.key]);
+      columns.forEach((column, columnIndex) => {
+        const cellValue = row[column.key];
         const widthStyle = column.width ? `(style="width: ${this.escapeAttribute(column.width)}")` : '';
-        code += `\n              td.px-4.py-2.align-top.text-gray-700${widthStyle} ${value}`;
+        if (isComponentDefValue(cellValue)) {
+          code += `
+              td.px-4.py-2.align-top.text-gray-700${widthStyle}`;
+          const cellCode = this.adjustIndentation(this.renderComponent(cellValue, rowIndex * 1000 + columnIndex), '                ');
+          code += `
+${cellCode}`;
+          return;
+        }
+        const value = this.toTableCellText(cellValue);
+        code += `
+              td.px-4.py-2.align-top.text-gray-700${widthStyle} ${value}`;
       });
     });
 
