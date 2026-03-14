@@ -7,6 +7,8 @@ import * as YAML from 'yaml';
 import type { TextUIDSL } from '../renderer/types';
 import { HtmlExporter } from '../exporters/html-exporter';
 
+declare const __non_webpack_require__: NodeRequire | undefined;
+
 export interface PreviewCaptureOptions {
   outputPath: string;
   themePath?: string;
@@ -51,6 +53,40 @@ const ALLOWED_BROWSER_COMMANDS = new Set([
 
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
 const THEME_FILENAMES = ['textui-theme.yml', 'textui-theme.yaml'];
+
+
+type PuppeteerLaunchOptions = {
+  executablePath: string;
+  headless: boolean;
+  args: string[];
+};
+
+type PuppeteerModuleLike = {
+  launch: (options: PuppeteerLaunchOptions) => Promise<PuppeteerBrowserLike>;
+};
+
+type PuppeteerPageLike = {
+  setViewport: (viewport: { width: number; height: number; deviceScaleFactor: number }) => Promise<void>;
+  goto: (url: string, options: { waitUntil: string; timeout: number }) => Promise<void>;
+  evaluate: <T>(fn: () => T) => Promise<T>;
+  screenshot: (options: { path: string; fullPage: boolean; type: 'png' }) => Promise<void>;
+};
+
+type PuppeteerBrowserLike = {
+  newPage: () => Promise<PuppeteerPageLike>;
+  close: () => Promise<void>;
+};
+
+function loadPuppeteerModule(): PuppeteerModuleLike | null {
+  try {
+    const moduleName = 'puppeteer-core';
+    const runtimeRequire: NodeRequire =
+      typeof __non_webpack_require__ === 'function' ? __non_webpack_require__ : require;
+    return runtimeRequire(moduleName) as PuppeteerModuleLike;
+  } catch {
+    return null;
+  }
+}
 
 function resolveThemePathForCapture(explicitThemePath?: string, dslFilePath?: string): string | undefined {
   if (explicitThemePath && fs.existsSync(explicitThemePath)) {
@@ -186,14 +222,12 @@ async function runPuppeteerFullPageCapture(params: {
   if (isPuppeteerDisabledByEnv()) {
     return null;
   }
-  let puppeteer: typeof import('puppeteer-core');
-  try {
-    puppeteer = await import('puppeteer-core');
-  } catch {
+  const puppeteer = loadPuppeteerModule();
+  if (!puppeteer) {
     return null;
   }
 
-  const launchOptions: import('puppeteer-core').LaunchOptions = {
+  const launchOptions: PuppeteerLaunchOptions = {
     executablePath: params.browserPath,
     headless: true,
     args: [
@@ -206,7 +240,7 @@ async function runPuppeteerFullPageCapture(params: {
     ]
   };
 
-  let browser: import('puppeteer-core').Browser | undefined;
+  let browser: PuppeteerBrowserLike | undefined;
   try {
     browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
