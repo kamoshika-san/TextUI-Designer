@@ -111,6 +111,31 @@ theme:
   # コンポーネント固有スタイル
   # ====================
   components:
+    # 画像コンポーネント
+    image:
+      default:
+        borderRadius: "var(--borderRadius-md)"
+        objectFit: "cover"
+      avatar:
+        borderRadius: "50%"
+        objectFit: "cover"
+
+    # バッジコンポーネント
+    badge:
+      default:
+        borderRadius: "9999px"
+        padding: "0.25em 0.6em"
+      primary:
+        backgroundColor: "rgba(59, 130, 246, 0.2)"
+        color: "#93c5fd"
+
+    # プログレスコンポーネント
+    progress:
+      track:
+        backgroundColor: "var(--color-surface)"
+      primary:
+        backgroundColor: "var(--color-primary)"
+
     # ボタンコンポーネント
     button:
       # プライマリボタン - メインアクション

@@ -80,5 +80,103 @@ ${varLines}
       background-color: var(--component-alert-error-backgroundColor, rgba(239, 68, 68, 0.1)) !important;
       color: var(--component-alert-error-color, var(--color-error, var(--colors-error, #f87171))) !important;
       border-color: var(--component-alert-error-borderColor, var(--color-error, var(--colors-error, #ef4444))) !important;
+    }
+
+    .textui-image {
+      border-radius: var(--component-image-default-borderRadius, 0) !important;
+      object-fit: var(--component-image-default-objectFit, cover) !important;
+      border: var(--component-image-default-border, none) !important;
+      border-color: var(--component-image-default-borderColor, var(--color-border-default, transparent)) !important;
+    }
+
+    .textui-image.rounded-full {
+      border-radius: var(--component-image-avatar-borderRadius, var(--component-image-default-borderRadius, 50%)) !important;
+      object-fit: var(--component-image-avatar-objectFit, var(--component-image-default-objectFit, cover)) !important;
+      border: var(--component-image-avatar-border, var(--component-image-default-border, none)) !important;
+      border-color: var(--component-image-avatar-borderColor, var(--component-image-default-borderColor, var(--color-border-default, transparent))) !important;
+    }
+
+    .textui-badge {
+      background-color: var(--component-badge-default-backgroundColor, var(--color-surface, rgba(107, 114, 128, 0.25))) !important;
+      color: var(--component-badge-default-color, var(--color-text-primary, #e5e7eb)) !important;
+      border-radius: var(--component-badge-default-borderRadius, 9999px) !important;
+      border: var(--component-badge-default-border, none) !important;
+      padding: var(--component-badge-default-padding, 0.25em 0.6em) !important;
+      font-weight: var(--component-badge-default-fontWeight, 600) !important;
+    }
+
+    .textui-badge-primary {
+      background-color: var(--component-badge-primary-backgroundColor, rgba(59, 130, 246, 0.2)) !important;
+      color: var(--component-badge-primary-color, #93c5fd) !important;
+    }
+
+    .textui-badge-success {
+      background-color: var(--component-badge-success-backgroundColor, rgba(34, 197, 94, 0.2)) !important;
+      color: var(--component-badge-success-color, #86efac) !important;
+    }
+
+    .textui-badge-warning {
+      background-color: var(--component-badge-warning-backgroundColor, rgba(245, 158, 11, 0.22)) !important;
+      color: var(--component-badge-warning-color, #fcd34d) !important;
+    }
+
+    .textui-badge-error {
+      background-color: var(--component-badge-error-backgroundColor, rgba(239, 68, 68, 0.2)) !important;
+      color: var(--component-badge-error-color, #fca5a5) !important;
+    }
+
+    .textui-badge-sm {
+      font-size: var(--component-badge-sm-fontSize, 0.75rem) !important;
+      padding: var(--component-badge-sm-padding, 0.15em 0.5em) !important;
+    }
+
+    .textui-badge-md {
+      font-size: var(--component-badge-md-fontSize, 0.875rem) !important;
+      padding: var(--component-badge-md-padding, 0.25em 0.6em) !important;
+    }
+
+    .textui-progress {
+      width: var(--component-progress-base-width, 100%) !important;
+      max-width: var(--component-progress-base-maxWidth, 32rem) !important;
+      margin-bottom: var(--component-progress-base-marginBottom, 0.75rem) !important;
+    }
+
+    .textui-progress-header {
+      color: var(--component-progress-header-color, var(--color-text-secondary, #d1d5db)) !important;
+      gap: var(--component-progress-header-gap, 0.75rem) !important;
+      margin-bottom: var(--component-progress-header-marginBottom, 0.25rem) !important;
+      font-size: var(--component-progress-header-fontSize, 0.875rem) !important;
+    }
+
+    .textui-progress-track {
+      height: var(--component-progress-track-height, 0.5rem) !important;
+      border-radius: var(--component-progress-track-borderRadius, 9999px) !important;
+      background-color: var(--component-progress-track-backgroundColor, var(--color-surface, rgba(107, 114, 128, 0.25))) !important;
+    }
+
+    .textui-progress-fill {
+      border-radius: var(--component-progress-fill-borderRadius, 9999px) !important;
+      transition: var(--component-progress-fill-transition, width 0.2s ease) !important;
+      background-color: var(--component-progress-fill-backgroundColor, rgba(107, 114, 128, 0.7)) !important;
+    }
+
+    .textui-progress-default {
+      background-color: var(--component-progress-default-backgroundColor, rgba(107, 114, 128, 0.7)) !important;
+    }
+
+    .textui-progress-primary {
+      background-color: var(--component-progress-primary-backgroundColor, #3b82f6) !important;
+    }
+
+    .textui-progress-success {
+      background-color: var(--component-progress-success-backgroundColor, #22c55e) !important;
+    }
+
+    .textui-progress-warning {
+      background-color: var(--component-progress-warning-backgroundColor, #f59e0b) !important;
+    }
+
+    .textui-progress-error {
+      background-color: var(--component-progress-error-backgroundColor, #ef4444) !important;
     }`;
 }
