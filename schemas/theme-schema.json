@@ -677,6 +677,84 @@
               },
               "additionalProperties": true
             },
+            "badge": {
+              "type": "object",
+              "description": "バッジコンポーネントのスタイル",
+              "properties": {
+                "default": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "デフォルトバッジのスタイル"
+                },
+                "primary": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "プライマリバッジのスタイル"
+                },
+                "success": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "成功バッジのスタイル"
+                },
+                "warning": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "警告バッジのスタイル"
+                },
+                "error": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "エラーバッジのスタイル"
+                },
+                "sm": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "小サイズバッジのスタイル"
+                },
+                "md": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "中サイズバッジのスタイル"
+                }
+              },
+              "additionalProperties": true
+            },
+            "progress": {
+              "type": "object",
+              "description": "プログレスコンポーネントのスタイル",
+              "properties": {
+                "base": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "プログレス全体のスタイル"
+                },
+                "header": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "ヘッダーのスタイル"
+                },
+                "track": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "トラックのスタイル"
+                },
+                "fill": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "フィル共通のスタイル"
+                },
+                "default": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "デフォルトフィルのスタイル"
+                },
+                "primary": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "プライマリフィルのスタイル"
+                },
+                "success": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "成功フィルのスタイル"
+                },
+                "warning": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "警告フィルのスタイル"
+                },
+                "error": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "エラーフィルのスタイル"
+                }
+              },
+              "additionalProperties": true
+            },
             "button": {
               "type": "object",
               "description": "ボタンコンポーネントのスタイル",
@@ -1168,6 +1246,21 @@
             "auto",
             "100px",
             "2rem"
+          ]
+        },
+        "objectFit": {
+          "type": "string",
+          "description": "オブジェクトのフィット方法（画像など）",
+          "enum": [
+            "fill",
+            "contain",
+            "cover",
+            "none",
+            "scale-down"
+          ],
+          "examples": [
+            "cover",
+            "contain"
           ]
         },
         "minHeight": {
