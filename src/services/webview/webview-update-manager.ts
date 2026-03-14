@@ -6,6 +6,8 @@ import { CacheManager } from './cache-manager';
 import { WebViewErrorHandler } from './webview-error-handler';
 import { ConfigManager } from '../../utils/config-manager';
 import { ErrorHandler } from '../../utils/error-handler';
+import { resolveImageSourcesInDsl } from '../../utils/image-source-resolver';
+import * as path from 'path';
 
 /**
  * リファクタリングされたWebViewUpdateManager
@@ -207,9 +209,14 @@ export class WebViewUpdateManager {
       return;
     }
 
+    const normalizedData = resolveImageSourcesInDsl(data, {
+      dslFileDir: path.dirname(fileName),
+      mapResolvedSrc: absolutePath => panel.webview.asWebviewUri(vscode.Uri.file(absolutePath)).toString()
+    });
+
     panel.webview.postMessage({
       type: 'update',
-      data: data,
+      data: normalizedData,
       fileName: fileName
     });
   }

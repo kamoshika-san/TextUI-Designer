@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import type {
   TextUIDSL,
   FormComponent,
@@ -29,6 +31,7 @@ import { HtmlFormRenderer } from './html-renderers/html-form-renderer';
 import { HtmlTextualRenderer } from './html-renderers/html-textual-renderer';
 import { HtmlLayoutRenderer } from './html-renderers/html-layout-renderer';
 import type { HtmlRendererUtils } from './html-renderers/html-renderer-utils';
+import { resolveImageSourcesInDsl } from '../utils/image-source-resolver';
 
 export class HtmlExporter extends BaseComponentRenderer {
   private readonly formRenderer: HtmlFormRenderer;
@@ -45,7 +48,8 @@ export class HtmlExporter extends BaseComponentRenderer {
   }
 
   async export(dsl: TextUIDSL, options: ExportOptions): Promise<string> {
-    const componentCode = this.renderPageComponents(dsl);
+    const normalizedDsl = this.resolveLocalImageSourcesForExport(dsl, options);
+    const componentCode = this.renderPageComponents(normalizedDsl);
     const themeStyles = this.buildThemeStyles(options.themePath);
 
     return buildHtmlDocument(componentCode, themeStyles);
@@ -174,5 +178,34 @@ export class HtmlExporter extends BaseComponentRenderer {
       console.warn(`[HtmlExporter] テーマ読み込みに失敗しました: ${error instanceof Error ? error.message : String(error)}`);
       return '';
     }
+  }
+
+  private resolveLocalImageSourcesForExport(dsl: TextUIDSL, options: ExportOptions): TextUIDSL {
+    if (!options.outputPath || !options.sourcePath) {
+      return dsl;
+    }
+
+    const outputDir = path.dirname(options.outputPath);
+    const imagesDir = path.join(outputDir, 'images');
+
+    return resolveImageSourcesInDsl(dsl, {
+      dslFileDir: path.dirname(options.sourcePath),
+      mapResolvedSrc: (absolutePath, originalSrc) => {
+        try {
+          if (!fs.existsSync(imagesDir)) {
+            fs.mkdirSync(imagesDir, { recursive: true });
+          }
+
+          const fileName = path.basename(absolutePath);
+          const targetPath = path.join(imagesDir, fileName);
+          fs.copyFileSync(absolutePath, targetPath);
+
+          return path.posix.join('images', fileName);
+        } catch (error) {
+          console.warn(`[HtmlExporter] 画像ファイルのコピーに失敗しました: ${absolutePath} (${error instanceof Error ? error.message : String(error)})`);
+          return originalSrc;
+        }
+      }
+    });
   }
 }

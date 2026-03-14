@@ -14,6 +14,7 @@ export interface ExportOptions {
   outputPath?: string;
   fileName?: string;
   themePath?: string;
+  sourcePath?: string;
 }
 
 export interface Exporter {
@@ -89,7 +90,12 @@ export class ExportManager {
           throw new Error(`Unsupported export format: ${options.format}`);
         }
 
-        return await this.exportWithOptimization(dsl, options);
+        const normalizedOptions: ExportOptions = {
+          ...options,
+          sourcePath: options.sourcePath ?? filePath
+        };
+
+        return await this.exportWithOptimization(dsl, normalizedOptions);
       } catch (error) {
         throw new Error(`Export failed: ${error instanceof Error ? error.message : String(error)}`);
       }

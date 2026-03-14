@@ -662,6 +662,21 @@
           "type": "object",
           "description": "コンポーネント固有のスタイル定義",
           "properties": {
+            "image": {
+              "type": "object",
+              "description": "画像コンポーネントのスタイル",
+              "properties": {
+                "default": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "通常画像のスタイル"
+                },
+                "avatar": {
+                  "$ref": "#/definitions/componentStyle",
+                  "description": "アバター画像のスタイル"
+                }
+              },
+              "additionalProperties": true
+            },
             "button": {
               "type": "object",
               "description": "ボタンコンポーネントのスタイル",

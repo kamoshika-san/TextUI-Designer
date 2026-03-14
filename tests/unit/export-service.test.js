@@ -83,6 +83,7 @@ describe('ExportService 単体テスト', () => {
       const lastOptions = exportService._testHelpers.getLastExportOptions();
       assert.ok(lastOptions, 'exportFromFile の呼び出しオプションが記録されます');
       assert.strictEqual(lastOptions.themePath, '/workspace/sample/02-theme/textui-theme.yml');
+      assert.ok(lastOptions.sourcePath?.endsWith('.tui.yml'), 'sourcePath が設定されます');
     });
   });
 

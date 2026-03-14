@@ -43,6 +43,7 @@ export interface ExportRequest {
   outputPath?: string;
   fileName?: string;
   themePath?: string;
+  sourcePath?: string;
 }
 
 export interface IRegisteredExporter {
