@@ -168,7 +168,7 @@ ${bodyCode}
   }
 
   renderContainer(props: ContainerComponent): string {
-    const { layout = 'vertical', components = [], width, flexGrow, token } = props;
+    const { layout = 'vertical', components = [], width, flexGrow, minWidth, token } = props;
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('Container', token);
     const layoutClasses = {
       vertical: 'textui-container flex flex-col space-y-4',
@@ -183,6 +183,9 @@ ${bodyCode}
     }
     if (width) {
       styleChunks.push(`width: ${this.utils.escapeAttribute(width)};`);
+    }
+    if (minWidth) {
+      styleChunks.push(`min-width: ${this.utils.escapeAttribute(minWidth)};`);
     }
     const styleAttr = styleChunks.length > 0 ? ` style="${styleChunks.join(' ')}"` : '';
 

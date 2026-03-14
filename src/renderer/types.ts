@@ -244,6 +244,7 @@ export interface ContainerComponent {
   components?: ComponentDef[];
   width?: string;
   flexGrow?: number;
+  minWidth?: string;
   token?: string;
 }
 

@@ -19,6 +19,7 @@ export const Container: React.FC<ContainerProps> = ({
   layout = 'vertical',
   width,
   flexGrow,
+  minWidth,
   children
 }) => {
   const className = layoutClasses[layout];
@@ -30,9 +31,13 @@ export const Container: React.FC<ContainerProps> = ({
         flexShrink: 0,
         flexBasis: width ?? 0,
         ...(width ? { width } : {}),
+        ...(minWidth ? { minWidth } : {}),
       }
-    : width
-      ? { width }
+    : width || minWidth
+      ? {
+          ...(width ? { width } : {}),
+          ...(minWidth ? { minWidth } : {}),
+        }
       : undefined;
 
   return <div className={className} style={style}>{children || null}</div>;

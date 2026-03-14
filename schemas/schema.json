@@ -760,6 +760,10 @@
               "minimum": 0,
               "description": "親が flex レイアウトのときの伸び率。例: 7 と 3 で 70:30 に近づける。"
             },
+            "minWidth": {
+              "type": "string",
+              "description": "最小幅（例: 280px）。flex で縮まないようにする。"
+            },
             "token": {
               "$ref": "#/definitions/tokenRef",
               "description": "Containerに適用するデザイントークン参照。"
