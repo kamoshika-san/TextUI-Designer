@@ -226,6 +226,7 @@ export interface TreeViewComponent {
 export interface TableColumn {
   key: string;
   header: string;
+  width?: string;
 }
 
 export interface TableComponent {
@@ -242,6 +243,7 @@ export interface ContainerComponent {
   layout?: ContainerLayout;
   components?: ComponentDef[];
   width?: string;
+  flexGrow?: number;
   token?: string;
 }
 
