@@ -16,7 +16,8 @@ import type {
   TabsComponent,
   TreeViewComponent,
   TableComponent,
-  LinkComponent
+  LinkComponent,
+  ImageComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -119,6 +120,10 @@ export class HtmlExporter extends BaseComponentRenderer {
 
   protected renderLink(props: LinkComponent, _key: number): string {
     return this.textualRenderer.renderLink(props);
+  }
+
+  protected renderImage(props: ImageComponent, _key: number): string {
+    return this.textualRenderer.renderImage(props);
   }
 
   private createRendererUtils(): HtmlRendererUtils {

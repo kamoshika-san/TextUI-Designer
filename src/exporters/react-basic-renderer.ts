@@ -1,4 +1,4 @@
-import type { AlertComponent, ButtonComponent, DividerComponent, LinkComponent, TextComponent } from '../renderer/types';
+import type { AlertComponent, ButtonComponent, DividerComponent, ImageComponent, LinkComponent, TextComponent } from '../renderer/types';
 import type { StyleManager } from '../utils/style-manager';
 
 export function renderTextTemplate(props: TextComponent, key: number, tokenStyle: string, styleManager: typeof StyleManager, format: string): string {
@@ -49,4 +49,18 @@ export function renderLinkTemplate(props: LinkComponent, key: number, tokenStyle
   const rel = target === '_blank' ? ' rel=\"noopener noreferrer\"' : '';
   const targetAttr = target ? ` target=\"${target}\"` : '';
   return `      <a key={${key}} href=\"${href}\"${targetAttr}${rel} className=\"textui-link\"${tokenStyle}>${label}</a>`;
+}
+
+
+export function renderImageTemplate(props: ImageComponent, key: number, tokenStyle: string): string {
+  const { src, alt = '', width, height } = props;
+  const stylePairs: string[] = [];
+  if (width) {
+    stylePairs.push(`width: ${JSON.stringify(width)}`);
+  }
+  if (height) {
+    stylePairs.push(`height: ${JSON.stringify(height)}`);
+  }
+  const styleAttr = stylePairs.length > 0 ? ` style={{ ${stylePairs.join(', ')} }}` : '';
+  return `      <img key={${key}} src={${JSON.stringify(src)}} alt={${JSON.stringify(alt)}} className="textui-image"${styleAttr}${tokenStyle} />`;
 }

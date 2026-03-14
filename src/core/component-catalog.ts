@@ -179,6 +179,23 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
       }
     }
   },
+
+  {
+    name: 'Link',
+    description: 'Hyperlink text.',
+    requiredProps: ['href', 'label'],
+    optionalProps: ['target', 'token'],
+    supportsChildren: false,
+    example: { Link: { href: 'https://example.com', label: 'Open docs', target: '_blank' } }
+  },
+  {
+    name: 'Image',
+    description: 'Image display.',
+    requiredProps: ['src'],
+    optionalProps: ['alt', 'width', 'height', 'token'],
+    supportsChildren: false,
+    example: { Image: { src: 'https://example.com/logo.png', alt: 'Company logo', width: '120px', height: 'auto' } }
+  },
   {
     name: 'Table',
     description: 'Tabular data display.',

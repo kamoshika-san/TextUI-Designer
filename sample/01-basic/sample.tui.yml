@@ -97,6 +97,11 @@
                           children:
                             - label: "App.tsx"
                     - label: "README.md"
+    - Image:
+        src: "https://picsum.photos/240/120"
+        alt: "Sample image"
+        width: "240px"
+        height: "120px"
     - Accordion:
         allowMultiple: true
         items:

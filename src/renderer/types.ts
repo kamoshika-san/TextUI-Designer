@@ -46,6 +46,14 @@ export interface LinkComponent {
   token?: string;
 }
 
+export interface ImageComponent {
+  src: string;
+  alt?: string;
+  width?: string;
+  height?: string;
+  token?: string;
+}
+
 export interface CheckboxComponent {
   label: string;
   name?: string;
@@ -111,6 +119,7 @@ export interface FormField {
   Container?: ContainerComponent;
   Table?: TableComponent;
   Link?: LinkComponent;
+  Image?: ImageComponent;
 }
 
 export interface FormAction {
@@ -231,7 +240,8 @@ export type ComponentDef =
   | { Tabs: TabsComponent }
   | { TreeView: TreeViewComponent }
   | { Table: TableComponent }
-  | { Link: LinkComponent };
+  | { Link: LinkComponent }
+  | { Image: ImageComponent };
 
 export interface PageDef {
   id: string;
@@ -316,4 +326,9 @@ export function isTableComponent(comp: ComponentDef): comp is { Table: TableComp
 
 export function isLinkComponent(comp: ComponentDef): comp is { Link: LinkComponent } {
   return 'Link' in comp;
+}
+
+
+export function isImageComponent(comp: ComponentDef): comp is { Image: ImageComponent } {
+  return 'Image' in comp;
 }

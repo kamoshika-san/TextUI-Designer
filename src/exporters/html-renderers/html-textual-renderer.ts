@@ -1,6 +1,7 @@
 import type {
   AlertComponent,
   DividerComponent,
+  ImageComponent,
   LinkComponent,
   SpacerComponent,
   TextComponent
@@ -32,6 +33,18 @@ export class HtmlTextualRenderer {
 
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('Text', token);
     return `    <${tag} class="${className}"${tokenStyle}>${safeValue}</${tag}>`;
+  }
+
+
+  renderImage(props: ImageComponent): string {
+    const { src, alt, width, height, token } = props;
+    const safeSrc = this.utils.escapeAttribute(src ?? '');
+    const safeAlt = this.utils.escapeAttribute(alt ?? '');
+    const widthAttr = width ? ` width="${this.utils.escapeAttribute(width)}"` : '';
+    const heightAttr = height ? ` height="${this.utils.escapeAttribute(height)}"` : '';
+    const tokenStyle = this.utils.getHtmlTokenStyleAttr('Image', token);
+
+    return `    <img src="${safeSrc}" alt="${safeAlt}" class="textui-image"${widthAttr}${heightAttr}${tokenStyle} />`;
   }
 
   renderLink(props: LinkComponent): string {
