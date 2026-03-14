@@ -400,7 +400,7 @@ ${indentedCode}`;
   }
 
   protected renderContainer(props: ContainerComponent, _key: number): string {
-    const { layout = 'vertical', components = [], width, flexGrow, token } = props;
+    const { layout = 'vertical', components = [], width, flexGrow, minWidth, token } = props;
     const layoutClasses = {
       'vertical': 'flex flex-col space-y-4',
       'horizontal': 'flex space-x-4',
@@ -415,6 +415,9 @@ ${indentedCode}`;
     }
     if (width) {
       styleChunks.push(`width: ${this.escapeAttribute(width)};`);
+    }
+    if (minWidth) {
+      styleChunks.push(`min-width: ${this.escapeAttribute(minWidth)};`);
     }
     const styleAttr = styleChunks.length > 0 ? `(style=\"${styleChunks.join(' ')}\")` : '';
     let code = `      .${layoutClasses[layout as keyof typeof layoutClasses]}${styleAttr}${tokenStyleModifier}`;

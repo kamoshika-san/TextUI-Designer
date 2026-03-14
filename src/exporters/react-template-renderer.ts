@@ -150,7 +150,7 @@ ${bodyCode}
 }
 
 export function renderContainerTemplate(props: ContainerComponent, key: number, tokenStyle: string, context: RenderContext): string {
-  const { layout = 'vertical', components = [], width, flexGrow } = props;
+  const { layout = 'vertical', components = [], width, flexGrow, minWidth } = props;
   const layoutClasses = {
     vertical: 'flex flex-col space-y-4',
     horizontal: 'flex space-x-4',
@@ -166,6 +166,9 @@ export function renderContainerTemplate(props: ContainerComponent, key: number, 
   }
   if (width) {
     styleParts.push(`width: '${width}'`);
+  }
+  if (minWidth) {
+    styleParts.push(`minWidth: '${minWidth}'`);
   }
   const styleAttr = styleParts.length > 0 ? ` style={{ ${styleParts.join(', ')} }}` : '';
 
