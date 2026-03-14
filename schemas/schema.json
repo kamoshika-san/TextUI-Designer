@@ -101,6 +101,9 @@
         },
         {
           "$ref": "#/definitions/Table"
+        },
+        {
+          "$ref": "#/definitions/Link"
         }
       ]
     },
@@ -274,6 +277,43 @@
       },
       "additionalProperties": false,
       "description": "ボタンコンポーネント。"
+    },
+    "Link": {
+      "type": "object",
+      "required": [
+        "Link"
+      ],
+      "properties": {
+        "Link": {
+          "type": "object",
+          "required": [
+            "href",
+            "label"
+          ],
+          "properties": {
+            "href": {
+              "type": "string",
+              "description": "リンク先URL。"
+            },
+            "label": {
+              "type": "string",
+              "description": "リンクとして表示するテキスト。"
+            },
+            "target": {
+              "type": "string",
+              "description": "リンクのtarget属性（例: _blank）。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Linkに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "リンクコンポーネント。\n利用可能な属性: href, label, target, token"
+        }
+      },
+      "additionalProperties": false,
+      "description": "リンクコンポーネント。"
     },
     "Checkbox": {
       "type": "object",

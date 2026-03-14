@@ -15,7 +15,8 @@ import type {
   AccordionComponent,
   TabsComponent,
   TreeViewComponent,
-  TableComponent
+  TableComponent,
+  LinkComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -114,6 +115,10 @@ export class HtmlExporter extends BaseComponentRenderer {
 
   protected renderTable(props: TableComponent, _key: number): string {
     return this.layoutRenderer.renderTable(props);
+  }
+
+  protected renderLink(props: LinkComponent, _key: number): string {
+    return this.textualRenderer.renderLink(props);
   }
 
   private createRendererUtils(): HtmlRendererUtils {

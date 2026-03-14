@@ -191,6 +191,20 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
         rows: [{ name: 'Alice' }]
       }
     }
+  },
+  {
+    name: 'Link',
+    description: 'Hyperlink text anchor.',
+    requiredProps: ['href', 'label'],
+    optionalProps: ['target', 'token'],
+    supportsChildren: false,
+    example: {
+      Link: {
+        href: 'https://github.com/owner/repo',
+        label: 'repository',
+        target: '_blank'
+      }
+    }
   }
 ];
 

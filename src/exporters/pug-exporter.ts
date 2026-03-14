@@ -3,7 +3,7 @@ import type {
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, SelectComponent, DatePickerComponent, SelectOption, DividerComponent, SpacerComponent,
   AlertComponent, ContainerComponent, AccordionComponent,
-  TabsComponent, TreeViewComponent, TableComponent
+  TabsComponent, TreeViewComponent, TableComponent, LinkComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -190,6 +190,15 @@ ${componentCode}`;
     return code;
   }
 
+
+  protected renderLink(props: LinkComponent, _key: number): string {
+    const { href, label, target, token } = props;
+    const tokenStyle = this.getPugTokenStyleSuffix('Link', token);
+    const targetAttr = target ? ` target=\"${this.escapeAttribute(target)}\"` : '';
+    const relAttr = target === '_blank' ? ' rel=\"noopener noreferrer\"' : '';
+
+    return `      a(href=\"${this.escapeAttribute(href)}\"${targetAttr}${relAttr} class=\"textui-link\"${tokenStyle}) ${this.escapeHtml(label)}`;
+  }
 
   protected renderAccordion(props: AccordionComponent, _key: number): string {
     const { allowMultiple = false, items = [], token } = props;

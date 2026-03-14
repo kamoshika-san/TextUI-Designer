@@ -1,4 +1,4 @@
-import type { AlertComponent, ButtonComponent, DividerComponent, TextComponent } from '../renderer/types';
+import type { AlertComponent, ButtonComponent, DividerComponent, LinkComponent, TextComponent } from '../renderer/types';
 import type { StyleManager } from '../utils/style-manager';
 
 export function renderTextTemplate(props: TextComponent, key: number, tokenStyle: string, styleManager: typeof StyleManager, format: string): string {
@@ -42,4 +42,11 @@ export function renderAlertTemplate(props: AlertComponent, key: number, tokenSty
   return `      <div key={${key}} className="p-4 border rounded-md ${className}"${tokenStyle}>
         <p className="text-sm">${message}</p>
       </div>`;
+}
+
+export function renderLinkTemplate(props: LinkComponent, key: number, tokenStyle: string): string {
+  const { href, label, target } = props;
+  const rel = target === '_blank' ? ' rel=\"noopener noreferrer\"' : '';
+  const targetAttr = target ? ` target=\"${target}\"` : '';
+  return `      <a key={${key}} href=\"${href}\"${targetAttr}${rel} className=\"textui-link\"${tokenStyle}>${label}</a>`;
 }

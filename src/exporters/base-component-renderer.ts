@@ -18,7 +18,8 @@ import type {
   AccordionComponent,
   TabsComponent,
   TreeViewComponent,
-  TableComponent
+  TableComponent,
+  LinkComponent
 } from '../renderer/types';
 import type { ExportOptions, Exporter } from './index';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';
@@ -56,7 +57,8 @@ export abstract class BaseComponentRenderer implements Exporter {
     Accordion: 'border-color',
     Tabs: 'border-color',
     TreeView: 'border-color',
-    Table: 'border-color'
+    Table: 'border-color',
+    Link: 'color'
   };
 
   constructor(format: ExportFormat) {
@@ -85,7 +87,8 @@ export abstract class BaseComponentRenderer implements Exporter {
       Accordion: (props, key) => this.renderAccordion(props as AccordionComponent, key),
       Tabs: (props, key) => this.renderTabs(props as TabsComponent, key),
       TreeView: (props, key) => this.renderTreeView(props as TreeViewComponent, key),
-      Table: (props, key) => this.renderTable(props as TableComponent, key)
+      Table: (props, key) => this.renderTable(props as TableComponent, key),
+      Link: (props, key) => this.renderLink(props as LinkComponent, key)
     };
 
     for (const componentName of BUILT_IN_COMPONENTS) {
@@ -191,6 +194,7 @@ export abstract class BaseComponentRenderer implements Exporter {
   protected abstract renderTabs(props: TabsComponent, key: number): string;
   protected abstract renderTreeView(props: TreeViewComponent, key: number): string;
   protected abstract renderTable(props: TableComponent, key: number): string;
+  protected abstract renderLink(props: LinkComponent, key: number): string;
 
   protected getStyleManager(): typeof StyleManager {
     return StyleManager;
