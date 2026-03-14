@@ -264,10 +264,10 @@ async function runPuppeteerFullPageCapture(params: {
     }));
 
     const viewportWidth = Math.max(dimensions.width, params.width);
-    const viewportHeight = Math.min(dimensions.height, 32767);
+    const viewportHeight = Math.min(Math.max(dimensions.height, params.height), 32767);
     await page.setViewport({
       width: viewportWidth,
-      height: Math.min(viewportHeight, 800),
+      height: viewportHeight,
       deviceScaleFactor: params.scale
     });
 
