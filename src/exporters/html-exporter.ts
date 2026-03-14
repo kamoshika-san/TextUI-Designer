@@ -53,8 +53,11 @@ export class HtmlExporter extends BaseComponentRenderer {
     const normalizedDsl = this.resolveLocalImageSourcesForExport(dsl, options);
     const themeStyles = this.buildThemeStyles(options.themePath);
 
-    // WebView と同じ React コンポーネント＋webviewCss で統一（テーマありでも同じ経路）
-    const useReact = options.useReactRender !== false;
+    // WebView と同じ React コンポーネント＋webviewCss で統一。
+    // ただし token 参照は現状の React 経路では HTML の inline style に反映できないため、
+    // オプション未指定時のみ従来レンダラーへフォールバックする。
+    const useReact = options.useReactRender === true
+      || (options.useReactRender !== false && !this.hasTokenReference(normalizedDsl));
     if (useReact) {
       try {
         const components = normalizedDsl.page?.components ?? [];
@@ -229,5 +232,26 @@ export class HtmlExporter extends BaseComponentRenderer {
         }
       }
     });
+  }
+
+  private hasTokenReference(node: unknown): boolean {
+    if (Array.isArray(node)) {
+      return node.some(item => this.hasTokenReference(item));
+    }
+
+    if (!node || typeof node !== 'object') {
+      return false;
+    }
+
+    for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+      if (key === 'token' && typeof value === 'string' && value.trim().length > 0) {
+        return true;
+      }
+      if (this.hasTokenReference(value)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }
