@@ -482,6 +482,7 @@
     "textui": "./out/cli/index.js"
   },
   "overrides": {
-    "serialize-javascript": "7.0.3"
+    "serialize-javascript": "7.0.3",
+    "yauzl": "3.2.1"
   }
 }
