@@ -258,6 +258,53 @@ async function runPuppeteerFullPageCapture(params: {
 
     await new Promise(resolve => setTimeout(resolve, params.waitMs));
 
+    // プレビュー CSS でスクロールコンテナ（overflow:auto + 固定高）が使われている場合、
+    // fullPage スクリーンショットがビューポート分だけになることがあるため、
+    // 一時的に「高さ auto / overflow visible」にしてドキュメント全体へ展開する。
+    await page.evaluate(() => {
+      const docEl = document.documentElement;
+      const body = document.body;
+      if (!body) {
+        return;
+      }
+
+      const overflowRegex = /(auto|scroll|overlay)/;
+      let deepestScrollable: HTMLElement | null = null;
+      let maxScrollableHeight = 0;
+
+      const allElements = Array.from(document.querySelectorAll<HTMLElement>('*'));
+      for (const element of allElements) {
+        const style = window.getComputedStyle(element);
+        const isScrollable = overflowRegex.test(style.overflowY) || overflowRegex.test(style.overflow);
+        const overflowAmount = element.scrollHeight - element.clientHeight;
+        if (!isScrollable || overflowAmount <= 1) {
+          continue;
+        }
+        if (element.scrollHeight > maxScrollableHeight) {
+          deepestScrollable = element;
+          maxScrollableHeight = element.scrollHeight;
+        }
+      }
+
+      const expandElement = (target: HTMLElement): void => {
+        target.style.overflow = 'visible';
+        target.style.overflowY = 'visible';
+        target.style.maxHeight = 'none';
+        target.style.height = 'auto';
+      };
+
+      expandElement(body);
+      expandElement(docEl as unknown as HTMLElement);
+
+      if (deepestScrollable) {
+        let current: HTMLElement | null = deepestScrollable;
+        while (current) {
+          expandElement(current);
+          current = current.parentElement;
+        }
+      }
+    });
+
     // 全コンテンツをレイアウトさせるため一度末尾へスクロールしてから高さを計測
     await page.evaluate(() => {
       window.scrollTo(0, 999999);
