@@ -55,7 +55,7 @@ describe('Exporter token style formatting', () => {
 
     const html = await exporter.export(dsl, { format: 'html' });
 
-    assert.ok(html.includes('<hr class="border-gray-700 my-4">'));
-    assert.ok(html.includes('<hr class="border-gray-700 my-4" style="border-color: var(--token-divider);">'));
+    assert.ok(html.includes('<hr class="textui-divider my-4">'));
+    assert.ok(html.includes('textui-divider my-4') && html.includes('border-color: var(--token-divider)'));
   });
 });

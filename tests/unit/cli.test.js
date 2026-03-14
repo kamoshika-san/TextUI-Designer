@@ -12,7 +12,10 @@ describe('TextUI CLI Sprint1', () => {
   const stateFile = path.join(tmpDir, 'state.json');
   const outFile = path.join(tmpDir, 'result.html');
   const captureOutFile = path.join(tmpDir, 'preview.png');
-  const captureMockBrowser = path.join(tmpDir, 'google-chrome');
+  const captureMockBrowser = process.platform === 'win32'
+    ? path.join(tmpDir, 'google-chrome.cmd')
+    : path.join(tmpDir, 'google-chrome');
+  const captureMockScript = path.join(tmpDir, 'google-chrome.js');
   const providerModuleFile = path.join(tmpDir, 'custom-provider.cjs');
   const invalidProviderModuleFile = path.join(tmpDir, 'invalid-provider.cjs');
   const mismatchProviderModuleFile = path.join(tmpDir, 'mismatch-provider.cjs');
@@ -51,7 +54,7 @@ module.exports = {
 };
 `, 'utf8');
 
-    fs.writeFileSync(captureMockBrowser, `#!/usr/bin/env node
+    const mockScriptBody = `
 const fs = require('fs');
 const path = require('path');
 const { fileURLToPath } = require('url');
@@ -83,8 +86,14 @@ fs.mkdirSync(path.dirname(target), { recursive: true });
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMBAANQ8Z8AAAAASUVORK5CYII=', 'base64');
 fs.writeFileSync(target, png);
 process.exit(0);
-`, 'utf8');
-    fs.chmodSync(captureMockBrowser, 0o755);
+`;
+    fs.writeFileSync(captureMockScript, mockScriptBody.trimStart(), 'utf8');
+    if (process.platform === 'win32') {
+      fs.writeFileSync(captureMockBrowser, '@echo off\nnode "%~dp0google-chrome.js" %*', 'utf8');
+    } else {
+      fs.writeFileSync(captureMockBrowser, '#!/usr/bin/env node' + mockScriptBody, 'utf8');
+      fs.chmodSync(captureMockBrowser, 0o755);
+    }
   });
 
   afterEach(() => {
@@ -560,15 +569,18 @@ theme:
       encoding: 'utf8',
       env: {
         ...process.env,
-        PATH: `${tmpDir}${path.delimiter}${process.env.PATH || ''}`
+        PATH: `${tmpDir}${path.delimiter}${process.env.PATH || ''}`,
+        TEXTUI_CAPTURE_EXTRA_TRUSTED_PATHS: path.resolve(captureMockBrowser),
+        TEXTUI_CAPTURE_DISABLE_PUPPETEER: '1',
+        TEXTUI_CAPTURE_SKIP_EXECUTABLE_CHECK: '1'
       }
     });
 
-    assert.strictEqual(result.status, 0);
+    assert.strictEqual(result.status, 0, result.stderr || result.stdout);
     const parsed = JSON.parse(result.stdout);
     assert.strictEqual(parsed.captured, true);
     assert.ok(fs.existsSync(captureOutFile));
-    assert.ok(parsed.browserPath.endsWith('google-chrome'));
+    assert.ok(parsed.browserPath.endsWith('google-chrome') || parsed.browserPath.endsWith('google-chrome.cmd'));
   });
 
   it('capture --theme applies theme styles before screenshot', function() {
@@ -613,6 +625,9 @@ theme:
       env: {
         ...process.env,
         PATH: `${tmpDir}${path.delimiter}${process.env.PATH || ''}`,
+        TEXTUI_CAPTURE_EXTRA_TRUSTED_PATHS: path.resolve(captureMockBrowser),
+        TEXTUI_CAPTURE_DISABLE_PUPPETEER: '1',
+        TEXTUI_CAPTURE_SKIP_EXECUTABLE_CHECK: '1',
         TEXTUI_CAPTURE_EXPECT_HTML_FRAGMENT: '--color-primary: #445566 !important;'
       }
     });

@@ -161,6 +161,11 @@ export async function capturePreviewImageFromDsl(
   }
 }
 
+function isPuppeteerDisabledByEnv(): boolean {
+  const v = process.env.TEXTUI_CAPTURE_DISABLE_PUPPETEER;
+  return v === '1' || v === 'true' || v === 'yes';
+}
+
 /**
  * puppeteer-core でページ全体をキャプチャ。失敗時は null を返し呼び出し元で CLI にフォールバックする。
  */
@@ -174,6 +179,9 @@ async function runPuppeteerFullPageCapture(params: {
   allowNoSandbox: boolean;
   targetUrl: string;
 }): Promise<PreviewCaptureResult | null> {
+  if (isPuppeteerDisabledByEnv()) {
+    return null;
+  }
   let puppeteer: typeof import('puppeteer-core');
   try {
     puppeteer = await import('puppeteer-core');
@@ -247,9 +255,25 @@ async function runPuppeteerFullPageCapture(params: {
   }
 }
 
+/** テスト用: TEXTUI_CAPTURE_EXTRA_TRUSTED_PATHS のカンマ区切りパスを解決して返す */
+function parseExtraTrustedPaths(envValue: string | undefined): string[] {
+  if (!envValue || typeof envValue !== 'string') {
+    return [];
+  }
+  const paths: string[] = [];
+  for (const raw of envValue.split(',').map(s => s.trim()).filter(Boolean)) {
+    const resolved = resolvePathCandidate(raw);
+    if (resolved && isAllowedBrowserBasename(path.basename(resolved))) {
+      paths.push(resolved);
+    }
+  }
+  return paths;
+}
+
 function resolveBrowserPath(overridePath?: string): string {
   const trustedBrowserPaths = discoverTrustedBrowserPaths();
-  const trustedPathSet = new Set(trustedBrowserPaths);
+  const extraPaths = parseExtraTrustedPaths(process.env.TEXTUI_CAPTURE_EXTRA_TRUSTED_PATHS);
+  const trustedPathSet = new Set([...trustedBrowserPaths, ...extraPaths]);
 
   if (overridePath) {
     return resolveAndValidateBrowserOverride(overridePath, trustedPathSet, '--browser');
@@ -371,7 +395,9 @@ function resolveAndValidateBrowserOverride(
   if (!trustedPathSet.has(resolvedPath)) {
     throw new Error(`${sourceLabel} is not in trusted browser allowlist: ${candidate}`);
   }
-  if (!canExecuteBrowser(resolvedPath)) {
+  const skipExecCheck = process.env.TEXTUI_CAPTURE_SKIP_EXECUTABLE_CHECK === '1'
+    || process.env.TEXTUI_CAPTURE_SKIP_EXECUTABLE_CHECK === 'true';
+  if (!skipExecCheck && !canExecuteBrowser(resolvedPath)) {
     throw new Error(`${sourceLabel} is not executable as browser: ${candidate}`);
   }
   return resolvedPath;
@@ -412,6 +438,7 @@ function resolveExecutableCommand(commandName: string): string | null {
 function isAllowedBrowserBasename(fileName: string): boolean {
   const normalized = fileName.toLowerCase();
   return normalized === 'google-chrome'
+    || normalized === 'google-chrome.cmd'
     || normalized === 'google-chrome-stable'
     || normalized === 'chromium-browser'
     || normalized === 'chromium'
@@ -465,8 +492,10 @@ async function runBrowserCapture(params: {
 }
 
 function runProcess(command: string, args: string[], timeoutMs: number): Promise<CaptureExecutionResult> {
+  const useShell = process.platform === 'win32'
+    && (command.toLowerCase().endsWith('.cmd') || command.toLowerCase().endsWith('.bat'));
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'], shell: useShell });
     let stdout = '';
     let stderr = '';
     let settled = false;
