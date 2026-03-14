@@ -258,10 +258,22 @@ async function runPuppeteerFullPageCapture(params: {
 
     await new Promise(resolve => setTimeout(resolve, params.waitMs));
 
-    const dimensions = await page.evaluate(() => ({
-      width: Math.max(document.documentElement.scrollWidth, document.documentElement.clientWidth),
-      height: Math.max(document.documentElement.scrollHeight, document.documentElement.clientHeight)
-    }));
+    // 全コンテンツをレイアウトさせるため一度末尾へスクロールしてから高さを計測
+    await page.evaluate(() => {
+      window.scrollTo(0, 999999);
+    });
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // 実コンテンツ高さを取得（body の min-height:100vh の影響を避けるため、コンテンツルートの scrollHeight を優先）
+    const dimensions = await page.evaluate(() => {
+      const docEl = document.documentElement;
+      const body = document.body;
+      const root = body.firstElementChild as HTMLElement | null;
+      const width = Math.max(docEl.scrollWidth, docEl.clientWidth, body.scrollWidth, body.clientWidth);
+      const contentHeight = root ? root.offsetTop + root.scrollHeight : body.scrollHeight;
+      const height = Math.max(contentHeight, docEl.scrollHeight, body.scrollHeight, docEl.clientHeight, body.clientHeight);
+      return { width, height };
+    });
 
     const viewportWidth = Math.max(dimensions.width, params.width);
     const viewportHeight = Math.min(Math.max(dimensions.height, params.height), 32767);
