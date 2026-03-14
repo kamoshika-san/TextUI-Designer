@@ -153,6 +153,7 @@ ${varLines}
     }
 
     .textui-progress-track {
+      display: flex !important;
       height: var(--component-progress-track-height, 0.5rem) !important;
       border-radius: var(--component-progress-track-borderRadius, 9999px) !important;
       background-color: var(--component-progress-track-backgroundColor, var(--color-surface, rgba(107, 114, 128, 0.25))) !important;

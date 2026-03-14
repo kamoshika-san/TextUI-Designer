@@ -62,7 +62,7 @@ ${componentCode}`;
   }
 
   protected renderButton(props: ButtonComponent, _key: number): string {
-    const { label, kind = 'primary', size = 'md', disabled = false, token } = props;
+    const { label, icon, iconPosition = 'left', kind = 'primary', size = 'md', disabled = false, token } = props;
     const styleManager = this.getStyleManager();
     const variantClasses = styleManager.getKindClasses(this.format);
     const sizeClasses = {
@@ -74,7 +74,12 @@ ${componentCode}`;
     const disabledAttr = disabled ? 'disabled' : '';
     const tokenStyle = this.getPugTokenStyleSuffix('Button', token);
     
-    return `      button(class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${variantClasses[kind as keyof typeof variantClasses]} ${sizeClasses[size as keyof typeof sizeClasses]} ${disabledClass} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" ${disabledAttr}${tokenStyle}) ${label}`;
+    const content = [
+      icon && iconPosition === 'left' ? this.escapeHtml(icon) : '',
+      label ? this.escapeHtml(label) : '',
+      icon && iconPosition === 'right' ? this.escapeHtml(icon) : ''
+    ].filter(Boolean).join(' ');
+    return `      button(class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${variantClasses[kind as keyof typeof variantClasses]} ${sizeClasses[size as keyof typeof sizeClasses]} ${disabledClass} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" ${disabledAttr}${tokenStyle}) ${content}`;
   }
 
   protected renderCheckbox(props: CheckboxComponent, _key: number): string {
@@ -228,20 +233,40 @@ ${componentCode}`;
 
 
   protected renderProgress(props: ProgressComponent, _key: number): string {
-    const { value, label, showValue = true, variant = 'default', token } = props;
-    const normalizedValue = Math.min(100, Math.max(0, value));
+    const { value = 0, segments, label, showValue = true, variant = 'default', token } = props;
+    const normalizeValue = (raw: number): number => Math.min(100, Math.max(0, raw));
+    const normalizedValue = normalizeValue(value);
+    const hasSegments = Array.isArray(segments) && segments.length > 0;
+    const totalValue = hasSegments
+      ? segments.reduce((sum, segment) => sum + normalizeValue(segment.value), 0)
+      : normalizedValue;
+    const displayValue = Number(Math.min(100, totalValue).toFixed(1));
     let code = '      .textui-progress';
 
     if (label || showValue) {
-      code += '\n        .textui-progress-header';
-      code += `\n          span.textui-progress-label ${this.escapeHtml(label ?? '')}`;
+      code += '\\n        .textui-progress-header';
+      code += `
+          span.textui-progress-label ${this.escapeHtml(label ?? '')}`;
       if (showValue) {
-        code += `\n          span.textui-progress-value ${this.escapeHtml(`${normalizedValue}%`)}`;
+        code += `
+          span.textui-progress-value ${this.escapeHtml(`${displayValue}%`)}`;
       }
     }
 
-    code += `\n        .textui-progress-track`;
-    code += `\n          .textui-progress-fill.textui-progress-${this.escapeAttribute(variant)}(style="width: ${this.escapeAttribute(`${normalizedValue}%`)};${token ? ` background-color: ${this.escapeAttribute(token)};` : ''}")`;
+    code += '\\n        .textui-progress-track';
+    if (hasSegments) {
+      segments.forEach(segment => {
+        const segmentVariant = this.escapeAttribute(segment.variant ?? variant);
+        const segmentToken = segment.token ? ` background-color: ${this.escapeAttribute(segment.token)};` : '';
+        const segmentTitle = segment.label ? ` title="${this.escapeAttribute(segment.label)}"` : '';
+        code += `
+          .textui-progress-fill.textui-progress-${segmentVariant}(style="width: ${this.escapeAttribute(`${normalizeValue(segment.value)}%`)};${segmentToken}"${segmentTitle})`;
+      });
+    } else {
+      code += `
+          .textui-progress-fill.textui-progress-${this.escapeAttribute(variant)}(style="width: ${this.escapeAttribute(`${normalizedValue}%`)};${token ? ` background-color: ${this.escapeAttribute(token)};` : ''}")`;
+    }
+
     return code;
   }
 
@@ -258,6 +283,15 @@ ${componentCode}`;
     const styleAttr = styleChunks.length > 0 ? ` style="${styleChunks.join(' ')}"` : '';
     const variantClass = variant === 'avatar' ? ' rounded-full' : '';
     return `      img(src="${this.escapeAttribute(src)}" alt="${this.escapeAttribute(alt)}" class="textui-image${variantClass}"${styleAttr}${tokenStyle})`;
+  }
+
+
+
+  protected renderIcon(props: IconComponent, _key: number): string {
+    const { name, label, token } = props;
+    const tokenStyle = this.getPugTokenStyleSuffix('Icon', token);
+    const content = label ? `${this.escapeHtml(name)} ${this.escapeHtml(label)}` : this.escapeHtml(name);
+    return `      span(class="textui-icon" role="img" aria-label="${this.escapeAttribute(label ?? name)}"${tokenStyle}) ${content}`;
   }
 
   protected renderLink(props: LinkComponent, _key: number): string {

@@ -26,6 +26,6 @@ describe('ReactExporter template rendering split', () => {
     assert.ok(code.includes('<form key={1} id="f1"'));
     assert.ok(code.includes('inside'));
     assert.ok(code.includes('hover:bg-gray-100 transition-colors'));
-    assert.match(code, /Edit\s*<\/button>/);
+    assert.match(code, /(?:>|\s)Edit(?:<|\s)/);
   });
 });

@@ -32,10 +32,18 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonComponent {
   kind?: ButtonKind;
-  label: string;
+  label?: string;
+  icon?: string;
+  iconPosition?: 'left' | 'right';
   submit?: boolean;
   disabled?: boolean;
   size?: ButtonSize;
+  token?: string;
+}
+
+export interface IconComponent {
+  name: string;
+  label?: string;
   token?: string;
 }
 
@@ -78,8 +86,16 @@ export interface ImageComponent {
 
 export type ProgressVariant = 'default' | 'primary' | 'success' | 'warning' | 'error';
 
-export interface ProgressComponent {
+export interface ProgressSegment {
   value: number;
+  label?: string;
+  variant?: ProgressVariant;
+  token?: string;
+}
+
+export interface ProgressComponent {
+  value?: number;
+  segments?: ProgressSegment[];
   label?: string;
   showValue?: boolean;
   variant?: ProgressVariant;
@@ -155,6 +171,7 @@ export interface FormField {
   Badge?: BadgeComponent;
   Progress?: ProgressComponent;
   Image?: ImageComponent;
+  Icon?: IconComponent;
 }
 
 export interface FormAction {
@@ -285,7 +302,8 @@ export type ComponentDef =
   | { Breadcrumb: BreadcrumbComponent }
   | { Badge: BadgeComponent }
   | { Progress: ProgressComponent }
-  | { Image: ImageComponent };
+  | { Image: ImageComponent }
+  | { Icon: IconComponent };
 
 export interface PageDef {
   id: string;

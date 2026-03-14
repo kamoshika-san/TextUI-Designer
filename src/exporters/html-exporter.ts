@@ -22,7 +22,8 @@ import type {
   BreadcrumbComponent,
   BadgeComponent,
   ProgressComponent,
-  ImageComponent
+  ImageComponent,
+  IconComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -157,6 +158,10 @@ export class HtmlExporter extends BaseComponentRenderer {
 
   protected renderImage(props: ImageComponent, _key: number): string {
     return this.textualRenderer.renderImage(props);
+  }
+
+  protected renderIcon(props: IconComponent, _key: number): string {
+    return this.textualRenderer.renderIcon(props);
   }
 
   private createRendererUtils(): HtmlRendererUtils {

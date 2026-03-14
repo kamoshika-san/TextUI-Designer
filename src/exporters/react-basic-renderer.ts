@@ -8,14 +8,19 @@ export function renderTextTemplate(props: TextComponent, key: number, tokenStyle
 }
 
 export function renderButtonTemplate(props: ButtonComponent, key: number, tokenStyle: string, styleManager: typeof StyleManager, format: string): string {
-  const { label, kind = 'primary' } = props;
+  const { label, icon, iconPosition = 'left', kind = 'primary' } = props;
   const className = styleManager.getButtonKindClass(kind, format);
+  const content = [
+    icon && iconPosition === 'left' ? `<span className=\"textui-button-icon\" aria-hidden=\"true\">${icon}</span>` : '',
+    label ? `<span className=\"textui-button-label\">${label}</span>` : '',
+    icon && iconPosition === 'right' ? `<span className=\"textui-button-icon\" aria-hidden=\"true\">${icon}</span>` : ''
+  ].filter(Boolean).join('');
   return `      <button
         key={${key}}
         className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${className} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         ${tokenStyle}
       >
-        ${label}
+        ${content}
       </button>`;
 }
 
@@ -86,16 +91,32 @@ export function renderBadgeTemplate(props: BadgeComponent, key: number, tokenSty
 
 
 export function renderProgressTemplate(props: ProgressComponent, key: number): string {
-  const { value, label, showValue = true, variant = 'default' } = props;
-  const normalizedValue = Math.min(100, Math.max(0, value));
+  const { value = 0, segments, label, showValue = true, variant = 'default' } = props;
+  const normalizeValue = (raw: number): number => Math.min(100, Math.max(0, raw));
+  const normalizedValue = normalizeValue(value);
+  const hasSegments = Array.isArray(segments) && segments.length > 0;
+  const totalValue = hasSegments
+    ? segments.reduce((sum, segment) => sum + normalizeValue(segment.value), 0)
+    : normalizedValue;
+  const displayValue = Number(Math.min(100, totalValue).toFixed(1));
+
+  const fillMarkup = hasSegments
+    ? segments.map((segment, index) => {
+        const segmentVariant = segment.variant ?? variant;
+        const segmentWidth = `${normalizeValue(segment.value)}%`;
+        const segmentTitle = segment.label ? ` title=${JSON.stringify(segment.label)}` : '';
+        const segmentStyle = `{ width: ${JSON.stringify(segmentWidth)}, ...( ${segment.token ? `{ backgroundColor: ${JSON.stringify(segment.token)} }` : '{}'} ) }`;
+        return `          <div key={${index}} className="textui-progress-fill textui-progress-${segmentVariant}"${segmentTitle} style={${segmentStyle}}></div>`;
+      }).join('\n')
+    : `          <div className="textui-progress-fill textui-progress-${variant}" style={{ width: ${JSON.stringify(`${normalizedValue}%`)}, ...( ${props.token ? `{ backgroundColor: ${JSON.stringify(props.token)} }` : '{}'} ) }}></div>`;
 
   return `      <div key={${key}} className="textui-progress">
         ${(label || showValue) ? `<div className="textui-progress-header">
           <span className="textui-progress-label">${label ?? ''}</span>
-          ${showValue ? `<span className="textui-progress-value">${normalizedValue}%</span>` : ''}
+          ${showValue ? `<span className="textui-progress-value">${displayValue}%</span>` : ''}
         </div>` : ''}
         <div className="textui-progress-track">
-          <div className="textui-progress-fill textui-progress-${variant}" style={{ width: ${JSON.stringify(`${normalizedValue}%`)}, ...( ${props.token ? `{ backgroundColor: ${JSON.stringify(props.token)} }` : '{}'} ) }}></div>
+${fillMarkup}
         </div>
       </div>`;
 }
@@ -112,4 +133,9 @@ export function renderImageTemplate(props: ImageComponent, key: number, tokenSty
   const styleAttr = stylePairs.length > 0 ? ` style={{ ${stylePairs.join(', ')} }}` : '';
   const variantClass = variant === 'avatar' ? ' rounded-full' : '';
   return `      <img key={${key}} src={${JSON.stringify(src)}} alt={${JSON.stringify(alt)}} className="textui-image${variantClass}"${styleAttr}${tokenStyle} />`;
+}
+
+export function renderIconTemplate(props: IconComponent, key: number, tokenStyle: string): string {
+  const { name, label } = props;
+  return `      <span key={${key}} className="textui-icon" role="img" aria-label={${JSON.stringify(label || name)}}${tokenStyle}><span className="textui-icon-glyph">${name}</span>${label ? `<span className="textui-icon-label">${label}</span>` : ''}</span>`;
 }

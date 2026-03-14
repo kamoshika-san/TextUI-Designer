@@ -28,9 +28,9 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
     name: 'Button',
     description: 'Action button.',
     requiredProps: ['label'],
-    optionalProps: ['kind', 'submit', 'token'],
+    optionalProps: ['kind', 'submit', 'icon', 'iconPosition', 'token'],
     supportsChildren: false,
-    example: { Button: { label: 'Submit', kind: 'primary' } }
+    example: { Button: { icon: '⭐', label: 'Submit', kind: 'primary' } }
   },
   {
     name: 'Checkbox',
@@ -217,10 +217,10 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
   {
     name: 'Progress',
     description: 'Horizontal progress bar for percentages.',
-    requiredProps: ['value'],
-    optionalProps: ['label', 'showValue', 'variant', 'token'],
+    requiredProps: ['value または segments'],
+    optionalProps: ['segments', 'label', 'showValue', 'variant', 'token'],
     supportsChildren: false,
-    example: { Progress: { label: 'TypeScript', value: 66.8, showValue: true, variant: 'primary' } }
+    example: { Progress: { label: 'Languages', segments: [{ label: 'TypeScript', value: 54.5, variant: 'primary' }, { label: 'JavaScript', value: 43.6, variant: 'warning' }, { label: 'CSS', value: 1.8, variant: 'error' }], showValue: true } }
   },
   {
     name: 'Image',
@@ -230,6 +230,16 @@ const COMPONENT_CATALOG: readonly TextUIComponentCatalogEntry[] = [
     supportsChildren: false,
     example: { Image: { src: 'https://example.com/logo.png', alt: 'Company logo', width: '120px', height: 'auto' } }
   },
+
+  {
+    name: 'Icon',
+    description: 'Icon display (emoji/symbol).',
+    requiredProps: ['name'],
+    optionalProps: ['label', 'token'],
+    supportsChildren: false,
+    example: { Icon: { name: '📁', label: 'Folder' } }
+  },
+
   {
     name: 'Table',
     description: 'Tabular data display.',

@@ -248,6 +248,11 @@ ${optionsCode}
     return renderImageTemplate(props, key, tokenStyle);
   }
 
+  protected renderIcon(props: IconComponent, key: number): string {
+    const tokenStyle = this.getReactTokenStyleInline('Icon', props.token);
+    return renderIconTemplate(props, key, tokenStyle);
+  }
+
   protected renderContainer(props: ContainerComponent, key: number): string {
     const tokenStyle = this.getReactTokenStyleInline('Container', props.token);
     return renderContainerTemplate(props, key, tokenStyle, {

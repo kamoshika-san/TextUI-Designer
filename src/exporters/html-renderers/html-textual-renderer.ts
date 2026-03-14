@@ -1,6 +1,7 @@
 import type {
   AlertComponent,
   DividerComponent,
+  IconComponent,
   ImageComponent,
   LinkComponent,
   BreadcrumbComponent,
@@ -49,6 +50,15 @@ export class HtmlTextualRenderer {
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('Image', token);
 
     return `    <img src="${safeSrc}" alt="${safeAlt}" class="textui-image${variantClass}"${widthAttr}${heightAttr}${tokenStyle} />`;
+  }
+
+  renderIcon(props: IconComponent): string {
+    const { name, label, token } = props;
+    const safeName = this.utils.escapeHtml(name ?? '');
+    const safeAria = this.utils.escapeAttribute(label ?? name ?? '');
+    const safeLabel = this.utils.escapeHtml(label ?? '');
+    const tokenStyle = this.utils.getHtmlTokenStyleAttr('Icon', token);
+    return `    <span class="textui-icon" role="img" aria-label="${safeAria}"${tokenStyle}><span class="textui-icon-glyph">${safeName}</span>${label ? `<span class="textui-icon-label">${safeLabel}</span>` : ''}</span>`;
   }
 
   renderLink(props: LinkComponent): string {
@@ -104,14 +114,38 @@ ${itemMarkup}
 
 
   renderProgress(props: ProgressComponent): string {
-    const { value, label, showValue = true, variant = 'default', token } = props;
-    const normalizedValue = Math.min(100, Math.max(0, value));
-    const safeVariant = this.utils.escapeAttribute(variant);
+    const { value = 0, segments, label, showValue = true, variant = 'default', token } = props;
+    const normalizeValue = (raw: number): number => Math.min(100, Math.max(0, raw));
+    const normalizedValue = normalizeValue(value);
+    const hasSegments = Array.isArray(segments) && segments.length > 0;
+    const totalValue = hasSegments
+      ? segments.reduce((sum, segment) => sum + normalizeValue(segment.value), 0)
+      : normalizedValue;
+    const displayValue = Number(Math.min(100, totalValue).toFixed(1));
     const labelBlock = (label || showValue)
-      ? `\n      <div class="textui-progress-header">\n        <span class="textui-progress-label">${this.utils.escapeHtml(label ?? '')}</span>\n        ${showValue ? `<span class="textui-progress-value">${normalizedValue}%</span>` : ''}\n      </div>`
+      ? `
+      <div class="textui-progress-header">
+        <span class="textui-progress-label">${this.utils.escapeHtml(label ?? '')}</span>
+        ${showValue ? `<span class="textui-progress-value">${displayValue}%</span>` : ''}
+      </div>`
       : '';
 
-    return `    <div class="textui-progress">${labelBlock}\n      <div class="textui-progress-track">\n        <div class="textui-progress-fill textui-progress-${safeVariant}" style="width: ${this.utils.escapeAttribute(String(normalizedValue))}%;${token ? ` background-color: ${this.utils.escapeAttribute(token)};` : ''}"></div>\n      </div>\n    </div>`;
+    const fillMarkup = hasSegments
+      ? segments.map(segment => {
+        const segmentVariant = this.utils.escapeAttribute(segment.variant ?? variant);
+        const segmentWidth = this.utils.escapeAttribute(String(normalizeValue(segment.value)));
+        const segmentTitle = segment.label ? ` title="${this.utils.escapeAttribute(segment.label)}"` : '';
+        const segmentToken = segment.token ? ` background-color: ${this.utils.escapeAttribute(segment.token)};` : '';
+        return `
+        <div class="textui-progress-fill textui-progress-${segmentVariant}"${segmentTitle} style="width: ${segmentWidth}%;${segmentToken}"></div>`;
+      }).join('')
+      : `
+        <div class="textui-progress-fill textui-progress-${this.utils.escapeAttribute(variant)}" style="width: ${this.utils.escapeAttribute(String(normalizedValue))}%;${token ? ` background-color: ${this.utils.escapeAttribute(token)};` : ''}"></div>`;
+
+    return `    <div class="textui-progress">${labelBlock}
+      <div class="textui-progress-track">${fillMarkup}
+      </div>
+    </div>`;
   }
   renderDivider(props: DividerComponent): string {
     const { orientation = 'horizontal', spacing = 'md', token } = props;

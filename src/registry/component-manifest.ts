@@ -27,7 +27,8 @@ export const BUILT_IN_COMPONENTS = [
   'Breadcrumb',
   'Badge',
   'Progress',
-  'Image'
+  'Image',
+  'Icon'
 ] as const;
 
 export type BuiltInComponentName = typeof BUILT_IN_COMPONENTS[number];
@@ -404,6 +405,7 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
     schemaRef: '#/definitions/Progress',
     properties: [
       { name: 'value', description: '割合（0-100）' },
+      { name: 'segments', description: '複数セグメント[{ value, label?, variant?, token? }]' },
       { name: 'label', description: '表示ラベル' },
       { name: 'showValue', description: 'パーセント表示', values: BOOLEAN_VALUES },
       {
@@ -417,6 +419,16 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
           { value: 'error', description: 'エラー' }
         ]
       },
+      { name: 'token', description: '適用するデザイントークン参照' }
+    ]
+  },
+
+  Icon: {
+    description: 'アイコン表示。',
+    schemaRef: '#/definitions/Icon',
+    properties: [
+      { name: 'name', description: 'アイコン文字（例: 📁, ⭐, 👁）' },
+      { name: 'label', description: 'アイコン横に表示するラベル' },
       { name: 'token', description: '適用するデザイントークン参照' }
     ]
   }

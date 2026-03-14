@@ -25,6 +25,7 @@ import { Breadcrumb } from './components/Breadcrumb';
 import { Badge } from './components/Badge';
 import { Progress } from './components/Progress';
 import { Image } from './components/Image';
+import { Icon } from './components/Icon';
 import { UnsupportedComponent } from './components/UnsupportedComponent';
 import type {
   ComponentDef,
@@ -50,7 +51,8 @@ import type {
   BreadcrumbComponent,
   BadgeComponent,
   ProgressComponent,
-  ImageComponent
+  ImageComponent,
+  IconComponent
 } from './types';
 import { getComponentName } from '../registry/component-registry';
 import { BUILT_IN_COMPONENTS, type BuiltInComponentName } from '../registry/component-registry';
@@ -135,6 +137,7 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
   Badge: (props, key) => <Badge key={key} {...(props as unknown as BadgeComponent)} />,
   Progress: (props, key) => <Progress key={key} {...(props as unknown as ProgressComponent)} />,
   Image: (props, key) => <Image key={key} {...(props as unknown as ImageComponent)} />,
+  Icon: (props, key) => <Icon key={key} {...(props as unknown as IconComponent)} />,
   Container: (props, key) => {
     const containerProps = props as unknown as ContainerComponent;
     const children = containerProps.components;
@@ -147,6 +150,7 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
         width={containerProps.width}
         flexGrow={containerProps.flexGrow}
         minWidth={containerProps.minWidth}
+        token={containerProps.token}
       >
         {children
           ? children.map((child: ComponentDef, i: number) => renderRegisteredComponent(
