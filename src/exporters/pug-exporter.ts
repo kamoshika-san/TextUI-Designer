@@ -2,7 +2,7 @@ import { isComponentDefValue, type TextUIDSL, type ComponentDef, type FormCompon
   type TextComponent, type InputComponent, type ButtonComponent, type CheckboxComponent,
   type RadioComponent, type SelectComponent, type DatePickerComponent, type SelectOption, type DividerComponent, type SpacerComponent,
   type AlertComponent, type ContainerComponent, type AccordionComponent,
-  type TabsComponent, type TreeViewComponent, type TableComponent, type LinkComponent, type BadgeComponent, type ProgressComponent, type ImageComponent
+  type TabsComponent, type TreeViewComponent, type TableComponent, type LinkComponent, type BadgeComponent, type ProgressComponent, type ImageComponent, type IconComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -62,7 +62,7 @@ ${componentCode}`;
   }
 
   protected renderButton(props: ButtonComponent, _key: number): string {
-    const { label, kind = 'primary', size = 'md', disabled = false, token } = props;
+    const { label, icon, iconPosition = 'left', kind = 'primary', size = 'md', disabled = false, token } = props;
     const styleManager = this.getStyleManager();
     const variantClasses = styleManager.getKindClasses(this.format);
     const sizeClasses = {
@@ -74,7 +74,12 @@ ${componentCode}`;
     const disabledAttr = disabled ? 'disabled' : '';
     const tokenStyle = this.getPugTokenStyleSuffix('Button', token);
     
-    return `      button(class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${variantClasses[kind as keyof typeof variantClasses]} ${sizeClasses[size as keyof typeof sizeClasses]} ${disabledClass} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" ${disabledAttr}${tokenStyle}) ${label}`;
+    const content = [
+      icon && iconPosition === 'left' ? this.escapeHtml(icon) : '',
+      label ? this.escapeHtml(label) : '',
+      icon && iconPosition === 'right' ? this.escapeHtml(icon) : ''
+    ].filter(Boolean).join(' ');
+    return `      button(class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${variantClasses[kind as keyof typeof variantClasses]} ${sizeClasses[size as keyof typeof sizeClasses]} ${disabledClass} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" ${disabledAttr}${tokenStyle}) ${content}`;
   }
 
   protected renderCheckbox(props: CheckboxComponent, _key: number): string {
@@ -250,6 +255,15 @@ ${componentCode}`;
     const styleAttr = styleChunks.length > 0 ? ` style="${styleChunks.join(' ')}"` : '';
     const variantClass = variant === 'avatar' ? ' rounded-full' : '';
     return `      img(src="${this.escapeAttribute(src)}" alt="${this.escapeAttribute(alt)}" class="textui-image${variantClass}"${styleAttr}${tokenStyle})`;
+  }
+
+
+
+  protected renderIcon(props: IconComponent, _key: number): string {
+    const { name, label, token } = props;
+    const tokenStyle = this.getPugTokenStyleSuffix('Icon', token);
+    const content = label ? `${this.escapeHtml(name)} ${this.escapeHtml(label)}` : this.escapeHtml(name);
+    return `      span(class="textui-icon" role="img" aria-label="${this.escapeAttribute(label ?? name)}"${tokenStyle}) ${content}`;
   }
 
   protected renderLink(props: LinkComponent, _key: number): string {

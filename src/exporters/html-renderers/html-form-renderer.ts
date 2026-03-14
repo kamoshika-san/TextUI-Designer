@@ -36,8 +36,14 @@ export class HtmlFormRenderer {
   }
 
   renderButton(props: ButtonComponent): string {
-    const { label, kind = 'primary', disabled = false, submit = false, token } = props;
+    const { label, icon, iconPosition = 'left', kind = 'primary', disabled = false, submit = false, token } = props;
     const safeLabel = this.utils.escapeHtml(label ?? '');
+    const safeIcon = this.utils.escapeHtml(icon ?? '');
+    const content = [
+      icon && iconPosition === 'left' ? `<span class="textui-button-icon" aria-hidden="true">${safeIcon}</span>` : '',
+      label ? `<span class="textui-button-label">${safeLabel}</span>` : '',
+      icon && iconPosition === 'right' ? `<span class="textui-button-icon" aria-hidden="true">${safeIcon}</span>` : ''
+    ].filter(Boolean).join('');
     const kindClasses = this.utils.getStyleManager().getKindClasses('html');
     const disabledClass = this.utils.getDisabledClass(disabled);
     const typeAttr = submit ? ' type="submit"' : '';
@@ -45,7 +51,7 @@ export class HtmlFormRenderer {
 
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('Button', token);
     const safeKind = this.utils.escapeAttribute(kind);
-    return `    <button${typeAttr} data-kind="${safeKind}" class="${kindClasses[kind as keyof typeof kindClasses]} ${disabledClass}"${buttonAttrs}${tokenStyle}>${safeLabel}</button>`;
+    return `    <button${typeAttr} data-kind="${safeKind}" class="${kindClasses[kind as keyof typeof kindClasses]} ${disabledClass}"${buttonAttrs}${tokenStyle}>${content}</button>`;
   }
 
   renderCheckbox(props: CheckboxComponent): string {

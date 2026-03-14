@@ -22,7 +22,8 @@ import type {
   LinkComponent,
   BadgeComponent,
   ProgressComponent,
-  ImageComponent
+  ImageComponent,
+  IconComponent
 } from '../renderer/types';
 import type { ExportOptions, Exporter } from './index';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';
@@ -57,7 +58,7 @@ export abstract class BaseComponentRenderer implements Exporter {
     Divider: 'border-color',
     Spacer: 'height',
     Alert: 'border-color',
-    Container: 'border-color',
+    Container: 'background-color',
     Form: 'border-color',
     Accordion: 'border-color',
     Tabs: 'border-color',
@@ -66,7 +67,8 @@ export abstract class BaseComponentRenderer implements Exporter {
     Link: 'color',
     Badge: 'background-color',
     Progress: 'background-color',
-    Image: 'border-color'
+    Image: 'border-color',
+    Icon: 'color'
   };
 
   constructor(format: ExportFormat) {
@@ -100,7 +102,8 @@ export abstract class BaseComponentRenderer implements Exporter {
       Link: (props, key) => this.renderLink(props as LinkComponent, key),
       Badge: (props, key) => this.renderBadge(props as BadgeComponent, key),
       Progress: (props, key) => this.renderProgress(props as ProgressComponent, key),
-      Image: (props, key) => this.renderImage(props as ImageComponent, key)
+      Image: (props, key) => this.renderImage(props as ImageComponent, key),
+      Icon: (props, key) => this.renderIcon(props as IconComponent, key)
     };
 
     for (const componentName of BUILT_IN_COMPONENTS) {
@@ -210,6 +213,7 @@ export abstract class BaseComponentRenderer implements Exporter {
   protected abstract renderBadge(props: BadgeComponent, key: number): string;
   protected abstract renderProgress(props: ProgressComponent, key: number): string;
   protected abstract renderImage(props: ImageComponent, key: number): string;
+  protected abstract renderIcon(props: IconComponent, key: number): string;
 
   protected getStyleManager(): typeof StyleManager {
     return StyleManager;

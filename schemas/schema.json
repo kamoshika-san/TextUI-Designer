@@ -112,6 +112,9 @@
           "$ref": "#/definitions/Progress"
         },
         {
+          "$ref": "#/definitions/Icon"
+        },
+        {
           "$ref": "#/definitions/Image"
         }
       ]
@@ -252,9 +255,7 @@
       "properties": {
         "Button": {
           "type": "object",
-          "required": [
-            "label"
-          ],
+          "minProperties": 1,
           "properties": {
             "kind": {
               "type": "string",
@@ -270,6 +271,19 @@
               "type": "string",
               "description": "ボタンに表示するテキスト。"
             },
+            "icon": {
+              "type": "string",
+              "description": "ボタンに表示するアイコン（例: ⭐, 👁）。"
+            },
+            "iconPosition": {
+              "type": "string",
+              "enum": [
+                "left",
+                "right"
+              ],
+              "default": "left",
+              "description": "アイコンの表示位置。"
+            },
             "submit": {
               "type": "boolean",
               "default": false,
@@ -281,7 +295,7 @@
             }
           },
           "additionalProperties": false,
-          "description": "ボタンコンポーネント。\n利用可能な属性: kind, label, submit"
+          "description": "ボタンコンポーネント。\n利用可能な属性: kind, label, icon, iconPosition, submit"
         }
       },
       "additionalProperties": false,
@@ -1246,6 +1260,38 @@
       },
       "additionalProperties": false,
       "description": "画像を表示するコンポーネント。"
+    },
+    "Icon": {
+      "type": "object",
+      "required": [
+        "Icon"
+      ],
+      "properties": {
+        "Icon": {
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "表示するアイコン文字。"
+            },
+            "label": {
+              "type": "string",
+              "description": "アイコンの横に表示するテキスト。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Iconに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "アイコンコンポーネント。利用可能な属性: name, label, token"
+        }
+      },
+      "additionalProperties": false,
+      "description": "アイコンを表示するコンポーネント。"
     }
   },
   "additionalProperties": false

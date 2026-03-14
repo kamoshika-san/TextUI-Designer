@@ -517,6 +517,27 @@
   @apply mb-4;
 }
 
+.textui-treeview-actions {
+  @apply mb-2;
+}
+
+.textui-treeview-action-link {
+  @apply text-sm underline;
+  color: var(--color-primary, rgb(59 130 246));
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.textui-treeview-action-link:hover {
+  color: var(--color-primary-hover, rgb(37 99 235));
+}
+
+.light .textui-treeview-action-link {
+  color: var(--color-primary, rgb(29 78 216));
+}
+
 .textui-treeview-list {
   list-style: none;
   margin: 0;
@@ -718,4 +739,24 @@ body.light {
   @apply w-full;
   padding: var(--spacing-md, 1rem);
   gap: var(--spacing-sm, 0.75rem);
+}
+
+.textui-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.textui-button-icon {
+  line-height: 1;
+}
+
+.textui-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.textui-icon-glyph {
+  line-height: 1;
 }
