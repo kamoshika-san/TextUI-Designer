@@ -15,12 +15,25 @@ const layoutClasses: Record<Layout, string> = {
   grid: 'textui-container grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4',
 };
 
-export const Container: React.FC<ContainerProps> = ({ 
-  layout = 'vertical', 
+export const Container: React.FC<ContainerProps> = ({
+  layout = 'vertical',
   width,
-  children 
+  flexGrow,
+  children
 }) => {
   const className = layoutClasses[layout];
+  const hasFlexGrow = typeof flexGrow === 'number';
 
-  return <div className={className} style={width ? { width } : undefined}>{children || null}</div>;
-}; 
+  const style = hasFlexGrow
+    ? {
+        flexGrow,
+        flexShrink: 0,
+        flexBasis: width ?? 0,
+        ...(width ? { width } : {}),
+      }
+    : width
+      ? { width }
+      : undefined;
+
+  return <div className={className} style={style}>{children || null}</div>;
+};

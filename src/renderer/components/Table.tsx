@@ -16,7 +16,12 @@ export const Table: React.FC<TableComponent> = ({ columns = [], rows = [], strip
         <thead className="bg-gray-800">
           <tr>
             {columns.map(column => (
-              <th key={column.key} scope="col" className="px-4 py-2 text-left font-semibold text-gray-100">
+              <th
+                key={column.key}
+                scope="col"
+                className="px-4 py-2 text-left font-semibold text-gray-100"
+                style={column.width ? { width: column.width } : undefined}
+              >
                 {column.header}
               </th>
             ))}
@@ -29,7 +34,11 @@ export const Table: React.FC<TableComponent> = ({ columns = [], rows = [], strip
                 const rawValue = row[column.key];
                 const value = rawValue === null || rawValue === undefined ? '' : String(rawValue);
                 return (
-                  <td key={`${rowIndex}-${column.key}`} className="px-4 py-2 align-top text-gray-300">
+                  <td
+                    key={`${rowIndex}-${column.key}`}
+                    className="px-4 py-2 align-top text-gray-300"
+                    style={column.width ? { width: column.width } : undefined}
+                  >
                     {value}
                   </td>
                 );

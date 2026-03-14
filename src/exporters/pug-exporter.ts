@@ -380,7 +380,8 @@ ${indentedCode}`;
     code += `\n            tr`;
 
     columns.forEach(column => {
-      code += `\n              th.px-4.py-2.text-left.font-semibold.text-gray-900 ${column.header}`;
+      const widthStyle = column.width ? `(style=\"width: ${this.escapeAttribute(column.width)}\")` : '';
+      code += `\n              th.px-4.py-2.text-left.font-semibold.text-gray-900${widthStyle} ${column.header}`;
     });
 
     code += `\n          tbody.divide-y.divide-gray-200.bg-white`;
@@ -390,7 +391,8 @@ ${indentedCode}`;
       code += `\n            tr${stripedClass}`;
       columns.forEach(column => {
         const value = this.toTableCellText(row[column.key]);
-        code += `\n              td.px-4.py-2.align-top.text-gray-700 ${value}`;
+        const widthStyle = column.width ? `(style=\"width: ${this.escapeAttribute(column.width)}\")` : '';
+        code += `\n              td.px-4.py-2.align-top.text-gray-700${widthStyle} ${value}`;
       });
     });
 
@@ -398,15 +400,24 @@ ${indentedCode}`;
   }
 
   protected renderContainer(props: ContainerComponent, _key: number): string {
-    const { layout = 'vertical', components = [], token } = props;
+    const { layout = 'vertical', components = [], width, flexGrow, token } = props;
     const layoutClasses = {
       'vertical': 'flex flex-col space-y-4',
       'horizontal': 'flex space-x-4',
+      'flex': 'flex flex-wrap gap-4',
       'grid': 'grid grid-cols-1 gap-4'
     };
     
     const tokenStyleModifier = this.getPugTokenStyleModifier('Container', token);
-    let code = `      .${layoutClasses[layout as keyof typeof layoutClasses]}${tokenStyleModifier}`;
+    const styleChunks: string[] = [];
+    if (typeof flexGrow === 'number') {
+      styleChunks.push(`flex-grow: ${this.escapeAttribute(String(flexGrow))};`, 'flex-shrink: 0;', `flex-basis: ${this.escapeAttribute(width ?? '0')};`);
+    }
+    if (width) {
+      styleChunks.push(`width: ${this.escapeAttribute(width)};`);
+    }
+    const styleAttr = styleChunks.length > 0 ? `(style=\"${styleChunks.join(' ')}\")` : '';
+    let code = `      .${layoutClasses[layout as keyof typeof layoutClasses]}${styleAttr}${tokenStyleModifier}`;
     (components || []).forEach((child: ComponentDef, index: number) => {
       const childCode = this.renderComponent(child, index);
       const indentedCode = this.adjustIndentation(childCode, '  ');

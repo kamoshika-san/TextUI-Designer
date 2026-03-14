@@ -133,14 +133,20 @@ ${treeCode}
     }
 
     const headerCode = columns
-      .map(column => `          <th class="px-4 py-2 text-left font-semibold text-gray-100">${this.utils.escapeHtml(column.header)}</th>`)
+      .map(column => {
+        const widthStyle = column.width ? ` style="width: ${this.utils.escapeAttribute(column.width)}"` : '';
+        return `          <th class="px-4 py-2 text-left font-semibold text-gray-100"${widthStyle}>${this.utils.escapeHtml(column.header)}</th>`;
+      })
       .join('\n');
 
     const bodyCode = rows
       .map((row, rowIndex) => {
         const rowClass = striped && rowIndex % 2 === 1 ? ' class="bg-gray-800/70"' : '';
         const cells = columns
-          .map(column => `          <td class="px-4 py-2 align-top text-gray-300">${this.utils.escapeHtml(this.utils.toTableCellText(row[column.key]))}</td>`)
+          .map(column => {
+            const widthStyle = column.width ? ` style="width: ${this.utils.escapeAttribute(column.width)}"` : '';
+            return `          <td class="px-4 py-2 align-top text-gray-300"${widthStyle}>${this.utils.escapeHtml(this.utils.toTableCellText(row[column.key]))}</td>`;
+          })
           .join('\n');
 
         return `        <tr${rowClass}>\n${cells}\n        </tr>`;
@@ -162,7 +168,7 @@ ${bodyCode}
   }
 
   renderContainer(props: ContainerComponent): string {
-    const { layout = 'vertical', components = [], token } = props;
+    const { layout = 'vertical', components = [], width, flexGrow, token } = props;
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('Container', token);
     const layoutClasses = {
       vertical: 'textui-container flex flex-col space-y-4',
@@ -171,7 +177,16 @@ ${bodyCode}
       grid: 'textui-container grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
     };
 
-    let code = `    <div class="${layoutClasses[layout as keyof typeof layoutClasses]}"${tokenStyle}>`;
+    const styleChunks: string[] = [];
+    if (typeof flexGrow === 'number') {
+      styleChunks.push(`flex-grow: ${this.utils.escapeAttribute(String(flexGrow))};`, 'flex-shrink: 0;', `flex-basis: ${this.utils.escapeAttribute(width ?? '0')};`);
+    }
+    if (width) {
+      styleChunks.push(`width: ${this.utils.escapeAttribute(width)};`);
+    }
+    const styleAttr = styleChunks.length > 0 ? ` style="${styleChunks.join(' ')}"` : '';
+
+    let code = `    <div class="${layoutClasses[layout as keyof typeof layoutClasses]}"${styleAttr}${tokenStyle}>`;
     components.forEach((child: ComponentDef, index: number) => {
       const childCode = this.utils.renderComponent(child, index);
       const indentedCode = childCode.split('\n').map(line => `  ${line}`).join('\n');

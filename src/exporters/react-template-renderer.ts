@@ -122,13 +122,13 @@ export function renderTableTemplate(props: TableComponent, key: number, tokenSty
   }
 
   const headerCode = columns
-    .map(column => `              <th key="${column.key}" className="px-4 py-2 text-left font-semibold text-gray-900">${column.header}</th>`)
+    .map(column => `              <th key="${column.key}" className="px-4 py-2 text-left font-semibold text-gray-900"${column.width ? ` style={{ width: '${column.width}' }}` : ''}>${column.header}</th>`)
     .join('\n');
 
   const bodyCode = rows
     .map((row, rowIndex) => {
       const cells = columns
-        .map(column => `              <td key="${rowIndex}-${column.key}" className="px-4 py-2 align-top text-gray-700">${context.toTableCellText(row[column.key])}</td>`)
+        .map(column => `              <td key="${rowIndex}-${column.key}" className="px-4 py-2 align-top text-gray-700"${column.width ? ` style={{ width: '${column.width}' }}` : ''}>${context.toTableCellText(row[column.key])}</td>`)
         .join('\n');
 
       return `            <tr key={${rowIndex}} className={${striped} && ${rowIndex} % 2 === 1 ? 'bg-gray-50' : ''}>\n${cells}\n            </tr>`;
@@ -150,16 +150,26 @@ ${bodyCode}
 }
 
 export function renderContainerTemplate(props: ContainerComponent, key: number, tokenStyle: string, context: RenderContext): string {
-  const { layout = 'vertical', components = [] } = props;
+  const { layout = 'vertical', components = [], width, flexGrow } = props;
   const layoutClasses = {
     vertical: 'flex flex-col space-y-4',
     horizontal: 'flex space-x-4',
+    flex: 'flex flex-wrap gap-4',
     grid: 'grid grid-cols-1 gap-4'
   };
 
   const childrenCode = components.map((child: ComponentDef, index: number) => context.renderComponent(child, index)).join('\n');
 
-  return `      <div key={${key}} className="${layoutClasses[layout as keyof typeof layoutClasses]}"${tokenStyle}>
+  const styleParts: string[] = [];
+  if (typeof flexGrow === 'number') {
+    styleParts.push(`flexGrow: ${flexGrow}`, 'flexShrink: 0', `flexBasis: ${width ? `'${width}'` : 0}`);
+  }
+  if (width) {
+    styleParts.push(`width: '${width}'`);
+  }
+  const styleAttr = styleParts.length > 0 ? ` style={{ ${styleParts.join(', ')} }}` : '';
+
+  return `      <div key={${key}} className="${layoutClasses[layout as keyof typeof layoutClasses]}"${styleAttr}${tokenStyle}>
 ${childrenCode}
       </div>`;
 }
