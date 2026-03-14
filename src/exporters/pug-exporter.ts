@@ -219,7 +219,7 @@ ${componentCode}`;
   }
 
   protected renderImage(props: ImageComponent, _key: number): string {
-    const { src, alt = '', width, height, token } = props;
+    const { src, alt = '', width, height, variant = 'default', token } = props;
     const tokenStyle = this.getPugTokenStyleSuffix('Image', token);
     const styleChunks: string[] = [];
     if (width) {
@@ -229,7 +229,8 @@ ${componentCode}`;
       styleChunks.push(`height: ${this.escapeAttribute(height)};`);
     }
     const styleAttr = styleChunks.length > 0 ? ` style="${styleChunks.join(' ')}"` : '';
-    return `      img(src="${this.escapeAttribute(src)}" alt="${this.escapeAttribute(alt)}" class="textui-image"${styleAttr}${tokenStyle})`;
+    const variantClass = variant === 'avatar' ? ' rounded-full' : '';
+    return `      img(src="${this.escapeAttribute(src)}" alt="${this.escapeAttribute(alt)}" class="textui-image${variantClass}"${styleAttr}${tokenStyle})`;
   }
 
   protected renderLink(props: LinkComponent, _key: number): string {
