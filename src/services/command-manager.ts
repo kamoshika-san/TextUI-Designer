@@ -182,10 +182,16 @@ export class CommandManager implements ICommandManager {
       ? workspaceFolder
       : undefined;
 
+    const webViewThemePath = this.themeManager?.getThemePath();
+    const themePathForCapture = (webViewThemePath && fs.existsSync(webViewThemePath))
+      ? webViewThemePath
+      : undefined;
+
     try {
       await capturePreviewImageFromDslFile(targetFile, {
         outputPath: outputUri.fsPath,
-        themePath: this.themeManager?.getThemePath(),
+        themePath: themePathForCapture,
+        useWebViewTheme: true,
         extensionPath: this.context.extensionPath,
         cliSpawnPath,
         log: (msg) => this.logger.info(msg)

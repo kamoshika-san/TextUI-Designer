@@ -44,6 +44,7 @@ export async function handleCaptureCommand(args: FileTargetArgs): Promise<ExitCo
 
   const output = path.resolve(getArg('--output') ?? `generated/${stripDslExtension(path.basename(filePath))}.preview.png`);
   const themePath = parseThemePath();
+  const useWebViewTheme = hasFlag('--use-webview-theme');
   const extensionPathRaw = getArg('--extension-path');
   const extensionPath = extensionPathRaw ? path.resolve(extensionPathRaw) : undefined;
   const width = parseOptionalPositiveInt('--width');
@@ -57,6 +58,7 @@ export async function handleCaptureCommand(args: FileTargetArgs): Promise<ExitCo
   const result = await capturePreviewImageFromDsl(loaded.dsl, {
     outputPath: output,
     themePath,
+    useWebViewTheme,
     dslFilePath: loaded.sourcePath,
     extensionPath,
     useReactRender: false,

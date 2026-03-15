@@ -42,6 +42,7 @@ export class ThemeManager implements IThemeManager {
   async loadTheme(): Promise<void> {
     if (!this.themePath || !fs.existsSync(this.themePath)) {
       console.log('[ThemeManager] theme file not found, using default theme');
+      this.themePath = undefined;
       this.resetToDefaultTheme();
       return;
     }
@@ -55,10 +56,12 @@ export class ThemeManager implements IThemeManager {
         this.components = ThemeUtils.deepMerge(this.defaultComponents, data.theme.components || {}) as ThemeComponents;
       } else {
         console.warn('[ThemeManager] テーマ定義の形式が不正なため、デフォルトを使用します');
+        this.themePath = undefined;
         this.resetToDefaultTheme();
       }
     } catch (err) {
       console.error('[ThemeManager] failed to load theme, using default theme', err);
+      this.themePath = undefined;
       this.resetToDefaultTheme();
     }
   }

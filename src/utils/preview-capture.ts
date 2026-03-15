@@ -28,6 +28,8 @@ export interface PreviewCaptureOptions {
   useReactRender?: boolean;
   /** 指定時は CLI spawn にこのパスを使う（開発時にワークスペースの CLI を優先） */
   cliSpawnPath?: string;
+  /** true のとき themePath を WebView 適用中テーマのみとし、同階層の textui-theme.yml にはフォールバックしない */
+  useWebViewTheme?: boolean;
 }
 
 export interface PreviewCaptureResult {
@@ -139,7 +141,14 @@ function loadPuppeteerModule(): PuppeteerModuleLike | null {
   }
 }
 
-function resolveThemePathForCapture(explicitThemePath?: string, dslFilePath?: string): string | undefined {
+function resolveThemePathForCapture(
+  explicitThemePath: string | undefined,
+  dslFilePath: string | undefined,
+  useWebViewTheme?: boolean
+): string | undefined {
+  if (useWebViewTheme) {
+    return (explicitThemePath && fs.existsSync(explicitThemePath)) ? explicitThemePath : undefined;
+  }
   if (explicitThemePath && fs.existsSync(explicitThemePath)) {
     return explicitThemePath;
   }
@@ -190,7 +199,11 @@ export async function capturePreviewImageFromDsl(
   const browserPath = resolveBrowserPath(options.browserPath);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
-  const themePath = resolveThemePathForCapture(options.themePath, options.dslFilePath);
+  const themePath = resolveThemePathForCapture(
+    options.themePath,
+    options.dslFilePath,
+    options.useWebViewTheme
+  );
   const html = await new HtmlExporter().export(dsl, {
     format: 'html',
     themePath,
@@ -227,6 +240,7 @@ export async function capturePreviewImageFromDsl(
         dslFilePath: options.dslFilePath,
         outputPath,
         themePath,
+        useWebViewTheme: options.useWebViewTheme,
         width,
         height,
         scale,
@@ -653,6 +667,7 @@ async function runCaptureViaCli(params: {
   dslFilePath: string;
   outputPath: string;
   themePath?: string;
+  useWebViewTheme?: boolean;
   width: number;
   height: number;
   scale: number;
@@ -676,6 +691,9 @@ async function runCaptureViaCli(params: {
     '--output', params.outputPath,
     '--extension-path', params.extensionPath
   ];
+  if (params.useWebViewTheme) {
+    args.push('--use-webview-theme');
+  }
   if (params.themePath) {
     args.push('--theme', params.themePath);
   }
