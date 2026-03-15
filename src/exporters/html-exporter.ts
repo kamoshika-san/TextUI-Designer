@@ -67,9 +67,12 @@ export class HtmlExporter extends BaseComponentRenderer {
       });
     }
 
-    // useReactRender: false のときのみ従来の文字列レンダー（HTML レンダラ系統）
+    // useReactRender: false のときのみ従来の文字列レンダー（CLI で react が無い環境向け）
     const componentCode = this.renderPageComponents(normalizedDsl);
-    return buildHtmlDocument(componentCode, themeStyles);
+    const webviewCss = readWebviewCssIfPresent(options.extensionPath);
+    return buildHtmlDocument(componentCode, themeStyles, {
+      webviewCss: webviewCss ?? undefined
+    });
   }
 
   getFileExtension(): string {

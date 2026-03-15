@@ -22,6 +22,12 @@ export interface PreviewCaptureOptions {
   waitMs?: number;
   browserPath?: string;
   allowNoSandbox?: boolean;
+  /** デバッグ用。拡張から呼ぶときに渡すと CLI spawn などの状況が出力される */
+  log?: (message: string) => void;
+  /** false のとき HTML は文字列レンダラーのみ（CLI で react が無い環境向け） */
+  useReactRender?: boolean;
+  /** 指定時は CLI spawn にこのパスを使う（開発時にワークスペースの CLI を優先） */
+  cliSpawnPath?: string;
 }
 
 export interface PreviewCaptureResult {
@@ -188,7 +194,7 @@ export async function capturePreviewImageFromDsl(
   const html = await new HtmlExporter().export(dsl, {
     format: 'html',
     themePath,
-    useReactRender: true,
+    useReactRender: options.useReactRender ?? true,
     extensionPath: options.extensionPath
   });
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-preview-capture-'));
@@ -213,6 +219,39 @@ export async function capturePreviewImageFromDsl(
       return puppeteerResult;
     }
 
+    if (options.extensionPath && options.dslFilePath) {
+      options.log?.(`Puppeteer failed, trying CLI spawn (extensionPath=${options.extensionPath}, dslFilePath=${options.dslFilePath})`);
+      const cliSuccess = await runCaptureViaCli({
+        extensionPath: options.extensionPath,
+        cliSpawnPath: options.cliSpawnPath,
+        dslFilePath: options.dslFilePath,
+        outputPath,
+        themePath,
+        width,
+        height,
+        scale,
+        waitMs,
+        browserPath,
+        allowNoSandbox,
+        log: options.log
+      });
+      if (cliSuccess && fs.existsSync(outputPath)) {
+        const image = fs.readFileSync(outputPath);
+        if (image.length >= 8 && image.subarray(0, 4).equals(PNG_MAGIC)) {
+          return {
+            outputPath,
+            browserPath,
+            width,
+            height
+          };
+        }
+        options.log?.('runCaptureViaCli: CLI exited 0 but output file missing or not valid PNG');
+      } else {
+        options.log?.('runCaptureViaCli: CLI failed or timed out');
+      }
+    }
+
+    options.log?.('Falling back to runBrowserCapture (viewport only)');
     const execution = await runBrowserCapture({
       browserPath,
       outputPath,
@@ -296,8 +335,9 @@ async function runPuppeteerFullPageCapture(params: {
       deviceScaleFactor: params.scale
     });
 
+    const isFileUrl = params.targetUrl.startsWith('file:');
     await page.goto(params.targetUrl, {
-      waitUntil: 'networkidle0',
+      waitUntil: isFileUrl ? 'load' : 'networkidle0',
       timeout: Math.max(10000, params.waitMs + 5000)
     });
 
@@ -583,6 +623,119 @@ function isAllowedBrowserBasename(fileName: string): boolean {
     || normalized === 'microsoft-edge'
     || normalized === 'chrome.exe'
     || normalized === 'msedge.exe';
+}
+
+function resolveNodeCommand(): string {
+  const base = path.basename(process.execPath).toLowerCase();
+  if (base === 'node' || base === 'node.exe') {
+    return process.execPath;
+  }
+  try {
+    if (process.platform === 'win32') {
+      const r = spawnSync('where', ['node'], { encoding: 'utf-8', windowsHide: true });
+      const line = r.stdout?.split(/\r?\n/)[0]?.trim();
+      if (line && fs.existsSync(line)) return line;
+    } else {
+      const r = spawnSync('which', ['node'], { encoding: 'utf-8' });
+      const line = r.stdout?.trim();
+      if (line && fs.existsSync(line)) return line;
+    }
+  } catch {
+    // fallback
+  }
+  return 'node';
+}
+
+async function runCaptureViaCli(params: {
+  extensionPath: string;
+  /** 指定時はここから CLI を起動（開発時はワークスペースの out/cli を優先） */
+  cliSpawnPath?: string;
+  dslFilePath: string;
+  outputPath: string;
+  themePath?: string;
+  width: number;
+  height: number;
+  scale: number;
+  waitMs: number;
+  browserPath: string;
+  allowNoSandbox: boolean;
+  log?: (message: string) => void;
+}): Promise<boolean> {
+  const cliRoot = params.cliSpawnPath ?? params.extensionPath;
+  const cliScript = path.join(cliRoot, 'out', 'cli', 'index.js');
+  if (!fs.existsSync(cliScript)) {
+    params.log?.(`runCaptureViaCli: CLI script not found: ${cliScript}`);
+    return false;
+  }
+  const nodeCommand = resolveNodeCommand();
+  params.log?.(`runCaptureViaCli: node=${nodeCommand}, script=${cliScript}, extensionPath=${params.extensionPath}`);
+  const args: string[] = [
+    cliScript,
+    'capture',
+    '--file', params.dslFilePath,
+    '--output', params.outputPath,
+    '--extension-path', params.extensionPath
+  ];
+  if (params.themePath) {
+    args.push('--theme', params.themePath);
+  }
+  if (params.browserPath) {
+    args.push('--browser', params.browserPath);
+  }
+  if (params.allowNoSandbox) {
+    args.push('--allow-no-sandbox');
+  }
+  args.push('--width', String(params.width));
+  args.push('--height', String(params.height));
+  args.push('--scale', String(params.scale));
+  args.push('--wait-ms', String(params.waitMs));
+
+  const timeoutMs = Math.max(120000, params.waitMs + 60000);
+  const env = { ...process.env };
+  const nodeModules = path.join(cliRoot, 'node_modules');
+  if (fs.existsSync(nodeModules)) {
+    env.NODE_PATH = nodeModules;
+  }
+
+  const result = await new Promise<{ code: number | null; stderr: string }>((resolve) => {
+    let stderr = '';
+    const cwd = cliRoot;
+    const child = spawn(nodeCommand, args, {
+      cwd,
+      env,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      detached: process.platform === 'win32'
+    });
+    let settled = false;
+    const timeoutHandle = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      child.kill('SIGKILL');
+      resolve({ code: null, stderr });
+    }, timeoutMs);
+    child.stderr?.on('data', (chunk: Buffer | string) => {
+      stderr += chunk.toString();
+    });
+    child.stdout?.on('data', () => {});
+    child.on('error', (err) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutHandle);
+      params.log?.(`runCaptureViaCli: spawn error: ${err.message}`);
+      resolve({ code: null, stderr: err.message });
+    });
+    child.on('close', (code, signal) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutHandle);
+      if (code !== 0) {
+        params.log?.(`runCaptureViaCli: exit code=${code}, signal=${String(signal)}, stderr=${stderr.slice(0, 500)}`);
+      }
+      resolve({ code: code ?? null, stderr });
+    });
+  });
+
+  return result.code === 0;
 }
 
 async function runBrowserCapture(params: {

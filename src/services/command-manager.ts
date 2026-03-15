@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { ErrorHandler } from '../utils/error-handler';
@@ -176,11 +177,18 @@ export class CommandManager implements ICommandManager {
       return;
     }
 
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath;
+    const cliSpawnPath = (workspaceFolder && fs.existsSync(path.join(workspaceFolder, 'out', 'cli', 'index.js')))
+      ? workspaceFolder
+      : undefined;
+
     try {
       await capturePreviewImageFromDslFile(targetFile, {
         outputPath: outputUri.fsPath,
         themePath: this.themeManager?.getThemePath(),
-        extensionPath: this.context.extensionPath
+        extensionPath: this.context.extensionPath,
+        cliSpawnPath,
+        log: (msg) => this.logger.info(msg)
       });
       vscode.window.showInformationMessage(`プレビュー画像を出力しました: ${outputUri.fsPath}`);
     } catch (error) {
