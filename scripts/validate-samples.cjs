@@ -152,9 +152,11 @@ function validateAllSamples() {
   }
 
   const failures = [];
+  const normalizeRelative = p => p.split(path.sep).join('/');
   const expectedFailures = new Set(expectedFailureCases.map(entry => entry.file));
 
   for (const relativePath of sampleFiles) {
+    const normalizedRelativePath = normalizeRelative(relativePath);
     try {
       const shouldResolveIncludes = /\.tui\.ya?ml$/i.test(relativePath);
       const parsed = parseYamlFile(path.join(repoRoot, relativePath), { resolveIncludes: shouldResolveIncludes });
@@ -162,7 +164,28 @@ function validateAllSamples() {
       let validate = schemaValidators.get(schemaName);
 
       if (!validate) {
-        const schema = loadJson(path.join(repoRoot, 'schemas', schemaName));
+        let schema = loadJson(path.join(repoRoot, 'schemas', schemaName));
+        if (schemaName === 'template-schema.json') {
+          // テンプレートは「配列（components断片）」として記述されるが、
+          // 許容コンポーネント集合は本体DSLと同一にしたい。
+          // そこで `schema.json` の definitions を流用した配列スキーマを組み立てる。
+          const full = loadJson(path.join(repoRoot, 'schemas', 'schema.json'));
+          schema = {
+            $schema: full.$schema,
+            $id: schema.$id || full.$id,
+            title: schema.title || 'TextUI Designer DSL(template)',
+            description: schema.description || 'Template snippet schema (array of components).',
+            type: 'array',
+            items: {
+              oneOf: [
+                { $ref: '#/definitions/component' },
+                { $ref: '#/definitions/includeDirective' }
+              ]
+            },
+            definitions: full.definitions,
+            additionalItems: true
+          };
+        }
         validate = ajv.compile(schema);
         schemaValidators.set(schemaName, validate);
       }
@@ -173,13 +196,13 @@ function validateAllSamples() {
         throw new Error(`スキーマ違反: ${details.join(' | ')}`);
       }
 
-      if (expectedFailures.has(relativePath)) {
+      if (expectedFailures.has(normalizedRelativePath)) {
         throw new Error('失敗を期待するサンプルが成功しました。');
       }
 
       console.log(`✅ validated: ${relativePath}`);
     } catch (error) {
-      const expected = expectedFailureCases.find(entry => entry.file === relativePath);
+      const expected = expectedFailureCases.find(entry => entry.file === normalizedRelativePath);
       if (expected) {
         console.log(`✅ expected failure: ${relativePath} (${expected.reason})`);
         continue;
@@ -189,7 +212,7 @@ function validateAllSamples() {
     }
   }
 
-  const uncoveredExpected = expectedFailureCases.filter(entry => !sampleFiles.includes(entry.file));
+  const uncoveredExpected = expectedFailureCases.filter(entry => !sampleFiles.map(normalizeRelative).includes(entry.file));
   for (const missing of uncoveredExpected) {
     failures.push(`❌ expected failure case not found: ${missing.file}`);
   }
