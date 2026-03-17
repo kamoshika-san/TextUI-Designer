@@ -53,6 +53,12 @@ page:
 - Text
 - Alert
 - Divider
+- Link
+- Breadcrumb
+- Badge
+- Icon
+- Image
+- Progress
 - Input
 - Checkbox
 - Radio
@@ -68,6 +74,8 @@ page:
 - Spacer
 
 > v0.5.1 で `Spacer` / `TreeView` に対応し、`sample/01-basic` は全対応コンポーネントを使うサンプルに更新しました。
+>
+> v0.6.0 で `Badge` / `Image` / `Progress` / `Icon` / `Link` / `Breadcrumb` を追加し、`sample/08-github`（GitHub風の大規模サンプル）を追加しました。
 
 ---
 
@@ -125,6 +133,7 @@ npm run test:quick       # ローカル高速確認（compile + unit）
 npm run test:all         # unit / integration / e2e / regression
 npm run test:all:ci      # CI向け（compile + lint + all tests）
 npm run package          # extension package build
+npm run validate:samples:fresh    # サンプル検証（compileしてから実行）
 ```
 
 CI運用テンプレート（DSL validate + plan）は `docs/CI_TEMPLATE.md` を参照してください。

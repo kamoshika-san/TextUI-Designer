@@ -19,6 +19,36 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - 拡張機能バージョンを `0.5.1` に更新。
 - `v0.5.1` 向けの配布資材（VSIX / リリースノート）を更新。
 
+## [0.6.0] - 2026-03-17
+
+### 新機能
+- **プレビュー画像出力（PNG）**: VS Code コマンド（`TextUI: Capture Preview Image`）/ CLI / MCP から、プレビューをそのまま画像として出力できるようになりました（テーマ指定にも対応）。
+- **新コンポーネント追加**: `Badge` / `Image`（avatar など）/ `Progress`（セグメント表示対応）/ `Icon` / `Link` / `Breadcrumb` を追加しました。
+- **Table 強化**: 行 hover (`rowHover`) と、セル内にコンポーネントを配置できる表現を追加しました。
+- **サンプル追加**: GitHub リポジトリ画面風の大規模サンプル `sample/08-github/` を追加しました（テンプレート分割の実例つき）。
+
+### 変更・改善
+- **レンダリング経路の統一**: WebView / Export / キャプチャのレンダラーを揃え、表示の一貫性を改善しました。
+- **エクスポートの出力整合**: WebView のレイアウト挙動に合わせて、HTML/React/Pug の出力（wrapper や container/table 周り）を調整しました。
+- **Container 表現拡張**: `flexGrow` / `minWidth` など、レイアウト指定の表現を追加・改善しました。
+- **テーマ適用の改善**: プレビューで選択中のテーマが Export / キャプチャにも反映されるように改善しました（明示指定も可能）。
+
+### CLI / MCP
+- **CLI 拡張**: `providers` / `validate` / `plan` / `apply` / `state` / `capture` を中心に機能を拡充し、CI やスクリプトからの自動化を強化しました。
+- **OpenAPI import 強化**: import レイヤを分割し、operation 選択やマッピングの拡張性を改善しました。
+- **MCP 拡張**: `run_cli` / `capture_preview` などを通じて、生成AIエージェントから Export / キャプチャを呼び出しやすくしました（テーマ指定可）。
+
+### バグ修正
+- **キャプチャ安定性**: スクロールコンテナや viewport 外の領域を含む「全体キャプチャ」の安定性を改善しました。
+- **レイアウト/整列**: Container の align 等、細部の表示崩れを修正しました。
+
+### 開発・CI
+- **CI 品質ゲート強化**: `tsc --noEmit` の strict typecheck と `eslint --max-warnings 0` を pretest に含め、CI とローカルの検査差分を減らしました。
+- **依存関係**: `puppeteer-core` を導入し、`yauzl` のパッチ版を override することでセキュリティ/互換性を改善しました。
+
+### 破壊的変更 / 注意点
+- **エクスポート出力の差分**: WebView と揃えるために HTML/React/Pug の出力構造・スタイルが一部変わります。生成物をコミットしている運用の場合は差分レビューを推奨します。
+
 ## [0.5.0] - 2026-03-08
 
 ### 新機能
