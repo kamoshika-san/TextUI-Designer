@@ -1,0 +1,115 @@
+# Pull requests タブ
+- Container:
+    layout: horizontal
+    components:
+      - Select:
+          name: filters
+          token: color.border.default
+          options:
+            - label: "Filters"
+              value: "filters"
+      - Input:
+          label: ""
+          name: searchPr
+          type: text
+          placeholder: "is:pr is:open"
+          token: color.border.default
+      - Button:
+          kind: secondary
+          label: "Labels 13"
+          token: color.secondary
+      - Button:
+          kind: secondary
+          label: "Milestones 0"
+          token: color.secondary
+      - Button:
+          kind: primary
+          label: "New pull request"
+          token: color.primary
+- Spacer:
+    axis: vertical
+    size: xs
+- Container:
+    layout: horizontal
+    components:
+      - Text:
+          variant: small
+          value: "0 Open"
+          token: color.text.secondary
+      - Text:
+          variant: small
+          value: " / "
+          token: color.text.muted
+      - Text:
+          variant: small
+          value: "199 Closed"
+          token: color.text.secondary
+- Divider:
+    token: color.border.default
+- Table:
+    token: color.border.default
+    columns:
+      - key: author
+        header: "Author"
+        width: "14%"
+      - key: label
+        header: "Label"
+        width: "14%"
+      - key: projects
+        header: "Projects"
+        width: "14%"
+      - key: milestones
+        header: "Milestones"
+        width: "14%"
+      - key: reviews
+        header: "Reviews"
+        width: "14%"
+      - key: assignee
+        header: "Assignee"
+        width: "14%"
+      - key: sort
+        header: "Sort"
+        width: "16%"
+    rows: []
+- Spacer:
+    axis: vertical
+    size: md
+- Text:
+    variant: h3
+    value: "There aren't any open pull requests."
+    token: color.text.primary
+- Spacer:
+    axis: vertical
+    size: xs
+- Container:
+    layout: horizontal
+    components:
+      - Text:
+          variant: p
+          value: "You could search "
+          token: color.text.secondary
+      - Link:
+          href: "https://github.com/search"
+          label: "all of GitHub"
+          target: "_blank"
+          token: color.text.link
+      - Text:
+          variant: p
+          value: " or try an "
+          token: color.text.secondary
+      - Link:
+          href: "https://github.com/search/advanced"
+          label: "advanced search"
+          target: "_blank"
+          token: color.text.link
+      - Text:
+          variant: p
+          value: "."
+          token: color.text.secondary
+- Spacer:
+    axis: vertical
+    size: md
+- Alert:
+    variant: info
+    message: "ProTip! Follow long discussions with comments:> 50."
+    token: color.primary

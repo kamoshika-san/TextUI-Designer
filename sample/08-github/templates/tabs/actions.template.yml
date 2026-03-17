@@ -1,0 +1,167 @@
+# Actions タブ: 左サイドバー + 右メイン（実行リスト）
+- Container:
+    layout: horizontal
+    components:
+      - Container:
+          layout: vertical
+          flexGrow: 1
+          width: "100%"
+          token: color.background
+          components:
+            - Text:
+                variant: h3
+                value: "Actions"
+                token: color.text.primary
+            - Spacer:
+                axis: vertical
+                size: xs
+            - Button:
+                kind: primary
+                label: "New workflow"
+                token: color.primary
+            - Spacer:
+                axis: vertical
+                size: sm
+            - Text:
+                variant: p
+                value: "All workflows"
+                token: color.text.primary
+            - Link:
+                href: "#"
+                label: "CI Pipeline"
+                target: "_blank"
+                token: color.text.link
+            - Link:
+                href: "#"
+                label: "CodeQL"
+                target: "_blank"
+                token: color.text.link
+            - Link:
+                href: "#"
+                label: "Dependabot Updates"
+                target: "_blank"
+                token: color.text.link
+            - Spacer:
+                axis: vertical
+                size: sm
+            - Divider:
+                token: color.border.default
+            - Text:
+                variant: h3
+                value: "Management"
+                token: color.text.primary
+            - Link:
+                href: "#"
+                label: "Caches"
+                target: "_blank"
+                token: color.text.link
+            - Link:
+                href: "#"
+                label: "Attestations"
+                target: "_blank"
+                token: color.text.link
+            - Link:
+                href: "#"
+                label: "Runners"
+                target: "_blank"
+                token: color.text.link
+            - Link:
+                href: "#"
+                label: "Usage metrics"
+                target: "_blank"
+                token: color.text.link
+            - Link:
+                href: "#"
+                label: "Performance metrics"
+                target: "_blank"
+                token: color.text.link
+      - Container:
+          layout: vertical
+          flexGrow: 4
+          width: "100%"
+          components:
+            - Text:
+                variant: h3
+                value: "All workflows"
+                token: color.text.primary
+            - Text:
+                variant: p
+                value: "Showing runs from all workflows."
+                token: color.text.secondary
+            - Spacer:
+                axis: vertical
+                size: xs
+            - Container:
+                layout: horizontal
+                components:
+                  - Input:
+                      label: ""
+                      name: filterRuns
+                      type: text
+                      placeholder: "Filter workflow runs"
+                      token: color.border.default
+            - Spacer:
+                axis: vertical
+                size: xs
+            - Text:
+                variant: small
+                value: "1,262 workflow runs"
+                token: color.text.secondary
+            - Divider:
+                token: color.border.default
+            - Table:
+                token: color.border.default
+                striped: true
+                rowHover: true
+                columns:
+                  - key: title
+                    header: "Workflow"
+                    width: "35%"
+                  - key: details
+                    header: "Event / Pipeline"
+                    width: "30%"
+                  - key: branch
+                    header: "Branch"
+                    width: "12%"
+                  - key: time
+                    header: "Time"
+                    width: "12%"
+                  - key: duration
+                    header: "Duration"
+                    width: "11%"
+                rows:
+                  - title: "feat(table): support component cells in table rows"
+                    details: "CI Pipeline #342: Commit b681142 pushed by kamoshika-san"
+                    branch: "main"
+                    time: "21 minutes ago"
+                    duration: "3m 1s"
+                  - title: "Push on main"
+                    details: "CodeQL #906 by kamoshika-san"
+                    branch: "main"
+                    time: "21 minutes ago"
+                    duration: "1m 31s"
+                  - title: "feat(table): allow table cells to render embedded components"
+                    details: "CI Pipeline #341: Pull request #225 opened by kamoshika-san"
+                    branch: "codex/add-row-hover-highlig-"
+                    time: "25 minutes ago"
+                    duration: "2m 37s"
+                  - title: "PR #225"
+                    details: "CodeQL #905: by kamoshika-san"
+                    branch: "refs/pull/225/head"
+                    time: "25 minutes ago"
+                    duration: "1m 14s"
+                  - title: "Push on codex/add-row-hover-highlight-feature"
+                    details: "CodeQL #904: by kamoshika-san"
+                    branch: "codex/add-row-hover-highlig-"
+                    time: "25 minutes ago"
+                    duration: "1m 16s"
+                  - title: "Handle missing puppeteer-core without build-time resolution"
+                    details: "CI Pipeline #340: Commit 95019 pushed by kamoshika-san"
+                    branch: "main"
+                    time: "27 minutes ago"
+                    duration: "2m 40s"
+                  - title: "Push on main"
+                    details: "CodeQL #902: by kamoshika-san"
+                    branch: "main"
+                    time: "27 minutes ago"
+                    duration: "1m 39s"

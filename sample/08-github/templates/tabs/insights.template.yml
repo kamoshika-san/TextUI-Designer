@@ -1,0 +1,5 @@
+# Insights タブ
+- Text:
+    variant: p
+    value: "Pulse, Contributors, Community."
+    token: color.text.secondary

@@ -1,0 +1,28 @@
+# Issues タブ
+- Container:
+    layout: horizontal
+    components:
+      - Button:
+          kind: primary
+          label: "New issue"
+          token: color.primary
+- Table:
+    token: color.border.default
+    columns:
+      - key: title
+        header: "Title"
+      - key: author
+        header: "Author"
+      - key: labels
+        header: "Labels"
+      - key: updated
+        header: "Updated"
+    rows:
+      - title: "Fix typo in README"
+        author: "kamoshika-san"
+        labels: "documentation"
+        updated: "2 days ago"
+      - title: "Add sample 08 github"
+        author: "kamoshika-san"
+        labels: "enhancement"
+        updated: "1 week ago"

@@ -1,0 +1,45 @@
+# 左カラム: タブ＋コンテンツ（メイン領域）
+- Container:
+    layout: vertical
+    flexGrow: 7
+    width: "100%"
+    components:
+      - Tabs:
+          defaultTab: 0
+          items:
+            - label: "Code"
+              components:
+                - $include:
+                    template: "./tabs/code.template.yml"
+            - label: "Issues"
+              components:
+                - $include:
+                    template: "./tabs/issues.template.yml"
+            - label: "Pull requests"
+              components:
+                - $include:
+                    template: "./tabs/pull-requests.template.yml"
+            - label: "Actions"
+              components:
+                - $include:
+                    template: "./tabs/actions.template.yml"
+            - label: "Projects"
+              components:
+                - $include:
+                    template: "./tabs/projects.template.yml"
+            - label: "Wiki"
+              components:
+                - $include:
+                    template: "./tabs/wiki.template.yml"
+            - label: "Security"
+              components:
+                - $include:
+                    template: "./tabs/security.template.yml"
+            - label: "Insights"
+              components:
+                - $include:
+                    template: "./tabs/insights.template.yml"
+            - label: "Settings"
+              components:
+                - $include:
+                    template: "./tabs/settings.template.yml"

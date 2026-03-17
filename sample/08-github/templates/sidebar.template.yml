@@ -1,0 +1,168 @@
+# 右サイドバー（About / Releases / Packages / Languages / Contributors）
+- Container:
+    layout: vertical
+    flexGrow: 3
+    width: "100%"
+    token: color.background
+    components:
+      - Container:
+          layout: horizontal
+          components:
+            - Text:
+                variant: h3
+                value: "About"
+                token: color.text.primary
+            - Badge:
+                label: "Public"
+                variant: default
+                size: sm
+                token: color.secondary
+      - Spacer:
+          axis: vertical
+          size: xs
+      - Text:
+          variant: p
+          value: "VS Code extension for designing text-based UIs with YAML/JSON DSL."
+          token: color.text.secondary
+      - Link:
+          href: "https://github.com/kamoshika-san/TextUI-Designer"
+          label: "Repository"
+          target: "_blank"
+          token: color.text.link
+      - Container:
+          layout: horizontal
+          components:
+            - Badge:
+                label: "react"
+                variant: default
+                size: sm
+            - Badge:
+                label: "tailwind"
+                variant: default
+                size: sm
+            - Badge:
+                label: "vscode-extension"
+                variant: default
+                size: sm
+            - Badge:
+                label: "yaml"
+                variant: default
+                size: sm
+      - Divider:
+          token: color.border.default
+      - Text:
+          variant: h3
+          value: "Releases"
+          token: color.text.primary
+      - Text:
+          variant: p
+          value: "No releases published"
+          token: color.text.secondary
+      - Link:
+          href: "https://github.com/kamoshika-san/TextUI-Designer/releases"
+          label: "Create a new release"
+          target: "_blank"
+          token: color.text.link
+      - Divider:
+          token: color.border.default
+      - Text:
+          variant: h3
+          value: "Packages"
+          token: color.text.primary
+      - Text:
+          variant: p
+          value: "No packages published"
+          token: color.text.secondary
+      - Divider:
+          token: color.border.default
+      - Text:
+          variant: h3
+          value: "Languages"
+          token: color.text.primary
+      - Progress:
+          label: "Languages"
+          showValue: true
+          variant: primary
+          segments:
+            - value: 66.8
+              label: "TypeScript"
+              variant: primary
+            - value: 19.1
+              label: "CSS"
+              variant: success
+            - value: 13.9
+              label: "JavaScript"
+              variant: warning
+            - value: 0.2
+              label: "Shell"
+              variant: default
+      - Spacer:
+          axis: vertical
+          size: xs
+      - Container:
+          layout: horizontal
+          components:
+            - Container:
+                layout: horizontal
+                components:
+                  - Badge:
+                      label: "•"
+                      variant: primary
+                      size: sm
+                  - Text:
+                      variant: small
+                      value: " TypeScript 66.8%"
+                      token: color.text.secondary
+            - Container:
+                layout: horizontal
+                components:
+                  - Badge:
+                      label: "•"
+                      variant: success
+                      size: sm
+                  - Text:
+                      variant: small
+                      value: " CSS 19.1%"
+                      token: color.text.secondary
+            - Container:
+                layout: horizontal
+                components:
+                  - Badge:
+                      label: "•"
+                      variant: warning
+                      size: sm
+                  - Text:
+                      variant: small
+                      value: " JavaScript 13.9%"
+                      token: color.text.secondary
+            - Container:
+                layout: horizontal
+                components:
+                  - Badge:
+                      label: "•"
+                      variant: default
+                      size: sm
+                  - Text:
+                      variant: small
+                      value: " Shell 0.2%"
+                      token: color.text.secondary
+      - Divider:
+          token: color.border.default
+      - Text:
+          variant: h3
+          value: "Contributors"
+          token: color.text.primary
+      - Container:
+          layout: horizontal
+          components:
+            - Image:
+                src: "https://github.com/kamoshika-san.png"
+                alt: "kamoshika-san"
+                width: "32px"
+                height: "32px"
+                variant: avatar
+                token: color.border.default
+            - Text:
+                variant: p
+                value: "1 contributor"
+                token: color.text.secondary

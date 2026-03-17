@@ -1,0 +1,5 @@
+# Security タブ
+- Text:
+    variant: p
+    value: "Security policy and advisories."
+    token: color.text.secondary

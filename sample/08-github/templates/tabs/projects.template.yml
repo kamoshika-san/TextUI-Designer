@@ -1,0 +1,109 @@
+# Projects タブ
+- Text:
+    variant: h3
+    value: "Welcome to projects"
+    token: color.text.primary
+- Text:
+    variant: p
+    value: "Built like a spreadsheet, project tables give you a live canvas to filter, sort, and group issues and pull requests. Tailor them to your needs with custom fields and saved views."
+    token: color.text.secondary
+- Spacer:
+    axis: vertical
+    size: xs
+- Button:
+    kind: secondary
+    label: "Learn more"
+    token: color.secondary
+- Spacer:
+    axis: vertical
+    size: md
+- Divider:
+    token: color.border.default
+- Container:
+    layout: horizontal
+    components:
+      - Input:
+          label: ""
+          name: searchProjects
+          type: text
+          placeholder: "Search projects"
+          token: color.border.default
+      - Button:
+          kind: secondary
+          label: "Link a project"
+          token: color.secondary
+      - Button:
+          kind: primary
+          label: "New project"
+          token: color.primary
+- Spacer:
+    axis: vertical
+    size: sm
+- Container:
+    layout: horizontal
+    components:
+      - Text:
+          variant: small
+          value: "Open 1"
+          token: color.text.primary
+      - Text:
+          variant: small
+          value: " / "
+          token: color.text.muted
+      - Link:
+          href: "#"
+          label: "Closed 1"
+          target: "_blank"
+          token: color.text.link
+- Spacer:
+    axis: vertical
+    size: xs
+- Container:
+    layout: horizontal
+    components:
+      - Container:
+          layout: vertical
+          flexGrow: 1
+          components: []
+      - Select:
+          name: sortProjects
+          token: color.border.default
+          options:
+            - label: "Sort"
+              value: "sort"
+            - label: "Date created"
+              value: "date"
+            - label: "Date updated"
+              value: "updated"
+- Spacer:
+    axis: vertical
+    size: xs
+- Table:
+    token: color.border.default
+    striped: true
+    rowHover: true
+    columns:
+      - key: title
+        header: "Project"
+        width: "35%"
+      - key: visibility
+        header: "Visibility"
+        width: "12%"
+      - key: started
+        header: "Started"
+        width: "18%"
+      - key: updated
+        header: "Updated"
+        width: "20%"
+      - key: status
+        header: "Status"
+        width: "15%"
+    rows:
+      - title: "UI/UX改善"
+        visibility: "Private"
+        started: "Jun 17, 2025"
+        updated: "#2 updated on Jun 29, 2025"
+        status: "On track"
+- Spacer:
+    axis: vertical
+    size: md

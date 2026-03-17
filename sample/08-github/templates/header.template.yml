@@ -1,0 +1,36 @@
+# ヘッダー: リポジトリ名・説明
+- Container:
+    layout: vertical
+    token: color.background
+    components:
+      - Link:
+          href: "https://github.com/kamoshika-san/TextUI-Designer"
+          label: "kamoshika-san / TextUI-Designer"
+          target: "_blank"
+          token: color.text.link
+      - Text:
+          variant: p
+          value: "VS Code extension for designing text-based UIs with YAML/JSON DSL."
+          token: color.text.secondary
+- Divider:
+    orientation: horizontal
+    token: color.border.default
+# Watch / Star / Fork（GitHub 風にカウント付き）
+- Container:
+    layout: horizontal
+    components:
+      - Button:
+          kind: secondary
+          label: "12  Watch"
+          token: color.secondary
+      - Button:
+          kind: secondary
+          label: "5  Star"
+          token: color.secondary
+      - Button:
+          kind: secondary
+          label: "3  Fork"
+          token: color.secondary
+- Spacer:
+    axis: vertical
+    size: md

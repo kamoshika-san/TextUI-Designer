@@ -1,0 +1,37 @@
+# フッター: ©・Terms・Privacy 等
+- Divider:
+    token: color.border.default
+- Container:
+    layout: horizontal
+    components:
+      - Text:
+          variant: small
+          value: "© 2026 "
+          token: color.text.muted
+      - Link:
+          href: "https://github.com/kamoshika-san"
+          label: "kamoshika-san"
+          target: "_blank"
+          token: color.text.link
+      - Text:
+          variant: small
+          value: " · "
+          token: color.text.muted
+      - Link:
+          href: "https://docs.github.com/site-policy/github-terms"
+          label: "Terms"
+          target: "_blank"
+          token: color.text.link
+      - Text:
+          variant: small
+          value: " · "
+          token: color.text.muted
+      - Link:
+          href: "https://docs.github.com/site-policy/github-privacy-statement"
+          label: "Privacy"
+          target: "_blank"
+          token: color.text.link
+      - Text:
+          variant: small
+          value: " · GitHub repository top page sample."
+          token: color.text.muted

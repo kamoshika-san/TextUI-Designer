@@ -29,7 +29,7 @@ export function getSharedLayoutStyles(): string {
 export function getExportCriticalLayoutUtilities(): string {
   return `
     .flex { display: flex; }
-    .flex-row { flex-direction: row; align-items: center; }
+    .flex-row { flex-direction: row; align-items: flex-start; }
     .flex-col { flex-direction: column; }
     .flex-wrap { flex-wrap: wrap; }
     .min-w-full { min-width: 100%; }

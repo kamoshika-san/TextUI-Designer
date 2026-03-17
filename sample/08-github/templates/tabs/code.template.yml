@@ -1,0 +1,138 @@
+# Code タブ: ツールバー + ファイル一覧 + README 本文
+- Container:
+    layout: horizontal
+    components:
+      - Select:
+          name: branchCode
+          token: color.border.default
+          options:
+            - label: "main"
+              value: "main"
+      - Button:
+          kind: secondary
+          label: "Go to file"
+          token: color.secondary
+      - Button:
+          kind: secondary
+          label: "Add file"
+          token: color.secondary
+      - Button:
+          kind: primary
+          label: "Code"
+          token: color.primary
+- Divider:
+    token: color.border.default
+- Table:
+    token: color.border.default
+    striped: true
+    columns:
+      - key: name
+        header: "Name"
+        width: "55%"
+      - key: lastCommit
+        header: "Last commit message"
+        width: "28%"
+      - key: updated
+        header: "Updated"
+        width: "17%"
+    rows:
+      - name: ".github/"
+        lastCommit: "Updated workflows"
+        updated: "2 months ago"
+      - name: "docs/"
+        lastCommit: "Updated docs"
+        updated: "2 months ago"
+      - name: "media/"
+        lastCommit: "Update assets"
+        updated: "1 month ago"
+      - name: "sample/"
+        lastCommit: "Add sample 08 github"
+        updated: "1 week ago"
+      - name: "src/"
+        lastCommit: "Refactor exporters"
+        updated: "3 days ago"
+      - name: "tests/"
+        lastCommit: "Add regression tests"
+        updated: "1 month ago"
+      - name: "AGENTS.md"
+        lastCommit: "Update AGENTS"
+        updated: "2 months ago"
+      - name: "package.json"
+        lastCommit: "Bump deps"
+        updated: "2 months ago"
+      - name: "package-lock.json"
+        lastCommit: "Bump deps"
+        updated: "2 months ago"
+      - name: "README.md"
+        lastCommit: "Update README"
+        updated: "2 months ago"
+- Divider:
+    token: color.border.default
+- Text:
+    variant: h3
+    value: "README.md"
+    token: color.text.primary
+- Text:
+    variant: h1
+    value: "TextUI Designer"
+    token: color.text.primary
+- Text:
+    variant: p
+    value: "YAML / JSON ベースの DSL で UI を設計し、VS Code 上でライブプレビューしながら開発できる拡張機能です。「UI をコードレビューしやすいテキストとして管理したい」「実装前に画面構成を素早く固めたい」ケースに向いています。"
+    token: color.text.secondary
+- Text:
+    variant: h3
+    value: "プロジェクト概要"
+    token: color.text.primary
+- Text:
+    variant: p
+    value: "TextUI Designerは、YAML/JSONベースのDSLでUIを設計するVS Code拡張機能。単一リポジトリ（モノレポではない）。外部サービス・Docker・DB依存なし。"
+    token: color.text.secondary
+- Text:
+    variant: h3
+    value: "開発コマンド"
+    token: color.text.primary
+- Divider:
+    token: color.border.default
+- Table:
+    token: color.border.default
+    columns:
+      - key: command
+        header: "コマンド"
+      - key: purpose
+        header: "用途"
+    rows:
+      - command: "npm run compile"
+        purpose: "TypeScriptコンパイル（src/ → out/）"
+      - command: "npm run build-webview"
+        purpose: "Vite でWebViewをビルド（media/に出力）"
+      - command: "npm run lint"
+        purpose: "ESLint実行"
+      - command: "npm test"
+        purpose: "ユニットテスト"
+      - command: "npm run test:all"
+        purpose: "全テスト（unit → integration → e2e → regression）"
+- Text:
+    variant: h3
+    value: "テストに関する注意点"
+    token: color.text.primary
+- Text:
+    variant: p
+    value: "テストは vscode モジュールをモック化して実行。VS Code実行環境は不要。npm run test:all で全件パスを確認。"
+    token: color.text.secondary
+- Text:
+    variant: h3
+    value: "WebViewビルドについて"
+    token: color.text.primary
+- Text:
+    variant: p
+    value: "npm run build-webview で media/ にWebViewアセットが生成される。ソースは src/renderer/ にあり、Vite + React + Tailwind CSS でビルド。"
+    token: color.text.secondary
+- Text:
+    variant: h3
+    value: "ライセンス"
+    token: color.text.primary
+- Text:
+    variant: p
+    value: "MIT"
+    token: color.text.secondary

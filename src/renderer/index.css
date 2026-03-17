@@ -795,9 +795,9 @@ body.light {
   gap: var(--spacing-sm, 0.75rem);
 }
 
-/* 横並びコンテナで子を stretch させず WebView とキャプチャのボタン高さを揃える */
+/* 横並びコンテナで子を stretch させず、縦方向は上揃えにする */
 .textui-container.flex.flex-row {
-  align-items: center;
+  align-items: flex-start;
 }
 
 .textui-button-icon {

@@ -1,0 +1,25 @@
+# Wiki タブ（空状態）
+- Spacer:
+    axis: vertical
+    size: md
+- Text:
+    variant: h1
+    value: "Welcome to the TextUI-Designer wiki!"
+    token: color.text.primary
+- Spacer:
+    axis: vertical
+    size: sm
+- Text:
+    variant: p
+    value: "Wikis provide a place in your repository to lay out the roadmap of your project, show the current status, and document software better, together."
+    token: color.text.secondary
+- Spacer:
+    axis: vertical
+    size: md
+- Button:
+    kind: primary
+    label: "Create the first page"
+    token: color.primary
+- Spacer:
+    axis: vertical
+    size: md
