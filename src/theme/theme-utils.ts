@@ -1,4 +1,11 @@
+import { DEFAULT_THEME_COMPONENTS, DEFAULT_THEME_TOKENS } from './default-theme';
+
 export class ThemeUtils {
+  /** WebView のデフォルトテーマと同じ CSS 変数ブロックを返す。テーマ未指定時の Export/キャプチャで使用する。 */
+  static getDefaultThemeCssVariables(): string {
+    return ThemeUtils.buildCssVariables(DEFAULT_THEME_TOKENS, DEFAULT_THEME_COMPONENTS);
+  }
+
   static deepMerge(base: unknown, override: unknown): unknown {
     if (Array.isArray(base) || Array.isArray(override)) {
       return override ?? base;

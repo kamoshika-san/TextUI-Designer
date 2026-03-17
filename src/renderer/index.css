@@ -446,8 +446,11 @@
   color: var(--color-text-dark, rgb(17 24 39));
 }
 
-/* Select値のセレクター */
+/* Select値のセレクター（Chromium UA の menulist を打ち消し、テーマ変数を効かせる） */
 .textui-select select {
+  -webkit-appearance: none;
+  appearance: none;
+  line-height: 1; /* WebView とキャプチャで高さを揃える（継承 line-height に依存しない） */
   @apply block w-full px-3 py-2 shadow-sm focus:outline-none focus:ring-2;
   border-radius: var(--borderRadius-md, 0.375rem);
   background-color: var(--color-surface, rgb(55 65 81));
@@ -636,8 +639,14 @@
 }
 
 /* Button */
-/* ボタンの改善 */
+/* ボタンの改善（Chromium UA を打ち消し、高さを WebView とキャプチャで揃える） */
 .textui-button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: var(--component-button-primary-minHeight, 2.25rem);
   @apply font-medium transition-all duration-200;
   border-radius: var(--component-button-primary-borderRadius, var(--borderRadius-md, 0.375rem));
   padding: var(--component-button-primary-padding, var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem));
@@ -786,13 +795,17 @@ body.light {
   gap: var(--spacing-sm, 0.75rem);
 }
 
-.textui-button {
-  display: inline-flex;
+/* 横並びコンテナで子を stretch させず WebView とキャプチャのボタン高さを揃える */
+.textui-container.flex.flex-row {
   align-items: center;
-  gap: 0.4rem;
 }
 
 .textui-button-icon {
+  line-height: 1;
+}
+
+/* ラベル部分の高さを固定し、WebView とキャプチャで差が出ないようにする */
+.textui-button-label {
   line-height: 1;
 }
 

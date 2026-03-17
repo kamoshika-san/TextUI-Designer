@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
+import { DEFAULT_THEME_COMPONENTS, DEFAULT_THEME_TOKENS } from '../theme/default-theme';
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -107,8 +108,11 @@ export function buildThemeVariables(themePath: string): Record<string, string> {
   const theme = loadThemeDefinition(themePath, []);
   const tokens = extractThemeSection(theme, 'tokens');
   const components = extractThemeSection(theme, 'components');
+  /* WebView の ThemeManager と同様にデフォルトとマージしてから flatten する */
+  const mergedTokens = deepMerge(DEFAULT_THEME_TOKENS, tokens) as Record<string, unknown>;
+  const mergedComponents = deepMerge(DEFAULT_THEME_COMPONENTS, components) as Record<string, unknown>;
   return {
-    ...flattenTokens(tokens),
-    ...flattenComponentVars(components)
+    ...flattenTokens(mergedTokens),
+    ...flattenComponentVars(mergedComponents)
   };
 }

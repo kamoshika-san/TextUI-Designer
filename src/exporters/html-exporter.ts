@@ -31,6 +31,7 @@ import { buildHtmlDocument, readWebviewCssIfPresent } from './html-template-buil
 import { renderPageComponentsToStaticHtml } from './react-static-export';
 import { buildThemeStyleBlock } from './theme-style-builder';
 import { buildThemeVariables } from './theme-definition-resolver';
+import { ThemeUtils } from '../theme/theme-utils';
 import { HtmlFormRenderer } from './html-renderers/html-form-renderer';
 import { HtmlTextualRenderer } from './html-renderers/html-textual-renderer';
 import { HtmlLayoutRenderer } from './html-renderers/html-layout-renderer';
@@ -53,14 +54,18 @@ export class HtmlExporter extends BaseComponentRenderer {
 
   async export(dsl: TextUIDSL, options: ExportOptions): Promise<string> {
     const normalizedDsl = this.resolveLocalImageSourcesForExport(dsl, options);
-    const themeStyles = this.buildThemeStyles(options.themePath);
+    let themeStyles = this.buildThemeStyles(options.themePath);
+    const webviewCss = readWebviewCssIfPresent(options.extensionPath);
+    // テーマ未指定かつ webviewCss 使用時は WebView のデフォルトと同じ theme-vars を注入する
+    if (!themeStyles && webviewCss) {
+      themeStyles = ThemeUtils.getDefaultThemeCssVariables();
+    }
 
     // WebView と同じ React コンポーネント＋webviewCss で統一（Export/スクリーンショットも同一系統）
     const useReact = options.useReactRender !== false;
     if (useReact) {
       const components = normalizedDsl.page?.components ?? [];
       const reactBody = renderPageComponentsToStaticHtml(components);
-      const webviewCss = readWebviewCssIfPresent(options.extensionPath);
       return buildHtmlDocument(reactBody, themeStyles, {
         webviewCss: webviewCss ?? undefined,
         noWrap: true
@@ -69,7 +74,6 @@ export class HtmlExporter extends BaseComponentRenderer {
 
     // useReactRender: false のときのみ従来の文字列レンダー（CLI で react が無い環境向け）
     const componentCode = this.renderPageComponents(normalizedDsl);
-    const webviewCss = readWebviewCssIfPresent(options.extensionPath);
     return buildHtmlDocument(componentCode, themeStyles, {
       webviewCss: webviewCss ?? undefined
     });

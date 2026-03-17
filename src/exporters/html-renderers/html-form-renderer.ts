@@ -44,14 +44,15 @@ export class HtmlFormRenderer {
       label ? `<span class="textui-button-label">${safeLabel}</span>` : '',
       icon && iconPosition === 'right' ? `<span class="textui-button-icon" aria-hidden="true">${safeIcon}</span>` : ''
     ].filter(Boolean).join('');
-    const kindClasses = this.utils.getStyleManager().getKindClasses('html');
-    const disabledClass = this.utils.getDisabledClass(disabled);
+    /* WebView と同一にし index.css の .textui-button / .textui-button.primary 等を効かせる（Tailwind の色・枠クラスは使わない） */
+    const variant = submit ? 'submit' : kind;
+    const buttonClass = `textui-button ${variant} ${this.utils.getDisabledClass(disabled)}`.trim();
     const typeAttr = submit ? ' type="submit"' : '';
     const buttonAttrs = this.utils.buildAttrs({ disabled });
 
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('Button', token);
     const safeKind = this.utils.escapeAttribute(kind);
-    return `    <button${typeAttr} data-kind="${safeKind}" class="${kindClasses[kind as keyof typeof kindClasses]} ${disabledClass}"${buttonAttrs}${tokenStyle}>${content}</button>`;
+    return `    <button${typeAttr} data-kind="${safeKind}" class="${buttonClass}"${buttonAttrs}${tokenStyle}>${content}</button>`;
   }
 
   renderCheckbox(props: CheckboxComponent): string {
@@ -115,20 +116,19 @@ export class HtmlFormRenderer {
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('Select', token);
     const disabledClass = this.utils.getDisabledClass(disabled);
 
-    const selectClass = multiple
-      ? `w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-32 ${disabledClass}`
-      : `w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}`;
+    /* WebView と同一にし index.css の .textui-select select を効かせる（Tailwind の色・枠クラスは使わない） */
+    const selectClass = multiple ? `min-h-32 ${disabledClass}`.trim() : disabledClass;
 
     const selectAttrs = this.utils.buildAttrs({ disabled, multiple });
     let selectHtml = `      <select class="${selectClass}"${selectAttrs}${tokenStyle}>`;
 
     if (placeholder && !multiple) {
-      selectHtml += `\n        <option value="" class="bg-gray-800 text-gray-400">${this.utils.escapeHtml(placeholder)}</option>`;
+      selectHtml += `\n        <option value="">${this.utils.escapeHtml(placeholder)}</option>`;
     }
 
     options.forEach((opt: SelectOption) => {
       const optionAttrs = this.utils.buildAttrs({ selected: Boolean(opt.selected) });
-      selectHtml += `\n        <option value="${this.utils.escapeAttribute(opt.value)}" class="bg-gray-800 text-gray-400"${optionAttrs}>${this.utils.escapeHtml(opt.label)}</option>`;
+      selectHtml += `\n        <option value="${this.utils.escapeAttribute(opt.value)}"${optionAttrs}>${this.utils.escapeHtml(opt.label)}</option>`;
     });
 
     selectHtml += '\n      </select>';
@@ -136,9 +136,9 @@ export class HtmlFormRenderer {
     return this.utils.buildLabeledFieldBlock(
       label,
       selectHtml,
-      '    <div class="mb-4">',
+      '    <div class="textui-select">',
       '    </div>',
-      safeLabel => `      <label class="block text-sm font-medium text-gray-400 mb-2">${safeLabel}</label>`
+      safeLabel => `      <label class="textui-text block text-sm font-medium mb-2">${safeLabel}</label>`
     );
   }
 
