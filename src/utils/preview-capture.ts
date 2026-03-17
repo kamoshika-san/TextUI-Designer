@@ -648,11 +648,15 @@ function resolveNodeCommand(): string {
     if (process.platform === 'win32') {
       const r = spawnSync('where', ['node'], { encoding: 'utf-8', windowsHide: true });
       const line = r.stdout?.split(/\r?\n/)[0]?.trim();
-      if (line && fs.existsSync(line)) return line;
+      if (line && fs.existsSync(line)) {
+        return line;
+      }
     } else {
       const r = spawnSync('which', ['node'], { encoding: 'utf-8' });
       const line = r.stdout?.trim();
-      if (line && fs.existsSync(line)) return line;
+      if (line && fs.existsSync(line)) {
+        return line;
+      }
     }
   } catch {
     // fallback
@@ -726,7 +730,9 @@ async function runCaptureViaCli(params: {
     });
     let settled = false;
     const timeoutHandle = setTimeout(() => {
-      if (settled) return;
+      if (settled) {
+        return;
+      }
       settled = true;
       child.kill('SIGKILL');
       resolve({ code: null, stderr });
@@ -736,14 +742,18 @@ async function runCaptureViaCli(params: {
     });
     child.stdout?.on('data', () => {});
     child.on('error', (err) => {
-      if (settled) return;
+      if (settled) {
+        return;
+      }
       settled = true;
       clearTimeout(timeoutHandle);
       params.log?.(`runCaptureViaCli: spawn error: ${err.message}`);
       resolve({ code: null, stderr: err.message });
     });
     child.on('close', (code, signal) => {
-      if (settled) return;
+      if (settled) {
+        return;
+      }
       settled = true;
       clearTimeout(timeoutHandle);
       if (code !== 0) {
