@@ -11,9 +11,28 @@ export const hashString = (value: string): string => {
 
 export const hashComponent = (component: ComponentDef): string => hashString(JSON.stringify(component));
 
-export const createComponentKeys = (components: ComponentDef[]): string[] =>
-  components.map((component, index) => `${hashComponent(component)}-${index}`);
+/**
+ * コンポーネント配列から安定した key 配列を生成する。
+ * previousComponents / previousKeys を渡すと、同じ参照の要素は前回の key を再利用し stringify を省略する（T-20260317-006）。
+ */
+export const createComponentKeys = (
+  components: ComponentDef[],
+  previousComponents?: ComponentDef[] | null,
+  previousKeys?: string[] | null
+): string[] =>
+  components.map((component, index) => {
+    if (previousComponents && previousKeys && index < previousComponents.length && index < previousKeys.length) {
+      if (component === previousComponents[index]) {
+        return previousKeys[index];
+      }
+    }
+    return `${hashComponent(component)}-${index}`;
+  });
 
+/**
+ * 前回DSLと次DSLをマージし、参照が同じコンポーネントは維持して React の再描画を抑える。
+ * 参照が同じ場合は JSON.stringify をスキップしてコスト削減（T-20260317-006）。
+ */
 export const mergeDslWithPrevious = (previous: TextUIDSL, next: TextUIDSL): TextUIDSL => {
   const previousComponents = previous.page?.components || [];
   const nextComponents = next.page?.components || [];
@@ -23,7 +42,10 @@ export const mergeDslWithPrevious = (previous: TextUIDSL, next: TextUIDSL): Text
     if (!oldComponent) {
       return component;
     }
-
+    // 参照同一なら stringify スキップ（T-20260317-006）
+    if (oldComponent === component) {
+      return oldComponent;
+    }
     return JSON.stringify(oldComponent) === JSON.stringify(component) ? oldComponent : component;
   });
 

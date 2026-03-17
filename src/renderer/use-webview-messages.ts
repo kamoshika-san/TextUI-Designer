@@ -12,16 +12,34 @@ import type { ErrorInfo } from './error-guidance';
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
+const isDevelopmentMode = Boolean(
+  (typeof globalThis !== 'undefined' && (globalThis as { __TUI_DEV_MODE__?: boolean }).__TUI_DEV_MODE__) ||
+  window.location.search.includes('textui-dev=true')
+);
+
 function applyThemeVariables(css: unknown): void {
-  console.log('[React] theme-variablesメッセージを受信:', css);
+  // 計測: getElementById / textContent の所要時間（T-20260317-006）
+  const t0 = isDevelopmentMode ? performance.now() : 0;
   const styleEl = document.getElementById('theme-vars');
+  const getElementMs = isDevelopmentMode ? performance.now() - t0 : 0;
+
   if (!styleEl) {
-    console.error('[React] theme-vars要素が見つかりません');
+    if (isDevelopmentMode) {
+      console.error('[React] theme-vars要素が見つかりません');
+    }
     return;
   }
-  console.log('[React] theme-vars要素が見つかりました。CSSを適用します');
+
+  const t1 = isDevelopmentMode ? performance.now() : 0;
   styleEl.textContent = typeof css === 'string' ? css : '';
-  console.log('[React] CSS変数を適用しました');
+  const textContentMs = isDevelopmentMode ? performance.now() - t1 : 0;
+
+  if (isDevelopmentMode) {
+    console.debug('[React][theme-variables] 適用しました', {
+      getElementByIdMs: Number(getElementMs.toFixed(2)),
+      textContentMs: Number(textContentMs.toFixed(2))
+    });
+  }
 }
 
 interface UseWebviewMessagesOptions {
@@ -41,49 +59,69 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
       if (!isRecord(message) || typeof message.type !== 'string') {
         return;
       }
-      console.log('[React] メッセージを受信:', message);
+      if (isDevelopmentMode) {
+        console.log('[React] メッセージを受信:', message);
+      }
 
       switch (message.type) {
         case 'json':
-          console.log('[React] JSONデータを受信:', message.json);
+          if (isDevelopmentMode) {
+            console.log('[React] JSONデータを受信:', message.json);
+          }
           applyDslUpdate(message.json as TextUIDSL);
           setError(null);
           break;
         case 'update':
-          console.log('[React] 更新データを受信:', message.data);
+          if (isDevelopmentMode) {
+            console.log('[React] 更新データを受信:', message.data);
+          }
           applyDslUpdate(message.data as TextUIDSL);
           setError(null);
           break;
         case 'error':
-          console.log('[React] エラーメッセージを受信:', message.error);
+          if (isDevelopmentMode) {
+            console.log('[React] エラーメッセージを受信:', message.error);
+          }
           setError(mapSimpleError(message));
           break;
         case 'schema-error': {
-          console.log('[React] スキーマエラーメッセージを受信:', message.errors);
+          if (isDevelopmentMode) {
+            console.log('[React] スキーマエラーメッセージを受信:', message.errors);
+          }
           const schemaErrors = formatSchemaErrors(message.errors);
           setError(mapSchemaValidationError(message, schemaErrors));
           break;
         }
         case 'theme-change':
-          console.log('[React] テーマ変更メッセージを受信:', message.theme);
+          if (isDevelopmentMode) {
+            console.log('[React] テーマ変更メッセージを受信:', message.theme);
+          }
           break;
         case 'theme-variables':
           applyThemeVariables(message.css);
           break;
         case 'parseError':
-          console.log('[React] 詳細パースエラーメッセージを受信:', message.error);
+          if (isDevelopmentMode) {
+            console.log('[React] 詳細パースエラーメッセージを受信:', message.error);
+          }
           setError(mapParseError(message));
           break;
         case 'schemaError':
-          console.log('[React] 詳細スキーマエラーメッセージを受信:', message.error);
+          if (isDevelopmentMode) {
+            console.log('[React] 詳細スキーマエラーメッセージを受信:', message.error);
+          }
           setError(mapDetailedSchemaError(message));
           break;
         case 'clearError':
-          console.log('[React] エラー状態クリアメッセージを受信');
+          if (isDevelopmentMode) {
+            console.log('[React] エラー状態クリアメッセージを受信');
+          }
           setError(null);
           break;
         default:
-          console.log('[React] 未対応のメッセージタイプ:', message.type);
+          if (isDevelopmentMode) {
+            console.log('[React] 未対応のメッセージタイプ:', message.type);
+          }
       }
     };
 

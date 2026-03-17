@@ -235,6 +235,7 @@ function renderFormField(field: FormField, index: number, context?: RenderContex
 /**
  * WebView は DSL コンポーネントキーの大小文字揺れを吸収しない。
  * レンダラー探索は exact match のみとし、不一致は Unsupported 扱いとする。
+ * （definitions 直参照・exact match のみ T-20260317-006）
  */
 function resolveRenderer(name: string | undefined): WebViewComponentRenderer | undefined {
   if (!name) {

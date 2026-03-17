@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ThemeToggle } from './components/ThemeToggle';
 import { CustomThemeSelector } from './components/CustomThemeSelector';
@@ -23,6 +23,7 @@ const isDevelopmentMode = Boolean(
 const App: React.FC = () => {
   const [json, setJson] = useState<TextUIDSL | null>(null);
   const [error, setError] = useState<ErrorInfo | string | null>(null);
+  const prevComponentsKeysRef = useRef<{ components: ComponentDef[]; keys: string[] } | null>(null);
 
   useEffect(() => {
     registerBuiltInComponents();
@@ -41,7 +42,9 @@ const App: React.FC = () => {
 
   const applyDslUpdate = useCallback((incomingDsl: TextUIDSL) => {
     const startedAt = performance.now();
+    // 計測: 受信DSLのhash計算時間（T-20260317-006）
     const incomingHash = hashString(JSON.stringify(incomingDsl));
+    const incomingHashMs = isDevelopmentMode ? performance.now() - startedAt : 0;
 
     setJson(previousJson => {
       if (!previousJson) {
@@ -49,6 +52,7 @@ const App: React.FC = () => {
           const elapsed = performance.now() - startedAt;
           console.debug('[React][diff-render] 初回描画を適用しました', {
             elapsedMs: Number(elapsed.toFixed(2)),
+            incomingHashMs: Number(incomingHashMs.toFixed(2)),
             changedCount: incomingDsl.page?.components?.length || 0,
             skipped: false
           });
@@ -56,12 +60,18 @@ const App: React.FC = () => {
         return incomingDsl;
       }
 
+      // 計測: 前回JSONのhash計算時間（T-20260317-006）
+      const tPrevStart = isDevelopmentMode ? performance.now() : 0;
       const previousHash = hashString(JSON.stringify(previousJson));
+      const previousHashMs = isDevelopmentMode ? performance.now() - tPrevStart : 0;
+
       if (previousHash === incomingHash) {
         if (isDevelopmentMode) {
           const elapsed = performance.now() - startedAt;
           console.debug('[React][diff-render] 変更がないため再描画をスキップしました', {
             elapsedMs: Number(elapsed.toFixed(2)),
+            incomingHashMs: Number(incomingHashMs.toFixed(2)),
+            previousHashMs: Number(previousHashMs.toFixed(2)),
             changedCount: 0,
             skipped: true
           });
@@ -69,7 +79,11 @@ const App: React.FC = () => {
         return previousJson;
       }
 
+      // 計測: mergeDslWithPrevious の所要時間（T-20260317-006）
+      const tMergeStart = isDevelopmentMode ? performance.now() : 0;
       const mergedDsl = mergeDslWithPrevious(previousJson, incomingDsl);
+      const mergeMs = isDevelopmentMode ? performance.now() - tMergeStart : 0;
+
       const mergedComponents = mergedDsl.page?.components || [];
       const previousComponents = previousJson.page?.components || [];
       const changedCount = mergedComponents.reduce((count, component, index) =>
@@ -79,6 +93,9 @@ const App: React.FC = () => {
         const elapsed = performance.now() - startedAt;
         console.debug('[React][diff-render] 差分描画を適用しました', {
           elapsedMs: Number(elapsed.toFixed(2)),
+          incomingHashMs: Number(incomingHashMs.toFixed(2)),
+          previousHashMs: Number(previousHashMs.toFixed(2)),
+          mergeMs: Number(mergeMs.toFixed(2)),
           changedCount,
           skipped: false
         });
@@ -132,7 +149,13 @@ const App: React.FC = () => {
   }
 
   const components: ComponentDef[] = json.page?.components || [];
-  const componentKeys = createComponentKeys(components);
+  const componentKeys = createComponentKeys(
+    components,
+    prevComponentsKeysRef.current?.components ?? null,
+    prevComponentsKeysRef.current?.keys ?? null
+  );
+  prevComponentsKeysRef.current = { components, keys: componentKeys };
+
   return (
     <div style={{ padding: 24, position: 'relative' }}>
       <ThemeToggle />
