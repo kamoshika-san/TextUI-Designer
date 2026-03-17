@@ -25,7 +25,7 @@ function loadJson(filePath) {
 
 function resolveSchemaForFile(relativePath) {
   if (relativePath.endsWith('.template.yml') || relativePath.endsWith('.template.yaml')) {
-    return 'template-schema.json';
+    return 'schema.json';
   }
 
   const baseName = path.basename(relativePath);
@@ -34,6 +34,15 @@ function resolveSchemaForFile(relativePath) {
   }
 
   return 'schema.json';
+}
+
+function normalizeDocumentForSchema(relativePath, parsed) {
+  if (relativePath.endsWith('.template.yml') || relativePath.endsWith('.template.yaml')) {
+    // テンプレートは components 配列としてメインスキーマで検証する
+    return { components: parsed };
+  }
+
+  return parsed;
 }
 
 function parseYamlFile(filePath, options = {}) {
@@ -158,6 +167,7 @@ function validateAllSamples() {
     try {
       const shouldResolveIncludes = /\.tui\.ya?ml$/i.test(relativePath);
       const parsed = parseYamlFile(path.join(repoRoot, relativePath), { resolveIncludes: shouldResolveIncludes });
+      const normalized = normalizeDocumentForSchema(relativePath, parsed);
       const schemaName = resolveSchemaForFile(relativePath);
       let validate = schemaValidators.get(schemaName);
 
@@ -167,7 +177,7 @@ function validateAllSamples() {
         schemaValidators.set(schemaName, validate);
       }
 
-      const valid = validate(parsed);
+      const valid = validate(normalized);
       if (!valid) {
         const details = (validate.errors || []).map(error => `${error.instancePath || '/'} ${error.message || ''}`.trim());
         throw new Error(`スキーマ違反: ${details.join(' | ')}`);
