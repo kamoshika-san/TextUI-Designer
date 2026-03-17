@@ -55,7 +55,7 @@ import type {
   IconComponent
 } from './types';
 import { getComponentName } from '../registry/component-registry';
-import { BUILT_IN_COMPONENTS, type BuiltInComponentName } from '../registry/component-registry';
+import { BUILT_IN_COMPONENTS, type BuiltInComponentName } from '../components/definitions/built-in-components';
 import {
   getWebViewComponentRenderer,
   registerWebViewComponent as registerRenderer,
@@ -232,14 +232,15 @@ function renderFormField(field: FormField, index: number, context?: RenderContex
  * ComponentDefをレンダリング（Mapベースのディスパッチ）
  * webview.tsx から呼び出されるメイン関数
  */
-/** DSL のキーが小文字（link / badge）の場合に PascalCase でレンダラーを探す */
+/**
+ * WebView は DSL コンポーネントキーの大小文字揺れを吸収しない。
+ * レンダラー探索は exact match のみとし、不一致は Unsupported 扱いとする。
+ */
 function resolveRenderer(name: string | undefined): WebViewComponentRenderer | undefined {
-  if (!name) return undefined;
-  const exact = getWebViewComponentRenderer(name);
-  if (exact) return exact;
-  if (name.length === 0) return undefined;
-  const pascal = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
-  return pascal !== name ? getWebViewComponentRenderer(pascal) : undefined;
+  if (!name) {
+    return undefined;
+  }
+  return getWebViewComponentRenderer(name);
 }
 
 export function renderRegisteredComponent(
