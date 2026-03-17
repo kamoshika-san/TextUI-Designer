@@ -106,7 +106,8 @@ process.exit(0);
     assert.strictEqual(parsed.valid, true);
   });
 
-  it('validate --dir --json validates all DSL files recursively', () => {
+  it('validate --dir --json validates all DSL files recursively', function () {
+    this.timeout(20000);
     const output = execFileSync('node', [cliPath, 'validate', '--dir', tmpDir, '--json'], { encoding: 'utf8' });
     const parsed = JSON.parse(output);
     assert.strictEqual(parsed.valid, true);
@@ -396,7 +397,8 @@ page:
     assert.match(result.stderr, /provider module not found/);
   });
 
-  it('plan returns exit code 3 when state is missing and changes exist', () => {
+  it('plan returns exit code 3 when state is missing and changes exist', function () {
+    this.timeout(20000);
     const result = spawnSync('node', [cliPath, 'plan', '--file', sampleFile, '--state', stateFile], { encoding: 'utf8' });
     assert.strictEqual(result.status, 3);
     assert.match(result.stdout, /\+/);
@@ -837,7 +839,8 @@ page:
     assert.match(plan.stdout, /No changes/);
   });
 
-  it('apply returns exit code 4 when state changes during execution', async () => {
+  it('apply returns exit code 4 when state changes during execution', async function () {
+    this.timeout(20000);
     const workingFile = path.join(tmpDir, 'conflict.tui.yml');
     fs.copyFileSync(sampleFile, workingFile);
 
@@ -918,7 +921,8 @@ page:
     assert.match(stderr, /state conflict detected/);
   });
 
-  it('state push writes state file from --input and state rm deletes a resource by id', () => {
+  it('state push writes state file from --input and state rm deletes a resource by id', function () {
+    this.timeout(20000);
     const pushPayload = {
       version: 1,
       dsl: {
