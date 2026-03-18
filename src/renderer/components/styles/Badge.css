@@ -1,0 +1,70 @@
+/* Badge */
+.textui-badge {
+  display: inline-block;
+  padding: 0.25em 0.6em;
+  border-radius: 9999px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.textui-badge-default {
+  background-color: var(--component-badge-default-backgroundColor, var(--color-surface, rgba(107, 114, 128, 0.25)));
+  color: var(--component-badge-default-color, var(--color-text-primary, #e5e7eb));
+  border-radius: var(--component-badge-default-borderRadius, 9999px);
+  border: var(--component-badge-default-border, none);
+  padding: var(--component-badge-default-padding, 0.25em 0.6em);
+  font-weight: var(--component-badge-default-fontWeight, 600);
+  font-size: var(--component-badge-default-fontSize, inherit);
+}
+
+.textui-badge-primary {
+  background-color: var(--component-badge-primary-backgroundColor, rgba(59, 130, 246, 0.2));
+  color: var(--component-badge-primary-color, #93c5fd);
+  border-radius: var(--component-badge-primary-borderRadius, 9999px);
+  border: var(--component-badge-primary-border, none);
+  padding: var(--component-badge-primary-padding, 0.25em 0.6em);
+  font-weight: var(--component-badge-primary-fontWeight, 600);
+  font-size: var(--component-badge-primary-fontSize, inherit);
+}
+
+.textui-badge-success {
+  background-color: var(--component-badge-success-backgroundColor, rgba(34, 197, 94, 0.2));
+  color: var(--component-badge-success-color, #86efac);
+  border-radius: var(--component-badge-success-borderRadius, 9999px);
+  border: var(--component-badge-success-border, none);
+  padding: var(--component-badge-success-padding, 0.25em 0.6em);
+  font-weight: var(--component-badge-success-fontWeight, 600);
+  font-size: var(--component-badge-success-fontSize, inherit);
+}
+
+.textui-badge-warning {
+  background-color: var(--component-badge-warning-backgroundColor, rgba(245, 158, 11, 0.22));
+  color: var(--component-badge-warning-color, #fcd34d);
+  border-radius: var(--component-badge-warning-borderRadius, 9999px);
+  border: var(--component-badge-warning-border, none);
+  padding: var(--component-badge-warning-padding, 0.25em 0.6em);
+  font-weight: var(--component-badge-warning-fontWeight, 600);
+  font-size: var(--component-badge-warning-fontSize, inherit);
+}
+
+.textui-badge-error {
+  background-color: var(--component-badge-error-backgroundColor, rgba(239, 68, 68, 0.2));
+  color: var(--component-badge-error-color, #fca5a5);
+  border-radius: var(--component-badge-error-borderRadius, 9999px);
+  border: var(--component-badge-error-border, none);
+  padding: var(--component-badge-error-padding, 0.25em 0.6em);
+  font-weight: var(--component-badge-error-fontWeight, 600);
+  font-size: var(--component-badge-error-fontSize, inherit);
+}
+
+.textui-badge-sm {
+  font-size: var(--component-badge-sm-fontSize, 0.75rem);
+  padding: var(--component-badge-sm-padding, 0.15em 0.5em);
+}
+
+.textui-badge-md {
+  font-size: var(--component-badge-md-fontSize, 0.875rem);
+  padding: var(--component-badge-md-padding, 0.25em 0.6em);
+}
+
+

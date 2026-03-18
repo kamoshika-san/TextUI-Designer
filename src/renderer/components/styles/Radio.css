@@ -1,0 +1,28 @@
+/* Radio */
+.textui-radio-group {
+  @apply mb-4;
+  gap: var(--spacing-xs, 0.5rem);
+}
+
+.textui-radio-option {
+  @apply flex items-center;
+}
+
+.textui-radio-option label {
+  @apply mr-2;
+  font-size: var(--typography-fontSize-sm, 0.875rem);
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
+  font-weight: normal;
+  color: var(--color-text-secondary, rgb(229 231 235));
+  margin-left: var(--spacing-xs, 0.5rem);
+}
+
+.light .textui-radio-option label {
+  color: var(--color-text-dark, rgb(55 65 81));
+}
+
+.textui-radio-option input[type="radio"] {
+  accent-color: var(--color-primary, rgb(59 130 246));
+}
+
+

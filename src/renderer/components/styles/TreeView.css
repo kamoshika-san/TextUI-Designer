@@ -1,0 +1,79 @@
+/* TreeView */
+.textui-treeview {
+  @apply mb-4;
+}
+
+.textui-treeview-actions {
+  @apply mb-2;
+}
+
+.textui-treeview-action-link {
+  @apply text-sm underline;
+  color: var(--color-primary, rgb(59 130 246));
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.textui-treeview-action-link:hover {
+  color: var(--color-primary-hover, rgb(37 99 235));
+}
+
+.light .textui-treeview-action-link {
+  color: var(--color-primary, rgb(29 78 216));
+}
+
+.textui-treeview-list {
+  list-style: none;
+  margin: 0;
+  padding-left: 0.75rem;
+}
+
+.textui-treeview > .textui-treeview-list {
+  padding-left: 0;
+}
+
+.textui-treeview-list.with-lines {
+  border-left: 1px dashed var(--color-secondary, rgb(75 85 99));
+}
+
+.light .textui-treeview-list.with-lines {
+  border-left: 1px dashed var(--color-secondary, rgb(209 213 219));
+}
+
+.textui-treeview-item {
+  margin: 0.125rem 0;
+}
+
+.textui-treeview-label-row {
+  @apply flex items-center gap-2;
+  color: var(--color-text-secondary, rgb(229 231 235));
+  font-size: var(--typography-fontSize-sm, 0.875rem);
+}
+
+.light .textui-treeview-label-row {
+  color: var(--color-text-dark, rgb(31 41 55));
+}
+
+.textui-treeview-toggle {
+  @apply inline-flex items-center justify-center;
+  width: 1rem;
+  height: 1rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.textui-treeview-toggle.placeholder {
+  cursor: default;
+}
+
+.textui-treeview-children {
+  margin-top: 0.25rem;
+  margin-left: 1rem;
+}
+
+

@@ -1,0 +1,12 @@
+/* Icon */
+.textui-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.textui-icon-glyph {
+  line-height: 1;
+}
+
+

@@ -1,0 +1,14 @@
+/* DatePicker */
+.textui-datepicker {
+  @apply mb-4;
+  padding: var(--spacing-xs, 0.5rem) 0;
+  font-weight: normal;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
+  font-size: var(--typography-fontSize-base, 1rem);
+}
+
+.light .textui-datepicker label {
+  color: var(--color-text-dark, rgb(17 24 39));
+}
+
+

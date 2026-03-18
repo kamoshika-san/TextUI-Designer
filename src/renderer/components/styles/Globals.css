@@ -1,0 +1,70 @@
+/* Shared global selectors (not component-specific) */
+body {
+  background-color: var(--color-surface, #1F2937);
+  color: var(--color-text-primary, #F9FAFB);
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
+  font-size: var(--typography-fontSize-base, 1rem);
+  font-weight: normal;
+  margin: 0;
+  padding: 0 20px;
+  overscroll-behavior-x: none;
+}
+
+body.light {
+  background-color: var(--color-background, #F9FAFB);
+  color: var(--color-text-dark, #111827);
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
+  font-size: var(--typography-fontSize-base, 1rem);
+  font-weight: normal;
+}
+
+#root {
+  background-color: var(--color-surface, #1F2937);
+  min-height: 100vh;
+  padding: 1rem;
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
+}
+
+.light #root {
+  background-color: var(--color-background, #F9FAFB);
+}
+
+.theme-toggle {
+  transition: all 0.2s ease-in-out;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.05);
+}
+
+.light .theme-toggle {
+  background-color: rgba(156, 163, 175, 0.8);
+  color: rgb(55 65 81);
+  border-color: rgba(107, 114, 128, 0.5);
+}
+
+.light .theme-toggle:hover {
+  background-color: rgba(107, 114, 128, 0.9);
+  border-color: rgba(75, 85, 99, 0.7);
+}
+
+.export-button {
+  transition: all 0.2s ease-in-out;
+}
+
+.export-button:hover {
+  transform: scale(1.05);
+}
+
+.light .export-button {
+  background-color: rgba(156, 163, 175, 0.8);
+  color: rgb(55 65 81);
+  border-color: rgba(107, 114, 128, 0.5);
+}
+
+.light .export-button:hover {
+  background-color: rgba(107, 114, 128, 0.9);
+  border-color: rgba(75, 85, 99, 0.7);
+}
+
+

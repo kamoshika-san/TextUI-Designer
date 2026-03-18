@@ -1,0 +1,10 @@
+.textui-button-icon {
+  line-height: 1;
+}
+
+/* ラベル部分の高さを固定し、WebView とキャプチャで差が出ないようにする */
+.textui-button-label {
+  line-height: 1;
+}
+
+

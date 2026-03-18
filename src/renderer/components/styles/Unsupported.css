@@ -1,0 +1,24 @@
+/* Unsupported placeholder */
+.textui-unsupported {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px dashed var(--color-border-muted, rgba(156, 163, 175, 0.5));
+  border-radius: 6px;
+  background-color: var(--color-surface-muted, rgba(75, 85, 99, 0.15));
+  color: var(--color-text-secondary, rgb(156 163 175));
+  font-size: 0.875rem;
+}
+
+.textui-unsupported-label {
+  font-weight: 500;
+}
+
+.textui-unsupported-props {
+  font-size: 0.8125rem;
+  opacity: 0.9;
+}
+
+

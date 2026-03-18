@@ -1,0 +1,75 @@
+/* Button */
+.textui-button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: var(--component-button-primary-minHeight, 2.25rem);
+  @apply font-medium transition-all duration-200;
+  border-radius: var(--component-button-primary-borderRadius, var(--borderRadius-md, 0.375rem));
+  padding: var(--component-button-primary-padding, var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem));
+  font-size: var(--component-button-primary-fontSize, var(--typography-fontSize-base, 1rem));
+  border: var(--component-button-primary-border, none);
+  cursor: var(--component-button-primary-cursor, pointer);
+  font-weight: var(--component-button-primary-fontWeight, medium);
+  transition: var(--component-button-primary-transition, all 0.2s ease-in-out);
+}
+
+.textui-button.primary {
+  background-color: var(--component-button-primary-backgroundColor, var(--color-primary, #3B82F6));
+  color: var(--component-button-primary-color, var(--color-text-primary, rgb(255 255 255)));
+  box-shadow: var(--component-button-primary-boxShadow, 0 4px 6px -1px rgba(59, 130, 246, 0.2));
+}
+
+.textui-button.primary:hover {
+  background-color: var(--component-button-primary-hover-backgroundColor, rgb(37 99 235));
+  transform: var(--component-button-primary-hover-transform, translateY(-1px));
+  box-shadow: var(--component-button-primary-hover-boxShadow, 0 6px 8px -1px rgba(59, 130, 246, 0.3));
+}
+
+.textui-button.secondary {
+  background-color: var(--component-button-secondary-backgroundColor, var(--color-secondary, #6B7280));
+  color: var(--component-button-secondary-color, var(--color-text-primary, rgb(255 255 255)));
+  border-radius: var(--component-button-secondary-borderRadius, var(--borderRadius-md, 0.375rem));
+  padding: var(--component-button-secondary-padding, var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem));
+  font-size: var(--component-button-secondary-fontSize, var(--typography-fontSize-base, 1rem));
+  border: var(--component-button-secondary-border, none);
+  cursor: var(--component-button-secondary-cursor, pointer);
+  font-weight: var(--component-button-secondary-fontWeight, medium);
+  transition: var(--component-button-secondary-transition, all 0.2s ease-in-out);
+}
+
+.textui-button.secondary:hover {
+  background-color: var(--component-button-secondary-hover-backgroundColor, rgb(55 65 81));
+}
+
+.light .textui-button.secondary {
+  background-color: var(--component-button-secondary-light-backgroundColor, rgb(156 163 175));
+  color: var(--component-button-secondary-light-color, var(--color-text-primary, rgb(255 255 255)));
+}
+
+.light .textui-button.secondary:hover {
+  background-color: var(--component-button-secondary-light-hover-backgroundColor, rgb(107 114 128));
+}
+
+.textui-button.submit {
+  background-color: var(--component-button-submit-backgroundColor, var(--color-success, #10B981));
+  color: var(--component-button-submit-color, var(--color-text-primary, rgb(255 255 255)));
+  box-shadow: var(--component-button-submit-boxShadow, 0 4px 6px -1px rgba(34, 197, 94, 0.2));
+  border-radius: var(--component-button-submit-borderRadius, var(--borderRadius-md, 0.375rem));
+  padding: var(--component-button-submit-padding, var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem));
+  font-size: var(--component-button-submit-fontSize, var(--typography-fontSize-base, 1rem));
+  border: var(--component-button-submit-border, none);
+  cursor: var(--component-button-submit-cursor, pointer);
+  font-weight: var(--component-button-submit-fontWeight, medium);
+  transition: var(--component-button-submit-transition, all 0.2s ease-in-out);
+}
+
+.textui-button.submit:hover {
+  background-color: var(--component-button-submit-hover-backgroundColor, rgb(22 163 74));
+  transform: var(--component-button-submit-hover-transform, translateY(-1px));
+  box-shadow: var(--component-button-submit-hover-boxShadow, 0 6px 8px -1px rgba(34, 197, 94, 0.3));
+}
+
+

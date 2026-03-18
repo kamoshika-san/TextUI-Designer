@@ -1,0 +1,8 @@
+/* Form */
+.textui-form {
+  @apply w-full;
+  padding: var(--spacing-md, 1rem);
+  gap: var(--spacing-sm, 0.75rem);
+}
+
+

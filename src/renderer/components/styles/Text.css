@@ -1,0 +1,66 @@
+/* Text */
+.textui-text {
+  color: var(--color-text-primary, rgb(255 255 255));
+  font-size: var(--typography-fontSize-base, 1rem);
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
+  font-weight: normal;
+  line-height: 1.6;
+}
+
+.light .textui-text {
+  color: var(--color-text-dark, rgb(17 24 39));
+}
+
+.textui-text.h1 {
+  @apply font-bold;
+  font-size: var(--typography-fontSize-4xl, 2.25rem);
+  font-weight: bold;
+  margin-bottom: var(--spacing-md, 1rem);
+}
+
+.textui-text.h2 {
+  @apply font-semibold;
+  font-size: var(--typography-fontSize-3xl, 1.875rem);
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm, 0.75rem);
+}
+
+.textui-text.h3 {
+  @apply font-medium;
+  color: var(--color-text-secondary, rgb(243 244 246));
+  font-size: var(--typography-fontSize-2xl, 1.5rem);
+  font-weight: 500;
+  line-height: 1.4;
+  margin-bottom: var(--spacing-xs, 0.5rem);
+}
+
+.light .textui-text.h3 {
+  color: var(--color-text-dark, rgb(31 41 55));
+}
+
+.textui-text.p {
+  color: var(--color-text-secondary, rgb(229 231 235));
+  font-size: var(--typography-fontSize-base, 1rem);
+  line-height: 1.6;
+  margin-bottom: var(--spacing-xs, 0.5rem);
+}
+
+.light .textui-text.p {
+  color: var(--color-text-dark, rgb(17 24 39));
+}
+
+.textui-text.small {
+  color: var(--color-text-muted, rgb(156 163 175));
+  font-size: var(--typography-fontSize-sm, 0.875rem);
+}
+
+.light .textui-text.small {
+  color: var(--color-text-secondary, rgb(107 114 128));
+}
+
+.textui-text.caption {
+  color: var(--color-text-muted, rgb(107 114 128));
+  font-size: var(--typography-fontSize-xs, 0.75rem);
+}
+
+
