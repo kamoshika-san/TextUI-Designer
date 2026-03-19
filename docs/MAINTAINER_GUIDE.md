@@ -1,6 +1,6 @@
 # メンテナーガイド（2026-03 更新）
 
-このドキュメントは、直近の保守性改善（`T-20260319-006/007/008/009`, `T-20260320-001`）を踏まえ、現行コードベースを安全に保守するための実務ガイドです。
+このドキュメントは、直近の保守性改善（`T-20260319-006/007/008/009`, `T-20260320-001`, `T-20260320-010`）を踏まえ、現行コードベースを安全に保守するための実務ガイドです。
 
 ## クイックスタート（変更種別別）
 
@@ -11,6 +11,7 @@
 | プレビュー画像キャプチャ | `src/utils/preview-capture/*` | `npm run compile` + `npm run test:unit` |
 | MCP `capture_preview` | `src/mcp/tools/capture-preview-*` と `src/mcp/server.ts` | `npm run compile` + `npx mocha ... tests/unit/mcp-server.test.js` |
 | CommandManager の実行フロー | `src/services/commands/*` と `src/services/command-manager.ts` | `npm run compile` + `npx mocha ... tests/unit/command-manager.test.js` |
+| スキーマ登録・テンプレ生成（VS Code 設定連携） | `src/services/schema-manager.ts` + `src/services/schema/schema-template-generator.ts` + `src/services/schema/schema-workspace-registrar.ts` | `npm run compile` + `npx mocha ... tests/unit/schema-manager.test.js` |
 
 ---
 
@@ -59,6 +60,11 @@
 - npm scripts:
   - `sync:configuration`
   - `check:configuration`
+
+### 6) SchemaManager の責務分割（`T-20260320-010`）
+- `src/services/schema-manager.ts`: パス・キャッシュ・`load*` / `validate` のファサード（公開 API は変更しない）
+- `src/services/schema/schema-template-generator.ts`: メイン `schema.json` からテンプレ用 JSON を生成
+- `src/services/schema/schema-workspace-registrar.ts`: YAML/JSON 拡張向けのワークスペース設定への登録・解除
 
 ---
 

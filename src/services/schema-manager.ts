@@ -6,17 +6,17 @@ import {
   SchemaValidationResult
 } from '../types';
 import { ConfigManager } from '../utils/config-manager';
-import {
-  buildTextUiJsonSchemas,
-  buildTextUiYamlSchemas,
-  filterTextUiJsonSchemas,
-  filterTextUiYamlSchemas,
-  type JsonSchemaAssociation
-} from './schema/schema-association';
 import { resolveSchemaPaths } from './schema/schema-path-resolver';
 import { validateSchemaConsistency } from './schema/schema-consistency-checker';
 import { SchemaCacheStore } from './schema/schema-cache-store';
 import { validateDataAgainstSchema } from './schema/schema-validator';
+import { writeTemplateSchemaFromMainSchema } from './schema/schema-template-generator';
+import {
+  cleanupTextUiSchemasInWorkspace,
+  registerTextUiSchemasInWorkspace,
+  registerYamlSchemaForPattern,
+  unregisterYamlSchemaByFilePattern
+} from './schema/schema-workspace-registrar';
 
 /**
  * スキーマ管理サービス
@@ -65,17 +65,7 @@ export class SchemaManager implements ISchemaManager {
   }
 
   async createTemplateSchema(): Promise<void> {
-    try {
-      const schema = JSON.parse(fs.readFileSync(this.schemaPath, 'utf-8'));
-      const templateSchema = {
-        ...schema,
-        type: 'array',
-        items: schema.definitions.componentArray?.items ?? schema.definitions.component
-      };
-      fs.writeFileSync(this.templateSchemaPath, JSON.stringify(templateSchema, null, 2), 'utf-8');
-    } catch (error) {
-      console.error('テンプレートスキーマの作成に失敗しました:', error);
-    }
+    writeTemplateSchemaFromMainSchema(this.schemaPath, this.templateSchemaPath);
   }
 
   async registerSchemas(): Promise<void> {
@@ -88,15 +78,12 @@ export class SchemaManager implements ISchemaManager {
         await this.createTemplateSchema();
       }
 
-      const schemaUri = vscode.Uri.file(this.schemaPath).toString();
-      const templateSchemaUri = vscode.Uri.file(this.templateSchemaPath).toString();
-      const themeSchemaUri = vscode.Uri.file(this.themeSchemaPath).toString();
-      this.debug('[SchemaManager] スキーマ登録を開始');
-
-      await this.registerYamlSchemas(schemaUri, templateSchemaUri, themeSchemaUri);
-      await this.registerJsonSchemas();
-
-      this.debug('[SchemaManager] スキーマ登録完了');
+      await registerTextUiSchemasInWorkspace(
+        this.schemaPath,
+        this.templateSchemaPath,
+        this.themeSchemaPath,
+        (message, ...args) => this.debug(message, ...args)
+      );
     } catch (error) {
       console.error('[SchemaManager] スキーマ登録中にエラーが発生しました:', error);
       throw new Error(`スキーマの初期化に失敗しました: ${error}`);
@@ -131,20 +118,7 @@ export class SchemaManager implements ISchemaManager {
 
   async cleanup(): Promise<void> {
     this.debug('[SchemaManager] スキーマクリーンアップを開始');
-
-    try {
-      const yamlConfig = vscode.workspace.getConfiguration('yaml');
-      const currentSchemas = (yamlConfig.get('schemas') as Record<string, string[]>) || {};
-      await yamlConfig.update('schemas', filterTextUiYamlSchemas(currentSchemas), vscode.ConfigurationTarget.Global);
-      this.debug('[SchemaManager] YAMLスキーマクリーンアップ完了');
-
-      const jsonConfig = vscode.workspace.getConfiguration('json');
-      const currentJsonSchemas = (jsonConfig.get('schemas') as JsonSchemaAssociation[] | undefined) || [];
-      await jsonConfig.update('schemas', filterTextUiJsonSchemas(currentJsonSchemas), vscode.ConfigurationTarget.Global);
-      this.debug('[SchemaManager] JSONスキーマクリーンアップ完了');
-    } catch (error) {
-      console.error('[SchemaManager] スキーマクリーンアップ中にエラーが発生しました:', error);
-    }
+    await cleanupTextUiSchemasInWorkspace((message, ...args) => this.debug(message, ...args));
   }
 
   async reinitialize(): Promise<void> {
@@ -179,59 +153,11 @@ export class SchemaManager implements ISchemaManager {
   }
 
   async registerSchema(filePattern: string, schemaPath: string): Promise<void> {
-    try {
-      const yamlConfig = vscode.workspace.getConfiguration('yaml');
-      const currentSchemas = (yamlConfig.get('schemas') as Record<string, string[]>) || {};
-      const schemaUri = vscode.Uri.file(schemaPath).toString();
-      currentSchemas[schemaUri] = [filePattern];
-      await yamlConfig.update('schemas', currentSchemas, vscode.ConfigurationTarget.Global);
-      this.debug(`[SchemaManager] スキーマを登録しました: ${filePattern} -> ${schemaPath}`);
-    } catch (error: unknown) {
-      console.error(`[SchemaManager] スキーマ登録に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
-      throw error;
-    }
+    await registerYamlSchemaForPattern(filePattern, schemaPath, (message, ...args) => this.debug(message, ...args));
   }
 
   async unregisterSchema(filePattern: string): Promise<void> {
-    try {
-      const yamlConfig = vscode.workspace.getConfiguration('yaml');
-      const currentSchemas = (yamlConfig.get('schemas') as Record<string, string[]>) || {};
-      const filteredSchemas = Object.fromEntries(Object.entries(currentSchemas).filter(([_uri, patterns]) => !patterns.includes(filePattern)));
-      await yamlConfig.update('schemas', filteredSchemas, vscode.ConfigurationTarget.Global);
-      this.debug(`[SchemaManager] スキーマを登録解除しました: ${filePattern}`);
-    } catch (error: unknown) {
-      console.error(`[SchemaManager] スキーマ登録解除に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
-      throw error;
-    }
-  }
-
-  private async registerYamlSchemas(schemaUri: string, templateSchemaUri: string, themeSchemaUri: string): Promise<void> {
-    try {
-      const yamlConfig = vscode.workspace.getConfiguration('yaml');
-      const currentSchemas = (yamlConfig.get('schemas') as Record<string, string[]>) || {};
-      const filteredSchemas = filterTextUiYamlSchemas(currentSchemas);
-      const newSchemas = buildTextUiYamlSchemas(filteredSchemas, schemaUri, templateSchemaUri, themeSchemaUri);
-      await yamlConfig.update('schemas', newSchemas, vscode.ConfigurationTarget.Global);
-      this.debug('[SchemaManager] YAMLスキーマ登録成功');
-    } catch (error) {
-      console.warn('[SchemaManager] YAMLスキーマ登録に失敗しました（続行します）:', error);
-    }
-  }
-
-  private async registerJsonSchemas(): Promise<void> {
-    try {
-      const jsonConfig = vscode.workspace.getConfiguration('json');
-      const currentSchemas = (jsonConfig.get('schemas') as JsonSchemaAssociation[] | undefined) || [];
-      const filteredSchemas = filterTextUiJsonSchemas(currentSchemas);
-      const schemaContent = JSON.parse(fs.readFileSync(this.schemaPath, 'utf-8'));
-      const templateSchemaContent = JSON.parse(fs.readFileSync(this.templateSchemaPath, 'utf-8'));
-      const themeSchemaContent = JSON.parse(fs.readFileSync(this.themeSchemaPath, 'utf-8'));
-      const newSchemas = buildTextUiJsonSchemas(filteredSchemas, schemaContent, templateSchemaContent, themeSchemaContent);
-      await jsonConfig.update('schemas', newSchemas, vscode.ConfigurationTarget.Global);
-      this.debug('[SchemaManager] JSONスキーマ登録成功');
-    } catch (error) {
-      console.warn('[SchemaManager] JSONスキーマ登録に失敗しました（続行します）:', error);
-    }
+    await unregisterYamlSchemaByFilePattern(filePattern, (message, ...args) => this.debug(message, ...args));
   }
 
   private debug(message: string, ...args: unknown[]): void {
