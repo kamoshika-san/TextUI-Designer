@@ -1,10 +1,7 @@
-import * as fs from 'fs';
 import * as vscode from 'vscode';
-import * as path from 'path';
 import { ErrorHandler } from '../utils/error-handler';
 import { ConfigManager } from '../utils/config-manager';
 import { RuntimeInspectionService } from './runtime-inspection-service';
-import { capturePreviewImageFromDslFile } from '../utils/preview-capture';
 import { Logger } from '../utils/logger';
 import type {
   ICommandManager,
@@ -16,6 +13,9 @@ import type {
   IThemeManager
 } from '../types';
 import { createCommandDefinitions, type CommandHandler } from './command-catalog';
+import { executeOpenPreviewCommand } from './commands/open-preview-command';
+import { executeCapturePreviewCommand } from './commands/capture-preview-command';
+import { executeExportCommand } from './commands/export-command';
 
 export interface CommandManagerDependencies {
   webViewManager: IWebViewManager;
@@ -68,7 +68,7 @@ export class CommandManager implements ICommandManager {
       openPreviewWithCheck: () => this.openPreviewWithCheck(),
       capturePreviewImage: () => this.capturePreviewImage(),
       openDevTools: () => this.webViewManager.openDevTools(),
-      executeExport: (filePath?: string) => this.exportService.executeExport(filePath),
+      executeExport: (filePath?: string) => executeExportCommand(this.exportService, filePath),
       createTemplate: () => this.templateService.createTemplate(),
       insertTemplate: () => this.templateService.insertTemplate(),
       openSettings: () => this.settingsService.openSettings(),
@@ -140,80 +140,18 @@ export class CommandManager implements ICommandManager {
    * プレビューを開く（ユーザーの明示的な指示による実行）
    */
   private async openPreviewWithCheck(): Promise<void> {
-    this.logger.debug('openPreviewWithCheck が呼び出されました');
-    try {
-      this.logger.debug('WebViewManager.openPreview を呼び出します');
-      // ユーザーが明示的にコマンドを実行した場合は、Auto Preview設定に関係なくプレビューを開く
-      await this.webViewManager.openPreview();
-      this.logger.debug('WebViewManager.openPreview が完了しました');
-    } catch (error) {
-      this.logger.error('プレビュー表示エラー:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      vscode.window.showErrorMessage(`プレビューの表示に失敗しました: ${errorMessage}`);
-    }
+    await executeOpenPreviewCommand(this.webViewManager, this.logger);
   }
 
   /**
    * 現在のプレビュー対象DSLをPNG画像として保存
    */
   private async capturePreviewImage(): Promise<void> {
-    const targetFile = this.resolveCaptureTargetFile();
-    if (!targetFile) {
-      vscode.window.showWarningMessage('キャプチャ対象の .tui.yml ファイルが見つかりません。');
-      return;
-    }
-
-    const defaultFileName = `${path.basename(targetFile).replace(/\.tui\.ya?ml$/i, '')}.preview.png`;
-    const defaultUri = vscode.Uri.file(path.join(path.dirname(targetFile), defaultFileName));
-    const outputUri = await vscode.window.showSaveDialog({
-      defaultUri,
-      saveLabel: 'プレビュー画像を保存',
-      filters: {
-        PNG: ['png']
-      }
+    await executeCapturePreviewCommand({
+      webViewManager: this.webViewManager,
+      themeManager: this.themeManager,
+      extensionPath: this.context.extensionPath,
+      logger: this.logger
     });
-
-    if (!outputUri) {
-      return;
-    }
-
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath;
-    const cliSpawnPath = (workspaceFolder && fs.existsSync(path.join(workspaceFolder, 'out', 'cli', 'index.js')))
-      ? workspaceFolder
-      : undefined;
-
-    const webViewThemePath = this.themeManager?.getThemePath();
-    const themePathForCapture = (webViewThemePath && fs.existsSync(webViewThemePath))
-      ? webViewThemePath
-      : undefined;
-
-    try {
-      await capturePreviewImageFromDslFile(targetFile, {
-        outputPath: outputUri.fsPath,
-        themePath: themePathForCapture,
-        useWebViewTheme: true,
-        extensionPath: this.context.extensionPath,
-        cliSpawnPath,
-        log: (msg) => this.logger.info(msg)
-      });
-      vscode.window.showInformationMessage(`プレビュー画像を出力しました: ${outputUri.fsPath}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      vscode.window.showErrorMessage(`プレビュー画像の出力に失敗しました: ${message}`);
-    }
-  }
-
-  private resolveCaptureTargetFile(): string | undefined {
-    const activeFile = vscode.window.activeTextEditor?.document.fileName;
-    if (activeFile && ConfigManager.isSupportedFile(activeFile)) {
-      return activeFile;
-    }
-
-    const lastFile = this.webViewManager.getLastTuiFile();
-    if (lastFile && ConfigManager.isSupportedFile(lastFile)) {
-      return lastFile;
-    }
-
-    return undefined;
   }
 } 
