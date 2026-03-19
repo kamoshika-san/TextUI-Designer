@@ -126,6 +126,14 @@ npm run test:all
 
 ---
 
+## Branch Protection 運用（main）
+
+- 必須チェックの最小ラインは `Test All CI` とする。
+- 追加で `DSL Plan (PR)` を必須化すると、DSL差分可視化まで統制できる。
+- 緊急時に一時解除する場合は、PRへ理由・影響・復旧期限を必ず記録し、解除後に再有効化する。
+
+---
+
 ## 今後の拡張指針
 
 - 新規リファクタは「薄いオーケストレータ + 明確な DTO/mapper/adapter/handler 分離」を基本にする

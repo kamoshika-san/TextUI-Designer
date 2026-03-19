@@ -7,6 +7,30 @@ on:
     branches: [ main, master, develop ]
 
 jobs:
+  test-all-ci:
+    name: Test All CI
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run full CI test command
+      run: npm run test:all:ci
+
   test:
     name: Test Suite
     permissions:
@@ -180,7 +204,7 @@ jobs:
     permissions:
       contents: read
     runs-on: ubuntu-latest
-    needs: [test, lint]
+    needs: [test-all-ci, test, lint]
     
     steps:
     - name: Checkout code
@@ -216,7 +240,7 @@ jobs:
     permissions:
       contents: read
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test-all-ci, test]
     
     steps:
     - name: Checkout code
