@@ -4,6 +4,14 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.6.1] - 2026-03-19
+
+### 変更・改善
+- `theme-vars` 側のセレクタ生成をコンポーネント定義に統一し、テーマ適用の一貫性を改善（T-20260319-002）
+
+### バグ修正
+- キャプチャの「全体ページにならない」再発時に追跡できるよう、full-page→フォールバック経路の観測ログを追加（T-20260319-004）
+
 ## [0.6.0] - 2026-03-17
 
 ### 新機能
