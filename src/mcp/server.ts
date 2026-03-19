@@ -14,6 +14,8 @@ import {
 } from './params';
 import { createRequestHandlers, type RequestHandler } from './request-handlers';
 import { resolvePrompt } from './registry';
+import { mapCapturePreviewRequest } from './tools/capture-preview-mapper';
+import { toCapturePreviewCliArgs } from './tools/capture-preview-cli-adapter';
 
 export class TextUiMcpServer {
   private coreEnginePromise: Promise<import('../core/textui-core-engine').TextUICoreEngine> | null = null;
@@ -114,43 +116,8 @@ export class TextUiMcpServer {
   }
 
   private async capturePreview(args: Record<string, unknown>): Promise<CliRunResponse> {
-    const dslFile = getObjectValue(args, 'dslFile');
-    if (!dslFile) {
-      throw new Error('capture_preview requires dslFile');
-    }
-
-    const cliArgs: string[] = ['capture', '--file', dslFile, '--json'];
-    const output = getObjectValue(args, 'output');
-    const themePath = getObjectValue(args, 'themePath');
-    const width = getObjectNumber(args, 'width');
-    const height = getObjectNumber(args, 'height');
-    const scale = getObjectNumber(args, 'scale');
-    const waitMs = getObjectNumber(args, 'waitMs');
-    if (output) {
-      cliArgs.push('--output', output);
-    }
-    if (themePath) {
-      cliArgs.push('--theme', themePath);
-    }
-    if (width !== undefined) {
-      cliArgs.push('--width', String(width));
-    }
-    if (height !== undefined) {
-      cliArgs.push('--height', String(height));
-    }
-    if (scale !== undefined) {
-      cliArgs.push('--scale', String(scale));
-    }
-    if (waitMs !== undefined) {
-      cliArgs.push('--wait-ms', String(waitMs));
-    }
-
-    const response = await this.runCli({
-      args: cliArgs,
-      cwd: getObjectValue(args, 'cwd'),
-      timeoutMs: getObjectNumber(args, 'timeoutMs'),
-      parseJson: true
-    });
+    const request = mapCapturePreviewRequest(args);
+    const response = await this.runCli(toCapturePreviewCliArgs(request));
 
     if (response.exitCode !== 0) {
       throw new Error(`capture_preview failed: ${response.stderr || response.stdout}`.trim());

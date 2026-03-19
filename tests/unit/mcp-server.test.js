@@ -249,6 +249,25 @@ theme:
     }
   });
 
+  it('tools/call capture_preview は不正な width を拒否する', async () => {
+    const server = new TextUiMcpServer();
+    const response = await server.handleMessage({
+      jsonrpc: '2.0',
+      id: 71,
+      method: 'tools/call',
+      params: {
+        name: 'capture_preview',
+        arguments: {
+          dslFile: 'sample/01-basic/sample.tui.yml',
+          width: -1
+        }
+      }
+    });
+
+    assert.ok(response.error);
+    assert.match(response.error.message, /capture_preview width must be a positive number/);
+  });
+
   it('tools/call run_cli は capture時の --browser 指定を拒否する', async () => {
     const server = new TextUiMcpServer();
     const response = await server.handleMessage({
