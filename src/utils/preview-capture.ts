@@ -45,6 +45,8 @@ interface CaptureExecutionResult {
   stderr: string;
 }
 
+type CaptureLog = (message: string) => void;
+
 const DEFAULT_WIDTH = 1280;
 const DEFAULT_HEIGHT = 720;
 const DEFAULT_SCALE = 1;
@@ -217,6 +219,7 @@ export async function capturePreviewImageFromDsl(
     fs.writeFileSync(htmlPath, html, 'utf8');
     const targetUrl = pathToFileURL(htmlPath).toString();
 
+    options.log?.(`capture path: trying puppeteer full-page (url=${targetUrl}, width=${width}, height=${height}, waitMs=${waitMs})`);
     const puppeteerResult = await runPuppeteerFullPageCapture({
       browserPath,
       outputPath,
@@ -225,10 +228,12 @@ export async function capturePreviewImageFromDsl(
       scale,
       waitMs,
       allowNoSandbox,
-      targetUrl
+      targetUrl,
+      log: options.log
     });
 
     if (puppeteerResult) {
+      options.log?.('capture path: puppeteer full-page succeeded');
       return puppeteerResult;
     }
 
@@ -252,6 +257,7 @@ export async function capturePreviewImageFromDsl(
       if (cliSuccess && fs.existsSync(outputPath)) {
         const image = fs.readFileSync(outputPath);
         if (image.length >= 8 && image.subarray(0, 4).equals(PNG_MAGIC)) {
+          options.log?.('capture path: CLI spawn succeeded');
           return {
             outputPath,
             browserPath,
@@ -265,7 +271,7 @@ export async function capturePreviewImageFromDsl(
       }
     }
 
-    options.log?.('Falling back to runBrowserCapture (viewport only)');
+    options.log?.('capture path: falling back to runBrowserCapture (viewport only)');
     const execution = await runBrowserCapture({
       browserPath,
       outputPath,
@@ -274,7 +280,8 @@ export async function capturePreviewImageFromDsl(
       scale,
       waitMs,
       allowNoSandbox,
-      targetUrl
+      targetUrl,
+      log: options.log
     });
 
     if (execution.code !== 0) {
@@ -316,12 +323,15 @@ async function runPuppeteerFullPageCapture(params: {
   waitMs: number;
   allowNoSandbox: boolean;
   targetUrl: string;
+  log?: CaptureLog;
 }): Promise<PreviewCaptureResult | null> {
   if (isPuppeteerDisabledByEnv()) {
+    params.log?.('runPuppeteerFullPageCapture: skipped (disabled by TEXTUI_CAPTURE_DISABLE_PUPPETEER)');
     return null;
   }
   const puppeteer = loadPuppeteerModule();
   if (!puppeteer) {
+    params.log?.('runPuppeteerFullPageCapture: skipped (puppeteer-core not available)');
     return null;
   }
 
@@ -339,10 +349,14 @@ async function runPuppeteerFullPageCapture(params: {
   };
 
   let browser: PuppeteerBrowserLike | undefined;
+  let currentPhase = 'launch';
   try {
+    currentPhase = 'launch';
     browser = await puppeteer.launch(launchOptions);
+    currentPhase = 'newPage';
     const page = await browser.newPage();
 
+    currentPhase = 'setViewport(initial)';
     await page.setViewport({
       width: params.width,
       height: params.height,
@@ -350,25 +364,30 @@ async function runPuppeteerFullPageCapture(params: {
     });
 
     const isFileUrl = params.targetUrl.startsWith('file:');
+    currentPhase = 'goto';
     await page.goto(params.targetUrl, {
       waitUntil: isFileUrl ? 'load' : 'networkidle0',
       timeout: Math.max(10000, params.waitMs + 5000)
     });
 
+    currentPhase = 'wait';
     await new Promise(resolve => setTimeout(resolve, params.waitMs));
 
     // プレビュー CSS で内部スクロール（overflow:auto 等 + 固定高）があると、
     // fullPage スクリーンショットがビューポート分だけになる場合がある。
     // そのため、実際に縦方向へオーバーフローしているコンテナを一時的に展開してから撮影する。
+    currentPhase = 'expandScrollableContainersForCapture';
     await page.evaluate(expandScrollableContainersForCapture);
 
     // 全コンテンツをレイアウトさせるため一度末尾へスクロールしてから高さを計測
+    currentPhase = 'scrollBottom';
     await page.evaluate(() => {
       window.scrollTo(0, 999999);
     });
     await new Promise(resolve => setTimeout(resolve, 200));
 
     // 実コンテンツ高さを取得（body の min-height:100vh の影響を避けるため、コンテンツルートの scrollHeight を優先）
+    currentPhase = 'measureDimensions';
     const dimensions = await page.evaluate(() => {
       const docEl = document.documentElement;
       const body = document.body;
@@ -381,12 +400,17 @@ async function runPuppeteerFullPageCapture(params: {
 
     const viewportWidth = Math.max(dimensions.width, params.width);
     const viewportHeight = Math.min(Math.max(dimensions.height, params.height), 32767);
+    params.log?.(
+      `runPuppeteerFullPageCapture: measured dimensions width=${dimensions.width}, height=${dimensions.height}, viewportWidth=${viewportWidth}, viewportHeight=${viewportHeight}`
+    );
+    currentPhase = 'setViewport(fullPage)';
     await page.setViewport({
       width: viewportWidth,
       height: viewportHeight,
       deviceScaleFactor: params.scale
     });
 
+    currentPhase = 'createCDPSession';
     const cdpSession = page.createCDPSession ? await page.createCDPSession().catch(() => null) : null;
     if (cdpSession) {
       type LayoutMetricsResponse = {
@@ -397,10 +421,15 @@ async function runPuppeteerFullPageCapture(params: {
           height?: number;
         };
       };
+      currentPhase = 'cdp.getLayoutMetrics';
       const metrics = await cdpSession.send<LayoutMetricsResponse>('Page.getLayoutMetrics');
       const clipWidth = Math.max(1, Math.ceil(metrics.contentSize?.width ?? viewportWidth));
       const clipHeight = Math.max(1, Math.ceil(metrics.contentSize?.height ?? viewportHeight));
+      params.log?.(
+        `runPuppeteerFullPageCapture: cdp contentSize width=${metrics.contentSize?.width ?? 0}, height=${metrics.contentSize?.height ?? 0}, clipWidth=${clipWidth}, clipHeight=${clipHeight}`
+      );
       type CaptureScreenshotResponse = { data?: string };
+      currentPhase = 'cdp.captureScreenshot';
       const captured = await cdpSession.send<CaptureScreenshotResponse>('Page.captureScreenshot', {
         format: 'png',
         fromSurface: true,
@@ -417,8 +446,11 @@ async function runPuppeteerFullPageCapture(params: {
       if (!base64) {
         throw new Error('capture failed: CDP screenshot returned empty payload');
       }
+      currentPhase = 'writePng(cdp)';
       fs.writeFileSync(params.outputPath, Buffer.from(base64, 'base64'));
     } else {
+      params.log?.('runPuppeteerFullPageCapture: CDP session unavailable, using page.screenshot(fullPage=true)');
+      currentPhase = 'page.screenshot(fullPage)';
       await page.screenshot({
         path: params.outputPath,
         fullPage: true,
@@ -433,7 +465,9 @@ async function runPuppeteerFullPageCapture(params: {
       width: dimensions.width,
       height: resultHeight
     };
-  } catch {
+  } catch (error) {
+    const message = error instanceof Error ? `${error.message}${error.stack ? `\n${error.stack}` : ''}` : String(error);
+    params.log?.(`runPuppeteerFullPageCapture: failed at phase=${currentPhase}\n${message}`);
     return null;
   } finally {
     if (browser) {
@@ -719,8 +753,9 @@ async function runCaptureViaCli(params: {
     env.NODE_PATH = nodeModules;
   }
 
-  const result = await new Promise<{ code: number | null; stderr: string }>((resolve) => {
+  const result = await new Promise<{ code: number | null; stderr: string; stdout: string; timedOut: boolean }>((resolve) => {
     let stderr = '';
+    let stdout = '';
     const cwd = cliRoot;
     const child = spawn(nodeCommand, args, {
       cwd,
@@ -735,12 +770,15 @@ async function runCaptureViaCli(params: {
       }
       settled = true;
       child.kill('SIGKILL');
-      resolve({ code: null, stderr });
+      params.log?.(`runCaptureViaCli: timed out after ${timeoutMs}ms`);
+      resolve({ code: null, stderr, stdout, timedOut: true });
     }, timeoutMs);
     child.stderr?.on('data', (chunk: Buffer | string) => {
       stderr += chunk.toString();
     });
-    child.stdout?.on('data', () => {});
+    child.stdout?.on('data', (chunk: Buffer | string) => {
+      stdout += chunk.toString();
+    });
     child.on('error', (err) => {
       if (settled) {
         return;
@@ -748,7 +786,7 @@ async function runCaptureViaCli(params: {
       settled = true;
       clearTimeout(timeoutHandle);
       params.log?.(`runCaptureViaCli: spawn error: ${err.message}`);
-      resolve({ code: null, stderr: err.message });
+      resolve({ code: null, stderr: err.message, stdout, timedOut: false });
     });
     child.on('close', (code, signal) => {
       if (settled) {
@@ -757,12 +795,19 @@ async function runCaptureViaCli(params: {
       settled = true;
       clearTimeout(timeoutHandle);
       if (code !== 0) {
-        params.log?.(`runCaptureViaCli: exit code=${code}, signal=${String(signal)}, stderr=${stderr.slice(0, 500)}`);
+        params.log?.(
+          `runCaptureViaCli: exit code=${code}, signal=${String(signal)}, stdout=${stdout.slice(0, 1000)}, stderr=${stderr.slice(0, 1000)}`
+        );
       }
-      resolve({ code: code ?? null, stderr });
+      resolve({ code: code ?? null, stderr, stdout, timedOut: false });
     });
   });
 
+  if (result.code === 0) {
+    params.log?.('runCaptureViaCli: completed successfully');
+  } else if (!result.timedOut) {
+    params.log?.('runCaptureViaCli: failed');
+  }
   return result.code === 0;
 }
 
@@ -775,6 +820,7 @@ async function runBrowserCapture(params: {
   waitMs: number;
   allowNoSandbox: boolean;
   targetUrl: string;
+  log?: CaptureLog;
 }): Promise<CaptureExecutionResult> {
   const headlessModes = ['--headless=new', '--headless'];
   let lastResult: CaptureExecutionResult | null = null;
@@ -800,10 +846,15 @@ async function runBrowserCapture(params: {
     }
 
     const maxExecutionMs = Math.max(15000, params.waitMs + 10000);
+    params.log?.(`runBrowserCapture: trying mode=${headlessMode}, timeoutMs=${maxExecutionMs}`);
     const execution = await runProcess(params.browserPath, args, maxExecutionMs);
     if (execution.code === 0) {
+      params.log?.(`runBrowserCapture: mode=${headlessMode} succeeded`);
       return execution;
     }
+    params.log?.(
+      `runBrowserCapture: mode=${headlessMode} failed code=${execution.code}, stdout=${execution.stdout.slice(0, 1000)}, stderr=${execution.stderr.slice(0, 1000)}`
+    );
     lastResult = execution;
   }
 
