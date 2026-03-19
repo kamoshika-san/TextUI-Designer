@@ -2,6 +2,8 @@
 
 このドキュメントは、保守性改善提案をそのまま GitHub Issue に起票できる粒度へ分解したものです。
 
+運用実務（正本ファイル、sync/check 手順、変更時の注意点）は `docs/MAINTAINER_GUIDE.md` を参照してください。
+
 ---
 
 ## Issue 1: TypeScript 静的チェックの段階導入
