@@ -6,7 +6,7 @@ VS Code 拡張をマーケットプレースに公開せず、ローカルでイ
 
 ## .vsix のビルド
 
-バージョン（例: v0.2.1）を `package.json` の `version` に合わせたうえで、以下を実行します。
+以下を実行します。
 
 ```bash
 npm run package:vsix
@@ -18,7 +18,23 @@ npm run package:vsix
 2. `npm run build-webview` … Vite で WebView をビルド（`media/` に出力）
 3. `npx @vscode/vsce package` … .vsix を生成（dependencies を同梱）
 
-成功するとプロジェクトルートに `textui-designer-<version>.vsix` が作成されます（例: `textui-designer-0.2.1.vsix`）。
+成功するとプロジェクトルートに `textui-designer-<version>.vsix` が作成されます  
+（例: 現在の `package.json` が `0.6.1` の場合は `textui-designer-0.6.1.vsix`）。
+
+### 生成された VSIX 名の確認
+
+PowerShell:
+
+```powershell
+$version = (Get-Content package.json | ConvertFrom-Json).version
+"textui-designer-$version.vsix"
+```
+
+bash:
+
+```bash
+node -p "'textui-designer-' + require('./package.json').version + '.vsix'"
+```
 
 ## ローカルへのインストール
 
@@ -31,7 +47,14 @@ npm run package:vsix
 ### 方法2: コマンドラインから
 
 ```bash
-code --install-extension "c:\code_lab\TextUI-Designer\textui-designer-0.2.1.vsix"
+code --install-extension "<プロジェクトルート>/textui-designer-<version>.vsix"
+```
+
+Windows (PowerShell) 例:
+
+```powershell
+$version = (Get-Content package.json | ConvertFrom-Json).version
+code --install-extension ".\textui-designer-$version.vsix"
 ```
 
 （パスは環境に合わせて変更してください。）
@@ -48,3 +71,4 @@ code --uninstall-extension kamoshika-san.textui-designer
 
 - `.vsix` は `.gitignore` に含まれており、リポジトリにはコミットされません。
 - 再ビルドする場合は `npm run package:vsix` を再度実行してください。
+- `code` コマンドが使えない場合は、VS Code の「Shell Command: Install 'code' command in PATH」を実行して有効化してください。
