@@ -133,6 +133,36 @@ npm run test:all
 
 ---
 
+## 回帰テストの分類タグ（`T-20260320-007`）
+
+PR テンプレートのテスト分類（`schema` / `exporter` / `preview` / `mcp`）と揃え、`tests/regression/*.js` の `describe` / 一部 `it` 名の**先頭**に `[tag]` を付与する。
+
+### 命名規約
+
+- **複数タグ**は先頭から `[preview][exporter]` のように並べる（回帰の主経路はプレビュー→エクスポートのため）。
+- **単一タグ**のみのブロックは `[preview]` のように最小限にする。
+- **`mcp`**: 現状 `tests/regression/` には MCP 専用スイートが無い。MCP 向け回帰を追加する際は `[mcp]` を先頭に付ける。
+
+対象ファイル: `tests/regression/export-regression-suite.js`, `tests/regression/export-from-preview.test.js`（いずれも `npm run test:regression` で実行）。
+
+### タグと一次切り分け（目安）
+
+| タグ | まず疑う領域 |
+|------|----------------|
+| `schema` | `schemas/*`, `src/services/schema/*`, 定義駆動生成 (`generate-schemas-from-definitions`) |
+| `exporter` | `src/exporters/*`, `ExportManager`, 出力形式固有ロジック |
+| `preview` | `src/renderer/*`, `media/*`, WebView メッセージ、`WebViewManager` |
+| `mcp` | `src/mcp/*`, CLI ブリッジ、MCP ツール入力検証 |
+
+### 失敗時の再現コマンド
+
+```bash
+npm run compile
+npm run test:regression
+```
+
+---
+
 ## Branch Protection 運用（main）
 
 - 必須チェックの最小ラインは `Test All CI` とする。

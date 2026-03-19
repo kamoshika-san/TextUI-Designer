@@ -429,7 +429,7 @@
     "test": "mocha --no-config --require ./tests/setup.js --timeout 5000 --exit tests/unit/**/*.js",
     "vscode-test": "node ./out/test/runTest.js",
     "test:coverage": "c8 --reporter=text --reporter=lcov npm run test:unit",
-    "test:regression": "mocha --no-config --require ./tests/setup.js --timeout 20000 --exit ./tests/regression/export-regression-suite.js",
+    "test:regression": "mocha --no-config --require ./tests/setup.js --timeout 20000 --exit ./tests/regression/export-regression-suite.js ./tests/regression/export-from-preview.test.js",
     "test:unit": "mocha --no-config --require ./tests/setup.js --timeout 5000 --exit tests/unit/**/*.js",
     "test:integration": "mocha --no-config --require ./tests/setup.js --timeout 5000 --exit ./tests/integration/command-manager.test.js",
     "test:e2e": "mocha --no-config --require ./tests/setup.js --timeout 20000 --exit ./tests/e2e/export-from-preview-e2e.test.js",

@@ -201,7 +201,7 @@ class ExportTestHelper {
 /**
  * 回帰テストスイート
  */
-describe('エクスポート機能回帰テストスイート', () => {
+describe('[preview][exporter] エクスポート機能回帰テストスイート', () => {
   let helper;
 
   before(async () => {
@@ -213,7 +213,7 @@ describe('エクスポート機能回帰テストスイート', () => {
     await helper.cleanup();
   });
 
-  describe('基本的なエクスポート機能', () => {
+  describe('[preview][exporter] 基本的なエクスポート機能', () => {
     it('基本的な.tui.ymlファイルのプレビューとエクスポートが正常に動作する', async () => {
       const testFilePath = helper.createBasicTestFile();
       await helper.openTestFile(testFilePath);
@@ -258,7 +258,7 @@ describe('エクスポート機能回帰テストスイート', () => {
     });
   });
 
-  describe('複雑なシナリオ', () => {
+  describe('[preview][exporter] 複雑なシナリオ', () => {
     it('複雑なコンポーネント構成のファイルでもエクスポートが正常に動作する', async () => {
       const testFilePath = helper.createComplexTestFile();
       await helper.openTestFile(testFilePath);
@@ -309,7 +309,7 @@ describe('エクスポート機能回帰テストスイート', () => {
     });
   });
 
-  describe('エラーハンドリング', () => {
+  describe('[preview][exporter] エラーハンドリング', () => {
     it('存在しないファイルパスでエクスポートを実行した場合、適切にエラーが処理される', async () => {
       const nonExistentPath = path.join(__dirname, 'non-existent-file.tui.yml');
 
@@ -321,7 +321,7 @@ describe('エクスポート機能回帰テストスイート', () => {
       }
     });
 
-    it('無効なYAMLファイルでもエクスポートが適切に処理される', async () => {
+    it('[schema][preview][exporter] 無効なYAMLファイルでもエクスポートが適切に処理される', async () => {
       const testFilePath = helper.createInvalidYamlFile();
       await helper.openTestFile(testFilePath);
       await helper.openPreview();
@@ -335,7 +335,7 @@ describe('エクスポート機能回帰テストスイート', () => {
     });
   });
 
-  describe('パフォーマンステスト', () => {
+  describe('[preview][exporter] パフォーマンステスト', () => {
     it('連続したプレビューとエクスポート操作が正常に動作する', async () => {
       const testFilePath = helper.createBasicTestFile();
       await helper.openTestFile(testFilePath);
@@ -381,7 +381,7 @@ describe('エクスポート機能回帰テストスイート', () => {
     });
   });
 
-  describe('エッジケース', () => {
+  describe('[preview][exporter] エッジケース', () => {
     it('空のコンポーネント配列でもエクスポートが正常に動作する', async () => {
       const content = `page:
   id: empty-test
@@ -431,8 +431,8 @@ describe('エクスポート機能回帰テストスイート', () => {
 /**
  * テスト実行の統計情報
  */
-describe('テスト統計情報', () => {
-  it('全てのテストケースが正常に実行される', async () => {
+describe('[preview][exporter] テスト統計情報', () => {
+  it('[preview][exporter] 全てのテストケースが正常に実行される', async () => {
     // このテストは実際のテスト実行統計を確認するためのプレースホルダー
     assert.ok(true, '全てのテストケースが正常に実行されました');
   });
