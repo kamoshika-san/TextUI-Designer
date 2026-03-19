@@ -69,27 +69,22 @@ describe('mcp-bootstrap-service', () => {
   });
 
   it('resolveUserMcpJsonPath はLinuxのCode配下を解決できる', function () {
-    if (process.platform !== 'linux') {
-      this.skip();
-    }
     const p = resolveUserMcpJsonPath({
       platform: 'linux',
       appName: 'Visual Studio Code',
       homeDir: '/home/test-user',
       env: {}
     });
-    assert.strictEqual(p, '/home/test-user/.config/Code/User/mcp.json');
+    // path.join は OS に依存して区切り文字が変わるため、期待値も同じ方法で組み立てる
+    assert.strictEqual(p, path.join('/home/test-user', '.config', 'Code', 'User', 'mcp.json'));
   });
 
   it('resolveUserCodexConfigPath はLinuxで~/.codex/config.tomlを返す', function () {
-    if (process.platform !== 'linux') {
-      this.skip();
-    }
     const p = resolveUserCodexConfigPath({
       homeDir: '/home/test-user',
       env: {}
     });
-    assert.strictEqual(p, '/home/test-user/.codex/config.toml');
+    assert.strictEqual(p, path.join('/home/test-user', '.codex', 'config.toml'));
   });
 
   it('upsertCodexServerConfig はconfig.tomlへmcp_serversセクションを作成する', () => {

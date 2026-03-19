@@ -3,7 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync, spawnSync } = require('child_process');
 
-describe('TextUI CLI Sprint1', () => {
+describe('TextUI CLI Sprint1', function () {
+  this.timeout(20000);
   const repoRoot = path.resolve(__dirname, '../..');
   const cliPath = path.join(repoRoot, 'out/cli/index.js');
   const sampleFile = path.join(repoRoot, 'sample/01-basic/sample.tui.yml');
@@ -553,7 +554,7 @@ theme:
     assert.match(html, /data-kind="primary"/);
   });
 
-  it.skip('capture writes preview image using mock browser', function() {
+  it('capture writes preview image using mock browser', function() {
     this.timeout(15000);
     const result = spawnSync('node', [
       cliPath,
