@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://example.com/textui/v0/schema.json",
-  "title": "TextUI Designer DSL(template) v0",
+  "title": "TextUI Designer DSL v0",
   "description": "Minimum viable component set for TextUI Designer (v0).",
   "type": "array",
   "properties": {
@@ -64,9 +64,6 @@
           "$ref": "#/definitions/Button"
         },
         {
-          "$ref": "#/definitions/Form"
-        },
-        {
           "$ref": "#/definitions/Checkbox"
         },
         {
@@ -76,13 +73,52 @@
           "$ref": "#/definitions/Select"
         },
         {
+          "$ref": "#/definitions/DatePicker"
+        },
+        {
           "$ref": "#/definitions/Divider"
+        },
+        {
+          "$ref": "#/definitions/Spacer"
+        },
+        {
+          "$ref": "#/definitions/Alert"
         },
         {
           "$ref": "#/definitions/Container"
         },
         {
-          "$ref": "#/definitions/Alert"
+          "$ref": "#/definitions/Form"
+        },
+        {
+          "$ref": "#/definitions/Accordion"
+        },
+        {
+          "$ref": "#/definitions/Tabs"
+        },
+        {
+          "$ref": "#/definitions/TreeView"
+        },
+        {
+          "$ref": "#/definitions/Table"
+        },
+        {
+          "$ref": "#/definitions/Link"
+        },
+        {
+          "$ref": "#/definitions/Breadcrumb"
+        },
+        {
+          "$ref": "#/definitions/Badge"
+        },
+        {
+          "$ref": "#/definitions/Progress"
+        },
+        {
+          "$ref": "#/definitions/Image"
+        },
+        {
+          "$ref": "#/definitions/Icon"
         }
       ]
     },
@@ -114,6 +150,11 @@
       "additionalProperties": false,
       "description": "$include によるテンプレート参照。"
     },
+    "tokenRef": {
+      "type": "string",
+      "description": "デザイントークン参照（例: color.primary, spacing.md）",
+      "pattern": "^[A-Za-z0-9_.-]+$"
+    },
     "Text": {
       "type": "object",
       "required": [
@@ -142,6 +183,10 @@
             "value": {
               "type": "string",
               "description": "表示するテキスト内容。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "テキストに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
@@ -188,10 +233,18 @@
               "type": "boolean",
               "default": false,
               "description": "必須入力かどうか。trueで必須。"
+            },
+            "placeholder": {
+              "type": "string",
+              "description": "入力欄のプレースホルダー（薄い説明文）。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Inputに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
-          "description": "テキスト入力用コンポーネント。\n利用可能な属性: label, name, type, required"
+          "description": "テキスト入力用コンポーネント。\n利用可能な属性: label, name, type, required, placeholder"
         }
       },
       "additionalProperties": false,
@@ -205,9 +258,7 @@
       "properties": {
         "Button": {
           "type": "object",
-          "required": [
-            "label"
-          ],
+          "minProperties": 1,
           "properties": {
             "kind": {
               "type": "string",
@@ -223,18 +274,275 @@
               "type": "string",
               "description": "ボタンに表示するテキスト。"
             },
+            "icon": {
+              "type": "string",
+              "description": "ボタンに表示するアイコン（例: ⭐, 👁）。"
+            },
+            "iconPosition": {
+              "type": "string",
+              "enum": [
+                "left",
+                "right"
+              ],
+              "default": "left",
+              "description": "アイコンの表示位置。"
+            },
             "submit": {
               "type": "boolean",
               "default": false,
               "description": "フォーム送信ボタンかどうか。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Buttonに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
-          "description": "ボタンコンポーネント。\n利用可能な属性: kind, label, submit"
+          "description": "ボタンコンポーネント。\n利用可能な属性: kind, label, icon, iconPosition, submit"
         }
       },
       "additionalProperties": false,
       "description": "ボタンコンポーネント。"
+    },
+    "Link": {
+      "type": "object",
+      "required": [
+        "Link"
+      ],
+      "properties": {
+        "Link": {
+          "type": "object",
+          "required": [
+            "href",
+            "label"
+          ],
+          "properties": {
+            "href": {
+              "type": "string",
+              "description": "リンク先URL。"
+            },
+            "label": {
+              "type": "string",
+              "description": "リンクとして表示するテキスト。"
+            },
+            "target": {
+              "type": "string",
+              "description": "リンクのtarget属性（例: _blank）。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Linkに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "リンクコンポーネント。\n利用可能な属性: href, label, target, token"
+        }
+      },
+      "additionalProperties": false,
+      "description": "リンクコンポーネント。"
+    },
+    "Breadcrumb": {
+      "type": "object",
+      "required": [
+        "Breadcrumb"
+      ],
+      "properties": {
+        "Breadcrumb": {
+          "type": "object",
+          "required": [
+            "items"
+          ],
+          "properties": {
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": [
+                  "label"
+                ],
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "description": "項目表示テキスト。"
+                  },
+                  "href": {
+                    "type": "string",
+                    "description": "リンク先URL（省略時は非リンク表示）。"
+                  },
+                  "target": {
+                    "type": "string",
+                    "description": "リンクターゲット（例: _blank）。"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "description": "パンくずの階層項目配列。"
+            },
+            "separator": {
+              "type": "string",
+              "default": "/",
+              "description": "項目間セパレータ。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Breadcrumbに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "パンくずナビゲーション。"
+        }
+      },
+      "additionalProperties": false,
+      "description": "パンくずナビゲーション。"
+    },
+    "Badge": {
+      "type": "object",
+      "required": [
+        "Badge"
+      ],
+      "properties": {
+        "Badge": {
+          "type": "object",
+          "required": [
+            "label"
+          ],
+          "properties": {
+            "label": {
+              "type": "string",
+              "description": "バッジに表示するテキスト。"
+            },
+            "variant": {
+              "type": "string",
+              "enum": [
+                "default",
+                "primary",
+                "success",
+                "warning",
+                "error"
+              ],
+              "default": "default",
+              "description": "バッジの見た目種別。"
+            },
+            "size": {
+              "type": "string",
+              "enum": [
+                "sm",
+                "md"
+              ],
+              "description": "バッジサイズ。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Badgeに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "バッジ（チップ）コンポーネント。\n利用可能な属性: label, variant, size, token"
+        }
+      },
+      "additionalProperties": false,
+      "description": "バッジ（チップ）コンポーネント。"
+    },
+    "Progress": {
+      "type": "object",
+      "required": [
+        "Progress"
+      ],
+      "properties": {
+        "Progress": {
+          "type": "object",
+          "anyOf": [
+            {
+              "required": [
+                "value"
+              ]
+            },
+            {
+              "required": [
+                "segments"
+              ]
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "割合（0-100）"
+            },
+            "segments": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": [
+                  "value"
+                ],
+                "properties": {
+                  "value": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "セグメントの割合（0-100）"
+                  },
+                  "label": {
+                    "type": "string",
+                    "description": "セグメントのラベル。"
+                  },
+                  "variant": {
+                    "type": "string",
+                    "enum": [
+                      "default",
+                      "primary",
+                      "success",
+                      "warning",
+                      "error"
+                    ],
+                    "default": "default",
+                    "description": "セグメントの見た目種別。"
+                  },
+                  "token": {
+                    "$ref": "#/definitions/tokenRef",
+                    "description": "セグメントに適用するデザイントークン参照。"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "description": "1本のバーを構成する複数セグメント。"
+            },
+            "label": {
+              "type": "string",
+              "description": "バーの左側に表示するラベル。"
+            },
+            "showValue": {
+              "type": "boolean",
+              "default": true,
+              "description": "true の場合は割合の数値を表示します。"
+            },
+            "variant": {
+              "type": "string",
+              "enum": [
+                "default",
+                "primary",
+                "success",
+                "warning",
+                "error"
+              ],
+              "default": "default",
+              "description": "プログレスバーの色種別。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Progressに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "割合表示用プログレスバー。\n利用可能な属性: value, segments, label, showValue, variant, token"
+        }
+      },
+      "additionalProperties": false,
+      "description": "割合表示用プログレスバー。"
     },
     "Checkbox": {
       "type": "object",
@@ -261,6 +569,10 @@
               "type": "boolean",
               "default": false,
               "description": "必須項目かどうか。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Checkboxに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
@@ -319,6 +631,10 @@
               },
               "minItems": 1,
               "description": "選択肢の配列。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Radioに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
@@ -381,14 +697,77 @@
               "type": "boolean",
               "default": false,
               "description": "複数選択を許可するか。"
+            },
+            "placeholder": {
+              "type": "string",
+              "description": "セレクトボックスのプレースホルダー（未選択時の表示）。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Selectに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
-          "description": "セレクトボックスコンポーネント。\n利用可能な属性: label, name, options, multiple"
+          "description": "セレクトボックスコンポーネント。\n利用可能な属性: label, name, options, multiple, placeholder"
         }
       },
       "additionalProperties": false,
       "description": "セレクトボックスコンポーネント。"
+    },
+    "DatePicker": {
+      "type": "object",
+      "required": [
+        "DatePicker"
+      ],
+      "properties": {
+        "DatePicker": {
+          "type": "object",
+          "required": [
+            "label",
+            "name"
+          ],
+          "properties": {
+            "label": {
+              "type": "string",
+              "description": "日付入力欄のラベル。"
+            },
+            "name": {
+              "type": "string",
+              "description": "フォーム送信時のname属性。"
+            },
+            "required": {
+              "type": "boolean",
+              "default": false,
+              "description": "必須入力かどうか。trueで必須。"
+            },
+            "disabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "入力を無効化するかどうか。"
+            },
+            "min": {
+              "type": "string",
+              "description": "選択可能な最小日付（YYYY-MM-DD）。"
+            },
+            "max": {
+              "type": "string",
+              "description": "選択可能な最大日付（YYYY-MM-DD）。"
+            },
+            "value": {
+              "type": "string",
+              "description": "初期値の日付（YYYY-MM-DD）。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "DatePickerに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "日付を選択するコンポーネント。\n利用可能な属性: label, name, required, disabled, min, max, value"
+        }
+      },
+      "additionalProperties": false,
+      "description": "日付を選択するコンポーネント。"
     },
     "Divider": {
       "type": "object",
@@ -407,6 +786,10 @@
               ],
               "default": "horizontal",
               "description": "区切り線の向き（横・縦）。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Dividerに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
@@ -415,6 +798,56 @@
       },
       "additionalProperties": false,
       "description": "区切り線コンポーネント。"
+    },
+    "Spacer": {
+      "type": "object",
+      "required": [
+        "Spacer"
+      ],
+      "properties": {
+        "Spacer": {
+          "type": "object",
+          "properties": {
+            "axis": {
+              "type": "string",
+              "enum": [
+                "vertical",
+                "horizontal"
+              ],
+              "default": "vertical",
+              "description": "余白を作る方向（縦・横）。"
+            },
+            "size": {
+              "type": "string",
+              "enum": [
+                "xs",
+                "sm",
+                "md",
+                "lg",
+                "xl"
+              ],
+              "default": "md",
+              "description": "余白サイズ。"
+            },
+            "width": {
+              "type": "string",
+              "description": "横幅（例: 16px, 1rem, 10%）。"
+            },
+            "height": {
+              "type": "string",
+              "description": "高さ（例: 16px, 1rem, 10%）。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Spacerに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "レイアウト余白を表現するスペーサー。\n利用可能な属性: axis, size, width, height"
+        }
+      },
+      "additionalProperties": false,
+      "description": "レイアウト余白を表現するスペーサー。"
     },
     "Container": {
       "type": "object",
@@ -438,6 +871,23 @@
             "components": {
               "$ref": "#/definitions/componentArray",
               "description": "子コンポーネントの配列。"
+            },
+            "width": {
+              "type": "string",
+              "description": "横幅指定（例: 70%, 480px）。"
+            },
+            "flexGrow": {
+              "type": "number",
+              "minimum": 0,
+              "description": "親が flex レイアウトのときの伸び率。例: 7 と 3 で 70:30 に近づける。"
+            },
+            "minWidth": {
+              "type": "string",
+              "description": "最小幅（例: 280px）。flex で縮まないようにする。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Containerに適用するデザイントークン参照。"
             }
           },
           "required": [
@@ -477,6 +927,10 @@
             "message": {
               "type": "string",
               "description": "表示するメッセージ内容。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Alertに適用するデザイントークン参照。"
             }
           },
           "additionalProperties": false,
@@ -509,6 +963,10 @@
                 "$ref": "#/definitions/Button"
               },
               "description": "フォーム下部のボタン群。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Formに適用するデザイントークン参照。"
             }
           },
           "required": [
@@ -520,6 +978,379 @@
       },
       "additionalProperties": false,
       "description": "フォームコンポーネント。"
+    },
+    "Accordion": {
+      "type": "object",
+      "required": [
+        "Accordion"
+      ],
+      "properties": {
+        "Accordion": {
+          "type": "object",
+          "required": [
+            "items"
+          ],
+          "properties": {
+            "allowMultiple": {
+              "type": "boolean",
+              "default": false,
+              "description": "複数のセクションを同時に展開可能にします。"
+            },
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "description": "アコーディオンの項目一覧。",
+              "items": {
+                "type": "object",
+                "required": [
+                  "title"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "description": "項目の見出し。"
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "展開時に表示する本文。"
+                  },
+                  "components": {
+                    "$ref": "#/definitions/componentArray",
+                    "description": "展開時に表示する子コンポーネント配列。"
+                  },
+                  "open": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "初期状態で展開するかどうか。"
+                  }
+                },
+                "anyOf": [
+                  {
+                    "required": [
+                      "content"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "components"
+                    ]
+                  }
+                ],
+                "additionalProperties": false
+              }
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Accordionに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "折りたたみ可能なセクションを表示するコンポーネント。\n利用可能な属性: allowMultiple, items"
+        }
+      },
+      "additionalProperties": false,
+      "description": "折りたたみ可能なセクションを表示するコンポーネント。"
+    },
+    "Tabs": {
+      "type": "object",
+      "required": [
+        "Tabs"
+      ],
+      "properties": {
+        "Tabs": {
+          "type": "object",
+          "required": [
+            "items"
+          ],
+          "properties": {
+            "defaultTab": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "初期表示するタブのインデックス（0始まり）。"
+            },
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "description": "タブ項目の配列。",
+              "items": {
+                "type": "object",
+                "required": [
+                  "label"
+                ],
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "description": "タブラベル。"
+                  },
+                  "disabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "タブを無効化するかどうか。"
+                  },
+                  "components": {
+                    "$ref": "#/definitions/componentArray"
+                  }
+                },
+                "additionalProperties": false,
+                "description": "タブ項目。"
+              }
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Tabsに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "タブ切り替えコンポーネント。\n利用可能な属性: defaultTab, items"
+        }
+      },
+      "additionalProperties": false,
+      "description": "タブ切り替えコンポーネント。"
+    },
+    "treeViewItemArray": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/treeViewItem"
+      }
+    },
+    "treeViewItem": {
+      "type": "object",
+      "required": [
+        "label"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "ノードの表示ラベル。"
+        },
+        "icon": {
+          "type": "string",
+          "description": "ラベル前に表示する簡易アイコン文字列。"
+        },
+        "expanded": {
+          "type": "boolean",
+          "default": false,
+          "description": "初期状態で展開するかどうか。"
+        },
+        "components": {
+          "$ref": "#/definitions/componentArray",
+          "description": "ノード直下に表示する子コンポーネント配列。"
+        },
+        "children": {
+          "$ref": "#/definitions/treeViewItemArray",
+          "description": "子ノード配列。"
+        }
+      },
+      "additionalProperties": false,
+      "description": "TreeViewの単一ノード。"
+    },
+    "TreeView": {
+      "type": "object",
+      "required": [
+        "TreeView"
+      ],
+      "properties": {
+        "TreeView": {
+          "type": "object",
+          "required": [
+            "items"
+          ],
+          "properties": {
+            "items": {
+              "$ref": "#/definitions/treeViewItemArray",
+              "minItems": 1,
+              "description": "ツリー項目配列。"
+            },
+            "showLines": {
+              "type": "boolean",
+              "default": true,
+              "description": "ツリー接続線を表示するかどうか。"
+            },
+            "expandAll": {
+              "type": "boolean",
+              "default": false,
+              "description": "初期状態ですべてのノードを展開するかどうか。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "TreeViewに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "階層構造を表示するツリービューコンポーネント。\n利用可能な属性: items, showLines, expandAll"
+        }
+      },
+      "additionalProperties": false,
+      "description": "階層構造を表示するツリービューコンポーネント。"
+    },
+    "Table": {
+      "type": "object",
+      "required": [
+        "Table"
+      ],
+      "properties": {
+        "Table": {
+          "type": "object",
+          "required": [
+            "columns",
+            "rows"
+          ],
+          "properties": {
+            "columns": {
+              "type": "array",
+              "minItems": 1,
+              "description": "列定義の配列。",
+              "items": {
+                "type": "object",
+                "required": [
+                  "key",
+                  "header"
+                ],
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "description": "行データ参照用のキー名。"
+                  },
+                  "header": {
+                    "type": "string",
+                    "description": "列ヘッダーに表示する文言。"
+                  },
+                  "width": {
+                    "type": "string",
+                    "description": "列幅（例: 60%, 100px, 2fr 1fr の場合は 2fr）。"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "rows": {
+              "type": "array",
+              "description": "行データの配列。各オブジェクトのキーはcolumns[].keyに対応。値には文字列/数値/真偽値/nullに加えてコンポーネント定義も指定可能。",
+              "items": {
+                "type": "object",
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": [
+                        "string",
+                        "number",
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    {
+                      "$ref": "#/definitions/component"
+                    }
+                  ]
+                }
+              }
+            },
+            "striped": {
+              "type": "boolean",
+              "default": false,
+              "description": "true の場合は行を交互色で表示します。"
+            },
+            "rowHover": {
+              "type": "boolean",
+              "default": false,
+              "description": "true の場合は行ホバー時にハイライト表示します。"
+            },
+            "width": {
+              "type": "string",
+              "description": "横幅指定（例: 70%, 480px）。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Tableに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "表形式でデータを表示するコンポーネント。\n利用可能な属性: columns, rows, striped, rowHover"
+        }
+      },
+      "additionalProperties": false,
+      "description": "表形式でデータを表示するコンポーネント。"
+    },
+    "Image": {
+      "type": "object",
+      "required": [
+        "Image"
+      ],
+      "properties": {
+        "Image": {
+          "type": "object",
+          "required": [
+            "src"
+          ],
+          "properties": {
+            "src": {
+              "type": "string",
+              "description": "画像のURLまたはパス。"
+            },
+            "alt": {
+              "type": "string",
+              "description": "画像の代替テキスト。"
+            },
+            "width": {
+              "type": "string",
+              "description": "画像の横幅（例: 200px, 50%）。"
+            },
+            "height": {
+              "type": "string",
+              "description": "画像の高さ（例: 100px, auto）。"
+            },
+            "variant": {
+              "type": "string",
+              "enum": [
+                "default",
+                "avatar"
+              ],
+              "description": "画像の表示種別。avatar で角丸（円形）表示。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "画像に適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "画像を表示するコンポーネント。利用可能な属性: src, alt, width, height, variant, token"
+        }
+      },
+      "additionalProperties": false,
+      "description": "画像を表示するコンポーネント。"
+    },
+    "Icon": {
+      "type": "object",
+      "required": [
+        "Icon"
+      ],
+      "properties": {
+        "Icon": {
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "表示するアイコン文字。"
+            },
+            "label": {
+              "type": "string",
+              "description": "アイコンの横に表示するテキスト。"
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Iconに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "アイコンコンポーネント。利用可能な属性: name, label, token"
+        }
+      },
+      "additionalProperties": false,
+      "description": "アイコンを表示するコンポーネント。"
     }
   },
   "additionalProperties": false,

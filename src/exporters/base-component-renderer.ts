@@ -30,6 +30,7 @@ import type { ExportOptions, Exporter } from './index';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';
 import { getComponentName, BUILT_IN_COMPONENTS, type BuiltInComponentName } from '../registry/component-registry';
 import { AttributeSerializer, type ExporterAstNode, renderExporterAst } from './exporter-ast';
+import { BUILT_IN_EXPORTER_RENDERER_DEFINITIONS } from '../components/definitions/exporter-renderer-definitions';
 
 export type ComponentHandler = (props: unknown, key: number) => string;
 
@@ -48,30 +49,6 @@ export abstract class BaseComponentRenderer implements Exporter {
     lg: '1.5rem',
     xl: '2rem'
   };
-  private static readonly TOKEN_STYLE_PROPERTY_MAP: Record<string, string> = {
-    Text: 'color',
-    Input: 'border-color',
-    Button: 'background-color',
-    Checkbox: 'accent-color',
-    Radio: 'accent-color',
-    Select: 'border-color',
-    DatePicker: 'border-color',
-    Divider: 'border-color',
-    Spacer: 'height',
-    Alert: 'border-color',
-    Container: 'background-color',
-    Form: 'border-color',
-    Accordion: 'border-color',
-    Tabs: 'border-color',
-    TreeView: 'border-color',
-    Table: 'border-color',
-    Link: 'color',
-    Breadcrumb: 'color',
-    Badge: 'background-color',
-    Progress: 'background-color',
-    Image: 'border-color',
-    Icon: 'color'
-  };
 
   constructor(format: ExportFormat) {
     this.format = format;
@@ -84,33 +61,10 @@ export abstract class BaseComponentRenderer implements Exporter {
    * サブクラスでオーバーライドして追加コンポーネントを登録可能
    */
   protected initializeHandlers(): void {
-    const builtInHandlers: Record<BuiltInComponentName, ComponentHandler> = {
-      Text: (props, key) => this.renderText(props as TextComponent, key),
-      Input: (props, key) => this.renderInput(props as InputComponent, key),
-      Button: (props, key) => this.renderButton(props as ButtonComponent, key),
-      Checkbox: (props, key) => this.renderCheckbox(props as CheckboxComponent, key),
-      Radio: (props, key) => this.renderRadio(props as RadioComponent, key),
-      Select: (props, key) => this.renderSelect(props as SelectComponent, key),
-      DatePicker: (props, key) => this.renderDatePicker(props as DatePickerComponent, key),
-      Divider: (props, key) => this.renderDivider(props as DividerComponent, key),
-      Spacer: (props, key) => this.renderSpacer(props as SpacerComponent, key),
-      Alert: (props, key) => this.renderAlert(props as AlertComponent, key),
-      Container: (props, key) => this.renderContainer(props as ContainerComponent, key),
-      Form: (props, key) => this.renderForm(props as FormComponent, key),
-      Accordion: (props, key) => this.renderAccordion(props as AccordionComponent, key),
-      Tabs: (props, key) => this.renderTabs(props as TabsComponent, key),
-      TreeView: (props, key) => this.renderTreeView(props as TreeViewComponent, key),
-      Table: (props, key) => this.renderTable(props as TableComponent, key),
-      Link: (props, key) => this.renderLink(props as LinkComponent, key),
-      Breadcrumb: (props, key) => this.renderBreadcrumb(props as BreadcrumbComponent, key),
-      Badge: (props, key) => this.renderBadge(props as BadgeComponent, key),
-      Progress: (props, key) => this.renderProgress(props as ProgressComponent, key),
-      Image: (props, key) => this.renderImage(props as ImageComponent, key),
-      Icon: (props, key) => this.renderIcon(props as IconComponent, key)
-    };
-
     for (const componentName of BUILT_IN_COMPONENTS) {
-      this.componentHandlers.set(componentName, builtInHandlers[componentName]);
+      const def = BUILT_IN_EXPORTER_RENDERER_DEFINITIONS[componentName];
+      // renderXxx はサブクラス実装（protected abstract）なので、実行時参照でディスパッチする
+      this.componentHandlers.set(componentName, (props, key) => (this as any)[def.rendererMethod](props, key));
     }
   }
 
@@ -265,7 +219,8 @@ export abstract class BaseComponentRenderer implements Exporter {
   }
 
   private resolveTokenStyleProperty(componentType: string): string | undefined {
-    return BaseComponentRenderer.TOKEN_STYLE_PROPERTY_MAP[componentType];
+    const def = (BUILT_IN_EXPORTER_RENDERER_DEFINITIONS as Record<string, { tokenStyleProperty: string } | undefined>)[componentType];
+    return def?.tokenStyleProperty;
   }
 
   private buildInlineCssDeclaration(property: string, token: string): string {

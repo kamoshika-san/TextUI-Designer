@@ -3,14 +3,29 @@ import type { SchemaDefinition } from '../../types';
 
 export function validateSchemaConsistency(schema: SchemaDefinition): void {
   const expectedRefs = getComponentSchemaRefs();
-  const actualRefs = collectSchemaComponentRefs(schema);
-  const missingRefs = expectedRefs.filter(ref => !actualRefs.includes(ref));
-  const extraRefs = actualRefs.filter(ref => !expectedRefs.includes(ref));
+  const { actualRefs, problems: componentOneOfProblems } = collectSchemaComponentRefsWithProblems(schema);
+
+  const expectedSet = new Set(expectedRefs);
+  const actualSet = new Set(actualRefs);
+  const missingRefs = expectedRefs.filter(ref => !actualSet.has(ref));
+  const extraRefs = actualRefs.filter(ref => !expectedSet.has(ref));
 
   const definitions = schema.definitions ?? {};
   const missingDefinitions = BUILT_IN_COMPONENTS.filter(componentName => !(componentName in definitions));
 
-  if (missingRefs.length === 0 && extraRefs.length === 0 && missingDefinitions.length === 0) {
+  const orderedMatch = actualRefs.length === expectedRefs.length && actualRefs.every((ref, i) => ref === expectedRefs[i]);
+  const duplicateRefs = collectDuplicateRefs(actualRefs);
+  const oneOfProblems: string[] = [];
+
+  oneOfProblems.push(...componentOneOfProblems);
+  if (duplicateRefs.length > 0) {
+    oneOfProblems.push(`oneOf重複参照: ${Array.from(new Set(duplicateRefs)).join(', ')}`);
+  }
+  if (componentOneOfProblems.length === 0 && !orderedMatch && actualRefs.length > 0) {
+    oneOfProblems.push('oneOf順序不一致（同集合でも順序差を検知）');
+  }
+
+  if (missingRefs.length === 0 && extraRefs.length === 0 && missingDefinitions.length === 0 && oneOfProblems.length === 0) {
     return;
   }
 
@@ -24,27 +39,46 @@ export function validateSchemaConsistency(schema: SchemaDefinition): void {
   if (missingDefinitions.length > 0) {
     problems.push(`definitions不足: ${missingDefinitions.join(', ')}`);
   }
+  if (oneOfProblems.length > 0) {
+    problems.push(...oneOfProblems);
+  }
 
   throw new Error(`[SchemaManager] schema整合性エラー: ${problems.join(' / ')}`);
 }
 
-function collectSchemaComponentRefs(schema: SchemaDefinition): string[] {
+function collectDuplicateRefs(refs: string[]): string[] {
+  const seen = new Set<string>();
+  const duplicates: string[] = [];
+  for (const ref of refs) {
+    if (seen.has(ref)) {
+      duplicates.push(ref);
+      continue;
+    }
+    seen.add(ref);
+  }
+  return duplicates;
+}
+
+function collectSchemaComponentRefsWithProblems(schema: SchemaDefinition): { actualRefs: string[]; problems: string[] } {
+  const problems: string[] = [];
   const definitions = schema.definitions;
-  if (!definitions) {
-    return [];
+  if (!definitions || typeof definitions !== 'object') {
+    return { actualRefs: [], problems };
   }
 
-  const componentDefinition = definitions.component;
+  const componentDefinition = (definitions as Record<string, unknown>).component;
   if (!componentDefinition || typeof componentDefinition !== 'object') {
-    return [];
+    problems.push('definitions.component が見つからない / 型が不正');
+    return { actualRefs: [], problems };
   }
 
   const oneOf = (componentDefinition as Record<string, unknown>).oneOf;
   if (!Array.isArray(oneOf)) {
-    return [];
+    problems.push('definitions.component.oneOf が配列ではない / 見つからない');
+    return { actualRefs: [], problems };
   }
 
-  return oneOf
+  const actualRefs = oneOf
     .map(definition => {
       if (!definition || typeof definition !== 'object') {
         return undefined;
@@ -53,4 +87,6 @@ function collectSchemaComponentRefs(schema: SchemaDefinition): string[] {
       return typeof ref === 'string' ? ref : undefined;
     })
     .filter((ref): ref is string => Boolean(ref));
+
+  return { actualRefs, problems };
 }

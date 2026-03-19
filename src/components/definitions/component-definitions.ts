@@ -1,6 +1,7 @@
 import { BUILT_IN_COMPONENTS, type BuiltInComponentName } from './built-in-components';
 import { COMPONENT_MANIFEST } from './manifest';
 import type { ComponentDefinition } from './types';
+import { BUILT_IN_EXPORTER_RENDERER_DEFINITIONS } from './exporter-renderer-definitions';
 
 /**
  * 単一ソース化のための定義一覧。
@@ -18,7 +19,9 @@ export const COMPONENT_DEFINITIONS: readonly ComponentDefinition[] = BUILT_IN_CO
       name,
       schemaRef: entry.schemaRef,
       description: entry.description,
-      properties: entry.properties
+      properties: entry.properties,
+      // token を inline style に反映する際の既定 CSS プロパティ名
+      tokenStyleProperty: BUILT_IN_EXPORTER_RENDERER_DEFINITIONS[name].tokenStyleProperty
     };
   }
 );
