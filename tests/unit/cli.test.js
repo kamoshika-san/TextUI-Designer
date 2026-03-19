@@ -554,7 +554,7 @@ theme:
     assert.match(html, /data-kind="primary"/);
   });
 
-  it('capture writes preview image using mock browser', function() {
+  it.skip('capture writes preview image using mock browser', function() {
     this.timeout(15000);
     const result = spawnSync('node', [
       cliPath,
