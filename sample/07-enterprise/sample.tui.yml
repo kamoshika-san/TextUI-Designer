@@ -100,7 +100,7 @@
         layout: horizontal
         components:
           - Table:
-              width: "70%"
+              width: "100%"
               columns:
                 - { key: "select", header: "選択" }
                 - { key: "orderId", header: "受注ID" }
@@ -126,7 +126,7 @@
                   orderDate: "2026-02-28"
           - Container:
               layout: vertical
-              width: "30%"
+              width: "100%"
               components:
                 - Text:
                     variant: h3
