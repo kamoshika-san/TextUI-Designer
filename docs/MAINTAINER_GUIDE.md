@@ -14,6 +14,13 @@
 
 ---
 
+## Pull Request（PR 作成時）
+
+- 新規 PR では `.github/PULL_REQUEST_TEMPLATE.md` に沿って記入する（**影響範囲・ロールバック・テスト分類**を必ず埋める）。
+- `main` 向けマージ時は必須チェック `Test All CI` / `DSL Plan (PR)` が緑であることを確認する。
+
+---
+
 ## 直近の設計更新（要点）
 
 ### 1) Preview Capture の責務分割
