@@ -1,11 +1,15 @@
-import * as YAML from 'yaml';
-import { validateDsl } from '../cli/validator';
-import { getSupportedProviderNames, runExport } from '../cli/exporter-runner';
 import type { ValidationIssue } from '../cli/types';
 import type { TextUIDSL } from '../renderer/types';
 import { getTextUiComponentCatalog, type TextUIComponentCatalogEntry } from './component-catalog';
 import { TextUiCoreComponentBuilder, getComponentSpecHandlerFlagsForTesting, getComponentSpecTypesForTesting } from './textui-core-component-builder';
-import { mapDiagnostic, mapHint, parseDsl, previewSchemaValue, toPageId } from './textui-core-helpers';
+import { buildGenerateUiDsl, buildExplainErrorResponseDomain, normalizeDslDomain } from './textui-core-engine-domain';
+import {
+  exportUiDslToCode,
+  getSupportedProvidersIo,
+  previewSchemaValueIo,
+  validateNormalizedDslIo
+} from './textui-core-engine-io';
+import { stringifyUiYaml, toCoreValidationResponse } from './textui-core-engine-format';
 
 export interface ComponentBlueprint {
   type: string;
@@ -71,40 +75,28 @@ export class TextUICoreEngine {
   private readonly componentBuilder = new TextUiCoreComponentBuilder();
 
   async generateUi(request: GenerateUiRequest): Promise<GenerateUiResponse> {
-    const dsl: TextUIDSL = {
-      page: {
-        id: request.pageId ?? toPageId(request.title),
-        title: request.title,
-        layout: request.layout ?? 'vertical',
-        components: this.componentBuilder.buildComponents(request.components ?? [])
-      }
-    };
+    const dsl: TextUIDSL = buildGenerateUiDsl(request, this.componentBuilder);
 
     const validation = this.validateUi({ dsl, skipTokenValidation: true });
     const exportedCode = request.format
-      ? await runExport(dsl, request.format, {
+      ? await exportUiDslToCode(dsl, request.format, {
           providerModulePath: request.providerModulePath,
           themePath: request.themePath
         })
       : undefined;
 
-    return { dsl, yaml: YAML.stringify(dsl), validation, exportedCode };
+    return { dsl, yaml: stringifyUiYaml(dsl), validation, exportedCode };
   }
 
   validateUi(request: ValidateUiRequest): ValidateUiResponse {
     try {
-      const normalizedDsl = parseDsl(request.dsl);
-      const result = validateDsl(normalizedDsl, {
+      const normalizedDsl = normalizeDslDomain(request.dsl);
+      const result = validateNormalizedDslIo(normalizedDsl, {
         sourcePath: request.sourcePath,
         skipTokenValidation: request.skipTokenValidation ?? true
       });
 
-      return {
-        valid: result.valid,
-        diagnostics: result.issues.map(issue => mapDiagnostic(issue)),
-        normalizedDsl,
-        normalizedYaml: YAML.stringify(normalizedDsl)
-      };
+      return toCoreValidationResponse(result, normalizedDsl);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       return {
@@ -121,18 +113,7 @@ export class TextUICoreEngine {
   }
 
   explainError(request: ExplainErrorRequest): { summary: string; suggestions: Array<{ path: string; message: string; hint: string }> } {
-    const suggestions = request.diagnostics.map(issue => ({
-      path: issue.path ?? '/',
-      message: issue.message,
-      hint: mapHint(issue.message)
-    }));
-
-    if (suggestions.length === 0) {
-      return { summary: 'エラーはありません。', suggestions: [] };
-    }
-
-    const first = suggestions[0];
-    return { summary: `主な原因: ${first.path} ${first.message}`, suggestions };
+    return buildExplainErrorResponseDomain(request);
   }
 
   previewSchema(request: PreviewSchemaRequest = {}): { schema: 'main' | 'template' | 'theme'; jsonPointer?: string; value: unknown } {
@@ -140,18 +121,19 @@ export class TextUICoreEngine {
     return {
       schema,
       jsonPointer: request.jsonPointer,
-      value: previewSchemaValue(schema, request.jsonPointer)
+      value: previewSchemaValueIo(schema, request.jsonPointer)
     };
   }
 
   async listComponents(): Promise<{ components: TextUIComponentCatalogEntry[]; supportedProviders: string[] }> {
     return {
       components: getTextUiComponentCatalog(),
-      supportedProviders: await this.getSupportedProviders()
+      supportedProviders: await getSupportedProvidersIo()
     };
   }
 
   async getSupportedProviders(): Promise<string[]> {
-    return getSupportedProviderNames();
+    // 互換性のため public method は残しつつ、実装は I/O 層へ委譲する
+    return getSupportedProvidersIo();
   }
 }
