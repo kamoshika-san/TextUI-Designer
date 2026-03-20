@@ -1,7 +1,15 @@
+/**
+ * VS Code `contributes.configuration` の単一ソース。
+ * 既定値・型は `config-schema.ts` の SETTINGS_DEFAULTS / buildConfigurationSchema、
+ * カテゴリ順は CONFIGURATION_CATEGORIES が決める。
+ */
 import { buildConfigurationSchema, SETTINGS_DEFAULTS } from '../utils/config-schema';
 import { CONFIGURATION_CATEGORIES, type ConfigurationCategory } from './configuration/categories';
 
 const CONFIG_SECTION = 'textui-designer';
+
+/** 設定 UI に表示されるセクション名（package.json contributes.configuration.title） */
+export const CONTRIBUTES_CONFIGURATION_TITLE = 'TextUI Designer';
 
 type JsonObject = Record<string, unknown>;
 
@@ -37,5 +45,13 @@ export function getGeneratedConfigurationProperties(): JsonObject {
     Object.assign(merged, getConfigurationPropertiesByCategory(category));
   }
   return merged;
+}
+
+/** `package.json` の `contributes.configuration` ブロック全体（title + properties） */
+export function getGeneratedContributesConfiguration(): { title: string; properties: JsonObject } {
+  return {
+    title: CONTRIBUTES_CONFIGURATION_TITLE,
+    properties: getGeneratedConfigurationProperties()
+  };
 }
 

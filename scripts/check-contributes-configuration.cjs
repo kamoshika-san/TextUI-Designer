@@ -14,24 +14,24 @@ if (!fs.existsSync(builtConfigurationPath)) {
   );
 }
 
-const { getGeneratedConfigurationProperties } = require(builtConfigurationPath);
+const { getGeneratedContributesConfiguration } = require(builtConfigurationPath);
 const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-const actual = pkg?.contributes?.configuration?.properties;
+const actual = pkg?.contributes?.configuration;
 
 if (!actual || typeof actual !== 'object') {
-  throw new Error('package.json の contributes.configuration.properties が見つかりません');
+  throw new Error('package.json の contributes.configuration が見つかりません');
 }
 
-const expected = getGeneratedConfigurationProperties();
+const expected = getGeneratedContributesConfiguration();
 const actualRaw = JSON.stringify(actual);
 const expectedRaw = JSON.stringify(expected);
 
 if (actualRaw !== expectedRaw) {
-  console.error('[check-contributes-configuration] package.json の configuration が定義ソースと不一致です');
+  console.error('[check-contributes-configuration] package.json の contributes.configuration が定義ソースと不一致です');
   console.error('修正方法: npm run sync:configuration');
   process.exit(1);
 }
 
-console.log('[check-contributes-configuration] package.json は configuration 定義と同期済みです');
-console.log(`[check-contributes-configuration] properties: ${Object.keys(expected).length} 件`);
+console.log('[check-contributes-configuration] package.json は contributes.configuration 全体が定義ソースと同期済みです');
+console.log(`[check-contributes-configuration] properties: ${Object.keys(expected.properties).length} 件`);
 

@@ -6,7 +6,7 @@
 
 | 変更したい内容 | 主に触る場所 | 実行コマンド（最低限） |
 |---|---|---|
-| 設定項目 (`contributes.configuration`) | `src/config/configuration-properties.ts` | `npm run sync:configuration` → `npm run check:configuration` |
+| 設定項目 (`contributes.configuration` の title + properties) | 既定値・型: `src/utils/config-schema.ts`（`SETTINGS_DEFAULTS`）／生成: `src/config/configuration-properties.ts`（`getGeneratedContributesConfiguration`） | `npm run sync:configuration` → `npm run check:configuration` |
 | コマンド一覧/メニュー | `src/services/command-catalog.ts` | `npm run sync:commands` → `npm run check:commands` |
 | `contributes` 整合性（snippets / yaml.schemas / menus参照） | `package.json` + `scripts/check-contributes-integrity.cjs` | `npm run check:contributes` |
 | プレビュー画像キャプチャ | `src/utils/preview-capture/*` | `npm run compile` + `npm run test:unit` |
@@ -59,13 +59,12 @@
   - `src/services/commands/export-command.ts`
 - `src/services/command-manager.ts` は登録レイヤ中心
 
-### 5) configuration の生成/検証導入
-- 定義ソース: `src/config/configuration-properties.ts`
-- 生成: `scripts/generate-contributes-configuration.cjs`
-- 検証: `scripts/check-contributes-configuration.cjs`
-- npm scripts:
-  - `sync:configuration`
-  - `check:configuration`
+### 5) configuration の生成/検証導入（`contributes.configuration` 全体）
+- 既定値・スキーマ断片: `src/utils/config-schema.ts`（`SETTINGS_DEFAULTS` / `buildConfigurationSchema`）
+- カテゴリ順・公開 API: `src/config/configuration-properties.ts`（`getGeneratedContributesConfiguration` が `title` + `properties` を返す）
+- 生成: `scripts/generate-contributes-configuration.cjs`（`package.json` の `contributes.configuration` を上書き）
+- 検証: `scripts/check-contributes-configuration.cjs`（生成結果と `package.json` の完全一致）
+- npm scripts: `sync:configuration` / `check:configuration`
 
 ### 6) SchemaManager の責務分割（`T-20260320-010`）
 - `src/services/schema-manager.ts`: パス・キャッシュ・`load*` / `validate` のファサード（公開 API は変更しない）

@@ -14,21 +14,18 @@ if (!fs.existsSync(builtConfigurationPath)) {
   );
 }
 
-const { getGeneratedConfigurationProperties } = require(builtConfigurationPath);
+const { getGeneratedContributesConfiguration } = require(builtConfigurationPath);
 const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 
-if (!pkg.contributes || !pkg.contributes.configuration) {
-  throw new Error('package.json に contributes.configuration が見つかりません');
+if (!pkg.contributes) {
+  throw new Error('package.json に contributes が見つかりません');
 }
 
-const nextProperties = getGeneratedConfigurationProperties();
-pkg.contributes.configuration = {
-  ...pkg.contributes.configuration,
-  properties: nextProperties
-};
+const nextConfiguration = getGeneratedContributesConfiguration();
+pkg.contributes.configuration = nextConfiguration;
 
 fs.writeFileSync(packageJsonPath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
 
-console.log('[generate-contributes-configuration] package.json の contributes.configuration.properties を同期しました');
-console.log(`[generate-contributes-configuration] properties: ${Object.keys(nextProperties).length} 件`);
+console.log('[generate-contributes-configuration] package.json の contributes.configuration を同期しました');
+console.log(`[generate-contributes-configuration] properties: ${Object.keys(nextConfiguration.properties).length} 件`);
 
