@@ -8,6 +8,7 @@
 |---|---|---|
 | 設定項目 (`contributes.configuration`) | `src/config/configuration-properties.ts` | `npm run sync:configuration` → `npm run check:configuration` |
 | コマンド一覧/メニュー | `src/services/command-catalog.ts` | `npm run sync:commands` → `npm run check:commands` |
+| `contributes` 整合性（snippets / yaml.schemas / menus参照） | `package.json` + `scripts/check-contributes-integrity.cjs` | `npm run check:contributes` |
 | プレビュー画像キャプチャ | `src/utils/preview-capture/*` | `npm run compile` + `npm run test:unit` |
 | MCP `capture_preview` | `src/mcp/tools/capture-preview-*` と `src/mcp/server.ts` | `npm run compile` + `npx mocha ... tests/unit/mcp-server.test.js` |
 | CommandManager の実行フロー | `src/services/commands/*` と `src/services/command-manager.ts` | `npm run compile` + `npx mocha ... tests/unit/command-manager.test.js` |
@@ -136,6 +137,7 @@
 npm run compile
 npm run check:configuration
 npm run check:commands
+npm run check:contributes
 npm run test:unit
 ```
 

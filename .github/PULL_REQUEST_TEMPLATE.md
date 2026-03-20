@@ -72,6 +72,7 @@
 - [ ] `npm run compile`
 - [ ] `npm run check:configuration`（設定変更時）
 - [ ] `npm run check:commands`（コマンド定義変更時）
+- [ ] `npm run check:contributes`（`contributes` 配下変更時）
 - [ ] `npm run test:unit`
 - [ ] `npm run test:all` または CI の `Test All CI` が緑
 - [ ] （DSL 変更時）`DSL Plan (PR)` の結果を確認

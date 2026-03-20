@@ -417,6 +417,7 @@
     "check:configuration": "npm run compile && node ./scripts/check-contributes-configuration.cjs",
     "sync:commands": "npm run compile && node ./scripts/sync-command-manifest.cjs",
     "check:commands": "npm run compile && node ./scripts/check-command-manifest.cjs",
+    "check:contributes": "npm run compile && node ./scripts/check-contributes-integrity.cjs",
     "compile-tests": "npm run compile",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run pretest:ci",
