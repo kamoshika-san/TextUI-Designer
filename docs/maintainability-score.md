@@ -42,7 +42,8 @@
 ## 現在の主な負債（優先度順）
 
 1. **大型モジュールの残存**
-  - `textui-core-engine` / `react-exporter` / `schema-manager` の責務集中は未解消
+  - Issue A 対象の `textui-core-engine` / `react-exporter` / `schema-manager` 分割は完了
+  - 残る主要ホットスポットとして `pug-exporter` の責務集中を次の構造改善対象とする
 2. **品質ゲート運用の固定化不足**
   - `test:all:ci` 必須化（branch protection）と失敗分類タグが未運用
 3. **ドキュメント鮮度のばらつき**
@@ -61,10 +62,8 @@
 **期待効果:** 品質判定のばらつき低減（+1〜2点）
 
 ### フェーズ2（3〜6週間）: 構造改善
-
-- `schema-manager` のロード/検証/キャッシュ分離
-- `react-exporter` のテンプレート生成責務抽出
-- `textui-core-engine` の I/O・ドメイン・整形レイヤ分離
+- `pug-exporter` の責務分割（Issue A の補完）
+- `ExtensionLifecycleManager` の起動/終了処理のステージ化（段階化）
 
 **期待効果:** 変更容易性・レビュー性向上（+2〜3点）
 
