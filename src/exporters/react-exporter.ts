@@ -1,13 +1,22 @@
 import type {
-  TextUIDSL, ComponentDef, FormComponent, FormField, FormAction,
+  TextUIDSL, FormComponent,
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, SelectComponent, DatePickerComponent, DividerComponent, SpacerComponent, AlertComponent,
-  ContainerComponent, AccordionComponent, TabsComponent, TreeViewComponent, TableComponent, LinkComponent, BreadcrumbComponent, BadgeComponent, ProgressComponent, ImageComponent, IconComponent, SelectOption
+  ContainerComponent, AccordionComponent, TabsComponent, TreeViewComponent, TableComponent, LinkComponent, BreadcrumbComponent, BadgeComponent, ProgressComponent, ImageComponent, IconComponent
 } from '../renderer/types';
 import type { ExportOptions } from './index';
 import { BaseComponentRenderer } from './base-component-renderer';
 import { renderAlertTemplate, renderBadgeTemplate, renderBreadcrumbTemplate, renderButtonTemplate, renderDividerTemplate, renderIconTemplate, renderImageTemplate, renderLinkTemplate, renderProgressTemplate, renderSpacerTemplate, renderTextTemplate } from './react-basic-renderer';
 import { renderAccordionTemplate, renderContainerTemplate, renderFormTemplate, renderTableTemplate, renderTabsTemplate, renderTreeViewTemplate } from './react-template-renderer';
+import { buildReactPageDocument } from './react-export-page-template';
+import {
+  buildReactCheckboxInputInnerHtml,
+  buildReactDateInputInnerHtml,
+  buildReactInputInnerHtml,
+  buildReactRadioInputInnerHtml,
+  buildReactSelectInnerHtml,
+  buildReactSelectOptionsLines
+} from './react-form-control-templates';
 
 export class ReactExporter extends BaseComponentRenderer {
   constructor() {
@@ -16,16 +25,7 @@ export class ReactExporter extends BaseComponentRenderer {
 
   async export(dsl: TextUIDSL, _options: ExportOptions): Promise<string> {
     const componentCode = this.renderPageComponents(dsl, '\n\n');
-    
-    return `import React from 'react';
-
-export default function GeneratedUI() {
-  return (
-    <div className="p-6">
-${componentCode}
-    </div>
-  );
-}`;
+    return buildReactPageDocument(componentCode);
   }
 
   getFileExtension(): string {
@@ -42,18 +42,19 @@ ${componentCode}
     const { label, placeholder, type = 'text', required = false, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
     const tokenStyle = this.getReactTokenStyleInline('Input', token);
-    
+
     const inputAttrs = this.buildAttrs({
       required,
       disabled
     });
 
-    const inputHtml = `        <input
-          type="${type}"
-          placeholder="${placeholder || ''}"${inputAttrs}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"
-          ${tokenStyle}
-        />`;
+    const inputHtml = buildReactInputInnerHtml({
+      type,
+      placeholder: placeholder || '',
+      inputAttrs,
+      disabledClass,
+      tokenStyle
+    });
 
     return this.buildLabeledFieldBlock(
       label,
@@ -75,12 +76,12 @@ ${componentCode}
     const disabledClass = this.getDisabledClass(disabled);
     const tokenStyle = this.getReactTokenStyleInline('Checkbox', token);
     const checkboxAttrs = this.buildAttrs({ disabled });
-    const checkboxInput = `        <input
-          type="checkbox"
-          defaultChecked={${checked}}${checkboxAttrs}
-          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${disabledClass}"
-          ${tokenStyle}
-        />`;
+    const checkboxInput = buildReactCheckboxInputInnerHtml({
+      checked,
+      checkboxAttrs,
+      disabledClass,
+      tokenStyle
+    });
 
     return this.buildControlRowWithLabel(
       label,
@@ -96,14 +97,14 @@ ${componentCode}
     const disabledClass = this.getDisabledClass(disabled);
     const tokenStyle = this.getReactTokenStyleInline('Radio', token);
     const radioAttrs = this.buildAttrs({ disabled });
-    const radioInput = `        <input
-          type="radio"
-          name="${name || 'radio'}"
-          value="${value || ''}"
-          defaultChecked={${checked}}${radioAttrs}
-          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 ${disabledClass}"
-          ${tokenStyle}
-        />`;
+    const radioInput = buildReactRadioInputInnerHtml({
+      name: name || 'radio',
+      value: value || '',
+      checked,
+      radioAttrs,
+      disabledClass,
+      tokenStyle
+    });
 
     return this.buildControlRowWithLabel(
       label,
@@ -118,19 +119,19 @@ ${componentCode}
     const { label, options = [], placeholder, disabled = false, token } = props;
     const disabledClass = this.getDisabledClass(disabled);
     const tokenStyle = this.getReactTokenStyleInline('Select', token);
-    const optionsCode = options.map((opt: SelectOption) => 
-      `          <option key="${opt.value}" value="${opt.value}">${opt.label}</option>`
-    ).join('\n');
-    
+    const optionsCode = buildReactSelectOptionsLines(options);
+
     const selectAttrs = this.buildAttrs({ disabled });
 
-    const selectHtml = `        <select${selectAttrs}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"
-          ${tokenStyle}
-        >
-          ${placeholder ? `<option value="">${placeholder}</option>` : ''}
-${optionsCode}
-        </select>`;
+    const placeholderSegment = placeholder ? `<option value="">${placeholder}</option>` : '';
+
+    const selectHtml = buildReactSelectInnerHtml({
+      selectAttrs,
+      disabledClass,
+      tokenStyle,
+      placeholderSegment,
+      optionsCode
+    });
 
     return this.buildLabeledFieldBlock(
       label,
@@ -154,13 +155,12 @@ ${optionsCode}
       defaultValue: value
     });
 
-    const dateInputHtml = `        <input
-          id="${name}"
-          name="${name}"
-          type="date"${dateInputAttrs}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"
-          ${tokenStyle}
-        />`;
+    const dateInputHtml = buildReactDateInputInnerHtml({
+      name,
+      dateInputAttrs,
+      disabledClass,
+      tokenStyle
+    });
 
     return this.buildLabeledFieldBlock(
       label,
@@ -272,4 +272,4 @@ ${optionsCode}
       (action, index) => this.renderFormAction(action, index)
     );
   }
-} 
+}
