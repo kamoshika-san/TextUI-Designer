@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import { Logger } from '../../utils/logger';
 import {
   buildTextUiJsonSchemas,
   buildTextUiYamlSchemas,
@@ -7,6 +8,8 @@ import {
   filterTextUiYamlSchemas,
   type JsonSchemaAssociation
 } from './schema-association';
+
+const logger = new Logger('SchemaWorkspaceRegistrar');
 
 export type SchemaWorkspaceDebug = (message: string, ...args: unknown[]) => void;
 
@@ -24,7 +27,7 @@ async function registerYamlSchemas(
     await yamlConfig.update('schemas', newSchemas, vscode.ConfigurationTarget.Global);
     debug?.('[SchemaManager] YAMLスキーマ登録成功');
   } catch (error) {
-    console.warn('[SchemaManager] YAMLスキーマ登録に失敗しました（続行します）:', error);
+    logger.warn('YAMLスキーマ登録に失敗しました（続行します）:', error);
   }
 }
 
@@ -45,7 +48,7 @@ async function registerJsonSchemas(
     await jsonConfig.update('schemas', newSchemas, vscode.ConfigurationTarget.Global);
     debug?.('[SchemaManager] JSONスキーマ登録成功');
   } catch (error) {
-    console.warn('[SchemaManager] JSONスキーマ登録に失敗しました（続行します）:', error);
+    logger.warn('JSONスキーマ登録に失敗しました（続行します）:', error);
   }
 }
 
@@ -82,7 +85,7 @@ export async function cleanupTextUiSchemasInWorkspace(debug?: SchemaWorkspaceDeb
     await jsonConfig.update('schemas', filterTextUiJsonSchemas(currentJsonSchemas), vscode.ConfigurationTarget.Global);
     debug?.('[SchemaManager] JSONスキーマクリーンアップ完了');
   } catch (error) {
-    console.error('[SchemaManager] スキーマクリーンアップ中にエラーが発生しました:', error);
+    logger.error('スキーマクリーンアップ中にエラーが発生しました:', error);
   }
 }
 
@@ -99,7 +102,7 @@ export async function registerYamlSchemaForPattern(
     await yamlConfig.update('schemas', currentSchemas, vscode.ConfigurationTarget.Global);
     debug?.(`[SchemaManager] スキーマを登録しました: ${filePattern} -> ${schemaPath}`);
   } catch (error: unknown) {
-    console.error(`[SchemaManager] スキーマ登録に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`スキーマ登録に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
     throw error;
   }
 }
@@ -117,7 +120,7 @@ export async function unregisterYamlSchemaByFilePattern(
     await yamlConfig.update('schemas', filteredSchemas, vscode.ConfigurationTarget.Global);
     debug?.(`[SchemaManager] スキーマを登録解除しました: ${filePattern}`);
   } catch (error: unknown) {
-    console.error(`[SchemaManager] スキーマ登録解除に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`スキーマ登録解除に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
     throw error;
   }
 }

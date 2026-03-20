@@ -2,12 +2,14 @@ import * as vscode from 'vscode';
 import { ExtensionServices } from './service-initializer';
 import { ConfigManager } from '../utils/config-manager';
 import { MemoryMonitor } from './memory-monitor';
+import { Logger } from '../utils/logger';
 
 /**
  * ファイル監視・デバウンス処理
  * ファイル変更、保存、アクティブエディタ変更の監視とデバウンス処理を担当
  */
 export class FileWatcher {
+  private readonly logger = new Logger('FileWatcher');
   private context: vscode.ExtensionContext;
   private services: ExtensionServices | null = null;
   private disposables: vscode.Disposable[] = [];
@@ -37,7 +39,7 @@ export class FileWatcher {
    * ファイル監視の開始
    */
   startWatching(services: ExtensionServices): void {
-    console.log('[FileWatcher] ファイル監視開始');
+    this.logger.info('ファイル監視開始');
     
     this.services = services;
     
@@ -50,7 +52,7 @@ export class FileWatcher {
     // ドキュメント変更の監視
     this.watchDocumentChange();
     
-    console.log('[FileWatcher] ファイル監視設定完了');
+    this.logger.info('ファイル監視設定完了');
   }
 
   /**
@@ -112,20 +114,20 @@ export class FileWatcher {
     
     // ファイルが変更された場合は常にプレビューを更新
     if (previousFile !== editor.document.fileName) {
-      console.log('[FileWatcher] ファイルが変更されたため、プレビューを更新します');
+      this.logger.info('ファイルが変更されたため、プレビューを更新します');
       
       // ファイル変更時に即座のプレビュー更新を有効にしてsetLastTuiFileを呼び出し
       this.services.webViewManager.setLastTuiFile(editor.document.fileName, true);
       
       // 自動プレビュー設定をチェック
       const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
-      console.log(`[FileWatcher] アクティブエディタ変更時の設定値: ${autoPreviewEnabled ? 'ON' : 'OFF'}, パネル存在: ${this.services.webViewManager.hasPanel()}`);
-      console.log(`[FileWatcher] ファイル: ${editor.document.fileName}`);
-      console.log(`[FileWatcher] 前のファイル: ${previousFile}`);
+      this.logger.info(`アクティブエディタ変更時の設定値: ${autoPreviewEnabled ? 'ON' : 'OFF'}, パネル存在: ${this.services.webViewManager.hasPanel()}`);
+      this.logger.info(`ファイル: ${editor.document.fileName}`);
+      this.logger.info(`前のファイル: ${previousFile}`);
       
       if (autoPreviewEnabled) {
         if (!this.services.webViewManager.hasPanel()) {
-          console.log('[FileWatcher] 自動プレビューを開きます');
+          this.logger.info('自動プレビューを開きます');
           this.services.webViewManager.openPreview();
         }
       }
@@ -163,7 +165,7 @@ export class FileWatcher {
           this.services!.diagnosticManager.validateAndReportDiagnostics(document);
         }
       } catch (error) {
-        console.error('[FileWatcher] ドキュメント保存処理でエラーが発生しました:', error);
+        this.logger.error('ドキュメント保存処理でエラーが発生しました:', error);
       } finally {
         // 保存処理完了後、少し遅延してからフラグをリセット
         setTimeout(() => {
@@ -213,7 +215,7 @@ export class FileWatcher {
     // ドキュメントサイズをチェック
     const documentSize = event.document.getText().length;
     if (documentSize > 1024 * 1024) { // 1MB以上
-      console.log(`[FileWatcher] ドキュメントサイズが大きすぎます: ${Math.round(documentSize / 1024)}KB`);
+      this.logger.info(`ドキュメントサイズが大きすぎます: ${Math.round(documentSize / 1024)}KB`);
       vscode.window.showWarningMessage(`ドキュメントサイズが大きすぎます（${Math.round(documentSize / 1024)}KB）。1MB以下にしてください。`);
       return;
     }
@@ -237,7 +239,7 @@ export class FileWatcher {
           this.services!.diagnosticManager.validateAndReportDiagnostics(event.document);
         }
       } catch (error) {
-        console.error('[FileWatcher] ドキュメント変更処理でエラーが発生しました:', error);
+        this.logger.error('ドキュメント変更処理でエラーが発生しました:', error);
       }
     }, 150);
   }
@@ -253,7 +255,7 @@ export class FileWatcher {
    * ファイル監視の停止
    */
   stopWatching(): void {
-    console.log('[FileWatcher] ファイル監視停止');
+    this.logger.info('ファイル監視停止');
     
     // タイマーをクリア
     if (this.activeEditorTimeout) {
@@ -276,7 +278,7 @@ export class FileWatcher {
       try {
         disposable.dispose();
       } catch (error) {
-        console.error('[FileWatcher] disposable破棄中にエラーが発生しました:', error);
+        this.logger.error('disposable破棄中にエラーが発生しました:', error);
       }
     });
     

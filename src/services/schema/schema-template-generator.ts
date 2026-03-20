@@ -1,8 +1,11 @@
 import * as fs from 'fs';
+import { Logger } from '../../utils/logger';
+
+const logger = new Logger('SchemaTemplateGenerator');
 
 /**
  * メインの schema.json から、テンプレート用（component 配列）のスキーマ JSON を生成して書き出す。
- * 失敗時は console.error のみ（例外は投げない）— 既存 SchemaManager 挙動と同一。
+ * 失敗時は Logger.error のみ（例外は投げない）— 既存 SchemaManager 挙動と同一。
  */
 export function writeTemplateSchemaFromMainSchema(mainSchemaPath: string, templateSchemaPath: string): void {
   try {
@@ -14,6 +17,6 @@ export function writeTemplateSchemaFromMainSchema(mainSchemaPath: string, templa
     };
     fs.writeFileSync(templateSchemaPath, JSON.stringify(templateSchema, null, 2), 'utf-8');
   } catch (error) {
-    console.error('テンプレートスキーマの作成に失敗しました:', error);
+    logger.error('テンプレートスキーマの作成に失敗しました:', error);
   }
 }

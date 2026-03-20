@@ -6,6 +6,7 @@ import {
   SchemaValidationResult
 } from '../types';
 import { ConfigManager } from '../utils/config-manager';
+import { Logger } from '../utils/logger';
 import { resolveSchemaPaths } from './schema/schema-path-resolver';
 import { validateSchemaConsistency } from './schema/schema-consistency-checker';
 import { SchemaCacheStore } from './schema/schema-cache-store';
@@ -23,6 +24,7 @@ import {
  * YAML/JSONスキーマの設定と管理を担当
  */
 export class SchemaManager implements ISchemaManager {
+  private readonly logger = new Logger('SchemaManager');
   private context: vscode.ExtensionContext;
   private schemaPath: string;
   private templateSchemaPath: string;
@@ -48,7 +50,7 @@ export class SchemaManager implements ISchemaManager {
     });
 
     if (!fs.existsSync(this.schemaPath)) {
-      console.error('[SchemaManager] スキーマファイルが見つかりません。検索したパス:', resolvedSchemaPaths.searchedPaths);
+      this.logger.error('スキーマファイルが見つかりません。検索したパス:', resolvedSchemaPaths.searchedPaths);
     } else {
       this.debug('[SchemaManager] スキーマパスを設定:', this.schemaPath);
     }
@@ -74,7 +76,7 @@ export class SchemaManager implements ISchemaManager {
         throw new Error(`スキーマファイルが存在しません: ${this.schemaPath}`);
       }
       if (!fs.existsSync(this.templateSchemaPath)) {
-        console.warn('[SchemaManager] テンプレートスキーマファイルが存在しません。作成を試行します。');
+        this.logger.warn('テンプレートスキーマファイルが存在しません。作成を試行します。');
         await this.createTemplateSchema();
       }
 
@@ -85,7 +87,7 @@ export class SchemaManager implements ISchemaManager {
         (message, ...args) => this.debug(message, ...args)
       );
     } catch (error) {
-      console.error('[SchemaManager] スキーマ登録中にエラーが発生しました:', error);
+      this.logger.error('スキーマ登録中にエラーが発生しました:', error);
       throw new Error(`スキーマの初期化に失敗しました: ${error}`);
     }
   }
@@ -131,16 +133,16 @@ export class SchemaManager implements ISchemaManager {
 
   async debugSchemas(): Promise<void> {
     const snapshot = this.cacheStore.getDebugSnapshot();
-    console.log('[SchemaManager] スキーマデバッグ情報:');
-    console.log('- スキーマパス:', this.schemaPath);
-    console.log('- テンプレートスキーマパス:', this.templateSchemaPath);
-    console.log('- テーマスキーマパス:', this.themeSchemaPath);
-    console.log('- スキーマキャッシュ:', snapshot.main.cached ? '有効' : '無効');
-    console.log('- テンプレートスキーマキャッシュ:', snapshot.template.cached ? '有効' : '無効');
-    console.log('- テーマスキーマキャッシュ:', snapshot.theme.cached ? '有効' : '無効');
-    console.log('- 最終スキーマ読み込み:', new Date(snapshot.main.lastLoad).toISOString());
-    console.log('- 最終テンプレートスキーマ読み込み:', new Date(snapshot.template.lastLoad).toISOString());
-    console.log('- 最終テーマスキーマ読み込み:', new Date(snapshot.theme.lastLoad).toISOString());
+    this.logger.info('スキーマデバッグ情報:');
+    this.logger.info('- スキーマパス:', this.schemaPath);
+    this.logger.info('- テンプレートスキーマパス:', this.templateSchemaPath);
+    this.logger.info('- テーマスキーマパス:', this.themeSchemaPath);
+    this.logger.info('- スキーマキャッシュ:', snapshot.main.cached ? '有効' : '無効');
+    this.logger.info('- テンプレートスキーマキャッシュ:', snapshot.template.cached ? '有効' : '無効');
+    this.logger.info('- テーマスキーマキャッシュ:', snapshot.theme.cached ? '有効' : '無効');
+    this.logger.info('- 最終スキーマ読み込み:', new Date(snapshot.main.lastLoad).toISOString());
+    this.logger.info('- 最終テンプレートスキーマ読み込み:', new Date(snapshot.template.lastLoad).toISOString());
+    this.logger.info('- 最終テーマスキーマ読み込み:', new Date(snapshot.theme.lastLoad).toISOString());
   }
 
   clearCache(): void {
@@ -164,6 +166,6 @@ export class SchemaManager implements ISchemaManager {
     if (!this.verboseLogging) {
       return;
     }
-    console.log(message, ...args);
+    this.logger.info(message, ...args);
   }
 }
