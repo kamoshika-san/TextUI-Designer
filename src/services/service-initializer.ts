@@ -32,9 +32,9 @@ export interface ServiceFactoryOverrides {
 }
 
 /**
- * サービスの初期化・管理
- * 各サービスの作成、初期化、クリーンアップを担当
- * ファクトリーオーバーライドにより、テスト時のモック注入やカスタム構成が可能
+ * サービスの初期化・管理（サービス束の生成〜ランタイム初期化〜束の cleanup）。
+ * 拡張全体の activate / deactivate の前後段階は `ExtensionLifecycleManager` と `extension-lifecycle-phases.ts` が担当する。
+ * ファクトリーオーバーライドにより、テスト時のモック注入やカスタム構成が可能。
  */
 export class ServiceInitializer {
   private context: vscode.ExtensionContext;

@@ -4,8 +4,8 @@ import { EventManager } from './event-manager';
 import { FileWatcher } from './file-watcher';
 import { MemoryMonitor } from './memory-monitor';
 import { PerformanceTracker } from './performance-tracker';
+import { ACTIVATION_PHASES, DEACTIVATION_PHASES } from './extension-lifecycle-phases';
 import { ErrorHandler } from '../utils/error-handler';
-import { TextUIMemoryTracker } from '../utils/textui-memory-tracker';
 import { Logger } from '../utils/logger';
 
 /**
@@ -35,31 +35,22 @@ export class ExtensionLifecycleManager {
    */
   async activate(): Promise<void> {
     this.logger.info('アクティベーション開始');
-    
+
     try {
-      // メモリ追跡システムの初期化
-      TextUIMemoryTracker.getInstance();
+      const activationCtx = {
+        serviceInitializer: this.serviceInitializer,
+        eventManager: this.eventManager,
+        fileWatcher: this.fileWatcher,
+        memoryMonitor: this.memoryMonitor,
+        performanceTracker: this.performanceTracker,
+        services: null
+      };
 
-      // パフォーマンス追跡開始
-      this.performanceTracker.startActivation();
-
-      // サービスの初期化
-      const services = await this.serviceInitializer.initialize();
-
-      // イベントマネージャーの初期化
-      this.eventManager.initialize(services);
-
-      // ファイル監視の開始
-      this.fileWatcher.startWatching(services);
-
-      // メモリ監視の開始
-      this.memoryMonitor.startMonitoring();
-
-      // パフォーマンス追跡完了
-      this.performanceTracker.completeActivation();
+      for (const phase of ACTIVATION_PHASES) {
+        await phase.run(activationCtx);
+      }
 
       this.logger.info('アクティベーション完了');
-
     } catch (error) {
       this.logger.error('アクティベーション中にエラーが発生しました:', error);
       ErrorHandler.showError('TextUI Designer拡張の初期化に失敗しました', error);
@@ -74,26 +65,19 @@ export class ExtensionLifecycleManager {
     this.logger.info('非アクティベーション開始');
 
     try {
-      // パフォーマンス追跡のクリーンアップ
-      this.performanceTracker.dispose();
+      const deactivationCtx = {
+        performanceTracker: this.performanceTracker,
+        memoryMonitor: this.memoryMonitor,
+        fileWatcher: this.fileWatcher,
+        eventManager: this.eventManager,
+        serviceInitializer: this.serviceInitializer
+      };
 
-      // メモリ監視の停止
-      this.memoryMonitor.stopMonitoring();
-
-      // ファイル監視の停止
-      this.fileWatcher.stopWatching();
-
-      // イベントマネージャーのクリーンアップ
-      this.eventManager.dispose();
-
-      // サービスのクリーンアップ
-      await this.serviceInitializer.cleanup();
-
-      // メモリ追跡システムのクリーンアップ
-      TextUIMemoryTracker.getInstance().dispose();
+      for (const phase of DEACTIVATION_PHASES) {
+        await phase.run(deactivationCtx);
+      }
 
       this.logger.info('非アクティベーション完了');
-
     } catch (error) {
       this.logger.error('非アクティベーション中にエラーが発生しました:', error);
     }
@@ -112,4 +96,4 @@ export class ExtensionLifecycleManager {
   getServices() {
     return this.serviceInitializer.getServices();
   }
-} 
+}

@@ -16,6 +16,7 @@
 | React エクスポートのページ/フォーム断片 | `src/exporters/react-exporter.ts` + `react-export-page-template.ts` + `react-form-control-templates.ts`（既存 `react-basic-renderer` / `react-template-renderer` と併用） | `npm run compile` + `npx mocha ... tests/unit/react-exporter-template.test.js` ほか |
 | TextUI core engine 責務分割 | `src/core/textui-core-engine.ts` + `src/core/textui-core-engine-io.ts` + `src/core/textui-core-engine-domain.ts` + `src/core/textui-core-engine-format.ts` | `npm run compile` + `npx mocha ... tests/unit/textui-core-engine.test.js` |
 | サービス初期化順・cleanup（宣言フェーズ） | `src/services/service-runtime-phases.ts` + `src/services/service-initializer.ts` | `npm run compile` + `npx mocha ... tests/unit/service-initializer.test.js` + `extensibility-service-factories-contract.test.js`（詳細は `docs/service-registration.md`） |
+| 拡張 activate/deactivate の順序 | `src/services/extension-lifecycle-phases.ts` + `src/services/extension-lifecycle-manager.ts` | `npm run compile` + `npx mocha ... tests/unit/extension-lifecycle-phases.test.js`（全体は `docs/service-registration.md`） |
 
 ---
 
