@@ -2,6 +2,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { spawn, spawnSync } from 'child_process';
 import type { CaptureExecutionResult, CaptureLog } from './shared';
+import {
+  buildRunBrowserCaptureArgs,
+  formatHeadlessAttemptLabel,
+  resolveHeadlessFlagAttempts
+} from './browser-capture-args';
 
 function resolveNodeCommand(): string {
   const base = path.basename(process.execPath).toLowerCase();
@@ -152,38 +157,35 @@ export async function runBrowserCapture(params: {
   targetUrl: string;
   log?: CaptureLog;
 }): Promise<CaptureExecutionResult> {
-  const headlessModes = ['--headless=new', '--headless'];
+  const headlessAttempts = resolveHeadlessFlagAttempts(params.browserPath);
   let lastResult: CaptureExecutionResult | null = null;
 
-  for (const headlessMode of headlessModes) {
-    const args: string[] = [
-      headlessMode,
-      '--disable-gpu',
-      '--hide-scrollbars',
-      '--disable-extensions',
-      `--window-size=${params.width},${params.height}`,
-      `--force-device-scale-factor=${params.scale}`,
-      `--virtual-time-budget=${params.waitMs}`,
-      `--screenshot=${params.outputPath}`,
-      params.targetUrl
-    ];
-
-    if (process.platform === 'linux') {
-      args.splice(1, 0, '--disable-dev-shm-usage');
-      if (params.allowNoSandbox) {
-        args.splice(1, 0, '--no-sandbox');
-      }
-    }
+  for (const headlessPrefix of headlessAttempts) {
+    const args = buildRunBrowserCaptureArgs(
+      {
+        width: params.width,
+        height: params.height,
+        scale: params.scale,
+        waitMs: params.waitMs,
+        outputPath: params.outputPath,
+        targetUrl: params.targetUrl,
+        allowNoSandbox: params.allowNoSandbox
+      },
+      headlessPrefix,
+      process.platform
+    );
 
     const maxExecutionMs = Math.max(15000, params.waitMs + 10000);
-    params.log?.(`runBrowserCapture: trying mode=${headlessMode}, timeoutMs=${maxExecutionMs}`);
+    const attemptLabel = formatHeadlessAttemptLabel(headlessPrefix);
+    params.log?.(`runBrowserCapture: trying attempt=${attemptLabel}, timeoutMs=${maxExecutionMs}`);
+    params.log?.(`runBrowserCapture: argv=${JSON.stringify(args)}`);
     const execution = await runProcess(params.browserPath, args, maxExecutionMs);
     if (execution.code === 0) {
-      params.log?.(`runBrowserCapture: mode=${headlessMode} succeeded`);
+      params.log?.(`runBrowserCapture: attempt=${attemptLabel} succeeded`);
       return execution;
     }
     params.log?.(
-      `runBrowserCapture: mode=${headlessMode} failed code=${execution.code}, stdout=${execution.stdout.slice(0, 1000)}, stderr=${execution.stderr.slice(0, 1000)}`
+      `runBrowserCapture: attempt=${attemptLabel} failed code=${execution.code}, stdout=${execution.stdout.slice(0, 1000)}, stderr=${execution.stderr.slice(0, 1000)}`
     );
     lastResult = execution;
   }
