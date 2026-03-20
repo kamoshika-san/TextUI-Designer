@@ -40,6 +40,7 @@
 ### 2) CLI エントリ遅延ロード
 - `src/cli/index.ts` はコマンドごとに dynamic import
 - 軽量コマンドのコールドスタート負荷を削減
+- サブコマンド追加は `src/cli/command-registry.ts` に 1 エントリ追加（CLI 文言/exit code 契約を維持）
 
 ### 3) MCP `capture_preview` の DTO/mapper/adapter 分離
 - 追加:

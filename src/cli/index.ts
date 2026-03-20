@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import type { ExitCode } from './types';
-import { getArg, printHelp } from './command-support';
+import { printHelp } from './command-support';
+import { getCommandRegistry } from './command-registry';
 
 async function run(): Promise<ExitCode> {
   const command = process.argv[2];
@@ -15,57 +16,15 @@ async function run(): Promise<ExitCode> {
     return 0;
   }
 
-  if (command === 'import') {
-    const { handleImportCommand } = await import('./commands/import-command');
-    return handleImportCommand();
+  // help/version 以外はレジストリで lazy-load dispatch
+  const registry = getCommandRegistry();
+  const handler = registry[command];
+  if (!handler) {
+    process.stderr.write(`unknown command: ${command}\n`);
+    return 1;
   }
 
-  if (command === 'providers') {
-    const { handleProvidersCommand } = await import('./commands/providers-command');
-    return handleProvidersCommand();
-  }
-
-  if (command === 'state') {
-    const { handleStateCommand } = await import('./commands/state-command');
-    return handleStateCommand();
-  }
-
-  if (command === 'capture') {
-    const { handleCaptureCommand } = await import('./commands/capture-command');
-    const fileArg = getArg('--file');
-    const dirArg = getArg('--dir');
-    return handleCaptureCommand({ fileArg, dirArg });
-  }
-
-  if (command === 'validate') {
-    const { handleValidateCommand } = await import('./commands/validate-command');
-    const fileArg = getArg('--file');
-    const dirArg = getArg('--dir');
-    return handleValidateCommand({ fileArg, dirArg });
-  }
-
-  if (command === 'export') {
-    const { handleExportCommand } = await import('./commands/export-command');
-    const fileArg = getArg('--file');
-    return handleExportCommand(fileArg);
-  }
-
-  if (command === 'plan') {
-    const { handlePlanCommand } = await import('./commands/plan-command');
-    const fileArg = getArg('--file');
-    const dirArg = getArg('--dir');
-    return handlePlanCommand({ fileArg, dirArg });
-  }
-
-  if (command === 'apply') {
-    const { handleApplyCommand } = await import('./commands/apply-command');
-    const fileArg = getArg('--file');
-    const dirArg = getArg('--dir');
-    return handleApplyCommand({ fileArg, dirArg });
-  }
-
-  process.stderr.write(`unknown command: ${command}\n`);
-  return 1;
+  return handler();
 }
 
 run()
