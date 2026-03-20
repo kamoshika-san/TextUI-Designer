@@ -136,6 +136,9 @@ npm run package          # extension package build
 npm run validate:samples:fresh    # サンプル検証（compileしてから実行）
 ```
 
+**ユニットテストと `out/`（`T-20260320-014`）**  
+多くの `tests/unit/*.js` は `require('../out/...')` でコンパイル済み JS を読みます。`npm test` / `npm run test:quick` / `npm run test:all:ci` は `compile` を先に実行しますが、**`npm run test:unit` 単体では `compile` を実行しない**ため、リポジトリをクリーンにした直後や `out/` を消した状態では失敗し得ます。初回・クリーン後は `npm run compile` のあとに `npm run test:unit` を実行するか、`npm run test:quick` / `npm test` を使ってください。`tests/setup.js` では `out/extension.js` が無い場合に早期失敗し、上記を案内します（`TEXTUI_TEST_SKIP_OUT_CHECK=1` でオプトアウト可能）。
+
 CI運用テンプレート（DSL validate + plan）は `docs/CI_TEMPLATE.md` を参照してください。
 
 

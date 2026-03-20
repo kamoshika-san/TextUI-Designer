@@ -1,3 +1,7 @@
+/**
+ * 既定は `out/utils/logger`（tsc 成果物）を読む。ビルド成果物契約に合わせ、CI との差分を最小化する。
+ * `src` 直読みの実証は `logger-ts-src-pilot.test.js`（`T-20260320-014`）を参照。
+ */
 const assert = require('assert');
 const { Logger } = require('../../out/utils/logger');
 

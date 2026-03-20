@@ -3,6 +3,21 @@
  * すべてのテストで使用されるモックとグローバル設定
  */
 
+const fs = require('fs');
+const path = require('path');
+
+const workspaceRoot = path.resolve(__dirname, '..');
+const outEntryMarker = path.join(workspaceRoot, 'out', 'extension.js');
+if (process.env.TEXTUI_TEST_SKIP_OUT_CHECK !== '1' && !fs.existsSync(outEntryMarker)) {
+  // eslint-disable-next-line no-console
+  console.error(
+    '[tests/setup] コンパイル成果物が見つかりません: out/extension.js\n' +
+      '先に `npm run compile` を実行するか、`npm run test:quick` / `npm test` を利用してください。\n' +
+      '（意図的にスキップする場合は TEXTUI_TEST_SKIP_OUT_CHECK=1）'
+  );
+  process.exit(1);
+}
+
 const { expect } = require('chai');
 
 // テスト環境変数を設定

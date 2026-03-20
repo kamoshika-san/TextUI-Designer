@@ -141,6 +141,13 @@ npm run check:contributes
 npm run test:unit
 ```
 
+### ユニットテストと `compile`（`T-20260320-014`）
+
+- **`npm run test:unit` は `compile` を自動実行しない**ため、ユニットテストが参照する `out/` が無いと失敗する（`require('../../out/...')` が多数）。
+- **推奨**: 初回・クリーン後は上の表のとおり **`npm run compile` を先に実行**するか、`npm run test:quick`（`compile` + unit）や `npm test`（`pretest:ci` + unit）を使う。
+- `tests/setup.js` は `out/extension.js` が無い場合に **早期終了**し、`compile` / `test:quick` を案内する（特殊用途のみ `TEXTUI_TEST_SKIP_OUT_CHECK=1` で無効化）。
+- `src` から直接読むパイロット（`ts-node`）は一部テストに限定しており、**CLI のように `out/cli/index.js` を実プロセスで叩く経路は引き続き `out` 前提**。
+
 変更範囲が広い場合:
 
 ```bash
