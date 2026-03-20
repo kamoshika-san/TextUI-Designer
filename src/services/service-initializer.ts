@@ -1,32 +1,18 @@
 import * as vscode from 'vscode';
 import { McpBootstrapService } from './mcp-bootstrap-service';
 import { ServiceFactory } from './service-factory';
+import { DISPOSE_PHASES, RUNTIME_INIT_PHASES } from './service-runtime-phases';
 import { Logger } from '../utils/logger';
+import type { ExtensionServices } from './extension-services';
 import type {
   ISchemaManager,
   IThemeManager,
   IWebViewManager,
   IExportManager,
-  IExportService,
   ITemplateService,
-  ISettingsService,
-  IDiagnosticManager,
-  ICompletionProvider,
-  ICommandManager
+  ISettingsService
 } from '../types';
-
-export interface ExtensionServices {
-  schemaManager: ISchemaManager;
-  themeManager: IThemeManager;
-  webViewManager: IWebViewManager;
-  exportManager: IExportManager;
-  exportService: IExportService;
-  templateService: ITemplateService;
-  settingsService: ISettingsService;
-  diagnosticManager: IDiagnosticManager;
-  completionProvider: ICompletionProvider;
-  commandManager: ICommandManager;
-}
+export type { ExtensionServices } from './extension-services';
 
 /**
  * サービスファクトリーのオーバーライド
@@ -90,17 +76,10 @@ export class ServiceInitializer {
 
     try {
       if (this.services) {
-        await this.services.schemaManager.cleanup();
-
-        this.services.diagnosticManager.clearCache();
-        this.services.diagnosticManager.dispose();
-
-        this.services.commandManager?.dispose?.();
-
-        this.services.webViewManager.dispose();
-
-        this.services.themeManager?.dispose?.();
-
+        const snapshot = this.services;
+        for (const phase of DISPOSE_PHASES) {
+          await phase.run(snapshot);
+        }
         this.services = null;
       }
 
@@ -125,15 +104,10 @@ export class ServiceInitializer {
   }
 
   private async initializeRuntime(services: ExtensionServices): Promise<void> {
-    await services.schemaManager.initialize();
-    services.commandManager.registerCommands();
-    await this.ensureMcpConfigured();
-
-    await services.themeManager.loadTheme();
-    services.webViewManager.applyThemeVariables(services.themeManager.generateCSSVariables());
-    services.themeManager.watchThemeFile(css => {
-      services.webViewManager.applyThemeVariables(css);
-    });
+    const ctx = { ensureMcpConfigured: () => this.ensureMcpConfigured() };
+    for (const phase of RUNTIME_INIT_PHASES) {
+      await phase.run(services, ctx);
+    }
   }
 
   private async ensureMcpConfigured(): Promise<void> {
