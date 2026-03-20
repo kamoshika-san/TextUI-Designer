@@ -2,9 +2,9 @@
 
 ## 結論
 
-**現状スコア: 88 / 100（A-）**
+**現状スコア: 89 / 100（A-）**
 
-- 直近で大きい保守性改善（configuration 生成化、CommandManager 分離、MCP DTO 分離、preview-capture 分割、CLI 遅延ロード）が完了し、構造リスクは明確に低下した
+- 直近で大きい保守性改善（configuration 生成化、CommandManager 分離、MCP DTO 分離、preview-capture 分割、CLI 遅延ロード、`pug-exporter` テンプレート分割）が完了し、構造リスクは明確に低下した
 - 一方で、大型モジュール分割と CI 運用固定化は未完了のため、90+ 到達には追加施策が必要
 
 ---
@@ -17,9 +17,9 @@
 | 品質ゲート運用         | 20      | 18     | `pretest:ci` と `test:all:ci` は整備済み、branch protection 必須化は未完           |
 | 型安全性            | 20      | 19     | `strict: true` + 追加静的チェック導入済み（`noImplicitReturns` 等）                  |
 | テスト容易性          | 20      | 17     | unit/integration/e2e/regression の分離は維持、失敗分類タグ運用は未導入                   |
-| 設計の分割容易性        | 20      | 16     | 責務分離は進展（preview-capture / MCP / commands）、core/export/schema の大型分割が残る |
+| 設計の分割容易性        | 20      | 17     | `pug-exporter` を `pug/*.ts` に分割済み、core/schema の大型分割が一部残る |
 | ドキュメント/オンボーディング | 20      | 18     | `MAINTAINER_GUIDE.md` を整備済み、古い周辺ドキュメント更新タスクは残る                        |
-| **合計**          | **100** | **88** |                                                                       |
+| **合計**          | **100** | **89** |                                                                       |
 
 
 ---
@@ -35,15 +35,17 @@
 4. **Preview Capture の責務分割**
   - `src/utils/preview-capture/`* へ分割し、障害切り分けと修正範囲を局所化
 5. **CLI コールドスタート改善**
-  - `src/cli/index.ts` の遅延ロード化で不要依存読み込みを削減
+   - `src/cli/index.ts` の遅延ロード化で不要依存読み込みを削減
+6. **`pug-exporter` の責務分割**
+   - ページシェル・フォーム断片・基本コンポーネント・レイアウトを `src/exporters/pug/*.ts` へ抽出し、`PugExporter` は `BaseComponentRenderer` 上の薄いデリゲートに集約
 
 ---
 
 ## 現在の主な負債（優先度順）
 
 1. **大型モジュールの残存**
-  - Issue A 対象の `textui-core-engine` / `react-exporter` / `schema-manager` 分割は完了
-  - 残る主要ホットスポットとして `pug-exporter` の責務集中を次の構造改善対象とする
+  - Issue A 対象の `textui-core-engine` / `react-exporter` / `schema-manager` / `pug-exporter` 分割は完了
+  - 残る主要ホットスポットとして `ExtensionLifecycleManager` のステージ化などが次の構造改善候補
 2. **品質ゲート運用の固定化不足**
   - `test:all:ci` 必須化（branch protection）と失敗分類タグが未運用
 3. **ドキュメント鮮度のばらつき**
@@ -62,7 +64,6 @@
 **期待効果:** 品質判定のばらつき低減（+1〜2点）
 
 ### フェーズ2（3〜6週間）: 構造改善
-- `pug-exporter` の責務分割（Issue A の補完）
 - `ExtensionLifecycleManager` の起動/終了処理のステージ化（段階化）
 
 **期待効果:** 変更容易性・レビュー性向上（+2〜3点）
@@ -95,6 +96,6 @@
 
 ## 最終提案（要約）
 
-> 以前の「82点で基礎改善が必要」フェーズは脱し、現在は「88点で運用固定化と大型分割をやり切る段階」です。  
-> 次は **品質ゲート固定化（Issue B）を先行**し、その後に **大型モジュール分割（Issue A）**へ進むのが最も安全です。
+> 以前の「82点で基礎改善が必要」フェーズは脱し、現在は「89点で運用固定化と残りの構造改善をやり切る段階」です。  
+> 次は **品質ゲート固定化（Issue B）を先行**し、その後に **ExtensionLifecycle のステージ化などフェーズ2の構造改善**へ進むのが最も安全です。
 
