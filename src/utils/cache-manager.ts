@@ -1,4 +1,4 @@
-import type { TextUIDSL, ComponentDef } from '../renderer/types';
+import type { TextUIDSL, ComponentDef } from '../domain/dsl-types';
 import type { ExportFormat } from './style-manager';
 import { TextUIMemoryTracker } from './textui-memory-tracker';
 
