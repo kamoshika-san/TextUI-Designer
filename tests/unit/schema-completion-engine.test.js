@@ -1,7 +1,9 @@
+const assert = require('assert');
 const { describe, it } = require('mocha');
 const { expect } = require('chai');
 
 const { SchemaCompletionEngine } = require('../../out/services/schema-completion-engine');
+const { COMPONENT_DEFINITIONS } = require('../../out/components/definitions/component-definitions');
 
 describe('SchemaCompletionEngine', () => {
   const engine = new SchemaCompletionEngine();
@@ -13,6 +15,14 @@ describe('SchemaCompletionEngine', () => {
 
     expect(items.length).to.be.greaterThan(0);
     expect(items.some((item) => item.label === 'Text')).to.equal(true);
+  });
+
+  it('getComponentCompletions は COMPONENT_DEFINITIONS の件数・順序・コンポーネント名と一致する（descriptor drift 防止）', () => {
+    const items = engine.getComponentCompletions();
+    assert.strictEqual(items.length, COMPONENT_DEFINITIONS.length);
+    COMPONENT_DEFINITIONS.forEach((def, i) => {
+      assert.strictEqual(items[i].label, def.name);
+    });
   });
 
   it('property-value コンテキストで値候補を返す', () => {
