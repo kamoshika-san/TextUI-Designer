@@ -4,6 +4,7 @@ import { TextUIMemoryTracker } from '../utils/textui-memory-tracker';
 import { ISchemaManager, SchemaDefinition } from '../types';
 import { suggestSimilarKeys } from './diagnostics/key-suggestion';
 import { buildDiagnosticTemplate } from './diagnostics/template-builder';
+import { assembleDiagnosticMarkdownMessage } from './diagnostics/diagnostic-message-assembler';
 import { resolveDiagnosticLocation, resolveDiagnosticRange } from './diagnostics/range-resolver';
 import { DiagnosticCacheStore, type DiagnosticCacheEntry } from './diagnostics/diagnostic-cache-store';
 import { DiagnosticScheduler } from './diagnostics/diagnostic-scheduler';
@@ -127,12 +128,7 @@ export class DiagnosticManager {
       const location = resolveDiagnosticLocation(err);
       const suggestedKeys = this.collectSuggestedKeys(err, schema);
       const template = buildDiagnosticTemplate(err, suggestedKeys);
-      const message = [
-        `[${template.code}] ${template.summary}`,
-        `原因: ${template.cause}`,
-        `修正: ${template.fix}`,
-        `場所: ${location}`
-      ].join('\n');
+      const message = assembleDiagnosticMarkdownMessage(template, location);
 
       const diag = new vscode.Diagnostic(
         range,
