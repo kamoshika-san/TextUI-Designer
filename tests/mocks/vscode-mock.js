@@ -182,7 +182,11 @@ const mockVscode = {
 
     onDidSaveTextDocument: () => ({ dispose: () => {} }),
     onDidChangeTextDocument: () => ({ dispose: () => {} }),
-    onDidCloseTextDocument: () => ({ dispose: () => {} })
+    onDidCloseTextDocument: () => ({ dispose: () => {} }),
+
+    fs: {
+      writeFile: () => Promise.resolve()
+    }
   },
 
   // Window
