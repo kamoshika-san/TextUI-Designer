@@ -1,4 +1,5 @@
 import { BUILT_IN_COMPONENTS, type BuiltInComponentName } from './built-in-components';
+import { CORE_CATALOG_METADATA } from './core-catalog-metadata';
 import { COMPONENT_MANIFEST } from './manifest';
 import type { ComponentDefinition } from './types';
 import { BUILT_IN_EXPORTER_RENDERER_DEFINITIONS } from './exporter-renderer-definitions';
@@ -16,6 +17,7 @@ export const COMPONENT_DEFINITIONS: readonly ComponentDefinition[] = BUILT_IN_CO
   (name: BuiltInComponentName) => {
     const entry = COMPONENT_MANIFEST[name];
     const exporter = BUILT_IN_EXPORTER_RENDERER_DEFINITIONS[name];
+    const coreMeta = CORE_CATALOG_METADATA[name];
     return {
       name,
       schemaRef: entry.schemaRef,
@@ -24,7 +26,12 @@ export const COMPONENT_DEFINITIONS: readonly ComponentDefinition[] = BUILT_IN_CO
       // token を inline style に反映する際の既定 CSS プロパティ名
       tokenStyleProperty: exporter.tokenStyleProperty,
       previewRendererKey: name,
-      exporterRendererMethod: exporter.rendererMethod
+      exporterRendererMethod: exporter.rendererMethod,
+      catalogSummaryEn: coreMeta.catalogSummaryEn,
+      requiredProps: coreMeta.requiredProps,
+      optionalProps: coreMeta.optionalProps,
+      supportsChildren: coreMeta.supportsChildren,
+      example: coreMeta.example
     };
   }
 );

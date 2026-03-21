@@ -65,8 +65,13 @@ export interface ComponentDefinition {
   name: string;
   /** スキーマ参照（例: `#/definitions/Text`） */
   schemaRef: SchemaRef;
-  /** 補完やカタログで表示する短い説明 */
+  /** 補完やカタログで表示する短い説明（日本語。manifest 由来） */
   description: string;
+  /**
+   * MCP / `listComponents` 向けの英語一行説明（旧 core component-catalog）。
+   * `description`（日本語）とは別物。
+   */
+  catalogSummaryEn: string;
   /** 補完用プロパティ定義 */
   properties: ComponentProperty[];
   /** token の既定適用先（任意） */
