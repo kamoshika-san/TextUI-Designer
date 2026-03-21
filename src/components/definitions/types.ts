@@ -21,8 +21,8 @@ export type SchemaRef = `#/definitions/${string}`;
  * token を inline style に適用する際の既定プロパティ名。
  * 例: `color`, `border-color`, `background-color`
  *
- * NOTE: 現状の既定マップは `src/exporters/base-component-renderer.ts` 側にあるため、
- * この値の運用は後続チケット（T-20260317-005）で集約する。
+ * NOTE: 編集用の既定は `exporter-renderer-definitions.ts` → `COMPONENT_DEFINITIONS` 合成。
+ * ランタイム（export）は `BaseComponentRenderer` が `COMPONENT_DEFINITIONS` 由来の Map を参照する。
  */
 export type TokenStyleProperty = string;
 

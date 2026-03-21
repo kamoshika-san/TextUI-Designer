@@ -28,9 +28,17 @@ import type {
 } from '../renderer/types';
 import type { ExportOptions, Exporter } from './index';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';
-import { getComponentName, BUILT_IN_COMPONENTS, type BuiltInComponentName } from '../registry/component-registry';
+import { getComponentName } from '../registry/component-registry';
+import { COMPONENT_DEFINITIONS } from '../components/definitions/component-definitions';
 import { AttributeSerializer, type ExporterAstNode, renderExporterAst } from './exporter-ast';
-import { BUILT_IN_EXPORTER_RENDERER_DEFINITIONS } from '../components/definitions/exporter-renderer-definitions';
+
+/** descriptor graph（`COMPONENT_DEFINITIONS`）由来の token 既定 CSS プロパティ。 */
+const BUILT_IN_TOKEN_STYLE_PROPERTY_BY_NAME = new Map<string, string>();
+for (const d of COMPONENT_DEFINITIONS) {
+  if (d.tokenStyleProperty !== undefined) {
+    BUILT_IN_TOKEN_STYLE_PROPERTY_BY_NAME.set(d.name, d.tokenStyleProperty);
+  }
+}
 
 export type ComponentHandler = (props: unknown, key: number) => string;
 
@@ -61,10 +69,10 @@ export abstract class BaseComponentRenderer implements Exporter {
    * サブクラスでオーバーライドして追加コンポーネントを登録可能
    */
   protected initializeHandlers(): void {
-    for (const componentName of BUILT_IN_COMPONENTS) {
-      const def = BUILT_IN_EXPORTER_RENDERER_DEFINITIONS[componentName];
+    for (const def of COMPONENT_DEFINITIONS) {
+      const method = def.exporterRendererMethod;
       // renderXxx はサブクラス実装（protected abstract）なので、実行時参照でディスパッチする
-      this.componentHandlers.set(componentName, (props, key) => (this as any)[def.rendererMethod](props, key));
+      this.componentHandlers.set(def.name, (props, key) => (this as any)[method](props, key));
     }
   }
 
@@ -219,8 +227,7 @@ export abstract class BaseComponentRenderer implements Exporter {
   }
 
   private resolveTokenStyleProperty(componentType: string): string | undefined {
-    const def = (BUILT_IN_EXPORTER_RENDERER_DEFINITIONS as Record<string, { tokenStyleProperty: string } | undefined>)[componentType];
-    return def?.tokenStyleProperty;
+    return BUILT_IN_TOKEN_STYLE_PROPERTY_BY_NAME.get(componentType);
   }
 
   private buildInlineCssDeclaration(property: string, token: string): string {
