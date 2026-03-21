@@ -1,4 +1,5 @@
 import { PerformanceMonitor } from '../../utils/performance-monitor';
+import { Logger } from '../../utils/logger';
 
 export interface WebViewCacheEntry {
   content: string;
@@ -17,6 +18,7 @@ export class WebViewPreviewCacheManager {
   private readonly MAX_CACHE_SIZE: number = 50 * 1024 * 1024; // 50MB制限
   private readonly MAX_CACHE_ENTRIES: number = 100; // 最大エントリ数
   private currentCacheSize: number = 0;
+  private readonly logger = new Logger('WebViewPreviewCache');
 
   constructor() {
     this.performanceMonitor = PerformanceMonitor.getInstance();
@@ -30,12 +32,12 @@ export class WebViewPreviewCacheManager {
     const entry = this.cache.get(cacheKey);
 
     if (entry) {
-      console.log(`[WebViewPreviewCache] キャッシュヒット: ${fileName}`);
+      this.logger.debug(`キャッシュヒット: ${fileName}`);
       this.performanceMonitor.recordCacheHit(true);
       return entry.data;
     }
 
-    console.log(`[WebViewPreviewCache] キャッシュミス: ${fileName}`);
+    this.logger.debug(`キャッシュミス: ${fileName}`);
     this.performanceMonitor.recordCacheHit(false);
     return null;
   }
@@ -68,7 +70,7 @@ export class WebViewPreviewCacheManager {
     this.cache.set(cacheKey, entry);
     this.currentCacheSize += entrySize;
 
-    console.log(`[WebViewPreviewCache] キャッシュに保存: ${fileName} (サイズ: ${Math.round(entrySize / 1024)}KB)`);
+    this.logger.debug(`キャッシュに保存: ${fileName} (サイズ: ${Math.round(entrySize / 1024)}KB)`);
   }
 
   /**
@@ -81,7 +83,7 @@ export class WebViewPreviewCacheManager {
     this.cache.clear();
     this.currentCacheSize = 0;
     
-    console.log(`[WebViewPreviewCache] キャッシュをクリアしました (${cacheSize}個のエントリ, ${Math.round(totalSize / 1024)}KB)`);
+    this.logger.debug(`キャッシュをクリアしました (${cacheSize}個のエントリ, ${Math.round(totalSize / 1024)}KB)`);
   }
 
   /**
@@ -105,7 +107,7 @@ export class WebViewPreviewCacheManager {
     }
 
     if (keysToRemove.length > 0) {
-      console.log(`[WebViewPreviewCache] ファイルのキャッシュをクリア: ${fileName} (${keysToRemove.length}個のエントリ)`);
+      this.logger.debug(`ファイルのキャッシュをクリア: ${fileName} (${keysToRemove.length}個のエントリ)`);
     }
   }
 
@@ -116,18 +118,18 @@ export class WebViewPreviewCacheManager {
     const memoryUsage = process.memoryUsage();
     const memoryMB = memoryUsage.heapUsed / 1024 / 1024;
     
-    console.log(`[WebViewPreviewCache] メモリ使用量: ${memoryMB.toFixed(1)}MB`);
+    this.logger.debug(`メモリ使用量: ${memoryMB.toFixed(1)}MB`);
     
     if (memoryMB > 150) {
-      console.warn(`[WebViewPreviewCache] メモリ使用量が多いため、キャッシュを強制クリアします: ${memoryMB.toFixed(1)}MB`);
+      this.logger.warn(`メモリ使用量が多いため、キャッシュを強制クリアします: ${memoryMB.toFixed(1)}MB`);
       this.clearCache();
     } else if (memoryMB > 100) {
-      console.warn(`[WebViewPreviewCache] メモリ使用量が多めのため、古いキャッシュをクリアします: ${memoryMB.toFixed(1)}MB`);
+      this.logger.warn(`メモリ使用量が多めのため、古いキャッシュをクリアします: ${memoryMB.toFixed(1)}MB`);
       this.evictOldEntries(this.MAX_CACHE_SIZE * 0.3); // 30%分の古いエントリを削除
     } else if (memoryMB > 50) {
-      console.log(`[WebViewPreviewCache] メモリ使用量: ${memoryMB.toFixed(1)}MB（キャッシュ保持中）`);
+      this.logger.debug(`メモリ使用量: ${memoryMB.toFixed(1)}MB（キャッシュ保持中）`);
     } else {
-      console.log(`[WebViewPreviewCache] メモリ使用量: ${memoryMB.toFixed(1)}MB（キャッシュ完全保持中）`);
+      this.logger.debug(`メモリ使用量: ${memoryMB.toFixed(1)}MB（キャッシュ完全保持中）`);
     }
   }
 
@@ -234,7 +236,7 @@ export class WebViewPreviewCacheManager {
       if (entry) {
         this.currentCacheSize -= entry.size;
         this.cache.delete(oldestKey);
-        console.log(`[WebViewPreviewCache] 最も古いエントリを削除: ${entry.fileName}`);
+        this.logger.debug(`最も古いエントリを削除: ${entry.fileName}`);
       }
     }
   }

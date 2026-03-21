@@ -3,6 +3,7 @@ import { WebViewLifecycleManager } from './webview-lifecycle-manager';
 import { WebViewUpdateManager } from './webview-update-manager';
 import { isWebViewMessage, type IThemeManager, type WebViewMessage } from '../../types';
 import { ConfigManager } from '../../utils/config-manager';
+import { Logger } from '../../utils/logger';
 import { ThemeDiscoveryService } from './theme-discovery-service';
 import { ThemeSwitchService } from './theme-switch-service';
 import { VsCodeWindowAdapter } from './vscode-window-adapter';
@@ -30,6 +31,7 @@ export class WebViewMessageHandler {
   private readonly themeSwitchService: ThemeSwitchService;
   private readonly windowAdapter: VsCodeWindowAdapter;
   private readonly messageHandlers: Record<MessageType, MessageHandler>;
+  private readonly logger = new Logger('WebViewMessageHandler');
 
   constructor(
     context: vscode.ExtensionContext,
@@ -83,7 +85,7 @@ export class WebViewMessageHandler {
     }
 
     if (!this.isMessageType(message.type)) {
-      console.warn('[WebViewMessageHandler] 未知のメッセージタイプ:', message.type);
+      this.logger.warn('未知のメッセージタイプ:', message.type);
       return;
     }
 
@@ -116,9 +118,9 @@ export class WebViewMessageHandler {
       }
 
       this.applyEditorSelection(editor, position);
-      console.log(`[WebViewMessageHandler] ${componentName} を DSL にジャンプ: ${dslPath}`);
+      this.logger.debug(`${componentName} を DSL にジャンプ: ${dslPath}`);
     } catch (error) {
-      console.error('[WebViewMessageHandler] jump-to-dsl エラー:', error);
+      this.logger.error('jump-to-dsl エラー:', error);
       this.windowAdapter.showErrorMessage(`DSLジャンプに失敗しました: ${error}`);
     }
   }
@@ -131,14 +133,14 @@ export class WebViewMessageHandler {
    * エクスポートメッセージを処理
    */
   private async handleExportMessage(): Promise<void> {
-    console.log('[WebViewMessageHandler] エクスポートメッセージを受信');
+    this.logger.debug('エクスポートメッセージを受信');
     const lastTuiFile = this.updateManager.getLastTuiFile();
 
     if (lastTuiFile) {
-      console.log(`[WebViewMessageHandler] エクスポート用ファイル: ${lastTuiFile}`);
+      this.logger.debug(`エクスポート用ファイル: ${lastTuiFile}`);
       await vscode.commands.executeCommand('textui-designer.export', lastTuiFile);
     } else {
-      console.log('[WebViewMessageHandler] エクスポート用ファイルが見つかりません');
+      this.logger.debug('エクスポート用ファイルが見つかりません');
       this.windowAdapter.showWarningMessage('エクスポートするファイルが見つかりません。先に.tui.ymlファイルを開いてください。');
     }
   }
@@ -147,7 +149,7 @@ export class WebViewMessageHandler {
    * WebView準備完了メッセージを処理
    */
   private async handleWebViewReady(): Promise<void> {
-    console.log('[WebViewMessageHandler] WebView準備完了メッセージを受信');
+    this.logger.debug('WebView準備完了メッセージを受信');
 
     const colorThemeKind = vscode.window.activeColorTheme?.kind;
     const lightThemeKind = vscode.ColorThemeKind?.Light;
@@ -166,7 +168,7 @@ export class WebViewMessageHandler {
 
   private async handleThemeSwitchMessage(message: WebViewMessage): Promise<void> {
     if (typeof message.themePath !== 'string') {
-      console.warn('[WebViewMessageHandler] theme-switch の themePath が無効です');
+      this.logger.warn('theme-switch の themePath が無効です');
       return;
     }
 
@@ -177,7 +179,7 @@ export class WebViewMessageHandler {
    * テーマ切り替えメッセージを処理
    */
   private async handleThemeSwitch(themePath: string): Promise<void> {
-    console.log('[WebViewMessageHandler] テーマ切り替えメッセージを受信:', themePath);
+    this.logger.debug('テーマ切り替えメッセージを受信:', themePath);
     await this.switchTheme(themePath);
   }
 
@@ -185,7 +187,7 @@ export class WebViewMessageHandler {
    * テーマ一覧取得メッセージを処理
    */
   private async handleGetThemes(): Promise<void> {
-    console.log('[WebViewMessageHandler] テーマ一覧リクエストを受信');
+    this.logger.debug('テーマ一覧リクエストを受信');
     await this.sendAvailableThemes();
   }
 
@@ -226,7 +228,7 @@ export class WebViewMessageHandler {
         themes: themes
       });
     } catch (error) {
-      console.error('[WebViewMessageHandler] テーマ一覧取得エラー:', error);
+      this.logger.error('テーマ一覧取得エラー:', error);
     }
   }
 
@@ -249,7 +251,7 @@ export class WebViewMessageHandler {
    */
   async switchTheme(themePath: string): Promise<void> {
     if (!this.themeManager) {
-      console.log('[WebViewMessageHandler] ThemeManagerが初期化されていません');
+      this.logger.debug('ThemeManagerが初期化されていません');
       return;
     }
 
@@ -271,7 +273,7 @@ export class WebViewMessageHandler {
 
       this.windowAdapter.showErrorMessage(result.notice.message);
     } catch (error) {
-      console.error('[WebViewMessageHandler] テーマ切り替えエラー:', error);
+      this.logger.error('テーマ切り替えエラー:', error);
       this.windowAdapter.showErrorMessage(`テーマ切り替えに失敗しました: ${error}`);
     }
   }
@@ -308,9 +310,9 @@ export class WebViewMessageHandler {
       setTimeout(async () => {
         try {
           await vscode.window.showTextDocument(activeEditor.document, vscode.ViewColumn.One);
-          console.log('[WebViewMessageHandler] WebView初期化完了後にtui.ymlファイルにフォーカスを戻しました');
+          this.logger.debug('WebView初期化完了後にtui.ymlファイルにフォーカスを戻しました');
         } catch (error) {
-          console.log('[WebViewMessageHandler] フォーカスを戻すことができませんでした:', error);
+          this.logger.debug('フォーカスを戻すことができませんでした:', error);
         }
       }, 300);
     }

@@ -7,6 +7,7 @@ import { WebViewPreviewCacheManager } from './cache-manager';
 import { WebViewErrorHandler } from './webview-error-handler';
 import { ConfigManager } from '../../utils/config-manager';
 import { ErrorHandler } from '../../utils/error-handler';
+import { Logger } from '../../utils/logger';
 import { resolveImageSourcesInDsl } from '../../utils/image-source-resolver';
 import * as path from 'path';
 
@@ -23,6 +24,7 @@ export class WebViewUpdateManager {
   private errorHandler: WebViewErrorHandler;
   private lastTuiFile: string | undefined = undefined;
   private isUpdating: boolean = false;
+  private readonly logger = new Logger('WebViewUpdateManager');
   private readonly isNamedError = (value: unknown, expectedName: string): value is Error =>
     value instanceof Error && value.name === expectedName;
 
@@ -60,9 +62,9 @@ export class WebViewUpdateManager {
       const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
       
       if (autoPreviewEnabled) {
-        console.log('[WebViewUpdateManager] 自動プレビューが有効なため、プレビューを開きます');
+        this.logger.debug('自動プレビューが有効なため、プレビューを開きます');
       } else {
-        console.log('[WebViewUpdateManager] 自動プレビューが無効なため、プレビューを開きません');
+        this.logger.debug('自動プレビューが無効なため、プレビューを開きません');
       }
     }
   }
@@ -75,7 +77,7 @@ export class WebViewUpdateManager {
     
     // ファイルが変更された場合はキャッシュとエラー状態をクリア
     if (this.lastTuiFile !== filePath) {
-      console.log(`[WebViewUpdateManager] ファイルが変更されました: ${this.lastTuiFile} -> ${filePath}`);
+      this.logger.debug(`ファイルが変更されました: ${this.lastTuiFile} -> ${filePath}`);
       this.cacheManager.clearCacheForFile(this.lastTuiFile || '');
       this.errorHandler.clearErrorState(this.lastTuiFile);
       
@@ -109,13 +111,13 @@ export class WebViewUpdateManager {
       const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
       
       if (!autoPreviewEnabled) {
-        console.log('[WebViewUpdateManager] 自動プレビューが無効なため、YAML送信をスキップします');
+        this.logger.debug('自動プレビューが無効なため、YAML送信をスキップします');
         return;
       }
     }
 
     if (!this.lifecycleManager.hasPanel() || this.isUpdating) {
-      console.log('[WebViewUpdateManager] パネルが存在しないか、更新中です');
+      this.logger.debug('パネルが存在しないか、更新中です');
       return;
     }
 
@@ -205,7 +207,7 @@ export class WebViewUpdateManager {
           content: document.getText()
         };
       } catch (error) {
-        console.warn('[WebViewUpdateManager] キャッシュ用YAMLの読み込みに失敗しました:', error);
+        this.logger.warn('キャッシュ用YAMLの読み込みに失敗しました:', error);
       }
     }
 
@@ -250,7 +252,7 @@ export class WebViewUpdateManager {
    * テスト用メモリ管理メソッド
    */
   _testMemoryManagement(): void {
-    console.log('[WebViewUpdateManager] テスト用メモリ管理を実行');
+    this.logger.debug('テスト用メモリ管理を実行');
     this.cacheManager.checkMemoryUsage();
   }
 
