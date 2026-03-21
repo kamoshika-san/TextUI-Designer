@@ -2,11 +2,14 @@ const assert = require('assert');
 const { describe, it } = require('mocha');
 const { expect } = require('chai');
 
-const { SchemaCompletionEngine } = require('../../out/services/schema-completion-engine');
+const {
+  DescriptorCompletionEngine,
+  SchemaCompletionEngine
+} = require('../../out/services/schema-completion-engine');
 const { COMPONENT_DEFINITIONS } = require('../../out/components/definitions/component-definitions');
 
-describe('SchemaCompletionEngine', () => {
-  const engine = new SchemaCompletionEngine();
+describe('DescriptorCompletionEngine', () => {
+  const engine = new DescriptorCompletionEngine();
 
   it('component-list コンテキストでコンポーネント候補を返す', () => {
     const items = engine.generateCompletionItemsFromDescriptors({
@@ -43,5 +46,9 @@ describe('SchemaCompletionEngine', () => {
       thrown = true;
     }
     expect(thrown).to.equal(true);
+  });
+
+  it('SchemaCompletionEngine は DescriptorCompletionEngine の互換エイリアス', () => {
+    assert.strictEqual(SchemaCompletionEngine, DescriptorCompletionEngine);
   });
 });

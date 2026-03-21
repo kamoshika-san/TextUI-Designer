@@ -10,7 +10,7 @@
 
 - プレビュー用 `YamlParser`（`src/services/webview/yaml-parser.ts`）
 - 診断用 `DiagnosticValidationEngine`（`src/services/diagnostics/diagnostic-validation-engine.ts`）
-- 補完用 `SchemaCompletionEngine.parseYamlForSyntaxValidation`（`src/services/schema-completion-engine.ts`）
+- 補完用 `DescriptorCompletionEngine.parseYamlForSyntaxValidation`（旧名 `SchemaCompletionEngine`・`src/services/schema-completion-engine.ts`）
 
 構文パースの挙動やスケジューリングが経路ごとに分岐すると、**軽微な修正の取りこぼし**や **valid/invalid の微妙な不一致**の温床になる。
 

@@ -3,19 +3,19 @@ import { ConfigManager } from '../utils/config-manager';
 import { Logger } from '../utils/logger';
 import { CompletionContextAnalyzer } from './completion-context-analyzer';
 import { CompletionCache } from './completion-cache';
-import { SchemaCompletionEngine } from './schema-completion-engine';
+import { DescriptorCompletionEngine } from './schema-completion-engine';
 
 /**
  * 補完プロバイダー（YAML/JSON の IntelliSense）。
  *
- * 候補の正本は descriptor カタログ（`SchemaCompletionEngine` → `COMPONENT_DEFINITIONS` / `COMPONENT_PROPERTIES`）。
+ * 候補の正本は descriptor カタログ（`DescriptorCompletionEngine` → `COMPONENT_DEFINITIONS` / `COMPONENT_PROPERTIES`）。
  * JSON Schema（`SchemaManager`）は補完経路では読み込まない（診断・バリデーション・スキーマ登録は別系統）。
  */
 export class TextUICompletionProvider implements vscode.CompletionItemProvider {
   private completionCacheService: CompletionCache;
   private contextAnalyzer: CompletionContextAnalyzer;
   /** クラス名は歴史的経緯。実装は descriptor / カタログ駆動（JSON Schema は未使用）。 */
-  private schemaEngine: SchemaCompletionEngine;
+  private schemaEngine: DescriptorCompletionEngine;
 
   private completionCache: Map<string, { items: vscode.CompletionItem[]; timestamp: number }> = new Map();
   private readonly CACHE_TTL = 10000; // 10秒
@@ -60,7 +60,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
   constructor() {
     this.contextAnalyzer = new CompletionContextAnalyzer();
     this.completionCacheService = new CompletionCache(this.CACHE_TTL);
-    this.schemaEngine = new SchemaCompletionEngine();
+    this.schemaEngine = new DescriptorCompletionEngine();
     this.completionCache = this.completionCacheService.getCompletionCacheMap();
   }
 

@@ -8,9 +8,9 @@ import { CompletionAnalysisContext } from './completion-context-analyzer';
  * 補完候補生成（descriptor / カタログ駆動）。
  *
  * `COMPONENT_DEFINITIONS` と `COMPONENT_PROPERTIES`（`completion-component-catalog`）が正本。
- * JSON Schema の AST や oneOf は参照しない（名前は歴史的経緯で `Schema*` のまま）。
+ * JSON Schema の AST や oneOf は参照しない。
  */
-export class SchemaCompletionEngine {
+export class DescriptorCompletionEngine {
   private readonly completionItemKindFallback: Record<'Class' | 'Property' | 'Value' | 'Module' | 'Field', number> = {
     Class: 7,
     Property: 9,
@@ -161,3 +161,8 @@ export class SchemaCompletionEngine {
     } as unknown as vscode.CompletionItem;
   }
 }
+
+/**
+ * @deprecated 互換名。新規コードは {@link DescriptorCompletionEngine} を参照。
+ */
+export const SchemaCompletionEngine = DescriptorCompletionEngine;

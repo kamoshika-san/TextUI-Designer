@@ -67,7 +67,7 @@ ADR: [0001 解析パイプライン（初稿）](adr/0001-document-analysis-serv
 
 ### 補完（IntelliSense）と JSON Schema
 
-- **補完候補の内容**は `COMPONENT_DEFINITIONS` / `COMPONENT_PROPERTIES`（`completion-component-catalog` 経由の descriptor グラフ）が正本。`SchemaCompletionEngine` というクラス名は残っているが、**JSON Schema を読んで候補を組み立てる実装ではない**。
+- **補完候補の内容**は `COMPONENT_DEFINITIONS` / `COMPONENT_PROPERTIES`（`completion-component-catalog` 経由の descriptor グラフ）が正本。実装クラスは **`DescriptorCompletionEngine`**（旧名 `SchemaCompletionEngine` は互換エイリアス）。**JSON Schema を読んで候補を組み立てる実装ではない**。
 - **JSON Schema**（`SchemaManager.loadSchema` 等）は、診断・バリデーション・`yaml.schemas` 登録など**別系統**で利用する。`CompletionCache` は **補完結果（`CompletionItem[]`）の TTL キャッシュのみ**を保持し、補完のたびにスキーマをウォームロードしない。
 
 ### 1) Preview Capture の責務分割
