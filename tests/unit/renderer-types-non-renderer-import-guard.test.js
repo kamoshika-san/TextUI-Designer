@@ -1,5 +1,6 @@
 /**
- * T-20260321-129: `src/renderer/**` 以外から `renderer/types` を import しないことを検知する。
+ * T-20260321-129 / Sprint 1 guardrail:
+ * `src/renderer/**` 以外、および test code から `renderer/types` を import しないことを検知する。
  *
  * 正本・棚卸し: docs/dsl-types-renderer-types-inventory.md
  */
@@ -12,6 +13,9 @@ const repoRoot = path.resolve(__dirname, '..', '..');
 const reRendererTypesImport = /from\s+['"][^'"]*renderer\/types['"]/;
 
 function walkTsFiles(dir, out = []) {
+  if (!fs.existsSync(dir)) {
+    return out;
+  }
   for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, ent.name);
     if (ent.isDirectory()) {
@@ -28,20 +32,22 @@ function toPosixRelative(filePath) {
 }
 
 describe('renderer/types non-renderer import guard (T-20260321-129)', () => {
-  it('src/renderer 外から renderer/types への import はゼロである', () => {
+  it('src/renderer 外および tests 配下から renderer/types への import はゼロである', () => {
     const srcDir = path.join(repoRoot, 'src');
+    const testsDir = path.join(repoRoot, 'tests');
     const rendererRoot = path.join(srcDir, 'renderer');
-    const allFiles = walkTsFiles(srcDir);
+    const allFiles = [...walkTsFiles(srcDir), ...walkTsFiles(testsDir)];
     const violations = [];
 
     for (const abs of allFiles) {
-      if (abs.startsWith(rendererRoot + path.sep) || abs === rendererRoot) {
+      const isRendererFile = abs.startsWith(rendererRoot + path.sep) || abs === rendererRoot;
+      if (isRendererFile) {
         continue;
       }
       const rel = toPosixRelative(abs);
       const text = fs.readFileSync(abs, 'utf8');
       if (reRendererTypesImport.test(text)) {
-        violations.push(`${rel}: renderer/types import が残存（domain/dsl-types へ移行してください）`);
+        violations.push(`${rel}: renderer/types import が残存（共有 DSL 型は domain/dsl-types を参照してください）`);
       }
     }
 

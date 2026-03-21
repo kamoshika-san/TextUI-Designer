@@ -5,7 +5,7 @@
 ## 概要
 
 - **正本（canonical）**: `src/domain/dsl-types.ts` に定義される共有 DSL 型（`TextUIDSL` / `ComponentDef` 等）。
-- **現状（2026-03-21 Sprint4 更新）**: `src/renderer/types.ts` は **`domain/dsl-types` の再エクスポート**のみ。`src/renderer/**` 外からの `renderer/types` import は **ゼロ**（T-128/129）。
+- **現状（2026-03-21 Sprint 1 ガード更新）**: `src/renderer/types.ts` は **`domain/dsl-types` の再エクスポート**のみ。`src/renderer/**` 外と `tests/**` からの `renderer/types` import は **ゼロ**を維持する（T-128/129）。
 - **移行の狙い**: 共有 DSL 契約は **domain を経由**し、非 renderer からの `renderer/types` 依存を **ゼロで維持**する。
 
 ## モジュール一覧（`renderer/types` を直接 import）
@@ -13,13 +13,22 @@
 非 `src/renderer/**` からの直接 import は解消済み。  
 今後 `renderer/types` 参照が増えた場合は CI ガード（`tests/unit/renderer-types-non-renderer-import-guard.test.js`）で検知される。
 
-**CI / ローカル**: `src/renderer/**` 外からの `renderer/types` import は **ゼロ必須**（T-129）。
+**CI / ローカル**:
+
+- `src/renderer/**` 外と `tests/**` からの `renderer/types` import は **ゼロ必須**（T-129）。
+- 棚卸しと違反検知は `npm run check:dsl-types-ssot` でも確認できる。
 
 ## Sprint4 完了メモ（T-128〜T-130）
 
 - `src/renderer/types.ts` は thin facade（`export * from '../domain/dsl-types'`）として固定。
 - Core / CLI / Services / Exporter の共有 DSL 型 import を `domain/dsl-types` 起点へ統一。
 - Exporter 回帰テスト `tests/unit/exporter-family-structure-regression.test.js` を追加。
+
+## Sprint 1 実装メモ（ガードレール）
+
+- `tests/unit/renderer-types-thin-facade.test.js`: `src/renderer/types.ts` が **re-export only** であることを固定。
+- `tests/unit/renderer-types-non-renderer-import-guard.test.js`: `src/renderer/**` 外 **および `tests/**`** からの `renderer/types` import を禁止。
+- `scripts/check-dsl-type-imports.cjs`: `domain/dsl-types` / `renderer/types` の import 件数と違反ファイルを一覧化する棚卸しコマンド。
 
 ## T-119（E-DSL-SSOT Sprint 1）— 移行単位マトリクス（領域 × 優先）
 
