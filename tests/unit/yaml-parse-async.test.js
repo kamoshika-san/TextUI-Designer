@@ -1,6 +1,14 @@
 const { describe, it } = require('mocha');
 const { expect } = require('chai');
-const { parseYamlTextAsync } = require('../../out/dsl/yaml-parse-async');
+const path = require('path');
+
+// T-20260321-085: src-first（token-style-property-map.test.js と同型の ts-node 登録）
+require('ts-node').register({
+  transpileOnly: true,
+  project: path.join(__dirname, '../../tsconfig.json')
+});
+
+const { parseYamlTextAsync } = require('../../src/dsl/yaml-parse-async');
 
 describe('parseYamlTextAsync (dsl kernel)', () => {
   it('有効な YAML をパースしてオブジェクトを返す', async () => {
