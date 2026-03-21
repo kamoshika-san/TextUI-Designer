@@ -15,6 +15,8 @@
 | [quality-gate-green-main.md](quality-gate-green-main.md) | ローカルで緑にしてから push/PR する運用（フェーズ 0） |
 | [ci-quality-gate.md](ci-quality-gate.md) | CI ジョブ・`test:all:ci`・branch protection の対応 |
 
+ログの混在整理（Phase 0）: [console-logger-inventory-phase0.md](console-logger-inventory-phase0.md)
+
 ## クイックスタート（変更種別別）
 
 | 変更したい内容 | 主に触る場所 | 実行コマンド（最低限） |
