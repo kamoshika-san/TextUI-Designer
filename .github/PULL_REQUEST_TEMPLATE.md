@@ -102,3 +102,5 @@
 
 - メンテナー向け実務: [`docs/MAINTAINER_GUIDE.md`](docs/MAINTAINER_GUIDE.md)
 - CI / DSL Plan: [`docs/CI_TEMPLATE.md`](docs/CI_TEMPLATE.md)
+- SSoT 方針 ADR: [`docs/adr/0003-dsl-types-canonical-source.md`](docs/adr/0003-dsl-types-canonical-source.md)
+- 型追加フロー: [`docs/adding-built-in-component.md`](docs/adding-built-in-component.md)

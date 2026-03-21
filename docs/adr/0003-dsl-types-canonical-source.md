@@ -17,6 +17,15 @@
 3. **新規コード**では、拡張ホスト・CLI・core・exporter から **可能な限り `domain/dsl-types` を参照**する。WebView 専用の見た目・プレビュー限定の型は `renderer` 側に残してよい。
 4. **棚卸し一覧**は [dsl-types-renderer-types-inventory.md](../dsl-types-renderer-types-inventory.md) を正とする。
 
+## 運用ルール（型追加フロー）
+
+1. 共有 DSL 型の追加・変更は **最初に `src/domain/dsl-types.ts`** を更新する。
+2. `src/renderer/types.ts` は **互換レイヤ（thin facade）** とし、型本体・独自 alias を追加しない。
+3. `src/renderer/**` 外で `renderer/types` を新規 import しない（必要時は ADR 追記で例外を明文化）。
+4. 変更時は最低限、以下のガードを実行してから PR を作成する。
+   - `npx mocha --grep "renderer/types|SSoT eslint restriction scope guard" tests/unit`
+   - `npx eslint "src/core/**/*.{ts,tsx}" "src/exporters/**/*.{ts,tsx}" "src/cli/**/*.{ts,tsx}" "src/utils/**/*.{ts,tsx}" "tests/**/*.{js,ts,tsx}"`
+
 ## 結果
 
 - 型の「どれが正か」がドキュメントとコードの両方で追える。
@@ -27,4 +36,6 @@
 
 - 棚卸し: [dsl-types-renderer-types-inventory.md](../dsl-types-renderer-types-inventory.md)
 - メンテナー導線: [MAINTAINER_GUIDE.md](../MAINTAINER_GUIDE.md)「境界ガイド索引」
+- 型追加の実務手順: [adding-built-in-component.md](../adding-built-in-component.md)
+- PR 入力テンプレ: [../../.github/PULL_REQUEST_TEMPLATE.md](../../.github/PULL_REQUEST_TEMPLATE.md)
 - 親エピック: T-20260321-072（保守性 Top リスク追跡）
