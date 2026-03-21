@@ -3,6 +3,7 @@ const {
   decodeDslComponent,
   decodeDslComponentAs,
   decodeDslComponentObjectProps,
+  decodeDslComponentUnion,
   decodeTextDslComponent,
   decodeButtonDslComponent
 } = require('../../out/registry/dsl-component-codec');
@@ -81,6 +82,27 @@ describe('DslComponentCodec', () => {
     const decoded = decodeButtonDslComponent({ Button: { label: 'x', kind: 'weird' } });
     assert.strictEqual(decoded.value, null);
     assert.strictEqual(decoded.reason, 'props-not-object');
+  });
+
+  it('decodeDslComponentUnion: Text は kind+TextComponent に narrow（T-180）', () => {
+    const decoded = decodeDslComponentUnion({ Text: { value: 'hi', variant: 'p' } });
+    assert.strictEqual(decoded.reason, null);
+    assert.strictEqual(decoded.value.kind, 'Text');
+    assert.deepStrictEqual(decoded.value.props, { value: 'hi', variant: 'p' });
+  });
+
+  it('decodeDslComponentUnion: Button は kind+ButtonComponent に narrow', () => {
+    const decoded = decodeDslComponentUnion({ Button: { label: 'go', kind: 'primary' } });
+    assert.strictEqual(decoded.reason, null);
+    assert.strictEqual(decoded.value.kind, 'Button');
+    assert.deepStrictEqual(decoded.value.props, { label: 'go', kind: 'primary' });
+  });
+
+  it('decodeDslComponentUnion: その他は name を kind に載せる', () => {
+    const decoded = decodeDslComponentUnion({ Input: { name: 'email', label: 'E', type: 'text' } });
+    assert.strictEqual(decoded.reason, null);
+    assert.strictEqual(decoded.value.kind, 'Input');
+    assert.deepStrictEqual(decoded.value.props, { name: 'email', label: 'E', type: 'text' });
   });
 });
 

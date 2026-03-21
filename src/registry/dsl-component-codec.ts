@@ -169,3 +169,46 @@ export function decodeButtonDslComponent(
   };
 }
 
+/**
+ * 代表 kind（Text / Button）では props が narrow され、その他は `unknown` の判別共用体（T-180）。
+ * preview / export 双方で `decodeDslComponent` の直後分岐を共通化するための入口。
+ */
+export type DecodedComponentUnion =
+  | { kind: 'Text'; props: TextComponent }
+  | { kind: 'Button'; props: ButtonComponent }
+  | { kind: string; props: unknown };
+
+/**
+ * DSL 断片を {@link DecodedComponentUnion} に正規化する。
+ * Text / Button は専用 narrow（{@link decodeTextDslComponent} / {@link decodeButtonDslComponent}）を先に適用し、
+ * それ以外は {@link decodeDslComponent} の name / props をそのまま載せる。
+ */
+export function decodeDslComponentUnion(
+  component: unknown
+): DslComponentDecodeResult<DecodedComponentUnion> {
+  const textDecoded = decodeTextDslComponent(component);
+  if (textDecoded.value) {
+    return {
+      value: { kind: 'Text', props: textDecoded.value.props },
+      reason: null
+    };
+  }
+  const buttonDecoded = decodeButtonDslComponent(component);
+  if (buttonDecoded.value) {
+    return {
+      value: { kind: 'Button', props: buttonDecoded.value.props },
+      reason: null
+    };
+  }
+  const decoded = decodeDslComponent(component);
+  if (!decoded.value) {
+    return { value: null, reason: decoded.reason };
+  }
+  return {
+    value: {
+      kind: decoded.value.name,
+      props: decoded.value.props
+    },
+    reason: null
+  };
+}
