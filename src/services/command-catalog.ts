@@ -2,7 +2,10 @@
  * VS Code `contributes.commands` および同期対象の `contributes.menus` の単一ソース。
  * `getPackageCommandContributions` / `getPackageMenuContributions` が `sync:commands` で `package.json` に反映される。
  */
-export type CommandHandler = (...args: unknown[]) => void | Promise<void>;
+import type { CommandCatalogDependencies, CommandCatalogEntry, CommandHandler } from './command-catalog-deps';
+import { RUNTIME_INSPECTION_COMMAND_ENTRIES } from './runtime-inspection-command-entries';
+
+export type { CommandHandler, CommandCatalogDependencies };
 
 export interface CommandDefinition {
   command: string;
@@ -28,37 +31,7 @@ interface CommandMenuEntry {
   group?: string;
 }
 
-export interface CommandCatalogDependencies {
-  openPreviewWithCheck: () => Promise<void>;
-  capturePreviewImage: () => Promise<void>;
-  openDevTools: () => void;
-  executeExport: (filePath?: string) => Promise<void>;
-  createTemplate: () => Promise<void>;
-  insertTemplate: () => Promise<void>;
-  openSettings: () => Promise<void>;
-  resetSettings: () => Promise<void>;
-  showAutoPreviewSetting: () => Promise<void>;
-  checkAutoPreviewSetting: () => Promise<void>;
-  reinitializeSchemas: () => Promise<void>;
-  debugSchemas: () => Promise<void>;
-  showPerformanceReport: () => Promise<void>;
-  clearPerformanceMetrics: () => Promise<void>;
-  togglePerformanceMonitoring: () => Promise<void>;
-  enablePerformanceMonitoring: () => Promise<void>;
-  generateSampleEvents: () => Promise<void>;
-  showMemoryReport: () => Promise<void>;
-  toggleMemoryTracking: () => Promise<void>;
-  enableMemoryTracking: () => Promise<void>;
-}
-
-interface CommandCatalogEntry {
-  command: string;
-  title: string;
-  menus?: readonly CommandMenuEntry[];
-  callback: (deps: CommandCatalogDependencies) => CommandHandler;
-}
-
-const COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
+const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
   {
     command: 'textui-designer.openPreview',
     title: 'TextUI: Open Preview',
@@ -133,48 +106,13 @@ const COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
     command: 'textui-designer.debugSchemas',
     title: 'TextUI: スキーマ状態をデバッグ',
     callback: deps => () => deps.debugSchemas()
-  },
-  {
-    command: 'textui-designer.showPerformanceReport',
-    title: 'TextUI: パフォーマンスレポートを表示',
-    callback: deps => () => deps.showPerformanceReport()
-  },
-  {
-    command: 'textui-designer.clearPerformanceMetrics',
-    title: 'TextUI: パフォーマンスメトリクスをクリア',
-    callback: deps => () => deps.clearPerformanceMetrics()
-  },
-  {
-    command: 'textui-designer.togglePerformanceMonitoring',
-    title: 'TextUI: パフォーマンス監視の切り替え',
-    callback: deps => () => deps.togglePerformanceMonitoring()
-  },
-  {
-    command: 'textui-designer.enablePerformanceMonitoring',
-    title: 'TextUI: パフォーマンス監視を有効化',
-    callback: deps => () => deps.enablePerformanceMonitoring()
-  },
-  {
-    command: 'textui-designer.generateSampleEvents',
-    title: 'TextUI: サンプルイベントを生成',
-    callback: deps => () => deps.generateSampleEvents()
-  },
-  {
-    command: 'textui-designer.showMemoryReport',
-    title: 'TextUI: メモリレポートを表示',
-    callback: deps => () => deps.showMemoryReport()
-  },
-  {
-    command: 'textui-designer.toggleMemoryTracking',
-    title: 'TextUI: メモリ追跡の切り替え',
-    callback: deps => () => deps.toggleMemoryTracking()
-  },
-  {
-    command: 'textui-designer.enableMemoryTracking',
-    title: 'TextUI: メモリ追跡を有効化',
-    callback: deps => () => deps.enableMemoryTracking()
   }
-] as const;
+];
+
+const COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
+  ...CORE_COMMAND_CATALOG,
+  ...RUNTIME_INSPECTION_COMMAND_ENTRIES
+];
 
 export const TEXTUI_COMMAND_IDS: readonly string[] = COMMAND_CATALOG.map(entry => entry.command);
 

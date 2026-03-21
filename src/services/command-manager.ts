@@ -59,7 +59,7 @@ export class CommandManager implements ICommandManager {
   }
 
   /**
-   * コマンドを登録
+   * コマンドを登録（定義は `command-catalog`＋`runtime-inspection-command-entries` に集約）。
    */
   registerCommands(): void {
     this.logger.info('コマンド登録を開始');

@@ -2,7 +2,7 @@
 
 ## 正本
 
-- [`src/services/command-catalog.ts`](../src/services/command-catalog.ts) の `COMMAND_CATALOG`
+- [`src/services/command-catalog.ts`](../src/services/command-catalog.ts) の `COMMAND_CATALOG`（コア＋[`runtime-inspection-command-entries.ts`](../src/services/runtime-inspection-command-entries.ts) の診断コマンド断片）
 - 各エントリ: `command`（ID）・`title`（表示名）・任意で `menus`（メニュー掲載先）
 
 ## package.json への反映
@@ -13,7 +13,7 @@
 
 ## コマンドやメニューを追加するとき
 
-1. `command-catalog.ts` の `COMMAND_CATALOG` にエントリを追加（必要なら `menus` に `location: 'editor/title'` 等）。
+1. `command-catalog.ts` の `CORE_COMMAND_CATALOG`、または診断系なら `runtime-inspection-command-entries.ts` にエントリを追加（必要なら `menus` に `location: 'editor/title'` 等）。
 2. `npm run sync:commands`
 3. `npm run check:commands` と `npm run check:contributes` が通ることを確認。
 
