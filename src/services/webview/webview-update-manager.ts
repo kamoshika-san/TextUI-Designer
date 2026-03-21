@@ -1,4 +1,3 @@
-import * as vscode from 'vscode';
 import { WebViewLifecycleManager } from './webview-lifecycle-manager';
 import { YamlParser, YamlSchemaLoader } from './yaml-parser';
 import { UpdateQueueManager } from './update-queue-manager';
@@ -9,12 +8,12 @@ import { WebViewErrorHandler } from './webview-error-handler';
 import { ConfigManager } from '../../utils/config-manager';
 import { ErrorHandler } from '../../utils/error-handler';
 import { Logger } from '../../utils/logger';
-import { resolveImageSourcesInDsl } from '../../utils/image-source-resolver';
-import * as path from 'path';
+import { deliverPreviewPayload } from './preview-webview-deliver';
 
 /**
- * リファクタリングされたWebViewUpdateManager
- * 各専用クラスに処理を委譲し、ファサードパターンで統一インターフェースを提供
+ * リファクタリングされた WebViewUpdateManager（プレビュー更新のオーケストレーション）。
+ * YAML の parse / validate・キャッシュ・**WebView への配信（postMessage）**は専用モジュールへ委譲。
+ * 配信ペイロードの組み立てと postMessage は `preview-webview-deliver.ts`（deliver ポート）。
  */
 export class WebViewUpdateManager {
   private lifecycleManager: WebViewLifecycleManager;
@@ -137,7 +136,7 @@ export class WebViewUpdateManager {
         const cachedData = this.cacheManager.getCachedData(currentYaml.fileName, currentYaml.content);
         if (cachedData) {
           this.previewUpdateCoordinator.setPhase(PreviewUpdatePhase.Delivering);
-          this.sendMessageToWebView(cachedData, currentYaml.fileName);
+          deliverPreviewPayload(this.lifecycleManager, cachedData, currentYaml.fileName);
           return;
         }
       }
@@ -157,7 +156,7 @@ export class WebViewUpdateManager {
 
       // WebViewにデータを送信
       this.previewUpdateCoordinator.setPhase(PreviewUpdatePhase.Delivering);
-      this.sendMessageToWebView(parsedResult.data, parsedResult.fileName);
+      deliverPreviewPayload(this.lifecycleManager, parsedResult.data, parsedResult.fileName);
 
       // メモリ使用量をチェック
       this.cacheManager.checkMemoryUsage();
@@ -180,27 +179,6 @@ export class WebViewUpdateManager {
       this.previewUpdateCoordinator.endPipeline();
       this.isUpdating = false;
     }
-  }
-
-  /**
-   * WebViewにメッセージを送信
-   */
-  private sendMessageToWebView(data: unknown, fileName: string): void {
-    const panel = this.lifecycleManager.getPanel();
-    if (!panel) {
-      return;
-    }
-
-    const normalizedData = resolveImageSourcesInDsl(data, {
-      dslFileDir: path.dirname(fileName),
-      mapResolvedSrc: absolutePath => panel.webview.asWebviewUri(vscode.Uri.file(absolutePath)).toString()
-    });
-
-    panel.webview.postMessage({
-      type: 'update',
-      data: normalizedData,
-      fileName: fileName
-    });
   }
 
   /**
