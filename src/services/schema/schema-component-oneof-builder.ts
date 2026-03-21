@@ -1,12 +1,12 @@
 import type { SchemaDefinition } from '../../types';
-import { getComponentSchemaRefs } from '../../registry/component-manifest';
+import { getComponentSchemaRefs } from './schema-descriptor-selectors';
 
 export type OneOfRef = { $ref: string };
 
 /**
  * `schemas/schema.json` の `definitions.component.oneOf` を
  * descriptor graph（`COMPONENT_DEFINITIONS` の各 `schemaRef` 列）から生成するためのビルダー。
- * 参照列挙は `getComponentSchemaRefs()`（registry）経由で descriptor と一致する。
+ * 参照列挙は `schema-descriptor-selectors` の `getComponentSchemaRefs()` で descriptor と一致する。
  */
 export function buildExpectedComponentOneOf(): OneOfRef[] {
   return getComponentSchemaRefs().map($ref => ({ $ref }));

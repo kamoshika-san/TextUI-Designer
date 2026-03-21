@@ -1,6 +1,5 @@
-import { COMPONENT_DEFINITIONS } from '../../components/definitions/component-definitions';
-import { getComponentSchemaRefs } from '../../registry/component-manifest';
 import type { SchemaDefinition } from '../../types';
+import { getComponentDefinitionNames, getComponentSchemaRefs } from './schema-descriptor-selectors';
 
 export function validateSchemaConsistency(schema: SchemaDefinition): void {
   const expectedRefs = getComponentSchemaRefs();
@@ -12,7 +11,7 @@ export function validateSchemaConsistency(schema: SchemaDefinition): void {
   const extraRefs = actualRefs.filter(ref => !expectedSet.has(ref));
 
   const definitions = schema.definitions ?? {};
-  const missingDefinitions = COMPONENT_DEFINITIONS.map(def => def.name).filter(name => !(name in definitions));
+  const missingDefinitions = getComponentDefinitionNames().filter(name => !(name in definitions));
 
   const orderedMatch = actualRefs.length === expectedRefs.length && actualRefs.every((ref, i) => ref === expectedRefs[i]);
   const duplicateRefs = collectDuplicateRefs(actualRefs);
