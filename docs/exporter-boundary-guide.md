@@ -20,6 +20,19 @@
 - オプションの意味の短い説明: `src/exporters/export-types.ts` の `useReactRender` JSDoc。
 - fallback の削除や primary への統一は **本ガイドのスコープ外**（別チケット）。
 
+## Export と Preview（WebView）の共有境界（T-117）
+
+**目的**: Export の primary 経路と WebView プレビューが **同じ React 実装**を共有しうるため、「どこまでが Export 契約で、どこがプレビュー専用か」を迷わない。
+
+| 区分 | 置き場の目安 | メモ |
+|------|----------------|------|
+| **共有カーネル** | `src/exporters/react-static-export.ts` が参照する **`src/renderer/component-map`** 経由の描画 | HTML exporter の **primary**（`useReactRender` 既定）とプレビューが交差しやすい。変更は **両経路の回帰**を意識する。 |
+| **Export 専用** | 各 `*exporter.ts`・`html-renderers/*`・`pug/*` など **文字列生成系** | `useReactRender === false` や非 React 形式の本体。プレビューと **挙動差**がありうる（上表の fallback 列）。 |
+| **Preview 専用** | WebView パネル・メッセージハンドラ（`src/renderer/` の UI シェル） | DSL の **表示**には関与するが、CLI export 成果物の **契約**とは切り分ける。 |
+
+- 結合パターンの詳細: [export-webview-runtime-coupling-inventory.md](export-webview-runtime-coupling-inventory.md)
+- import 境界（WebView → Export 禁止）: [import-boundaries-4-lanes.md](import-boundaries-4-lanes.md)
+
 ## 関連ドキュメント
 
 - Provider契約: `docs/PROVIDER_CONTRACT.md`
