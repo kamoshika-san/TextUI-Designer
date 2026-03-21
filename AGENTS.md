@@ -6,6 +6,8 @@
 
 TextUI Designerは、YAML/JSONベースのDSLでUIを設計するVS Code拡張機能。単一リポジトリ（モノレポではない）。外部サービス・Docker・DB依存なし。
 
+ローカル生成物（`generated/`、`.tmp-cli-*` など）は `.gitignore` によりリポジトリに含めない。
+
 ### 開発コマンド
 
 `package.json`の`scripts`セクションを参照。主要コマンド:

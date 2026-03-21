@@ -1,6 +1,12 @@
 out
 dist
 node_modules
+
+# Local / generated artifacts (do not commit; T-20260321-061)
+generated/
+.tmp-cli-debug/
+.tmp-cli-test/
+.tmp-cli-regression-test/
 .vscode-test/
 *.vsix
 media/
