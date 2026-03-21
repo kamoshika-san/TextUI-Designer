@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 import { WebViewLifecycleManager } from './webview-lifecycle-manager';
-import { YamlParser, ParsedYamlResult, YamlSchemaLoader } from './yaml-parser';
+import { YamlParser, YamlSchemaLoader } from './yaml-parser';
 import { UpdateQueueManager } from './update-queue-manager';
 import { PreviewUpdateCoordinator, PreviewUpdatePhase } from './preview-update-coordinator';
+import { PreviewYamlSourceResolver } from './preview-yaml-source-resolver';
 import { WebViewPreviewCacheManager } from './cache-manager';
 import { WebViewErrorHandler } from './webview-error-handler';
 import { ConfigManager } from '../../utils/config-manager';
@@ -20,6 +21,7 @@ export class WebViewUpdateManager {
   private yamlParser: YamlParser;
   private updateQueueManager: UpdateQueueManager;
   private previewUpdateCoordinator: PreviewUpdateCoordinator;
+  private yamlSourceResolver: PreviewYamlSourceResolver;
   private cacheManager: WebViewPreviewCacheManager;
   private errorHandler: WebViewErrorHandler;
   private lastTuiFile: string | undefined = undefined;
@@ -33,6 +35,7 @@ export class WebViewUpdateManager {
     this.yamlParser = new YamlParser(schemaLoader);
     this.updateQueueManager = new UpdateQueueManager();
     this.previewUpdateCoordinator = new PreviewUpdateCoordinator();
+    this.yamlSourceResolver = new PreviewYamlSourceResolver(() => this.lastTuiFile, this.logger);
     this.cacheManager = new WebViewPreviewCacheManager();
     this.errorHandler = new WebViewErrorHandler(lifecycleManager);
   }
@@ -126,7 +129,7 @@ export class WebViewUpdateManager {
 
     try {
       this.previewUpdateCoordinator.setPhase(PreviewUpdatePhase.ResolvingSource);
-      const currentYaml = await this.resolveCurrentYamlForCache();
+      const currentYaml = await this.yamlSourceResolver.resolveCurrentYamlForCache();
 
       this.previewUpdateCoordinator.setPhase(PreviewUpdatePhase.CacheLookup);
       // キャッシュチェック（forceUpdateがtrueの場合はスキップ）
@@ -177,41 +180,6 @@ export class WebViewUpdateManager {
       this.previewUpdateCoordinator.endPipeline();
       this.isUpdating = false;
     }
-  }
-
-  /**
-   * キャッシュ参照に使う現在のYAML情報を取得
-   */
-  private async resolveCurrentYamlForCache(): Promise<{ fileName: string; content: string } | null> {
-    const activeEditor = vscode.window.activeTextEditor;
-    const activeFileName = activeEditor?.document.fileName;
-    const isSupportedActiveFile = Boolean(activeFileName && ConfigManager.isSupportedFile(activeFileName));
-
-    if (
-      activeEditor &&
-      activeFileName &&
-      isSupportedActiveFile &&
-      (!this.lastTuiFile || this.lastTuiFile === activeFileName)
-    ) {
-      return {
-        fileName: activeFileName,
-        content: activeEditor.document.getText()
-      };
-    }
-
-    if (this.lastTuiFile) {
-      try {
-        const document = await vscode.workspace.openTextDocument(this.lastTuiFile);
-        return {
-          fileName: this.lastTuiFile,
-          content: document.getText()
-        };
-      } catch (error) {
-        this.logger.warn('キャッシュ用YAMLの読み込みに失敗しました:', error);
-      }
-    }
-
-    return null;
   }
 
   /**

@@ -47,3 +47,4 @@ stateDiagram-v2
 
 - `src/services/webview/preview-update-coordinator.ts`
 - `src/services/webview/webview-update-manager.ts`（`getPreviewUpdatePhase()`）
+- [webview-update-manager-responsibilities.md](./webview-update-manager-responsibilities.md)（責務一覧・後続スライス候補）
