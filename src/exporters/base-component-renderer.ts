@@ -29,11 +29,7 @@ import type {
 import type { ExportOptions, Exporter } from './export-types';
 import type { ExporterRendererMethod } from '../components/definitions/types';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';
-import {
-  decodeDslComponent,
-  decodeTextDslComponent,
-  decodeButtonDslComponent
-} from '../registry/dsl-component-codec';
+import { decodeDslComponent, decodeDslComponentUnion } from '../registry/dsl-component-codec';
 import { getTokenStylePropertyKebab } from '../components/definitions/token-style-property-map';
 import { componentDescriptorRegistry } from '../registry/component-descriptor-registry';
 import { AttributeSerializer, type ExporterAstNode, renderExporterAst } from './exporter-ast';
@@ -128,26 +124,22 @@ export abstract class BaseComponentRenderer implements Exporter {
    * if-else連鎖を排除し、レジストリに登録されたハンドラーで処理
    */
   protected renderComponent(comp: ComponentDef, key: number): string {
-    const textDecoded = decodeTextDslComponent(comp);
-    if (textDecoded.value) {
-      return this.renderText(textDecoded.value.props, key);
+    // T-181: 特例 decode は codec 内の {@link decodeDslComponentUnion} に集約
+    const union = decodeDslComponentUnion(comp);
+    if (!union.value) {
+      return this.renderUnsupportedComponent(comp, key);
     }
-    const buttonDecoded = decodeButtonDslComponent(comp);
-    if (buttonDecoded.value) {
-      return this.renderButton(buttonDecoded.value.props, key);
+    const v = union.value;
+    if (v.kind === 'Text') {
+      return this.renderText((v as { kind: 'Text'; props: TextComponent }).props, key);
     }
-
-    const decoded = decodeDslComponent(comp);
-    const name = decoded.value?.name;
-    const props = decoded.value?.props;
-
-    if (name && props !== undefined) {
-      const handler = this.componentHandlers.get(name);
-      if (handler) {
-        return handler(props, key);
-      }
+    if (v.kind === 'Button') {
+      return this.renderButton((v as { kind: 'Button'; props: ButtonComponent }).props, key);
     }
-
+    const handler = this.componentHandlers.get(v.kind);
+    if (handler) {
+      return handler(v.props, key);
+    }
     return this.renderUnsupportedComponent(comp, key);
   }
 
@@ -156,15 +148,20 @@ export abstract class BaseComponentRenderer implements Exporter {
    * FormField / FormAction も同じハンドラーMapで処理し、if-else連鎖を排除
    */
   protected renderFormField(field: FormField, index: number): string {
-    const decoded = decodeDslComponent(field);
-    const name = decoded.value?.name;
-    const props = decoded.value?.props;
-
-    if (name && props !== undefined) {
-      const handler = this.componentHandlers.get(name);
-      if (handler) {
-        return handler(props, index);
-      }
+    const union = decodeDslComponentUnion(field);
+    if (!union.value) {
+      return '';
+    }
+    const v = union.value;
+    if (v.kind === 'Text') {
+      return this.renderText((v as { kind: 'Text'; props: TextComponent }).props, index);
+    }
+    if (v.kind === 'Button') {
+      return this.renderButton((v as { kind: 'Button'; props: ButtonComponent }).props, index);
+    }
+    const handler = this.componentHandlers.get(v.kind);
+    if (handler) {
+      return handler(v.props, index);
     }
     return '';
   }
@@ -173,14 +170,20 @@ export abstract class BaseComponentRenderer implements Exporter {
    * FormActionのレンダリング（FormField と同様に decode + Map ディスパッチ）
    */
   protected renderFormAction(action: FormAction, index: number): string {
-    const decoded = decodeDslComponent(action as unknown);
-    const name = decoded.value?.name;
-    const props = decoded.value?.props;
-    if (name && props !== undefined) {
-      const handler = this.componentHandlers.get(name);
-      if (handler) {
-        return handler(props, index);
-      }
+    const union = decodeDslComponentUnion(action as unknown);
+    if (!union.value) {
+      return '';
+    }
+    const v = union.value;
+    if (v.kind === 'Text') {
+      return this.renderText((v as { kind: 'Text'; props: TextComponent }).props, index);
+    }
+    if (v.kind === 'Button') {
+      return this.renderButton((v as { kind: 'Button'; props: ButtonComponent }).props, index);
+    }
+    const handler = this.componentHandlers.get(v.kind);
+    if (handler) {
+      return handler(v.props, index);
     }
     return '';
   }
