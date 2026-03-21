@@ -210,6 +210,11 @@ npm run test:unit
 2. shared DSL 型の参照先を `src/domain/dsl-types.ts` に寄せられるか。
 3. 本当に互換経路が必要な場合は、ADR とチケットで例外理由を明記できるか。
 
+### SSoT チェックの標準実行タイミング
+
+- ローカル: 共有 DSL 型に触れた変更の PR 作成前に `npm run check:dsl-types-ssot` を必ず実行する。
+- CI: `.github/workflows/ci.yml` の `test-all-ci` / `test` ジョブで同コマンドを常時実行し、違反を早期停止する。
+
 ### ユニットテストと `compile`（`T-20260320-014`）
 
 - **`npm run test:unit` は `compile` を自動実行しない**ため、ユニットテストが参照する `out/` が無いと失敗する（`require('../../out/...')` が多数）。
