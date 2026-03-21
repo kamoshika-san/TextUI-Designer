@@ -1,7 +1,8 @@
 const assert = require('assert');
 const {
   decodeDslComponent,
-  decodeDslComponentObjectProps
+  decodeDslComponentObjectProps,
+  decodeTextDslComponent
 } = require('../../out/registry/dsl-component-codec');
 
 describe('DslComponentCodec', () => {
@@ -35,6 +36,21 @@ describe('DslComponentCodec', () => {
       value: { name: 'Button', props: { label: 'ok' } },
       reason: null
     });
+  });
+
+  it('decodeTextDslComponent: Text の props を TextComponent として返す', () => {
+    const decoded = decodeTextDslComponent({ Text: { value: 'hello', variant: 'h1' } });
+    assert.strictEqual(decoded.reason, null);
+    assert.deepStrictEqual(decoded.value, {
+      name: 'Text',
+      props: { value: 'hello', variant: 'h1' }
+    });
+  });
+
+  it('decodeTextDslComponent: Text 以外は invalid-name', () => {
+    const decoded = decodeTextDslComponent({ Button: { label: 'x' } });
+    assert.strictEqual(decoded.value, null);
+    assert.strictEqual(decoded.reason, 'invalid-name');
   });
 });
 
