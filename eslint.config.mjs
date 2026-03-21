@@ -8,7 +8,7 @@ import tsParser from "@typescript-eslint/parser";
  *
  * T-101: `src/domain` / `src/services` / `src/components` では `renderer/types` への新規依存を抑止（緑field レーン）。
  */
-const rendererTypesImportRestriction = ["warn", {
+const rendererTypesImportRestriction = ["error", {
     patterns: [{
         group: ["**/renderer/types", "**/renderer/types.ts"],
         message: "Use `src/domain/dsl-types.ts` for shared DSL types. Do not add new imports from `renderer/types` under domain/services/components (T-101).",
@@ -72,7 +72,22 @@ export default [{
         semi: "warn",
     },
 }, {
-    files: ["src/domain/**/*.ts", "src/services/**/*.ts", "src/components/**/*.ts"],
+    files: [
+        "src/domain/**/*.ts",
+        "src/services/**/*.ts",
+        "src/components/**/*.ts",
+        "src/core/**/*.ts",
+        "src/core/**/*.tsx",
+        "src/exporters/**/*.ts",
+        "src/exporters/**/*.tsx",
+        "src/cli/**/*.ts",
+        "src/cli/**/*.tsx",
+        "src/utils/**/*.ts",
+        "src/utils/**/*.tsx",
+        "tests/**/*.ts",
+        "tests/**/*.tsx",
+        "tests/**/*.js",
+    ],
     plugins: {
         "@typescript-eslint": typescriptEslint,
     },
