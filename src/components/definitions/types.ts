@@ -18,11 +18,12 @@ export type ComponentProperty = {
 export type SchemaRef = `#/definitions/${string}`;
 
 /**
- * token を inline style に適用する際の既定プロパティ名。
+ * テーマ token を inline style に適用する際の CSS プロパティ名（kebab-case）。
  * 例: `color`, `border-color`, `background-color`
  *
- * NOTE: 編集用の既定は `exporter-renderer-definitions.ts` → `COMPONENT_DEFINITIONS` 合成。
- * ランタイム（export）は `BaseComponentRenderer` が `COMPONENT_DEFINITIONS` 由来の Map を参照する。
+ * 値の正本は `exporter-renderer-definitions.ts` の `BUILT_IN_EXPORTER_RENDERER_DEFINITIONS`。
+ * `component-definitions.ts` で `COMPONENT_DEFINITIONS` に合成され、
+ * `token-style-property-map.ts` の `getTokenStylePropertyKebab` が参照用 Map を構築する（export の `BaseComponentRenderer` と WebView の `token-inline-style-from-definition.ts` が利用）。
  */
 export type TokenStyleProperty = string;
 
@@ -74,7 +75,10 @@ export interface ComponentDefinition {
   catalogSummaryEn: string;
   /** 補完用プロパティ定義 */
   properties: ComponentProperty[];
-  /** token の既定適用先（任意） */
+  /**
+   * テーマ token の既定適用先（CSS プロパティ名）。
+   * 組み込みは `BUILT_IN_EXPORTER_RENDERER_DEFINITIONS[name].tokenStyleProperty` を `component-definitions` で詰めた値。
+   */
   tokenStyleProperty?: TokenStyleProperty;
   /**
    * WebView の組み込み renderer 登録キー（`component-map` の built-in キーと対応）。

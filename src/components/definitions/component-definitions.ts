@@ -23,7 +23,7 @@ export const COMPONENT_DEFINITIONS: readonly ComponentDefinition[] = BUILT_IN_CO
       schemaRef: entry.schemaRef,
       description: entry.description,
       properties: entry.properties,
-      // token を inline style に反映する際の既定 CSS プロパティ名
+      // token 既定: 正本は exporter-renderer-definitions（→ token-style-property-map 経由で export / プレビューが参照）
       tokenStyleProperty: exporter.tokenStyleProperty,
       previewRendererKey: name,
       exporterRendererMethod: exporter.rendererMethod,

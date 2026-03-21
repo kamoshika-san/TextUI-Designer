@@ -6,18 +6,19 @@ export type { ExporterRendererMethod };
 export type ExporterRendererDefinition = {
   /**
    * BaseComponentRenderer 側が呼び出す renderXxx メソッド名。
-   * NOTE: ここは文字列で持つ（型安全は base renderer 側の実行時参照に委ねる）。
+   * ディスパッチは `BaseComponentRenderer.dispatchExporterRenderer` の網羅的 switch に対応付けられる。
    */
   rendererMethod: ExporterRendererMethod;
   /**
-   * token を inline style に反映する CSS プロパティ名。
+   * token を inline style に反映する CSS プロパティ名（kebab-case）。
+   * `COMPONENT_DEFINITIONS.tokenStyleProperty` と `token-style-property-map` の入力の正本。
    */
   tokenStyleProperty: TokenStyleProperty;
 };
 
 /**
- * Exporter 側（BaseComponentRenderer）の「組み込み handler」と「token 既定反映先」を
- * definitions 側で単一管理するためのテーブル。
+ * Exporter 側の「組み込み handler」と「token 既定反映先」を定義するテーブル（値の正本）。
+ * `component-definitions.ts` で `COMPONENT_DEFINITIONS` に合成され、ランタイム参照は `token-style-property-map.ts` 経由。
  */
 export const BUILT_IN_EXPORTER_RENDERER_DEFINITIONS: Record<
   BuiltInComponentName,
