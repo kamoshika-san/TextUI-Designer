@@ -3,6 +3,7 @@ import type { ExportOptions, Exporter } from './export-types';
 import type { CacheManager } from '../utils/cache-manager';
 import type { DiffManager } from '../utils/diff-manager';
 import type { PerformanceMonitor } from '../utils/performance-monitor';
+import { isExportPipelineMetricsEnabled } from './export-instrumentation';
 
 export interface ExportPipelineDeps {
   cacheManager: CacheManager;
@@ -32,7 +33,7 @@ export async function runOptimizedExport(
 
   const diffResult = diffManager.computeDiff(dsl);
 
-  if (diffResult.hasChanges) {
+  if (diffResult.hasChanges && isExportPipelineMetricsEnabled()) {
     const totalComponents = dsl.page?.components?.length || 0;
     performanceMonitor.recordDiffEfficiency(diffResult.changedComponents.length, totalComponents);
   }

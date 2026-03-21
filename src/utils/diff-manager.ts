@@ -21,7 +21,7 @@ export interface ComponentDiff {
 export class DiffManager {
   private lastDSL: TextUIDSL | null = null;
   private lastHash: string | null = null;
-  /** `computeDiff` の直近戻り値（パフォーマンス表示用。増分レンダーには未使用）。 */
+  /** `computeDiff` の直近戻り値（メトリクス/デバッグ用。export の増分レンダーには未使用）。詳細は `docs/export-instrumentation.md`。 */
   private lastDiffResult: DiffResult | null = null;
 
   /**
