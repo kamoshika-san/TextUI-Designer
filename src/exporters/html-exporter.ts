@@ -38,6 +38,20 @@ import { HtmlLayoutRenderer } from './html-renderers/html-layout-renderer';
 import type { HtmlRendererUtils } from './html-renderers/html-renderer-utils';
 import { resolveImageSourcesInDsl } from '../utils/image-source-resolver';
 
+/**
+ * HTML 形式へのエクスポート。
+ *
+ * **Primary path（既定）**: `ExportOptions.useReactRender !== false` のとき。
+ * `renderPageComponentsToStaticHtml`（React コンポーネントの静的 HTML 化）でページ本体を生成し、
+ * `buildHtmlDocument(..., { noWrap: true })` でラップする。WebView プレビューと同系統の見た目を目指す経路。
+ *
+ * **Fallback path**: `useReactRender === false` のときのみ。
+ * `renderPageComponents`（本クラス継承の文字列ベース HTML レンダラ群）を使用。
+ * テストの安定化や capture 等で明示的に切り替える。挙動差・コンポーネント対応差が残りうるため、
+ * **不具合修正・新コンポーネント対応は通常 primary 側を正とする**（fallback は縮小・削除は別チケット）。
+ *
+ * 運用の一覧は `docs/exporter-boundary-guide.md` の「HtmlExporter」の節を参照。
+ */
 export class HtmlExporter extends BaseComponentRenderer {
   private readonly formRenderer: HtmlFormRenderer;
   private readonly textualRenderer: HtmlTextualRenderer;
@@ -61,7 +75,7 @@ export class HtmlExporter extends BaseComponentRenderer {
       themeStyles = ThemeUtils.getDefaultThemeCssVariables();
     }
 
-    // WebView と同じ React コンポーネント＋webviewCss で統一（Export/スクリーンショットも同一系統）
+    // Primary: WebView と同じ React 静的レンダー ＋ webviewCss（既定）
     const useReact = options.useReactRender !== false;
     if (useReact) {
       const components = normalizedDsl.page?.components ?? [];
@@ -72,7 +86,7 @@ export class HtmlExporter extends BaseComponentRenderer {
       });
     }
 
-    // useReactRender: false のときのみ従来の文字列レンダー（CLI で react が無い環境向け）
+    // Fallback: 文字列レンダー（useReactRender: false のときのみ。テスト・capture 等）
     const componentCode = this.renderPageComponents(normalizedDsl);
     return buildHtmlDocument(componentCode, themeStyles, {
       webviewCss: webviewCss ?? undefined
