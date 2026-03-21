@@ -1,6 +1,6 @@
 # ExportManager における観測と最適化の分離（方針）
 
-外部アーキ **Phase 5** の方針メモ。**`ExportManager` や `export-pipeline` のリファクタは行わない**（実装は別チケット）。
+外部アーキ **Phase 5** の方針メモ。大規模な責務分割の **詳細は別チケット**。**T-107 第1スライス**として `OptimizingExportExecutor` を導入済み（下記）。
 
 ## T-049（観測とキャッシュの境界）との役割分担
 
@@ -11,9 +11,13 @@
 
 T-049 が「外から見て何を隠すか」に寄せるのに対し、本文書は **Export の合成（composition）**が読み手に負荷をかけている点を分解する。
 
+## T-107（第1スライス）
+
+`OptimizingExportExecutor`（`src/exporters/export-optimizing-executor.ts`）が **`ExportPipelineDeps` を束ねて** `export-pipeline` の `runOptimizedExport` / `runExportWithDiffUpdate` を呼び出し、`ExportManager` は **レジストリ登録・`CacheManager` / `DiffManager` / `PerformanceMonitor` の生成**と **計測ラップ（`measureExportTime`）**に寄せる。キャッシュ／diff／メトリクス記録の意味論は `export-pipeline`・[export-instrumentation.md](export-instrumentation.md) の既存契約を変えない。
+
 ## 現状の整理（コードベース）
 
-`ExportManager`（`src/exporters/export-manager.ts`）は概ね次を **同一クラス内で合成**している。
+`ExportManager`（`src/exporters/export-manager.ts`）は概ね次を **同一クラス内で合成**している（実行経路の一部は上記 `OptimizingExportExecutor` へ委譲）。
 
 - **`CacheManager`** — エクスポート結果の再利用（本流の高速化に直結しうる）
 - **`DiffManager`** — 前回 DSL との差分。**状態整合**のため本流でも利用。観測用データの源泉でもある（[export-instrumentation.md](export-instrumentation.md)）

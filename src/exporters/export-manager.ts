@@ -7,7 +7,8 @@ import { PerformanceMonitor } from '../utils/performance-monitor';
 import { ConfigManager } from '../utils/config-manager';
 import type { ExportOptions, Exporter } from './export-types';
 import { populateBuiltInExporters } from './built-in-exporter-registry';
-import { runOptimizedExport, runExportWithDiffUpdate, type ExportPipelineDeps } from './export-pipeline';
+import type { ExportPipelineDeps } from './export-pipeline';
+import { OptimizingExportExecutor } from './export-optimizing-executor';
 import { runBatchExport } from './export-batch';
 
 /**
@@ -20,6 +21,7 @@ export class ExportManager {
   private diffManager: DiffManager;
   private performanceMonitor: PerformanceMonitor;
   private readonly maxConcurrentOperations: number;
+  private readonly optimizingExecutor: OptimizingExportExecutor;
 
   constructor() {
     populateBuiltInExporters(this.exporters);
@@ -34,6 +36,8 @@ export class ExportManager {
 
     this.diffManager = new DiffManager();
     this.performanceMonitor = PerformanceMonitor.getInstance();
+
+    this.optimizingExecutor = new OptimizingExportExecutor(() => this.pipelineDeps());
   }
 
   private pipelineDeps(): ExportPipelineDeps {
@@ -79,7 +83,7 @@ export class ExportManager {
           sourcePath: options.sourcePath ?? filePath
         };
 
-        return await runOptimizedExport(dsl, normalizedOptions, this.pipelineDeps());
+        return await this.optimizingExecutor.runOptimizedExport(dsl, normalizedOptions);
       } catch (error) {
         throw new Error(`Export failed: ${error instanceof Error ? error.message : String(error)}`);
       }
@@ -94,9 +98,7 @@ export class ExportManager {
     isFullUpdate: boolean;
     changedComponents: number[];
   }> {
-    return runExportWithDiffUpdate(dsl, options, this.pipelineDeps(), (d, o) =>
-      runOptimizedExport(d, o, this.pipelineDeps())
-    );
+    return this.optimizingExecutor.runExportWithDiffUpdate(dsl, options);
   }
 
   async batchExport(files: Array<{ path: string; options: ExportOptions }>): Promise<Map<string, string>> {
