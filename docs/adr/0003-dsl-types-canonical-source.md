@@ -17,6 +17,25 @@
 3. **新規コード**では、拡張ホスト・CLI・core・exporter から **可能な限り `domain/dsl-types` を参照**する。WebView 専用の見た目・プレビュー限定の型は `renderer` 側に残してよい。
 4. **棚卸し一覧**は [dsl-types-renderer-types-inventory.md](../dsl-types-renderer-types-inventory.md) を正とする。
 
+## `renderer/types.ts` の最終役割（T-SSOTC-10）
+
+- `src/renderer/types.ts` は **互換窓口（thin facade）** としてのみ維持する。
+- 共有 DSL 型の定義元は `src/domain/dsl-types.ts` に固定し、`renderer/types` は再エクスポート責務に限定する。
+- `src/renderer/**` 外から `renderer/types` を新規 import しない（既存ガードでゼロ維持）。
+
+### 互換期間中の禁止事項
+
+- `renderer/types` へ **型本体・独自 alias・業務ロジック** を追加しない。
+- `renderer/types` を shared DSL 型の正本として参照しない。
+
+### 将来削除の判定条件
+
+以下をすべて満たした場合、`src/renderer/types.ts` の削除を検討する。
+
+1. `src/renderer/**` を含め、`renderer/types` への参照がゼロである。
+2. `domain/dsl-types` 直参照で WebView / preview / exporter のビルドとテストが通る。
+3. 外部公開契約（拡張利用者向け互換面）への影響なし、または移行手順を文書化済み。
+
 ## 運用ルール（型追加フロー）
 
 1. 共有 DSL 型の追加・変更は **最初に `src/domain/dsl-types.ts`** を更新する。

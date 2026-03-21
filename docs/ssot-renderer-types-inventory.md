@@ -14,3 +14,5 @@
 
 - 新規の共有 DSL 型は `domain/dsl-types` を正本として追加する。
 - 互換窓口として `renderer/types` を使う場合は理由を明記し、段階的縮退を前提にする。
+- `renderer/types` は thin facade（再エクスポート専用）として維持し、型本体の追加を禁止する。
+- 削除検討は「全レイヤ参照ゼロ」「domain 直参照で build/test 緑」「移行影響文書化」を満たしたときに行う。
