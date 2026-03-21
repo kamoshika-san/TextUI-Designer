@@ -1,36 +1,42 @@
 import { BUILT_IN_COMPONENTS, type BuiltInComponentName } from './built-in-components';
-import { builtInSchemaRef } from './component-spec';
+import {
+  buildComponentDefinitionFromSpec,
+  builtInSchemaRef,
+  type ComponentSpec
+} from './component-spec';
 import { CORE_CATALOG_METADATA } from './core-catalog-metadata';
 import { COMPONENT_MANIFEST } from './manifest';
 import type { ComponentDefinition } from './types';
 import { BUILT_IN_EXPORTER_RENDERER_DEFINITIONS } from './exporter-renderer-definitions';
 
+function buildBuiltInComponentSpec(name: BuiltInComponentName): ComponentSpec {
+  const entry = COMPONENT_MANIFEST[name];
+  const exporter = BUILT_IN_EXPORTER_RENDERER_DEFINITIONS[name];
+  return {
+    kind: name,
+    schemaRef: builtInSchemaRef(name),
+    description: entry.description,
+    properties: entry.properties,
+    previewRendererKey: name,
+    exporterRendererMethod: exporter.rendererMethod,
+    tokenStyleProperty: exporter.tokenStyleProperty
+  };
+}
+
+/**
+ * 組み込みコンポーネントの **意味論メタの正本（順序付き配列）**。
+ * `COMPONENT_DEFINITIONS` は本配列から {@link buildComponentDefinitionFromSpec} で導出する（T-178）。
+ */
+export const BUILT_IN_COMPONENT_SPECS: readonly ComponentSpec[] = BUILT_IN_COMPONENTS.map(
+  buildBuiltInComponentSpec
+);
+
 /**
  * 単一ソース化のための定義一覧。
  *
  * **schemaRef（T-177）**: manifest では保持せず `builtInSchemaRef(name)` で導出。
- * **ComponentSpec（T-176）**: 中間モデルは `component-spec.ts` を参照。
+ * **ComponentSpec（T-176/T-178）**: 正本は {@link BUILT_IN_COMPONENT_SPECS}。
  */
-export const COMPONENT_DEFINITIONS: readonly ComponentDefinition[] = BUILT_IN_COMPONENTS.map(
-  (name: BuiltInComponentName) => {
-    const entry = COMPONENT_MANIFEST[name];
-    const exporter = BUILT_IN_EXPORTER_RENDERER_DEFINITIONS[name];
-    const coreMeta = CORE_CATALOG_METADATA[name];
-    return {
-      name,
-      schemaRef: builtInSchemaRef(name),
-      description: entry.description,
-      properties: entry.properties,
-      // token 既定: 正本は exporter-renderer-definitions（→ token-style-property-map 経由で export / プレビューが参照）
-      tokenStyleProperty: exporter.tokenStyleProperty,
-      previewRendererKey: name,
-      exporterRendererMethod: exporter.rendererMethod,
-      catalogSummaryEn: coreMeta.catalogSummaryEn,
-      requiredProps: coreMeta.requiredProps,
-      optionalProps: coreMeta.optionalProps,
-      supportsChildren: coreMeta.supportsChildren,
-      example: coreMeta.example
-    };
-  }
+export const COMPONENT_DEFINITIONS: readonly ComponentDefinition[] = BUILT_IN_COMPONENT_SPECS.map(
+  spec => buildComponentDefinitionFromSpec(spec, CORE_CATALOG_METADATA[spec.kind])
 );
-

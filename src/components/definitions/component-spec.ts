@@ -1,4 +1,5 @@
 import type { BuiltInComponentName } from './built-in-components';
+import type { CoreCatalogMeta } from './core-catalog-metadata';
 import type {
   ComponentDefinition,
   ComponentProperty,
@@ -11,8 +12,8 @@ import type {
  * ComponentSpec（E1-S1-T1 / T-176）: built-in コンポーネントの意味論メタを集約する **中間モデル**。
  * 既存の `COMPONENT_DEFINITIONS`（descriptor graph）と同じ情報を「1箇所に集める器」として表現する。
  *
- * **Migration seam（T-178 へ）**: 現状は `ComponentDefinition` から合成可能な形に留め、
- * `COMPONENT_DEFINITIONS` の一括置換・DEFINITIONS 合成は **T-178** で実施する。
+ * **T-178**: `COMPONENT_DEFINITIONS` は `BUILT_IN_COMPONENT_SPECS` から
+ * {@link buildComponentDefinitionFromSpec} で生成する（descriptor の単一経路）。
  */
 export interface ComponentSpec {
   /** DSL kind（built-in 名の正本は `BUILT_IN_COMPONENTS`） */
@@ -48,5 +49,29 @@ export function buildComponentSpecFromDefinition(def: ComponentDefinition): Comp
     previewRendererKey: def.previewRendererKey,
     exporterRendererMethod: def.exporterRendererMethod,
     tokenStyleProperty: def.tokenStyleProperty
+  };
+}
+
+/**
+ * `ComponentSpec` + core catalog 行を {@link ComponentDefinition}（descriptor 行）へ合成する。
+ * **T-178**: `COMPONENT_DEFINITIONS` の正の生成経路。
+ */
+export function buildComponentDefinitionFromSpec(
+  spec: ComponentSpec,
+  coreMeta: CoreCatalogMeta
+): ComponentDefinition {
+  return {
+    name: spec.kind,
+    schemaRef: spec.schemaRef,
+    description: spec.description,
+    properties: spec.properties,
+    tokenStyleProperty: spec.tokenStyleProperty,
+    previewRendererKey: spec.previewRendererKey,
+    exporterRendererMethod: spec.exporterRendererMethod,
+    catalogSummaryEn: coreMeta.catalogSummaryEn,
+    requiredProps: coreMeta.requiredProps,
+    optionalProps: coreMeta.optionalProps,
+    supportsChildren: coreMeta.supportsChildren,
+    example: coreMeta.example
   };
 }
