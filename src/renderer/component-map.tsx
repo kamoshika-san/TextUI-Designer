@@ -55,7 +55,8 @@ import type {
   IconComponent
 } from './types';
 import { getComponentName } from '../registry/component-registry';
-import { BUILT_IN_COMPONENTS, type BuiltInComponentName } from '../components/definitions/built-in-components';
+import { COMPONENT_DEFINITIONS } from '../components/definitions/component-definitions';
+import { type BuiltInComponentName } from '../components/definitions/built-in-components';
 import {
   getWebViewComponentRenderer,
   registerWebViewComponent as registerRenderer,
@@ -199,8 +200,8 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
 };
 
 function registerBuiltInComponentsImpl(): void {
-  for (const componentName of BUILT_IN_COMPONENTS) {
-    registerRenderer(componentName, builtInRenderers[componentName]);
+  for (const def of COMPONENT_DEFINITIONS) {
+    registerRenderer(def.name, builtInRenderers[def.previewRendererKey]);
   }
 }
 
