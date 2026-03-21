@@ -36,6 +36,9 @@ jobs:
     - name: Collect code metrics
       run: npm run metrics:collect
 
+    - name: Check SSoT regression threshold
+      run: npm run metrics:check:ssot
+
     - name: Append metrics to job summary
       run: cat metrics/code-metrics.md >> "$GITHUB_STEP_SUMMARY"
 

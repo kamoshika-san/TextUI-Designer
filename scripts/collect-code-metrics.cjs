@@ -12,6 +12,7 @@ const { globSync } = require("glob");
 
 const root = path.join(__dirname, "..");
 const outDir = path.join(root, "metrics");
+const SSOT_IMPORT_THRESHOLD = Number(process.env.SSOT_IMPORT_THRESHOLD || 0);
 
 /** @typedef {{ files: number, totalLines: number, nonEmptyLines: number }} Bucket */
 
@@ -143,6 +144,53 @@ function formatClocSection(cloc) {
     return lines.join("\n");
 }
 
+/**
+ * @param {string} relPosix
+ * @returns {boolean}
+ */
+function isSourceLikeFile(relPosix) {
+    return /\.(ts|tsx|js|cjs|mjs)$/.test(relPosix);
+}
+
+/**
+ * @returns {{ threshold: number, rendererTypesImports: number, violatingFiles: string[], status: "pass" | "fail" }}
+ */
+function collectSsotMetrics() {
+    const candidates = globSync("**/*.{ts,tsx,js,cjs,mjs}", {
+        cwd: root,
+        nodir: true,
+        ignore: [...IGNORE, "media/**", "metrics/**", "coverage/**", ".tmp-plan/**"],
+    });
+    const violatingFiles = [];
+    const importPattern =
+        /(?:from\s+['"][^'"]*renderer\/types['"]|require\(\s*['"][^'"]*renderer\/types['"]\s*\))/g;
+
+    for (const f of candidates) {
+        const relPosix = f.split(path.sep).join("/");
+        if (!isSourceLikeFile(relPosix)) {
+            continue;
+        }
+        // thin facade 自身や build 生成物はカウント対象外
+        if (relPosix === "src/renderer/types.ts" || relPosix.startsWith("out/")) {
+            continue;
+        }
+        const abs = path.join(root, f);
+        const text = fs.readFileSync(abs, "utf8");
+        if (importPattern.test(text)) {
+            violatingFiles.push(relPosix);
+        }
+    }
+
+    violatingFiles.sort((a, b) => a.localeCompare(b));
+    return {
+        threshold: SSOT_IMPORT_THRESHOLD,
+        rendererTypesImports: violatingFiles.length,
+        violatingFiles,
+        status:
+            violatingFiles.length <= SSOT_IMPORT_THRESHOLD ? "pass" : "fail",
+    };
+}
+
 function main() {
     fs.mkdirSync(outDir, { recursive: true });
 
@@ -181,12 +229,14 @@ function main() {
     }
 
     const cloc = runClocJson();
+    const ssot = collectSsotMetrics();
 
     const payload = {
         generatedAt: new Date().toISOString(),
         summary: grand,
         byPattern,
         bySegment,
+        ssot,
         cloc: cloc || undefined,
     };
 
@@ -221,6 +271,25 @@ function main() {
         "## ディレクトリ区分（src の第1階層ほか）",
         "",
         formatSegmentTable(bySegment),
+        "",
+        "## SSoT 回帰メトリクス（renderer/types import）",
+        "",
+        "| 指標 | 値 |",
+        "| --- | ---: |",
+        `| 閾値（許容件数） | ${ssot.threshold} |`,
+        `| 検出件数 | ${ssot.rendererTypesImports} |`,
+        `| 判定 | ${ssot.status === "pass" ? "PASS" : "FAIL"} |`,
+        "",
+        ssot.violatingFiles.length > 0
+            ? [
+                  "### 検出ファイル",
+                  "",
+                  ...ssot.violatingFiles.map((f) => `- \`${f}\``),
+                  "",
+                  "_対応方針: 閾値超過時は CI の SSoT metrics check で失敗させる。_",
+                  "",
+              ].join("\n")
+            : "_検出なし（閾値内）。_",
         "",
         formatClocSection(cloc),
     ].join("\n");
