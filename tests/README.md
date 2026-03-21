@@ -42,17 +42,19 @@
 - 複数コマンドの連続実行
 - パフォーマンステスト
 
-### 4. E2Eテスト (`e2e/`)
-実際のVS Code環境でのエンドツーエンドテストです。
+### 4. Simulated E2E（`e2e/`・Node + Mocha）
+
+**実 VS Code Extension Host 上の E2E ではありません。** `npm run test:e2e` は **`tests/setup.js` で `vscode` をモックした Node 上の Mocha** で、`e2e/` 配下のシナリオを走らせます。リポジトリ内では **「実機 E2E」ではなく simulated-e2e（シミュレートされた結合シナリオ）** と捉えてください。
 
 **ファイル:**
-- `export-from-preview-e2e.test.js` - プレビュー画面からのエクスポート機能のE2Eテスト
+- `export-from-preview-e2e.test.js` — プレビュー起点のエクスポートを、モック環境で厚めに扱うシナリオ
 
-**テスト内容:**
-- 実際のWebViewとの連携
-- ユーザー操作のシミュレーション
-- 複雑なシナリオのテスト
-- パフォーマンステスト
+**テスト内容（保証のイメージ）:**
+- モックされた `vscode` / WebView まわりを通した **結合に近い**挙動
+- ユーザー操作に相当する呼び出しのシミュレーション
+- （スクリプト名は historical に `test:e2e` のまま）
+
+**実 VS Code 上での検証**が必要な場合は、`@vscode/test-electron` 等の別ライン（`vscode-test` スクリプト）を検討してください（本リポジトリのデフォルト品質ゲートは上記 Mocha ラインが正）。
 
 ## テストの実行方法
 
@@ -94,7 +96,7 @@ node ./tests/e2e/export-from-preview-e2e.test.js
 
 ## テストの前提条件
 
-1. **Node.js環境**: テストは`tests/setup.js`で`vscode`モジュールをモック化して実行されるため、VS Code本体の起動は不要です
+1. **Node.js環境**: テストは`tests/setup.js`で`vscode`モジュールをモック化して実行されるため、**VS Code 拡張ホストの起動は不要**です（`test:e2e` も同様に **simulated** です。上記「4. Simulated E2E」参照）。
 2. **ファイルシステム**: テスト用の一時ファイルが作成されます
 3. **WebView関連アセット**: `media/`が未生成でも主要テストは実行できます（不足時は警告ログが出る場合があります）
 
@@ -121,7 +123,7 @@ node ./tests/e2e/export-from-preview-e2e.test.js
 
 ### テストが失敗する場合
 
-1. **VS Code環境の確認**: 拡張が正しく読み込まれているか確認
+1. **環境の確認**: 多くのテストは **モック上の Node** で動くため、**実拡張のインストール状態**は問いません。`out/extension.js` が無い場合は `npm run compile` のあとに再実行してください（`tests/setup.js` が案内します）。
 2. **ファイルパーミッション**: テストファイルの作成・削除権限を確認
 3. **WebViewの初期化**: プレビュー機能の初期化時間を調整
 4. **エラーログ**: コンソールに出力されるエラーメッセージを確認
@@ -143,6 +145,7 @@ node ./tests/e2e/export-from-preview-e2e.test.js
 
 ## 関連ドキュメント
 
+- [テストセットアップ方針（グローバルフック非拡大）](../docs/test-setup-policy.md)
 - [VS Code Extension Testing](https://code.visualstudio.com/api/working-with-extensions/testing-extension)
 - [Mocha Testing Framework](https://mochajs.org/)
 - [Node.js Assert Module](https://nodejs.org/api/assert.html) 

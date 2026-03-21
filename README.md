@@ -159,6 +159,9 @@ npm run package          # extension package build
 npm run validate:samples:fresh    # サンプル検証（compileしてから実行）
 ```
 
+**`test:e2e` の意味（`T-20260321-084`）**  
+`npm run test:e2e` は **実 VS Code 上の E2E ではなく**、`tests/setup.js` で `vscode` をモックした **Node + Mocha の simulated シナリオ**です。詳細は `tests/README.md` の「Simulated E2E」を参照してください。
+
 **ユニットテストと `out/`（`T-20260320-014`）**  
 多くの `tests/unit/*.js` は `require('../out/...')` でコンパイル済み JS を読みます。`npm test` / `npm run test:quick` / `npm run test:all:ci` は `compile` を先に実行しますが、**`npm run test:unit` 単体では `compile` を実行しない**ため、リポジトリをクリーンにした直後や `out/` を消した状態では失敗し得ます。初回・クリーン後は `npm run compile` のあとに `npm run test:unit` を実行するか、`npm run test:quick` / `npm test` を使ってください。`tests/setup.js` では `out/extension.js` が無い場合に早期失敗し、上記を案内します（`TEXTUI_TEST_SKIP_OUT_CHECK=1` でオプトアウト可能）。
 
