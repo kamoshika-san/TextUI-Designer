@@ -20,7 +20,8 @@
 | **テーマ token → CSS（プレビューとエクスポートの対応）** | **正本（kebab）**: `src/components/definitions/exporter-renderer-definitions.ts` の `tokenStyleProperty` → 集約マップ `src/components/definitions/token-style-property-map.ts`。**エクスポート**: `src/exporters/base-component-renderer.ts`（`getTokenStylePropertyKebab`）。**WebView プレビュー**: `src/renderer/token-inline-style-from-definition.ts` の `tokenToPreviewInlineStyle`（各 `src/renderer/components/*.tsx`）。`Spacer` は寸法フォールバックとして token を別用途で使うためマップと完全一致ではない。 | `npm run compile` + `npx mocha ... tests/unit/token-style-property-map.test.js` |
 | TextUI core engine 責務分割 | `src/core/textui-core-engine.ts` + `src/core/textui-core-engine-io.ts` + `src/core/textui-core-engine-domain.ts` + `src/core/textui-core-engine-format.ts` | `npm run compile` + `npx mocha ... tests/unit/textui-core-engine.test.js` |
 | DSL ドメイン型（ComponentDef / TextUIDSL） | 正本: `src/domain/dsl-types.ts`／WebView 互換: `src/renderer/types.ts`（re-export） | `npm run compile` + `npx mocha ... tests/unit/dsl-types-descriptor-sync.test.js`（[change amplification メモ](change-amplification-dsl.md)） |
-| サービス初期化順・cleanup（宣言フェーズ） | `src/services/service-runtime-phases.ts` + `src/services/service-initializer.ts` | `npm run compile` + `npx mocha ... tests/unit/service-initializer.test.js` + `extensibility-service-factories-contract.test.js`（詳細は `docs/service-registration.md`） |
+| サービス初期化順・cleanup（宣言フェーズ） | `src/services/service-runtime-phases.ts` + `src/services/service-initializer.ts`（意図の短い説明: [service-design-service-initializer.md](service-design-service-initializer.md)） | `npm run compile` + `npx mocha ... tests/unit/service-initializer.test.js` + `extensibility-service-factories-contract.test.js`（詳細は `docs/service-registration.md`） |
+| FileWatcher / SchemaManager / WebView（プレビュー）の設計意図 | [service-design-file-watcher.md](service-design-file-watcher.md) · [service-design-schema-manager.md](service-design-schema-manager.md) · [service-design-webview-manager.md](service-design-webview-manager.md) | タイミング・キュー・スキーマ TTL 変更時は各メモの「不変条件」「罠」を確認 |
 | 拡張 activate/deactivate の順序 | `src/services/extension-lifecycle-phases.ts` + `src/services/extension-lifecycle-manager.ts` | `npm run compile` + `npx mocha ... tests/unit/extension-lifecycle-phases.test.js`（全体は `docs/service-registration.md`） |
 
 ---
@@ -33,6 +34,14 @@
 ---
 
 ## 直近の設計更新（要点）
+
+### サービス設計メモ（理解コスト低減）
+
+主要サービスの意図・契約・罠を短くまとめたページ（実装変更なしのドキュメント）。
+
+- [FileWatcher](service-design-file-watcher.md)（監視・デバウンス境界）
+- [SchemaManager](service-design-schema-manager.md)（スキーマ登録・キャッシュ）
+- [WebViewManager / プレビュー](service-design-webview-manager.md)（ファサードとライフサイクル）
 
 ### 1) Preview Capture の責務分割
 - 旧: `src/utils/preview-capture.ts` にロジック集中
