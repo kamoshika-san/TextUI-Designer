@@ -1,7 +1,7 @@
 import type { TextUIDSL } from '../domain/dsl-types';
 import type { ExportOptions, Exporter } from './export-types';
 import type { CacheManager } from '../utils/cache-manager';
-import type { DiffManager } from '../utils/diff-manager';
+import type { DiffManager } from './metrics/diff-manager';
 import type { PerformanceMonitor } from '../utils/performance-monitor';
 import { isExportPipelineMetricsEnabled } from './export-instrumentation';
 

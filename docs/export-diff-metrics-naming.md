@@ -6,7 +6,7 @@
 
 | 名前 | 所在（代表） | 本流 / 観測 | 役割の要約 |
 |------|----------------|-------------|------------|
-| `DiffManager.computeDiff` | `src/utils/diff-manager.ts` | **本流（状態整合）** | 前回 DSL との差分と内部状態。無効化すると次回 export の前提が壊れうる。 |
+| `DiffManager.computeDiff` | `src/exporters/metrics/diff-manager.ts` | **状態整合＋観測入力**（配置は metrics） | 前回 DSL との差分。**増分レンダーには未使用**（経路は [export-diff-observation-path.md](export-diff-observation-path.md)）。 |
 | `getDiffStats` / `diffStats.efficiency` | `DiffManager` / `export-manager` | **主に表示・診断** | 直近比較に基づく統計（レポート文脈）。 |
 | `recordDiffEfficiency` | `PerformanceMonitor` | **観測** | 変更コンポーネント数と総数から「効率」をメトリクスへ。`export-pipeline` から **設定ガード**付きで呼ぶ。 |
 | `metrics.diffEfficiency`（ローリング等） | `PerformanceMonitor` | **観測** | レポート用の集約値。 |

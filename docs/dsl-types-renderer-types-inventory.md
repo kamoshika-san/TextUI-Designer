@@ -13,7 +13,7 @@
 | 領域 | ファイル |
 |------|----------|
 | **Core** | `src/core/textui-core-engine.ts`, `textui-core-engine-io.ts`, `textui-core-engine-format.ts`, `textui-core-engine-domain.ts`, `textui-core-helpers.ts`, `textui-core-component-builder.ts` |
-| **キャッシュ / 差分** | `src/utils/cache-manager.ts`, `src/utils/diff-manager.ts` |
+| **キャッシュ / 差分** | `src/utils/cache-manager.ts`, `src/exporters/metrics/diff-manager.ts` |
 | **プレビュー** | `src/utils/preview-capture.ts`, `src/utils/preview-capture/html-preparation.ts` |
 | **スタイル** | `src/utils/style-manager.ts` |
 | **型（サービス契約）** | `src/types/webview.ts`, `src/types/services.ts` |
@@ -30,7 +30,7 @@
 層境界が読み手に効く **横断ユーティリティ**から着手するのが安全。
 
 1. **`src/utils/cache-manager.ts`** — レンダリング結果キャッシュと DSL 型の接点が明確。
-2. **`src/utils/diff-manager.ts`** — 同上（export パイプライン観測と隣接）。
+2. **`src/exporters/metrics/diff-manager.ts`** — export パイプライン上の差分（観測／メトリクス寄りの配置。[export-diff-observation-path.md](export-diff-observation-path.md)）。
 
 ## T-086（移行第2スライス）
 

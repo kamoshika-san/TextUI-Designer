@@ -1,4 +1,4 @@
-import type { TextUIDSL, ComponentDef } from '../domain/dsl-types';
+import type { TextUIDSL, ComponentDef } from '../../domain/dsl-types';
 
 export interface DiffResult {
   hasChanges: boolean;
@@ -16,7 +16,8 @@ export interface ComponentDiff {
 }
 
 /**
- * DSLの差分を検出し、効率的な更新を管理するクラス
+ * DSL の差分を検出するクラス。export パイプライン上で **メトリクス／レポート用**に配置される（`src/exporters/metrics/`）。
+ * **増分レンダー（コンポーネント単位の省略描画）には未使用**。経路は `docs/export-diff-observation-path.md` を参照。
  */
 export class DiffManager {
   private lastDSL: TextUIDSL | null = null;
@@ -49,7 +50,7 @@ export class DiffManager {
    */
   computeDiff(newDSL: TextUIDSL): DiffResult {
     const newHash = this.generateDSLHash(newDSL);
-    
+
     // 初回実行またはハッシュが同じ場合は変更なし
     if (!this.lastDSL || this.lastHash === newHash) {
       this.lastDSL = newDSL;
@@ -226,4 +227,4 @@ export class DiffManager {
       efficiency
     };
   }
-} 
+}

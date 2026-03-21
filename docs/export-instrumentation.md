@@ -31,7 +31,7 @@
 
 - `src/exporters/export-instrumentation.ts` — export 観測の有効判定
 - `src/utils/performance-monitor.ts` — イベント蓄積（内部でも `enablePerformanceLogs` で no-op）
-- `src/utils/diff-manager.ts` — DSL 差分（メトリクス用データ源でもある）
+- `src/exporters/metrics/diff-manager.ts` — DSL 差分（**メトリクス／レポート用**モジュール。経路は [export-diff-observation-path.md](export-diff-observation-path.md)）
 
 ## 6. 受け入れの見方（チケット T-20260321-041）
 
