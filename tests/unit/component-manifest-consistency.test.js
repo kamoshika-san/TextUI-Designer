@@ -11,6 +11,7 @@ describe('Component manifest consistency', () => {
     COMPONENT_MANIFEST,
     getComponentSchemaRefs
   } = require('../../out/registry/component-manifest');
+  const { COMPONENT_DEFINITIONS } = require('../../out/components/definitions/component-definitions');
   const {
     COMPONENT_DESCRIPTIONS,
     COMPONENT_PROPERTIES
@@ -38,6 +39,11 @@ describe('Component manifest consistency', () => {
     const expectedRefs = [...getComponentSchemaRefs()].sort();
     const actualRefs = [...getSchemaComponentRefs()].sort();
     assert.deepStrictEqual(actualRefs, expectedRefs);
+  });
+
+  it('getComponentSchemaRefs は COMPONENT_DEFINITIONS の schemaRef 列と一致する', () => {
+    const fromDescriptor = COMPONENT_DEFINITIONS.map(d => d.schemaRef);
+    assert.deepStrictEqual(getComponentSchemaRefs(), fromDescriptor);
   });
 
   it('補完定義は COMPONENT_DEFINITIONS（descriptor）由来で manifest と整合する', () => {

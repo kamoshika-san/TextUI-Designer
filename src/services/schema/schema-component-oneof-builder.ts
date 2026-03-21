@@ -5,7 +5,8 @@ export type OneOfRef = { $ref: string };
 
 /**
  * `schemas/schema.json` の `definitions.component.oneOf` を
- * `src/components/definitions` の単一情報源（= schemaRef）から生成するためのビルダー。
+ * descriptor graph（`COMPONENT_DEFINITIONS` の各 `schemaRef` 列）から生成するためのビルダー。
+ * 参照列挙は `getComponentSchemaRefs()`（registry）経由で descriptor と一致する。
  */
 export function buildExpectedComponentOneOf(): OneOfRef[] {
   return getComponentSchemaRefs().map($ref => ({ $ref }));

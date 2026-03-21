@@ -1,4 +1,5 @@
-import { BUILT_IN_COMPONENTS, getComponentSchemaRefs } from '../../registry/component-manifest';
+import { COMPONENT_DEFINITIONS } from '../../components/definitions/component-definitions';
+import { getComponentSchemaRefs } from '../../registry/component-manifest';
 import type { SchemaDefinition } from '../../types';
 
 export function validateSchemaConsistency(schema: SchemaDefinition): void {
@@ -11,7 +12,7 @@ export function validateSchemaConsistency(schema: SchemaDefinition): void {
   const extraRefs = actualRefs.filter(ref => !expectedSet.has(ref));
 
   const definitions = schema.definitions ?? {};
-  const missingDefinitions = BUILT_IN_COMPONENTS.filter(componentName => !(componentName in definitions));
+  const missingDefinitions = COMPONENT_DEFINITIONS.map(def => def.name).filter(name => !(name in definitions));
 
   const orderedMatch = actualRefs.length === expectedRefs.length && actualRefs.every((ref, i) => ref === expectedRefs[i]);
   const duplicateRefs = collectDuplicateRefs(actualRefs);
@@ -34,7 +35,7 @@ export function validateSchemaConsistency(schema: SchemaDefinition): void {
     problems.push(`不足しているoneOf参照: ${missingRefs.join(', ')}`);
   }
   if (extraRefs.length > 0) {
-    problems.push(`manifestに存在しないoneOf参照: ${extraRefs.join(', ')}`);
+    problems.push(`descriptor に存在しない oneOf 参照: ${extraRefs.join(', ')}`);
   }
   if (missingDefinitions.length > 0) {
     problems.push(`definitions不足: ${missingDefinitions.join(', ')}`);
