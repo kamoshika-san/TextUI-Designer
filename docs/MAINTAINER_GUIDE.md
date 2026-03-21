@@ -19,6 +19,8 @@
 
 チーム運用（外部アーキ 4 則）: [external-arch-team-rules.md](external-arch-team-rules.md)
 
+ADR（解析パイプライン・初稿）: [adr/0001-document-analysis-service.md](adr/0001-document-analysis-service.md)
+
 ## クイックスタート（変更種別別）
 
 | 変更したい内容 | 主に触る場所 | 実行コマンド（最低限） |
