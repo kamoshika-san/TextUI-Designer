@@ -41,7 +41,7 @@ describe('TextUICompletionProvider delegation', () => {
       getCompletionCacheMap: sinon.stub().returns(new Map())
     };
 
-    provider.schemaEngine = {
+    provider.descriptorEngine = {
       parseYamlForSyntaxValidation: sinon.stub().resolves(),
       generateCompletionItemsFromDescriptors: sinon.stub().returns(expectedItems),
       getBasicCompletions: sinon.stub().returns([]),
@@ -59,9 +59,9 @@ describe('TextUICompletionProvider delegation', () => {
 
     expect(result).to.equal(expectedItems);
     expect(provider.contextAnalyzer.buildCompletionRequestContext.calledOnce).to.equal(true);
-    expect(provider.schemaEngine.parseYamlForSyntaxValidation.calledOnce).to.equal(true);
+    expect(provider.descriptorEngine.parseYamlForSyntaxValidation.calledOnce).to.equal(true);
     expect(provider.contextAnalyzer.analyzeContext.calledOnce).to.equal(true);
-    expect(provider.schemaEngine.generateCompletionItemsFromDescriptors.calledWith(analysisContext)).to.equal(true);
+    expect(provider.descriptorEngine.generateCompletionItemsFromDescriptors.calledWith(analysisContext)).to.equal(true);
     expect(provider.completionCacheService.setCachedCompletionItems.calledOnce).to.equal(true);
 
     Date.now.restore();
@@ -84,7 +84,7 @@ describe('TextUICompletionProvider delegation', () => {
       getCachedCompletionItems: sinon.stub().returns(cached)
     };
 
-    provider.schemaEngine = {
+    provider.descriptorEngine = {
       parseYamlForSyntaxValidation: sinon.stub(),
       generateCompletionItemsFromDescriptors: sinon.stub(),
       getBasicCompletions: sinon.stub().returns([])
@@ -97,6 +97,6 @@ describe('TextUICompletionProvider delegation', () => {
     );
 
     expect(result).to.equal(cached);
-    expect(provider.schemaEngine.parseYamlForSyntaxValidation.called).to.equal(false);
+    expect(provider.descriptorEngine.parseYamlForSyntaxValidation.called).to.equal(false);
   });
 });

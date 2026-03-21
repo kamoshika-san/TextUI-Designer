@@ -14,8 +14,8 @@ import { DescriptorCompletionEngine } from './schema-completion-engine';
 export class TextUICompletionProvider implements vscode.CompletionItemProvider {
   private completionCacheService: CompletionCache;
   private contextAnalyzer: CompletionContextAnalyzer;
-  /** クラス名は歴史的経緯。実装は descriptor / カタログ駆動（JSON Schema は未使用）。 */
-  private schemaEngine: DescriptorCompletionEngine;
+  /** 実装は descriptor / カタログ駆動（JSON Schema は未使用）。 */
+  private descriptorEngine: DescriptorCompletionEngine;
 
   private completionCache: Map<string, { items: vscode.CompletionItem[]; timestamp: number }> = new Map();
   private readonly CACHE_TTL = 10000; // 10秒
@@ -54,13 +54,13 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
   }
 
   private async parseYamlForSyntaxValidation(text: string): Promise<void> {
-    await this.schemaEngine.parseYamlForSyntaxValidation(text);
+    await this.descriptorEngine.parseYamlForSyntaxValidation(text);
   }
 
   constructor() {
     this.contextAnalyzer = new CompletionContextAnalyzer();
     this.completionCacheService = new CompletionCache(this.CACHE_TTL);
-    this.schemaEngine = new DescriptorCompletionEngine();
+    this.descriptorEngine = new DescriptorCompletionEngine();
     this.completionCache = this.completionCacheService.getCompletionCacheMap();
   }
 
@@ -148,7 +148,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
       rootKeys?: Set<string>;
     }
   ): vscode.CompletionItem[] {
-    return this.schemaEngine.generateCompletionItemsFromDescriptors(analysisContext);
+    return this.descriptorEngine.generateCompletionItemsFromDescriptors(analysisContext);
   }
 
   /**
@@ -190,35 +190,35 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
    * コンポーネントの補完候補を取得
    */
   private getComponentCompletions(): vscode.CompletionItem[] {
-    return this.schemaEngine.getComponentCompletions();
+    return this.descriptorEngine.getComponentCompletions();
   }
 
   /**
    * コンポーネントのプロパティ補完候補を取得
    */
   private getComponentPropertyCompletions(componentName?: string, existingProperties: Set<string> = new Set()): vscode.CompletionItem[] {
-    return this.schemaEngine.getComponentPropertyCompletions(componentName, existingProperties);
+    return this.descriptorEngine.getComponentPropertyCompletions(componentName, existingProperties);
   }
 
   /**
    * プロパティの値補完候補を取得
    */
   private getPropertyValueCompletions(propertyName?: string, componentName?: string): vscode.CompletionItem[] {
-    return this.schemaEngine.getPropertyValueCompletions(propertyName, componentName);
+    return this.descriptorEngine.getPropertyValueCompletions(propertyName, componentName);
   }
 
   /**
    * ルートレベルの補完候補を取得
    */
   private getRootLevelCompletions(existingRootKeys: Set<string> = new Set()): vscode.CompletionItem[] {
-    return this.schemaEngine.getRootLevelCompletions(existingRootKeys);
+    return this.descriptorEngine.getRootLevelCompletions(existingRootKeys);
   }
 
   /**
    * 基本的な補完候補を取得（YAMLパースエラー時）
    */
   private getBasicCompletions(): vscode.CompletionItem[] {
-    return this.schemaEngine.getBasicCompletions();
+    return this.descriptorEngine.getBasicCompletions();
   }
 
   /**
