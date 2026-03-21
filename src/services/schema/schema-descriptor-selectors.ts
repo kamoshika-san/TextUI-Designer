@@ -1,4 +1,4 @@
-import { COMPONENT_DEFINITIONS } from '../../components/definitions/component-definitions';
+import { componentDescriptorRegistry } from '../../registry/component-descriptor-registry';
 
 /**
  * Schema パイプライン用の descriptor graph 直結セレクタ。
@@ -7,10 +7,10 @@ import { COMPONENT_DEFINITIONS } from '../../components/definitions/component-de
 
 /** `COMPONENT_DEFINITIONS` の `schemaRef` 列（`schemas/schema.json` の `definitions.component.oneOf` と揃える基準）。 */
 export function getComponentSchemaRefs(): string[] {
-  return COMPONENT_DEFINITIONS.map(def => def.schemaRef);
+  return componentDescriptorRegistry.getSchemaRefs();
 }
 
 /** `definitions` に各コンポーネント定義が存在するか検証するときの名前列（descriptor 順）。 */
 export function getComponentDefinitionNames(): string[] {
-  return COMPONENT_DEFINITIONS.map(def => def.name);
+  return componentDescriptorRegistry.list().map(def => def.name);
 }

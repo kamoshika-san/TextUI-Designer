@@ -54,9 +54,9 @@ import type {
   ImageComponent,
   IconComponent
 } from './types';
-import { getComponentName } from '../registry/component-registry';
-import { COMPONENT_DEFINITIONS } from '../components/definitions/component-definitions';
+import { decodeDslComponentObjectProps } from '../registry/dsl-component-codec';
 import { type BuiltInComponentName } from '../components/definitions/built-in-components';
+import { componentDescriptorRegistry } from '../registry/component-descriptor-registry';
 import {
   getWebViewComponentRenderer,
   registerWebViewComponent as registerRenderer,
@@ -68,23 +68,9 @@ interface RenderContext {
   onJumpToDsl?: (dslPath: string, componentName: string) => void;
 }
 
-const isComponentProps = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
-
 /** WebViewComponentRenderer の props を FormComponent として扱う（DSL 由来のため意図的なキャスト） */
 function toFormComponent(props: Record<string, unknown>): FormComponent {
   return props as unknown as FormComponent;
-}
-
-function extractProps(
-  component: Record<string, unknown>,
-  name: string | null
-): Record<string, unknown> | undefined {
-  if (!name) {
-    return undefined;
-  }
-  const value = component[name];
-  return isComponentProps(value) ? value : undefined;
 }
 
 // --- 組み込みコンポーネントの登録 ---
@@ -200,8 +186,12 @@ const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> =
 };
 
 function registerBuiltInComponentsImpl(): void {
-  for (const def of COMPONENT_DEFINITIONS) {
-    registerRenderer(def.name, builtInRenderers[def.previewRendererKey]);
+  for (const def of componentDescriptorRegistry.list()) {
+    const rendererKey = componentDescriptorRegistry.getPreviewRenderer(def.name);
+    if (!rendererKey) {
+      continue;
+    }
+    registerRenderer(def.name, builtInRenderers[rendererKey]);
   }
 }
 
@@ -218,9 +208,9 @@ export function registerBuiltInComponents(): void {
  * FormFieldをレンダリング（Mapベースのディスパッチ）
  */
 function renderFormField(field: FormField, index: number, context?: RenderContext): React.ReactNode {
-  const fieldRecord = field as unknown as Record<string, unknown>;
-  const name = getComponentName(fieldRecord);
-  const props = extractProps(fieldRecord, name ?? null);
+  const decoded = decodeDslComponentObjectProps(field);
+  const name = decoded.value?.name;
+  const props = decoded.value?.props;
   const renderer = name ? getWebViewComponentRenderer(name) : undefined;
 
   if (name && props && renderer) {
@@ -250,9 +240,9 @@ export function renderRegisteredComponent(
   key: React.Key,
   context?: RenderContext
 ): React.ReactNode {
-  const componentRecord = comp as unknown as Record<string, unknown>;
-  const name = getComponentName(componentRecord);
-  const props = extractProps(componentRecord, name ?? null);
+  const decoded = decodeDslComponentObjectProps(comp);
+  const name = decoded.value?.name;
+  const props = decoded.value?.props;
   const renderer = resolveRenderer(name);
 
   if (name && props && renderer) {

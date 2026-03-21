@@ -29,9 +29,9 @@ import type {
 import type { ExportOptions, Exporter } from './export-types';
 import type { ExporterRendererMethod } from '../components/definitions/types';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';
-import { getComponentName } from '../registry/component-registry';
-import { COMPONENT_DEFINITIONS } from '../components/definitions/component-definitions';
+import { decodeDslComponent } from '../registry/dsl-component-codec';
 import { getTokenStylePropertyKebab } from '../components/definitions/token-style-property-map';
+import { componentDescriptorRegistry } from '../registry/component-descriptor-registry';
 import { AttributeSerializer, type ExporterAstNode, renderExporterAst } from './exporter-ast';
 
 export type ComponentHandler = (props: unknown, key: number) => string;
@@ -63,8 +63,11 @@ export abstract class BaseComponentRenderer implements Exporter {
    * サブクラスでオーバーライドして追加コンポーネントを登録可能
    */
   protected initializeHandlers(): void {
-    for (const def of COMPONENT_DEFINITIONS) {
-      const method = def.exporterRendererMethod;
+    for (const def of componentDescriptorRegistry.list()) {
+      const method = componentDescriptorRegistry.getExporterHandlerKey(def.name);
+      if (!method) {
+        continue;
+      }
       this.componentHandlers.set(def.name, (props, key) =>
         this.dispatchExporterRenderer(method, props, key)
       );
@@ -135,9 +138,9 @@ export abstract class BaseComponentRenderer implements Exporter {
    * if-else連鎖を排除し、レジストリに登録されたハンドラーで処理
    */
   protected renderComponent(comp: ComponentDef, key: number): string {
-    const componentRecord = comp as unknown as Record<string, unknown>;
-    const name = getComponentName(componentRecord);
-    const props = name ? componentRecord[name] : undefined;
+    const decoded = decodeDslComponent(comp);
+    const name = decoded.value?.name;
+    const props = decoded.value?.props;
 
     if (name && props !== undefined) {
       const handler = this.componentHandlers.get(name);
@@ -154,9 +157,9 @@ export abstract class BaseComponentRenderer implements Exporter {
    * FormField / FormAction も同じハンドラーMapで処理し、if-else連鎖を排除
    */
   protected renderFormField(field: FormField, index: number): string {
-    const fieldRecord = field as unknown as Record<string, unknown>;
-    const name = getComponentName(fieldRecord);
-    const props = name ? fieldRecord[name] : undefined;
+    const decoded = decodeDslComponent(field);
+    const name = decoded.value?.name;
+    const props = decoded.value?.props;
 
     if (name && props !== undefined) {
       const handler = this.componentHandlers.get(name);
@@ -196,7 +199,7 @@ export abstract class BaseComponentRenderer implements Exporter {
   }
 
   protected renderUnsupportedComponent(comp: ComponentDef, _key: number): string {
-    const componentName = getComponentName(comp as Record<string, unknown>) || 'unknown';
+    const componentName = decodeDslComponent(comp).value?.name || 'unknown';
     switch (this.format) {
       case 'html':
         return `    <!-- 未対応コンポーネント: ${componentName} -->`;
