@@ -7,7 +7,7 @@
 
 ## import ルール（T-110）との相互リンク
 
-- **4 レーンの import 方針**（作業中・T-110 で ESLint 等へ拡張予定）: [import-boundaries-4-lanes.md](import-boundaries-4-lanes.md)  
+- **4 レーンの import 方針**（正本・ESLint 第 1 弾は WebView→Export 禁止）: [import-boundaries-4-lanes.md](import-boundaries-4-lanes.md)  
 - 本ファイルは **語彙と境界の「なぜ」**、T-110 側は **「どこからどこへ import してよいか」**を主眼とする（重複は避け、相互にリンクで往復できること）。
 
 ## 推奨の四層（概念）

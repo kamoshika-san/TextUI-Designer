@@ -15,9 +15,16 @@ const rendererTypesImportRestriction = ["warn", {
     }],
 }];
 
+/** T-110: WebView レーンから Export ランタイムへの直接依存を禁止（import-boundaries-4-lanes.md） */
+const rendererToExportersImportRestriction = ["warn", {
+    patterns: [
+        { group: ["**/exporters/**"], message: "WebView runtime must not import export runtime. See docs/import-boundaries-4-lanes.md (T-110)." },
+        { group: ["**/exporters"], message: "WebView runtime must not import export runtime. See docs/import-boundaries-4-lanes.md (T-110)." },
+    ],
+}];
+
 export default [{
     files: ["**/*.ts"],
-}, {
     plugins: {
         "@typescript-eslint": typescriptEslint,
     },
@@ -76,5 +83,18 @@ export default [{
     },
     rules: {
         "no-restricted-imports": rendererTypesImportRestriction,
+    },
+}, {
+    files: ["src/renderer/**/*.ts", "src/renderer/**/*.tsx"],
+    plugins: {
+        "@typescript-eslint": typescriptEslint,
+    },
+    languageOptions: {
+        parser: tsParser,
+        ecmaVersion: 2022,
+        sourceType: "module",
+    },
+    rules: {
+        "no-restricted-imports": rendererToExportersImportRestriction,
     },
 }];
