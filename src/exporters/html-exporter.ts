@@ -25,7 +25,7 @@ import type {
   ImageComponent,
   IconComponent
 } from '../renderer/types';
-import type { ExportOptions } from './index';
+import type { ExportOptions } from './export-types';
 import { BaseComponentRenderer } from './base-component-renderer';
 import { buildHtmlDocument, readWebviewCssIfPresent } from './html-template-builder';
 import { renderPageComponentsToStaticHtml } from './react-static-export';

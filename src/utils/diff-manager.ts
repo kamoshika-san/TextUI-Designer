@@ -21,6 +21,8 @@ export interface ComponentDiff {
 export class DiffManager {
   private lastDSL: TextUIDSL | null = null;
   private lastHash: string | null = null;
+  /** `computeDiff` の直近戻り値（パフォーマンス表示用。増分レンダーには未使用）。 */
+  private lastDiffResult: DiffResult | null = null;
 
   /**
    * 文字列のハッシュを生成
@@ -52,25 +54,33 @@ export class DiffManager {
     if (!this.lastDSL || this.lastHash === newHash) {
       this.lastDSL = newDSL;
       this.lastHash = newHash;
-      return {
+      const unchanged: DiffResult = {
         hasChanges: false,
         changedComponents: [],
         addedComponents: [],
         removedComponents: [],
         modifiedComponents: []
       };
+      this.lastDiffResult = unchanged;
+      return unchanged;
     }
 
     const oldComponents = this.lastDSL.page?.components || [];
     const newComponents = newDSL.page?.components || [];
-    
+
     const result = this.compareComponents(oldComponents, newComponents);
-    
+
     // 状態を更新
     this.lastDSL = newDSL;
     this.lastHash = newHash;
-    
+    this.lastDiffResult = result;
+
     return result;
+  }
+
+  /** 直近の差分結果（未実行時は null）。 */
+  getLastDiffResult(): DiffResult | null {
+    return this.lastDiffResult;
   }
 
   /**
@@ -194,6 +204,7 @@ export class DiffManager {
   reset(): void {
     this.lastDSL = null;
     this.lastHash = null;
+    this.lastDiffResult = null;
   }
 
   /**

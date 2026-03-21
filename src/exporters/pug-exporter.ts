@@ -23,7 +23,7 @@ import type {
   IconComponent,
   FormComponent
 } from '../renderer/types';
-import type { ExportOptions } from './index';
+import type { ExportOptions } from './export-types';
 import { BaseComponentRenderer } from './base-component-renderer';
 import { buildPugPageDocument } from './pug/pug-page-document';
 import {

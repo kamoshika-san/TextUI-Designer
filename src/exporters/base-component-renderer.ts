@@ -26,19 +26,12 @@ import type {
   ImageComponent,
   IconComponent
 } from '../renderer/types';
-import type { ExportOptions, Exporter } from './index';
+import type { ExportOptions, Exporter } from './export-types';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';
 import { getComponentName } from '../registry/component-registry';
 import { COMPONENT_DEFINITIONS } from '../components/definitions/component-definitions';
+import { getTokenStylePropertyKebab } from '../components/definitions/token-style-property-map';
 import { AttributeSerializer, type ExporterAstNode, renderExporterAst } from './exporter-ast';
-
-/** descriptor graph（`COMPONENT_DEFINITIONS`）由来の token 既定 CSS プロパティ。 */
-const BUILT_IN_TOKEN_STYLE_PROPERTY_BY_NAME = new Map<string, string>();
-for (const d of COMPONENT_DEFINITIONS) {
-  if (d.tokenStyleProperty !== undefined) {
-    BUILT_IN_TOKEN_STYLE_PROPERTY_BY_NAME.set(d.name, d.tokenStyleProperty);
-  }
-}
 
 export type ComponentHandler = (props: unknown, key: number) => string;
 
@@ -227,7 +220,7 @@ export abstract class BaseComponentRenderer implements Exporter {
   }
 
   private resolveTokenStyleProperty(componentType: string): string | undefined {
-    return BUILT_IN_TOKEN_STYLE_PROPERTY_BY_NAME.get(componentType);
+    return getTokenStylePropertyKebab(componentType);
   }
 
   private buildInlineCssDeclaration(property: string, token: string): string {

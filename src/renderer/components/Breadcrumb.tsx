@@ -1,4 +1,5 @@
 import React from 'react';
+import { tokenToPreviewInlineStyle } from '../token-inline-style-from-definition';
 import type { BreadcrumbComponent } from '../types';
 
 interface BreadcrumbProps extends BreadcrumbComponent {}
@@ -9,7 +10,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ items = [], separator = 
   }
 
   return (
-    <nav className="textui-breadcrumb" aria-label="Breadcrumb" style={token ? { color: token } : undefined}>
+    <nav className="textui-breadcrumb" aria-label="Breadcrumb" style={tokenToPreviewInlineStyle('Breadcrumb', token)}>
       <ol className="textui-breadcrumb-list">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;

@@ -1,5 +1,6 @@
 import React from 'react';
 import { BadgeComponent, BadgeVariant } from '../types';
+import { tokenToPreviewInlineStyle } from '../token-inline-style-from-definition';
 
 const variantClasses: Record<BadgeVariant, string> = {
   default: 'textui-badge-default',
@@ -13,7 +14,7 @@ export const Badge: React.FC<BadgeComponent> = ({ label, variant = 'default', si
   const className = `textui-badge ${variantClasses[variant]} textui-badge-${size}`;
 
   return (
-    <span className={className} style={token ? { backgroundColor: token } : undefined}>
+    <span className={className} style={tokenToPreviewInlineStyle('Badge', token)}>
       {label}
     </span>
   );

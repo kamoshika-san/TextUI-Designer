@@ -1,5 +1,6 @@
 import React from 'react';
 import { ProgressComponent, ProgressVariant } from '../types';
+import { tokenToPreviewInlineStyle } from '../token-inline-style-from-definition';
 
 const variantClasses: Record<ProgressVariant, string> = {
   default: 'textui-progress-default',
@@ -46,7 +47,7 @@ export const Progress: React.FC<ProgressComponent> = ({
               <div
                 key={`${segment.label ?? 'segment'}-${index}`}
                 className={className}
-                style={{ width, ...(segment.token ? { backgroundColor: segment.token } : {}) }}
+                style={{ width, ...tokenToPreviewInlineStyle('Progress', segment.token) }}
                 title={segment.label}
               />
             );
@@ -54,7 +55,7 @@ export const Progress: React.FC<ProgressComponent> = ({
           : (
             <div
               className={`textui-progress-fill ${variantClasses[variant]}`}
-              style={{ width: `${normalizedValue}%`, ...(token ? { backgroundColor: token } : {}) }}
+              style={{ width: `${normalizedValue}%`, ...tokenToPreviewInlineStyle('Progress', token) }}
             />
           )}
       </div>

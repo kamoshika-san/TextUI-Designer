@@ -1,4 +1,5 @@
 import React from 'react';
+import { tokenToPreviewInlineStyle } from '../token-inline-style-from-definition';
 import { LinkComponent } from '../types';
 
 interface LinkProps extends LinkComponent {}
@@ -12,7 +13,7 @@ export const Link: React.FC<LinkProps> = ({ href, label, target, token }) => {
       target={target}
       rel={rel}
       className="textui-link"
-      style={token ? { color: token } : undefined}
+      style={tokenToPreviewInlineStyle('Link', token)}
     >
       {label}
     </a>

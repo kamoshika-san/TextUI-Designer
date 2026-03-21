@@ -1,5 +1,5 @@
 import type { TextUIDSL } from '../renderer/types';
-import type { ExportOptions, Exporter } from './index';
+import type { ExportOptions, Exporter } from './export-types';
 import { HtmlExporter } from './html-exporter';
 
 function extractContainerContent(html: string): string {

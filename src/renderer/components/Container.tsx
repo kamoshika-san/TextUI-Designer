@@ -1,5 +1,6 @@
 import React from 'react';
 import { ContainerComponent } from '../types';
+import { tokenToPreviewInlineStyle } from '../token-inline-style-from-definition';
 
 type Layout = 'vertical' | 'horizontal' | 'flex' | 'grid';
 
@@ -26,6 +27,8 @@ export const Container: React.FC<ContainerProps> = ({
   const className = layoutClasses[layout];
   const hasFlexGrow = typeof flexGrow === 'number';
 
+  const tokenStyle = tokenToPreviewInlineStyle('Container', token);
+
   const style = hasFlexGrow
     ? {
         flexGrow,
@@ -33,13 +36,13 @@ export const Container: React.FC<ContainerProps> = ({
         flexBasis: width ?? 0,
         ...(width ? { width } : {}),
         ...(minWidth ? { minWidth } : {}),
-        ...(token ? { backgroundColor: token } : {}),
+        ...tokenStyle
       }
     : width || minWidth || token
       ? {
           ...(width ? { width } : {}),
           ...(minWidth ? { minWidth } : {}),
-          ...(token ? { backgroundColor: token } : {}),
+          ...tokenStyle
         }
       : undefined;
 
