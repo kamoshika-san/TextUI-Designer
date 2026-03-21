@@ -21,6 +21,7 @@
 
 - 型の「どれが正か」がドキュメントとコードの両方で追える。
 - T-074 以降の import 移行は **小さなスライス**で行い、回帰を `npm test` 等で担保する。
+- 2026-03-21 Sprint4（T-128〜T-130）で、`src/renderer/types.ts` は **thin facade**（domain 再エクスポート）に収束し、`src/renderer/**` 外からの `renderer/types` import は **ゼロ**を CI ガードで強制する運用に更新した。
 
 ## 関連
 

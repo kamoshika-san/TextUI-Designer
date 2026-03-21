@@ -5,27 +5,38 @@
 ## 概要
 
 - **正本（canonical）**: `src/domain/dsl-types.ts` に定義される共有 DSL 型（`TextUIDSL` / `ComponentDef` 等）。
-- **現状**: `src/renderer/types.ts` が **同一概念の並行定義**を抱え、拡張ホスト側の多数モジュールが **`../renderer/types` または `../../renderer/types`** から型を import している。
-- **移行の狙い**: 共有 DSL 契約は **domain を経由**し、`renderer/types.ts` は **re-export / 互換レイヤ**へ収束する（段階的。実装は T-074 以降）。
+- **現状（2026-03-21 Sprint4 更新）**: `src/renderer/types.ts` は **`domain/dsl-types` の再エクスポート**のみ。`src/renderer/**` 外からの `renderer/types` import は **ゼロ**（T-128/129）。
+- **移行の狙い**: 共有 DSL 契約は **domain を経由**し、非 renderer からの `renderer/types` 依存を **ゼロで維持**する。
 
 ## モジュール一覧（`renderer/types` を直接 import）
 
-| 領域 | ファイル |
-|------|----------|
-| **Core** | `src/core/textui-core-engine.ts`, `textui-core-engine-io.ts`, `textui-core-engine-format.ts`, `textui-core-engine-domain.ts`, `textui-core-helpers.ts`, `textui-core-component-builder.ts` |
-| **キャッシュ / 差分** | `src/utils/cache-manager.ts`, `src/exporters/metrics/diff-manager.ts` |
-| **プレビュー** | `src/utils/preview-capture.ts`, `src/utils/preview-capture/html-preparation.ts` |
-| **スタイル** | `src/utils/style-manager.ts` |
-| **型（サービス契約）** | `src/types/webview.ts`, `src/types/services.ts` |
-| **DSL 読込** | `src/dsl/load-dsl-with-includes.ts` |
-| **CLI** | `src/cli/types.ts`, `src/cli/theme-token-resolver.ts`, `src/cli/provider-registry.ts`, `src/cli/exporter-runner.ts`, `src/cli/openapi/types.ts`, `src/cli/openapi/dsl-builder.ts` |
-| **Exporter（ルート）** | `src/exporters/html-exporter.ts`, `base-component-renderer.ts`, `vue-exporter.ts`, `svelte-exporter.ts`, `react-exporter.ts`, `react-basic-renderer.ts`, `react-template-renderer.ts`, `react-static-export.ts`, `react-form-control-templates.ts`, `pug-exporter.ts` |
-| **Exporter / pug** | `src/exporters/pug/pug-basic-templates.ts`, `pug-form-fragments.ts`, `pug-layout-templates.ts` |
-| **Exporter / html-renderers** | `src/exporters/html-renderers/html-textual-renderer.ts`, `html-renderer-utils.ts`, `html-layout-renderer.ts`, `html-form-renderer.ts` |
+非 `src/renderer/**` からの直接 import は解消済み。  
+今後 `renderer/types` 参照が増えた場合は CI ガード（`tests/unit/renderer-types-non-renderer-import-guard.test.js`）で検知される。
 
-上記はリポジトリ走査時点の一覧。新規追加時は本表を更新する。
+**CI / ローカル**: `src/renderer/**` 外からの `renderer/types` import は **ゼロ必須**（T-129）。
 
-**CI / ローカル**: `src/renderer/**` 外からの `renderer/types` import は **`tests/unit/renderer-types-non-renderer-import-guard.test.js`（T-113）** の許可リストとも同期すること。リストのみ更新でよい場合は、棚卸し表とガードを同一 PR で更新する。
+## Sprint4 完了メモ（T-128〜T-130）
+
+- `src/renderer/types.ts` は thin facade（`export * from '../domain/dsl-types'`）として固定。
+- Core / CLI / Services / Exporter の共有 DSL 型 import を `domain/dsl-types` 起点へ統一。
+- Exporter 回帰テスト `tests/unit/exporter-family-structure-regression.test.js` を追加。
+
+## T-119（E-DSL-SSOT Sprint 1）— 移行単位マトリクス（領域 × 優先）
+
+次の **1〜2 ファイルスライス**を選ぶための整理（`領域` / 代表ファイル / 主な import 形 / 難易度 / 置換先 / メモ）。
+
+| 領域 | 代表ファイル（例） | 主に import する型 | 難易度 | 置換先候補 | メモ |
+|------|-------------------|-------------------|--------|------------|------|
+| Core 残り | `textui-core-component-builder.ts` ほか | `ComponentDef` 等 | 低〜中 | `domain/dsl-types` | engine 本体は一部済み（T-105）。builder は単独で切り出しやすい。 |
+| Utils | `preview-capture.ts`, `html-preparation.ts` | `TextUIDSL` | 低 | `domain/dsl-types` | CLI/キャプチャ経路。テストのモック境界を確認。 |
+| Utils | `style-manager.ts` | `TextVariant`, `ButtonKind` | 低 | `domain/dsl-types` | 型のみの import。 |
+| 型（契約） | `types/webview.ts`, `types/services.ts` | `TextUIDSL` | 中 | `domain/dsl-types` | サービス境界の「顔」— 置換は PR を小さく。 |
+| DSL | `load-dsl-with-includes.ts` | `TextUIDSL` | 中 | `domain/dsl-types` | include 解決の中枢。 |
+| CLI | `cli/types.ts` ほか OpenAPI 配下 | `TextUIDSL` | 中 | `domain/dsl-types` | ファイル数が多いがパターンは単純。Wave 単位で batch 可。 |
+| Exporter 共通 | `base-component-renderer.ts` | 多数のコンポーネント型 | 中 | `domain/dsl-types` | `ExporterRendererMethod` dispatch と同時に読むこと。 |
+| Exporter 個別 | `html-exporter.ts`, `react-*.ts`, `pug/*` 等 | フォーマットごとにばらつき | 中〜高 | `domain/dsl-types` | ボリューム最大。**後半 Wave** に分割推奨。 |
+
+**推奨次スライス（本ドキュメント時点）**: `style-manager.ts` + `preview-capture.ts`（いずれも型のみ・依存が浅い）。
 
 ## T-074（移行第1スライス）向けの優先候補
 
