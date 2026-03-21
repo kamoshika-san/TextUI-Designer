@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 describe('core SSoT import guard (T-20260321-136)', () => {
-  it('src/core レイヤに renderer/types import が存在しない', () => {
+  it('src/core レイヤに禁止 import が存在しない', () => {
     const coreDir = path.resolve(__dirname, '../../src/core');
     const offenders = [];
     const restrictedImportPath = ['renderer', 'types'].join('/');
