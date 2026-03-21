@@ -19,18 +19,36 @@ const {
 
 const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 const manifestCommands = pkg.contributes?.commands || [];
-const manifestMenus = pkg.contributes?.menus?.['editor/title'] || [];
+const manifestMenus = pkg.contributes?.menus || {};
 
 const catalogCommands = getPackageCommandContributions();
-const catalogMenus = getPackageMenuContributions()['editor/title'] || [];
+const catalogMenus = getPackageMenuContributions();
 
-const normalize = (items) =>
+const normalizeItems = items =>
   [...items]
     .map(item => JSON.stringify(item))
     .sort();
 
-const commandDiffers = JSON.stringify(normalize(manifestCommands)) !== JSON.stringify(normalize(catalogCommands));
-const menuDiffers = JSON.stringify(normalize(manifestMenus)) !== JSON.stringify(normalize(catalogMenus));
+/** メニュー各ロケーションのエントリ配列を順不同で比較可能にする */
+function normalizeMenusObject(menus) {
+  if (!menus || typeof menus !== 'object') {
+    return {};
+  }
+  const out = {};
+  for (const key of Object.keys(menus).sort()) {
+    const items = menus[key];
+    if (!Array.isArray(items)) {
+      continue;
+    }
+    out[key] = normalizeItems(items);
+  }
+  return out;
+}
+
+const commandDiffers =
+  JSON.stringify(normalizeItems(manifestCommands)) !== JSON.stringify(normalizeItems(catalogCommands));
+const menuDiffers =
+  JSON.stringify(normalizeMenusObject(manifestMenus)) !== JSON.stringify(normalizeMenusObject(catalogMenus));
 
 if (!commandDiffers && !menuDiffers) {
   console.log('[check-command-manifest] package.json は command-catalog と同期済みです');
@@ -41,7 +59,7 @@ if (commandDiffers) {
   console.error('[check-command-manifest] contributes.commands が command-catalog と不一致です');
 }
 if (menuDiffers) {
-  console.error('[check-command-manifest] contributes.menus["editor/title"] が command-catalog と不一致です');
+  console.error('[check-command-manifest] contributes.menus が command-catalog と不一致です（全キー検証）');
 }
 
 console.error('[check-command-manifest] `npm run sync:commands` を実行して同期してください');

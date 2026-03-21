@@ -20,13 +20,7 @@ const {
 const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 const contributes = pkg.contributes || {};
 const nextCommands = getPackageCommandContributions();
-const nextMenusFromCatalog = getPackageMenuContributions();
-
-const existingMenus = contributes.menus || {};
-const nextMenus = {
-  ...existingMenus,
-  'editor/title': nextMenusFromCatalog['editor/title']
-};
+const nextMenus = getPackageMenuContributions();
 
 pkg.contributes = {
   ...contributes,
@@ -38,4 +32,8 @@ fs.writeFileSync(packageJsonPath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
 
 console.log('[sync-command-manifest] package.json を command-catalog から同期しました');
 console.log(`[sync-command-manifest] commands: ${nextCommands.length} 件`);
-console.log(`[sync-command-manifest] editor/title menus: ${nextMenus['editor/title'].length} 件`);
+const menuKeys = Object.keys(nextMenus);
+console.log(`[sync-command-manifest] menus キー: ${menuKeys.join(', ')}`);
+for (const key of menuKeys) {
+  console.log(`[sync-command-manifest] menus["${key}"]: ${(nextMenus[key] || []).length} 件`);
+}

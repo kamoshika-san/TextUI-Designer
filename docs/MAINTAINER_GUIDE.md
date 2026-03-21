@@ -7,7 +7,7 @@
 | 変更したい内容 | 主に触る場所 | 実行コマンド（最低限） |
 |---|---|---|
 | 設定項目 (`contributes.configuration` の title + properties) | 既定値・型: `src/utils/config-schema.ts`（`SETTINGS_DEFAULTS`）／生成: `src/config/configuration-properties.ts`（`getGeneratedContributesConfiguration`） | `npm run sync:configuration` → `npm run check:configuration` |
-| コマンド一覧/メニュー | `src/services/command-catalog.ts` | `npm run sync:commands` → `npm run check:commands` |
+| コマンド一覧/メニュー | `src/services/command-catalog.ts`（[詳細](contributes-commands.md)） | `npm run sync:commands` → `npm run check:commands` |
 | `contributes` 整合性（snippets / yaml.schemas / menus参照） | `package.json` + `scripts/check-contributes-integrity.cjs` | `npm run check:contributes` |
 | プレビュー画像キャプチャ | `src/utils/preview-capture/*` | `npm run compile` + `npm run test:unit` |
 | MCP `capture_preview` | `src/mcp/tools/capture-preview-*` と `src/mcp/server.ts` | `npm run compile` + `npx mocha ... tests/unit/mcp-server.test.js` |
@@ -65,6 +65,11 @@
 - 生成: `scripts/generate-contributes-configuration.cjs`（`package.json` の `contributes.configuration` を上書き）
 - 検証: `scripts/check-contributes-configuration.cjs`（生成結果と `package.json` の完全一致）
 - npm scripts: `sync:configuration` / `check:configuration`
+
+### 5.1) contributes commands / menus（`T-20260321-002`）
+- 正本・手順: [contributes-commands.md](contributes-commands.md)
+- `sync:commands` は `contributes.commands` に加え **`contributes.menus` を `getPackageMenuContributions()` で全面置換**（従来の `menus` への手編集マージは廃止）
+- `check:commands` は `menus` の**全ロケーションキー**をカタログと比較
 
 ### 6) SchemaManager の責務分割（`T-20260320-010`）
 - `src/services/schema-manager.ts`: パス・キャッシュ・`load*` / `validate` のファサード（公開 API は変更しない）

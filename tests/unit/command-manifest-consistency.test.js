@@ -12,16 +12,16 @@ describe('コマンド定義整合性', () => {
     return pkg.contributes?.commands || [];
   };
 
-  const readManifestMenus = () => {
+  const readManifestMenusObject = () => {
     const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-    return pkg.contributes?.menus?.['editor/title'] || [];
+    return pkg.contributes?.menus || {};
   };
 
   const readCatalogContributions = () => {
     const { getPackageCommandContributions, getPackageMenuContributions } = require(commandCatalogPath);
     return {
       commands: getPackageCommandContributions(),
-      menus: getPackageMenuContributions()['editor/title'] || []
+      menus: getPackageMenuContributions()
     };
   };
 
@@ -30,6 +30,15 @@ describe('コマンド定義整合性', () => {
 
   const normalizeMenus = menus =>
     [...menus].sort((a, b) => a.command.localeCompare(b.command));
+
+  const normalizeMenusObject = menus => {
+    const keys = Object.keys(menus || {}).sort();
+    const out = {};
+    for (const k of keys) {
+      out[k] = normalizeMenus(menus[k] || []);
+    }
+    return out;
+  };
 
   it('manifestで公開するcommands定義はcommand-catalogと一致する', () => {
     const manifestCommands = normalizeCommands(readManifestCommands());
@@ -42,14 +51,14 @@ describe('コマンド定義整合性', () => {
     );
   });
 
-  it('manifestで公開するeditor/titleメニュー定義はcommand-catalogと一致する', () => {
-    const manifestMenus = normalizeMenus(readManifestMenus());
-    const catalogMenus = normalizeMenus(readCatalogContributions().menus);
+  it('manifestで公開するmenusオブジェクト全体はcommand-catalogと一致する', () => {
+    const manifestMenus = normalizeMenusObject(readManifestMenusObject());
+    const catalogMenus = normalizeMenusObject(readCatalogContributions().menus);
 
     assert.deepStrictEqual(
       manifestMenus,
       catalogMenus,
-      'manifest menus[editor/title] が command-catalog と一致しません'
+      'manifest contributes.menus が command-catalog と一致しません'
     );
   });
 });

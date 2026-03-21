@@ -1,3 +1,7 @@
+/**
+ * VS Code `contributes.commands` および同期対象の `contributes.menus` の単一ソース。
+ * `getPackageCommandContributions` / `getPackageMenuContributions` が `sync:commands` で `package.json` に反映される。
+ */
 export type CommandHandler = (...args: unknown[]) => void | Promise<void>;
 
 export interface CommandDefinition {
