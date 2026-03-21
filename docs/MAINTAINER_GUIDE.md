@@ -17,6 +17,7 @@
 | [observability-and-cache-boundary.md](observability-and-cache-boundary.md) | 公開 API と観測・キャッシュ実装の**横断**境界（内側に閉じる方針） |
 | [dsl-types-renderer-types-inventory.md](dsl-types-renderer-types-inventory.md) | `renderer/types` 直接参照の棚卸し（移行計画用） |
 | [test-setup-policy.md](test-setup-policy.md) | `tests/setup.js` とグローバルフックへの **新規依存を増やさない** 方針（注入優先） |
+| [package-contributes-policy.md](package-contributes-policy.md) | `package.json` の `contributes` 肥大を抑えるための **カテゴリ・生成・設定の分離**（方針のみ） |
 
 ログの混在整理（Phase 0）: [console-logger-inventory-phase0.md](console-logger-inventory-phase0.md)
 
