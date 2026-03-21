@@ -1,4 +1,5 @@
 import { BUILT_IN_COMPONENTS, type BuiltInComponentName } from './built-in-components';
+import { builtInSchemaRef } from './component-spec';
 import { CORE_CATALOG_METADATA } from './core-catalog-metadata';
 import { COMPONENT_MANIFEST } from './manifest';
 import type { ComponentDefinition } from './types';
@@ -7,11 +8,8 @@ import { BUILT_IN_EXPORTER_RENDERER_DEFINITIONS } from './exporter-renderer-defi
 /**
  * 単一ソース化のための定義一覧。
  *
- * NOTE: T-20260317-002（土台のみ）では既存実装への配線は行わないため、
- * まずは現行の `component-manifest` をソースとして安全に組み立てていた。
- *
- * T-20260317-003 以降は definitions 側が真の単一ソースとなるため、
- * ここでは registry ではなく definitions 内の manifest を参照する。
+ * **schemaRef（T-177）**: manifest では保持せず `builtInSchemaRef(name)` で導出。
+ * **ComponentSpec（T-176）**: 中間モデルは `component-spec.ts` を参照。
  */
 export const COMPONENT_DEFINITIONS: readonly ComponentDefinition[] = BUILT_IN_COMPONENTS.map(
   (name: BuiltInComponentName) => {
@@ -20,7 +18,7 @@ export const COMPONENT_DEFINITIONS: readonly ComponentDefinition[] = BUILT_IN_CO
     const coreMeta = CORE_CATALOG_METADATA[name];
     return {
       name,
-      schemaRef: entry.schemaRef,
+      schemaRef: builtInSchemaRef(name),
       description: entry.description,
       properties: entry.properties,
       // token 既定: 正本は exporter-renderer-definitions（→ token-style-property-map 経由で export / プレビューが参照）

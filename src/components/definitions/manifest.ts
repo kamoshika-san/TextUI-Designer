@@ -1,5 +1,9 @@
-import type { SchemaRef } from './types';
 import type { BuiltInComponentName } from './built-in-components';
+
+/**
+ * VS Code 補完・説明文のカタログ（description / properties のみ）。
+ * **`schemaRef` は manifest では保持しない**（単一ソース: `component-spec.ts` の `builtInSchemaRef` → `COMPONENT_DEFINITIONS`）。
+ */
 
 export type CompletionValue = { value: string; description: string };
 export type ComponentProperty = {
@@ -11,7 +15,6 @@ export type ComponentProperty = {
 export interface ComponentManifestEntry {
   description: string;
   properties: ComponentProperty[];
-  schemaRef: SchemaRef;
 }
 
 const BOOLEAN_VALUES: CompletionValue[] = [
@@ -22,7 +25,6 @@ const BOOLEAN_VALUES: CompletionValue[] = [
 export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestEntry> = {
   Text: {
     description: 'テキストコンポーネント',
-    schemaRef: '#/definitions/Text',
     properties: [
       {
         name: 'variant',
@@ -75,7 +77,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Input: {
     description: '入力フィールド',
-    schemaRef: '#/definitions/Input',
     properties: [
       { name: 'label', description: '入力ラベル' },
       { name: 'name', description: '入力名' },
@@ -98,7 +99,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Button: {
     description: 'ボタン',
-    schemaRef: '#/definitions/Button',
     properties: [
       {
         name: 'kind',
@@ -125,7 +125,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Checkbox: {
     description: 'チェックボックス',
-    schemaRef: '#/definitions/Checkbox',
     properties: [
       { name: 'label', description: '表示ラベル' },
       { name: 'name', description: '入力名' },
@@ -135,7 +134,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Radio: {
     description: 'ラジオボタン',
-    schemaRef: '#/definitions/Radio',
     properties: [
       { name: 'label', description: '表示ラベル' },
       { name: 'name', description: 'グループ名' },
@@ -147,7 +145,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Select: {
     description: 'セレクトボックス',
-    schemaRef: '#/definitions/Select',
     properties: [
       { name: 'label', description: '表示ラベル' },
       { name: 'name', description: '入力名' },
@@ -159,7 +156,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   DatePicker: {
     description: '日付選択',
-    schemaRef: '#/definitions/DatePicker',
     properties: [
       { name: 'label', description: '表示ラベル' },
       { name: 'name', description: '入力名' },
@@ -172,7 +168,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Divider: {
     description: '区切り線',
-    schemaRef: '#/definitions/Divider',
     properties: [
       {
         name: 'orientation',
@@ -195,7 +190,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Spacer: {
     description: '余白スペーサー',
-    schemaRef: '#/definitions/Spacer',
     properties: [
       {
         name: 'axis',
@@ -222,7 +216,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Alert: {
     description: 'アラート',
-    schemaRef: '#/definitions/Alert',
     properties: [
       {
         name: 'variant',
@@ -240,7 +233,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Container: {
     description: 'コンテナ',
-    schemaRef: '#/definitions/Container',
     properties: [
       {
         name: 'layout',
@@ -258,7 +250,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Form: {
     description: 'フォーム',
-    schemaRef: '#/definitions/Form',
     properties: [
       { name: 'id', description: 'フォームID' },
       { name: 'fields', description: '入力フィールド配列' },
@@ -267,7 +258,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Accordion: {
     description: 'アコーディオン',
-    schemaRef: '#/definitions/Accordion',
     properties: [
       { name: 'allowMultiple', description: '複数項目を同時展開するか', values: BOOLEAN_VALUES },
       { name: 'items', description: '見出しとcontent/componentsを持つ項目配列' }
@@ -275,7 +265,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Tabs: {
     description: 'タブ',
-    schemaRef: '#/definitions/Tabs',
     properties: [
       { name: 'defaultTab', description: '初期表示するタブのインデックス（0始まり）' },
       { name: 'items', description: 'ラベルと内容コンポーネントを持つタブ配列' }
@@ -283,7 +272,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   TreeView: {
     description: 'ツリービュー',
-    schemaRef: '#/definitions/TreeView',
     properties: [
       { name: 'items', description: 'ツリー項目配列（label, children, components など）' },
       { name: 'showLines', description: '接続線を表示するか', values: BOOLEAN_VALUES },
@@ -292,7 +280,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Table: {
     description: 'テーブル',
-    schemaRef: '#/definitions/Table',
     properties: [
       { name: 'columns', description: '列定義（key/header）配列' },
       { name: 'rows', description: '行データ配列（セル値にコンポーネント定義も指定可）' },
@@ -303,7 +290,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Link: {
     description: 'リンク',
-    schemaRef: '#/definitions/Link',
     properties: [
       { name: 'href', description: 'リンク先URL' },
       { name: 'label', description: '表示テキスト' },
@@ -313,7 +299,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Breadcrumb: {
     description: 'パンくずリスト',
-    schemaRef: '#/definitions/Breadcrumb',
     properties: [
       { name: 'items', description: '階層項目配列（label, href?, target?）' },
       { name: 'separator', description: '区切り文字（例: >, /）' },
@@ -322,7 +307,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Badge: {
     description: 'バッジ（チップ）',
-    schemaRef: '#/definitions/Badge',
     properties: [
       { name: 'label', description: '表示テキスト' },
       {
@@ -349,7 +333,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Progress: {
     description: '割合表示用プログレスバー',
-    schemaRef: '#/definitions/Progress',
     properties: [
       { name: 'value', description: '割合（0-100）' },
       { name: 'segments', description: '複数セグメント[{ value, label?, variant?, token? }]' },
@@ -371,7 +354,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Image: {
     description: '画像',
-    schemaRef: '#/definitions/Image',
     properties: [
       { name: 'src', description: '画像のURLまたはパス' },
       { name: 'alt', description: '代替テキスト' },
@@ -382,7 +364,6 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
   },
   Icon: {
     description: 'アイコン表示。',
-    schemaRef: '#/definitions/Icon',
     properties: [
       { name: 'name', description: 'アイコン文字（例: 📁, ⭐, 👁）' },
       { name: 'label', description: 'アイコン横に表示するラベル' },

@@ -12,6 +12,7 @@ describe('Component contract consistency (T-103)', () => {
   const { BUILT_IN_EXPORTER_RENDERER_DEFINITIONS } = require(
     '../../out/components/definitions/exporter-renderer-definitions'
   );
+  const { builtInSchemaRef } = require('../../out/components/definitions/component-spec');
 
   it('built-in / descriptor / manifest schemaRef / exporter handler が全コンポーネントで閉じている', () => {
     assert.strictEqual(
@@ -34,8 +35,8 @@ describe('Component contract consistency (T-103)', () => {
       assert.ok(manifest, `[contract]「${name}」の COMPONENT_MANIFEST エントリが無い`);
       assert.strictEqual(
         def.schemaRef,
-        manifest.schemaRef,
-        `[contract]「${name}」の schemaRef が manifest と不一致（descriptor vs registry）`
+        builtInSchemaRef(name),
+        `[contract]「${name}」の schemaRef が built-in 既定と不一致（T-177 単一ソース）`
       );
 
       assert.strictEqual(

@@ -10,6 +10,7 @@ describe('Component definitions (descriptor graph Step1)', () => {
   const { COMPONENT_DEFINITIONS } = require('../../out/components/definitions/component-definitions');
   const { BUILT_IN_COMPONENTS } = require('../../out/components/definitions/built-in-components');
   const { COMPONENT_MANIFEST } = require('../../out/components/definitions/manifest');
+  const { builtInSchemaRef } = require('../../out/components/definitions/component-spec');
   const { BUILT_IN_EXPORTER_RENDERER_DEFINITIONS } = require(
     '../../out/components/definitions/exporter-renderer-definitions'
   );
@@ -30,11 +31,11 @@ describe('Component definitions (descriptor graph Step1)', () => {
     );
   });
 
-  it('各定義の schemaRef が COMPONENT_MANIFEST と一致する（T-20260321-028）', () => {
+  it('各定義の schemaRef が built-in 既定（#/definitions/<Name>）である（T-177 / 旧 manifest schemaRef）', () => {
     for (const def of COMPONENT_DEFINITIONS) {
       const entry = COMPONENT_MANIFEST[def.name];
       assert.ok(entry, `${def.name} の manifest がありません`);
-      assert.strictEqual(def.schemaRef, entry.schemaRef);
+      assert.strictEqual(def.schemaRef, builtInSchemaRef(def.name));
     }
   });
 
