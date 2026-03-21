@@ -40,7 +40,7 @@ describe('Component manifest consistency', () => {
     assert.deepStrictEqual(actualRefs, expectedRefs);
   });
 
-  it('補完定義は manifest から生成される', () => {
+  it('補完定義は COMPONENT_DEFINITIONS（descriptor）由来で manifest と整合する', () => {
     BUILT_IN_COMPONENTS.forEach(componentName => {
       const manifestEntry = COMPONENT_MANIFEST[componentName];
       assert.strictEqual(COMPONENT_DESCRIPTIONS[componentName], manifestEntry.description);
