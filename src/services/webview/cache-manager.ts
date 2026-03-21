@@ -1,4 +1,4 @@
-import { PerformanceMonitor } from '../../utils/performance-monitor';
+import { PreviewPerformanceMonitor } from '../../utils/performance-monitor-preview';
 import { Logger } from '../../utils/logger';
 
 export interface WebViewCacheEntry {
@@ -14,14 +14,14 @@ export interface WebViewCacheEntry {
  */
 export class WebViewPreviewCacheManager {
   private cache: Map<string, WebViewCacheEntry> = new Map();
-  private performanceMonitor: PerformanceMonitor;
+  private performanceMonitor: PreviewPerformanceMonitor;
   private readonly MAX_CACHE_SIZE: number = 50 * 1024 * 1024; // 50MB制限
   private readonly MAX_CACHE_ENTRIES: number = 100; // 最大エントリ数
   private currentCacheSize: number = 0;
   private readonly logger = new Logger('WebViewPreviewCache');
 
   constructor() {
-    this.performanceMonitor = PerformanceMonitor.getInstance();
+    this.performanceMonitor = new PreviewPerformanceMonitor();
   }
 
   /**

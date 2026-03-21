@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { ErrorObject } from 'ajv';
 import { parseYamlTextAsync } from '../../dsl/yaml-parse-async';
 import { SchemaDefinition } from '../../types';
-import { PerformanceMonitor } from '../../utils/performance-monitor';
+import { PreviewPerformanceMonitor } from '../../utils/performance-monitor-preview';
 import { YamlContentReader } from './yaml-content-reader';
 import { YamlIncludeResolver } from './yaml-include-resolver';
 import { YamlSchemaValidator } from './yaml-schema-validator';
@@ -38,14 +38,14 @@ export interface SchemaErrorInfo {
  * YAMLのパース、スキーマバリデーション、エラー処理を担当
  */
 export class YamlParser {
-  private performanceMonitor: PerformanceMonitor;
+  private performanceMonitor: PreviewPerformanceMonitor;
   private readonly MAX_YAML_SIZE: number = 1024 * 1024; // 1MB制限
   private readonly contentReader: YamlContentReader;
   private readonly includeResolver: YamlIncludeResolver;
   private readonly schemaValidator: YamlSchemaValidator;
 
   constructor(schemaLoader?: YamlSchemaLoader) {
-    this.performanceMonitor = PerformanceMonitor.getInstance();
+    this.performanceMonitor = new PreviewPerformanceMonitor();
     this.contentReader = new YamlContentReader(
       this.getDefaultSampleYaml(),
       () => vscode.window.activeTextEditor,
