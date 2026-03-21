@@ -21,8 +21,8 @@ BaseComponentRenderer.initializeHandlers()（base-component-renderer.ts）
         │
         ▼
 renderComponent / renderFormField / renderFormAction
- ・ decodeDslComponent → name / props
- ・ componentHandlers.get(name) でハンドラ解決
+ ・ decodeDslComponentUnion（T-181）→ kind / props（Text・Button は narrow）
+ ・ 組み込みは componentHandlers.get(kind) でハンドラ解決
         │
         ▼
 dispatchExporterRenderer(method, props, key)
