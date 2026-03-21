@@ -69,17 +69,26 @@ export class ServiceFactory {
       ? f.createSettingsService()
       : new SettingsService();
 
-    const diagnosticManager: IDiagnosticManager = new DiagnosticManager(schemaManager);
-    const completionProvider: ICompletionProvider = new TextUICompletionProvider(schemaManager);
+    const diagnosticManager: IDiagnosticManager = f.createDiagnosticManager
+      ? f.createDiagnosticManager(schemaManager)
+      : new DiagnosticManager(schemaManager);
 
-    const commandManager: ICommandManager = new CommandManager(this.context, {
+    const completionProvider: ICompletionProvider = f.createCompletionProvider
+      ? f.createCompletionProvider(schemaManager)
+      : new TextUICompletionProvider(schemaManager);
+
+    const commandManagerDependencies = {
       webViewManager,
       exportService,
       templateService,
       settingsService,
       schemaManager,
       themeManager
-    });
+    };
+
+    const commandManager: ICommandManager = f.createCommandManager
+      ? f.createCommandManager(this.context, commandManagerDependencies)
+      : new CommandManager(this.context, commandManagerDependencies);
 
     return {
       schemaManager,

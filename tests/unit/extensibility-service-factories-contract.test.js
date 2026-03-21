@@ -82,6 +82,39 @@ function createWebViewManagerMock() {
   };
 }
 
+function createDiagnosticManagerMock() {
+  return {
+    clearCacheCalled: 0,
+    disposeCalled: 0,
+    clearCache() {
+      this.clearCacheCalled += 1;
+    },
+    dispose() {
+      this.disposeCalled += 1;
+    }
+  };
+}
+
+function createCompletionProviderMock() {
+  return {
+    // この契約テストでは初期化/破棄以外の振る舞いは検証対象外
+    mockCompletionProvider: true
+  };
+}
+
+function createCommandManagerMock() {
+  return {
+    registerCommandsCalled: 0,
+    disposeCalled: 0,
+    registerCommands() {
+      this.registerCommandsCalled += 1;
+    },
+    dispose() {
+      this.disposeCalled += 1;
+    }
+  };
+}
+
 describe('拡張API契約: ServiceFactoryOverrides', () => {
   let ServiceInitializer;
 
@@ -98,6 +131,9 @@ describe('拡張API契約: ServiceFactoryOverrides', () => {
     const schemaManager = createSchemaManagerMock();
     const themeManager = createThemeManagerMock();
     const webViewManager = createWebViewManagerMock();
+    const diagnosticManager = createDiagnosticManagerMock();
+    const completionProvider = createCompletionProviderMock();
+    const commandManager = createCommandManagerMock();
 
     const templateService = {
       async createTemplate() {},
@@ -138,7 +174,10 @@ describe('拡張API契約: ServiceFactoryOverrides', () => {
       createWebViewManager: () => webViewManager,
       createExportManager: () => exportManager,
       createTemplateService: () => templateService,
-      createSettingsService: () => settingsService
+      createSettingsService: () => settingsService,
+      createDiagnosticManager: () => diagnosticManager,
+      createCompletionProvider: () => completionProvider,
+      createCommandManager: () => commandManager
     });
 
     const services = await initializer.initialize();
@@ -146,6 +185,11 @@ describe('拡張API契約: ServiceFactoryOverrides', () => {
     assert.strictEqual(services.themeManager, themeManager);
     assert.strictEqual(services.templateService, templateService);
     assert.strictEqual(services.settingsService, settingsService);
+    assert.strictEqual(services.diagnosticManager, diagnosticManager);
+    assert.strictEqual(services.completionProvider, completionProvider);
+    assert.strictEqual(services.commandManager, commandManager);
+
+    assert.strictEqual(commandManager.registerCommandsCalled, 1);
 
     assert.strictEqual(schemaManager.initializeCalled, 1);
     assert.strictEqual(themeManager.loadThemeCalled, 1);
@@ -155,6 +199,9 @@ describe('拡張API契約: ServiceFactoryOverrides', () => {
     await initializer.cleanup();
 
     assert.strictEqual(schemaManager.cleanupCalled, 1);
+    assert.strictEqual(diagnosticManager.clearCacheCalled, 1);
+    assert.strictEqual(diagnosticManager.disposeCalled, 1);
+    assert.strictEqual(commandManager.disposeCalled, 1);
     assert.strictEqual(webViewManager.disposeCalled, 1);
     assert.strictEqual(themeManager.disposeCalled, 1);
   });

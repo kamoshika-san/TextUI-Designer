@@ -9,8 +9,12 @@ import type {
   IThemeManager,
   IWebViewManager,
   IExportManager,
+  IExportService,
   ITemplateService,
-  ISettingsService
+  ISettingsService,
+  IDiagnosticManager,
+  ICompletionProvider,
+  ICommandManager
 } from '../types';
 export type { ExtensionServices } from './extension-services';
 
@@ -29,6 +33,20 @@ export interface ServiceFactoryOverrides {
   createExportManager?: () => IExportManager;
   createTemplateService?: () => ITemplateService;
   createSettingsService?: () => ISettingsService;
+
+  createDiagnosticManager?: (schemaManager: ISchemaManager) => IDiagnosticManager;
+  createCompletionProvider?: (schemaManager: ISchemaManager) => ICompletionProvider;
+  createCommandManager?: (
+    context: vscode.ExtensionContext,
+    deps: {
+      webViewManager: IWebViewManager;
+      exportService: IExportService;
+      templateService: ITemplateService;
+      settingsService: ISettingsService;
+      schemaManager: ISchemaManager;
+      themeManager?: IThemeManager;
+    }
+  ) => ICommandManager;
 }
 
 /**
