@@ -188,11 +188,20 @@ ADR: [0001 解析パイプライン（初稿）](adr/0001-document-analysis-serv
 
 ```bash
 npm run compile
+npm run check:dsl-types-ssot
 npm run check:configuration
 npm run check:commands
 npm run check:contributes
 npm run test:unit
 ```
+
+### SSoT import-boundary 失敗時の調査観点
+
+`npm run check:dsl-types-ssot` が失敗したら、次の順で確認する。
+
+1. 失敗ログに出るファイルで `renderer/types` import が増えていないか。
+2. shared DSL 型の参照先を `src/domain/dsl-types.ts` に寄せられるか。
+3. 本当に互換経路が必要な場合は、ADR とチケットで例外理由を明記できるか。
 
 ### ユニットテストと `compile`（`T-20260320-014`）
 

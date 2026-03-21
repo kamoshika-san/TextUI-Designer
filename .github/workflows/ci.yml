@@ -70,6 +70,9 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - name: Check SSoT import boundary
+      run: npm run check:dsl-types-ssot
+
     - name: Run full CI test command
       run: npm run test:all:ci
 
@@ -97,6 +100,9 @@ jobs:
     
     - name: Install dependencies
       run: npm ci
+
+    - name: Check SSoT import boundary
+      run: npm run check:dsl-types-ssot
     
     - name: TypeScript strict checks (warning mode)
       if: vars.TS_STRICT_FAIL_MODE == 'false'
