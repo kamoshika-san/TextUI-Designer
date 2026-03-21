@@ -54,7 +54,7 @@ import type {
   ImageComponent,
   IconComponent
 } from './types';
-import { decodeDslComponentObjectProps } from '../registry/dsl-component-codec';
+import { decodeDslComponentObjectProps, decodeTextDslComponent } from '../registry/dsl-component-codec';
 import { type BuiltInComponentName } from '../components/definitions/built-in-components';
 import { componentDescriptorRegistry } from '../registry/component-descriptor-registry';
 import {
@@ -73,9 +73,22 @@ function toFormComponent(props: Record<string, unknown>): FormComponent {
   return props as unknown as FormComponent;
 }
 
+/** プレビュー用 props から `__renderContext` を外し、codec に渡す DSL 形へ整える（T-182） */
+function propsWithoutRenderContext(props: Record<string, unknown>): Record<string, unknown> {
+  const { __renderContext: _c, ...rest } = props;
+  return rest;
+}
+
 // --- 組み込みコンポーネントの登録 ---
 const builtInRenderers: Record<BuiltInComponentName, WebViewComponentRenderer> = {
-  Text: (props, key) => <Text key={key} {...(props as unknown as TextComponent)} />,
+  Text: (props, key) => {
+    const raw = props as Record<string, unknown>;
+    const decoded = decodeTextDslComponent({ Text: propsWithoutRenderContext(raw) });
+    if (decoded.value) {
+      return <Text key={key} {...decoded.value.props} />;
+    }
+    return <Text key={key} {...(props as unknown as TextComponent)} />;
+  },
   Input: (props, key) => <Input key={key} {...(props as unknown as InputComponent)} />,
   Button: (props, key) => <Button key={key} {...(props as unknown as ButtonComponent)} />,
   Checkbox: (props, key) => <Checkbox key={key} {...(props as unknown as CheckboxComponent)} />,
