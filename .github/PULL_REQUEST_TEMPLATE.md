@@ -65,6 +65,15 @@
 
 ---
 
+## CI 品質ゲート（参照）
+
+<!-- PR でどのチェックを必須にするか・`test:all:ci` の位置づけは T-043 のドキュメントに準拠 -->
+
+- 必須チェックの選定・branch protection 手順: [`docs/ci-quality-gate.md`](docs/ci-quality-gate.md)
+- ローカルで CI 相当の厳しさを再現する場合: `npm run test:all:ci`（`pretest:ci` を含む）
+
+---
+
 ## 検証
 
 <!-- 実施したものにチェック。未実施は理由を併記 -->
