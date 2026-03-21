@@ -32,4 +32,7 @@
 1. **`src/utils/cache-manager.ts`** — レンダリング結果キャッシュと DSL 型の接点が明確。
 2. **`src/utils/diff-manager.ts`** — 同上（export パイプライン観測と隣接）。
 
-必要なら第2候補として **`src/core/textui-core-engine-domain.ts`**（ドメイン責務の集約点）を検討する。
+## T-086（移行第2スライス）
+
+- **実施済み**: `src/core/textui-core-engine-domain.ts` の `TextUIDSL` import を `domain/dsl-types` に寄せた。
+- **次候補（棚卸し表の Core 行より）**: 同ディレクトリの `textui-core-engine.ts` / `textui-core-engine-io.ts` など、**1〜2 ファイル単位**で順次（別チケット・PM 割当）。
