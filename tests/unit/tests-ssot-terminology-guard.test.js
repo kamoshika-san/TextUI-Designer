@@ -13,6 +13,10 @@ const ALLOW_RENDERER_TYPES_MENTION = new Set([
   'tests/unit/renderer-types-non-renderer-import-guard.test.js',
   'tests/unit/exporters-ssot-import-guard.test.js',
   'tests/unit/cli-utils-registry-ssot-import-guard.test.js',
+  'tests/unit/cli-utils-registry-domain-origin-guard.test.js',
+  'tests/unit/services-webview-ssot-import-guard.test.js',
+  'tests/unit/dsl-load-path-ssot-import-guard.test.js',
+  'tests/unit/non-renderer-ssot-meta-guard.test.js',
   'tests/unit/component-def-renderer-union-alignment.test.js',
   'tests/unit/tests-ssot-terminology-guard.test.js',
 ]);
