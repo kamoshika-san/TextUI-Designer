@@ -7,6 +7,7 @@
 - 型・descriptor・スキーマ・プレビュー・エクスポートの **いずれかだけ更新すると** 実行時・CI・補完で不整合になる。
 - より詳しい **change amplification** の説明は [change-amplification-dsl.md](change-amplification-dsl.md) を参照。
 - SSoT の正本と互換レイヤ方針は [adr/0003-dsl-types-canonical-source.md](adr/0003-dsl-types-canonical-source.md) を参照。
+- このページは **実務手順の正本**。設計判断の根拠は ADR（`adr/0003`）を参照する。
 
 ## DSL 型追加の最短フロー（SSoT）
 
