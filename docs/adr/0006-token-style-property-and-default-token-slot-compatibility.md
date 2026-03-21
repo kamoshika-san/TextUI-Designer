@@ -61,5 +61,6 @@
 ## 関連
 
 - [token-slot-model-and-theme-extension.md](../token-slot-model-and-theme-extension.md)
+- [token-slot-naming-convention.md](../token-slot-naming-convention.md)（スロット ID の命名・拡張時の衝突回避）
 - [component-spec.ts](../../src/components/definitions/component-spec.ts)（`ComponentSpec`）
 - [ADR 0004](0004-component-definition-graph-canonical.md) — descriptor グラフ正本

@@ -32,7 +32,9 @@
 
 チーム運用（外部アーキ 4 則）: [external-arch-team-rules.md](external-arch-team-rules.md)
 
-ADR: [0001 解析パイプライン（初稿）](adr/0001-document-analysis-service.md) · [0002 YAML 構文パース共有カーネル（T-067 第1スライス）](adr/0002-dsl-yaml-parse-shared-kernel.md) · [0003 DSL 型の正本と層境界（T-073）](adr/0003-dsl-types-canonical-source.md) · [0004 コンポーネント定義グラフの設計正本（T-090）](adr/0004-component-definition-graph-canonical.md)
+ADR: [0001 解析パイプライン（初稿）](adr/0001-document-analysis-service.md) · [0002 YAML 構文パース共有カーネル（T-067 第1スライス）](adr/0002-dsl-yaml-parse-shared-kernel.md) · [0003 DSL 型の正本と層境界（T-073）](adr/0003-dsl-types-canonical-source.md) · [0004 コンポーネント定義グラフの設計正本（T-090）](adr/0004-component-definition-graph-canonical.md) · [0006 tokenStyleProperty / defaultTokenSlot 互換](adr/0006-token-style-property-and-default-token-slot-compatibility.md)
+
+テーマ slot 命名（Phase 6 拡張時）: [token-slot-naming-convention.md](token-slot-naming-convention.md) · モデル案: [token-slot-model-and-theme-extension.md](token-slot-model-and-theme-extension.md)
 
 ## クイックスタート（変更種別別）
 
