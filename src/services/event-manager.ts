@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { ExtensionServices } from './service-initializer';
 import { ConfigManager } from '../utils/config-manager';
+import { getDocumentKind } from './document-kind-resolver';
 
 /**
  * イベントリスナーの登録・管理
@@ -145,27 +146,7 @@ export class EventManager {
    * 診断対象ファイルかどうかを判定
    */
   private shouldValidateDocument(fileName: string): boolean {
-    const lower = fileName.toLowerCase();
-
-    if (ConfigManager.isSupportedFile(lower)) {
-      return true;
-    }
-
-    return (
-      /\.template\.(ya?ml|json)$/.test(lower) ||
-      lower.endsWith('-theme.yml') ||
-      lower.endsWith('-theme.yaml') ||
-      lower.endsWith('_theme.yml') ||
-      lower.endsWith('_theme.yaml') ||
-      lower.endsWith('/textui-theme.yml') ||
-      lower.endsWith('/textui-theme.yaml') ||
-      lower.endsWith('\\textui-theme.yml') ||
-      lower.endsWith('\\textui-theme.yaml') ||
-      lower.endsWith('-theme.json') ||
-      lower.endsWith('_theme.json') ||
-      lower.endsWith('/textui-theme.json') ||
-      lower.endsWith('\\textui-theme.json')
-    );
+    return getDocumentKind(fileName) !== 'unsupported';
   }
 
   /**

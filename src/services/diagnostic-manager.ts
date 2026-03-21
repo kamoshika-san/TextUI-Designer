@@ -8,6 +8,7 @@ import { resolveDiagnosticLocation, resolveDiagnosticRange } from './diagnostics
 import { DiagnosticCacheStore, type DiagnosticCacheEntry } from './diagnostics/diagnostic-cache-store';
 import { DiagnosticScheduler } from './diagnostics/diagnostic-scheduler';
 import { DiagnosticValidationEngine, type ValidationSchemaKind } from './diagnostics/diagnostic-validation-engine';
+import { getValidationSchemaKind } from './document-kind-resolver';
 
 
 /**
@@ -60,7 +61,7 @@ export class DiagnosticManager {
     }
 
     // 診断を実行
-    const schemaKind = this.resolveSchemaKind(document.fileName);
+    const schemaKind = getValidationSchemaKind(document.fileName);
     await this.performValidation(document, text, schemaKind);
   }
 
@@ -109,34 +110,6 @@ export class DiagnosticManager {
 
     this.diagnosticCollection.set(document.uri, diagnostics);
   }
-
-  private resolveSchemaKind(fileName: string): ValidationSchemaKind {
-    const lower = fileName.toLowerCase();
-
-    if (/\.template\.(ya?ml|json)$/.test(lower)) {
-      return 'template';
-    }
-
-    if (
-      lower.endsWith('-theme.yml') ||
-      lower.endsWith('-theme.yaml') ||
-      lower.endsWith('_theme.yml') ||
-      lower.endsWith('_theme.yaml') ||
-      lower.endsWith('/textui-theme.yml') ||
-      lower.endsWith('/textui-theme.yaml') ||
-      lower.endsWith('\\textui-theme.yml') ||
-      lower.endsWith('\\textui-theme.yaml') ||
-      lower.endsWith('-theme.json') ||
-      lower.endsWith('_theme.json') ||
-      lower.endsWith('/textui-theme.json') ||
-      lower.endsWith('\\textui-theme.json')
-    ) {
-      return 'theme';
-    }
-
-    return 'main';
-  }
-
 
   /**
    * エラーから診断情報を作成
