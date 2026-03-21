@@ -25,6 +25,8 @@
 
 上記はリポジトリ走査時点の一覧。新規追加時は本表を更新する。
 
+**CI / ローカル**: `src/renderer/**` 外からの `renderer/types` import は **`tests/unit/renderer-types-non-renderer-import-guard.test.js`（T-113）** の許可リストとも同期すること。リストのみ更新でよい場合は、棚卸し表とガードを同一 PR で更新する。
+
 ## T-074（移行第1スライス）向けの優先候補
 
 層境界が読み手に効く **横断ユーティリティ**から着手するのが安全。
