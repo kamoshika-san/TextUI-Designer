@@ -136,6 +136,8 @@
   - `&&` や heredoc の扱いが bash と異なるため、必要ならコマンドを分ける
 - **fallback 経路の契約を変えない**
   - preview capture と MCP CLI bridge は、失敗時メッセージ契約の維持が重要
+- **外部契約（公開API / 設定キー / exporter 互換）**
+  - 正本: [api-compat-policy.md](api-compat-policy.md)
 - **レイヤ境界を守る**
   - 入力検証は mapper、実行引数組み立ては adapter、サーバ/マネージャは委譲中心
 
