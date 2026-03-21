@@ -17,6 +17,8 @@
 
 ログの混在整理（Phase 0）: [console-logger-inventory-phase0.md](console-logger-inventory-phase0.md)
 
+チーム運用（外部アーキ 4 則）: [external-arch-team-rules.md](external-arch-team-rules.md)
+
 ## クイックスタート（変更種別別）
 
 | 変更したい内容 | 主に触る場所 | 実行コマンド（最低限） |
