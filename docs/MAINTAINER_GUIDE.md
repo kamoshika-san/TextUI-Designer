@@ -15,12 +15,13 @@
 | [quality-gate-green-main.md](quality-gate-green-main.md) | ローカルで緑にしてから push/PR する運用（フェーズ 0） |
 | [ci-quality-gate.md](ci-quality-gate.md) | CI ジョブ・`test:all:ci`・branch protection の対応 |
 | [observability-and-cache-boundary.md](observability-and-cache-boundary.md) | 公開 API と観測・キャッシュ実装の**横断**境界（内側に閉じる方針） |
+| [dsl-types-renderer-types-inventory.md](dsl-types-renderer-types-inventory.md) | `renderer/types` 直接参照の棚卸し（移行計画用） |
 
 ログの混在整理（Phase 0）: [console-logger-inventory-phase0.md](console-logger-inventory-phase0.md)
 
 チーム運用（外部アーキ 4 則）: [external-arch-team-rules.md](external-arch-team-rules.md)
 
-ADR: [0001 解析パイプライン（初稿）](adr/0001-document-analysis-service.md) · [0002 YAML 構文パース共有カーネル（T-067 第1スライス）](adr/0002-dsl-yaml-parse-shared-kernel.md)
+ADR: [0001 解析パイプライン（初稿）](adr/0001-document-analysis-service.md) · [0002 YAML 構文パース共有カーネル（T-067 第1スライス）](adr/0002-dsl-yaml-parse-shared-kernel.md) · [0003 DSL 型の正本と層境界（T-073）](adr/0003-dsl-types-canonical-source.md)
 
 ## クイックスタート（変更種別別）
 
@@ -40,7 +41,7 @@ ADR: [0001 解析パイプライン（初稿）](adr/0001-document-analysis-serv
 | **HtmlExporter（HTML 出力の primary / fallback）** | **Primary（既定）**: `useReactRender !== false` → `react-static-export`。**Fallback**: `useReactRender === false` → `BaseComponentRenderer` 文字列系。詳細は [exporter-boundary-guide.md](exporter-boundary-guide.md)「HtmlExporter」 | `npm run compile` + 既存 exporter 系ユニット |
 | **テーマ token → CSS（プレビューとエクスポートの対応）** | **正本（kebab）**: `src/components/definitions/exporter-renderer-definitions.ts` の `tokenStyleProperty` → 集約マップ `src/components/definitions/token-style-property-map.ts`。**エクスポート**: `src/exporters/base-component-renderer.ts`（`getTokenStylePropertyKebab`）。**WebView プレビュー**: `src/renderer/token-inline-style-from-definition.ts` の `tokenToPreviewInlineStyle`（各 `src/renderer/components/*.tsx`）。`Spacer` は寸法フォールバックとして token を別用途で使うためマップと完全一致ではない。 | `npm run compile` + `npx mocha ... tests/unit/token-style-property-map.test.js` |
 | TextUI core engine 責務分割 | `src/core/textui-core-engine.ts` + `src/core/textui-core-engine-io.ts` + `src/core/textui-core-engine-domain.ts` + `src/core/textui-core-engine-format.ts` | `npm run compile` + `npx mocha ... tests/unit/textui-core-engine.test.js` |
-| DSL ドメイン型（ComponentDef / TextUIDSL） | 正本: `src/domain/dsl-types.ts`／WebView 互換: `src/renderer/types.ts`（re-export） | `npm run compile` + `npx mocha ... tests/unit/dsl-types-descriptor-sync.test.js`（[change amplification メモ](change-amplification-dsl.md)） |
+| DSL ドメイン型（ComponentDef / TextUIDSL） | **正本**: `src/domain/dsl-types.ts`。`src/renderer/types.ts` は移行期の互換・re-export 収束先（[ADR 0003](adr/0003-dsl-types-canonical-source.md)・[棚卸し](dsl-types-renderer-types-inventory.md)） | `npm run compile` + `npx mocha ... tests/unit/dsl-types-descriptor-sync.test.js`（[change amplification メモ](change-amplification-dsl.md)） |
 | サービス初期化順・cleanup（宣言フェーズ） | `src/services/service-runtime-phases.ts` + `src/services/service-initializer.ts`（意図の短い説明: [service-design-service-initializer.md](service-design-service-initializer.md)） | `npm run compile` + `npx mocha ... tests/unit/service-initializer.test.js` + `extensibility-service-factories-contract.test.js`（詳細は `docs/service-registration.md`） |
 | FileWatcher / SchemaManager / WebView（プレビュー）の設計意図 | [service-design-file-watcher.md](service-design-file-watcher.md) · [service-design-schema-manager.md](service-design-schema-manager.md) · [service-design-webview-manager.md](service-design-webview-manager.md) | タイミング・キュー・スキーマ TTL 変更時は各メモの「不変条件」「罠」を確認 |
 | 拡張 activate/deactivate の順序 | `src/services/extension-lifecycle-phases.ts` + `src/services/extension-lifecycle-manager.ts` | `npm run compile` + `npx mocha ... tests/unit/extension-lifecycle-phases.test.js`（全体は `docs/service-registration.md`） |
