@@ -79,6 +79,9 @@ export interface ComponentDefinition {
   /**
    * WebView の組み込み renderer 登録キー（`component-map` の built-in キーと対応）。
    * 現状は `name` と同一。
+   *
+   * 型方針（T-20260321-027）: alias や組み込み外キーが実際に必要になるまで `BuiltInComponentName` 固定（YAGNI）。
+   * 必要になった時点で `string` 拡張などを検討する。T-20260321-021（Step5）で descriptor 起点の登録に寄せ済み。
    */
   previewRendererKey: BuiltInComponentName;
   /** Exporter 側が呼び分ける render メソッド名 */
