@@ -9,33 +9,94 @@
 - SSoT の正本と互換レイヤ方針は [adr/0003-dsl-types-canonical-source.md](adr/0003-dsl-types-canonical-source.md) を参照。
 - このページは **実務手順の正本**。設計判断の根拠は ADR（`adr/0003`）を参照する。
 
-## DSL 型追加の最短フロー（SSoT）
+---
 
-1. `src/domain/dsl-types.ts` を先に更新（型の正本）。
-2. `src/renderer/types.ts` は thin facade を維持し、型本体を追加しない。
-3. `src/renderer/**` 外で `renderer/types` import を増やさない。
-4. 変更後に SSoT ガードを実行:
-   - `npx mocha --grep "renderer/types|SSoT eslint restriction scope guard" tests/unit`
-   - `npx eslint "src/core/**/*.{ts,tsx}" "src/exporters/**/*.{ts,tsx}" "src/cli/**/*.{ts,tsx}" "src/utils/**/*.{ts,tsx}" "tests/**/*.{js,ts,tsx}"`
+## 固定順序（SSoT・必須 4 フェーズ）
 
-### 型追加テンプレ（コピペ用）
+**順序を飛ばすと** import 境界違反・スキーマ不一致・CI 失敗に直結する。次の **4 フェーズ**を上から順に実施する。
 
-新規型追加時は、以下を PR 説明にそのまま貼り付けてチェックする。
+| フェーズ | 内容 | 代表パス |
+|----------|------|----------|
+| **1. domain** | 名前の正本 → 共有 DSL 型の正本 | `built-in-components.ts` → `domain/dsl-types.ts` |
+| **2. schema / descriptor** | 定義・descriptor・合成・スキーマ生成 | `definitions/*`, `schemas/`（生成物） |
+| **3. facade 維持** | `renderer/types` は **thin facade のみ**（型本体を足さない） | `src/renderer/types.ts` |
+| **4. guard 実行** | SSoT 境界チェック → コンパイル → テスト | `npm run check:dsl-types-ssot` ほか |
 
-- [ ] `src/domain/dsl-types.ts` を最初に更新した
-- [ ] `src/renderer/types.ts` に型本体を追加していない（thin facade 維持）
-- [ ] `src/renderer/**` 外で `renderer/types` の新規 import を追加していない
-- [ ] 必要に応じて `component definitions` / `schema` / `exporters` を更新した
-- [ ] `npx mocha --grep "renderer/types|SSoT eslint restriction scope guard" tests/unit` を実行した
-- [ ] `npx eslint "src/core/**/*.{ts,tsx}" "src/exporters/**/*.{ts,tsx}" "src/cli/**/*.{ts,tsx}" "src/utils/**/*.{ts,tsx}" "tests/**/*.{js,ts,tsx}"` を実行した
+**補足（フェーズ 1 の「名前 → 型」）**: `DSL_COMPONENT_KINDS` は `BUILT_IN_COMPONENTS` から導出される（T-091）。そのため **新しい kind 文字列**は **`src/components/definitions/built-in-components.ts` に先に追加**し、続けて **`src/domain/dsl-types.ts`** で `ComponentDef` の union・型ガードを拡張する（`dsl-types` が `BUILT_IN_COMPONENTS` を import するため）。
 
-## チェックリスト（推奨順）
+---
+
+## DSL 型追加の最短フロー（上記 4 フェーズに対応）
+
+1. **domain**: `built-in-components.ts`（名前）→ `dsl-types.ts`（型・union・型ガード）。
+2. **schema / descriptor**: `definitions/*`・`COMPONENT_DEFINITIONS`・必要ならスキーマ再生成（`npm run compile` 連動）。
+3. **facade**: `src/renderer/types.ts` は thin facade を維持し、**型本体を追加しない**。
+4. **非 renderer** で `renderer/types` import を増やさない（[ADR 0003](adr/0003-dsl-types-canonical-source.md)）。
+5. **guard**: 変更後に必ず次を実行する:
+   - `npm run compile`
+   - `npm run check:dsl-types-ssot`
+   - `npm test`（または少なくとも `npm run test:unit`）
+
+---
+
+### 型追加テンプレ（PR 説明にコピペ）
+
+新規型追加・共有 DSL 型変更の PR では、以下を **説明欄にそのまま貼り**、チェックを付ける。
+
+#### チェックリスト
+
+- [ ] **フェーズ 1 domain**: `built-in-components.ts`（新 kind 名）→ `dsl-types.ts` を **この順で**更新した
+- [ ] **フェーズ 2 schema/descriptor**: `definitions` / schema 生成物が `COMPONENT_DEFINITIONS` と整合している
+- [ ] **フェーズ 3 facade**: `src/renderer/types.ts` に型本体を追加していない（thin facade 維持）
+- [ ] `src/renderer/**` 外で `renderer/types` の **新規 import を増やしていない**
+- [ ] **フェーズ 4 guard**: `npm run compile` → `npm run check:dsl-types-ssot` → `npm test` を実行した（結果を PR に記載）
+
+#### PR 記載例（本文テンプレ）
+
+次のブロックをそのまま使ってよい（チケット番号・要約だけ差し替え）。
+
+```markdown
+## 変更概要
+- （例）ビルトイン `Foo` 追加に伴う共有 DSL 型・定義の更新
+
+## SSoT 4 フェーズ対応
+- domain: `built-in-components.ts` → `domain/dsl-types.ts`
+- schema/descriptor: `definitions/*`・スキーマ生成
+- facade: `renderer/types.ts` は re-export のみ（型本体なし）
+- guard: 下記コマンドを通過
+
+## 検証
+\`\`\`bash
+npm run compile
+npm run check:dsl-types-ssot
+npm test
+\`\`\`
+（ログに失敗が無いこと）
+```
+
+---
+
+### トラブルシュート（失敗時の見る場所）
+
+| 症状 | まず確認すること | 参照 |
+|------|------------------|------|
+| `check:dsl-types-ssot` が **import 違反**を出す | `src/renderer/**` 外で `renderer/types` を新規 import していないか。共有型は `domain/dsl-types` に寄せる | [MAINTAINER_GUIDE.md](MAINTAINER_GUIDE.md#ssot-import-boundary-失敗時の調査観点) |
+| `dsl-types-descriptor-sync` 等が落ちる | domain と `definitions` の kind 名・descriptor の不一致 | 本ページのチェックリスト **フェーズ 1〜2** |
+| `compile` は通るが **プレビューだけ壊れる** | `component-map.tsx`・`renderer/components/*` の登録漏れ | [component-add-contract.md](component-add-contract.md) |
+| スキーマと YAML の補完がズレる | `COMPONENT_DEFINITIONS` と `schemas/` の oneOf / `schemaRef` | `npm run compile` 後の生成物を確認 |
+
+**一般手順**: [MAINTAINER_GUIDE.md](MAINTAINER_GUIDE.md) の「SSoT import-boundary 失敗時の調査観点」に従い、**フェーズ 4 を再実行**してからログのファイルパスを上から直す。
+
+---
+
+## チェックリスト（ファイル別・推奨順）
+
+以下は **フェーズ 1→2→…** に沿った **作業順**。上の 4 フェーズを崩さないこと。
 
 1. **`src/components/definitions/built-in-components.ts`**
-   - `BUILT_IN_COMPONENTS` 配列にコンポーネント名を追加。
+   - `BUILT_IN_COMPONENTS` にコンポーネント名を追加（**DSL kind 名の正本**）。
 2. **`src/domain/dsl-types.ts`**
-   - `DSL_COMPONENT_KINDS` に同じ名前を追加。
-   - `ComponentDef` の union および `*Component` 型・型ガードを追加。
+   - `ComponentDef` の union および `*Component` 型・型ガードを追加（**共有 DSL 型の正本**）。
 3. **`src/components/definitions/types.ts`**
    - コンポーネント定義用の型（プロパティ・descriptor 用）を追加。
 4. **`src/components/definitions/exporter-renderer-definitions.ts`**
@@ -44,16 +105,20 @@
    - `COMPONENT_DEFINITIONS` への合成（`BUILT_IN_COMPONENTS` からマップ）。
 6. **スキーマ**
    - `schemas/` 配下の生成物は `npm run compile` 時に更新される（`scripts/generate-schemas-from-definitions.cjs` 等）。`COMPONENT_DEFINITIONS` の `schemaRef` と `components` の oneOf が一致すること。
-7. **WebView プレビュー**
+7. **`src/renderer/types.ts`**
+   - **thin facade のみ**（必要なら `domain/dsl-types` からの re-export）。型本体をここに増やさない。
+8. **WebView プレビュー**
    - `src/renderer/component-map.tsx` にレンダラを登録。
    - 必要に応じて `src/renderer/components/` に TSX を追加。
-8. **トークン由来のスタイル**
+9. **トークン由来のスタイル**
    - `tokenStyleProperty` を使う場合は `src/components/definitions/token-style-property-map.ts` と `src/renderer/token-inline-style-from-definition.ts` の整合を確認。
-9. **エクスポート**
-   - `src/exporters/` 側の該当メソッド（`base-component-renderer` 等）に分岐を追加。
-10. **検証**
-    - `npm run compile` → `npm test`（必要なら `npm run test:all`）。
+10. **エクスポート**
+    - `src/exporters/` 側の該当メソッド（`base-component-renderer` 等）に分岐を追加。
+11. **検証（フェーズ 4）**
+    - `npm run compile` → `npm run check:dsl-types-ssot` → `npm test`（必要なら `npm run test:all`）。
     - 機械系: `tests/unit/dsl-types-descriptor-sync.test.js`、`component-definitions` 系の不変条件テストが通ること。
+
+---
 
 ## 関連ドキュメント
 
