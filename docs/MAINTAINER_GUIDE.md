@@ -214,6 +214,7 @@ npm run test:unit
 
 - ローカル: 共有 DSL 型に触れた変更の PR 作成前に `npm run check:dsl-types-ssot` を必ず実行する。
 - CI: `.github/workflows/ci.yml` の `test-all-ci` / `test` ジョブで同コマンドを常時実行し、違反を早期停止する。
+- **影響半径・エピック完了の客観条件（PM/TM 向け）**: [dsl-types-change-impact-audit.md](dsl-types-change-impact-audit.md)
 
 ### ユニットテストと `compile`（`T-20260320-014`）
 

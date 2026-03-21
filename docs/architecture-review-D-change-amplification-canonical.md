@@ -32,3 +32,4 @@
 ## 既存ドキュメント
 
 - 実務チェックリスト: [change-amplification-dsl.md](change-amplification-dsl.md)
+- **影響半径の可視化・完了監査・例外台帳（T-158）**: [dsl-types-change-impact-audit.md](dsl-types-change-impact-audit.md)

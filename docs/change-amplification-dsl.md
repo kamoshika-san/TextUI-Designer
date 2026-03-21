@@ -20,6 +20,10 @@
 3. `COMPONENT_DEFINITIONS` および関連する manifest / exporter-renderer / schema 生成パイプラインを更新する。
 4. `npm run compile` と `npm test`（必要なら `npm run test:all`）を通す。
 
+## 影響半径と監査（T-158）
+
+- **`dsl-types` 変更時の波及経路（図）**・**文書/lint/test/script/PR の整合マトリクス**・**PM/TM 向け完了チェック**・**例外の期限付き台帳**: [dsl-types-change-impact-audit.md](dsl-types-change-impact-audit.md)
+
 ## 関連
 
 - レビュー D 節の正本（俯瞰）: [architecture-review-D-change-amplification-canonical.md](architecture-review-D-change-amplification-canonical.md)

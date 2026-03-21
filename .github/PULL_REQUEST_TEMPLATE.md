@@ -53,8 +53,8 @@
 - [ ] 共有 DSL 型の更新起点が `src/domain/dsl-types.ts` になっている
 - [ ] `src/renderer/types.ts` に型本体・独自 alias・業務ロジックを追加していない（thin facade 維持）
 - [ ] `src/renderer/**` 外で `renderer/types` を新規 import していない（必要なら理由を明記）
-- [ ] `npm run check:dsl-types-ssot` を実行して結果を確認
-- [ ] `npx mocha --grep "renderer/types|SSoT eslint restriction scope guard" tests/unit` を実行して結果を確認
+- [ ] `npm run check:dsl-types-ssot` を実行して結果を確認（import 境界の機械検査）
+- [ ] `npm test` を実行し、SSoT 関連ユニットが通過することを確認（個別実行する場合は `npx mocha --grep "renderer/types|SSoT eslint restriction scope guard" tests/unit` でも可）
 
 ---
 
@@ -107,3 +107,4 @@
 - CI / DSL Plan: [`docs/CI_TEMPLATE.md`](docs/CI_TEMPLATE.md)
 - SSoT 方針 ADR: [`docs/adr/0003-dsl-types-canonical-source.md`](docs/adr/0003-dsl-types-canonical-source.md)
 - 型追加フロー: [`docs/adding-built-in-component.md`](docs/adding-built-in-component.md)
+- 影響半径・完了監査: [`docs/dsl-types-change-impact-audit.md`](docs/dsl-types-change-impact-audit.md)
