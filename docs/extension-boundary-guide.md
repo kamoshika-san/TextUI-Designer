@@ -6,7 +6,7 @@
 ## この境界の責務
 
 - `activate` / `deactivate` を起点としたライフサイクル管理
-- コマンド登録、診断更新、補完提供のオーケストレーション
+- コマンド登録、診断更新、補完提供のオーケストレーション（補完の候補データは descriptor カタログが正本。JSON Schema は診断等で別系統。詳細は `MAINTAINER_GUIDE.md` の「補完（IntelliSense）と JSON Schema」節）
 - WebView・Schema・Exporter など各サービスの初期化と破棄
 - ユーザー設定（`contributes.configuration`）と実行時挙動の接続
 

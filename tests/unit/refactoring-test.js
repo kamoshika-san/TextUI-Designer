@@ -282,7 +282,7 @@ function runRefactoringTests() {
       loadSchema: () => ({})
     };
 
-    const completionProvider = new TextUICompletionProvider.TextUICompletionProvider(mockSchemaManager);
+    const completionProvider = new TextUICompletionProvider.TextUICompletionProvider();
     
     // 基本的なメソッドの確認
     if (!completionProvider.provideCompletionItems) {
@@ -409,7 +409,7 @@ module.exports = {
     const TextUICompletionProvider = loadModule('services/completion-provider');
     if (!TextUICompletionProvider) throw new Error('TextUICompletionProviderが見つかりません');
     const mockSchemaManager = { loadSchema: () => ({}) };
-    const completionProvider = new TextUICompletionProvider.TextUICompletionProvider(mockSchemaManager);
+    const completionProvider = new TextUICompletionProvider.TextUICompletionProvider();
     if (!completionProvider.provideCompletionItems) throw new Error('provideCompletionItemsメソッドが存在しません');
   },
   testCommandManager: () => {

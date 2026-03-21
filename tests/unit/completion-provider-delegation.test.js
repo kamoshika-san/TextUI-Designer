@@ -8,9 +8,7 @@ describe('TextUICompletionProvider delegation', () => {
   let provider;
 
   beforeEach(() => {
-    provider = new TextUICompletionProvider({
-      loadSchema: sinon.stub().resolves({})
-    });
+    provider = new TextUICompletionProvider();
   });
 
   it('generateCompletionItems は analyzer/cache/engine に処理を委譲する', async () => {
@@ -39,16 +37,13 @@ describe('TextUICompletionProvider delegation', () => {
     provider.completionCacheService = {
       getCachedCompletionItems: sinon.stub().returns(undefined),
       setCachedCompletionItems: sinon.stub(),
-      loadSchemaWithCache: sinon.stub().resolves({}),
-      getLastSchemaLoad: sinon.stub().returns(now),
       clear: sinon.stub(),
-      getCompletionCacheMap: sinon.stub().returns(new Map()),
-      getSchemaCache: sinon.stub().returns(null)
+      getCompletionCacheMap: sinon.stub().returns(new Map())
     };
 
     provider.schemaEngine = {
       parseYamlForSyntaxValidation: sinon.stub().resolves(),
-      generateCompletionItemsFromSchema: sinon.stub().returns(expectedItems),
+      generateCompletionItemsFromDescriptors: sinon.stub().returns(expectedItems),
       getBasicCompletions: sinon.stub().returns([]),
       getComponentCompletions: sinon.stub(),
       getComponentPropertyCompletions: sinon.stub(),
@@ -65,9 +60,8 @@ describe('TextUICompletionProvider delegation', () => {
     expect(result).to.equal(expectedItems);
     expect(provider.contextAnalyzer.buildCompletionRequestContext.calledOnce).to.equal(true);
     expect(provider.schemaEngine.parseYamlForSyntaxValidation.calledOnce).to.equal(true);
-    expect(provider.completionCacheService.loadSchemaWithCache.calledOnce).to.equal(true);
     expect(provider.contextAnalyzer.analyzeContext.calledOnce).to.equal(true);
-    expect(provider.schemaEngine.generateCompletionItemsFromSchema.calledWith(analysisContext)).to.equal(true);
+    expect(provider.schemaEngine.generateCompletionItemsFromDescriptors.calledWith(analysisContext)).to.equal(true);
     expect(provider.completionCacheService.setCachedCompletionItems.calledOnce).to.equal(true);
 
     Date.now.restore();
@@ -92,7 +86,7 @@ describe('TextUICompletionProvider delegation', () => {
 
     provider.schemaEngine = {
       parseYamlForSyntaxValidation: sinon.stub(),
-      generateCompletionItemsFromSchema: sinon.stub(),
+      generateCompletionItemsFromDescriptors: sinon.stub(),
       getBasicCompletions: sinon.stub().returns([])
     };
 

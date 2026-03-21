@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { ISchemaManager, SchemaDefinition } from '../types';
 import { ConfigManager } from '../utils/config-manager';
 import { Logger } from '../utils/logger';
 import { CompletionContextAnalyzer } from './completion-context-analyzer';
@@ -7,20 +6,21 @@ import { CompletionCache } from './completion-cache';
 import { SchemaCompletionEngine } from './schema-completion-engine';
 
 /**
- * 補完プロバイダー
- * YAML/JSONファイルのIntelliSense機能を提供
+ * 補完プロバイダー（YAML/JSON の IntelliSense）。
+ *
+ * 候補の正本は descriptor カタログ（`SchemaCompletionEngine` → `COMPONENT_DEFINITIONS` / `COMPONENT_PROPERTIES`）。
+ * JSON Schema（`SchemaManager`）は補完経路では読み込まない（診断・バリデーション・スキーマ登録は別系統）。
  */
 export class TextUICompletionProvider implements vscode.CompletionItemProvider {
-  private schemaManager: ISchemaManager;
   private completionCacheService: CompletionCache;
   private contextAnalyzer: CompletionContextAnalyzer;
+  /** クラス名は歴史的経緯。実装は descriptor / カタログ駆動（JSON Schema は未使用）。 */
   private schemaEngine: SchemaCompletionEngine;
 
-  private schemaCache: SchemaDefinition | null = null;
-  private lastSchemaLoad: number = 0;
   private completionCache: Map<string, { items: vscode.CompletionItem[]; timestamp: number }> = new Map();
   private readonly CACHE_TTL = 10000; // 10秒
   private completionTimeout: NodeJS.Timeout | null = null;
+  private readonly logger = new Logger('CompletionProvider');
 
   private buildCompletionRequestContext(
     document: vscode.TextDocument,
@@ -57,19 +57,9 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     await this.schemaEngine.parseYamlForSyntaxValidation(text);
   }
 
-  private async loadSchemaWithCache(now: number): Promise<SchemaDefinition> {
-    this.schemaCache = await this.completionCacheService.loadSchemaWithCache(now);
-    this.lastSchemaLoad = this.completionCacheService.getLastSchemaLoad();
-    return this.schemaCache;
-  }
-
-
-  private readonly logger = new Logger('CompletionProvider');
-
-  constructor(schemaManager: ISchemaManager) {
-    this.schemaManager = schemaManager;
+  constructor() {
     this.contextAnalyzer = new CompletionContextAnalyzer();
-    this.completionCacheService = new CompletionCache(this.schemaManager, this.CACHE_TTL);
+    this.completionCacheService = new CompletionCache(this.CACHE_TTL);
     this.schemaEngine = new SchemaCompletionEngine();
     this.completionCache = this.completionCacheService.getCompletionCacheMap();
   }
@@ -124,9 +114,8 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
       }
 
       await this.parseYamlForSyntaxValidation(requestContext.text);
-      await this.loadSchemaWithCache(now);
       const analysisContext = this.analyzeContext(requestContext.linePrefix, position);
-      const items = this.generateCompletionItemsFromSchema(analysisContext);
+      const items = this.generateCompletionItemsFromDescriptors(analysisContext);
 
       this.setCachedCompletionItems(requestContext.cacheKey, items, now);
       return items;
@@ -148,9 +137,9 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
   }
 
   /**
-   * スキーマに基づく補完アイテムを生成
+   * descriptor カタログに基づく補完アイテムを生成
    */
-  private generateCompletionItemsFromSchema(
+  private generateCompletionItemsFromDescriptors(
     analysisContext: {
       type: 'component-list' | 'component-properties' | 'property-value' | 'root-level';
       componentName?: string;
@@ -159,7 +148,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
       rootKeys?: Set<string>;
     }
   ): vscode.CompletionItem[] {
-    return this.schemaEngine.generateCompletionItemsFromSchema(analysisContext);
+    return this.schemaEngine.generateCompletionItemsFromDescriptors(analysisContext);
   }
 
   /**
@@ -238,8 +227,6 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
   clearCache(): void {
     this.completionCacheService.clear();
     this.completionCache = this.completionCacheService.getCompletionCacheMap();
-    this.schemaCache = this.completionCacheService.getSchemaCache();
-    this.lastSchemaLoad = this.completionCacheService.getLastSchemaLoad();
   }
 
   /**

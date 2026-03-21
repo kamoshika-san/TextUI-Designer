@@ -6,7 +6,7 @@ const { CompletionCache } = require('../../out/services/completion-cache');
 
 describe('CompletionCache', () => {
   it('TTL 内の completion items を返す', () => {
-    const cache = new CompletionCache({ loadSchema: async () => ({}) }, 1000);
+    const cache = new CompletionCache(1000);
     const now = Date.now();
     cache.setCachedCompletionItems('k', [{ label: 'page' }], now);
 
@@ -15,7 +15,7 @@ describe('CompletionCache', () => {
   });
 
   it('TTL 超過の completion items は返さない', () => {
-    const cache = new CompletionCache({ loadSchema: async () => ({}) }, 10);
+    const cache = new CompletionCache(10);
     const now = Date.now();
     cache.setCachedCompletionItems('k', [{ label: 'page' }], now);
 
@@ -23,16 +23,10 @@ describe('CompletionCache', () => {
     expect(result).to.equal(undefined);
   });
 
-  it('schema を TTL 付きで再利用する', async () => {
-    const schema = { version: 1 };
-    const schemaManager = { loadSchema: sinon.stub().resolves(schema) };
-    const cache = new CompletionCache(schemaManager, 1000);
-
-    const first = await cache.loadSchemaWithCache(100);
-    const second = await cache.loadSchemaWithCache(200);
-
-    expect(first).to.equal(schema);
-    expect(second).to.equal(schema);
-    expect(schemaManager.loadSchema.calledOnce).to.equal(true);
+  it('completion items の TTL 動作は schema ロードに依存しない', () => {
+    const cache = new CompletionCache(1000);
+    const now = Date.now();
+    cache.setCachedCompletionItems('k', [{ label: 'page' }], now);
+    expect(cache.getCachedCompletionItems('k', now + 100)).to.have.length(1);
   });
 });

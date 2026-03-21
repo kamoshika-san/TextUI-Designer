@@ -62,6 +62,11 @@ ADR（解析パイプライン・初稿）: [adr/0001-document-analysis-service.
 - [SchemaManager](service-design-schema-manager.md)（スキーマ登録・キャッシュ）
 - [WebViewManager / プレビュー](service-design-webview-manager.md)（ファサードとライフサイクル）
 
+### 補完（IntelliSense）と JSON Schema
+
+- **補完候補の内容**は `COMPONENT_DEFINITIONS` / `COMPONENT_PROPERTIES`（`completion-component-catalog` 経由の descriptor グラフ）が正本。`SchemaCompletionEngine` というクラス名は残っているが、**JSON Schema を読んで候補を組み立てる実装ではない**。
+- **JSON Schema**（`SchemaManager.loadSchema` 等）は、診断・バリデーション・`yaml.schemas` 登録など**別系統**で利用する。`CompletionCache` は **補完結果（`CompletionItem[]`）の TTL キャッシュのみ**を保持し、補完のたびにスキーマをウォームロードしない。
+
 ### 1) Preview Capture の責務分割
 - 旧: `src/utils/preview-capture.ts` にロジック集中
 - 現在: `src/utils/preview-capture/` 配下へ分割

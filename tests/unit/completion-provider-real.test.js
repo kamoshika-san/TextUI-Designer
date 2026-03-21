@@ -6,17 +6,13 @@ const { TextUICompletionProvider } = require('../../out/services/completion-prov
 
 describe('TextUICompletionProvider (real class behavior)', () => {
   let provider;
-  let schemaManager;
   let document;
   let position;
   let context;
   let token;
 
   beforeEach(() => {
-    schemaManager = {
-      loadSchema: sinon.stub().resolves({ type: 'object' })
-    };
-    provider = new TextUICompletionProvider(schemaManager);
+    provider = new TextUICompletionProvider();
 
     document = {
       getText: sinon.stub().returns('page:\n  components:\n    - '),
@@ -32,7 +28,6 @@ describe('TextUICompletionProvider (real class behavior)', () => {
   it('provideCompletionItems: 有効な入力で処理できる', async () => {
     const items = await provider.provideCompletionItems(document, position, token, context);
     expect(items).to.be.an('array');
-    expect(schemaManager.loadSchema.callCount).to.equal(1);
   });
 
   it('provideCompletionItems: 不正YAMLでも基本補完へフォールバックする', async () => {
@@ -43,12 +38,12 @@ describe('TextUICompletionProvider (real class behavior)', () => {
     expect(items.some(item => item.label === 'page')).to.equal(true);
   });
 
-  it('provideCompletionItems: TTL内はスキーマ再ロードを抑制する', async () => {
+  it('provideCompletionItems: TTL内は補完候補キャッシュを再利用する', async () => {
     const first = await provider.provideCompletionItems(document, position, token, context);
     const second = await provider.provideCompletionItems(document, position, token, context);
 
     expect(first).to.be.an('array');
     expect(second).to.be.an('array');
-    expect(schemaManager.loadSchema.callCount).to.equal(1);
+    expect(first).to.deep.equal(second);
   });
 });

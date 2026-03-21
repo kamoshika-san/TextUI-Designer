@@ -9,7 +9,7 @@ describe('SchemaCompletionEngine', () => {
   const engine = new SchemaCompletionEngine();
 
   it('component-list コンテキストでコンポーネント候補を返す', () => {
-    const items = engine.generateCompletionItemsFromSchema({
+    const items = engine.generateCompletionItemsFromDescriptors({
       type: 'component-list'
     });
 
@@ -26,7 +26,7 @@ describe('SchemaCompletionEngine', () => {
   });
 
   it('property-value コンテキストで値候補を返す', () => {
-    const items = engine.generateCompletionItemsFromSchema({
+    const items = engine.generateCompletionItemsFromDescriptors({
       type: 'property-value',
       propertyName: 'variant',
       componentName: 'Text'

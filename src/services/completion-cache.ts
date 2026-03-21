@@ -1,12 +1,13 @@
 import * as vscode from 'vscode';
-import { ISchemaManager, SchemaDefinition } from '../types';
 
+/**
+ * 補完候補（`CompletionItem[]`）の TTL キャッシュのみを保持する。
+ * JSON Schema のロードは行わない（補完のデータ源は descriptor カタログ。スキーマは診断等の別系統）。
+ */
 export class CompletionCache {
-  private schemaCache: SchemaDefinition | null = null;
-  private lastSchemaLoad: number = 0;
   private completionCache: Map<string, { items: vscode.CompletionItem[]; timestamp: number }> = new Map();
 
-  constructor(private readonly schemaManager: ISchemaManager, private readonly ttl: number) {}
+  constructor(private readonly ttl: number) {}
 
   getCachedCompletionItems(cacheKey: string, now: number): vscode.CompletionItem[] | undefined {
     const cached = this.completionCache.get(cacheKey);
@@ -23,29 +24,9 @@ export class CompletionCache {
     });
   }
 
-  async loadSchemaWithCache(now: number): Promise<SchemaDefinition> {
-    if (!this.schemaCache || (now - this.lastSchemaLoad) > this.ttl) {
-      this.schemaCache = await this.schemaManager.loadSchema();
-      this.lastSchemaLoad = now;
-    }
-    return this.schemaCache;
-  }
-
   clear(): void {
     this.completionCache.clear();
-    this.schemaCache = null;
-    this.lastSchemaLoad = 0;
   }
-
-  getSchemaCache(): SchemaDefinition | null {
-    return this.schemaCache;
-  }
-
-
-  getLastSchemaLoad(): number {
-    return this.lastSchemaLoad;
-  }
-
 
   getCompletionCacheMap(): Map<string, { items: vscode.CompletionItem[]; timestamp: number }> {
     return this.completionCache;

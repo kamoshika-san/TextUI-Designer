@@ -141,9 +141,7 @@ describe('高優先度課題: 拡張性・柔軟性', () => {
       })
     );
 
-    const provider = new TextUICompletionProvider({
-      loadSchema: async () => ({})
-    });
+    const provider = new TextUICompletionProvider();
     const context = { triggerCharacter: '' };
     const content = 'page:\n  components:\n    - ';
 
@@ -159,9 +157,7 @@ describe('高優先度課題: 拡張性・柔軟性', () => {
   });
 
   it('CompletionProvider の Button 補完は DSL型に一致する', () => {
-    const provider = new TextUICompletionProvider({
-      loadSchema: async () => ({})
-    });
+    const provider = new TextUICompletionProvider();
 
     const labels = provider
       .getComponentPropertyCompletions('Button')
@@ -175,9 +171,7 @@ describe('高優先度課題: 拡張性・柔軟性', () => {
 
 
   it('CompletionProvider は既存プロパティを重複候補から除外する', () => {
-    const provider = new TextUICompletionProvider({
-      loadSchema: async () => ({})
-    });
+    const provider = new TextUICompletionProvider();
 
     const existingProperties = new Set(['label']);
     const labels = provider
@@ -189,17 +183,13 @@ describe('高優先度課題: 拡張性・柔軟性', () => {
   });
 
   it('CompletionProvider は page 定義済み時に root 候補を抑制する', () => {
-    const provider = new TextUICompletionProvider({
-      loadSchema: async () => ({})
-    });
+    const provider = new TextUICompletionProvider();
 
     const items = provider.getRootLevelCompletions(new Set(['page']));
     assert.strictEqual(items.length, 0);
   });
   it('CompletionProvider の variant 値補完は Text 型に一致する', () => {
-    const provider = new TextUICompletionProvider({
-      loadSchema: async () => ({})
-    });
+    const provider = new TextUICompletionProvider();
 
     const values = provider
       .getPropertyValueCompletions('variant', 'Text')

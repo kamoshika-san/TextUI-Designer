@@ -4,6 +4,12 @@ import { COMPONENT_DEFINITIONS } from '../components/definitions/component-defin
 import { COMPONENT_PROPERTIES } from './completion-component-catalog';
 import { CompletionAnalysisContext } from './completion-context-analyzer';
 
+/**
+ * 補完候補生成（descriptor / カタログ駆動）。
+ *
+ * `COMPONENT_DEFINITIONS` と `COMPONENT_PROPERTIES`（`completion-component-catalog`）が正本。
+ * JSON Schema の AST や oneOf は参照しない（名前は歴史的経緯で `Schema*` のまま）。
+ */
 export class SchemaCompletionEngine {
   private readonly completionItemKindFallback: Record<'Class' | 'Property' | 'Value' | 'Module' | 'Field', number> = {
     Class: 7,
@@ -26,7 +32,7 @@ export class SchemaCompletionEngine {
     });
   }
 
-  generateCompletionItemsFromSchema(context: CompletionAnalysisContext): vscode.CompletionItem[] {
+  generateCompletionItemsFromDescriptors(context: CompletionAnalysisContext): vscode.CompletionItem[] {
     const items: vscode.CompletionItem[] = [];
 
     switch (context.type) {

@@ -75,7 +75,7 @@ export class ServiceFactory {
 
     const completionProvider: ICompletionProvider = f.createCompletionProvider
       ? f.createCompletionProvider(schemaManager)
-      : new TextUICompletionProvider(schemaManager);
+      : new TextUICompletionProvider();
 
     const commandManagerDependencies = {
       webViewManager,

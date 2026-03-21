@@ -48,7 +48,6 @@ const { TextUICompletionProvider } = require('../../out/services/completion-prov
 
 describe('TextUICompletionProvider', () => {
   let completionProvider;
-  let mockSchemaManager;
   let mockDocument;
   let mockPosition;
   let mockContext;
@@ -77,7 +76,7 @@ describe('TextUICompletionProvider', () => {
     // Tokenのモック
     mockToken = new vscode.CancellationToken();
 
-    completionProvider = new TextUICompletionProvider(mockSchemaManager);
+    completionProvider = new TextUICompletionProvider();
   });
 
   afterEach(() => {
@@ -135,7 +134,7 @@ describe('TextUICompletionProvider', () => {
     });
   });
 
-  describe('generateCompletionItemsFromSchema', () => {
+  describe('generateCompletionItemsFromDescriptors', () => {
     it('コンポーネントリストの補完を生成する', () => {
       const linePrefix = 'page:\n  components:\n    - ';
       const position = new vscode.Position(2, 6);
@@ -144,7 +143,7 @@ describe('TextUICompletionProvider', () => {
       const isTemplate = false;
 
       const analysisContext = completionProvider.analyzeContext(linePrefix, position);
-      const result = completionProvider.generateCompletionItemsFromSchema(analysisContext);
+      const result = completionProvider.generateCompletionItemsFromDescriptors(analysisContext);
 
       expect(result).to.be.an('array');
       expect(result.length).to.be.greaterThan(0);
@@ -160,7 +159,7 @@ describe('TextUICompletionProvider', () => {
       const isTemplate = false;
 
       const analysisContext = completionProvider.analyzeContext(linePrefix, position);
-      const result = completionProvider.generateCompletionItemsFromSchema(analysisContext);
+      const result = completionProvider.generateCompletionItemsFromDescriptors(analysisContext);
 
       expect(result).to.be.an('array');
       expect(result.length).to.be.greaterThan(0);
@@ -176,7 +175,7 @@ describe('TextUICompletionProvider', () => {
       const isTemplate = false;
 
       const analysisContext = completionProvider.analyzeContext(linePrefix, position);
-      const result = completionProvider.generateCompletionItemsFromSchema(analysisContext);
+      const result = completionProvider.generateCompletionItemsFromDescriptors(analysisContext);
 
       expect(result).to.be.an('array');
       expect(result.length).to.be.greaterThan(0);
@@ -192,7 +191,7 @@ describe('TextUICompletionProvider', () => {
       const isTemplate = false;
 
       const analysisContext = completionProvider.analyzeContext(linePrefix, position);
-      const result = completionProvider.generateCompletionItemsFromSchema(analysisContext);
+      const result = completionProvider.generateCompletionItemsFromDescriptors(analysisContext);
 
       expect(result).to.be.an('array');
       expect(result.length).to.be.greaterThan(0);
@@ -387,17 +386,12 @@ describe('TextUICompletionProvider', () => {
     it('キャッシュをクリアする', () => {
       // キャッシュにデータを追加
       completionProvider.completionCache.set('test', { items: [], timestamp: Date.now() });
-      completionProvider.schemaCache = { test: 'data' };
-      completionProvider.lastSchemaLoad = Date.now();
 
       expect(completionProvider.completionCache.size).to.be.greaterThan(0);
-      expect(completionProvider.schemaCache).to.not.be.null;
 
       completionProvider.clearCache();
 
       expect(completionProvider.completionCache.size).to.equal(0);
-      expect(completionProvider.schemaCache).to.be.null;
-      expect(completionProvider.lastSchemaLoad).to.equal(0);
     });
   });
 
