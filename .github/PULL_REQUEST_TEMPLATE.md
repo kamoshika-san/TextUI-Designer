@@ -45,7 +45,13 @@
 - [ ] `exporter`
 - [ ] `preview`（WebView / プレビュー関連）
 - [ ] `mcp`
+- [ ] `ssot`（`domain/dsl-types` と `renderer/types` 境界に影響あり）
 - [ ] 該当なし（ドキュメントのみ・CIメタのみ等）— 理由を1行で:
+
+### SSoT 影響チェック（該当時）
+
+- [ ] `src/renderer/**` 外で `renderer/types` を新規 import していない（必要なら理由を明記）
+- [ ] `npm run test:unit -- tests/unit/renderer-types-non-renderer-import-guard.test.js` を確認
 
 ---
 

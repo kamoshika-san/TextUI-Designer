@@ -6,6 +6,7 @@ node_modules
 generated/
 .tmp-cli-debug/
 .tmp-cli-test/
+.tmp-cli-test-*/
 .tmp-cli-regression-test/
 .vscode-test/
 *.vsix
