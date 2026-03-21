@@ -9,6 +9,7 @@ import { ConfigManager } from '../../utils/config-manager';
 import { ErrorHandler } from '../../utils/error-handler';
 import { Logger } from '../../utils/logger';
 import { deliverPreviewPayload } from './preview-webview-deliver';
+import { PreviewUpdateSessionState, shouldBlockYamlSend } from './preview-update-session-state';
 
 /**
  * リファクタリングされた WebViewUpdateManager（プレビュー更新のオーケストレーション）。
@@ -23,8 +24,7 @@ export class WebViewUpdateManager {
   private yamlSourceResolver: PreviewYamlSourceResolver;
   private cacheManager: WebViewPreviewCacheManager;
   private errorHandler: WebViewErrorHandler;
-  private lastTuiFile: string | undefined = undefined;
-  private isUpdating: boolean = false;
+  private readonly session = new PreviewUpdateSessionState();
   private readonly logger = new Logger('WebViewUpdateManager');
   private readonly isNamedError = (value: unknown, expectedName: string): value is Error =>
     value instanceof Error && value.name === expectedName;
@@ -34,7 +34,7 @@ export class WebViewUpdateManager {
     this.yamlParser = new YamlParser(schemaLoader);
     this.updateQueueManager = new UpdateQueueManager();
     this.previewUpdateCoordinator = new PreviewUpdateCoordinator();
-    this.yamlSourceResolver = new PreviewYamlSourceResolver(() => this.lastTuiFile, this.logger);
+    this.yamlSourceResolver = new PreviewYamlSourceResolver(() => this.session.lastTuiFile, this.logger);
     this.cacheManager = new WebViewPreviewCacheManager();
     this.errorHandler = new WebViewErrorHandler(lifecycleManager);
   }
@@ -78,10 +78,10 @@ export class WebViewUpdateManager {
     console.log(`[WebViewUpdateManager] setLastTuiFile called: ${filePath}, updatePreview: ${updatePreview}`);
     
     // ファイルが変更された場合はキャッシュとエラー状態をクリア
-    if (this.lastTuiFile !== filePath) {
-      this.logger.debug(`ファイルが変更されました: ${this.lastTuiFile} -> ${filePath}`);
-      this.cacheManager.clearCacheForFile(this.lastTuiFile || '');
-      this.errorHandler.clearErrorState(this.lastTuiFile);
+    if (this.session.lastTuiFile !== filePath) {
+      this.logger.debug(`ファイルが変更されました: ${this.session.lastTuiFile} -> ${filePath}`);
+      this.cacheManager.clearCacheForFile(this.session.lastTuiFile || '');
+      this.errorHandler.clearErrorState(this.session.lastTuiFile);
       
       // プレビュー更新が要求された場合、即座に更新
       if (updatePreview && this.lifecycleManager.hasPanel()) {
@@ -94,14 +94,14 @@ export class WebViewUpdateManager {
       }
     }
     
-    this.lastTuiFile = filePath;
+    this.session.lastTuiFile = filePath;
   }
 
   /**
    * 最後に開いていたtui.ymlファイルのパスを取得
    */
   getLastTuiFile(): string | undefined {
-    return this.lastTuiFile;
+    return this.session.lastTuiFile;
   }
 
   /**
@@ -118,12 +118,12 @@ export class WebViewUpdateManager {
       }
     }
 
-    if (!this.lifecycleManager.hasPanel() || this.isUpdating) {
+    if (shouldBlockYamlSend({ hasPanel: this.lifecycleManager.hasPanel(), isUpdating: this.session.isUpdating })) {
       this.logger.debug('パネルが存在しないか、更新中です');
       return;
     }
 
-    this.isUpdating = true;
+    this.session.isUpdating = true;
     this.previewUpdateCoordinator.beginPipeline();
 
     try {
@@ -143,9 +143,9 @@ export class WebViewUpdateManager {
 
       // YAMLファイルを解析
       this.previewUpdateCoordinator.setPhase(PreviewUpdatePhase.Parsing);
-      const parsedResult = await this.yamlParser.parseYamlFile(currentYaml?.fileName || this.lastTuiFile);
+      const parsedResult = await this.yamlParser.parseYamlFile(currentYaml?.fileName || this.session.lastTuiFile);
       this.previewUpdateCoordinator.setPhase(PreviewUpdatePhase.Validating);
-      this.lastTuiFile = parsedResult.fileName;
+      this.session.lastTuiFile = parsedResult.fileName;
       
       // キャッシュに保存
       this.cacheManager.setCachedData(
@@ -167,17 +167,17 @@ export class WebViewUpdateManager {
       
       // エラータイプに応じて適切なエラーハンドリング
       if (this.isNamedError(error, 'YamlParseError')) {
-        this.errorHandler.sendParseError(error, this.lastTuiFile || '', '');
+        this.errorHandler.sendParseError(error, this.session.lastTuiFile || '', '');
       } else if (this.isNamedError(error, 'SchemaValidationError')) {
-        this.errorHandler.sendSchemaError(error, this.lastTuiFile || '', '');
+        this.errorHandler.sendSchemaError(error, this.session.lastTuiFile || '', '');
       } else if (this.isNamedError(error, 'FileSizeError')) {
-        this.errorHandler.sendFileSizeError(0, this.lastTuiFile || '');
+        this.errorHandler.sendFileSizeError(0, this.session.lastTuiFile || '');
       } else {
         ErrorHandler.showError('プレビューの更新に失敗しました', error);
       }
     } finally {
       this.previewUpdateCoordinator.endPipeline();
-      this.isUpdating = false;
+      this.session.isUpdating = false;
     }
   }
 
@@ -206,7 +206,7 @@ export class WebViewUpdateManager {
    * テスト用: YAMLキャッシュ内容を取得
    */
   _getYamlCacheContent(): string {
-    return this.cacheManager._getCacheContent(this.lastTuiFile || '') || '';
+    return this.cacheManager._getCacheContent(this.session.lastTuiFile || '') || '';
   }
 
   /**
@@ -221,7 +221,7 @@ export class WebViewUpdateManager {
    */
   _setYamlCacheContent(content: string): void {
     // テスト用のダミーデータをキャッシュに設定
-    this.lastTuiFile = 'test.tui.yml';
+    this.session.lastTuiFile = 'test.tui.yml';
     this.cacheManager.setCachedData('test.tui.yml', content, content);
   }
 
@@ -266,10 +266,10 @@ export class WebViewUpdateManager {
    * YAMLキャッシュの解析済みデータを取得/設定
    */
   get lastParsedData(): unknown {
-    return this.cacheManager._getCachedData(this.lastTuiFile || '') ?? null;
+    return this.cacheManager._getCachedData(this.session.lastTuiFile || '') ?? null;
   }
   set lastParsedData(val: unknown) {
-    const fileName = this.lastTuiFile || '';
+    const fileName = this.session.lastTuiFile || '';
     const content = this.cacheManager._getCacheContent(fileName) || '';
     const normalizedValue = val === undefined ? null : val;
     this.cacheManager.setCachedData(fileName, content, normalizedValue);
