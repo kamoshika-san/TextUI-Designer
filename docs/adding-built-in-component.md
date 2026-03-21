@@ -1,6 +1,6 @@
 # ビルトインコンポーネント追加の修正箇所（チェックリスト）
 
-新しい **組み込みコンポーネント** を追加するときに触る主なファイル・手順の入口。**詳細な契約ドキュメント**（T-055 等）は別チケットとし、ここは **迷わず一覧**できることを目的とする。
+新しい **組み込みコンポーネント** を追加するときに触る主なファイル・手順の入口。**5 要素を 1 セットとする契約**は [component-add-contract.md](component-add-contract.md)（T-055）。ここは **迷わず一覧**できることを目的とする。
 
 ## 前提
 
@@ -35,5 +35,6 @@
 
 ## 関連ドキュメント
 
+- [component-add-contract.md](component-add-contract.md) — 追加時の契約（descriptor / schema / preview / exporter / tests の 1 セット）
 - [change-amplification-dsl.md](change-amplification-dsl.md) — DSL の増幅箇所とテストの説明
 - [registry-compat-layer-policy.md](registry-compat-layer-policy.md) — registry 互換レイヤの運用（新規は正本へ）
