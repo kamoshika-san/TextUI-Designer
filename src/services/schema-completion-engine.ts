@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as YAML from 'yaml';
-import { BUILT_IN_COMPONENTS } from '../registry/component-registry';
-import { COMPONENT_DESCRIPTIONS, COMPONENT_PROPERTIES } from './completion-component-catalog';
+import { COMPONENT_DEFINITIONS } from '../components/definitions/component-definitions';
+import { COMPONENT_PROPERTIES } from './completion-component-catalog';
 import { CompletionAnalysisContext } from './completion-context-analyzer';
 
 export class SchemaCompletionEngine {
@@ -48,9 +48,10 @@ export class SchemaCompletionEngine {
   }
 
   getComponentCompletions(): vscode.CompletionItem[] {
-    return BUILT_IN_COMPONENTS.map(componentName => {
+    return COMPONENT_DEFINITIONS.map(def => {
+      const componentName = def.name;
       const item = this.createCompletionItem(componentName, 'Class');
-      item.detail = COMPONENT_DESCRIPTIONS[componentName] || 'コンポーネント';
+      item.detail = def.description || 'コンポーネント';
       item.insertText = `${componentName}:\n    `;
       item.sortText = `0${componentName}`;
       return item;
