@@ -1,13 +1,13 @@
 import * as vscode from 'vscode';
 import { parseYamlTextAsync } from '../dsl/yaml-parse-async';
-import { COMPONENT_DEFINITIONS } from '../components/definitions/component-definitions';
+import { componentDescriptorRegistry } from '../registry/component-descriptor-registry';
 import { COMPONENT_PROPERTIES } from './completion-component-catalog';
 import { CompletionAnalysisContext } from './completion-context-analyzer';
 
 /**
  * 補完候補生成（descriptor / カタログ駆動）。
  *
- * `COMPONENT_DEFINITIONS` と `COMPONENT_PROPERTIES`（`completion-component-catalog`）が正本。
+ * コンポーネント一覧は {@link componentDescriptorRegistry}、プロパティ辞書は `COMPONENT_PROPERTIES`（`completion-component-catalog`）を参照。
  * JSON Schema の AST や oneOf は参照しない。
  */
 export class DescriptorCompletionEngine {
@@ -45,7 +45,7 @@ export class DescriptorCompletionEngine {
   }
 
   getComponentCompletions(): vscode.CompletionItem[] {
-    return COMPONENT_DEFINITIONS.map(def => {
+    return componentDescriptorRegistry.list().map(def => {
       const componentName = def.name;
       const item = this.createCompletionItem(componentName, 'Class');
       item.detail = def.description || 'コンポーネント';
