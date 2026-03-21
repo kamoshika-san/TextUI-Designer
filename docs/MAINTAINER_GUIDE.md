@@ -14,6 +14,7 @@
 | [exporter-boundary-guide.md](exporter-boundary-guide.md) | 各 Exporter / provider の境界 |
 | [quality-gate-green-main.md](quality-gate-green-main.md) | ローカルで緑にしてから push/PR する運用（フェーズ 0） |
 | [ci-quality-gate.md](ci-quality-gate.md) | CI ジョブ・`test:all:ci`・branch protection の対応 |
+| [observability-and-cache-boundary.md](observability-and-cache-boundary.md) | 公開 API と観測・キャッシュ実装の**横断**境界（内側に閉じる方針） |
 
 ログの混在整理（Phase 0）: [console-logger-inventory-phase0.md](console-logger-inventory-phase0.md)
 
