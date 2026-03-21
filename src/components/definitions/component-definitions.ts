@@ -15,13 +15,16 @@ import { BUILT_IN_EXPORTER_RENDERER_DEFINITIONS } from './exporter-renderer-defi
 export const COMPONENT_DEFINITIONS: readonly ComponentDefinition[] = BUILT_IN_COMPONENTS.map(
   (name: BuiltInComponentName) => {
     const entry = COMPONENT_MANIFEST[name];
+    const exporter = BUILT_IN_EXPORTER_RENDERER_DEFINITIONS[name];
     return {
       name,
       schemaRef: entry.schemaRef,
       description: entry.description,
       properties: entry.properties,
       // token を inline style に反映する際の既定 CSS プロパティ名
-      tokenStyleProperty: BUILT_IN_EXPORTER_RENDERER_DEFINITIONS[name].tokenStyleProperty
+      tokenStyleProperty: exporter.tokenStyleProperty,
+      previewRendererKey: name,
+      exporterRendererMethod: exporter.rendererMethod
     };
   }
 );

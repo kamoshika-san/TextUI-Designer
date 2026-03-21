@@ -1,29 +1,7 @@
 import { BUILT_IN_COMPONENTS, type BuiltInComponentName } from './built-in-components';
-import type { TokenStyleProperty } from './types';
+import type { ExporterRendererMethod, TokenStyleProperty } from './types';
 
-export type ExporterRendererMethod =
-  | 'renderText'
-  | 'renderInput'
-  | 'renderButton'
-  | 'renderCheckbox'
-  | 'renderRadio'
-  | 'renderSelect'
-  | 'renderDatePicker'
-  | 'renderDivider'
-  | 'renderSpacer'
-  | 'renderAlert'
-  | 'renderContainer'
-  | 'renderForm'
-  | 'renderAccordion'
-  | 'renderTabs'
-  | 'renderTreeView'
-  | 'renderTable'
-  | 'renderLink'
-  | 'renderBreadcrumb'
-  | 'renderBadge'
-  | 'renderProgress'
-  | 'renderImage'
-  | 'renderIcon';
+export type { ExporterRendererMethod };
 
 export type ExporterRendererDefinition = {
   /**
