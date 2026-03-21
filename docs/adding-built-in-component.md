@@ -6,6 +6,27 @@
 
 - 型・descriptor・スキーマ・プレビュー・エクスポートの **いずれかだけ更新すると** 実行時・CI・補完で不整合になる。
 - より詳しい **change amplification** の説明は [change-amplification-dsl.md](change-amplification-dsl.md) を参照。
+- SSoT の正本と互換レイヤ方針は [adr/0003-dsl-types-canonical-source.md](adr/0003-dsl-types-canonical-source.md) を参照。
+
+## DSL 型追加の最短フロー（SSoT）
+
+1. `src/domain/dsl-types.ts` を先に更新（型の正本）。
+2. `src/renderer/types.ts` は thin facade を維持し、型本体を追加しない。
+3. `src/renderer/**` 外で `renderer/types` import を増やさない。
+4. 変更後に SSoT ガードを実行:
+   - `npx mocha --grep "renderer/types|SSoT eslint restriction scope guard" tests/unit`
+   - `npx eslint "src/core/**/*.{ts,tsx}" "src/exporters/**/*.{ts,tsx}" "src/cli/**/*.{ts,tsx}" "src/utils/**/*.{ts,tsx}" "tests/**/*.{js,ts,tsx}"`
+
+### 型追加テンプレ（コピペ用）
+
+新規型追加時は、以下を PR 説明にそのまま貼り付けてチェックする。
+
+- [ ] `src/domain/dsl-types.ts` を最初に更新した
+- [ ] `src/renderer/types.ts` に型本体を追加していない（thin facade 維持）
+- [ ] `src/renderer/**` 外で `renderer/types` の新規 import を追加していない
+- [ ] 必要に応じて `component definitions` / `schema` / `exporters` を更新した
+- [ ] `npx mocha --grep "renderer/types|SSoT eslint restriction scope guard" tests/unit` を実行した
+- [ ] `npx eslint "src/core/**/*.{ts,tsx}" "src/exporters/**/*.{ts,tsx}" "src/cli/**/*.{ts,tsx}" "src/utils/**/*.{ts,tsx}" "tests/**/*.{js,ts,tsx}"` を実行した
 
 ## チェックリスト（推奨順）
 
@@ -38,3 +59,5 @@
 - [component-add-contract.md](component-add-contract.md) — 追加時の契約（descriptor / schema / preview / exporter / tests の 1 セット）
 - [change-amplification-dsl.md](change-amplification-dsl.md) — DSL の増幅箇所とテストの説明
 - [registry-compat-layer-policy.md](registry-compat-layer-policy.md) — registry 互換レイヤの運用（新規は正本へ）
+- [adr/0003-dsl-types-canonical-source.md](adr/0003-dsl-types-canonical-source.md) — `domain/dsl-types` 正本化と `renderer/types` thin facade 方針
+- [../.github/PULL_REQUEST_TEMPLATE.md](../.github/PULL_REQUEST_TEMPLATE.md) — PR 時の SSoT 影響チェック
