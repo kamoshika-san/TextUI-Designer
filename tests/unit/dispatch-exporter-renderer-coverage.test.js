@@ -3,8 +3,8 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * T-20260321-051: BaseComponentRenderer.dispatchExporterRenderer の switch が
- * exporter 定義・ExporterRendererMethod 型と集合一致すること（取りこぼし検知）。
+ * T-20260321-051 / T-069: `EXPORTER_RENDERER_DISPATCH` のキー集合が
+ * exporter 定義・ExporterRendererMethod 型と一致すること（取りこぼし検知）。
  */
 describe('dispatchExporterRenderer coverage (Phase 0)', () => {
   const workspaceRoot = path.resolve(__dirname, '../..');
@@ -25,17 +25,31 @@ describe('dispatchExporterRenderer coverage (Phase 0)', () => {
   }
 
   /** @returns {string[]} */
-  function methodsFromDispatchSwitch() {
+  function methodsFromExporterRendererDispatch() {
     const src = fs.readFileSync(rendererPath, 'utf8');
-    const head = 'protected dispatchExporterRenderer(';
-    const start = src.indexOf(head);
-    assert.ok(start >= 0, 'dispatchExporterRenderer not found');
-    const switchIdx = src.indexOf('switch (method)', start);
-    assert.ok(switchIdx > start, 'switch (method) not found');
-    const defaultIdx = src.indexOf('default:', switchIdx);
-    assert.ok(defaultIdx > switchIdx, 'default: not found in dispatchExporterRenderer');
-    const block = src.slice(switchIdx, defaultIdx);
-    const keys = [...block.matchAll(/case '([^']+)':/g)].map((m) => m[1]);
+    const marker = 'private static readonly EXPORTER_RENDERER_DISPATCH';
+    const start = src.indexOf(marker);
+    assert.ok(start >= 0, 'EXPORTER_RENDERER_DISPATCH field not found');
+    const assignOpen = src.indexOf('} = {', start);
+    assert.ok(assignOpen > start, 'value initializer "} = {" not found after EXPORTER_RENDERER_DISPATCH');
+    const braceStart = assignOpen + 4; // `{` in `} = {`
+    let depth = 0;
+    let i = braceStart;
+    for (; i < src.length; i++) {
+      const c = src[i];
+      if (c === '{') depth++;
+      else if (c === '}') {
+        depth--;
+        if (depth === 0) {
+          i++;
+          break;
+        }
+      }
+    }
+    assert.ok(depth === 0, 'failed to find closing brace for EXPORTER_RENDERER_DISPATCH value');
+    const block = src.slice(braceStart, i);
+    const keys = [...block.matchAll(/\n\s*(render\w+)\s*:/g)].map((m) => m[1]);
+    assert.ok(keys.length > 0, 'no render* keys parsed from EXPORTER_RENDERER_DISPATCH');
     return [...new Set(keys)].sort();
   }
 
@@ -54,11 +68,11 @@ describe('dispatchExporterRenderer coverage (Phase 0)', () => {
     return [...new Set(keys)].sort();
   }
 
-  it('dispatch switch の case 集合は BUILT_IN_EXPORTER_RENDERER_DEFINITIONS の rendererMethod 集合と一致（T-20260321-051）', () => {
-    assert.deepStrictEqual(methodsFromDispatchSwitch(), methodsFromDefinitions());
+  it('EXPORTER_RENDERER_DISPATCH のキー集合は BUILT_IN_EXPORTER_RENDERER_DEFINITIONS の rendererMethod 集合と一致（T-20260321-051）', () => {
+    assert.deepStrictEqual(methodsFromExporterRendererDispatch(), methodsFromDefinitions());
   });
 
-  it('dispatch switch の case 集合は ExporterRendererMethod 型リテラル集合と一致（T-20260321-051）', () => {
-    assert.deepStrictEqual(methodsFromDispatchSwitch(), methodsFromExporterRendererMethodType());
+  it('EXPORTER_RENDERER_DISPATCH のキー集合は ExporterRendererMethod 型リテラル集合と一致（T-20260321-051）', () => {
+    assert.deepStrictEqual(methodsFromExporterRendererDispatch(), methodsFromExporterRendererMethodType());
   });
 });

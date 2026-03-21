@@ -41,6 +41,41 @@ export type ComponentHandler = (props: unknown, key: number) => string;
  * Mapベースのディスパッチにより、新コンポーネント追加時の変更箇所を最小化
  */
 export abstract class BaseComponentRenderer implements Exporter {
+  /**
+   * `ExporterRendererMethod` → `renderXxx` 実装の対応表（switch の代わり）。
+   * 次スライス: `BUILT_IN_EXPORTER_RENDERER_DEFINITIONS` / 生成コードとの単一化を検討。
+   */
+  private static readonly EXPORTER_RENDERER_DISPATCH: {
+    [K in ExporterRendererMethod]: (
+      self: BaseComponentRenderer,
+      props: unknown,
+      key: number
+    ) => string;
+  } = {
+    renderText: (self, p, k) => self.renderText(p as TextComponent, k),
+    renderInput: (self, p, k) => self.renderInput(p as InputComponent, k),
+    renderButton: (self, p, k) => self.renderButton(p as ButtonComponent, k),
+    renderCheckbox: (self, p, k) => self.renderCheckbox(p as CheckboxComponent, k),
+    renderRadio: (self, p, k) => self.renderRadio(p as RadioComponent, k),
+    renderSelect: (self, p, k) => self.renderSelect(p as SelectComponent, k),
+    renderDatePicker: (self, p, k) => self.renderDatePicker(p as DatePickerComponent, k),
+    renderDivider: (self, p, k) => self.renderDivider(p as DividerComponent, k),
+    renderSpacer: (self, p, k) => self.renderSpacer(p as SpacerComponent, k),
+    renderAlert: (self, p, k) => self.renderAlert(p as AlertComponent, k),
+    renderContainer: (self, p, k) => self.renderContainer(p as ContainerComponent, k),
+    renderForm: (self, p, k) => self.renderForm(p as FormComponent, k),
+    renderAccordion: (self, p, k) => self.renderAccordion(p as AccordionComponent, k),
+    renderTabs: (self, p, k) => self.renderTabs(p as TabsComponent, k),
+    renderTreeView: (self, p, k) => self.renderTreeView(p as TreeViewComponent, k),
+    renderTable: (self, p, k) => self.renderTable(p as TableComponent, k),
+    renderLink: (self, p, k) => self.renderLink(p as LinkComponent, k),
+    renderBreadcrumb: (self, p, k) => self.renderBreadcrumb(p as BreadcrumbComponent, k),
+    renderBadge: (self, p, k) => self.renderBadge(p as BadgeComponent, k),
+    renderProgress: (self, p, k) => self.renderProgress(p as ProgressComponent, k),
+    renderImage: (self, p, k) => self.renderImage(p as ImageComponent, k),
+    renderIcon: (self, p, k) => self.renderIcon(p as IconComponent, k)
+  };
+
   protected format: ExportFormat;
   private componentHandlers: Map<string, ComponentHandler> = new Map();
   private readonly attributeSerializer: AttributeSerializer;
@@ -78,56 +113,7 @@ export abstract class BaseComponentRenderer implements Exporter {
    * `ExporterRendererMethod` と `renderXxx` 実装をコンパイル時に対応付ける（`(this as any)[method]` を排除）。
    */
   protected dispatchExporterRenderer(method: ExporterRendererMethod, props: unknown, key: number): string {
-    switch (method) {
-      case 'renderText':
-        return this.renderText(props as TextComponent, key);
-      case 'renderInput':
-        return this.renderInput(props as InputComponent, key);
-      case 'renderButton':
-        return this.renderButton(props as ButtonComponent, key);
-      case 'renderCheckbox':
-        return this.renderCheckbox(props as CheckboxComponent, key);
-      case 'renderRadio':
-        return this.renderRadio(props as RadioComponent, key);
-      case 'renderSelect':
-        return this.renderSelect(props as SelectComponent, key);
-      case 'renderDatePicker':
-        return this.renderDatePicker(props as DatePickerComponent, key);
-      case 'renderDivider':
-        return this.renderDivider(props as DividerComponent, key);
-      case 'renderSpacer':
-        return this.renderSpacer(props as SpacerComponent, key);
-      case 'renderAlert':
-        return this.renderAlert(props as AlertComponent, key);
-      case 'renderContainer':
-        return this.renderContainer(props as ContainerComponent, key);
-      case 'renderForm':
-        return this.renderForm(props as FormComponent, key);
-      case 'renderAccordion':
-        return this.renderAccordion(props as AccordionComponent, key);
-      case 'renderTabs':
-        return this.renderTabs(props as TabsComponent, key);
-      case 'renderTreeView':
-        return this.renderTreeView(props as TreeViewComponent, key);
-      case 'renderTable':
-        return this.renderTable(props as TableComponent, key);
-      case 'renderLink':
-        return this.renderLink(props as LinkComponent, key);
-      case 'renderBreadcrumb':
-        return this.renderBreadcrumb(props as BreadcrumbComponent, key);
-      case 'renderBadge':
-        return this.renderBadge(props as BadgeComponent, key);
-      case 'renderProgress':
-        return this.renderProgress(props as ProgressComponent, key);
-      case 'renderImage':
-        return this.renderImage(props as ImageComponent, key);
-      case 'renderIcon':
-        return this.renderIcon(props as IconComponent, key);
-      default: {
-        const _exhaustive: never = method;
-        return _exhaustive;
-      }
-    }
+    return BaseComponentRenderer.EXPORTER_RENDERER_DISPATCH[method](this, props, key);
   }
 
   abstract export(dsl: TextUIDSL, options: ExportOptions): Promise<string>;

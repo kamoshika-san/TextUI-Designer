@@ -6,7 +6,7 @@ export type { ExporterRendererMethod };
 export type ExporterRendererDefinition = {
   /**
    * BaseComponentRenderer 側が呼び出す renderXxx メソッド名。
-   * ディスパッチは `BaseComponentRenderer.dispatchExporterRenderer` の網羅的 switch に対応付けられる。
+   * ディスパッチは `BaseComponentRenderer` の `EXPORTER_RENDERER_DISPATCH` テーブルに対応付けられる。
    */
   rendererMethod: ExporterRendererMethod;
   /**
