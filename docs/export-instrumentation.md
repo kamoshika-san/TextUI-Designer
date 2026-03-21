@@ -37,3 +37,7 @@
 
 - 「観測専用」が **docs とコード上のコメント / `export-instrumentation`** で追えること。
 - 通常パスで **不要な観測処理が減った**ことは、`recordDiffEfficiency` を設定オフ時に呼ばない（呼んでも内部 no-op だった箇所を、呼び出し側で明示）として説明できること。
+
+## 7. 関連（命名の改善案・設計メモ）
+
+- [export-diff-metrics-naming.md](export-diff-metrics-naming.md) — diff / metrics 系の呼び名を整理した **将来リネーム案**（コード変更は別チケット）
