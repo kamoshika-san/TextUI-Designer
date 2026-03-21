@@ -2,6 +2,19 @@
 
 このドキュメントは、直近の保守性改善（`T-20260319-006/007/008/009`, `T-20260320-001`, `T-20260320-010`, `T-20260320-011`）を踏まえ、現行コードベースを安全に保守するための実務ガイドです。
 
+## 境界ガイド索引
+
+機能境界・品質ゲート・CI 運用の入口を一覧する（本文の詳細は各ページへ）。
+
+| ドキュメント | 主な用途 |
+|---|---|
+| [extension-boundary-guide.md](extension-boundary-guide.md) | VS Code 拡張ホスト側の責務と境界 |
+| [cli-boundary-guide.md](cli-boundary-guide.md) | CLI エントリとサブコマンドの境界 |
+| [mcp-boundary-guide.md](mcp-boundary-guide.md) | MCP サーバとツールの境界 |
+| [exporter-boundary-guide.md](exporter-boundary-guide.md) | 各 Exporter / provider の境界 |
+| [quality-gate-green-main.md](quality-gate-green-main.md) | ローカルで緑にしてから push/PR する運用（フェーズ 0） |
+| [ci-quality-gate.md](ci-quality-gate.md) | CI ジョブ・`test:all:ci`・branch protection の対応 |
+
 ## クイックスタート（変更種別別）
 
 | 変更したい内容 | 主に触る場所 | 実行コマンド（最低限） |
