@@ -3,7 +3,6 @@ import { WebViewLifecycleManager } from './webview/webview-lifecycle-manager';
 import { WebViewUpdateManager } from './webview/webview-update-manager';
 import { WebViewMessageHandler } from './webview/webview-message-handler';
 import type { YamlSchemaLoader } from './webview/yaml-parser';
-import { TextUIDSL } from '../renderer/types';
 import type { IThemeManager, IWebViewManager } from '../types';
 
 /**
@@ -80,41 +79,11 @@ export class WebViewManager implements IWebViewManager {
     this.updateManager.openDevTools();
   }
 
-  _testMemoryManagement(): void {
-    this.updateManager._testMemoryManagement();
-  }
-
   async switchTheme(themePath: string): Promise<void> {
     return await this.messageHandler.switchTheme(themePath);
   }
 
   async sendAvailableThemes(): Promise<void> {
     return await this.messageHandler.sendAvailableThemes();
-  }
-
-  _getYamlCacheContent(): string {
-    return this.updateManager._getYamlCacheContent();
-  }
-
-  _clearYamlCache(): void {
-    this.updateManager._clearYamlCache();
-  }
-
-  _setYamlCacheContent(content: string): void {
-    this.updateManager._setYamlCacheContent(content);
-  }
-
-  get lastYamlContent(): string {
-    return this.updateManager.lastYamlContent;
-  }
-  set lastYamlContent(val: string) {
-    this.updateManager.lastYamlContent = val;
-  }
-
-  get lastParsedData(): TextUIDSL | null {
-    return this.updateManager.lastParsedData as TextUIDSL | null;
-  }
-  set lastParsedData(val: TextUIDSL | null) {
-    this.updateManager.lastParsedData = val;
   }
 }

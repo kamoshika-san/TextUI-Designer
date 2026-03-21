@@ -10,6 +10,7 @@ global.vscode = global.vscode || {};
 const assert = require('assert');
 const path = require('path');
 const fs = require('fs');
+const { getWebViewUpdateManagerForTest } = require('../helpers/webview-update-test-access');
 
 describe('WebViewManager 単体テスト', () => {
   let webviewManager;
@@ -216,10 +217,11 @@ describe('WebViewManager 単体テスト', () => {
       };
 
       webviewManager.setLastTuiFile(testPath);
-      webviewManager.lastParsedData = parsedData;
+      const updateMgr = getWebViewUpdateManagerForTest(webviewManager);
+      updateMgr.lastParsedData = parsedData;
 
       assert.deepStrictEqual(
-        webviewManager.lastParsedData,
+        updateMgr.lastParsedData,
         parsedData,
         'lastParsedData の read/write 契約が成立している'
       );
@@ -414,6 +416,7 @@ describe('WebViewManager 単体テスト', () => {
     });
 
          it('150MB以上でキャッシュが強制クリアされる', async () => {
+       const updateMgr = getWebViewUpdateManagerForTest(webviewManager);
        // 150MB以上のメモリ使用量をシミュレート
        process.memoryUsage = () => ({
          heapUsed: 160 * 1024 * 1024, // 160MB
@@ -423,16 +426,17 @@ describe('WebViewManager 単体テスト', () => {
        });
 
        // キャッシュにデータを設定
-       webviewManager._setYamlCacheContent('test content');
+       updateMgr._setYamlCacheContent('test content');
 
        // テスト用メソッドを直接実行
-       webviewManager._testMemoryManagement();
+       updateMgr._testMemoryManagement();
 
        // キャッシュがクリアされていることを確認
-       assert.strictEqual(webviewManager._getYamlCacheContent(), '', 'YAMLキャッシュがクリアされた');
+       assert.strictEqual(updateMgr._getYamlCacheContent(), '', 'YAMLキャッシュがクリアされた');
      });
 
          it('100-150MBでキャッシュが予防的にクリアされる', async () => {
+       const updateMgr = getWebViewUpdateManagerForTest(webviewManager);
        // 100-150MBのメモリ使用量をシミュレート
        process.memoryUsage = () => ({
          heapUsed: 120 * 1024 * 1024, // 120MB
@@ -442,16 +446,17 @@ describe('WebViewManager 単体テスト', () => {
        });
 
        // キャッシュにデータを設定
-       webviewManager._setYamlCacheContent('test content');
+       updateMgr._setYamlCacheContent('test content');
 
        // テスト用メソッドを直接実行
-       webviewManager._testMemoryManagement();
+       updateMgr._testMemoryManagement();
 
        // キャッシュがクリアされていることを確認
-       assert.strictEqual(webviewManager._getYamlCacheContent(), '', 'YAMLキャッシュがクリアされた');
+       assert.strictEqual(updateMgr._getYamlCacheContent(), '', 'YAMLキャッシュがクリアされた');
      });
 
          it('50-100MBではキャッシュが保持される', async () => {
+       const updateMgr = getWebViewUpdateManagerForTest(webviewManager);
        // 50-100MBのメモリ使用量をシミュレート
        process.memoryUsage = () => ({
          heapUsed: 70 * 1024 * 1024, // 70MB
@@ -462,16 +467,17 @@ describe('WebViewManager 単体テスト', () => {
 
        // キャッシュにデータを設定
        const testContent = 'test content';
-       webviewManager._setYamlCacheContent(testContent);
+       updateMgr._setYamlCacheContent(testContent);
 
        // テスト用メソッドを直接実行
-       webviewManager._testMemoryManagement();
+       updateMgr._testMemoryManagement();
 
        // キャッシュが保持されていることを確認
-       assert.strictEqual(webviewManager._getYamlCacheContent(), testContent, 'YAMLキャッシュが保持されている');
+       assert.strictEqual(updateMgr._getYamlCacheContent(), testContent, 'YAMLキャッシュが保持されている');
      });
 
          it('50MB未満ではキャッシュが完全に保持される', async () => {
+       const updateMgr = getWebViewUpdateManagerForTest(webviewManager);
        // 50MB未満のメモリ使用量をシミュレート
        process.memoryUsage = () => ({
          heapUsed: 30 * 1024 * 1024, // 30MB
@@ -482,13 +488,13 @@ describe('WebViewManager 単体テスト', () => {
 
        // キャッシュにデータを設定
        const testContent = 'test content';
-       webviewManager._setYamlCacheContent(testContent);
+       updateMgr._setYamlCacheContent(testContent);
 
        // テスト用メソッドを直接実行
-       webviewManager._testMemoryManagement();
+       updateMgr._testMemoryManagement();
 
        // キャッシュが完全に保持されていることを確認
-       assert.strictEqual(webviewManager._getYamlCacheContent(), testContent, 'YAMLキャッシュが完全に保持されている');
+       assert.strictEqual(updateMgr._getYamlCacheContent(), testContent, 'YAMLキャッシュが完全に保持されている');
      });
   });
 }); 
