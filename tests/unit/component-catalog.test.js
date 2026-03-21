@@ -1,17 +1,19 @@
 const { expect } = require('chai');
 
 const { getTextUiComponentCatalog } = require('../../out/core/component-catalog.js');
-const { BUILT_IN_COMPONENTS } = require('../../out/components/definitions/built-in-components.js');
+const { COMPONENT_DEFINITIONS } = require('../../out/components/definitions/component-definitions.js');
 
+/**
+ * MCP / core `getTextUiComponentCatalog` の不変条件（T-20260321-015）。
+ * descriptor（COMPONENT_DEFINITIONS）と同じ順・同じ件数で、名前の重複があれば CI で落ちる。
+ */
 describe('core component catalog', () => {
-  it('returns one entry per built-in component with unique names', () => {
+  it('matches COMPONENT_DEFINITIONS order and rejects duplicate names (T-20260321-015)', () => {
     const catalog = getTextUiComponentCatalog();
-    expect(catalog).to.have.lengthOf(BUILT_IN_COMPONENTS.length);
-    const names = catalog.map(entry => entry.name);
-    expect(new Set(names).size).to.equal(names.length);
-    BUILT_IN_COMPONENTS.forEach((name) => {
-      expect(names.filter(n => n === name).length).to.equal(1);
-    });
+    const names = catalog.map((entry) => entry.name);
+    const expectedNames = COMPONENT_DEFINITIONS.map((d) => d.name);
+    expect(names).to.deep.equal(expectedNames);
+    expect(new Set(names).size, 'duplicate component name in catalog').to.equal(names.length);
   });
 
   it('includes Link definition for MCP catalog consumers', () => {
