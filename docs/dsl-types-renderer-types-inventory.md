@@ -5,8 +5,73 @@
 ## 概要
 
 - **正本（canonical）**: `src/domain/dsl-types.ts` に定義される共有 DSL 型（`TextUIDSL` / `ComponentDef` 等）。
-- **現状（2026-03-21 Sprint 1 ガード更新）**: `src/renderer/types.ts` は **`domain/dsl-types` の再エクスポート**のみ。`src/renderer/**` 外と `tests/**` からの `renderer/types` import は **ゼロ**を維持する（T-128/129）。
+- **現状（2026-03-22）**: `src/renderer/types.ts` は **`domain/dsl-types` の再エクスポート**のみ。`scripts/check-dsl-type-imports.cjs` では **`renderer/types` 形式の import は 0 件**（`from '...renderer/types'` / 相対で `renderer/types` を含む import の総数）。非 renderer からの `renderer/types` 依存は **ゼロ**を維持する（T-128/129）。
 - **移行の狙い**: 共有 DSL 契約は **domain を経由**し、非 renderer からの `renderer/types` 依存を **ゼロで維持**する。
+
+## `npm run check:dsl-types-ssot` スナップショット（正本・2026-03-22）
+
+以下は **`npm run check:dsl-types-ssot`**（`scripts/check-dsl-type-imports.cjs`）の標準出力を **そのまま転記**したもの。棚卸し Markdown の「現況」は **本節と矛盾しない**ように保つ（差分が出たら [棚卸し文書の更新手順](#棚卸し文書の更新手順)）。
+
+```
+DSL type import inventory
+- domain/dsl-types imports: 44
+- renderer/types imports: 0
+
+Files importing domain/dsl-types:
+  - src/cli/exporter-runner.ts (1)
+  - src/cli/openapi/dsl-builder.ts (1)
+  - src/cli/openapi/types.ts (1)
+  - src/cli/provider-registry.ts (1)
+  - src/cli/theme-token-resolver.ts (1)
+  - src/cli/types.ts (1)
+  - src/core/textui-core-component-builder.ts (1)
+  - src/core/textui-core-engine-domain.ts (1)
+  - src/core/textui-core-engine-format.ts (1)
+  - src/core/textui-core-engine-io.ts (1)
+  - src/core/textui-core-engine.ts (1)
+  - src/core/textui-core-helpers.ts (1)
+  - src/dsl/load-dsl-with-includes.ts (1)
+  - src/exporters/base-component-renderer.ts (1)
+  - src/exporters/export-manager.ts (1)
+  - src/exporters/export-optimizing-executor.ts (1)
+  - src/exporters/export-pipeline.ts (1)
+  - src/exporters/export-types.ts (1)
+  - src/exporters/html-exporter.ts (1)
+  - src/exporters/html-renderers/html-form-renderer.ts (1)
+  - src/exporters/html-renderers/html-layout-renderer.ts (1)
+  - src/exporters/html-renderers/html-renderer-utils.ts (1)
+  - src/exporters/html-renderers/html-textual-renderer.ts (1)
+  - src/exporters/metrics/diff-manager.ts (1)
+  - src/exporters/pug/pug-basic-templates.ts (1)
+  - src/exporters/pug/pug-form-fragments.ts (1)
+  - src/exporters/pug/pug-layout-templates.ts (1)
+  - src/exporters/pug-exporter.ts (1)
+  - src/exporters/react-basic-renderer.ts (1)
+  - src/exporters/react-exporter.ts (1)
+  - src/exporters/react-form-control-templates.ts (1)
+  - src/exporters/react-static-export.ts (1)
+  - src/exporters/react-template-renderer.ts (1)
+  - src/exporters/svelte-exporter.ts (1)
+  - src/exporters/vue-exporter.ts (1)
+  - src/registry/dsl-component-codec.ts (1)
+  - src/renderer/types.ts (1)
+  - src/types/services.ts (1)
+  - src/types/webview.ts (1)
+  - src/utils/cache-manager.ts (1)
+  - src/utils/preview-capture/html-preparation.ts (1)
+  - src/utils/preview-capture.ts (1)
+  - src/utils/style-manager.ts (1)
+  - tests/unit/renderer-types-thin-facade.test.js (1)
+```
+
+### 棚卸し文書の更新手順
+
+1. リポジトリルートで `npm run check:dsl-types-ssot` を実行する（**exit 0** であること。違反があると exit 1）。
+2. 出力の **集計行**（`domain/dsl-types imports` / `renderer/types imports`）と **ファイル一覧**を、上記コードブロックを **丸ごと差し替え**る（日付見出し `（正本・YYYY-MM-DD）` も更新）。
+3. 本ページの「概要」箇条書きの **件数・方針**が、新しい集計と矛盾しないか確認する。
+4. 変更をコミットする。
+
+詳細は [MAINTAINER_GUIDE.md](MAINTAINER_GUIDE.md)（SSoT 正本導線）も参照。
 
 ## モジュール一覧（`renderer/types` を直接 import）
 
