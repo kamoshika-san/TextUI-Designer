@@ -6,10 +6,12 @@ import { PreviewYamlSourceResolver } from './preview-yaml-source-resolver';
 import { WebViewPreviewCacheManager } from './cache-manager';
 import { WebViewErrorHandler } from './webview-error-handler';
 import { ConfigManager } from '../../utils/config-manager';
-import { ErrorHandler } from '../../utils/error-handler';
 import { Logger } from '../../utils/logger';
 import { deliverPreviewPayload } from './preview-webview-deliver';
 import { PreviewUpdateSessionState, shouldBlockYamlSend } from './preview-update-session-state';
+import { parseValidateYamlForPreview } from './preview-parser-validator-port';
+import { lookupPreviewCacheData } from './preview-cache-port';
+import { applyPreviewFailurePolicy } from './preview-failure-policy';
 
 /**
  * YAML キャッシュのテスト観測口。単体テストは本オブジェクト経由で読み書きし、
@@ -22,9 +24,16 @@ export interface WebViewYamlCacheTestAdapter {
 }
 
 /**
- * リファクタリングされた WebViewUpdateManager（プレビュー更新のオーケストレーション）。
- * YAML の parse / validate・キャッシュ・**WebView への配信（postMessage）**は専用モジュールへ委譲。
- * 配信ペイロードの組み立てと postMessage は `preview-webview-deliver.ts`（deliver ポート）。
+ * プレビュー更新の **オーケストレーションのみ**（T-077 / T-093 / T-106）。
+ *
+ * 5 ポート（責務の所在）:
+ * - **SourceResolver**: `preview-yaml-source-resolver.ts`（`PreviewYamlSourceResolver`）
+ * - **PreviewParserValidator**: `preview-parser-validator-port.ts`（`parseValidateYamlForPreview`）
+ * - **PreviewCache**: `preview-cache-port.ts`（lookup）+ `WebViewPreviewCacheManager`（格納・メモリ）
+ * - **PreviewDelivery**: `preview-webview-deliver.ts`（`deliverPreviewPayload`）
+ * - **PreviewFailurePolicy**: `preview-failure-policy.ts`（`applyPreviewFailurePolicy`）
+ *
+ * 正本: `docs/preview-update-pipeline-ports.md`
  */
 export class WebViewUpdateManager {
   private lifecycleManager: WebViewLifecycleManager;
@@ -36,8 +45,6 @@ export class WebViewUpdateManager {
   private errorHandler: WebViewErrorHandler;
   private readonly session = new PreviewUpdateSessionState();
   private readonly logger = new Logger('WebViewUpdateManager');
-  private readonly isNamedError = (value: unknown, expectedName: string): value is Error =>
-    value instanceof Error && value.name === expectedName;
 
   constructor(lifecycleManager: WebViewLifecycleManager, schemaLoader?: YamlSchemaLoader) {
     this.lifecycleManager = lifecycleManager;
@@ -141,9 +148,13 @@ export class WebViewUpdateManager {
       const currentYaml = await this.yamlSourceResolver.resolveCurrentYamlForCache();
 
       this.previewUpdateCoordinator.setPhase(PreviewUpdatePhase.CacheLookup);
-      // キャッシュチェック（forceUpdateがtrueの場合はスキップ）
-      if (!forceUpdate && currentYaml) {
-        const cachedData = this.cacheManager.getCachedData(currentYaml.fileName, currentYaml.content);
+      if (currentYaml) {
+        const cachedData = lookupPreviewCacheData(
+          this.cacheManager,
+          currentYaml.fileName,
+          currentYaml.content,
+          forceUpdate
+        );
         if (cachedData) {
           this.previewUpdateCoordinator.setPhase(PreviewUpdatePhase.Delivering);
           deliverPreviewPayload(this.lifecycleManager, cachedData, currentYaml.fileName);
@@ -153,7 +164,10 @@ export class WebViewUpdateManager {
 
       // YAMLファイルを解析
       this.previewUpdateCoordinator.setPhase(PreviewUpdatePhase.Parsing);
-      const parsedResult = await this.yamlParser.parseYamlFile(currentYaml?.fileName || this.session.lastTuiFile);
+      const parsedResult = await parseValidateYamlForPreview(
+        this.yamlParser,
+        currentYaml?.fileName || this.session.lastTuiFile
+      );
       this.previewUpdateCoordinator.setPhase(PreviewUpdatePhase.Validating);
       this.session.lastTuiFile = parsedResult.fileName;
       
@@ -174,17 +188,10 @@ export class WebViewUpdateManager {
     } catch (error: unknown) {
       this.previewUpdateCoordinator.markFailed();
       console.error('[WebViewUpdateManager] YAML送信処理でエラーが発生しました:', error);
-      
-      // エラータイプに応じて適切なエラーハンドリング
-      if (this.isNamedError(error, 'YamlParseError')) {
-        this.errorHandler.sendParseError(error, this.session.lastTuiFile || '', '');
-      } else if (this.isNamedError(error, 'SchemaValidationError')) {
-        this.errorHandler.sendSchemaError(error, this.session.lastTuiFile || '', '');
-      } else if (this.isNamedError(error, 'FileSizeError')) {
-        this.errorHandler.sendFileSizeError(0, this.session.lastTuiFile || '');
-      } else {
-        ErrorHandler.showError('プレビューの更新に失敗しました', error);
-      }
+      applyPreviewFailurePolicy(error, {
+        errorHandler: this.errorHandler,
+        lastTuiFile: this.session.lastTuiFile || ''
+      });
     } finally {
       this.previewUpdateCoordinator.endPipeline();
       this.session.isUpdating = false;
