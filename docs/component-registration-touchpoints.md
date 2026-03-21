@@ -1,32 +1,35 @@
-# コンポーネント登録点の棚卸しと SSOT 案（T-116）
+# コンポーネント登録点の棚卸し（T-115 子・T-116）
 
-**親エピック**: Vault `T-20260321-115`（多層編集統合）。本稿は **第1子**として、built-in 相当のコンポーネントを追加・変更するときに触れうる **登録点**を列挙し、**正本候補（SSOT）**と **従属（生成・派生）**の整理案を示す。
+**目的**: ビルトイン相当のコンポーネントを追加・変更するときに触る **登録点**を一覧し、**正本候補（SSOT）**と **従属（生成・派生）**の境界案を共有する。実装の統合や codegen は **別チケット**（T-115 の後続子）で扱う。
 
-## 登録点一覧（現状）
+## 登録点マップ（現状）
 
-| 区分 | 主なファイル / モジュール | 役割 |
-|------|---------------------------|------|
-| **Descriptor 正本** | `src/components/definitions/component-descriptor-graph.ts`（`COMPONENT_DEFINITIONS`） | スキーマ参照・補完・MCP カタログ等の **単一グラフ**。 |
-| **Built-in 名の列挙** | `src/components/definitions/built-in-components.ts`（`BUILT_IN_COMPONENTS`） | 組み込み種別名のソース。`DSL_COMPONENT_KINDS` はここから導出（T-091）。 |
-| **Manifest / schema** | `package.json` contributes、`schemas/`、`COMPONENT_MANIFEST` 連携 | VS Code 拡張としての公開定義。 |
-| **Preview（WebView）** | `src/renderer/component-map.tsx`（built-in の React 登録） | プレビュー描画のレジストリ。`previewRendererKey`（descriptor）と対応。 |
-| **Exporter（形式別）** | `src/exporters/*`（HTML / React / Pug / Vue / Svelte 等）、`base-component-renderer.ts` | 出力ごとのハンドラ・テンプレート。`exporterRendererMethod`（descriptor）と対応。 |
-| **契約・整合テスト** | `tests/unit/component-contract-consistency.test.js` 等 | 上記の **閉じ方**を強制。 |
+| 領域 | 主なファイル / モジュール | 役割（要約） | SSOT 候補 |
+|------|----------------------------|--------------|-----------|
+| 名前の列挙 | `src/components/definitions/built-in-components.ts` | `BUILT_IN_COMPONENTS`（DSL 種別の根） | **強** — 名前の集合の起点 |
+| DSL 型・判別 | `src/domain/dsl-types.ts` | `ComponentDef` union・型ガード・`DSL_COMPONENT_KINDS` | **強** — ADR 0003 の型正本（`renderer/types` は再エクスポート） |
+| Descriptor グラフ | `src/components/definitions/component-definitions.ts` ほか | `COMPONENT_DESCRIPTIONS` / `COMPONENT_PROPERTIES` 等 | **強** — 補完・スキーマ参照の中枢 |
+| Exporter レンダラキー | `src/components/definitions/exporter-renderer-definitions.ts` | `previewRendererKey` / `exporterRendererMethod` | **中** — descriptor とペアで整合必須 |
+| WebView プレビュー | `src/renderer/component-map.tsx`、`src/renderer/components/*` | プレビュー用 React 登録 | **中** — 実行時登録はここ（理想は descriptor から機械導出） |
+| HTML / React / Pug / Svelte / Vue 出力 | `src/exporters/**` | 各フォーマットの描画分岐 | **従属** — シグネチャは基底＋定義に追従 |
+| トークンスタイル | `token-style-property-map.ts` 等 | トークン→CSS の対応 | **従属** — コンポーネント種別に依存 |
+| スキーマ JSON | `schemas/*`（生成） | YAML 検証 | **生成** — 定義から `npm run compile` で更新 |
+| 契約・回帰テスト | `tests/unit/*`（例: component contract、dsl-types-descriptor-sync） | 不変条件の固定 | **検証** — 正本同士の整合を保証 |
 
-## SSOT 案（移行の北極星）
+## SSOT 案（次スライス向け）
 
-1. **DSL / 型 / descriptor 周辺**は既存どおり **`domain/dsl-types` + `COMPONENT_DEFINITIONS`** を正とし、新規の `renderer/types` 直参照は **T-113 ガード**で増やさない。
-2. **Preview と Exporter の「どの実装が対応するか」**は、descriptor 上の **`previewRendererKey` / `exporterRendererMethod`** を **インデックス**とし、実装側レジストリは **機械的に追従**できる形へ寄せる（全面 codegen は不要・T-115 非スコープ）。
-3. **登録漏れの検知**は既存の **component contract** 系テストを正とし、新たな「登録表の単一由来」スライスでは **テストを先に拡張**してからデータを移す。
+1. **`BUILT_IN_COMPONENTS` + descriptor 1 行**を「論理コンポーネント ID」の正とし、プレビュー map・exporter 分岐を **同じキー空間**に載せる（漏れをテストで検知）。
+2. **`renderer/types` は `domain/dsl-types` の薄い窓口**に統一済み（T-117）。以降の import 移行は exporter / cli を Wave 単位で domain 直参照へ寄せる。
+3. **プレビュー登録**と **exporter メソッド列挙**の二重手書きをやめる方向なら、**descriptor または exporter-renderer 定義からの導出**を第2子チケット以降で検討（codegen 全面はスコープ外でも **単一モジュール集約**は可）。
 
-## 次スライス候補（子チケット用）
+## 次スライス候補（T-115 分割表との対応）
 
-- **スライス A**: `component-map` の登録キー集合と `COMPONENT_DEFINITIONS` の **機械的比較**を1テストにまとめる（漏れの早期検知）。
-- **スライス B**: exporter 側 dispatch テーブル（`T-20260321-051` 系）と descriptor の **rendererMethod** の差分を CI で可視化。
-- **スライス C**: `docs/新コンポーネント追加_修正箇所ガイド`（Vault Archive・T-054）を、上記 SSOT 案と **リンクで接続**する追記。
+- 行1「棚卸しと SSOT 案」→ **本ドキュメント**。
+- 行2 以降: preview 登録の単一由来化、exporter 側整合、契約テスト／ガイド更新 — **個別チケットで 1 コミット粒度**。
 
 ## 参照
 
-- 親チケット（Vault）: `T-20260321-115` / `2026-03-21_新コンポーネント追加_多層編集統合_エピック.md`
-- [exporter-boundary-guide.md](exporter-boundary-guide.md)
-- [export-webview-runtime-coupling-inventory.md](export-webview-runtime-coupling-inventory.md)
+- [adding-built-in-component.md](adding-built-in-component.md) — 手順チェックリスト
+- [component-add-contract.md](component-add-contract.md) — 追加時の契約（T-055）
+- [change-amplification-dsl.md](change-amplification-dsl.md)
+- ADR: `docs/adr/0003-dsl-types-canonical-source.md`
