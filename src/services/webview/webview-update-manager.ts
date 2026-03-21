@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { WebViewLifecycleManager } from './webview-lifecycle-manager';
 import { YamlParser, ParsedYamlResult, YamlSchemaLoader } from './yaml-parser';
 import { UpdateQueueManager } from './update-queue-manager';
+import { PreviewUpdateCoordinator, PreviewUpdatePhase } from './preview-update-coordinator';
 import { WebViewPreviewCacheManager } from './cache-manager';
 import { WebViewErrorHandler } from './webview-error-handler';
 import { ConfigManager } from '../../utils/config-manager';
@@ -17,6 +18,7 @@ export class WebViewUpdateManager {
   private lifecycleManager: WebViewLifecycleManager;
   private yamlParser: YamlParser;
   private updateQueueManager: UpdateQueueManager;
+  private previewUpdateCoordinator: PreviewUpdateCoordinator;
   private cacheManager: WebViewPreviewCacheManager;
   private errorHandler: WebViewErrorHandler;
   private lastTuiFile: string | undefined = undefined;
@@ -28,6 +30,7 @@ export class WebViewUpdateManager {
     this.lifecycleManager = lifecycleManager;
     this.yamlParser = new YamlParser(schemaLoader);
     this.updateQueueManager = new UpdateQueueManager();
+    this.previewUpdateCoordinator = new PreviewUpdateCoordinator();
     this.cacheManager = new WebViewPreviewCacheManager();
     this.errorHandler = new WebViewErrorHandler(lifecycleManager);
   }
@@ -117,21 +120,27 @@ export class WebViewUpdateManager {
     }
 
     this.isUpdating = true;
+    this.previewUpdateCoordinator.beginPipeline();
 
     try {
+      this.previewUpdateCoordinator.setPhase(PreviewUpdatePhase.ResolvingSource);
       const currentYaml = await this.resolveCurrentYamlForCache();
 
+      this.previewUpdateCoordinator.setPhase(PreviewUpdatePhase.CacheLookup);
       // キャッシュチェック（forceUpdateがtrueの場合はスキップ）
       if (!forceUpdate && currentYaml) {
         const cachedData = this.cacheManager.getCachedData(currentYaml.fileName, currentYaml.content);
         if (cachedData) {
+          this.previewUpdateCoordinator.setPhase(PreviewUpdatePhase.Delivering);
           this.sendMessageToWebView(cachedData, currentYaml.fileName);
           return;
         }
       }
 
       // YAMLファイルを解析
+      this.previewUpdateCoordinator.setPhase(PreviewUpdatePhase.Parsing);
       const parsedResult = await this.yamlParser.parseYamlFile(currentYaml?.fileName || this.lastTuiFile);
+      this.previewUpdateCoordinator.setPhase(PreviewUpdatePhase.Validating);
       this.lastTuiFile = parsedResult.fileName;
       
       // キャッシュに保存
@@ -142,12 +151,14 @@ export class WebViewUpdateManager {
       );
 
       // WebViewにデータを送信
+      this.previewUpdateCoordinator.setPhase(PreviewUpdatePhase.Delivering);
       this.sendMessageToWebView(parsedResult.data, parsedResult.fileName);
 
       // メモリ使用量をチェック
       this.cacheManager.checkMemoryUsage();
 
     } catch (error: unknown) {
+      this.previewUpdateCoordinator.markFailed();
       console.error('[WebViewUpdateManager] YAML送信処理でエラーが発生しました:', error);
       
       // エラータイプに応じて適切なエラーハンドリング
@@ -161,6 +172,7 @@ export class WebViewUpdateManager {
         ErrorHandler.showError('プレビューの更新に失敗しました', error);
       }
     } finally {
+      this.previewUpdateCoordinator.endPipeline();
       this.isUpdating = false;
     }
   }
@@ -270,6 +282,11 @@ export class WebViewUpdateManager {
    */
   getQueueStatus() {
     return this.updateQueueManager.getQueueStatus();
+  }
+
+  /** プレビュー更新パイプラインの現在フェーズ（デバッグ・テスト用） */
+  getPreviewUpdatePhase(): PreviewUpdatePhase {
+    return this.previewUpdateCoordinator.getPhase();
   }
 
   /**
