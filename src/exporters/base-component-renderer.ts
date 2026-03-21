@@ -157,13 +157,16 @@ export abstract class BaseComponentRenderer implements Exporter {
   }
 
   /**
-   * FormActionのレンダリング
+   * FormActionのレンダリング（FormField と同様に decode + Map ディスパッチ）
    */
   protected renderFormAction(action: FormAction, index: number): string {
-    if (action.Button) {
-      const handler = this.componentHandlers.get('Button');
+    const decoded = decodeDslComponent(action as unknown);
+    const name = decoded.value?.name;
+    const props = decoded.value?.props;
+    if (name && props !== undefined) {
+      const handler = this.componentHandlers.get(name);
       if (handler) {
-        return handler(action.Button, index);
+        return handler(props, index);
       }
     }
     return '';
