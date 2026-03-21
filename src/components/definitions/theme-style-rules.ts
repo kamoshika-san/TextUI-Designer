@@ -26,9 +26,10 @@ export type ThemeStyleRuleBlock = {
 };
 
 /**
- * theme-style-builder が生成する “セレクタ付き上書きCSS” の単一情報源。
+ * セレクタと宣言の「定義データ」。
+ * 値の解決（varKey/fallback/raw -> CSS 文字列）は `ThemeStyleResolver` が担う。
  * - :root の CSS変数宣言（値）は ThemeUtils/ThemeManager 側が生成
- * - ここは「どのセレクタに対して、どの var key を参照して上書きするか」を保持する
+ * - ここは「どのセレクタに何を適用するか」だけを保持する
  */
 export const THEME_STYLE_RULE_BLOCKS: readonly ThemeStyleRuleBlock[] = [
   {
