@@ -1,5 +1,5 @@
-import * as YAML from 'yaml';
 import Ajv, { type ErrorObject } from 'ajv';
+import { parseYamlTextAsync } from '../../dsl/yaml-parse-async';
 import type { ISchemaManager, SchemaDefinition } from '../../types';
 
 export type ValidationSchemaKind = 'main' | 'template' | 'theme';
@@ -32,7 +32,7 @@ export class DiagnosticValidationEngine {
     const now = Date.now();
 
     try {
-      const yaml = await this.parseYamlAsync(text);
+      const yaml = await parseYamlTextAsync(text);
       const schema = await this.getSchema(schemaKind, now);
 
       const validate = this.getAjv().compile(schema);
@@ -64,18 +64,6 @@ export class DiagnosticValidationEngine {
       theme: 0
     };
     this.ajvInstance = null;
-  }
-
-  private async parseYamlAsync(text: string): Promise<unknown> {
-    return await new Promise((resolve, reject) => {
-      setImmediate(() => {
-        try {
-          resolve(YAML.parse(text));
-        } catch (error) {
-          reject(error);
-        }
-      });
-    });
   }
 
   private getAjv(): Ajv {

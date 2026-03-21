@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import * as YAML from 'yaml';
 import { ErrorObject } from 'ajv';
+import { parseYamlTextAsync } from '../../dsl/yaml-parse-async';
 import { SchemaDefinition } from '../../types';
 import { PerformanceMonitor } from '../../utils/performance-monitor';
 import { YamlContentReader } from './yaml-content-reader';
@@ -85,16 +85,7 @@ export class YamlParser {
    */
   private async parseYamlContent(yamlContent: string, fileName: string): Promise<unknown> {
     try {
-      return await new Promise((resolve, reject) => {
-        setImmediate(() => {
-          try {
-            const parsed = YAML.parse(yamlContent);
-            resolve(parsed);
-          } catch (error) {
-            reject(error);
-          }
-        });
-      });
+      return await parseYamlTextAsync(yamlContent);
     } catch (parseError) {
       console.error('[YamlParser] YAMLパースエラー:', parseError);
       throw this.createParseError(parseError, yamlContent, fileName);

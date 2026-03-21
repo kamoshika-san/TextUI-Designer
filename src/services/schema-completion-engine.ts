@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import * as YAML from 'yaml';
+import { parseYamlTextAsync } from '../dsl/yaml-parse-async';
 import { COMPONENT_DEFINITIONS } from '../components/definitions/component-definitions';
 import { COMPONENT_PROPERTIES } from './completion-component-catalog';
 import { CompletionAnalysisContext } from './completion-context-analyzer';
@@ -20,16 +20,7 @@ export class SchemaCompletionEngine {
   };
 
   async parseYamlForSyntaxValidation(text: string): Promise<void> {
-    await new Promise<void>((resolve, reject) => {
-      setImmediate(() => {
-        try {
-          YAML.parse(text);
-          resolve();
-        } catch (error) {
-          reject(error);
-        }
-      });
-    });
+    await parseYamlTextAsync(text);
   }
 
   generateCompletionItemsFromDescriptors(context: CompletionAnalysisContext): vscode.CompletionItem[] {
