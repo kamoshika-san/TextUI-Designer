@@ -2,6 +2,10 @@
 
 新しい **組み込みコンポーネント** を追加するときに触る主なファイル・手順の入口。**5 要素を 1 セットとする契約**は [component-add-contract.md](component-add-contract.md)（T-055）。ここは **迷わず一覧**できることを目的とする。
 
+## Obsidian / PM 用チケットテンプレ（Vault）
+
+**TextUI-Designer-Doc** Vault を使う場合は、`Tasks/Template/新built-in追加チケット-template.md` を複製して起票する（**spec / preview / export（または明示 unsupported）/ sample / tests** をチェックリストに固定。T-187）。索引は Vault 内 `Tasks/Template/README.md`。
+
 ## 前提
 
 - 型・descriptor・スキーマ・プレビュー・エクスポートの **いずれかだけ更新すると** 実行時・CI・補完で不整合になる。
