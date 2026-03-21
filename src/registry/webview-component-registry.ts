@@ -1,12 +1,15 @@
 import type { Key, ReactNode } from 'react';
+import type { BuiltInComponentName } from '../components/definitions/built-in-components';
 
 export type WebViewComponentRenderer = (props: Record<string, unknown>, key: Key) => ReactNode;
 
 const webViewComponentMap = new Map<string, WebViewComponentRenderer>();
 
 /**
- * WebViewコンポーネントレンダラーを登録
+ * WebViewコンポーネントレンダラーを登録（組み込み名は `BuiltInComponentName` でキー不一致を検知しやすくする）
  */
+export function registerWebViewComponent(name: BuiltInComponentName, renderer: WebViewComponentRenderer): void;
+export function registerWebViewComponent(name: string, renderer: WebViewComponentRenderer): void;
 export function registerWebViewComponent(name: string, renderer: WebViewComponentRenderer): void {
   webViewComponentMap.set(name, renderer);
 }

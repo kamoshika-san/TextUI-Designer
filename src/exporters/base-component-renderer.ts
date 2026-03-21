@@ -27,6 +27,7 @@ import type {
   IconComponent
 } from '../renderer/types';
 import type { ExportOptions, Exporter } from './export-types';
+import type { ExporterRendererMethod } from '../components/definitions/types';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';
 import { getComponentName } from '../registry/component-registry';
 import { COMPONENT_DEFINITIONS } from '../components/definitions/component-definitions';
@@ -64,8 +65,65 @@ export abstract class BaseComponentRenderer implements Exporter {
   protected initializeHandlers(): void {
     for (const def of COMPONENT_DEFINITIONS) {
       const method = def.exporterRendererMethod;
-      // renderXxx はサブクラス実装（protected abstract）なので、実行時参照でディスパッチする
-      this.componentHandlers.set(def.name, (props, key) => (this as any)[method](props, key));
+      this.componentHandlers.set(def.name, (props, key) =>
+        this.dispatchExporterRenderer(method, props, key)
+      );
+    }
+  }
+
+  /**
+   * `ExporterRendererMethod` と `renderXxx` 実装をコンパイル時に対応付ける（`(this as any)[method]` を排除）。
+   */
+  protected dispatchExporterRenderer(method: ExporterRendererMethod, props: unknown, key: number): string {
+    switch (method) {
+      case 'renderText':
+        return this.renderText(props as TextComponent, key);
+      case 'renderInput':
+        return this.renderInput(props as InputComponent, key);
+      case 'renderButton':
+        return this.renderButton(props as ButtonComponent, key);
+      case 'renderCheckbox':
+        return this.renderCheckbox(props as CheckboxComponent, key);
+      case 'renderRadio':
+        return this.renderRadio(props as RadioComponent, key);
+      case 'renderSelect':
+        return this.renderSelect(props as SelectComponent, key);
+      case 'renderDatePicker':
+        return this.renderDatePicker(props as DatePickerComponent, key);
+      case 'renderDivider':
+        return this.renderDivider(props as DividerComponent, key);
+      case 'renderSpacer':
+        return this.renderSpacer(props as SpacerComponent, key);
+      case 'renderAlert':
+        return this.renderAlert(props as AlertComponent, key);
+      case 'renderContainer':
+        return this.renderContainer(props as ContainerComponent, key);
+      case 'renderForm':
+        return this.renderForm(props as FormComponent, key);
+      case 'renderAccordion':
+        return this.renderAccordion(props as AccordionComponent, key);
+      case 'renderTabs':
+        return this.renderTabs(props as TabsComponent, key);
+      case 'renderTreeView':
+        return this.renderTreeView(props as TreeViewComponent, key);
+      case 'renderTable':
+        return this.renderTable(props as TableComponent, key);
+      case 'renderLink':
+        return this.renderLink(props as LinkComponent, key);
+      case 'renderBreadcrumb':
+        return this.renderBreadcrumb(props as BreadcrumbComponent, key);
+      case 'renderBadge':
+        return this.renderBadge(props as BadgeComponent, key);
+      case 'renderProgress':
+        return this.renderProgress(props as ProgressComponent, key);
+      case 'renderImage':
+        return this.renderImage(props as ImageComponent, key);
+      case 'renderIcon':
+        return this.renderIcon(props as IconComponent, key);
+      default: {
+        const _exhaustive: never = method;
+        return _exhaustive;
+      }
     }
   }
 
