@@ -5,7 +5,16 @@ import tsParser from "@typescript-eslint/parser";
  * 方針（T-20260320-025）:
  * - 命名・表記ゆれは warn（`npm run lint` は `--max-warnings 0` のため実質ゼロ警告維持）
  * - `console.*` の統一・禁止レベルは T-20260320-020 側。ここではルールを足さず、意図のみコメントで明示
+ *
+ * T-101: `src/domain` / `src/services` / `src/components` では `renderer/types` への新規依存を抑止（緑field レーン）。
  */
+const rendererTypesImportRestriction = ["warn", {
+    patterns: [{
+        group: ["**/renderer/types", "**/renderer/types.ts"],
+        message: "Use `src/domain/dsl-types.ts` for shared DSL types. Do not add new imports from `renderer/types` under domain/services/components (T-101).",
+    }],
+}];
+
 export default [{
     files: ["**/*.ts"],
 }, {
@@ -54,5 +63,18 @@ export default [{
         eqeqeq: ["warn", "smart"],
         "no-throw-literal": "warn",
         semi: "warn",
+    },
+}, {
+    files: ["src/domain/**/*.ts", "src/services/**/*.ts", "src/components/**/*.ts"],
+    plugins: {
+        "@typescript-eslint": typescriptEslint,
+    },
+    languageOptions: {
+        parser: tsParser,
+        ecmaVersion: 2022,
+        sourceType: "module",
+    },
+    rules: {
+        "no-restricted-imports": rendererTypesImportRestriction,
     },
 }];
