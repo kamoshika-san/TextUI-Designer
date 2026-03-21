@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import { type CaptureLog, type PreviewCaptureResult } from './shared';
 
+// webpack が注入するグローバル（名前は固定）
+// eslint-disable-next-line @typescript-eslint/naming-convention -- 上記の識別子名に合わせる
 declare const __non_webpack_require__: NodeRequire | undefined;
 
 type PuppeteerLaunchOptions = {
