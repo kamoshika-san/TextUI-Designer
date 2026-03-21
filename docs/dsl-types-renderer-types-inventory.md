@@ -1,6 +1,6 @@
 # `src/renderer/types.ts` 直接参照の棚卸し（2026-03）
 
-方針の正本は [ADR 0003: DSL 型の正本と層境界](adr/0003-dsl-types-canonical-source.md)。本書は **移行計画のための一覧**であり、本チケットでは import 変更を行わない。
+方針の正本は [ADR 0003: DSL 型の正本と層境界](adr/0003-dsl-types-canonical-source.md)。本書は **移行計画のための一覧**と、実施済みスライスの **記録**（下記セクション）を兼ねる。
 
 ## 概要
 
@@ -36,3 +36,7 @@
 
 - **実施済み**: `src/core/textui-core-engine-domain.ts` の `TextUIDSL` import を `domain/dsl-types` に寄せた。
 - **次候補（棚卸し表の Core 行より）**: 同ディレクトリの `textui-core-engine.ts` / `textui-core-engine-io.ts` など、**1〜2 ファイル単位**で順次（別チケット・PM 割当）。
+
+## T-105（第2スライス・2026-03-21）
+
+- **`textui-core-engine.ts`** / **`textui-core-engine-io.ts`**: `TextUIDSL` の import を **`../domain/dsl-types`** に変更（`renderer/types` への直接依存を 2 ファイル分削減）。

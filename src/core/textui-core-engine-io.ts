@@ -1,4 +1,4 @@
-import type { TextUIDSL } from '../renderer/types';
+import type { TextUIDSL } from '../domain/dsl-types';
 import { getSupportedProviderNames, runExport } from '../cli/exporter-runner';
 import { validateDsl } from '../cli/validator';
 import { previewSchemaValue } from './textui-core-helpers';

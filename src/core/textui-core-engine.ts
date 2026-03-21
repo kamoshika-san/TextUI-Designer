@@ -1,5 +1,5 @@
 import type { ValidationIssue } from '../cli/types';
-import type { TextUIDSL } from '../renderer/types';
+import type { TextUIDSL } from '../domain/dsl-types';
 import { getTextUiComponentCatalog, type TextUIComponentCatalogEntry } from './component-catalog';
 import { TextUiCoreComponentBuilder, getComponentSpecHandlerFlagsForTesting, getComponentSpecTypesForTesting } from './textui-core-component-builder';
 import { buildGenerateUiDsl, buildExplainErrorResponseDomain, normalizeDslDomain } from './textui-core-engine-domain';
