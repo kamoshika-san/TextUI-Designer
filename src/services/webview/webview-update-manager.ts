@@ -12,6 +12,16 @@ import { deliverPreviewPayload } from './preview-webview-deliver';
 import { PreviewUpdateSessionState, shouldBlockYamlSend } from './preview-update-session-state';
 
 /**
+ * YAML キャッシュのテスト観測口。単体テストは本オブジェクト経由で読み書きし、
+ * `_getYamlCacheContent` 等を直接呼ばない（T-104）。
+ */
+export interface WebViewYamlCacheTestAdapter {
+  getYamlCacheContent(): string;
+  clearYamlCache(): void;
+  setYamlCacheContent(content: string): void;
+}
+
+/**
  * リファクタリングされた WebViewUpdateManager（プレビュー更新のオーケストレーション）。
  * YAML の parse / validate・キャッシュ・**WebView への配信（postMessage）**は専用モジュールへ委譲。
  * 配信ペイロードの組み立てと postMessage は `preview-webview-deliver.ts`（deliver ポート）。
@@ -203,24 +213,25 @@ export class WebViewUpdateManager {
   }
 
   /**
-   * テスト用: YAMLキャッシュ内容を取得
+   * YAML キャッシュを単体テストから観測するためのアダプタ。テストはここ経由のみを使用する。
    */
-  _getYamlCacheContent(): string {
+  createYamlCacheTestAdapter(): WebViewYamlCacheTestAdapter {
+    return {
+      getYamlCacheContent: () => this.readYamlCacheContentForTest(),
+      clearYamlCache: () => this.clearYamlCacheForTest(),
+      setYamlCacheContent: (content: string) => this.setYamlCacheContentForTest(content),
+    };
+  }
+
+  private readYamlCacheContentForTest(): string {
     return this.cacheManager._getCacheContent(this.session.lastTuiFile || '') || '';
   }
 
-  /**
-   * テスト用: YAMLキャッシュをクリア
-   */
-  _clearYamlCache(): void {
+  private clearYamlCacheForTest(): void {
     this.cacheManager._clearCache();
   }
 
-  /**
-   * テスト用: YAMLキャッシュ内容を設定
-   */
-  _setYamlCacheContent(content: string): void {
-    // テスト用のダミーデータをキャッシュに設定
+  private setYamlCacheContentForTest(content: string): void {
     this.session.lastTuiFile = 'test.tui.yml';
     this.cacheManager.setCachedData('test.tui.yml', content, content);
   }
@@ -252,13 +263,13 @@ export class WebViewUpdateManager {
   }
 
   /**
-   * テスト用: lastYamlContent へのアクセサ
+   * テスト用: lastYamlContent へのアクセサ（内部は createYamlCacheTestAdapter と同じ経路）
    */
   get lastYamlContent(): string {
-    return this._getYamlCacheContent();
+    return this.readYamlCacheContentForTest();
   }
   set lastYamlContent(content: string) {
-    this._setYamlCacheContent(content);
+    this.setYamlCacheContentForTest(content);
   }
 
   /**
