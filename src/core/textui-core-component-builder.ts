@@ -1,3 +1,7 @@
+/**
+ * 共有 DSL 型（例: `ComponentDef`）の import は **`domain/dsl-types` を正本**とする（SSoT）。
+ * 非 renderer から `renderer/types` を経由しない（スライス T-20260322-163）。
+ */
 import type { ComponentDef } from '../domain/dsl-types';
 import { getTextUiComponentCatalog } from './component-catalog';
 import type { ComponentBlueprint, TreeViewBlueprintItem } from './textui-core-engine';
