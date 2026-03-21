@@ -1,4 +1,3 @@
-import * as vscode from 'vscode';
 import path from 'path';
 import { ConfigManager } from '../../utils/config-manager';
 import { PerformanceMonitor } from '../../utils/performance-monitor';
@@ -64,6 +63,8 @@ export function createVscodeExportPerformWrite(
   const performanceMonitor = PerformanceMonitor.getInstance();
   return async (filePath: string, format: string, outputFsPath: string) => {
     await performanceMonitor.measureExportTime(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- テストの require フックと整合（モジュール先頭の import だと束縛が古くなる場合がある）
+      const vscode = require('vscode') as typeof import('vscode');
       const content = await exportManager.exportFromFile(filePath, {
         format,
         outputPath: outputFsPath,
