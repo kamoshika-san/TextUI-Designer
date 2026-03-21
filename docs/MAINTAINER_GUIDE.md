@@ -15,6 +15,7 @@
 | [quality-gate-green-main.md](quality-gate-green-main.md) | ローカルで緑にしてから push/PR する運用（フェーズ 0） |
 | [ci-quality-gate.md](ci-quality-gate.md) | CI ジョブ・`test:all:ci`・branch protection の対応 |
 | [observability-and-cache-boundary.md](observability-and-cache-boundary.md) | 公開 API と観測・キャッシュ実装の**横断**境界（内側に閉じる方針） |
+| [architecture-review-F-boundary-roadmap.md](architecture-review-F-boundary-roadmap.md) | **ロードマップ F 正本索引**（4 境界・導入候補 IF・やらないこと）。[import-boundaries-4-lanes.md](import-boundaries-4-lanes.md)（T-110）と相互リンク |
 | [dsl-types-renderer-types-inventory.md](dsl-types-renderer-types-inventory.md) | `renderer/types` 直接参照の棚卸し（移行計画用） |
 | [test-setup-policy.md](test-setup-policy.md) | `tests/setup.js` とグローバルフックへの **新規依存を増やさない** 方針（注入優先） |
 | [package-contributes-policy.md](package-contributes-policy.md) | `package.json` の `contributes` 肥大を抑えるための **カテゴリ・生成・設定の分離**（方針のみ） |
