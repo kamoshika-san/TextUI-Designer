@@ -7,17 +7,18 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import type { ComponentDef } from '../domain/dsl-types';
 import { createComponentKeys } from '../renderer/preview-diff';
 import { renderRegisteredComponent } from '../renderer/component-map';
+import { getStaticHtmlRenderContext } from './static-html-render-adapter';
 
 /**
  * DSL の page.components を受け取り、WebView と同じルート（padding のみ、ThemeToggle/ExportButton なし）
  * で React ツリーを組み立て、renderToStaticMarkup で HTML 文字列を返す。
+ * プレビュー固有の jump-to-DSL 文脈はアダプタ経由で渡さない（T-194）。
  */
 export function renderPageComponentsToStaticHtml(components: ComponentDef[]): string {
   const componentKeys = createComponentKeys(components);
+  const staticCtx = getStaticHtmlRenderContext();
   const children = components.map((comp, i) =>
-    renderRegisteredComponent(comp, componentKeys[i] ?? i, {
-      dslPath: `/page/components/${i}`
-    })
+    renderRegisteredComponent(comp, componentKeys[i] ?? i, staticCtx)
   );
 
   return renderToStaticMarkup(
