@@ -3,6 +3,8 @@
  * 拡張機能・CLI・exporter・core はここを参照する。WebView は `src/renderer/types.ts` 経由でも可。
  */
 
+import { BUILT_IN_COMPONENTS } from '../components/definitions/built-in-components';
+
 export type TextVariant = 'h1' | 'h2' | 'h3' | 'p' | 'small' | 'caption';
 export type TextSize = 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl';
 export type TextWeight = 'normal' | 'medium' | 'semibold' | 'bold';
@@ -410,33 +412,10 @@ export function isImageComponent(comp: ComponentDef): comp is { Image: ImageComp
 }
 
 /**
- * `ComponentDef` の判別キー（`BUILT_IN_COMPONENTS` と同一集合であること）。
- * 新コンポーネント追加時は定義グラフ・DSL 型の両方を更新する（change amplification 監視用）。
+ * `ComponentDef` の判別キー。正本は `built-in-components.ts` の `BUILT_IN_COMPONENTS`（T-20260321-091）。
+ * 新コンポーネント追加時は **同ファイルの列挙**を更新すれば DSL 側の集合も一致する。
  */
-export const DSL_COMPONENT_KINDS = [
-  'Text',
-  'Input',
-  'Button',
-  'Checkbox',
-  'Radio',
-  'Select',
-  'DatePicker',
-  'Divider',
-  'Spacer',
-  'Alert',
-  'Container',
-  'Form',
-  'Accordion',
-  'Tabs',
-  'TreeView',
-  'Table',
-  'Link',
-  'Breadcrumb',
-  'Badge',
-  'Progress',
-  'Image',
-  'Icon'
-] as const;
+export const DSL_COMPONENT_KINDS = BUILT_IN_COMPONENTS;
 
 export type DslComponentKind = (typeof DSL_COMPONENT_KINDS)[number];
 

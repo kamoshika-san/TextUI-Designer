@@ -7,7 +7,7 @@ const assert = require('assert');
  * 新ビルトインコンポーネント追加時の最小チェックリスト（手動・別チケットで拡張可）:
  * - `built-in-components.ts` の BUILT_IN_COMPONENTS
  * - `component-definitions.ts` / manifest / exporter-renderer 定義
- * - `src/domain/dsl-types.ts` の DSL_COMPONENT_KINDS と ComponentDef union
+ * - `dsl-types.ts` の `DSL_COMPONENT_KINDS` は `BUILT_IN_COMPONENTS` から導出（重複列挙なし・T-091）。ComponentDef union は別途
  */
 describe('DSL types vs descriptor (change amplification)', () => {
   const { DSL_COMPONENT_KINDS } = require('../../out/domain/dsl-types');
