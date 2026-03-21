@@ -25,6 +25,11 @@
 
 - 本ドキュメントは **即時のフック削除**を求めない（チケットスコープ外）。縮小・整理は **別チケット**で計画する。
 
+## 第1スライス例（T-095）
+
+- **`tests/unit/schema-manager.test.js`**: テストファイル内の **`Module.prototype.require` 上書きを撤去**し、`tests/setup.js` が提供する `require('vscode')`（`tests/mocks/vscode-mock.js`）に統一。`vscode.ExtensionContext` がモックに無いため、**コンストラクタ引数に必要な最小クラスだけ**をテスト側で `TestExtensionContext` として定義（新規フックは増やさない）。
+- **次の一手**: 同様に、単体テスト内で `originalRequire` を保存しているファイルを **factory / 明示モック**へ段階的に移す。
+
 ## 参照
 
 - `tests/setup.js`

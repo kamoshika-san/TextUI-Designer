@@ -3,38 +3,16 @@ const path = require('path');
 const fs = require('fs');
 const { expect } = require('chai');
 
-// VSCode APIのモック
-// グローバルなyamlConfigStubとjsonConfigStubの宣言は削除します。
-// これらはbeforeEach内で毎回新しく作成し、thisに設定します。
-const vscode = {
-  ExtensionContext: class {
-    constructor() {
-      this.extensionPath = __dirname; // テスト用にカレントディレクトリ
-      this.subscriptions = [];
-    }
-  },
-  Uri: {
-    file: (filePath) => ({ toString: () => `file://${filePath}` })
-  },
-  workspace: {
-    getConfiguration: () => {},
-  },
-  ConfigurationTarget: {
-    Global: 1,
-    Workspace: 2,
-    WorkspaceFolder: 3
-  }
-};
+// tests/setup.js 経由の vscode モックを使用（本ファイル専用の Module.prototype.require フックは置かない）
+const vscode = require('vscode');
 
-// vscodeモジュールをグローバルにモック
-const Module = require('module');
-const originalRequire = Module.prototype.require;
-Module.prototype.require = function(id) {
-  if (id === 'vscode') {
-    return vscode;
+/** SchemaManager が要求する最小の ExtensionContext（vscode-mock に無いためローカル） */
+class TestExtensionContext {
+  constructor() {
+    this.extensionPath = __dirname;
+    this.subscriptions = [];
   }
-  return originalRequire.apply(this, arguments);
-};
+}
 
 // テスト用の最小限schema.json
 const testSchemaPath = path.join(__dirname, 'schemas', 'schema.json');
@@ -82,12 +60,10 @@ describe('SchemaManager', () => {
     if (fs.existsSync(testTemplateSchemaPath)) fs.unlinkSync(testTemplateSchemaPath);
     if (fs.existsSync(testThemeSchemaPath)) fs.unlinkSync(testThemeSchemaPath);
     if (fs.existsSync(path.dirname(testSchemaPath))) fs.rmdirSync(path.dirname(testSchemaPath));
-    // モックを復元
-    Module.prototype.require = originalRequire;
   });
 
   beforeEach(function () {
-    mockContext = new vscode.ExtensionContext();
+    mockContext = new TestExtensionContext();
 
     // スタブをbeforeEachのスコープで作成し、thisに割り当てる
     this.yamlConfigStub = { get: sinon.stub().returns({}), update: sinon.stub().resolves() };
