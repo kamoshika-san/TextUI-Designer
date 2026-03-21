@@ -1,9 +1,9 @@
 /**
- * 互換レイヤ: 既存 import を壊さないための re-export
+ * 互換レイヤ（registry）: 既存 import を壊さないための re-export 集約。
  *
- * NOTE: コンポーネントのメタ情報（name/description/properties/schemaRef）の単一ソースは
- * `src/components/definitions/` 側へ移動した。
- * `getComponentSchemaRefs` の実装は `src/services/schema/schema-descriptor-selectors`（descriptor 直結）。
+ * - **新規コード**の参照先: `COMPONENT_DEFINITIONS`（`component-definitions`）、
+ *   schema の列挙は `src/services/schema/schema-descriptor-selectors`、VS Code 補完は `completion-component-catalog`。
+ * - **本ファイル**は compatibility のみ。新規機能ではここを経由せず、上記モジュールへ直接 import する。
  */
 import { BUILT_IN_COMPONENTS, type BuiltInComponentName } from '../components/definitions/built-in-components';
 import {

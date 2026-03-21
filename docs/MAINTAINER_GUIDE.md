@@ -13,8 +13,10 @@
 | MCP `capture_preview` | `src/mcp/tools/capture-preview-*` と `src/mcp/server.ts` | `npm run compile` + `npx mocha ... tests/unit/mcp-server.test.js` |
 | CommandManager の実行フロー | `src/services/commands/*` と `src/services/command-manager.ts` | `npm run compile` + `npx mocha ... tests/unit/command-manager.test.js` |
 | スキーマ登録・テンプレ生成（VS Code 設定連携） | `src/services/schema-manager.ts` + `src/services/schema/schema-template-generator.ts` + `src/services/schema/schema-workspace-registrar.ts` | `npm run compile` + `npx mocha ... tests/unit/schema-manager.test.js` |
+| JSON Schema の component.oneOf / descriptor 整合 | 列挙の正: `src/services/schema/schema-descriptor-selectors.ts`／registry は互換: `src/registry/component-manifest.ts` | `npm run compile` + `npx mocha ... tests/unit/schema-descriptor-consistency.test.js` |
 | React エクスポートのページ/フォーム断片 | `src/exporters/react-exporter.ts` + `react-export-page-template.ts` + `react-form-control-templates.ts`（既存 `react-basic-renderer` / `react-template-renderer` と併用） | `npm run compile` + `npx mocha ... tests/unit/react-exporter-template.test.js` ほか |
 | TextUI core engine 責務分割 | `src/core/textui-core-engine.ts` + `src/core/textui-core-engine-io.ts` + `src/core/textui-core-engine-domain.ts` + `src/core/textui-core-engine-format.ts` | `npm run compile` + `npx mocha ... tests/unit/textui-core-engine.test.js` |
+| DSL ドメイン型（ComponentDef / TextUIDSL） | 正本: `src/domain/dsl-types.ts`／WebView 互換: `src/renderer/types.ts`（re-export） | `npm run compile` + `npx mocha ... tests/unit/dsl-types-descriptor-sync.test.js`（[change amplification メモ](change-amplification-dsl.md)） |
 | サービス初期化順・cleanup（宣言フェーズ） | `src/services/service-runtime-phases.ts` + `src/services/service-initializer.ts` | `npm run compile` + `npx mocha ... tests/unit/service-initializer.test.js` + `extensibility-service-factories-contract.test.js`（詳細は `docs/service-registration.md`） |
 | 拡張 activate/deactivate の順序 | `src/services/extension-lifecycle-phases.ts` + `src/services/extension-lifecycle-manager.ts` | `npm run compile` + `npx mocha ... tests/unit/extension-lifecycle-phases.test.js`（全体は `docs/service-registration.md`） |
 
