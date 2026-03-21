@@ -10,6 +10,7 @@
 | コマンド一覧/メニュー | `src/services/command-catalog.ts`（[詳細](contributes-commands.md)） | `npm run sync:commands` → `npm run check:commands` |
 | `contributes` 整合性（snippets / yaml.schemas / menus参照） | `package.json` + `scripts/check-contributes-integrity.cjs` | `npm run check:contributes` |
 | プレビュー画像キャプチャ | `src/utils/preview-capture/*` | `npm run compile` + `npm run test:unit` |
+| キャッシュ（同名クラス注意） | **Exporter 用**: `src/utils/cache-manager.ts` の `CacheManager`（レンダリング結果キャッシュ）／**WebView プレビュー用**: `src/services/webview/cache-manager.ts` の `WebViewPreviewCacheManager`（YAML・解析結果）。import を取り違えないこと。 | `npm run compile` + 関連ユニットテスト |
 | MCP `capture_preview` | `src/mcp/tools/capture-preview-*` と `src/mcp/server.ts` | `npm run compile` + `npx mocha ... tests/unit/mcp-server.test.js` |
 | CommandManager の実行フロー | `src/services/commands/*` と `src/services/command-manager.ts` | `npm run compile` + `npx mocha ... tests/unit/command-manager.test.js` |
 | スキーマ登録・テンプレ生成（VS Code 設定連携） | `src/services/schema-manager.ts` + `src/services/schema/schema-template-generator.ts` + `src/services/schema/schema-workspace-registrar.ts` | `npm run compile` + `npx mocha ... tests/unit/schema-manager.test.js` |

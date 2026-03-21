@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { WebViewLifecycleManager } from './webview-lifecycle-manager';
 import { YamlParser, ParsedYamlResult, YamlSchemaLoader } from './yaml-parser';
 import { UpdateQueueManager } from './update-queue-manager';
-import { CacheManager } from './cache-manager';
+import { WebViewPreviewCacheManager } from './cache-manager';
 import { WebViewErrorHandler } from './webview-error-handler';
 import { ConfigManager } from '../../utils/config-manager';
 import { ErrorHandler } from '../../utils/error-handler';
@@ -17,7 +17,7 @@ export class WebViewUpdateManager {
   private lifecycleManager: WebViewLifecycleManager;
   private yamlParser: YamlParser;
   private updateQueueManager: UpdateQueueManager;
-  private cacheManager: CacheManager;
+  private cacheManager: WebViewPreviewCacheManager;
   private errorHandler: WebViewErrorHandler;
   private lastTuiFile: string | undefined = undefined;
   private isUpdating: boolean = false;
@@ -28,7 +28,7 @@ export class WebViewUpdateManager {
     this.lifecycleManager = lifecycleManager;
     this.yamlParser = new YamlParser(schemaLoader);
     this.updateQueueManager = new UpdateQueueManager();
-    this.cacheManager = new CacheManager();
+    this.cacheManager = new WebViewPreviewCacheManager();
     this.errorHandler = new WebViewErrorHandler(lifecycleManager);
   }
 
