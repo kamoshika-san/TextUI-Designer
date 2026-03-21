@@ -26,7 +26,6 @@ import { Badge } from './components/Badge';
 import { Progress } from './components/Progress';
 import { Image } from './components/Image';
 import { Icon } from './components/Icon';
-import { UnsupportedComponent } from './components/UnsupportedComponent';
 import type {
   ComponentDef,
   FormComponent,
@@ -62,11 +61,13 @@ import {
   registerWebViewComponent as registerRenderer,
   type WebViewComponentRenderer
 } from '../registry/webview-component-registry';
-
-interface RenderContext {
-  dslPath: string;
-  onJumpToDsl?: (dslPath: string, componentName: string) => void;
-}
+import type { RenderContext } from './render-context';
+import {
+  attachRenderContext,
+  createChildContext,
+  extractRenderContext
+} from './render-context';
+import { composeRegisteredComponent } from './registered-component-kernel';
 
 /** WebViewComponentRenderer の props を FormComponent として扱う（DSL 由来のため意図的なキャスト） */
 function toFormComponent(props: Record<string, unknown>): FormComponent {
@@ -233,79 +234,16 @@ function renderFormField(field: FormField, index: number, context?: RenderContex
 }
 
 /**
- * ComponentDefをレンダリング（Mapベースのディスパッチ）
- * webview.tsx から呼び出されるメイン関数
+ * ComponentDef をレンダリング（Map ベースのディスパッチ）。webview / 静的 HTML から利用。
+ * WebView は DSL コンポーネントキーの大小文字揺れを吸収しない（exact match のみ T-20260317-006）。
+ * 共有カーネル + プレビュー専用 jump 枠は composeRegisteredComponent（T-193）。
  */
-/**
- * WebView は DSL コンポーネントキーの大小文字揺れを吸収しない。
- * レンダラー探索は exact match のみとし、不一致は Unsupported 扱いとする。
- * （definitions 直参照・exact match のみ T-20260317-006）
- */
-function resolveRenderer(name: string | undefined): WebViewComponentRenderer | undefined {
-  if (!name) {
-    return undefined;
-  }
-  return getWebViewComponentRenderer(name);
-}
-
 export function renderRegisteredComponent(
   comp: ComponentDef,
   key: React.Key,
   context?: RenderContext
 ): React.ReactNode {
-  const decoded = decodeDslComponentObjectProps(comp);
-  const name = decoded.value?.name;
-  const props = decoded.value?.props;
-  const renderer = resolveRenderer(name);
-
-  if (name && props && renderer) {
-    const rendered = renderer(attachRenderContext(props, context), key);
-    return (
-      <div
-        key={key}
-        className="textui-jump-target"
-        title={context?.dslPath ? `Ctrl+Shift+クリックでDSLへジャンプ: ${context.dslPath}` : undefined}
-        onClick={(event) => {
-          if (!context?.dslPath || !context.onJumpToDsl || !name) {
-            return;
-          }
-          if (!(event.ctrlKey && event.shiftKey)) {
-            return;
-          }
-          event.preventDefault();
-          event.stopPropagation();
-          context.onJumpToDsl(context.dslPath, name);
-        }}
-      >
-        {rendered}
-      </div>
-    );
-  }
-
-  const fallback = (
-    <UnsupportedComponent key={key} componentName={name ?? 'Unknown'} props={props} />
-  );
-
-  if (context?.dslPath) {
-    return (
-      <div
-        key={key}
-        className="textui-jump-target"
-        title={`Ctrl+Shift+クリックでDSLへジャンプ: ${context.dslPath}`}
-        onClick={(event) => {
-          if (!context.onJumpToDsl || !name) return;
-          if (!(event.ctrlKey && event.shiftKey)) return;
-          event.preventDefault();
-          event.stopPropagation();
-          context.onJumpToDsl(context.dslPath, name);
-        }}
-      >
-        {fallback}
-      </div>
-    );
-  }
-
-  return fallback;
+  return composeRegisteredComponent(comp, key, context);
 }
 
 /**
@@ -315,46 +253,3 @@ export function registerWebViewComponent(name: string, renderer: WebViewComponen
   registerRenderer(name, renderer);
 }
 
-function attachRenderContext(
-  props: Record<string, unknown>,
-  context?: RenderContext
-): Record<string, unknown> {
-  if (!context) {
-    return props;
-  }
-  return {
-    ...props,
-    __renderContext: context
-  };
-}
-
-function extractRenderContext(props: unknown): RenderContext | undefined {
-  if (!props || typeof props !== 'object') {
-    return undefined;
-  }
-  const value = (props as Record<string, unknown>).__renderContext;
-  if (!value || typeof value !== 'object') {
-    return undefined;
-  }
-  const dslPath = (value as Record<string, unknown>).dslPath;
-  if (typeof dslPath !== 'string') {
-    return undefined;
-  }
-  const onJumpToDsl = (value as Record<string, unknown>).onJumpToDsl;
-  return {
-    dslPath,
-    onJumpToDsl: typeof onJumpToDsl === 'function'
-      ? (onJumpToDsl as (dslPath: string, componentName: string) => void)
-      : undefined
-  };
-}
-
-function createChildContext(parent: RenderContext | undefined, childPath: string): RenderContext | undefined {
-  if (!parent) {
-    return undefined;
-  }
-  return {
-    dslPath: childPath,
-    onJumpToDsl: parent.onJumpToDsl
-  };
-}
