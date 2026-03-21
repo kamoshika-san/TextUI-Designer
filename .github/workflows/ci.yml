@@ -76,6 +76,9 @@ jobs:
     - name: Check non-renderer SSoT meta guard
       run: npm run check:ssot:non-renderer
 
+    - name: Check exporter SSoT guards
+      run: npm run check:ssot:exporters
+
     - name: Run full CI test command
       run: npm run test:all:ci
 
@@ -109,6 +112,9 @@ jobs:
 
     - name: Check non-renderer SSoT meta guard
       run: npm run check:ssot:non-renderer
+
+    - name: Check exporter SSoT guards
+      run: npm run check:ssot:exporters
     
     - name: TypeScript strict checks (warning mode)
       if: vars.TS_STRICT_FAIL_MODE == 'false'
