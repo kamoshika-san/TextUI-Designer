@@ -1,8 +1,10 @@
 const assert = require('assert');
 const {
   decodeDslComponent,
+  decodeDslComponentAs,
   decodeDslComponentObjectProps,
-  decodeTextDslComponent
+  decodeTextDslComponent,
+  decodeButtonDslComponent
 } = require('../../out/registry/dsl-component-codec');
 
 describe('DslComponentCodec', () => {
@@ -51,6 +53,34 @@ describe('DslComponentCodec', () => {
     const decoded = decodeTextDslComponent({ Button: { label: 'x' } });
     assert.strictEqual(decoded.value, null);
     assert.strictEqual(decoded.reason, 'invalid-name');
+  });
+
+  it('decodeDslComponentAs: 期待名と一致すると name をリテラルとして返す', () => {
+    const decoded = decodeDslComponentAs({ Input: { name: 'n' } }, 'Input');
+    assert.strictEqual(decoded.reason, null);
+    assert.strictEqual(decoded.value.name, 'Input');
+    assert.deepStrictEqual(decoded.value.props, { name: 'n' });
+  });
+
+  it('decodeDslComponentAs: 名前不一致は invalid-name', () => {
+    const decoded = decodeDslComponentAs({ Text: { value: 'x' } }, 'Button');
+    assert.strictEqual(decoded.value, null);
+    assert.strictEqual(decoded.reason, 'invalid-name');
+  });
+
+  it('decodeButtonDslComponent: 妥当な Button を返す', () => {
+    const decoded = decodeButtonDslComponent({ Button: { label: 'ok', kind: 'primary' } });
+    assert.strictEqual(decoded.reason, null);
+    assert.deepStrictEqual(decoded.value, {
+      name: 'Button',
+      props: { label: 'ok', kind: 'primary' }
+    });
+  });
+
+  it('decodeButtonDslComponent: kind が不正なら失敗', () => {
+    const decoded = decodeButtonDslComponent({ Button: { label: 'x', kind: 'weird' } });
+    assert.strictEqual(decoded.value, null);
+    assert.strictEqual(decoded.reason, 'props-not-object');
   });
 });
 

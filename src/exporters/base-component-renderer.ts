@@ -29,7 +29,11 @@ import type {
 import type { ExportOptions, Exporter } from './export-types';
 import type { ExporterRendererMethod } from '../components/definitions/types';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';
-import { decodeDslComponent } from '../registry/dsl-component-codec';
+import {
+  decodeDslComponent,
+  decodeTextDslComponent,
+  decodeButtonDslComponent
+} from '../registry/dsl-component-codec';
 import { getTokenStylePropertyKebab } from '../components/definitions/token-style-property-map';
 import { componentDescriptorRegistry } from '../registry/component-descriptor-registry';
 import { AttributeSerializer, type ExporterAstNode, renderExporterAst } from './exporter-ast';
@@ -124,6 +128,15 @@ export abstract class BaseComponentRenderer implements Exporter {
    * if-else連鎖を排除し、レジストリに登録されたハンドラーで処理
    */
   protected renderComponent(comp: ComponentDef, key: number): string {
+    const textDecoded = decodeTextDslComponent(comp);
+    if (textDecoded.value) {
+      return this.renderText(textDecoded.value.props, key);
+    }
+    const buttonDecoded = decodeButtonDslComponent(comp);
+    if (buttonDecoded.value) {
+      return this.renderButton(buttonDecoded.value.props, key);
+    }
+
     const decoded = decodeDslComponent(comp);
     const name = decoded.value?.name;
     const props = decoded.value?.props;
