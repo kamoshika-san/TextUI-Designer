@@ -6,6 +6,8 @@
 
 **TextUI-Designer-Doc** Vault を使う場合は、`Tasks/Template/新built-in追加チケット-template.md` を複製して起票する（**spec / preview / export（または明示 unsupported）/ sample / tests** をチェックリストに固定。T-187）。索引は Vault 内 `Tasks/Template/README.md`。
 
+**マージ時点での exporter 必須範囲・unsupported コメントの意味**は [adr/0005-exporter-unsupported-and-phased-rollout.md](adr/0005-exporter-unsupported-and-phased-rollout.md)（T-188 / ADR 0005）。チケットテンプレ（T-187）と同じ前提（段階実装はブランチ内、`BUILT_IN_COMPONENTS` 掲載時は契約完走）で読む。
+
 ## 前提
 
 - 型・descriptor・スキーマ・プレビュー・エクスポートの **いずれかだけ更新すると** 実行時・CI・補完で不整合になる。
@@ -88,6 +90,7 @@ npm test
 | `dsl-types-descriptor-sync` 等が落ちる | domain と `definitions` の kind 名・descriptor の不一致 | 本ページのチェックリスト **フェーズ 1〜2** |
 | `compile` は通るが **プレビューだけ壊れる** | `component-map.tsx`・`renderer/components/*` の登録漏れ | [component-add-contract.md](component-add-contract.md) |
 | スキーマと YAML の補完がズレる | `COMPONENT_DEFINITIONS` と `schemas/` の oneOf / `schemaRef` | `npm run compile` 後の生成物を確認 |
+| `component-contract-consistency` が落ちる | `built-in` / manifest / descriptor / exporter の **どのキーが欠けているか**をメッセージ内のファイルパスで確認 | [ADR 0005](adr/0005-exporter-unsupported-and-phased-rollout.md)、`tests/unit/component-contract-consistency.test.js` |
 
 **一般手順**: [MAINTAINER_GUIDE.md](MAINTAINER_GUIDE.md) の「SSoT import-boundary 失敗時の調査観点」に従い、**フェーズ 4 を再実行**してからログのファイルパスを上から直す。
 
@@ -126,6 +129,7 @@ npm test
 
 ## 関連ドキュメント
 
+- [adr/0005-exporter-unsupported-and-phased-rollout.md](adr/0005-exporter-unsupported-and-phased-rollout.md) — exporter 必須範囲・段階導入・unsupported 出力の製品方針（T-188）
 - [component-add-contract.md](component-add-contract.md) — 追加時の契約（descriptor / schema / preview / exporter / tests の 1 セット）
 - [change-amplification-dsl.md](change-amplification-dsl.md) — DSL の増幅箇所とテストの説明
 - [registry-compat-layer-policy.md](registry-compat-layer-policy.md) — registry 互換レイヤの運用（新規は正本へ）
