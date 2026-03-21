@@ -1,6 +1,6 @@
-import * as fs from 'fs';
 import * as path from 'path';
-import * as YAML from 'yaml';
+import * as fs from 'fs';
+import { loadDslWithIncludesFromPath } from '../dsl/load-dsl-with-includes';
 import type { LoadedDsl } from './types';
 
 export function resolveDslFile(fileArg?: string): string {
@@ -60,10 +60,7 @@ export function resolveDslFiles(fileArg?: string, dirArg?: string): string[] {
 }
 
 export function loadDslFromFile(filePath: string): LoadedDsl {
-  const sourcePath = path.resolve(filePath);
-  const raw = fs.readFileSync(sourcePath, 'utf8');
-  const dsl = YAML.parse(raw);
-  return { dsl, sourcePath, raw };
+  return loadDslWithIncludesFromPath(filePath);
 }
 
 export function ensureDirectoryForFile(targetPath: string): void {

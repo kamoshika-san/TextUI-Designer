@@ -1,8 +1,7 @@
 import * as path from 'path';
 import { loadDslFromFile } from './io';
 import { validateDsl } from './validator';
-import { validateIncludeReferences } from './include-validator';
-import type { CliState, ValidationSummary } from './types';
+import type { CliState, ValidationIssue, ValidationSummary } from './types';
 import { stateToStableJson } from './state-manager';
 import { sha256 } from './utils';
 
@@ -10,20 +9,41 @@ export function printJson(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
 }
 
+function loadErrorToIssues(filePath: string, error: unknown): ValidationIssue[] {
+  const message = error instanceof Error ? error.message : String(error);
+  return [
+    {
+      level: 'error',
+      path: '/',
+      message,
+      file: path.resolve(filePath)
+    }
+  ];
+}
+
 export function validateAcrossFiles(filePaths: string[], skipTokenValidation: boolean = false): ValidationSummary {
   const files = filePaths.map(filePath => {
-    const loaded = loadDslFromFile(filePath);
-    const result = validateDsl(loaded.dsl, {
-      sourcePath: loaded.sourcePath,
-      skipTokenValidation
-    });
-    const includeIssues = validateIncludeReferences(loaded.dsl, loaded.sourcePath);
-    const issues = [...result.issues, ...includeIssues].map(issue => ({ ...issue, file: loaded.sourcePath }));
-    return {
-      file: loaded.sourcePath,
-      valid: result.valid && includeIssues.length === 0,
-      issues
-    };
+    try {
+      const loaded = loadDslFromFile(filePath);
+      const result = validateDsl(loaded.dsl, {
+        sourcePath: loaded.sourcePath,
+        skipTokenValidation
+      });
+      const issues = result.issues.map(issue => ({ ...issue, file: loaded.sourcePath }));
+      return {
+        file: loaded.sourcePath,
+        valid: result.valid,
+        issues
+      };
+    } catch (error: unknown) {
+      const resolvedPath = path.resolve(filePath);
+      const issues = loadErrorToIssues(filePath, error);
+      return {
+        file: resolvedPath,
+        valid: false,
+        issues
+      };
+    }
   });
 
   return {

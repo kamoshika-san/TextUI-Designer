@@ -2,8 +2,8 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { pathToFileURL } from 'url';
-import * as YAML from 'yaml';
 import type { TextUIDSL } from '../../renderer/types';
+import { loadDslWithIncludesFromPath } from '../../dsl/load-dsl-with-includes';
 import { HtmlExporter } from '../../exporters/html-exporter';
 import {
   DEFAULT_HEIGHT,
@@ -28,8 +28,8 @@ export type CapturePreparationResult = {
 };
 
 export function parseDslFile(sourcePath: string): TextUIDSL {
-  const raw = fs.readFileSync(sourcePath, 'utf8');
-  return YAML.parse(raw) as TextUIDSL;
+  const { dsl } = loadDslWithIncludesFromPath(sourcePath);
+  return dsl as TextUIDSL;
 }
 
 export async function prepareCaptureArtifacts(
