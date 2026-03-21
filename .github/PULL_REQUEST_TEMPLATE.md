@@ -50,8 +50,11 @@
 
 ### SSoT 影響チェック（該当時）
 
+- [ ] 共有 DSL 型の更新起点が `src/domain/dsl-types.ts` になっている
+- [ ] `src/renderer/types.ts` に型本体・独自 alias・業務ロジックを追加していない（thin facade 維持）
 - [ ] `src/renderer/**` 外で `renderer/types` を新規 import していない（必要なら理由を明記）
-- [ ] `npm run test:unit -- tests/unit/renderer-types-non-renderer-import-guard.test.js` を確認
+- [ ] `npm run check:dsl-types-ssot` を実行して結果を確認
+- [ ] `npx mocha --grep "renderer/types|SSoT eslint restriction scope guard" tests/unit` を実行して結果を確認
 
 ---
 
