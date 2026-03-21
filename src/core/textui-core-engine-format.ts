@@ -1,6 +1,6 @@
 import * as YAML from 'yaml';
 import type { ValidationResult } from '../cli/types';
-import type { TextUIDSL } from '../renderer/types';
+import type { TextUIDSL } from '../domain/dsl-types';
 import type { ValidateUiResponse } from './textui-core-engine';
 import { mapDiagnostic } from './textui-core-helpers';
 

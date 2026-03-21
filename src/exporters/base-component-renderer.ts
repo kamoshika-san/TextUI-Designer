@@ -25,7 +25,7 @@ import type {
   ProgressComponent,
   ImageComponent,
   IconComponent
-} from '../renderer/types';
+} from '../domain/dsl-types';
 import type { ExportOptions, Exporter } from './export-types';
 import type { ExporterRendererMethod } from '../components/definitions/types';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';

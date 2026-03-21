@@ -8,21 +8,36 @@ describe('TextUI CLI Sprint1', function () {
   const repoRoot = path.resolve(__dirname, '../..');
   const cliPath = path.join(repoRoot, 'out/cli/index.js');
   const sampleFile = path.join(repoRoot, 'sample/01-basic/sample.tui.yml');
-  const tmpDir = path.join(repoRoot, '.tmp-cli-test');
-  const dirSampleFile = path.join(tmpDir, 'nested', 'dir-sample.tui.yml');
-  const stateFile = path.join(tmpDir, 'state.json');
-  const outFile = path.join(tmpDir, 'result.html');
-  const captureOutFile = path.join(tmpDir, 'preview.png');
-  const captureMockBrowser = process.platform === 'win32'
-    ? path.join(tmpDir, 'google-chrome.cmd')
-    : path.join(tmpDir, 'google-chrome');
-  const captureMockScript = path.join(tmpDir, 'google-chrome.js');
-  const providerModuleFile = path.join(tmpDir, 'custom-provider.cjs');
-  const invalidProviderModuleFile = path.join(tmpDir, 'invalid-provider.cjs');
-  const mismatchProviderModuleFile = path.join(tmpDir, 'mismatch-provider.cjs');
+
+  /** フルスイート実行時の固定パス競合（別プロセス・遅延削除）を避けるため、ケースごとに一意ディレクトリを使う */
+  let tmpDir;
+  let dirSampleFile;
+  let stateFile;
+  let outFile;
+  let captureOutFile;
+  let captureMockBrowser;
+  let captureMockScript;
+  let providerModuleFile;
+  let invalidProviderModuleFile;
+  let mismatchProviderModuleFile;
+
+  function assignTmpPaths() {
+    dirSampleFile = path.join(tmpDir, 'nested', 'dir-sample.tui.yml');
+    stateFile = path.join(tmpDir, 'state.json');
+    outFile = path.join(tmpDir, 'result.html');
+    captureOutFile = path.join(tmpDir, 'preview.png');
+    captureMockBrowser = process.platform === 'win32'
+      ? path.join(tmpDir, 'google-chrome.cmd')
+      : path.join(tmpDir, 'google-chrome');
+    captureMockScript = path.join(tmpDir, 'google-chrome.js');
+    providerModuleFile = path.join(tmpDir, 'custom-provider.cjs');
+    invalidProviderModuleFile = path.join(tmpDir, 'invalid-provider.cjs');
+    mismatchProviderModuleFile = path.join(tmpDir, 'mismatch-provider.cjs');
+  }
 
   beforeEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    tmpDir = fs.mkdtempSync(path.join(repoRoot, '.tmp-cli-test-'));
+    assignTmpPaths();
     fs.mkdirSync(path.dirname(dirSampleFile), { recursive: true });
     fs.copyFileSync(sampleFile, dirSampleFile);
     fs.writeFileSync(providerModuleFile, `

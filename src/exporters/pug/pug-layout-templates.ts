@@ -10,7 +10,7 @@ import {
   type TreeViewComponent,
   type TableComponent,
   type ContainerComponent
-} from '../../renderer/types';
+} from '../../domain/dsl-types';
 import type { ExporterAstNode } from '../exporter-ast';
 
 export function renderPugBreadcrumb(

@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
 import type { ValidationIssue } from '../cli/types';
-import type { TextUIDSL } from '../renderer/types';
+import type { TextUIDSL } from '../domain/dsl-types';
 import type { CoreDiagnostic } from './textui-core-engine';
 
 export function parseDsl(input: unknown): TextUIDSL {

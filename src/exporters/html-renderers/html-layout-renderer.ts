@@ -6,7 +6,7 @@ import {
   type TableComponent,
   type TabsComponent,
   type TreeViewComponent
-} from '../../renderer/types';
+} from '../../domain/dsl-types';
 import type { HtmlRendererUtils } from './html-renderer-utils';
 
 export class HtmlLayoutRenderer {

@@ -1,4 +1,4 @@
-import type { TextUIDSL } from '../renderer/types';
+import type { TextUIDSL } from '../domain/dsl-types';
 import * as path from 'path';
 import * as fs from 'fs';
 import { getProvider, listProviders, type CliProviderDefinition } from './provider-registry';

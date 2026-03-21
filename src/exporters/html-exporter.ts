@@ -24,7 +24,7 @@ import type {
   ProgressComponent,
   ImageComponent,
   IconComponent
-} from '../renderer/types';
+} from '../domain/dsl-types';
 import type { ExportOptions } from './export-types';
 import { BaseComponentRenderer } from './base-component-renderer';
 import { buildHtmlDocument, readWebviewCssIfPresent } from './html-template-builder';

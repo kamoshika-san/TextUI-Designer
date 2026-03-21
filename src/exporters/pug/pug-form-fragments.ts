@@ -6,7 +6,7 @@ import type {
   SelectComponent,
   DatePickerComponent,
   SelectOption
-} from '../../renderer/types';
+} from '../../domain/dsl-types';
 import { StyleManager } from '../../utils/style-manager';
 import type { ExportFormat } from '../../utils/style-manager';
 

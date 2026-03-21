@@ -1,4 +1,4 @@
-import type { ComponentDef, FormAction, FormField, SpacerComponent } from '../../renderer/types';
+import type { ComponentDef, FormAction, FormField, SpacerComponent } from '../../domain/dsl-types';
 import type { StyleManager } from '../../utils/style-manager';
 
 export type HtmlRendererUtils = {

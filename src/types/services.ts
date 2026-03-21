@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { TextUIDSL } from '../renderer/types';
+import type { TextUIDSL } from '../domain/dsl-types';
 import type { SchemaDefinition, SchemaValidationResult } from './schema';
 
 export interface ISchemaManager {

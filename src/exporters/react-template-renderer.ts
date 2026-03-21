@@ -1,4 +1,4 @@
-import { isComponentDefValue, type ComponentDef, type AccordionComponent, type TabsComponent, type TreeViewComponent, type TableComponent, type ContainerComponent, type FormComponent, type FormField, type FormAction } from '../renderer/types';
+import { isComponentDefValue, type ComponentDef, type AccordionComponent, type TabsComponent, type TreeViewComponent, type TableComponent, type ContainerComponent, type FormComponent, type FormField, type FormAction } from '../domain/dsl-types';
 
 interface RenderContext {
   renderComponent: (component: ComponentDef, key: number) => string;

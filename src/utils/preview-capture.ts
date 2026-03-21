@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { TextUIDSL } from '../renderer/types';
+import type { TextUIDSL } from '../domain/dsl-types';
 import {
   type PreviewCaptureOptions,
   type PreviewCaptureResult,

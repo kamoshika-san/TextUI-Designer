@@ -10,7 +10,7 @@ import type {
   RadioOption,
   SelectComponent,
   SelectOption
-} from '../../renderer/types';
+} from '../../domain/dsl-types';
 import type { HtmlRendererUtils } from './html-renderer-utils';
 
 export class HtmlFormRenderer {

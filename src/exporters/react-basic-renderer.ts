@@ -1,4 +1,4 @@
-import type { AlertComponent, BadgeComponent, ButtonComponent, DividerComponent, IconComponent, ImageComponent, LinkComponent, BreadcrumbComponent, ProgressComponent, TextComponent } from '../renderer/types';
+import type { AlertComponent, BadgeComponent, ButtonComponent, DividerComponent, IconComponent, ImageComponent, LinkComponent, BreadcrumbComponent, ProgressComponent, TextComponent } from '../domain/dsl-types';
 import type { StyleManager } from '../utils/style-manager';
 
 export function renderTextTemplate(props: TextComponent, key: number, tokenStyle: string, styleManager: typeof StyleManager, format: string): string {

@@ -1,4 +1,4 @@
-import type { ComponentDef } from '../renderer/types';
+import type { ComponentDef } from '../domain/dsl-types';
 import { getTextUiComponentCatalog } from './component-catalog';
 import type { ComponentBlueprint, TreeViewBlueprintItem } from './textui-core-engine';
 

@@ -1,5 +1,5 @@
 import * as YAML from 'yaml';
-import type { TextUIDSL } from '../../renderer/types';
+import type { TextUIDSL } from '../../domain/dsl-types';
 import { buildFieldDescriptors } from './field-mapper';
 import type { FieldDescriptor, OpenApiDocument, OpenApiImportResult, ResolvedOperation } from './types';
 import { sanitizeId } from './utils';

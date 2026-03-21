@@ -9,7 +9,7 @@ import type {
   ProgressComponent,
   SpacerComponent,
   TextComponent
-} from '../../renderer/types';
+} from '../../domain/dsl-types';
 import type { HtmlRendererUtils } from './html-renderer-utils';
 
 export class HtmlTextualRenderer {

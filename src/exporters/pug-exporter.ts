@@ -22,7 +22,7 @@ import type {
   ImageComponent,
   IconComponent,
   FormComponent
-} from '../renderer/types';
+} from '../domain/dsl-types';
 import type { ExportOptions } from './export-types';
 import { BaseComponentRenderer } from './base-component-renderer';
 import { buildPugPageDocument } from './pug/pug-page-document';

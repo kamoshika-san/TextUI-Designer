@@ -1,4 +1,4 @@
-import type { TextVariant, ButtonKind } from '../renderer/types';
+import type { TextVariant, ButtonKind } from '../domain/dsl-types';
 
 export type BuiltInExportFormat = 'html' | 'react' | 'pug';
 export type ExportFormat = BuiltInExportFormat | (string & {});

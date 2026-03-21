@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { pathToFileURL } from 'url';
-import type { TextUIDSL } from '../../renderer/types';
+import type { TextUIDSL } from '../../domain/dsl-types';
 import { loadDslWithIncludesFromPath } from '../../dsl/load-dsl-with-includes';
 import { HtmlExporter } from '../../exporters/html-exporter';
 import {

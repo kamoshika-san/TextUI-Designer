@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { ComponentDef } from '../renderer/types';
+import type { ComponentDef } from '../domain/dsl-types';
 import { createComponentKeys } from '../renderer/preview-diff';
 import { renderRegisteredComponent } from '../renderer/component-map';
 

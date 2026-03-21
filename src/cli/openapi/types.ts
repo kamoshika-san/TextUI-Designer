@@ -1,4 +1,4 @@
-import type { TextUIDSL } from '../../renderer/types';
+import type { TextUIDSL } from '../../domain/dsl-types';
 
 export interface OpenApiDocument {
   openapi?: string;

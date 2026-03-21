@@ -1,4 +1,4 @@
-import type { SelectOption } from '../renderer/types';
+import type { SelectOption } from '../domain/dsl-types';
 
 /** `<select>` 内の `<option>` 行（インデント付き）を連結した文字列 */
 export function buildReactSelectOptionsLines(options: SelectOption[]): string {

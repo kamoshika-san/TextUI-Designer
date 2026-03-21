@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
-import type { TextUIDSL } from '../renderer/types';
+import type { TextUIDSL } from '../domain/dsl-types';
 import { collectComponentEntries } from './component-traversal';
 
 export type TokenErrorMode = 'error' | 'warn' | 'ignore';
