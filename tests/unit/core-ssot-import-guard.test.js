@@ -6,6 +6,7 @@ describe('core SSoT import guard (T-20260321-136)', () => {
   it('src/core レイヤに renderer/types import が存在しない', () => {
     const coreDir = path.resolve(__dirname, '../../src/core');
     const offenders = [];
+    const restrictedImportPath = ['renderer', 'types'].join('/');
 
     function walk(dir) {
       for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -16,7 +17,7 @@ describe('core SSoT import guard (T-20260321-136)', () => {
         }
         if (!/\.(ts|tsx|js)$/.test(ent.name)) continue;
         const code = fs.readFileSync(full, 'utf8');
-        if (/\bfrom\s+['"][^'"]*renderer\/types['"]/.test(code)) {
+        if (new RegExp(`\\bfrom\\s+['"][^'"]*${restrictedImportPath}['"]`).test(code)) {
           offenders.push(path.relative(path.resolve(__dirname, '../..'), full));
         }
       }
@@ -26,7 +27,7 @@ describe('core SSoT import guard (T-20260321-136)', () => {
     assert.deepStrictEqual(
       offenders,
       [],
-      `core レイヤで renderer/types import が検出されました:\n${offenders.join('\n')}`
+      `core レイヤで禁止 import が検出されました:\n${offenders.join('\n')}`
     );
   });
 });
