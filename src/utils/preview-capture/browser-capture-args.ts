@@ -5,7 +5,13 @@ import * as path from 'path';
  * それ以外は従来どおり --headless=new → --headless の順で試行する。
  */
 export function normalizeBrowserBasename(browserPath: string): string {
-  return path.basename(browserPath).replace(/\.exe$/i, '').toLowerCase();
+  // Linux CI など path.basename が POSIX のとき、`\` 区切りの Windows パスは 1 セグメントとみなされる。
+  // 設定やログに渡る文字列は OS 非依存で正規化できるよう、Windows 形式は path.win32 で basename を取る。
+  const base =
+    browserPath.includes('\\') || /^[A-Za-z]:/.test(browserPath)
+      ? path.win32.basename(browserPath)
+      : path.posix.basename(browserPath);
+  return base.replace(/\.exe$/i, '').toLowerCase();
 }
 
 export function isHeadlessShellBinary(browserPath: string): boolean {
