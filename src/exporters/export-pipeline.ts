@@ -1,4 +1,4 @@
-import type { TextUIDSL } from '../renderer/types';
+import type { TextUIDSL } from '../domain/dsl-types';
 import type { ExportOptions, Exporter } from './export-types';
 import type { CacheManager } from '../utils/cache-manager';
 import type { DiffManager } from '../utils/diff-manager';

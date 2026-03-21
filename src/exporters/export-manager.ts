@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as YAML from 'yaml';
-import type { TextUIDSL } from '../renderer/types';
+import type { TextUIDSL } from '../domain/dsl-types';
 import { CacheManager } from '../utils/cache-manager';
 import { DiffManager } from '../utils/diff-manager';
 import { PerformanceMonitor } from '../utils/performance-monitor';
