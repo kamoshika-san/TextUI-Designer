@@ -60,4 +60,5 @@
 
 - `src/registry/component-manifest.ts`（ファイル先頭コメント）
 - [MAINTAINER_GUIDE.md](MAINTAINER_GUIDE.md)（クイックスタート表の registry 行）
+- **複数互換レイヤを段階的に薄くするときの順序・ゲート一覧**: [compat-layer-shrinkage-checklist.md](compat-layer-shrinkage-checklist.md)
 - 親チケット: `Tasks/2026-03-21_コードレビュー_保守性リスク_エピック.md`

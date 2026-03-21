@@ -51,6 +51,7 @@ Exporter は少なくとも以下を「契約」とみなして扱います。
 ## 参照
 
 - registry 互換レイヤ（`component-manifest` / `component-registry`）の import 方針・削除条件: [registry-compat-layer-policy.md](registry-compat-layer-policy.md)
+- registry 以外も含めた **縮小の順序・PR 前チェックリスト**: [compat-layer-shrinkage-checklist.md](compat-layer-shrinkage-checklist.md)
 - `docs/SETTINGS.md`（設定単一ソース化と生成/同期）
 - `docs/contributes-commands.md`（command/mensues の単一ソース）
 - `docs/PROVIDER_CONTRACT.md`（provider の契約観点）

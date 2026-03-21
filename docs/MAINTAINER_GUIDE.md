@@ -173,6 +173,7 @@ ADR: [0001 解析パイプライン（初稿）](adr/0001-document-analysis-serv
   - preview capture と MCP CLI bridge は、失敗時メッセージ契約の維持が重要
 - **外部契約（公開API / 設定キー / exporter 互換）**
   - 正本: [api-compat-policy.md](api-compat-policy.md)
+  - 互換レイヤを段階的に薄くするときの順序・チェックリスト: [compat-layer-shrinkage-checklist.md](compat-layer-shrinkage-checklist.md)
 - **レイヤ境界を守る**
   - 入力検証は mapper、実行引数組み立ては adapter、サーバ/マネージャは委譲中心
 
