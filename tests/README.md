@@ -46,6 +46,15 @@
 - パフォーマンステスト
 - テーマ一覧送信・`theme-switch` 後の CSS / アクティブ状態（theme-switching）
 
+### 新規テストの最短経路（setup.js 非拡大）
+
+グローバルフック（`Module.prototype.require` や `tests/setup.js` への追加）を**増やさず**にテストするための推奨パスです。
+
+- **推奨**: 対象クラスに **constructor / factory 注入**（例: `SchemaManager` の `SchemaManagerSeams`、`CommandManager` の `RuntimeInspectionCommandBindings`）を使い、**差し替え可能な依存**だけをテストでスタブする。
+- **統合テストのサービス束**: `tests/helpers/integration-service-factory.js` の `createIntegrationServices`（`ServiceFactory` オーバーライドの雛形）。
+- **反パターン**: `global.vscode` を手書きで上書きし続ける、テスト専用に `setup.js` にグローバルフックを追加する（方針上の詳細は [`docs/test-setup-policy.md`](../docs/test-setup-policy.md)）。
+- **レイヤと CI の対応**: [`docs/test-matrix.md`](../docs/test-matrix.md)。
+
 ### 4. Simulated E2E（`e2e/`・Node + Mocha）
 
 **実 VS Code Extension Host 上の E2E ではありません。** `npm run test:e2e` は **`tests/setup.js` で `vscode` をモックした Node 上の Mocha** で、`e2e/` 配下のシナリオを走らせます。リポジトリ内では **「実機 E2E」ではなく simulated-e2e（シミュレートされた結合シナリオ）** と捉えてください。
