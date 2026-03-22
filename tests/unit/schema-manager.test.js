@@ -164,6 +164,21 @@ describe('SchemaManager', () => {
     expect(manager.getThemeSchemaPath()).to.include('theme-schema.json');
   });
 
+  it('constructor の第2引数 seams.resolveSchemaPaths でパス解決を差し替えできる', () => {
+    const seams = {
+      resolveSchemaPaths: () => ({
+        schemaPath: testSchemaPath,
+        templateSchemaPath: testTemplateSchemaPath,
+        themeSchemaPath: testThemeSchemaPath,
+        searchedPaths: []
+      })
+    };
+    const manager = new SchemaManager(mockContext, seams);
+    expect(manager.getSchemaPath()).to.equal(testSchemaPath);
+    expect(manager.getTemplateSchemaPath()).to.equal(testTemplateSchemaPath);
+    expect(manager.getThemeSchemaPath()).to.equal(testThemeSchemaPath);
+  });
+
   it('スキーマファイルが存在しない場合はエラー', async () => {
     schemaManager.schemaPath = '/not/exist/schema.json';
     try {

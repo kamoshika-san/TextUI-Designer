@@ -18,6 +18,7 @@ import {
   registerYamlSchemaForPattern,
   unregisterYamlSchemaByFilePattern
 } from './schema/schema-workspace-registrar';
+import type { SchemaManagerSeams } from './schema/schema-manager-seams';
 
 /**
  * スキーマ管理サービス
@@ -32,22 +33,27 @@ export class SchemaManager implements ISchemaManager {
   private readonly cacheStore: SchemaCacheStore;
   private readonly cacheTTL: number;
   private readonly verboseLogging: boolean;
+  private readonly seams?: SchemaManagerSeams;
 
-  constructor(context: vscode.ExtensionContext) {
+  constructor(context: vscode.ExtensionContext, seams?: SchemaManagerSeams) {
     this.context = context;
+    this.seams = seams;
     this.verboseLogging = process.env.TEXTUI_SCHEMA_DEBUG === 'true';
     const performanceSettings = ConfigManager.getPerformanceSettings();
     this.cacheTTL = performanceSettings.schemaCacheTTL || 30000;
 
-    const resolvedSchemaPaths = resolveSchemaPaths(context);
+    const resolvedSchemaPaths = (seams?.resolveSchemaPaths ?? resolveSchemaPaths)(context);
     this.schemaPath = resolvedSchemaPaths.schemaPath;
     this.templateSchemaPath = resolvedSchemaPaths.templateSchemaPath;
     this.themeSchemaPath = resolvedSchemaPaths.themeSchemaPath;
-    this.cacheStore = new SchemaCacheStore({
+    const pathGetters = {
       main: () => this.schemaPath,
       template: () => this.templateSchemaPath,
       theme: () => this.themeSchemaPath
-    });
+    };
+    this.cacheStore = seams?.createCacheStore
+      ? seams.createCacheStore(pathGetters)
+      : new SchemaCacheStore(pathGetters);
 
     if (!fs.existsSync(this.schemaPath)) {
       this.logger.error('スキーマファイルが見つかりません。検索したパス:', resolvedSchemaPaths.searchedPaths);
@@ -80,7 +86,9 @@ export class SchemaManager implements ISchemaManager {
         await this.createTemplateSchema();
       }
 
-      await registerTextUiSchemasInWorkspace(
+      const registerFn =
+        this.seams?.workspace?.registerTextUiSchemasInWorkspace ?? registerTextUiSchemasInWorkspace;
+      await registerFn(
         this.schemaPath,
         this.templateSchemaPath,
         this.themeSchemaPath,
@@ -120,7 +128,8 @@ export class SchemaManager implements ISchemaManager {
 
   async cleanup(): Promise<void> {
     this.debug('[SchemaManager] スキーマクリーンアップを開始');
-    await cleanupTextUiSchemasInWorkspace((message, ...args) => this.debug(message, ...args));
+    const cleanupFn = this.seams?.workspace?.cleanupTextUiSchemasInWorkspace ?? cleanupTextUiSchemasInWorkspace;
+    await cleanupFn((message, ...args) => this.debug(message, ...args));
   }
 
   async reinitialize(): Promise<void> {
@@ -151,7 +160,8 @@ export class SchemaManager implements ISchemaManager {
   }
 
   validateSchema(data: unknown, schema: SchemaDefinition): SchemaValidationResult {
-    return validateDataAgainstSchema(data, schema);
+    const validate = this.seams?.validateData ?? validateDataAgainstSchema;
+    return validate(data, schema);
   }
 
   async registerSchema(filePattern: string, schemaPath: string): Promise<void> {
