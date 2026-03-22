@@ -2,6 +2,10 @@ import * as vscode from 'vscode';
 import { ErrorHandler } from '../utils/error-handler';
 import { ConfigManager } from '../utils/config-manager';
 import { RuntimeInspectionService } from './runtime-inspection-service';
+import {
+  createRuntimeInspectionCommandBindings,
+  type RuntimeInspectionCommandBindings
+} from './runtime-inspection-command-bindings';
 import { Logger } from '../utils/logger';
 import type {
   ICommandManager,
@@ -24,7 +28,10 @@ export interface CommandManagerDependencies {
   settingsService: ISettingsService;
   schemaManager: ISchemaManager;
   themeManager?: IThemeManager;
-  runtimeInspectionService?: RuntimeInspectionService;
+  /**
+   * runtime inspection コマンド群のコールバック束。未指定時は `RuntimeInspectionService` から生成する。
+   */
+  runtimeInspection?: RuntimeInspectionCommandBindings;
 }
 
 
@@ -40,7 +47,7 @@ export class CommandManager implements ICommandManager {
   private settingsService: ISettingsService;
   private schemaManager: ISchemaManager;
   private themeManager?: IThemeManager;
-  private runtimeInspectionService: RuntimeInspectionService;
+  private runtimeInspection: RuntimeInspectionCommandBindings;
   private readonly logger = new Logger('CommandManager');
   private commandDisposables: vscode.Disposable[] = [];
 
@@ -55,7 +62,9 @@ export class CommandManager implements ICommandManager {
     this.settingsService = dependencies.settingsService;
     this.schemaManager = dependencies.schemaManager;
     this.themeManager = dependencies.themeManager;
-    this.runtimeInspectionService = dependencies.runtimeInspectionService ?? new RuntimeInspectionService();
+    this.runtimeInspection =
+      dependencies.runtimeInspection ??
+      createRuntimeInspectionCommandBindings(new RuntimeInspectionService());
   }
 
   /**
@@ -64,6 +73,7 @@ export class CommandManager implements ICommandManager {
   registerCommands(): void {
     this.logger.info('コマンド登録を開始');
 
+    const ri = this.runtimeInspection;
     const commandDefinitions = createCommandDefinitions({
       openPreviewWithCheck: () => this.openPreviewWithCheck(),
       capturePreviewImage: () => this.capturePreviewImage(),
@@ -77,14 +87,14 @@ export class CommandManager implements ICommandManager {
       checkAutoPreviewSetting: () => this.checkAutoPreviewSetting(),
       reinitializeSchemas: () => this.schemaManager.reinitialize(),
       debugSchemas: () => this.schemaManager.debugSchemas(),
-      showPerformanceReport: () => this.runtimeInspectionService.showPerformanceReport(),
-      clearPerformanceMetrics: () => this.runtimeInspectionService.clearPerformanceMetrics(),
-      togglePerformanceMonitoring: () => this.runtimeInspectionService.togglePerformanceMonitoring(),
-      enablePerformanceMonitoring: () => this.runtimeInspectionService.enablePerformanceMonitoring(),
-      generateSampleEvents: () => this.runtimeInspectionService.generateSampleEvents(),
-      showMemoryReport: () => this.runtimeInspectionService.showMemoryReport(),
-      toggleMemoryTracking: () => this.runtimeInspectionService.toggleMemoryTracking(),
-      enableMemoryTracking: () => this.runtimeInspectionService.enableMemoryTracking()
+      showPerformanceReport: () => ri.showPerformanceReport(),
+      clearPerformanceMetrics: () => ri.clearPerformanceMetrics(),
+      togglePerformanceMonitoring: () => ri.togglePerformanceMonitoring(),
+      enablePerformanceMonitoring: () => ri.enablePerformanceMonitoring(),
+      generateSampleEvents: () => ri.generateSampleEvents(),
+      showMemoryReport: () => ri.showMemoryReport(),
+      toggleMemoryTracking: () => ri.toggleMemoryTracking(),
+      enableMemoryTracking: () => ri.enableMemoryTracking()
     });
 
     for (const { command, callback } of commandDefinitions) {

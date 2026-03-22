@@ -9,6 +9,8 @@ import { ExportManager } from '../exporters';
 import { ThemeManager } from './theme-manager';
 import { DiagnosticManager } from './diagnostic-manager';
 import { TextUICompletionProvider } from './completion-provider';
+import { RuntimeInspectionService } from './runtime-inspection-service';
+import { createRuntimeInspectionCommandBindings } from './runtime-inspection-command-bindings';
 import type {
   ISchemaManager,
   IThemeManager,
@@ -77,13 +79,15 @@ export class ServiceFactory {
       ? f.createCompletionProvider(schemaManager)
       : new TextUICompletionProvider();
 
+    const runtimeInspectionService = new RuntimeInspectionService();
     const commandManagerDependencies = {
       webViewManager,
       exportService,
       templateService,
       settingsService,
       schemaManager,
-      themeManager
+      themeManager,
+      runtimeInspection: createRuntimeInspectionCommandBindings(runtimeInspectionService)
     };
 
     const commandManager: ICommandManager = f.createCommandManager
