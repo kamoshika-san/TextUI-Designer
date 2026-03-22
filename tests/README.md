@@ -4,6 +4,8 @@
 
 ## テストの種類
 
+**層の定義（unit / integration / smoke）と CI との対応**は [`docs/test-matrix.md`](../docs/test-matrix.md) を参照。
+
 ### 1. 回帰テスト (`regression/`)
 プレビュー画面からのエクスポート機能に関する回帰テストです。
 
