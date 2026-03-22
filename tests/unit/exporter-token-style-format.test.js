@@ -61,6 +61,22 @@ describe('Exporter token style formatting', () => {
     assert.ok(html.includes('background-color: var(--token-container-bg)'));
   });
 
+  it('HtmlExporter: Text token uses slot-aware var() when defaultTokenSlot is set (T-20260322-202)', async () => {
+    const exporter = new HtmlExporter();
+    const dsl = {
+      page: {
+        components: [{ Text: { value: 'hello', token: '#aabbcc' } }]
+      }
+    };
+
+    const html = await exporter.export(dsl, { format: 'html', useReactRender: false });
+
+    assert.ok(
+      html.includes('color: var(--tui-slot-text-color, #aabbcc)'),
+      'HTML path wraps token with slot CSS variable and fallback'
+    );
+  });
+
   it('HtmlExporter: React render path also applies Container token as background-color', async () => {
     const exporter = new HtmlExporter();
     const dsl = {

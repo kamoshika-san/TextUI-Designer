@@ -30,7 +30,11 @@ import type { ExportOptions, Exporter } from './export-types';
 import type { ExporterRendererMethod } from '../components/definitions/types';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';
 import { decodeDslComponent, decodeDslComponentUnion } from '../registry/dsl-component-codec';
-import { getTokenStylePropertyKebab } from '../components/definitions/token-style-property-map';
+import {
+  getDefaultTokenSlotForComponent,
+  getTokenStylePropertyKebab,
+  slotIdToTuiCssVarName
+} from '../components/definitions/token-style-property-map';
 import { componentDescriptorRegistry } from '../registry/component-descriptor-registry';
 import { AttributeSerializer, type ExporterAstNode, renderExporterAst } from './exporter-ast';
 
@@ -289,7 +293,11 @@ export abstract class BaseComponentRenderer implements Exporter {
     return getTokenStylePropertyKebab(componentType);
   }
 
-  private buildInlineCssDeclaration(property: string, token: string): string {
+  private buildInlineCssDeclaration(property: string, token: string, defaultTokenSlot?: string): string {
+    if (defaultTokenSlot) {
+      const cssVar = slotIdToTuiCssVarName(defaultTokenSlot);
+      return `${property}: var(${cssVar}, ${this.escapeAttribute(token)});`;
+    }
     return `${property}: ${this.escapeAttribute(token)};`;
   }
 
@@ -323,7 +331,8 @@ export abstract class BaseComponentRenderer implements Exporter {
       return '';
     }
 
-    const raw = ` style="${this.buildInlineCssDeclaration(property, token)}"`;
+    const defaultTokenSlot = getDefaultTokenSlotForComponent(componentType);
+    const raw = ` style="${this.buildInlineCssDeclaration(property, token, defaultTokenSlot)}"`;
     if (mode === 'suffix') {
       return raw;
     }
@@ -340,7 +349,11 @@ export abstract class BaseComponentRenderer implements Exporter {
     }
 
     const reactProperty = this.toReactStyleProperty(property);
-    return ` style={{ ${reactProperty}: ${JSON.stringify(token)} }}`;
+    const defaultTokenSlot = getDefaultTokenSlotForComponent(componentType);
+    const valueExpr = defaultTokenSlot
+      ? JSON.stringify(`var(${slotIdToTuiCssVarName(defaultTokenSlot)}, ${token})`)
+      : JSON.stringify(token);
+    return ` style={{ ${reactProperty}: ${valueExpr} }}`;
   }
 
   protected getReactTokenStyleInline(componentType: string, token?: string): string {

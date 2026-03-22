@@ -1,9 +1,14 @@
 import type { CSSProperties } from 'react';
-import { getTokenStylePropertyKebab, tokenStyleKebabToReactCamel } from '../components/definitions/token-style-property-map';
+import {
+  getDefaultTokenSlotForComponent,
+  getTokenStylePropertyKebab,
+  slotIdToTuiCssVarName,
+  tokenStyleKebabToReactCamel
+} from '../components/definitions/token-style-property-map';
 
 /**
  * WebView プレビュー用: `COMPONENT_DEFINITIONS.tokenStyleProperty` と同じ対応で React の style を返す。
- * エクスポータは `BaseComponentRenderer` が同一マップ（kebab）を参照する。
+ * `defaultTokenSlot` がある場合は exporter と同様に `var(--tui-slot-…, token)`（T-20260322-202）。
  */
 export function tokenToPreviewInlineStyle(
   componentName: string,
@@ -16,5 +21,7 @@ export function tokenToPreviewInlineStyle(
   if (!kebab) {
     return undefined;
   }
-  return { [tokenStyleKebabToReactCamel(kebab)]: token } as CSSProperties;
+  const slot = getDefaultTokenSlotForComponent(componentName);
+  const value = slot ? `var(${slotIdToTuiCssVarName(slot)}, ${token})` : token;
+  return { [tokenStyleKebabToReactCamel(kebab)]: value } as CSSProperties;
 }
