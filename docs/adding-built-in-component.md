@@ -14,6 +14,7 @@
 - より詳しい **change amplification** の説明は [change-amplification-dsl.md](change-amplification-dsl.md) を参照。
 - SSoT の正本と互換レイヤ方針は [adr/0003-dsl-types-canonical-source.md](adr/0003-dsl-types-canonical-source.md) を参照。
 - このページは **実務手順の正本**。設計判断の根拠は ADR（`adr/0003`）を参照する。
+- **descriptor の中心は ComponentSpec 経路**である。`BUILT_IN_COMPONENT_SPECS`（`component-definitions.ts`）から `COMPONENT_DEFINITIONS` を生成し、補完・スキーマ oneOf・契約テストはここを基準に揃える。スキーマ JSON の更新経路は [schema-pipeline-from-spec.md](schema-pipeline-from-spec.md)、補完メタの執筆場所は [completion-descriptor-authoring.md](completion-descriptor-authoring.md)。
 
 ---
 
@@ -24,7 +25,7 @@
 | フェーズ | 内容 | 代表パス |
 |----------|------|----------|
 | **1. domain** | 名前の正本 → 共有 DSL 型の正本 | `built-in-components.ts` → `domain/dsl-types.ts` |
-| **2. schema / descriptor** | 定義・descriptor・合成・スキーマ生成 | `definitions/*`, `schemas/`（生成物） |
+| **2. schema / descriptor（ComponentSpec 中心）** | `ComponentSpec` 合成 → `COMPONENT_DEFINITIONS` → `npm run compile` で `schemas/` 再生成 | `component-spec.ts`, `component-definitions.ts`, `manifest.ts`（補完文面）, `exporter-renderer-definitions.ts` |
 | **3. facade 維持** | `renderer/types` は **thin facade のみ**（型本体を足さない） | `src/renderer/types.ts` |
 | **4. guard 実行** | SSoT 境界チェック → コンパイル → テスト | `npm run check:dsl-types-ssot` ほか |
 
@@ -35,7 +36,7 @@
 ## DSL 型追加の最短フロー（上記 4 フェーズに対応）
 
 1. **domain**: `built-in-components.ts`（名前）→ `dsl-types.ts`（型・union・型ガード）。
-2. **schema / descriptor**: `definitions/*`・`COMPONENT_DEFINITIONS`・必要ならスキーマ再生成（`npm run compile` 連動）。
+2. **schema / descriptor**: `types.ts`（型）→ `exporter-renderer-definitions.ts` → **`manifest.ts`（補完用 description/properties）** → `component-definitions.ts` が `BUILT_IN_COMPONENT_SPECS` / `COMPONENT_DEFINITIONS` を合成。**手で `schemas/schema.json` の oneOf を編集しない**（`compile` で [schema-pipeline-from-spec.md](schema-pipeline-from-spec.md) のとおり再生成）。
 3. **facade**: `src/renderer/types.ts` は thin facade を維持し、**型本体を追加しない**。
 4. **非 renderer** で `renderer/types` import を増やさない（[ADR 0003](adr/0003-dsl-types-canonical-source.md)）。
 5. **guard**: 変更後に必ず次を実行する:
@@ -98,7 +99,7 @@ npm test
 
 ## チェックリスト（ファイル別・推奨順）
 
-以下は **フェーズ 1→2→…** に沿った **作業順**。上の 4 フェーズを崩さないこと。
+以下は **フェーズ 1→2→…** に沿った **作業順**。上の 4 フェーズを崩さないこと。**旧「多点をバラバラに触る」フローではなく**、まず **名前・型・Exporter 定義・補完文面（manifest）** を揃えてから **`component-definitions.ts` が一括で descriptor 行を出す**想定で読む。
 
 1. **`src/components/definitions/built-in-components.ts`**
    - `BUILT_IN_COMPONENTS` にコンポーネント名を追加（**DSL kind 名の正本**）。
@@ -108,20 +109,22 @@ npm test
    - コンポーネント定義用の型（プロパティ・descriptor 用）を追加。
 4. **`src/components/definitions/exporter-renderer-definitions.ts`**
    - `previewRendererKey` / `exporterRendererMethod` などのレンダラ定義を追加。
-5. **`src/components/definitions/component-definitions.ts`**
-   - `COMPONENT_DEFINITIONS` への合成（`BUILT_IN_COMPONENTS` からマップ）。
-6. **スキーマ**
-   - `schemas/` 配下の生成物は `npm run compile` 時に更新される（`scripts/generate-schemas-from-definitions.cjs` 等）。`COMPONENT_DEFINITIONS` の `schemaRef` と `components` の oneOf が一致すること。
-7. **`src/renderer/types.ts`**
+5. **`src/components/definitions/manifest.ts`**
+   - 補完・説明文（`description` / `properties`）を追加（**執筆正本** → `BUILT_IN_COMPONENT_SPECS` に取り込まれる。詳細は [completion-descriptor-authoring.md](completion-descriptor-authoring.md)）。
+6. **`src/components/definitions/component-definitions.ts`**
+   - 通常は **手で行を増やさず**、`BUILT_IN_COMPONENTS` と上記の合成により `BUILT_IN_COMPONENT_SPECS` → `COMPONENT_DEFINITIONS` が更新されることを確認する。
+7. **スキーマ**
+   - `schemas/` 配下の生成物は `npm run compile` 時に更新される（`scripts/generate-schemas-from-definitions.cjs`）。`COMPONENT_DEFINITIONS` の `schemaRef` と `definitions.component.oneOf` が一致すること（[schema-pipeline-from-spec.md](schema-pipeline-from-spec.md)）。
+8. **`src/renderer/types.ts`**
    - **thin facade のみ**（必要なら `domain/dsl-types` からの re-export）。型本体をここに増やさない。
-8. **WebView プレビュー**
+9. **WebView プレビュー**
    - `src/renderer/component-map.tsx` にレンダラを登録。
    - 必要に応じて `src/renderer/components/` に TSX を追加。
-9. **トークン由来のスタイル**
+10. **トークン由来のスタイル**
    - `tokenStyleProperty` を使う場合は `src/components/definitions/token-style-property-map.ts` と `src/renderer/token-inline-style-from-definition.ts` の整合を確認。
-10. **エクスポート**
+11. **エクスポート**
     - `src/exporters/` 側の該当メソッド（`base-component-renderer` 等）に分岐を追加。
-11. **検証（フェーズ 4）**
+12. **検証（フェーズ 4）**
     - `npm run compile` → `npm run check:dsl-types-ssot` → `npm test`（必要なら `npm run test:all`）。
     - 機械系: `tests/unit/dsl-types-descriptor-sync.test.js`、`component-definitions` 系の不変条件テストが通ること。
 
@@ -129,6 +132,8 @@ npm test
 
 ## 関連ドキュメント
 
+- [schema-pipeline-from-spec.md](schema-pipeline-from-spec.md) — `schema.json` の oneOf / definitions と descriptor の対応（**手編集禁止の理由**）
+- [completion-descriptor-authoring.md](completion-descriptor-authoring.md) — 補完を変えるときの編集箇所（manifest → descriptor）
 - [adr/0005-exporter-unsupported-and-phased-rollout.md](adr/0005-exporter-unsupported-and-phased-rollout.md) — exporter 必須範囲・段階導入・unsupported 出力の製品方針（T-188）
 - [component-add-contract.md](component-add-contract.md) — 追加時の契約（descriptor / schema / preview / exporter / tests の 1 セット）
 - [change-amplification-dsl.md](change-amplification-dsl.md) — DSL の増幅箇所とテストの説明
