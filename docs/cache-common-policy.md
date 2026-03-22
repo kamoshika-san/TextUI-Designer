@@ -49,4 +49,24 @@
 
 ## 6. 統計（stats）について
 
-hitRate・reset・デバッグ表示・テスト観点の **共通契約と既存実装とのギャップ**は、RF3-S1-T3 で本ドキュメントに **「統計（stats）の共通契約とギャップ」** として追記する。
+詳細は後掲 **「統計（stats）の共通契約とギャップ」** を参照。
+
+---
+
+## 統計（stats）の共通契約とギャップ（RF3-S1-T3）
+
+### 共通契約（目標）
+
+- **hitRate**: 0〜100 の百分率。原則 `hits / (hits + misses) × 100`（分母が 0 のときは 0）。
+- **reset**: キャッシュ本体の消去と、ヒット／ミス **カウンタのリセット**は別概念。リセット API がある場合は名前・呼び出しタイミングを明示する。
+- **debug 表示**: 統計のダンプは **Logger** の `debug`（等）で行い、スコープ名でキャッシュ種別を識別できること。
+- **テスト観点**: hit/miss がアクセスに連動して更新されること、reset 後に期待どおり 0 に戻ること、分母 0 で例外にならないこと。
+
+### 実装別の振る舞いとギャップ
+
+| 観点 | 目標契約 | Export `CacheManager`（`src/utils/cache-manager.ts`） | WebView `WebViewPreviewCacheManager`（`src/services/webview/cache-manager.ts`） |
+|------|----------|--------------------------------------------------------|----------------------------------------------------------------------------------|
+| hitRate | 上記の百分率 | `getStats` / `getDetailedStats` で hits・misses から算出 | `getCacheStats().hitRate` は **常に 0**（コード上、PerformanceMonitor からの配線が未完了） | **ギャップ** |
+| reset | 統計カウンタのみリセットする API があれば明記 | `resetStats()` が hits/misses を 0 に | 同等の「プレビューキャッシュ専用 reset」は無し。ヒット記録は `PreviewPerformanceMonitor.recordCacheHit` → 共有 `PerformanceMonitor` | **ギャップ**（責務が分離） |
+| グローバル指標とローカル指標 | 単一キャッシュの stats と、`PerformanceMonitor` の集約 cache 率を取り違えない | ローカルに hits/misses を保持 | ローカル `getCacheStats` の hitRate は未使用。一方で `recordCacheHit` は **グローバル** メトリクスを更新 | **解釈ギャップ**（参照先をドキュメントで固定） |
+| ログ | Logger 準拠 | 本クラス自体は Logger 非使用（Export 周辺で観測） | `Logger('WebViewPreviewCache')`。RF3-S1-T2 で主要パスの raw `console.log` を除去済み | — |
