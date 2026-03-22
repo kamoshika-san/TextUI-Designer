@@ -56,6 +56,8 @@
 
 **実 VS Code 上での検証**が必要な場合は、`@vscode/test-electron` 等の別ライン（`vscode-test` スクリプト）を検討してください（本リポジトリのデフォルト品質ゲートは上記 Mocha ラインが正）。
 
+**手動の最小スモーク**（活性化 → プレビュー → HTML エクスポート）は、拡張リポジトリの [`docs/real-vscode-smoke.md`](../docs/real-vscode-smoke.md) を正とする。
+
 ## テストの実行方法
 
 ### 全テストの実行
