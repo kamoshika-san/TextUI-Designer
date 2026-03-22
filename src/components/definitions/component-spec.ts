@@ -48,7 +48,8 @@ export function buildComponentSpecFromDefinition(def: ComponentDefinition): Comp
     properties: def.properties,
     previewRendererKey: def.previewRendererKey,
     exporterRendererMethod: def.exporterRendererMethod,
-    tokenStyleProperty: def.tokenStyleProperty
+    tokenStyleProperty: def.tokenStyleProperty,
+    defaultTokenSlot: def.defaultTokenSlot
   };
 }
 
@@ -66,6 +67,7 @@ export function buildComponentDefinitionFromSpec(
     description: spec.description,
     properties: spec.properties,
     tokenStyleProperty: spec.tokenStyleProperty,
+    defaultTokenSlot: spec.defaultTokenSlot,
     previewRendererKey: spec.previewRendererKey,
     exporterRendererMethod: spec.exporterRendererMethod,
     catalogSummaryEn: coreMeta.catalogSummaryEn,

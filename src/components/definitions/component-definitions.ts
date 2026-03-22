@@ -19,7 +19,8 @@ function buildBuiltInComponentSpec(name: BuiltInComponentName): ComponentSpec {
     properties: entry.properties,
     previewRendererKey: name,
     exporterRendererMethod: exporter.rendererMethod,
-    tokenStyleProperty: exporter.tokenStyleProperty
+    tokenStyleProperty: exporter.tokenStyleProperty,
+    defaultTokenSlot: exporter.defaultTokenSlot
   };
 }
 

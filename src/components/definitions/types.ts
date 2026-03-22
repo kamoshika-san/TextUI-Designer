@@ -81,6 +81,11 @@ export interface ComponentDefinition {
    */
   tokenStyleProperty?: TokenStyleProperty;
   /**
+   * テーマ token の既定適用先（スロット ID）。命名は `docs/token-slot-naming-convention.md` を参照。
+   * 未指定時は `tokenStyleProperty` のみで従来互換（ADR 0006）。
+   */
+  defaultTokenSlot?: string;
+  /**
    * WebView の組み込み renderer 登録キー（`component-map` の built-in キーと対応）。
    * 現状は `name` と同一。
    *

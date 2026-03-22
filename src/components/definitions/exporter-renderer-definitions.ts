@@ -14,6 +14,11 @@ export type ExporterRendererDefinition = {
    * `COMPONENT_DEFINITIONS.tokenStyleProperty` と `token-style-property-map` の入力の正本。
    */
   tokenStyleProperty: TokenStyleProperty;
+  /**
+   * 既定のテーマスロット ID（1 コンポーネント 1 スロットの互換形でも可）。
+   * formatter 層で `var(--tui-slot-…, <token>)` 等へ変換する（T-20260322-201/202）。
+   */
+  defaultTokenSlot?: string;
 };
 
 /**
@@ -24,7 +29,7 @@ export const BUILT_IN_EXPORTER_RENDERER_DEFINITIONS: Record<
   BuiltInComponentName,
   ExporterRendererDefinition
 > = {
-  Text: { rendererMethod: 'renderText', tokenStyleProperty: 'color' },
+  Text: { rendererMethod: 'renderText', tokenStyleProperty: 'color', defaultTokenSlot: 'text.color' },
   Input: { rendererMethod: 'renderInput', tokenStyleProperty: 'border-color' },
   Button: { rendererMethod: 'renderButton', tokenStyleProperty: 'background-color' },
   Checkbox: { rendererMethod: 'renderCheckbox', tokenStyleProperty: 'accent-color' },
