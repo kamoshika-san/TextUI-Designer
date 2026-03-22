@@ -33,13 +33,13 @@
 | **preview** | DSL 差分・プレビュー補助 |
 | **component** | `components/*` 各ビルトイン（`../types` 経由） |
 
-### ファイル一覧（import 元が `./types` または `../types`）
+### ファイル一覧（import 元が `./types` または `../types`。**例外**は脚注）
 
 | ファイル | 分類 | 主なimportシンボル（型） |
 |----------|------|---------------------------|
 | `types.ts` | facade | `export *` from `domain/dsl-types` |
-| `webview.tsx` | entry | `TextUIDSL`, `ComponentDef` |
-| `use-webview-messages.ts` | entry | `TextUIDSL` |
+| `webview.tsx` | entry | `TextUIDSL`, `ComponentDef` — **`../domain/dsl-types` 直参照（T-167 PoC）** |
+| `use-webview-messages.ts` | entry | `TextUIDSL` — **`../domain/dsl-types` 直参照（T-167 PoC）** |
 | `component-map.tsx` | kernel | `ComponentDef` |
 | `registered-component-kernel.tsx` | kernel | `ComponentDef` |
 | `preview-built-in-renderers.tsx` | kernel | （複数・`./types`） |
@@ -78,14 +78,14 @@ flowchart LR
   COMP[components/*]
 
   DSL --> FAC
-  FAC --> ENTRY
+  DSL --> ENTRY
   FAC --> KERNEL
   FAC --> COMP
 ```
 
-**観察**: `renderer` 配下では **型の実体は常に domain に集約**され、`types.ts` は **単一の再エクスポート窓口**。縮退・削除判断では「`types.ts` を廃止して各ファイルを `domain/dsl-types` に直す」か「プレビュー専用型を `preview-types.ts` に分離する」かを **PoC・ADR（T-167/T-168）** で段階的に決める。
+**観察**: `renderer` 配下では **型の実体は常に domain に集約**され、`types.ts` は **単一の再エクスポート窓口**（entry は T-167 で **窓口をバイパスして domain 直参照**する PoC を実施）。縮退・削除判断では「`types.ts` を廃止して各ファイルを `domain/dsl-types` に直す」か「プレビュー専用型を `preview-types.ts` に分離する」かを **PoC・ADR（T-167/T-168）** で段階的に決める。
 
 ### 次工程への手渡し（T-167 / T-168）
 
-- **PoC**: T-167 で `docs/ssot-webview-dsl-types-direct-import-poc.md` を追加（WebView 入口の `domain/dsl-types` 直参照試行）。
+- **PoC**: [ssot-webview-dsl-types-direct-import-poc.md](./ssot-webview-dsl-types-direct-import-poc.md)（WebView 入口の `domain/dsl-types` 直参照試行・T-167）。
 - **ADR 補遺**: ADR 0003 / `MAINTAINER_GUIDE` の更新は T-168 スコープ。

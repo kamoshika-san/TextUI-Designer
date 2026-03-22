@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { ThemeToggle } from './components/ThemeToggle';
 import { CustomThemeSelector } from './components/CustomThemeSelector';
 import { renderRegisteredComponent, registerBuiltInComponents } from './component-map';
-import type { TextUIDSL, ComponentDef } from './types';
+import type { TextUIDSL, ComponentDef } from '../domain/dsl-types';
 import { getVSCodeApi } from './vscode-api';
 import { createComponentKeys, hashString, mergeDslWithPrevious } from './preview-diff';
 import type { ErrorInfo } from './error-guidance';

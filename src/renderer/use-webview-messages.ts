@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { TextUIDSL } from './types';
+import type { TextUIDSL } from '../domain/dsl-types';
 import {
   formatSchemaErrors,
   mapDetailedSchemaError,
