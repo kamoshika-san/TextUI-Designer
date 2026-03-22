@@ -71,6 +71,9 @@ export class ThemeManager implements IThemeManager {
   }
 
   watchThemeFile(callback: (css: string) => void): void {
+    if (this.watcher) {
+      return;
+    }
     if (!this.themePath) {
       return;
     }

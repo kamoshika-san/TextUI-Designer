@@ -167,6 +167,10 @@ export class WebViewMessageHandler {
 
     if (this.themeManager) {
       this.applyThemeVariables(this.themeManager.generateCSSVariables());
+      // テーマファイル監視はプレビューが初めて開いたタイミングで開始（activate クリティカルパス短縮・T-305）
+      this.themeManager.watchThemeFile(css => {
+        this.applyThemeVariables(css);
+      });
     }
 
     await this.sendAvailableThemes();

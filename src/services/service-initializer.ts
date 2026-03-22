@@ -124,7 +124,10 @@ export class ServiceInitializer {
   private async initializeRuntime(services: ExtensionServices): Promise<void> {
     const ctx = { ensureMcpConfigured: () => this.ensureMcpConfigured() };
     for (const phase of RUNTIME_INIT_PHASES) {
+      const t0 = Date.now();
       await phase.run(services, ctx);
+      const ms = Date.now() - t0;
+      this.logger.info(`[runtime-init] phase=${phase.id} durationMs=${ms}`);
     }
   }
 

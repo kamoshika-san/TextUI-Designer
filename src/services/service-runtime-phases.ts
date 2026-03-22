@@ -31,7 +31,8 @@ export const RUNTIME_INIT_PHASES: readonly RuntimeInitPhase[] = [
   {
     id: 'mcp',
     run: async (_services, ctx) => {
-      await ctx.ensureMcpConfigured();
+      // activate のクリティカルパスから外し、バックグラウンドで完了させる（T-305）
+      void ctx.ensureMcpConfigured();
     }
   },
   {
@@ -39,9 +40,7 @@ export const RUNTIME_INIT_PHASES: readonly RuntimeInitPhase[] = [
     run: async services => {
       await services.themeManager.loadTheme();
       services.webViewManager.applyThemeVariables(services.themeManager.generateCSSVariables());
-      services.themeManager.watchThemeFile(css => {
-        services.webViewManager.applyThemeVariables(css);
-      });
+      // theme ファイル監視はプレビュー初回表示（webview-ready）まで遅延（T-305）
     }
   }
 ];

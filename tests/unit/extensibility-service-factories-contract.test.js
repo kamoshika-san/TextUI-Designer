@@ -193,7 +193,8 @@ describe('拡張API契約: ServiceFactoryOverrides', () => {
 
     assert.strictEqual(schemaManager.initializeCalled, 1);
     assert.strictEqual(themeManager.loadThemeCalled, 1);
-    assert.strictEqual(themeManager.watchThemeFileCalled, 1);
+    // watchThemeFile はプレビュー初回（webview-ready）まで遅延（T-305）
+    assert.strictEqual(themeManager.watchThemeFileCalled, 0);
     assert.deepStrictEqual(webViewManager.appliedCss, [':root { --x: 1; }']);
 
     await initializer.cleanup();
