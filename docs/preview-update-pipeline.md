@@ -43,6 +43,12 @@ stateDiagram-v2
 
 - **スキーマ検証**は `YamlParser` 内部で実行されるため、`parsing` と `validating` の境界は「非同期 1 呼び出し」の前後で表現している。検証だけを別フェーズに細分化する場合は `YamlParser` 側の分割が必要になる。
 
+## 観測と制御の境界（T-208）
+
+- **`PreviewUpdateCoordinator` / `PreviewUpdatePhase` は観測（テレメトリ・デバッグ）用**。1 回の送信処理の内部でどこまで進んだかを表す。
+- **制御**（再入防止・スキップ・キュー優先度・デバウンス）は **`UpdateQueueManager`**、**`PreviewUpdateSessionState`**（`isUpdating` 等）、**`shouldBlockYamlSend`** などが担う。
+- フェーズを読んで「このタイミングでは送らない」等の **新たな業務分岐を足さない**こと。境界の説明の正本は `preview-update-coordinator.ts` のクラス JSDoc。
+
 ## 関連コード
 
 - `src/services/webview/preview-update-coordinator.ts`（フェーズ状態は **観測専用**。`WebViewUpdateManager` から外部公開しない — T-207）
