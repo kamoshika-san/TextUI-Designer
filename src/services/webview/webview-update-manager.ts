@@ -115,27 +115,34 @@ export class WebViewUpdateManager {
   /**
    * 最後に開いたtui.ymlファイルを設定
    */
+  /**
+   * アクティブ DSL（.tui.yml）の正本パスを更新する。
+   * ファイル切替時は **session.lastTuiFile をキュー投入より先に**更新し、
+   * `sendYamlToWebview` が同期〜最初の await までのあいだに旧パスを参照しないようにする（T-301）。
+   */
   setLastTuiFile(filePath: string, updatePreview: boolean = false): void {
     console.log(`[WebViewUpdateManager] setLastTuiFile called: ${filePath}, updatePreview: ${updatePreview}`);
-    
-    // ファイルが変更された場合はキャッシュとエラー状態をクリア
-    if (this.session.lastTuiFile !== filePath) {
-      this.logger.debug(`ファイルが変更されました: ${this.session.lastTuiFile} -> ${filePath}`);
-      this.cacheManager.clearCacheForFile(this.session.lastTuiFile || '');
-      this.errorHandler.clearErrorState(this.session.lastTuiFile);
-      
-      // プレビュー更新が要求された場合、即座に更新
-      if (updatePreview && this.lifecycleManager.hasPanel()) {
-        console.log('[WebViewUpdateManager] ファイル変更による即座のプレビュー更新を実行します');
-        this.updateQueueManager.queueUpdate(
-          () => this.sendYamlToWebview(false),
-          true,
-          10 // 高優先度
-        );
-      }
+
+    const previous = this.session.lastTuiFile;
+
+    // ファイルが変更された場合はキャッシュとエラー状態をクリア（切替前パスで）
+    if (previous !== filePath) {
+      this.logger.debug(`ファイルが変更されました: ${previous} -> ${filePath}`);
+      this.cacheManager.clearCacheForFile(previous || '');
+      this.errorHandler.clearErrorState(previous);
     }
-    
+
     this.session.lastTuiFile = filePath;
+
+    // プレビュー更新は lastTuiFile 更新後にのみキューへ（競合防止）
+    if (previous !== filePath && updatePreview && this.lifecycleManager.hasPanel()) {
+      console.log('[WebViewUpdateManager] ファイル変更による即座のプレビュー更新を実行します');
+      this.updateQueueManager.queueUpdate(
+        () => this.sendYamlToWebview(false),
+        true,
+        10 // 高優先度
+      );
+    }
   }
 
   /**
