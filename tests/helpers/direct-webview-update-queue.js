@@ -6,12 +6,17 @@
  * 本番の {@link UpdateQueueManager} の代わりに `deps.updateQueueManager` へ渡す。
  */
 class DirectWebViewUpdateQueueForTest {
-  async queueUpdate(updateFunction) {
+  async queueUpdate(updateFunction, _forceUpdate, _priority, trace) {
+    if (trace) {
+      const { withPreviewPipelineTrace } = require('../../out/services/webview/preview-pipeline-observability');
+      await withPreviewPipelineTrace(trace, () => updateFunction());
+      return;
+    }
     await updateFunction();
   }
 
-  queueUpdateWithDebounce(updateFunction) {
-    void this.queueUpdate(updateFunction);
+  queueUpdateWithDebounce(updateFunction, _debounceDelay, trace) {
+    void this.queueUpdate(updateFunction, false, 0, trace);
   }
 
   getQueueStatus() {

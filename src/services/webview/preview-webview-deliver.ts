@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import type { WebViewLifecycleManager } from './webview-lifecycle-manager';
 import { resolveImageSourcesInDsl } from '../../utils/image-source-resolver';
+import { logPreviewDelivered } from './preview-pipeline-observability';
 
 /**
  * プレビュー WebView へ DSL ペイロードを postMessage する（deliver ポート）。
@@ -27,4 +28,6 @@ export function deliverPreviewPayload(
     data: normalizedData,
     fileName: fileName
   });
+
+  logPreviewDelivered(fileName);
 }

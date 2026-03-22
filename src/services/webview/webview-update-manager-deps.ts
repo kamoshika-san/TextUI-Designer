@@ -1,5 +1,6 @@
 import type { WebViewPreviewCacheManager } from './cache-manager';
 import type { PreviewFailurePolicyContext } from './preview-failure-policy';
+import type { PreviewPipelineQueueTrace } from './preview-pipeline-observability';
 
 /**
  * Preview 更新キュー（{@link WebViewUpdateManager} が使用する最小表面）。
@@ -9,9 +10,14 @@ export interface IWebViewUpdateQueue {
   queueUpdate(
     updateFunction: () => Promise<void>,
     forceUpdate?: boolean,
-    priority?: number
+    priority?: number,
+    trace?: PreviewPipelineQueueTrace
   ): Promise<void>;
-  queueUpdateWithDebounce(updateFunction: () => Promise<void>, debounceDelay?: number): void;
+  queueUpdateWithDebounce(
+    updateFunction: () => Promise<void>,
+    debounceDelay?: number,
+    trace?: PreviewPipelineQueueTrace
+  ): void;
   getQueueStatus(): {
     queueSize: number;
     isProcessing: boolean;

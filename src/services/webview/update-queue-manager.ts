@@ -1,11 +1,20 @@
 import { ConfigManager } from '../../utils/config-manager';
 import type { IWebViewUpdateQueue } from './webview-update-manager-deps';
+import type { PreviewPipelineQueueTrace } from './preview-pipeline-observability';
+import {
+  logPreviewQueueCoalescedDebounce,
+  logPreviewQueueCoalescedMinInterval,
+  logPreviewQueueDropped,
+  logPreviewQueueScheduled,
+  withPreviewPipelineTrace
+} from './preview-pipeline-observability';
 
 export interface UpdateTask {
   id: string;
   execute: () => Promise<void>;
   priority: number;
   timestamp: number;
+  trace?: PreviewPipelineQueueTrace;
 }
 
 /**
@@ -19,7 +28,11 @@ export class UpdateQueueManager implements IWebViewUpdateQueue {
   private lastUpdateTime: number = -1;
   private updateTimeout: NodeJS.Timeout | undefined = undefined;
   /** 最小間隔で捨てた非強制更新の「最新1件」を後追いする（T-302 latest-wins） */
-  private pendingLatest: { fn: () => Promise<void>; priority: number } | null = null;
+  private pendingLatest: {
+    fn: () => Promise<void>;
+    priority: number;
+    trace?: PreviewPipelineQueueTrace;
+  } | null = null;
   private pendingLatestTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   private readonly MAX_QUEUE_SIZE: number = 5; // キューサイズ制限
   private taskIdCounter: number = 0;
@@ -32,9 +45,10 @@ export class UpdateQueueManager implements IWebViewUpdateQueue {
    * 更新処理をキューに追加（デバウンス付き）
    */
   async queueUpdate(
-    updateFunction: () => Promise<void>, 
+    updateFunction: () => Promise<void>,
     forceUpdate: boolean = false,
-    priority: number = 0
+    priority: number = 0,
+    trace?: PreviewPipelineQueueTrace
   ): Promise<void> {
     // 強制更新は直列投入。保留中の「間隔待ち latest」を打ち消す
     if (forceUpdate) {
@@ -54,10 +68,12 @@ export class UpdateQueueManager implements IWebViewUpdateQueue {
       now - this.lastUpdateTime < minInterval
     ) {
       const wait = Math.max(0, minInterval - (now - this.lastUpdateTime));
+      const replacedPending = this.pendingLatest !== null;
       console.log(
         `[UpdateQueueManager] 最小更新間隔（${minInterval}ms）のため ${wait}ms 後に最新タスクを実行します`
       );
-      this.pendingLatest = { fn: updateFunction, priority };
+      logPreviewQueueCoalescedMinInterval({ waitMs: wait, trace, replacedPending });
+      this.pendingLatest = { fn: updateFunction, priority, trace };
       if (this.pendingLatestTimer) {
         clearTimeout(this.pendingLatestTimer);
       }
@@ -66,7 +82,7 @@ export class UpdateQueueManager implements IWebViewUpdateQueue {
         const pending = this.pendingLatest;
         this.pendingLatest = null;
         if (pending) {
-          void this.queueUpdate(pending.fn, true, pending.priority);
+          void this.queueUpdate(pending.fn, true, pending.priority, pending.trace);
         }
       }, wait);
       return;
@@ -100,16 +116,18 @@ export class UpdateQueueManager implements IWebViewUpdateQueue {
    */
   queueUpdateWithDebounce(
     updateFunction: () => Promise<void>,
-    debounceDelay: number = 200
+    debounceDelay: number = 200,
+    trace?: PreviewPipelineQueueTrace
   ): void {
     // 既存のタイマーをクリア
     if (this.updateTimeout) {
+      logPreviewQueueCoalescedDebounce();
       clearTimeout(this.updateTimeout);
     }
 
     // デバウンス処理
     this.updateTimeout = setTimeout(async () => {
-      await this.queueUpdate(updateFunction, false, 0);
+      await this.queueUpdate(updateFunction, false, 0, trace);
     }, debounceDelay);
   }
 
@@ -129,7 +147,9 @@ export class UpdateQueueManager implements IWebViewUpdateQueue {
         if (task) {
           try {
             console.log(`[UpdateQueueManager] タスク実行中: ${task.id} (優先度: ${task.priority})`);
-            await task.execute();
+            await (task.trace
+              ? withPreviewPipelineTrace(task.trace, () => task.execute())
+              : task.execute());
             this.lastUpdateTime = Date.now();
             
             // 処理間に少し間隔を空ける
@@ -188,6 +208,11 @@ export class UpdateQueueManager implements IWebViewUpdateQueue {
 
     const removedTask = this.updateQueue.splice(lowestPriorityIndex, 1)[0];
     console.log(`[UpdateQueueManager] 古いタスクを削除: ${removedTask.id} (優先度: ${removedTask.priority})`);
+    logPreviewQueueDropped({
+      droppedTaskId: removedTask.id,
+      droppedPriority: removedTask.priority,
+      trace: removedTask.trace
+    });
   }
 
   /**

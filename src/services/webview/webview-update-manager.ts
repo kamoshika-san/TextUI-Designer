@@ -12,6 +12,11 @@ import { PreviewUpdateSessionState, shouldBlockYamlSend } from './preview-update
 import { parseValidateYamlForPreview } from './preview-parser-validator-port';
 import { lookupPreviewCacheData } from './preview-cache-port';
 import { applyPreviewFailurePolicy } from './preview-failure-policy';
+import {
+  getActivePreviewPipelineTrace,
+  logPreviewPipelineSkip,
+  logPreviewPipelineStart
+} from './preview-pipeline-observability';
 import type {
   IWebViewUpdateQueue,
   PreviewFailurePolicyApplyFn,
@@ -91,13 +96,15 @@ export class WebViewUpdateManager {
         await this.updateQueueManager.queueUpdate(
           () => this.sendYamlToWebview(forceUpdate),
           true,
-          10 // 高優先度
+          10, // 高優先度
+          { entry: 'preview_force', scheduledFile: this.session.lastTuiFile }
         );
       } else {
         // デバウンス付きで更新
         this.updateQueueManager.queueUpdateWithDebounce(
           () => this.sendYamlToWebview(forceUpdate),
-          200
+          200,
+          { entry: 'preview_debounce', scheduledFile: this.session.lastTuiFile }
         );
       }
     } else {
@@ -140,7 +147,8 @@ export class WebViewUpdateManager {
       this.updateQueueManager.queueUpdate(
         () => this.sendYamlToWebview(false),
         true,
-        10 // 高優先度
+        10, // 高優先度
+        { entry: 'file_change_high_priority', scheduledFile: filePath }
       );
     }
   }
@@ -156,20 +164,30 @@ export class WebViewUpdateManager {
    * WebViewにYAMLデータを送信（キャッシュ付き）
    */
   async sendYamlToWebview(forceUpdate: boolean = false): Promise<void> {
+    const activeTrace = getActivePreviewPipelineTrace();
+
     // 自動プレビュー設定をチェック（明示的な実行時はスキップ）
     if (!forceUpdate) {
       const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
       
       if (!autoPreviewEnabled) {
         this.logger.debug('自動プレビューが無効なため、YAML送信をスキップします');
+        logPreviewPipelineSkip('auto_preview_disabled', `entry=${activeTrace?.entry ?? 'n/a'}`);
         return;
       }
     }
 
     if (shouldBlockYamlSend({ hasPanel: this.lifecycleManager.hasPanel(), isUpdating: this.session.isUpdating })) {
       this.logger.debug('パネルが存在しないか、更新中です');
+      logPreviewPipelineSkip('blocked_panel_or_updating', `hasPanel=${this.lifecycleManager.hasPanel()} isUpdating=${this.session.isUpdating}`);
       return;
     }
+
+    logPreviewPipelineStart({
+      forceUpdate,
+      lastTuiFile: this.session.lastTuiFile,
+      entry: activeTrace?.entry
+    });
 
     this.session.isUpdating = true;
     this.previewUpdateCoordinator.beginPipeline();

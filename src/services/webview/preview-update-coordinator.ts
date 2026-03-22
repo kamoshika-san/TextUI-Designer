@@ -1,3 +1,5 @@
+import { logPreviewPipelinePhaseSummary } from './preview-pipeline-observability';
+
 /**
  * WebView プレビュー更新パイプラインの明示的フェーズ。
  * キュー（UpdateQueueManager）・デバウンスは別レイヤ。ここでは「1 回の sendYamlToWebview 相当」の遷移を表す。
@@ -37,6 +39,10 @@ export enum PreviewUpdatePhase {
  */
 export class PreviewUpdateCoordinator {
   private phase: PreviewUpdatePhase = PreviewUpdatePhase.Idle;
+  /** `beginPipeline` 以降の 1 ランの計測（T-304） */
+  private pipelineStartMs = 0;
+  private segmentStartMs = 0;
+  private phaseDurationsMs: Record<string, number> = {};
 
   /** 現在フェーズ（観測用。制御判断の単一ソースにしない） */
   getPhase(): PreviewUpdatePhase {
@@ -46,18 +52,43 @@ export class PreviewUpdateCoordinator {
   /** パイプライン開始（sendYamlToWebview がロックを取った直後） */
   beginPipeline(): void {
     this.phase = PreviewUpdatePhase.Scheduled;
+    const now = performance.now();
+    this.pipelineStartMs = now;
+    this.segmentStartMs = now;
+    this.phaseDurationsMs = {};
   }
 
   setPhase(phase: PreviewUpdatePhase): void {
+    const now = performance.now();
+    this.accumulateSegment(now);
     this.phase = phase;
   }
 
   /** 正常・異常を問わずパイプライン終端 */
   endPipeline(): void {
+    const now = performance.now();
+    if (this.pipelineStartMs > 0) {
+      this.accumulateSegment(now);
+      logPreviewPipelinePhaseSummary(this.phaseDurationsMs, now - this.pipelineStartMs);
+    }
     this.phase = PreviewUpdatePhase.Idle;
+    this.pipelineStartMs = 0;
+    this.phaseDurationsMs = {};
   }
 
   markFailed(): void {
+    const now = performance.now();
+    this.accumulateSegment(now);
     this.phase = PreviewUpdatePhase.Failed;
+  }
+
+  private accumulateSegment(now: number): void {
+    if (this.pipelineStartMs <= 0) {
+      return;
+    }
+    const key = String(this.phase);
+    const delta = now - this.segmentStartMs;
+    this.phaseDurationsMs[key] = (this.phaseDurationsMs[key] || 0) + delta;
+    this.segmentStartMs = now;
   }
 }

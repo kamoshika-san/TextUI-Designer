@@ -8,6 +8,7 @@ import { ThemeDiscoveryService } from './theme-discovery-service';
 import { ThemeSwitchService } from './theme-switch-service';
 import { VsCodeWindowAdapter } from './vscode-window-adapter';
 import { YamlPointerResolver } from './yaml-pointer-resolver';
+import { withPreviewPipelineTrace } from './preview-pipeline-observability';
 
 type MessageType = 'export' | 'jump-to-dsl' | 'webview-ready' | 'theme-switch' | 'get-themes';
 type MessageHandler = (message: WebViewMessage) => Promise<void>;
@@ -156,7 +157,13 @@ export class WebViewMessageHandler {
     const initialTheme = colorThemeKind === lightThemeKind ? 'light' : 'dark';
     this.notifyThemeChange(initialTheme);
 
-    await this.updateManager.sendYamlToWebview(true);
+    await withPreviewPipelineTrace(
+      {
+        entry: 'webview_ready',
+        scheduledFile: this.updateManager.getLastTuiFile()
+      },
+      () => this.updateManager.sendYamlToWebview(true)
+    );
 
     if (this.themeManager) {
       this.applyThemeVariables(this.themeManager.generateCSSVariables());
@@ -264,7 +271,13 @@ export class WebViewMessageHandler {
 
       this.applyThemeVariables(result.cssVariables);
       await this.sendAvailableThemes();
-      await this.updateManager.sendYamlToWebview(false);
+      await withPreviewPipelineTrace(
+        {
+          entry: 'theme_switch',
+          scheduledFile: this.updateManager.getLastTuiFile()
+        },
+        () => this.updateManager.sendYamlToWebview(false)
+      );
 
       if (result.notice.kind === 'info') {
         this.windowAdapter.showInformationMessage(result.notice.message);
