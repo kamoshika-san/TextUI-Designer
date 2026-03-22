@@ -275,12 +275,9 @@ export class WebViewMessageHandler {
 
       this.applyThemeVariables(result.cssVariables);
       await this.sendAvailableThemes();
-      await withPreviewPipelineTrace(
-        {
-          entry: 'theme_switch',
-          scheduledFile: this.updateManager.getLastTuiFile()
-        },
-        () => this.updateManager.sendYamlToWebview(false)
+      // プレビューは CSS 変数でテーマを反映するため、通常は DSL 再送不要（T-306 / css-only fast path）
+      this.logger.debug(
+        'theme_switch: css-only fast path（sendYamlToWebview スキップ）。DSL 再評価が必要な例外は将来ここで分岐可能'
       );
 
       if (result.notice.kind === 'info') {
