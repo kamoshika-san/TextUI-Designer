@@ -134,6 +134,7 @@ npm test
 
 - [schema-pipeline-from-spec.md](schema-pipeline-from-spec.md) — `schema.json` の oneOf / definitions と descriptor の対応（**手編集禁止の理由**）
 - [completion-descriptor-authoring.md](completion-descriptor-authoring.md) — 補完を変えるときの編集箇所（manifest → descriptor）
+- [new-built-in-sample-regression-stub.md](new-built-in-sample-regression-stub.md) — **sample + 回帰テスト**のコピー用雛形（`sample/09-new-built-in-stub/`）
 - [adr/0005-exporter-unsupported-and-phased-rollout.md](adr/0005-exporter-unsupported-and-phased-rollout.md) — exporter 必須範囲・段階導入・unsupported 出力の製品方針（T-188）
 - [component-add-contract.md](component-add-contract.md) — 追加時の契約（descriptor / schema / preview / exporter / tests の 1 セット）
 - [change-amplification-dsl.md](change-amplification-dsl.md) — DSL の増幅箇所とテストの説明
