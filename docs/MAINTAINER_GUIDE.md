@@ -32,6 +32,29 @@
 
 チーム運用（外部アーキ 4 則）: [external-arch-team-rules.md](external-arch-team-rules.md)
 
+## 互換レイヤ（`src/renderer/types.ts`）
+
+共有 DSL 型まわりの **互換窓口**として `src/renderer/types.ts` をどう扱うかの最小ガイド（正本は [ADR 0003](adr/0003-dsl-types-canonical-source.md)・補遺 T-168）。
+
+### 役割
+
+- **正本（canonical）** は **`src/domain/dsl-types.ts`**。`renderer/types.ts` は **thin facade**（`domain` の再エクスポートに限定）として維持する。
+- **非 `src/renderer/**` から `renderer/types` を import しない**（0 件を CI ガードで維持）。詳細は [dsl-types-renderer-types-inventory.md](dsl-types-renderer-types-inventory.md) と `npm run check:dsl-types-ssot`。
+
+### WebView 入口（T-167）
+
+- プレビュー UI の **エントリ**（例: `webview.tsx`）では、`renderer/types` を経由せず **`domain/dsl-types` を直接 import してもよい**（ビルド・ルール上問題にならない）。PoCと判断材料: [ssot-webview-dsl-types-direct-import-poc.md](ssot-webview-dsl-types-direct-import-poc.md)。
+- 既存ファイルが facade 経由のままでもよい。**新規だけ**方針を変える必要はない（二重正本を増やさないこと）。
+
+### 削除や「中身の追加」
+
+- **型本体・独自 alias・業務ロジックを `renderer/types.ts` に足さない**（縮退ルール）。
+- **ファイル削除**は、ADR 0003 の「将来削除の判定条件」を満たしたうえで **別チケット**で行う（合意なしの削除 PR はしない）。
+
+### 変更時のチェック
+
+- 共有 DSL 型に触れる PR では、少なくとも `npm run compile` と `npm run check:dsl-types-ssot`、関連ユニット（`renderer-types-non-renderer-import-guard` 等）を通す。
+
 ADR: [0001 解析パイプライン（初稿）](adr/0001-document-analysis-service.md) · [0002 YAML 構文パース共有カーネル（T-067 第1スライス）](adr/0002-dsl-yaml-parse-shared-kernel.md) · [0003 DSL 型の正本と層境界（T-073）](adr/0003-dsl-types-canonical-source.md) · [0004 コンポーネント定義グラフの設計正本（T-090）](adr/0004-component-definition-graph-canonical.md) · [0006 tokenStyleProperty / defaultTokenSlot 互換](adr/0006-token-style-property-and-default-token-slot-compatibility.md)
 
 テーマ slot 命名（Phase 6 拡張時）: [token-slot-naming-convention.md](token-slot-naming-convention.md) · モデル案: [token-slot-model-and-theme-extension.md](token-slot-model-and-theme-extension.md)

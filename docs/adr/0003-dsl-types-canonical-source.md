@@ -51,10 +51,31 @@
 - T-074 以降の import 移行は **小さなスライス**で行い、回帰を `npm test` 等で担保する。
 - 2026-03-21 Sprint4（T-128〜T-130）で、`src/renderer/types.ts` は **thin facade**（domain 再エクスポート）に収束し、`src/renderer/**` 外からの `renderer/types` import は **ゼロ**を CI ガードで強制する運用に更新した。
 
+## 補遺: T-166 / T-167 を入力とした推奨コース（T-168・2026-03-22）
+
+### 入力の要約
+
+- **T-166（棚卸し）**: [dsl-types-renderer-types-inventory.md](../dsl-types-renderer-types-inventory.md) および `npm run check:dsl-types-ssot` により、**非 `src/renderer/**` からの `renderer/types` import は 0 件**を維持。`src/renderer/types.ts` は **`domain/dsl-types` の再エクスポートのみ**（thin facade）に収束済み。
+- **T-167（PoC）**: [ssot-webview-dsl-types-direct-import-poc.md](../ssot-webview-dsl-types-direct-import-poc.md) により、**WebView 入口**（例: `webview.tsx`）で **`domain/dsl-types` を直接 import** しても、ビルド・型・既存テストと整合する。**ESLint / import 境界**上、当該パスは `renderer/types` 経由に限定されない。
+
+### 推奨コース（維持 / 縮退 / 削除準備）
+
+| コース | 意味（本リポジトリでの解釈） | いつ見直すか |
+|--------|------------------------------|--------------|
+| **維持（当面）** | `src/renderer/types.ts` を **thin facade** として残す。共有 DSL の意味論の正本は引き続き **`src/domain/dsl-types.ts`**。 | インベントリの集計が大きく変わる・または下記「削除準備」の条件が揃いそうなとき。 |
+| **縮退** | facade に **型本体・独自 alias・業務ロジックを足さない**（上記「互換期間中の禁止事項」と同義）。WebView 側は必要に応じて **domain 直参照**（T-167）と facade 併存しうるが、**新規の「正本の二重化」は避ける**。 | 新規コンポーネント・新規 exporter 経路を追加するとき。 |
+| **削除準備** | ファイル削除そのものは **行わない**（非スコープ）。上記「**将来削除の判定条件**」を **すべて満たした**うえで、**別チケット**で削除・移行手順・外部契約を扱う。 | PM/TM が「互換レイヤ撤去」をバックログに載せるタイミング。 |
+
+### PM/TM 向け完了判断メモ
+
+- **本補遺の時点**では **「維持 + 縮退ルールの厳守」**を推奨コースとする。**合意なしの削除 PR は行わない**（親エピックの方針と一致）。
+- 次エピックでは、**`renderer/types` 参照ゼロ（`src/renderer/**` 含む）**に近づけるスライスか、**プレビュー専用型の分離**（`preview-types.ts` 等）を [ssot-renderer-types-inventory.md](../ssot-renderer-types-inventory.md) の観察に沿って検討してよい。
+
 ## 関連
 
 - 棚卸し: [dsl-types-renderer-types-inventory.md](../dsl-types-renderer-types-inventory.md)
-- メンテナー導線: [MAINTAINER_GUIDE.md](../MAINTAINER_GUIDE.md)「境界ガイド索引」
+- WebView / renderer 別インベントリ: [ssot-renderer-types-inventory.md](../ssot-renderer-types-inventory.md)
+- メンテナー導線: [MAINTAINER_GUIDE.md](../MAINTAINER_GUIDE.md)「互換レイヤ（`renderer/types.ts`）」
 - 型追加の実務手順: [adding-built-in-component.md](../adding-built-in-component.md)
 - PR 入力テンプレ: [../../.github/PULL_REQUEST_TEMPLATE.md](../../.github/PULL_REQUEST_TEMPLATE.md)
 - 親エピック: T-20260321-072（保守性 Top リスク追跡）
