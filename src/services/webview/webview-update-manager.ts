@@ -12,6 +12,11 @@ import { PreviewUpdateSessionState, shouldBlockYamlSend } from './preview-update
 import { parseValidateYamlForPreview } from './preview-parser-validator-port';
 import { lookupPreviewCacheData } from './preview-cache-port';
 import { applyPreviewFailurePolicy } from './preview-failure-policy';
+import type {
+  IWebViewUpdateQueue,
+  PreviewFailurePolicyApplyFn,
+  WebViewUpdateManagerDeps
+} from './webview-update-manager-deps';
 
 /**
  * YAML キャッシュのテスト観測口。単体テストは本オブジェクト経由で読み書きし、
@@ -34,26 +39,35 @@ export interface WebViewYamlCacheTestAdapter {
  * - **PreviewFailurePolicy**: `preview-failure-policy.ts`（`applyPreviewFailurePolicy`）
  *
  * 正本: `docs/preview-update-pipeline-ports.md`
+ *
+ * **テスト用差し替え（T-210）**: 第3引数 `deps` でキュー・キャッシュ・失敗ポリシーを注入可能。
+ * 例: `tests/helpers/direct-webview-update-queue.js` を `updateQueueManager` に渡すとデバウンス待ちが不要。
  */
 export class WebViewUpdateManager {
   private lifecycleManager: WebViewLifecycleManager;
   private yamlParser: YamlParser;
-  private updateQueueManager: UpdateQueueManager;
+  private updateQueueManager: IWebViewUpdateQueue;
   private previewUpdateCoordinator: PreviewUpdateCoordinator;
   private yamlSourceResolver: PreviewYamlSourceResolver;
   private cacheManager: WebViewPreviewCacheManager;
   private errorHandler: WebViewErrorHandler;
+  private readonly applyFailurePolicy: PreviewFailurePolicyApplyFn;
   private readonly session = new PreviewUpdateSessionState();
   private readonly logger = new Logger('WebViewUpdateManager');
 
-  constructor(lifecycleManager: WebViewLifecycleManager, schemaLoader?: YamlSchemaLoader) {
+  constructor(
+    lifecycleManager: WebViewLifecycleManager,
+    schemaLoader?: YamlSchemaLoader,
+    deps?: WebViewUpdateManagerDeps
+  ) {
     this.lifecycleManager = lifecycleManager;
     this.yamlParser = new YamlParser(schemaLoader);
-    this.updateQueueManager = new UpdateQueueManager();
+    this.updateQueueManager = deps?.updateQueueManager ?? new UpdateQueueManager();
     this.previewUpdateCoordinator = new PreviewUpdateCoordinator();
     this.yamlSourceResolver = new PreviewYamlSourceResolver(() => this.session.lastTuiFile, this.logger);
-    this.cacheManager = new WebViewPreviewCacheManager();
+    this.cacheManager = deps?.cacheManager ?? new WebViewPreviewCacheManager();
     this.errorHandler = new WebViewErrorHandler(lifecycleManager);
+    this.applyFailurePolicy = deps?.applyFailurePolicy ?? applyPreviewFailurePolicy;
   }
 
   /**
@@ -188,7 +202,7 @@ export class WebViewUpdateManager {
     } catch (error: unknown) {
       this.previewUpdateCoordinator.markFailed();
       console.error('[WebViewUpdateManager] YAML送信処理でエラーが発生しました:', error);
-      applyPreviewFailurePolicy(error, {
+      this.applyFailurePolicy(error, {
         errorHandler: this.errorHandler,
         lastTuiFile: this.session.lastTuiFile || ''
       });

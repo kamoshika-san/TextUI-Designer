@@ -1,4 +1,5 @@
 import { ConfigManager } from '../../utils/config-manager';
+import type { IWebViewUpdateQueue } from './webview-update-manager-deps';
 
 export interface UpdateTask {
   id: string;
@@ -11,7 +12,7 @@ export interface UpdateTask {
  * 更新キュー管理専用クラス
  * 更新処理のキュー管理、デバウンス処理、競合状態の防止を担当
  */
-export class UpdateQueueManager {
+export class UpdateQueueManager implements IWebViewUpdateQueue {
   private updateQueue: UpdateTask[] = [];
   private isProcessingQueue: boolean = false;
   private lastUpdateTime: number = 0;

@@ -1,8 +1,7 @@
 const assert = require('assert');
+const { DirectWebViewUpdateQueueForTest } = require('../helpers/direct-webview-update-queue');
 
 describe('WebViewUpdateManager', () => {
-  const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
   function createLifecycleMock(hasPanel = true) {
     return {
       hasPanel: () => hasPanel,
@@ -16,7 +15,9 @@ describe('WebViewUpdateManager', () => {
 
   it('updatePreview(false) は sendYamlToWebview(false) を呼び出す', async () => {
     const { WebViewUpdateManager } = require('../../out/services/webview/webview-update-manager');
-    const manager = new WebViewUpdateManager(createLifecycleMock(true));
+    const manager = new WebViewUpdateManager(createLifecycleMock(true), undefined, {
+      updateQueueManager: new DirectWebViewUpdateQueueForTest()
+    });
     const calls = [];
 
     manager.sendYamlToWebview = async (forceUpdate) => {
@@ -24,7 +25,6 @@ describe('WebViewUpdateManager', () => {
     };
 
     await manager.updatePreview(false);
-    await wait(260);
 
     assert.deepStrictEqual(calls, [false], '通常更新ではforceUpdate=falseが伝播する');
     manager.dispose();
@@ -47,7 +47,9 @@ describe('WebViewUpdateManager', () => {
 
   it('setLastTuiFile(updatePreview=true) はキャッシュ活用経路で更新する', async () => {
     const { WebViewUpdateManager } = require('../../out/services/webview/webview-update-manager');
-    const manager = new WebViewUpdateManager(createLifecycleMock(true));
+    const manager = new WebViewUpdateManager(createLifecycleMock(true), undefined, {
+      updateQueueManager: new DirectWebViewUpdateQueueForTest()
+    });
     const calls = [];
 
     manager.sendYamlToWebview = async (forceUpdate) => {
@@ -56,9 +58,18 @@ describe('WebViewUpdateManager', () => {
 
     manager.setLastTuiFile('/tmp/first.tui.yml');
     manager.setLastTuiFile('/tmp/second.tui.yml', true);
-    await wait(60);
 
     assert.deepStrictEqual(calls, [false], 'ファイル切替即時更新はforce=falseで呼び出される');
+    manager.dispose();
+  });
+
+  it('T-210: 注入したキューの getQueueStatus がそのまま観測できる', () => {
+    const { WebViewUpdateManager } = require('../../out/services/webview/webview-update-manager');
+    const manager = new WebViewUpdateManager(createLifecycleMock(true), undefined, {
+      updateQueueManager: new DirectWebViewUpdateQueueForTest()
+    });
+    const st = manager.getQueueStatus();
+    assert.deepStrictEqual(st, { queueSize: 0, isProcessing: false, lastUpdateTime: 0 });
     manager.dispose();
   });
 });
