@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+/**
+ * `npm run compile` の最終段で実行。descriptor（COMPONENT_DEFINITIONS）由来の
+ * `definitions.component.oneOf` を `schema-component-oneof-builder` 経由で `schemas/schema.json` に書き戻し、
+ * `template-schema.json` をメインスキーマから再生成する。正規フローは docs/schema-pipeline-from-spec.md。
+ */
 /* eslint-disable no-console */
 const fs = require('fs');
 const path = require('path');

@@ -2,6 +2,8 @@ import { componentDescriptorRegistry } from '../../registry/component-descriptor
 
 /**
  * Schema パイプライン用の descriptor graph 直結セレクタ。
+ * **`schemas/schema.json` の `definitions.component.oneOf` および definitions キー存在チェック**に使う
+ * コンポーネント名・`$ref` 列挙の **単一 API**（別経路で BUILT_IN 名を数えない）。
  * 新規コードは `registry/component-manifest` ではなく本モジュールを参照すること。
  */
 

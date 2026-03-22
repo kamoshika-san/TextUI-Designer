@@ -141,7 +141,7 @@ ADR: [0001 解析パイプライン（初稿）](adr/0001-document-analysis-serv
 
 - **設定定義**: `src/config/configuration-properties.ts`
 - **コマンド定義**: `src/services/command-catalog.ts`
-- **スキーマ組み立て**: `src/services/schema/*` + `scripts/generate-schemas-from-definitions.cjs`
+- **スキーマ組み立て**: `src/services/schema/*` + `scripts/generate-schemas-from-definitions.cjs`（**`definitions.component.oneOf` と `definitions/<Name>` の期待列挙**の正本は descriptor → 詳細は [schema-pipeline-from-spec.md](schema-pipeline-from-spec.md)）
 - **WebView CSS 組み立て**: `scripts/generate-renderer-index-css.cjs` + `src/renderer/components/styles/*`
 
 > `package.json` は生成ターゲットを含みます。  
