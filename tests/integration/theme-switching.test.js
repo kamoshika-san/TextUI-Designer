@@ -18,7 +18,9 @@ describe('テーマ切り替え機能 結合テスト', () => {
     getThemePath() { return this.themePath; },
     setThemePath(themePath) { this.themePath = themePath; },
     loadTheme: async () => {},
-    generateCSSVariables: () => '--mock-theme-var: 1;'
+    generateCSSVariables: () => '--mock-theme-var: 1;',
+    /** @param {(css: string) => void} _callback WebViewMessageHandler.handleWebViewReady から登録（T-305）。結合テストではファイル監視を再現しない。 */
+    watchThemeFile(_callback) {}
   };
 
   const wait = (ms = 20) => new Promise(resolve => setTimeout(resolve, ms));
