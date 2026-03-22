@@ -7,7 +7,12 @@ export const ACTIVE_EDITOR_DEBOUNCE_MS = 100;
 export const SAVE_DEBOUNCE_MS = 100;
 export const SAVING_FLAG_CLEAR_DELAY_MS = 500;
 export const POST_SAVE_DOCUMENT_CHANGE_SKIP_MS = 1000;
-export const DOCUMENT_CHANGE_DEBOUNCE_MS = 150;
+/** プレビュー更新（latest-wins・短め） */
+export const DOCUMENT_PREVIEW_DEBOUNCE_MS = 100;
+/** 診断（validateOnChange）。プレビューと独立したタイマーで相互にブロックしない（T-308） */
+export const DOCUMENT_DIAGNOSTICS_DEBOUNCE_MS = 350;
+/** @deprecated DOCUMENT_PREVIEW_DEBOUNCE_MS に置き換え */
+export const DOCUMENT_CHANGE_DEBOUNCE_MS = DOCUMENT_PREVIEW_DEBOUNCE_MS;
 export const CHANGE_COUNTER_RESET_MS = 1000;
 export const MIN_CHANGE_INTERVAL_MS = 100;
 export const MAX_CHANGES_PER_SECOND = 15;

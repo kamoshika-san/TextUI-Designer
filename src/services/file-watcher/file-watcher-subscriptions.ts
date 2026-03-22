@@ -6,7 +6,8 @@ import { Logger } from '../../utils/logger';
 import {
   ACTIVE_EDITOR_DEBOUNCE_MS,
   CHANGE_COUNTER_RESET_MS,
-  DOCUMENT_CHANGE_DEBOUNCE_MS,
+  DOCUMENT_DIAGNOSTICS_DEBOUNCE_MS,
+  DOCUMENT_PREVIEW_DEBOUNCE_MS,
   FileWatcherSyncState,
   isDocumentOversized,
   MAX_CHANGES_PER_SECOND,
@@ -156,7 +157,8 @@ export class DocumentSaveSubscription {
  * ドキュメント変更の監視（保存との相互作用・スロットリング・デバウンス 150ms）
  */
 export class DocumentChangeSubscription {
-  private documentChangeTimeout: NodeJS.Timeout | undefined;
+  private previewTimeout: NodeJS.Timeout | undefined;
+  private diagnosticsTimeout: NodeJS.Timeout | undefined;
 
   constructor(
     private readonly deps: FileWatcherDeps,
@@ -173,9 +175,13 @@ export class DocumentChangeSubscription {
   }
 
   clearTimer(): void {
-    if (this.documentChangeTimeout) {
-      clearTimeout(this.documentChangeTimeout);
-      this.documentChangeTimeout = undefined;
+    if (this.previewTimeout) {
+      clearTimeout(this.previewTimeout);
+      this.previewTimeout = undefined;
+    }
+    if (this.diagnosticsTimeout) {
+      clearTimeout(this.diagnosticsTimeout);
+      this.diagnosticsTimeout = undefined;
     }
   }
 
@@ -219,22 +225,33 @@ export class DocumentChangeSubscription {
       return;
     }
 
-    if (this.documentChangeTimeout) {
-      clearTimeout(this.documentChangeTimeout);
+    if (this.previewTimeout) {
+      clearTimeout(this.previewTimeout);
     }
 
-    this.documentChangeTimeout = setTimeout(async () => {
+    this.previewTimeout = setTimeout(async () => {
       try {
         this.deps.memoryMonitor.checkMemoryUsageRealTime();
         await services.webViewManager.updatePreview();
+      } catch (error) {
+        this.deps.logger.error('ドキュメント変更処理（プレビュー）でエラーが発生しました:', error);
+      }
+    }, DOCUMENT_PREVIEW_DEBOUNCE_MS);
 
+    if (this.diagnosticsTimeout) {
+      clearTimeout(this.diagnosticsTimeout);
+    }
+
+    const docSnapshot = event.document;
+    this.diagnosticsTimeout = setTimeout(() => {
+      try {
         const diagnosticSettings = ConfigManager.getDiagnosticSettings();
         if (diagnosticSettings.enabled && diagnosticSettings.validateOnChange) {
-          services.diagnosticManager.validateAndReportDiagnostics(event.document);
+          services.diagnosticManager.validateAndReportDiagnostics(docSnapshot);
         }
       } catch (error) {
-        this.deps.logger.error('ドキュメント変更処理でエラーが発生しました:', error);
+        this.deps.logger.error('ドキュメント変更処理（診断）でエラーが発生しました:', error);
       }
-    }, DOCUMENT_CHANGE_DEBOUNCE_MS);
+    }, DOCUMENT_DIAGNOSTICS_DEBOUNCE_MS);
   }
 }
