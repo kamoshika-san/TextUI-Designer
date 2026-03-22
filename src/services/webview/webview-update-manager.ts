@@ -19,13 +19,23 @@ import type {
 } from './webview-update-manager-deps';
 
 /**
- * YAML キャッシュのテスト観測口。単体テストは本オブジェクト経由で読み書きし、
- * `_getYamlCacheContent` 等を直接呼ばない（T-104）。
+ * YAML キャッシュおよび関連する **テスト専用** の観測・操作口（T-104 / T-207）。
+ * 本番コードからは `createYamlCacheTestAdapter()` 経由でのみ取得する。
+ * 単体テストは本オブジェクト経由で読み書きし、`_getYamlCacheContent` 等を直接呼ばない。
  */
 export interface WebViewYamlCacheTestAdapter {
   getYamlCacheContent(): string;
   clearYamlCache(): void;
   setYamlCacheContent(content: string): void;
+  /** 解析済み DSL（キャッシュ格納値）の取得。テスト契約用。 */
+  getParsedData(): unknown;
+  /** 解析済み DSL の設定。テスト契約用。 */
+  setParsedData(val: unknown): void;
+  /**
+   * メモリ閾値に応じたキャッシュ整理（`WebViewPreviewCacheManager.checkMemoryUsage`）を実行。
+   * ユニットテストのメモリシナリオ専用。
+   */
+  runMemoryPressureCheckForTest(): void;
 }
 
 /**
@@ -213,34 +223,25 @@ export class WebViewUpdateManager {
   }
 
   /**
-   * 開発者ツールを開く
-   */
-  openDevTools(): void {
-    const panel = this.lifecycleManager.getPanel();
-    if (panel) {
-      panel.webview.postMessage({ type: 'openDevTools' });
-    } else {
-      const vscode = require('vscode');
-      vscode.window.showWarningMessage('プレビューが開かれていません。先にプレビューを開いてください。');
-    }
-  }
-
-  /**
-   * テスト用メモリ管理メソッド
-   */
-  _testMemoryManagement(): void {
-    this.logger.debug('テスト用メモリ管理を実行');
-    this.cacheManager.checkMemoryUsage();
-  }
-
-  /**
-   * YAML キャッシュを単体テストから観測するためのアダプタ。テストはここ経由のみを使用する。
+   * YAML キャッシュ／パース結果のテスト用アダプタ（T-207: テスト露出の単一入口）。
+   * `lastParsedData` や `_testMemoryManagement` 相当はここに集約。
    */
   createYamlCacheTestAdapter(): WebViewYamlCacheTestAdapter {
     return {
       getYamlCacheContent: () => this.readYamlCacheContentForTest(),
       clearYamlCache: () => this.clearYamlCacheForTest(),
       setYamlCacheContent: (content: string) => this.setYamlCacheContentForTest(content),
+      getParsedData: () => this.cacheManager._getCachedData(this.session.lastTuiFile || '') ?? null,
+      setParsedData: (val: unknown) => {
+        const fileName = this.session.lastTuiFile || '';
+        const content = this.cacheManager._getCacheContent(fileName) || '';
+        const normalizedValue = val === undefined ? null : val;
+        this.cacheManager.setCachedData(fileName, content, normalizedValue);
+      },
+      runMemoryPressureCheckForTest: () => {
+        this.logger.debug('テスト用メモリ管理を実行');
+        this.cacheManager.checkMemoryUsage();
+      }
     };
   }
 
@@ -258,53 +259,23 @@ export class WebViewUpdateManager {
   }
 
   /**
-   * キューの状態を取得
+   * 開発者ツールを開く
+   */
+  openDevTools(): void {
+    const panel = this.lifecycleManager.getPanel();
+    if (panel) {
+      panel.webview.postMessage({ type: 'openDevTools' });
+    } else {
+      const vscode = require('vscode');
+      vscode.window.showWarningMessage('プレビューが開かれていません。先にプレビューを開いてください。');
+    }
+  }
+
+  /**
+   * キューの状態を取得（注入キューとの疎通確認用。T-210）
    */
   getQueueStatus() {
     return this.updateQueueManager.getQueueStatus();
-  }
-
-  /** プレビュー更新パイプラインの現在フェーズ（デバッグ・テスト用） */
-  getPreviewUpdatePhase(): PreviewUpdatePhase {
-    return this.previewUpdateCoordinator.getPhase();
-  }
-
-  /**
-   * キャッシュの統計情報を取得
-   */
-  getCacheStats() {
-    return this.cacheManager.getCacheStats();
-  }
-
-  /**
-   * エラー統計を取得
-   */
-  getErrorStats() {
-    return this.errorHandler.getErrorStats();
-  }
-
-  /**
-   * テスト用: lastYamlContent へのアクセサ（内部は createYamlCacheTestAdapter と同じ経路）
-   */
-  get lastYamlContent(): string {
-    return this.readYamlCacheContentForTest();
-  }
-  set lastYamlContent(content: string) {
-    this.setYamlCacheContentForTest(content);
-  }
-
-  /**
-   * テスト用: lastParsedData へのアクセサ
-   * YAMLキャッシュの解析済みデータを取得/設定
-   */
-  get lastParsedData(): unknown {
-    return this.cacheManager._getCachedData(this.session.lastTuiFile || '') ?? null;
-  }
-  set lastParsedData(val: unknown) {
-    const fileName = this.session.lastTuiFile || '';
-    const content = this.cacheManager._getCacheContent(fileName) || '';
-    const normalizedValue = val === undefined ? null : val;
-    this.cacheManager.setCachedData(fileName, content, normalizedValue);
   }
 
   /**

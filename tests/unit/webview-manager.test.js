@@ -204,8 +204,8 @@ describe('WebViewManager 単体テスト', () => {
     });
   });
 
-  describe('lastParsedData の管理', () => {
-    it('setterで設定した値をgetterで取得できる', () => {
+  describe('解析済み DSL キャッシュ（テストアダプタ）', () => {
+    it('setParsedData で設定した値を getParsedData で取得できる', () => {
       const testPath = '/path/to/parsed.tui.yml';
       const parsedData = {
         page: {
@@ -218,12 +218,13 @@ describe('WebViewManager 単体テスト', () => {
 
       webviewManager.setLastTuiFile(testPath);
       const updateMgr = getWebViewUpdateManagerForTest(webviewManager);
-      updateMgr.lastParsedData = parsedData;
+      const yamlTest = updateMgr.createYamlCacheTestAdapter();
+      yamlTest.setParsedData(parsedData);
 
       assert.deepStrictEqual(
-        updateMgr.lastParsedData,
+        yamlTest.getParsedData(),
         parsedData,
-        'lastParsedData の read/write 契約が成立している'
+        'createYamlCacheTestAdapter 経由の read/write 契約が成立している'
       );
     });
   });
@@ -430,7 +431,7 @@ describe('WebViewManager 単体テスト', () => {
        yamlTest.setYamlCacheContent('test content');
 
        // テスト用メソッドを直接実行
-       updateMgr._testMemoryManagement();
+       yamlTest.runMemoryPressureCheckForTest();
 
        // キャッシュがクリアされていることを確認
        assert.strictEqual(yamlTest.getYamlCacheContent(), '', 'YAMLキャッシュがクリアされた');
@@ -451,7 +452,7 @@ describe('WebViewManager 単体テスト', () => {
        yamlTest.setYamlCacheContent('test content');
 
        // テスト用メソッドを直接実行
-       updateMgr._testMemoryManagement();
+       yamlTest.runMemoryPressureCheckForTest();
 
        // キャッシュがクリアされていることを確認
        assert.strictEqual(yamlTest.getYamlCacheContent(), '', 'YAMLキャッシュがクリアされた');
@@ -473,7 +474,7 @@ describe('WebViewManager 単体テスト', () => {
        yamlTest.setYamlCacheContent(testContent);
 
        // テスト用メソッドを直接実行
-       updateMgr._testMemoryManagement();
+       yamlTest.runMemoryPressureCheckForTest();
 
        // キャッシュが保持されていることを確認
        assert.strictEqual(yamlTest.getYamlCacheContent(), testContent, 'YAMLキャッシュが保持されている');
@@ -495,7 +496,7 @@ describe('WebViewManager 単体テスト', () => {
        yamlTest.setYamlCacheContent(testContent);
 
        // テスト用メソッドを直接実行
-       updateMgr._testMemoryManagement();
+       yamlTest.runMemoryPressureCheckForTest();
 
        // キャッシュが完全に保持されていることを確認
        assert.strictEqual(yamlTest.getYamlCacheContent(), testContent, 'YAMLキャッシュが完全に保持されている');

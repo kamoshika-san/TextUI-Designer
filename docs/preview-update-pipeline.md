@@ -45,6 +45,6 @@ stateDiagram-v2
 
 ## 関連コード
 
-- `src/services/webview/preview-update-coordinator.ts`
-- `src/services/webview/webview-update-manager.ts`（`getPreviewUpdatePhase()`）
+- `src/services/webview/preview-update-coordinator.ts`（フェーズ状態は **観測専用**。`WebViewUpdateManager` から外部公開しない — T-207）
+- `src/services/webview/webview-update-manager.ts`（オーケストレーション。フェーズは内部の `PreviewUpdateCoordinator` のみ）
 - [webview-update-manager-responsibilities.md](./webview-update-manager-responsibilities.md)（責務一覧・後続スライス候補）

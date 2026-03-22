@@ -16,7 +16,7 @@
 | 8 | **自動プレビュー設定の解釈** | `updatePreview` / `sendYamlToWebview` 冒頭 | `ConfigManager` |
 | 9 | **lastTuiFile 変更時のキャッシュ・エラー状態クリア** | `setLastTuiFile` | |
 | 10 | **再入防止（isUpdating）** | `sendYamlToWebview` | キューと併用 |
-| 11 | **開発者向け・テスト用フック** | `_testMemoryManagement` 等 | 縮小候補 |
+| 11 | **テスト用フック** | `createYamlCacheTestAdapter()`（`WebViewYamlCacheTestAdapter`） | T-207 で YAML/パース/メモリ検査を単一入口に集約。`_testMemoryManagement`・`lastParsedData` 相当は廃止 |
 
 ## 第1スライス
 
