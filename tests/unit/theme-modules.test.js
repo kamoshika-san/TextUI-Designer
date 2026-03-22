@@ -67,6 +67,36 @@ describe('Theme modules', () => {
       }
     });
 
+    it('mtime が変わるとキャッシュを使わず再読込する', async () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'theme-loader-mtime-'));
+      const themePath = path.join(dir, 't.yml');
+
+      try {
+        fs.writeFileSync(
+          themePath,
+          JSON.stringify({
+            theme: { tokens: { colors: { primary: { value: '#111111' } } } }
+          })
+        );
+        const loader = new ThemeLoader();
+        const resolved1 = await loader.resolveThemeDefinition(themePath);
+        assert.strictEqual(resolved1.theme.tokens.colors.primary.value, '#111111');
+
+        await new Promise(r => setTimeout(r, 20));
+        fs.writeFileSync(
+          themePath,
+          JSON.stringify({
+            theme: { tokens: { colors: { primary: { value: '#222222' } } } }
+          })
+        );
+
+        const resolved2 = await loader.resolveThemeDefinition(themePath);
+        assert.strictEqual(resolved2.theme.tokens.colors.primary.value, '#222222');
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    });
+
     it('throws for unsupported npm: extends path', async () => {
       const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'theme-loader-npm-'));
       const childPath = path.join(dir, 'child.yml');
