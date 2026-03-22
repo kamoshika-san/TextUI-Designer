@@ -16,3 +16,76 @@
 - 互換窓口として `renderer/types` を使う場合は理由を明記し、段階的縮退を前提にする。
 - `renderer/types` は thin facade（再エクスポート専用）として維持し、型本体の追加を禁止する。
 - 削除検討は「全レイヤ参照ゼロ」「domain 直参照で build/test 緑」「移行影響文書化」を満たしたときに行う。
+
+---
+
+## `src/renderer/**` 内の `types` 参照一覧（2026-03-22 棚卸し・T-166）
+
+**正本**: `src/domain/dsl-types.ts`（ADR 0003）。**窓口**: `src/renderer/types.ts` は `export * from '../domain/dsl-types'` のみ。
+
+### 分類キー
+
+| 分類 | 意味 |
+|------|------|
+| **facade** | `types.ts` 本体（再エクスポートのみ） |
+| **entry** | WebView エントリ・メッセージ（ユーザー向けプレビュー UI の根） |
+| **kernel** | 登録コンポーネント・component-map・プレビュー built-in |
+| **preview** | DSL 差分・プレビュー補助 |
+| **component** | `components/*` 各ビルトイン（`../types` 経由） |
+
+### ファイル一覧（import 元が `./types` または `../types`）
+
+| ファイル | 分類 | 主なimportシンボル（型） |
+|----------|------|---------------------------|
+| `types.ts` | facade | `export *` from `domain/dsl-types` |
+| `webview.tsx` | entry | `TextUIDSL`, `ComponentDef` |
+| `use-webview-messages.ts` | entry | `TextUIDSL` |
+| `component-map.tsx` | kernel | `ComponentDef` |
+| `registered-component-kernel.tsx` | kernel | `ComponentDef` |
+| `preview-built-in-renderers.tsx` | kernel | （複数・`./types`） |
+| `preview-diff.ts` | preview | `ComponentDef`, `TextUIDSL` |
+| `components/Accordion.tsx` | component | `AccordionComponent`, `ComponentDef` |
+| `components/Alert.tsx` | component | `AlertComponent` |
+| `components/Badge.tsx` | component | `BadgeComponent`, `BadgeVariant` |
+| `components/Breadcrumb.tsx` | component | `BreadcrumbComponent` |
+| `components/Button.tsx` | component | `ButtonComponent` |
+| `components/Checkbox.tsx` | component | `CheckboxComponent` |
+| `components/Container.tsx` | component | `ContainerComponent` |
+| `components/DatePicker.tsx` | component | `DatePickerComponent` |
+| `components/Divider.tsx` | component | `DividerComponent` |
+| `components/Form.tsx` | component | `FormComponent`, `FormField`, `FormAction` |
+| `components/Icon.tsx` | component | `IconComponent` |
+| `components/Image.tsx` | component | `ImageComponent` |
+| `components/Input.tsx` | component | `InputComponent` |
+| `components/Link.tsx` | component | `LinkComponent` |
+| `components/Progress.tsx` | component | `ProgressComponent`, `ProgressVariant` |
+| `components/Radio.tsx` | component | `RadioComponent`, `RadioOption` |
+| `components/Select.tsx` | component | `SelectComponent`, `SelectOption` |
+| `components/Spacer.tsx` | component | `SpacerComponent` |
+| `components/Table.tsx` | component | `ComponentDef`, `TableComponent`, `isComponentDefValue` |
+| `components/Tabs.tsx` | component | `ComponentDef`, `TabsComponent` |
+| `components/Text.tsx` | component | `TextComponent` |
+| `components/TreeView.tsx` | component | `ComponentDef`, `TreeViewComponent`, `TreeViewItem` |
+
+### 依存の読み方（簡易）
+
+```mermaid
+flowchart LR
+  DSL[domain/dsl-types.ts]
+  FAC[renderer/types.ts]
+  ENTRY[webview / use-webview-messages]
+  KERNEL[component-map / kernel / preview-built-in]
+  COMP[components/*]
+
+  DSL --> FAC
+  FAC --> ENTRY
+  FAC --> KERNEL
+  FAC --> COMP
+```
+
+**観察**: `renderer` 配下では **型の実体は常に domain に集約**され、`types.ts` は **単一の再エクスポート窓口**。縮退・削除判断では「`types.ts` を廃止して各ファイルを `domain/dsl-types` に直す」か「プレビュー専用型を `preview-types.ts` に分離する」かを **PoC・ADR（T-167/T-168）** で段階的に決める。
+
+### 次工程への手渡し（T-167 / T-168）
+
+- **PoC**: T-167 で `docs/ssot-webview-dsl-types-direct-import-poc.md` を追加（WebView 入口の `domain/dsl-types` 直参照試行）。
+- **ADR 補遺**: ADR 0003 / `MAINTAINER_GUIDE` の更新は T-168 スコープ。
