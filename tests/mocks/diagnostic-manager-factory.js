@@ -112,32 +112,8 @@ class DiagnosticManagerFactory {
         createDiagnosticCollection: (name) => {
           return mockDiagnosticCollection;
         }
-      },
-      DiagnosticSeverity: {
-        Error: 0,
-        Warning: 1,
-        Information: 2,
-        Hint: 3
-      },
-      Diagnostic: class {
-        constructor(range, message, severity) {
-          this.range = range;
-          this.message = message;
-          this.severity = severity !== undefined ? severity : 0;
-        }
-      },
-      Range: class {
-        constructor(start, end) {
-          this.start = start;
-          this.end = end;
-        }
-      },
-      Position: class {
-        constructor(line, character) {
-          this.line = line;
-          this.character = character;
-        }
       }
+      // Position / Range / Diagnostic / DiagnosticSeverity は tests/mocks/vscode-mock.js の実装を使用
     };
 
     // Module requireフックを設定

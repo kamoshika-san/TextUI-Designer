@@ -1,4 +1,10 @@
-export class DiagnosticScheduler {
+/** 診断デバウンス用スケジューラ（テストでモック差し替え可能） */
+export interface IDiagnosticScheduler {
+  schedule(task: () => Promise<void>, delayMs: number): void;
+  clear(): void;
+}
+
+export class DiagnosticScheduler implements IDiagnosticScheduler {
   private timeout: NodeJS.Timeout | null = null;
 
   schedule(task: () => Promise<void>, delayMs: number): void {

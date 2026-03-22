@@ -16,8 +16,8 @@ describe('DiagnosticManager', () => {
     delete require.cache[require.resolve('../mocks/diagnostic-manager-factory.js')];
     const { DiagnosticManagerFactory } = require('../mocks/diagnostic-manager-factory.js');
     
-    // VSCodeモックを取得
-    const vscode = global.vscode || require('../mocks/vscode-mock.js');
+    // VSCodeモックを取得（global.vscode は他テストで {} 等に差し替わることがあるため常に正本を読む）
+    const vscode = require('../mocks/vscode-mock.js');
     
     // DiagnosticManagerインスタンスを作成
     diagnosticManager = DiagnosticManagerFactory.createForTest(vscode);

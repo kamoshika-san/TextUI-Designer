@@ -103,6 +103,64 @@ class MockTextEditor {
   }
 }
 
+/** VS Code API 互換: Position */
+class MockPosition {
+  constructor(line, character) {
+    this.line = line;
+    this.character = character;
+  }
+
+  isBefore(other) {
+    return this.line < other.line || (this.line === other.line && this.character < other.character);
+  }
+
+  isEqual(other) {
+    return this.line === other.line && this.character === other.character;
+  }
+}
+
+/**
+ * VS Code API 互換: Range
+ * - new Range(start: Position, end: Position)
+ * - new Range(startLine, startChar, endLine, endChar)
+ */
+class MockRange {
+  constructor(a, b, c, d) {
+    if (arguments.length === 4 && typeof a === 'number') {
+      this.start = new MockPosition(a, b);
+      this.end = new MockPosition(c, d);
+    } else if (arguments.length === 2) {
+      this.start = a;
+      this.end = b;
+    } else {
+      throw new Error('MockRange: invalid arguments');
+    }
+  }
+
+  isEmpty() {
+    return this.start.isEqual(this.end);
+  }
+}
+
+const MockDiagnosticSeverity = {
+  Error: 0,
+  Warning: 1,
+  Information: 2,
+  Hint: 3
+};
+
+class MockDiagnostic {
+  constructor(range, message, severity) {
+    this.range = range;
+    this.message = message;
+    this.severity = severity !== undefined ? severity : MockDiagnosticSeverity.Error;
+    this.source = undefined;
+    this.code = undefined;
+    this.relatedInformation = undefined;
+    this.tags = undefined;
+  }
+}
+
 class MockUri {
   constructor(scheme, authority, path, query, fragment) {
     this.scheme = scheme || 'file';
@@ -243,6 +301,14 @@ const mockVscode = {
 
   // Uri
   Uri: MockUri,
+
+  Position: MockPosition,
+
+  Range: MockRange,
+
+  DiagnosticSeverity: MockDiagnosticSeverity,
+
+  Diagnostic: MockDiagnostic,
 
   // ConfigurationTarget
   ConfigurationTarget: {

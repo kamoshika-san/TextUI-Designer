@@ -7,10 +7,25 @@ import { buildDiagnosticTemplate } from './diagnostics/template-builder';
 import { assembleDiagnosticMarkdownMessage } from './diagnostics/diagnostic-message-assembler';
 import { resolveDiagnosticLocation, resolveDiagnosticRange } from './diagnostics/range-resolver';
 import { DiagnosticCacheStore, type DiagnosticCacheEntry } from './diagnostics/diagnostic-cache-store';
-import { DiagnosticScheduler } from './diagnostics/diagnostic-scheduler';
-import { DiagnosticValidationEngine, type ValidationSchemaKind } from './diagnostics/diagnostic-validation-engine';
+import { DiagnosticScheduler, type IDiagnosticScheduler } from './diagnostics/diagnostic-scheduler';
+import {
+  DiagnosticValidationEngine,
+  type IDiagnosticValidationEngine,
+  type ValidationSchemaKind
+} from './diagnostics/diagnostic-validation-engine';
 import { getValidationSchemaKind } from './document-kind-resolver';
 
+/**
+ * DiagnosticManager へ注入可能な依存（ユニットテストのモック差し替え用）
+ */
+export type DiagnosticManagerDeps = {
+  /** デバウンス用スケジューラ（省略時は {@link DiagnosticScheduler}） */
+  scheduler?: IDiagnosticScheduler;
+  /** スキーマ検証エンジン（省略時は {@link DiagnosticValidationEngine}） */
+  validationEngine?: IDiagnosticValidationEngine;
+  /** VS Code 診断コレクション（省略時は拡張が作成） */
+  diagnosticCollection?: vscode.DiagnosticCollection;
+};
 
 /**
  * 診断管理サービス
@@ -25,15 +40,17 @@ export class DiagnosticManager {
   private readonly MAX_CACHE_AGE = 30000; // 30秒でキャッシュをクリア
   private memoryTracker: TextUIMemoryTracker;
   private cacheStore: DiagnosticCacheStore;
-  private scheduler: DiagnosticScheduler;
-  private validationEngine: DiagnosticValidationEngine;
+  private scheduler: IDiagnosticScheduler;
+  private validationEngine: IDiagnosticValidationEngine;
 
-  constructor(schemaManager: ISchemaManager) {
-    this.diagnosticCollection = vscode.languages.createDiagnosticCollection('textui-designer');
+  constructor(schemaManager: ISchemaManager, deps?: DiagnosticManagerDeps) {
+    this.diagnosticCollection =
+      deps?.diagnosticCollection ?? vscode.languages.createDiagnosticCollection('textui-designer');
     this.memoryTracker = TextUIMemoryTracker.getInstance();
     this.cacheStore = new DiagnosticCacheStore(this.validationCache, this.MAX_CACHE_SIZE, this.MAX_CACHE_AGE);
-    this.scheduler = new DiagnosticScheduler();
-    this.validationEngine = new DiagnosticValidationEngine(schemaManager, this.CACHE_TTL);
+    this.scheduler = deps?.scheduler ?? new DiagnosticScheduler();
+    this.validationEngine =
+      deps?.validationEngine ?? new DiagnosticValidationEngine(schemaManager, this.CACHE_TTL);
   }
 
   /**

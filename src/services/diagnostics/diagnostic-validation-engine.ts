@@ -10,7 +10,13 @@ export type DiagnosticValidationResult = {
   errorMessage: string | null;
 };
 
-export class DiagnosticValidationEngine {
+/** AJV ベースの検証（テストでモック差し替え可能） */
+export interface IDiagnosticValidationEngine {
+  validateText(text: string, schemaKind: ValidationSchemaKind): Promise<DiagnosticValidationResult>;
+  clearCache(): void;
+}
+
+export class DiagnosticValidationEngine implements IDiagnosticValidationEngine {
   private ajvInstance: Ajv | null = null;
   private schemaCaches: Record<ValidationSchemaKind, SchemaDefinition | null> = {
     main: null,
