@@ -3,8 +3,8 @@ import type { ExportOptions } from './export-types';
 import { runExportWithDiffUpdate, runOptimizedExport, type ExportPipelineDeps } from './export-pipeline';
 
 /**
- * キャッシュ・差分・観測を束ねた export 経路（ExportManager から合成注入）。
- * T-107: registry/dispatch 本体と観測レイヤの境界を読みやすくするための第1スライス。
+ * **本流**の `runOptimizedExport` / `runExportWithDiffUpdate` を束ねる薄いオーケストレータ。
+ * キャッシュ・`exporter.export` が成果物を決め、差分・メトリクスは `ExportPipelineDeps.metricsObserver` 経由で **観測**に送る（T-206）。
  */
 export class OptimizingExportExecutor {
   constructor(private readonly getDeps: () => ExportPipelineDeps) {}

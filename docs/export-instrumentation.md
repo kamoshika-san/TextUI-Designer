@@ -12,9 +12,11 @@
 
 ## 2. Export パイプライン（`src/exporters/export-pipeline.ts`）
 
-- **キャッシュ**: ヒット時は本流が早期 return。`recordCacheHit` は `PerformanceMonitor` 経由で **設定 `performance.enablePerformanceLogs`（opt-in）** に従う。
+- **キャッシュ**: ヒット時は本流が早期 return。キャッシュ lookup の結果は **`ExportPipelineMetricsObserver.onCacheLookup`** 経由で `PerformanceMonitor.recordCacheHit` に渡す（本流が `PerformanceMonitor` を直接呼ばない）。
 - **`DiffManager.computeDiff`**: 前回との差分を計算し内部状態を更新。**メトリクス記録とは切り離して常に実行**（省略すると状態が壊れる）。
-- **`recordDiffEfficiency`**: diff の「効率」だけを観測用に送る。呼び出し側で `isExportPipelineMetricsEnabled()`（= `export-instrumentation.ts`）により **明示的にガード**し、本流の責務から観測を読み分けやすくする。
+- **diff 由来メトリクス**: `onExportDiffMetricsSample` → `recordDiffEfficiency`。呼び出し側で `isExportPipelineMetricsEnabled()`（= `export-instrumentation.ts`）により **明示的にガード**し、本流の責務から観測を読み分けやすくする。
+
+diff の製品上の位置づけ（観測専用 vs 将来の増分レンダー前提）は [ADR 0007](adr/0007-export-diff-purpose.md) を参照。
 
 ## 3. WebView プレビュー（`src/renderer/webview.tsx`）
 
@@ -30,6 +32,7 @@
 ## 5. 関連コード
 
 - `src/exporters/export-instrumentation.ts` — export 観測の有効判定
+- `src/exporters/export-metrics-observer.ts` — 本流 → `PerformanceMonitor` への観測通知の窓口
 - `src/utils/performance-monitor.ts` — イベント蓄積（内部でも `enablePerformanceLogs` で no-op）
 - `src/exporters/metrics/diff-manager.ts` — DSL 差分（**メトリクス／レポート用**モジュール。経路は [export-diff-observation-path.md](export-diff-observation-path.md)）
 

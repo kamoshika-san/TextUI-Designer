@@ -3,12 +3,15 @@ import type { ExportOptions, Exporter } from './export-types';
 import type { CacheManager } from '../utils/cache-manager';
 import type { DiffManager } from './metrics/diff-manager';
 import type { PerformanceMonitor } from '../utils/performance-monitor';
+import type { ExportPipelineMetricsObserver } from './export-metrics-observer';
 import { isExportPipelineMetricsEnabled } from './export-instrumentation';
 
 export interface ExportPipelineDeps {
   cacheManager: CacheManager;
   diffManager: DiffManager;
   performanceMonitor: PerformanceMonitor;
+  /** キャッシュ hit/miss・diff 由来メトリクスを `PerformanceMonitor` へ送る観測専用（本流から直接 record* しない） */
+  metricsObserver: ExportPipelineMetricsObserver;
   exporters: Map<string, Exporter>;
 }
 
@@ -21,21 +24,21 @@ export async function runOptimizedExport(
   options: ExportOptions,
   deps: ExportPipelineDeps
 ): Promise<string> {
-  const { cacheManager, diffManager, performanceMonitor, exporters } = deps;
+  const { cacheManager, diffManager, metricsObserver, exporters } = deps;
 
   const cachedResult = cacheManager.get(dsl, options.format);
   if (cachedResult) {
-    performanceMonitor.recordCacheHit(true);
+    metricsObserver.onCacheLookup(true);
     return cachedResult;
   }
 
-  performanceMonitor.recordCacheHit(false);
+  metricsObserver.onCacheLookup(false);
 
   const diffResult = diffManager.computeDiff(dsl);
 
   if (diffResult.hasChanges && isExportPipelineMetricsEnabled()) {
     const totalComponents = dsl.page?.components?.length || 0;
-    performanceMonitor.recordDiffEfficiency(diffResult.changedComponents.length, totalComponents);
+    metricsObserver.onExportDiffMetricsSample(diffResult.changedComponents.length, totalComponents);
   }
 
   const exporter = exporters.get(options.format);
@@ -63,7 +66,7 @@ export async function runExportWithDiffUpdate(
   if (!diffResult.hasChanges) {
     const cachedResult = deps.cacheManager.get(dsl, options.format);
     if (cachedResult) {
-      deps.performanceMonitor.recordCacheHit(true);
+      deps.metricsObserver.onCacheLookup(true);
       return {
         result: cachedResult,
         isFullUpdate: false,
