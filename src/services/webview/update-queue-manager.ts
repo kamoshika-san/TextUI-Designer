@@ -15,8 +15,12 @@ export interface UpdateTask {
 export class UpdateQueueManager implements IWebViewUpdateQueue {
   private updateQueue: UpdateTask[] = [];
   private isProcessingQueue: boolean = false;
-  private lastUpdateTime: number = 0;
+  /** 最後にキュータスクが完了した時刻（ms）。`-1` は未完了（初回スロットル対象外） */
+  private lastUpdateTime: number = -1;
   private updateTimeout: NodeJS.Timeout | undefined = undefined;
+  /** 最小間隔で捨てた非強制更新の「最新1件」を後追いする（T-302 latest-wins） */
+  private pendingLatest: { fn: () => Promise<void>; priority: number } | null = null;
+  private pendingLatestTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   private readonly MAX_QUEUE_SIZE: number = 5; // キューサイズ制限
   private taskIdCounter: number = 0;
 
@@ -32,14 +36,39 @@ export class UpdateQueueManager implements IWebViewUpdateQueue {
     forceUpdate: boolean = false,
     priority: number = 0
   ): Promise<void> {
+    // 強制更新は直列投入。保留中の「間隔待ち latest」を打ち消す
+    if (forceUpdate) {
+      this.clearPendingLatestSchedule();
+    }
+
     // 設定から最小更新間隔を取得
     const performanceSettings = ConfigManager.getPerformanceSettings();
     const minInterval = performanceSettings.minUpdateInterval;
     
-    // 最小更新間隔をチェック
+    // 最小更新間隔をチェック — 捨てずに **最新タスクだけ**遅延実行（T-302）
     const now = Date.now();
-    if (!forceUpdate && now - this.lastUpdateTime < minInterval) {
-      console.log(`[UpdateQueueManager] 最小更新間隔（${minInterval}ms）を待機中...`);
+    // 一度も完了していない（-1）のときはスロットルしない
+    if (
+      !forceUpdate &&
+      this.lastUpdateTime >= 0 &&
+      now - this.lastUpdateTime < minInterval
+    ) {
+      const wait = Math.max(0, minInterval - (now - this.lastUpdateTime));
+      console.log(
+        `[UpdateQueueManager] 最小更新間隔（${minInterval}ms）のため ${wait}ms 後に最新タスクを実行します`
+      );
+      this.pendingLatest = { fn: updateFunction, priority };
+      if (this.pendingLatestTimer) {
+        clearTimeout(this.pendingLatestTimer);
+      }
+      this.pendingLatestTimer = setTimeout(() => {
+        this.pendingLatestTimer = undefined;
+        const pending = this.pendingLatest;
+        this.pendingLatest = null;
+        if (pending) {
+          void this.queueUpdate(pending.fn, true, pending.priority);
+        }
+      }, wait);
       return;
     }
 
@@ -167,6 +196,7 @@ export class UpdateQueueManager implements IWebViewUpdateQueue {
   clearQueue(): void {
     const queueSize = this.updateQueue.length;
     this.updateQueue = [];
+    this.clearPendingLatestSchedule();
     console.log(`[UpdateQueueManager] キューをクリアしました (${queueSize}個のタスク)`);
   }
 
@@ -214,7 +244,16 @@ export class UpdateQueueManager implements IWebViewUpdateQueue {
    */
   dispose(): void {
     this.clearDebounceTimer();
+    this.clearPendingLatestSchedule();
     this.clearQueue();
     this.isProcessingQueue = false;
+  }
+
+  private clearPendingLatestSchedule(): void {
+    if (this.pendingLatestTimer) {
+      clearTimeout(this.pendingLatestTimer);
+      this.pendingLatestTimer = undefined;
+    }
+    this.pendingLatest = null;
   }
 } 
