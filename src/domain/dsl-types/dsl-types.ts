@@ -3,7 +3,7 @@
  * 拡張機能・CLI・exporter・core はここを参照する。WebView は `src/renderer/types.ts` 経由でも可。
  */
 
-import { BUILT_IN_COMPONENTS } from '../components/definitions/built-in-components';
+import { BUILT_IN_COMPONENTS } from '../../components/definitions/built-in-components';
 
 export type TextVariant = 'h1' | 'h2' | 'h3' | 'p' | 'small' | 'caption';
 export type TextSize = 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl';

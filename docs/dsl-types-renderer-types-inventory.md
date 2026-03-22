@@ -4,7 +4,7 @@
 
 ## 概要
 
-- **正本（canonical）**: `src/domain/dsl-types.ts` に定義される共有 DSL 型（`TextUIDSL` / `ComponentDef` 等）。
+- **正本（canonical）**: `src/domain/dsl-types/`（実体は当面 `dsl-types/dsl-types.ts`、公開は `index.ts`）に定義される共有 DSL 型（`TextUIDSL` / `ComponentDef` 等）。
 - **現状（2026-03-22）**: `src/renderer/types.ts` は **`domain/dsl-types` の再エクスポート**のみ。`scripts/check-dsl-type-imports.cjs` では **`renderer/types` 形式の import は 0 件**（`from '...renderer/types'` / 相対で `renderer/types` を含む import の総数）。非 renderer からの `renderer/types` 依存は **ゼロ**を維持する（T-128/129）。
 - **移行の狙い**: 共有 DSL 契約は **domain を経由**し、非 renderer からの `renderer/types` 依存を **ゼロで維持**する。
 
@@ -14,7 +14,7 @@
 
 ```
 DSL type import inventory
-- domain/dsl-types imports: 44
+- domain/dsl-types imports: 47
 - renderer/types imports: 0
 
 Files importing domain/dsl-types:
@@ -30,6 +30,7 @@ Files importing domain/dsl-types:
   - src/core/textui-core-engine-io.ts (1)
   - src/core/textui-core-engine.ts (1)
   - src/core/textui-core-helpers.ts (1)
+  - src/domain/dsl-types/index.ts (1)
   - src/dsl/load-dsl-with-includes.ts (1)
   - src/exporters/base-component-renderer.ts (1)
   - src/exporters/export-manager.ts (1)
@@ -55,6 +56,8 @@ Files importing domain/dsl-types:
   - src/exporters/vue-exporter.ts (1)
   - src/registry/dsl-component-codec.ts (1)
   - src/renderer/types.ts (1)
+  - src/renderer/use-webview-messages.ts (1)
+  - src/renderer/webview.tsx (1)
   - src/types/services.ts (1)
   - src/types/webview.ts (1)
   - src/utils/cache-manager.ts (1)
