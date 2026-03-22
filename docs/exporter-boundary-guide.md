@@ -20,6 +20,17 @@
 - オプションの意味の短い説明: `src/exporters/export-types.ts` の `useReactRender` JSDoc。
 - fallback の削除や primary への統一は **本ガイドのスコープ外**（別チケット）。
 
+### Fallback を compatibility lane（互換レーン）として扱う
+
+**定義**: `useReactRender === false` の経路は、**プレビュー／CLI の既定 export と同じ React 静的経路ではない**ため、**互換・補助**のレーンとみなす。新機能・不具合修正の **正（source of truth）は Primary**。
+
+| 観点 | 方針 |
+|------|------|
+| **優先度** | **P0**: Primary の欠陥・プレビューとの整合。**P1**: Primary と意図的に揃えるべき差分の整理。**P2**: Fallback 専用の差分（互換の範囲で最小修正）。 |
+| **保守** | 新コンポーネントの HTML 対応は **Primary（React 静的）を先に**満たす。Fallback への追従は **必要になったときに限り**、かつ **Primary の挙動に合わせる**方向で行う。 |
+| **バグの切り分け** | 再現が Primary のみ → Primary を修正。Fallback のみ → 互換レーンとして **意図した差か**を [html-exporter-primary-fallback-inventory.md](html-exporter-primary-fallback-inventory.md) の分類表で確認し、修正するなら **理由をコードコメントに残す**。 |
+| **将来** | Fallback の縮小・廃止は **別チケット**（本節では方針のみ）。 |
+
 ## Export と Preview（WebView）の共有境界（T-117）
 
 **目的**: Export の primary 経路と WebView プレビューが **同じ React 実装**を共有しうるため、「どこまでが Export 契約で、どこがプレビュー専用か」を迷わない。
@@ -35,6 +46,7 @@
 
 ## 関連ドキュメント
 
+- Primary / fallback 差分の棚卸し（分類表）: [html-exporter-primary-fallback-inventory.md](html-exporter-primary-fallback-inventory.md)
 - Provider契約: `docs/PROVIDER_CONTRACT.md`
 - テーマ実装: `docs/THEME_IMPLEMENTATION.md`
 - API/互換方針: `docs/api-compat-policy.md`
