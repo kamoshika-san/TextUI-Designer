@@ -9,7 +9,7 @@ const path = require('path');
  */
 describe('ComponentDef union vs COMPONENT_DEFINITIONS (Phase 0)', () => {
   const workspaceRoot = path.resolve(__dirname, '../..');
-  const typesPath = path.join(workspaceRoot, 'src', 'domain', 'dsl-types', 'dsl-types.ts');
+  const typesPath = path.join(workspaceRoot, 'src', 'domain', 'dsl-types', 'component-def.ts');
 
   const { COMPONENT_DEFINITIONS } = require('../../out/components/definitions/component-definitions');
 
@@ -18,7 +18,7 @@ describe('ComponentDef union vs COMPONENT_DEFINITIONS (Phase 0)', () => {
     const src = fs.readFileSync(typesPath, 'utf8');
     const head = 'export type ComponentDef =';
     const start = src.indexOf(head);
-    assert.ok(start >= 0, 'export type ComponentDef not found in domain/dsl-types/dsl-types.ts');
+    assert.ok(start >= 0, 'export type ComponentDef not found in domain/dsl-types/component-def.ts');
     const tail = src.indexOf('export interface PageDef', start + head.length);
     assert.ok(tail > start, 'PageDef block not found after ComponentDef');
     const block = src.slice(start + head.length, tail);
