@@ -13,10 +13,36 @@
 | 解放 | `cleanup` 順の dispose | 同 `DISPOSE_PHASES` |
 | 拡張全体の activate / deactivate | メモリ追跡・性能計測・`ServiceInitializer`・Event/FileWatcher 等の順序付きオーケストレーション | `src/services/extension-lifecycle-manager.ts` が `src/services/extension-lifecycle-phases.ts` の `ACTIVATION_PHASES` / `DEACTIVATION_PHASES` を実行 |
 
+## 関係図
+
+```mermaid
+graph TD
+  A[ExtensionLifecycleManager] --> B[ServiceInitializer.initialize]
+  B --> C[ServiceFactory.create]
+  C --> D[ExtensionServices]
+  D --> E[CommandManager]
+  D --> F[SchemaManager / ThemeManager / WebViewManager]
+  D --> G[DiagnosticManager / CompletionProvider]
+  C --> H[RuntimeInspectionService]
+  H --> I[RuntimeInspectionCommandBindings]
+  I --> E
+  B --> J[RUNTIME_INIT_PHASES]
+  J --> K[schema -> commands -> mcp -> theme]
+  B --> L[cleanup]
+  L --> M[DISPOSE_PHASES]
+```
+
 ## `ServiceFactoryOverrides` との関係
 
 - **Overrides はファクトリ層専用**である。どの具象クラス（またはモック）を組み立てるかを差し替える。
 - **ランタイムフェーズ**は `ExtensionServices` が揃ったあとの順序付き処理であり、Overrides と直交する。テストで Overrides を渡したうえで、同じフェーズ列が走る。
+
+## runtime inspection の境界
+
+- `RuntimeInspectionService` は **パフォーマンス/メモリ観測コマンドの実処理**を持つ。
+- `ServiceFactory` はそのサービスを生成し、`RuntimeInspectionCommandBindings` に変換して `CommandManager` へ渡す。
+- `CommandManager` は **bindings を command catalog に流し込む登録レイヤ**に留め、観測処理の実装本体は持たない。
+- 追加の inspection コマンドは、まず `runtime-inspection-command-bindings.ts` と `runtime-inspection-command-entries.ts` に寄せる。`CommandManager` へ直接メソッドを生やさない。
 
 ## 関連チケット
 

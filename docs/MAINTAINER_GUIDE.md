@@ -22,6 +22,7 @@
 | [quality-gate-green-main.md](quality-gate-green-main.md) | ローカルで緑にしてから push/PR する運用（フェーズ 0） |
 | [ci-quality-gate.md](ci-quality-gate.md) | CI ジョブ・`test:all:ci`・branch protection の対応 |
 | [observability-and-cache-boundary.md](observability-and-cache-boundary.md) | 公開 API と観測・キャッシュ実装の**横断**境界（内側に閉じる方針） |
+| [runtime-inspection-boundary.md](runtime-inspection-boundary.md) | performance / memory inspection コマンドの service・bindings・登録境界 |
 | [architecture-review-F-boundary-roadmap.md](architecture-review-F-boundary-roadmap.md) | **ロードマップ F 正本索引**（4 境界・導入候補 IF・やらないこと）。[import-boundaries-4-lanes.md](import-boundaries-4-lanes.md)（T-110）と相互リンク |
 | [dsl-types-renderer-types-inventory.md](dsl-types-renderer-types-inventory.md) | `renderer/types` 直接参照の棚卸し（移行計画用） |
 | [ssot-metrics-and-ci-checks.md](ssot-metrics-and-ci-checks.md) | **`metrics:collect` / `metrics:check:ssot`** の出力と CI（Code metrics ジョブ）の見え方・PM 向けチェックリスト（T-165） |
@@ -71,6 +72,7 @@ ADR: [0001 解析パイプライン（初稿）](adr/0001-document-analysis-serv
 | キャッシュ（同名クラス注意） | **Exporter 用**: `src/utils/cache-manager.ts` の `CacheManager`（レンダリング結果キャッシュ）／**WebView プレビュー用**: `src/services/webview/cache-manager.ts` の `WebViewPreviewCacheManager`（YAML・解析結果）。import を取り違えないこと。 | `npm run compile` + 関連ユニットテスト |
 | MCP `capture_preview` | `src/mcp/tools/capture-preview-*` と `src/mcp/server.ts` | `npm run compile` + `npx mocha ... tests/unit/mcp-server.test.js` |
 | CommandManager の実行フロー | `src/services/commands/*` と `src/services/command-manager.ts` | `npm run compile` + `npx mocha ... tests/unit/command-manager.test.js` |
+| runtime inspection コマンド境界 | `src/services/runtime-inspection-service.ts` + `runtime-inspection-command-bindings.ts` + `runtime-inspection-command-entries.ts`（設計メモ: [runtime-inspection-boundary.md](runtime-inspection-boundary.md)） | `npm run compile` + `npx mocha ... tests/unit/command-feature-registries.test.js` |
 | スキーマ登録・テンプレ生成（VS Code 設定連携） | `src/services/schema-manager.ts` + `src/services/schema/schema-template-generator.ts` + `src/services/schema/schema-workspace-registrar.ts` | `npm run compile` + `npx mocha ... tests/unit/schema-manager.test.js` |
 | JSON Schema の component.oneOf / descriptor 整合 | 列挙の正: `src/services/schema/schema-descriptor-selectors.ts`／registry は互換: `src/registry/component-manifest.ts`（**新規は正本へ。運用** [registry-compat-layer-policy.md](registry-compat-layer-policy.md)） | `npm run compile` + `npx mocha ... tests/unit/schema-descriptor-consistency.test.js` + `npx mocha ... tests/unit/registry-compat-import-guard.test.js` |
 | React エクスポートのページ/フォーム断片 | `src/exporters/react-exporter.ts` + `react-export-page-template.ts` + `react-form-control-templates.ts`（既存 `react-basic-renderer` / `react-template-renderer` と併用） | `npm run compile` + `npx mocha ... tests/unit/react-exporter-template.test.js` ほか |
