@@ -12,6 +12,7 @@ const ALLOW_RENDERER_TYPES_MENTION = new Set([
   'tests/unit/renderer-types-thin-facade.test.js',
   'tests/unit/renderer-types-non-renderer-import-guard.test.js',
   'tests/unit/exporters-ssot-import-guard.test.js',
+  'tests/unit/html-renderers-exporter-ssot-guard.test.js',
   'tests/unit/exporter-common-foundation-ssot-guard.test.js',
   'tests/unit/cli-utils-registry-ssot-import-guard.test.js',
   'tests/unit/cli-utils-registry-domain-origin-guard.test.js',
