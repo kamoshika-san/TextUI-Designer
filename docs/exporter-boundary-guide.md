@@ -46,6 +46,7 @@
 
 ## 関連ドキュメント
 
+- Exporter の `renderXxx` 抽象を **capability map** に寄せる設計案（追加コスト削減・段階移行）: [exporter-capability-map-design.md](exporter-capability-map-design.md)
 - Primary / fallback 差分の棚卸し（分類表）: [html-exporter-primary-fallback-inventory.md](html-exporter-primary-fallback-inventory.md)
 - Provider契約: `docs/PROVIDER_CONTRACT.md`
 - テーマ実装: `docs/THEME_IMPLEMENTATION.md`
