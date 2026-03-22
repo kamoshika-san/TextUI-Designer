@@ -25,4 +25,10 @@ describe('Completion catalog vs COMPONENT_DEFINITIONS', () => {
     const fromProps = Object.keys(COMPONENT_PROPERTIES).sort();
     assert.deepStrictEqual(fromProps, fromDef);
   });
+
+  it('各コンポーネントの properties が descriptor の properties と一致する（補完＝descriptor 正本・T-185）', () => {
+    for (const def of COMPONENT_DEFINITIONS) {
+      assert.deepStrictEqual(COMPONENT_PROPERTIES[def.name], def.properties);
+    }
+  });
 });

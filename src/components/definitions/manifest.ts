@@ -1,8 +1,9 @@
 import type { BuiltInComponentName } from './built-in-components';
 
 /**
- * VS Code 補完・説明文のカタログ（description / properties のみ）。
+ * VS Code 補完・説明文の **執筆用**カタログ（description / properties のみ）。
  * **`schemaRef` は manifest では保持しない**（単一ソース: `component-spec.ts` の `builtInSchemaRef` → `COMPONENT_DEFINITIONS`）。
+ * ランタイムの補完は `completion-component-catalog`（descriptor 由来）のみを参照する（docs/completion-descriptor-authoring.md）。
  */
 
 export type CompletionValue = { value: string; description: string };

@@ -9,6 +9,7 @@ import { COMPONENT_MANIFEST } from './manifest';
 import type { ComponentDefinition } from './types';
 import { BUILT_IN_EXPORTER_RENDERER_DEFINITIONS } from './exporter-renderer-definitions';
 
+/** manifest の description/properties を ComponentSpec に載せ、descriptor へ単一経路で合成する（T-185）。 */
 function buildBuiltInComponentSpec(name: BuiltInComponentName): ComponentSpec {
   const entry = COMPONENT_MANIFEST[name];
   const exporter = BUILT_IN_EXPORTER_RENDERER_DEFINITIONS[name];
