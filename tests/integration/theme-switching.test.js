@@ -181,7 +181,11 @@ describe('テーマ切り替え機能 結合テスト', () => {
     const themeMessage = [...emittedMessages].reverse().find(msg => msg.type === 'available-themes');
     assert.ok(themeMessage, 'テーマ切り替え後にavailable-themesが再送される');
 
-    const activeTheme = themeMessage.themes.find(theme => theme.path === 'sample/integration-one-theme.yml');
+    // ThemeDiscoveryService は path.relative を使うため、Windows では '\' 区切りになり得る
+    const expectedRel = path.join('sample', 'integration-one-theme.yml');
+    const activeTheme = themeMessage.themes.find(
+      theme => path.normalize(theme.path) === path.normalize(expectedRel)
+    );
     assert.ok(activeTheme, '切り替え先テーマが一覧に存在する');
     assert.strictEqual(activeTheme.isActive, true, '切り替え先テーマがアクティブになる');
   });

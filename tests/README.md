@@ -36,13 +36,15 @@
 複数のサービス間の連携をテストします。
 
 **ファイル:**
-- `command-manager.test.js` - CommandManagerの統合テスト
+- `command-manager.test.js` — CommandManager の統合テスト
+- `theme-switching.test.js` — WebView メッセージ経由のテーマ検出・切り替え（**Integration 層**。`test:e2e`（simulated）とは別ライン）
 
 **テスト内容:**
-- コマンドの登録と実行
+- コマンドの登録と実行（command-manager）
 - エクスポートコマンドの処理
 - 複数コマンドの連続実行
 - パフォーマンステスト
+- テーマ一覧送信・`theme-switch` 後の CSS / アクティブ状態（theme-switching）
 
 ### 4. Simulated E2E（`e2e/`・Node + Mocha）
 
@@ -93,6 +95,7 @@ node ./tests/unit/webview-manager.test.js
 
 # 統合テスト
 node ./tests/integration/command-manager.test.js
+node ./tests/integration/theme-switching.test.js
 
 # E2Eテスト
 node ./tests/e2e/export-from-preview-e2e.test.js

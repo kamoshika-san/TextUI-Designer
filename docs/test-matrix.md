@@ -10,7 +10,7 @@
 | 層 | 定義 | 本リポジトリでの意味 |
 |----|------|----------------------|
 | **Unit** | **pure / injected**（副作用を注入または純粋ロジック） | `tests/unit/**/*.js` を **`tests/setup.js`** 経由で実行。`vscode` API は **テスト用にモック**され、**実 Extension Host は不要**。 |
-| **Integration** | **mocked vscode**（モックした VS Code 上で複数モジュールを結合） | 現状の **`tests/integration/`**（例: `command-manager.test.js`）。同様く **モック環境**（実ホストではない）。 |
+| **Integration** | **mocked vscode**（モックした VS Code 上で複数モジュールを結合） | 現状の **`tests/integration/`**（`command-manager.test.js` / `theme-switching.test.js`。`npm run test:integration` で両方実行）。**E2E（simulated）とは別層**（実ホストではない）。 |
 | **E2E（simulated）** | スクリプト名は `e2e` だが **実機ではない** | **`tests/e2e/`** は Mocha + モックによる **結合に近いシナリオ**。詳細は [`tests/README.md`](../tests/README.md)。 |
 | **Regression** | 回帰スイート（プレビュー起点エクスポート等） | **`tests/regression/`** — 引き続きモック環境。 |
 | **Smoke（real host）** | **実 VS Code** 上での最小確認 | **自動化のデフォルト品質ゲートには含めない**。手動手順は [`real-vscode-smoke.md`](./real-vscode-smoke.md)。 |
