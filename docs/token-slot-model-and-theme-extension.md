@@ -61,6 +61,7 @@
 
 ## 関連
 
+- **lookup / fallback / variant merge / output formatter の責務分離（設計）**: [theme-resolver-responsibilities.md](theme-resolver-responsibilities.md)
 - **スロット ID の命名規約（拡張時の衝突回避）**: [token-slot-naming-convention.md](token-slot-naming-convention.md)
 - テーマ実装の現状説明（UI 切替中心）: [THEME_IMPLEMENTATION.md](THEME_IMPLEMENTATION.md)
 - トークンとプレビュー／エクスポートの対応（保守ガイド）: [MAINTAINER_GUIDE.md](MAINTAINER_GUIDE.md) の該当表
