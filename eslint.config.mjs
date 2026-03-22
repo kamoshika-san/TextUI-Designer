@@ -11,7 +11,7 @@ import tsParser from "@typescript-eslint/parser";
 const rendererTypesImportRestriction = ["error", {
     patterns: [{
         group: ["**/renderer/types", "**/renderer/types.ts"],
-        message: "Use `src/domain/dsl-types.ts` for shared DSL types. Do not add new imports from `renderer/types` under domain/services/components (T-101).",
+        message: "Use `src/domain/dsl-types` for shared DSL types. Do not add new imports from `renderer/types` under domain/services/components (T-101).",
     }],
 }];
 
