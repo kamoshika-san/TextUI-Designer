@@ -26,6 +26,7 @@
 - コマンド仕様: `docs/contributes-commands.md`
 - 設定体系: `docs/SETTINGS.md`
 - サービス登録規約: `docs/service-registration.md`
+- runtime inspection 境界: `docs/runtime-inspection-boundary.md`
 - 互換ポリシー: `docs/api-compat-policy.md`
 
 ## 変更時のチェックポイント
