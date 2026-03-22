@@ -125,7 +125,10 @@ const mockVscode = {
     }
   },
   DiagnosticSeverity: {
-    Error: 1
+    Error: 0,
+    Warning: 1,
+    Information: 2,
+    Hint: 3
   },
   Range: class {
     constructor(start, end) {
@@ -141,18 +144,8 @@ const mockVscode = {
   }
 };
 
-// グローバルにvscodeを設定
-global.vscode = mockVscode;
-
-// vscodeモジュールをモック
-const Module = require('module');
-const originalRequire = Module.prototype.require;
-Module.prototype.require = function(id) {
-  if (id === 'vscode') {
-    return mockVscode;
-  }
-  return originalRequire.apply(this, arguments);
-};
+// 注: Mocha が tests/unit/**/*.js を一括読み込みするため、ここで require を上書きすると
+// 後続の diagnostic-manager 等のテストを壊す。フックは「単体で node 実行するとき」だけに限定する。
 
 // テスト用のモジュール読み込み
 const fs = require('fs');
@@ -365,9 +358,22 @@ function runRefactoringTests() {
   }
 }
 
-// テストを実行
+// 単体実行時のみ: 一時的に vscode を差し替えてからリファクタテストを走らせ、終了後に復元する
 if (require.main === module) {
-  runRefactoringTests();
+  const Module = require('module');
+  const setupHookRequire = Module.prototype.require;
+  global.vscode = mockVscode;
+  Module.prototype.require = function (id) {
+    if (id === 'vscode') {
+      return mockVscode;
+    }
+    return setupHookRequire.apply(this, arguments);
+  };
+  try {
+    runRefactoringTests();
+  } finally {
+    Module.prototype.require = setupHookRequire;
+  }
 }
 
 // 各テスト本体を個別の関数としてexport

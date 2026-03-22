@@ -34,6 +34,11 @@
 
 - **`tests/unit/webview-utils.test.js`**（`src/utils/webview-utils.ts` 相当の出力を検証）: ファイル先頭の **`Module.prototype.require` フックと `global.vscode` を撤去**。`require('vscode')` は **setup 経由のモックのみ**を使用。`vscode-mock` の `MockWebviewPanel.webview` に **`cspSource` / `asWebviewUri` が無い**ため、**テストヘルパ `createTestWebviewPanel()`** で `vscode.window.createWebviewPanel` の戻りに対し **不足 API だけをローカルで補完**（グローバル require 横取りは増やさない）。
 
+## 第3スライス例（RF2-S2-T1 / T-323）
+
+- **`tests/mocks/diagnostic-manager-factory.js`**: `Module.prototype.require` による `vscode` 差し替えを **撤去**。**`DiagnosticManager` の `deps.diagnosticCollection` 注入**でモック診断コレクションを渡す（`tests/setup.js` の `require('vscode')` のまま実モジュールを読み込む）。
+- **`tests/unit/diagnostic-manager-di.test.js`**: 同上フックを **撤去**し、setup 経由の `vscode` のみを使用。
+
 ## 参照
 
 - `tests/setup.js`

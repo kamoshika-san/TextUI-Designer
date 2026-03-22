@@ -4,32 +4,12 @@
  */
 
 const assert = require('assert');
-const { describe, it, afterEach } = require('mocha');
+const { describe, it } = require('mocha');
 
 describe('DiagnosticManager DI (T-209)', () => {
-  let restoreRequire;
-
-  afterEach(() => {
-    if (restoreRequire) {
-      restoreRequire();
-      restoreRequire = null;
-    }
-  });
-
   it('注入した scheduler / validationEngine / diagnosticCollection が使われる', async () => {
-    const Module = require('module');
-    const originalRequire = Module.prototype.require;
-    const vscode = require('../mocks/vscode-mock.js');
-
-    Module.prototype.require = function (id) {
-      if (id === 'vscode') {
-        return vscode;
-      }
-      return originalRequire.apply(this, arguments);
-    };
-    restoreRequire = () => {
-      Module.prototype.require = originalRequire;
-    };
+    // tests/setup.js 経由の vscode モックを使用（本テスト専用の require フックは置かない）
+    const vscode = require('vscode');
 
     const diagnosticManagerPath = require.resolve('../../out/services/diagnostic-manager.js');
     delete require.cache[diagnosticManagerPath];

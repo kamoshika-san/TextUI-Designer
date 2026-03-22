@@ -105,42 +105,13 @@ class DiagnosticManagerFactory {
       }
     };
 
-    // 拡張VSCode APIモック
-    const extendedVscode = {
-      ...vscode,
-      languages: {
-        createDiagnosticCollection: (name) => {
-          return mockDiagnosticCollection;
-        }
-      }
-      // Position / Range / Diagnostic / DiagnosticSeverity は tests/mocks/vscode-mock.js の実装を使用
-    };
-
-    // Module requireフックを設定
-    const Module = require('module');
-    const originalRequire = Module.prototype.require;
-    
-    Module.prototype.require = function(id) {
-      if (id === 'vscode') {
-        return extendedVscode;
-      }
-      return originalRequire.apply(this, arguments);
-    };
-
-    // VSCode APIをパッチして診断コレクション作成をインターセプト
-    const originalCreateDiagnosticCollection = extendedVscode.languages.createDiagnosticCollection;
-    extendedVscode.languages.createDiagnosticCollection = (name) => {
-      return mockDiagnosticCollection;
-    };
-
-    // DiagnosticManagerを作成
+    // DiagnosticManager は ctor で diagnosticCollection を注入可能（require フック不要）
     const diagnosticManagerModulePath = require.resolve('../../out/services/diagnostic-manager.js');
     delete require.cache[diagnosticManagerModulePath];
     const { DiagnosticManager } = require(diagnosticManagerModulePath);
-    const diagnosticManager = new DiagnosticManager(mockSchemaManager);
-
-    // VSCode APIを元に戻す
-    extendedVscode.languages.createDiagnosticCollection = originalCreateDiagnosticCollection;
+    const diagnosticManager = new DiagnosticManager(mockSchemaManager, {
+      diagnosticCollection: mockDiagnosticCollection
+    });
 
     // 実際の診断コレクションにアクセスできるようにする
     const originalDiagnosticCollection = diagnosticManager.diagnosticCollection || mockDiagnosticCollection;
@@ -149,7 +120,6 @@ class DiagnosticManagerFactory {
     diagnosticManager._testHelpers = {
       mockSchemaManager,
       mockDiagnosticCollection,
-      extendedVscode,
       globalDiagnostics,
       originalDiagnosticCollection,
       resetAllMocks: () => {
@@ -165,7 +135,7 @@ class DiagnosticManagerFactory {
         }
       },
       restoreRequire: () => {
-        Module.prototype.require = originalRequire;
+        // RF2-S2-T1: Module.prototype.require フックは廃止（noop で互換）
       },
       // スキーマ読み込み動作を設定するヘルパー
       setSchemaLoadBehavior: (behavior) => {
@@ -189,7 +159,7 @@ class DiagnosticManagerFactory {
       // テスト用ドキュメント作成ヘルパー
       createTestDocument: (content, uri = '/test/test.tui.yml') => {
         return {
-          uri: extendedVscode.Uri.file(uri),
+          uri: vscode.Uri.file(uri),
           getText: () => content,
           fileName: uri,
           languageId: 'yaml',
@@ -204,7 +174,7 @@ class DiagnosticManagerFactory {
             const lines = content.slice(0, safeOffset).split('\n');
             const line = lines.length - 1;
             const character = lines[lines.length - 1].length;
-            return new extendedVscode.Position(line, character);
+            return new vscode.Position(line, character);
           }
         };
       },
