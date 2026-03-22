@@ -1,11 +1,14 @@
 import * as vscode from 'vscode';
-import { ErrorHandler } from '../utils/error-handler';
-import { ConfigManager } from '../utils/config-manager';
 import { RuntimeInspectionService } from './runtime-inspection-service';
 import {
   createRuntimeInspectionCommandBindings,
   type RuntimeInspectionCommandBindings
 } from './runtime-inspection-command-bindings';
+import {
+  createAuthoringFeatureRegistry,
+  createCommandFeatureBindings,
+  createPreviewExportFeatureRegistry
+} from './command-feature-registries';
 import { Logger } from '../utils/logger';
 import type {
   ICommandManager,
@@ -17,9 +20,6 @@ import type {
   IThemeManager
 } from '../types';
 import { createCommandDefinitions, type CommandHandler } from './command-catalog';
-import { executeOpenPreviewCommand } from './commands/open-preview-command';
-import { executeCapturePreviewCommand } from './commands/capture-preview-command';
-import { executeExportCommand } from './commands/export-command';
 
 export interface CommandManagerDependencies {
   webViewManager: IWebViewManager;
@@ -73,52 +73,28 @@ export class CommandManager implements ICommandManager {
   registerCommands(): void {
     this.logger.info('コマンド登録を開始');
 
-    const ri = this.runtimeInspection;
-    const commandDefinitions = createCommandDefinitions({
-      openPreviewWithCheck: () => this.openPreviewWithCheck(),
-      capturePreviewImage: () => this.capturePreviewImage(),
-      openDevTools: () => this.webViewManager.openDevTools(),
-      executeExport: (filePath?: string) => executeExportCommand(this.exportService, filePath),
-      createTemplate: () => this.templateService.createTemplate(),
-      insertTemplate: () => this.templateService.insertTemplate(),
-      openSettings: () => this.settingsService.openSettings(),
-      resetSettings: () => this.settingsService.resetSettings(),
-      showAutoPreviewSetting: () => this.settingsService.showAutoPreviewSetting(),
-      checkAutoPreviewSetting: () => this.checkAutoPreviewSetting(),
-      reinitializeSchemas: () => this.schemaManager.reinitialize(),
-      debugSchemas: () => this.schemaManager.debugSchemas(),
-      showPerformanceReport: () => ri.showPerformanceReport(),
-      clearPerformanceMetrics: () => ri.clearPerformanceMetrics(),
-      togglePerformanceMonitoring: () => ri.togglePerformanceMonitoring(),
-      enablePerformanceMonitoring: () => ri.enablePerformanceMonitoring(),
-      generateSampleEvents: () => ri.generateSampleEvents(),
-      showMemoryReport: () => ri.showMemoryReport(),
-      toggleMemoryTracking: () => ri.toggleMemoryTracking(),
-      enableMemoryTracking: () => ri.enableMemoryTracking()
+    const previewExport = createPreviewExportFeatureRegistry({
+      webViewManager: this.webViewManager,
+      exportService: this.exportService,
+      themeManager: this.themeManager,
+      extensionPath: this.context.extensionPath,
+      logger: this.logger
     });
+    const authoring = createAuthoringFeatureRegistry({
+      templateService: this.templateService,
+      settingsService: this.settingsService,
+      schemaManager: this.schemaManager,
+      logger: this.logger
+    });
+    const commandDefinitions = createCommandDefinitions(
+      createCommandFeatureBindings(previewExport, authoring, this.runtimeInspection)
+    );
 
     for (const { command, callback } of commandDefinitions) {
       this.registerCommand(command, callback);
     }
 
     this.logger.info('コマンド登録完了');
-  }
-
-  /**
-   * 自動プレビュー設定を確認
-   */
-  private async checkAutoPreviewSetting(): Promise<void> {
-    const result = await ErrorHandler.executeSafely(async () => {
-      const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
-      const message = `自動プレビュー設定: ${autoPreviewEnabled ? 'ON' : 'OFF'}`;
-      this.logger.info(message);
-      ErrorHandler.showInfo(message);
-    }, '自動プレビュー設定の確認に失敗しました');
-
-    if (!result) {
-      // エラーハンドリングは既にErrorHandlerで処理済み
-      return;
-    }
   }
 
   /**
@@ -146,22 +122,4 @@ export class CommandManager implements ICommandManager {
     this.commandDisposables = [];
   }
 
-  /**
-   * プレビューを開く（ユーザーの明示的な指示による実行）
-   */
-  private async openPreviewWithCheck(): Promise<void> {
-    await executeOpenPreviewCommand(this.webViewManager, this.logger);
-  }
-
-  /**
-   * 現在のプレビュー対象DSLをPNG画像として保存
-   */
-  private async capturePreviewImage(): Promise<void> {
-    await executeCapturePreviewCommand({
-      webViewManager: this.webViewManager,
-      themeManager: this.themeManager,
-      extensionPath: this.context.extensionPath,
-      logger: this.logger
-    });
-  }
-} 
+}

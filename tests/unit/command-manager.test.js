@@ -81,11 +81,9 @@ describe('CommandManager', () => {
   });
 
   describe('プレビュー関連コマンド', () => {
-    it('openPreviewコマンドでopenPreviewWithCheck()が呼び出される', async () => {
+    it('openPreviewコマンドを含むカタログ件数が登録される', () => {
       commandManager.registerCommands();
-
-      // openPreviewWithCheckメソッドが存在することを確認
-      expect(typeof commandManager.openPreviewWithCheck).to.equal('function');
+      expect(commandManager.commandDisposables.length).to.equal(EXPECTED_COMMAND_COUNT);
     });
 
     it('WebViewManagerが正しく設定されている', () => {
@@ -136,16 +134,6 @@ describe('CommandManager', () => {
     it('PerformanceMonitorが正しく設定されている', () => {
       expect(commandManager._testHelpers.mockPerformanceMonitor).to.exist;
       expect(typeof commandManager._testHelpers.mockPerformanceMonitor.getInstance).to.equal('function');
-    });
-  });
-
-  describe('openPreviewWithCheck()', () => {
-    it('openPreviewWithCheckメソッドが正しく実装されている', () => {
-      // openPreviewWithCheckメソッドが存在し、呼び出し可能であることを確認
-      expect(typeof commandManager.openPreviewWithCheck).to.equal('function');
-      
-      // メソッドの実行が例外を投げないことを確認
-      expect(() => commandManager.openPreviewWithCheck()).to.not.throw();
     });
   });
 
