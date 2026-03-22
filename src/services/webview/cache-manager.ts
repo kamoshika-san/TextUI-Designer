@@ -214,7 +214,9 @@ export class WebViewPreviewCacheManager {
       }
     }
 
-    console.log(`[WebViewPreviewCache] 古いエントリを削除: ${keysToRemove.length}個 (${Math.round(freedSpace / 1024)}KB 解放)`);
+    this.logger.debug(
+      `古いエントリを削除: ${keysToRemove.length}個 (${Math.round(freedSpace / 1024)}KB 解放)`
+    );
   }
 
   /**
