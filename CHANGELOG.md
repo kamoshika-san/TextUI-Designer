@@ -4,6 +4,27 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.7.0] - 2026-03-22
+
+### 新機能
+- **テーマ切替の高速化**: CSS-only fast path と非同期テーマ読み込みを導入し、テーマ変更時のプレビュー反映を高速化しました。
+- **プレビュー更新の安定化**: update queue を latest-wins に整理し、`setLastTuiFile` / deliver / phase の観測性を強化しました。
+- **SchemaManager の注入ポイント拡張**: path / cache / workspace / validator の seam を追加し、単体テストしやすい構成に改善しました。
+
+### 変更・改善
+- **DSL 型の正本整理**: `src/domain/dsl-types` を中心に型定義を再編し、`Text` / `Link` / `Breadcrumb` / `Badge` / `Image` / `Icon` / `Progress` / `Form` / `Button` / `Layout` 系の型を責務ごとに分割しました。
+- **SSoT ガードの強化**: `renderer/types` 逆流防止、exporter/import guard、ComponentDef/definitions 整合、descriptor 正本化のガードを拡充しました。
+- **コマンド・設定・ドキュメント整備**: `contributes.configuration` / command manifest / 各種 boundary guide / maintainer guide / quality gate 文書を更新し、保守運用の導線を整理しました。
+- **キャッシュ/観測ポリシー整理**: Export / WebView / theme resolver / diff metrics まわりの責務とログ方針を明文化しました。
+
+### バグ修正
+- **プレビュー更新競合**: 最小間隔中の再実行や `lastTuiFile` 更新順の不整合を修正し、編集連打時の取りこぼしを抑制しました。
+- **WebView / Export 周辺の互換性**: Windows 形式パスの basename 正規化や、テスト環境での `vscode` 遅延取得など、環境差分による不具合を修正しました。
+
+### テスト・CI
+- **テスト基盤の安定化**: `SchemaManager` 系の require フック縮小、WebView/theme-switching 統合テスト、SSoT/contract 系テストを追加・整理しました。
+- **運用ドキュメント更新**: simulated E2E、`out/` 前提、品質ゲート、API 互換ポリシー、ビルトイン追加手順を最新構成に合わせて更新しました。
+
 ## [0.6.1] - 2026-03-19
 
 ### 変更・改善

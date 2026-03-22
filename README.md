@@ -99,6 +99,8 @@ page:
 > v0.5.1 で `Spacer` / `TreeView` に対応し、`sample/01-basic` は全対応コンポーネントを使うサンプルに更新しました。
 >
 > v0.6.0 で `Badge` / `Image` / `Progress` / `Icon` / `Link` / `Breadcrumb` を追加し、`sample/08-github`（GitHub風の大規模サンプル）を追加しました。
+>
+> v0.7.0 では DSL 型の正本を `src/domain/dsl-types` に整理し、テーマ切替・プレビュー更新・SchemaManager のテスト容易性を重点的に改善しました。
 
 ---
 
