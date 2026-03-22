@@ -58,7 +58,10 @@ describe('Exporter token style formatting', () => {
 
     assert.ok(html.includes('textui-divider my-4'), 'output contains divider with textui-divider and my-4');
     assert.ok(html.includes('textui-divider my-4') && html.includes('border-color: var(--token-divider)'));
-    assert.ok(html.includes('background-color: var(--token-container-bg)'));
+    assert.ok(
+      html.includes('background-color: var(--tui-slot-container-background, var(--token-container-bg))'),
+      'Container token wrapped with container.background slot (same vocabulary as preview)'
+    );
   });
 
   it('HtmlExporter: Text token uses slot-aware var() when defaultTokenSlot is set (T-20260322-202)', async () => {
@@ -89,7 +92,12 @@ describe('Exporter token style formatting', () => {
 
     const html = await exporter.export(dsl, { format: 'html' });
 
-    assert.ok(html.includes('background-color:rgb(245, 245, 245)') || html.includes('background-color: rgb(245, 245, 245)'));
+    assert.ok(
+      html.includes('var(--tui-slot-container-background, rgb(245, 245, 245))') ||
+        html.includes('background-color:rgb(245, 245, 245)') ||
+        html.includes('background-color: rgb(245, 245, 245)'),
+      'React path uses slot-aware var or legacy literal'
+    );
     assert.ok(html.includes('inside'));
   });
 

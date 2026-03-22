@@ -39,7 +39,11 @@ describe('React static export (renderToStaticMarkup)', () => {
       { Container: { layout: 'vertical', token: 'rgb(240, 240, 240)', components: [{ Text: { value: 'inside' } }] } }
     ]);
 
-    assert.ok(html.includes('background-color:rgb(240, 240, 240)') || html.includes('background-color: rgb(240, 240, 240)'));
+    assert.ok(
+      html.includes('var(--tui-slot-container-background, rgb(240, 240, 240))') ||
+        html.includes('background-color:rgb(240, 240, 240)') ||
+        html.includes('background-color: rgb(240, 240, 240)')
+    );
     assert.ok(html.includes('inside'));
   });
 

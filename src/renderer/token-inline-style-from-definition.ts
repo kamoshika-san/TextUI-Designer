@@ -8,7 +8,7 @@ import {
 
 /**
  * WebView プレビュー用: `COMPONENT_DEFINITIONS.tokenStyleProperty` と同じ対応で React の style を返す。
- * `defaultTokenSlot` がある場合は exporter と同様に `var(--tui-slot-…, token)`（T-20260322-202）。
+ * `defaultTokenSlot` がある場合は exporter（`BaseComponentRenderer`）と同じ `var(--tui-slot-…, token)`（T-202 / T-203）。
  */
 export function tokenToPreviewInlineStyle(
   componentName: string,

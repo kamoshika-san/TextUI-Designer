@@ -39,7 +39,11 @@ export const BUILT_IN_EXPORTER_RENDERER_DEFINITIONS: Record<
   Divider: { rendererMethod: 'renderDivider', tokenStyleProperty: 'border-color' },
   Spacer: { rendererMethod: 'renderSpacer', tokenStyleProperty: 'height' },
   Alert: { rendererMethod: 'renderAlert', tokenStyleProperty: 'border-color' },
-  Container: { rendererMethod: 'renderContainer', tokenStyleProperty: 'background-color' },
+  Container: {
+    rendererMethod: 'renderContainer',
+    tokenStyleProperty: 'background-color',
+    defaultTokenSlot: 'container.background'
+  },
   Form: { rendererMethod: 'renderForm', tokenStyleProperty: 'border-color' },
   Accordion: { rendererMethod: 'renderAccordion', tokenStyleProperty: 'border-color' },
   Tabs: { rendererMethod: 'renderTabs', tokenStyleProperty: 'border-color' },
