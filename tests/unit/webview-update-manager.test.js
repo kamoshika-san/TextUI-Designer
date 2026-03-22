@@ -63,13 +63,35 @@ describe('WebViewUpdateManager', () => {
     manager.dispose();
   });
 
+  it('T-303: ファイル切替の即時更新では sendYaml 実行時点で lastTuiFile が新パス', async () => {
+    const { WebViewUpdateManager } = require('../../out/services/webview/webview-update-manager');
+    const manager = new WebViewUpdateManager(createLifecycleMock(true), undefined, {
+      updateQueueManager: new DirectWebViewUpdateQueueForTest()
+    });
+    const seenPaths = [];
+
+    manager.sendYamlToWebview = async () => {
+      seenPaths.push(manager.getLastTuiFile());
+    };
+
+    manager.setLastTuiFile('/workspace/a.tui.yml');
+    manager.setLastTuiFile('/workspace/b.tui.yml', true);
+
+    assert.deepStrictEqual(
+      seenPaths,
+      ['/workspace/b.tui.yml'],
+      '同期キューが即時に sendYaml を呼んでも lastTuiFile は切替先'
+    );
+    manager.dispose();
+  });
+
   it('T-210: 注入したキューの getQueueStatus がそのまま観測できる', () => {
     const { WebViewUpdateManager } = require('../../out/services/webview/webview-update-manager');
     const manager = new WebViewUpdateManager(createLifecycleMock(true), undefined, {
       updateQueueManager: new DirectWebViewUpdateQueueForTest()
     });
     const st = manager.getQueueStatus();
-    assert.deepStrictEqual(st, { queueSize: 0, isProcessing: false, lastUpdateTime: 0 });
+    assert.deepStrictEqual(st, { queueSize: 0, isProcessing: false, lastUpdateTime: -1 });
     manager.dispose();
   });
 });

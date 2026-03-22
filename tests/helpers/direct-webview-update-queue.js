@@ -15,7 +15,7 @@ class DirectWebViewUpdateQueueForTest {
   }
 
   getQueueStatus() {
-    return { queueSize: 0, isProcessing: false, lastUpdateTime: 0 };
+    return { queueSize: 0, isProcessing: false, lastUpdateTime: -1 };
   }
 
   dispose() {}
