@@ -1,7 +1,9 @@
 /**
  * CommandManager の統合テスト
- * 
+ *
  * プレビュー画面からのエクスポート機能に関連するコマンド処理をテストします
+ *
+ * T-211: インスタンス生成は `ServiceFactory` + `createIntegrationServices` 雛形を使用（`docs/integration-test-service-factory.md`）。
  */
 
 const assert = require('assert');
@@ -75,7 +77,10 @@ describe('CommandManager 統合テスト', () => {
     const mockSettingsService = {
       openSettings: () => Promise.resolve(),
       resetSettings: () => Promise.resolve(),
-      showAutoPreviewSetting: () => Promise.resolve()
+      showAutoPreviewSetting: () => Promise.resolve(),
+      showSettings: () => Promise.resolve(),
+      startWatching: () => ({ dispose: () => {} }),
+      hasConfigurationChanged: () => false
     };
 
     const mockSchemaManager = {
@@ -83,15 +88,39 @@ describe('CommandManager 統合テスト', () => {
       debugSchemas: () => Promise.resolve()
     };
 
-    // CommandManagerをインポートしてテスト用インスタンスを作成
+    const mockThemeManager = {
+      loadTheme: async () => {},
+      generateCSSVariables: () => '',
+      watchThemeFile: () => {},
+      getThemePath: () => undefined,
+      setThemePath: () => {},
+      dispose: () => {}
+    };
+
     const { CommandManager } = require('../../out/services/command-manager');
-    commandManager = new CommandManager(mockContext, {
-      webViewManager: mockWebViewManager,
-      exportService: mockExportService,
-      templateService: mockTemplateService,
-      settingsService: mockSettingsService,
-      schemaManager: mockSchemaManager
+    const {
+      createIntegrationServices,
+      createDefaultExportManagerForIntegration
+    } = require('../helpers/integration-service-factory');
+
+    const services = createIntegrationServices(mockContext, {
+      createSchemaManager: () => mockSchemaManager,
+      createThemeManager: () => mockThemeManager,
+      createWebViewManager: () => mockWebViewManager,
+      createExportManager: () => createDefaultExportManagerForIntegration(),
+      createTemplateService: () => mockTemplateService,
+      createSettingsService: () => mockSettingsService,
+      createCommandManager: (ctx, _deps) =>
+        new CommandManager(ctx, {
+          webViewManager: mockWebViewManager,
+          exportService: mockExportService,
+          templateService: mockTemplateService,
+          settingsService: mockSettingsService,
+          schemaManager: mockSchemaManager,
+          themeManager: mockThemeManager
+        })
     });
+    commandManager = services.commandManager;
   });
 
   after(async () => {
