@@ -145,6 +145,7 @@ describe('拡張API契約', () => {
 
     afterEach(() => {
       clearWebViewComponentRegistry();
+      require('../../out/renderer/component-map').registerBuiltInComponents();
     });
 
     it('registerWebViewComponent() でレンダラー登録・取得ができる', () => {
