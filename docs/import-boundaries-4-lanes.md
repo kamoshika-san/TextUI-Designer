@@ -53,3 +53,10 @@ Export runtime
 
 - **T-112**（`architecture-review-F-boundary-roadmap.md`）: 境界の **なぜ**・索引・ロードマップ。
 - **本ファイル（T-110）**: **どこからどこへ import してよいか**の運用ルールと **第 1 弾の自動検査**。
+## T-358 follow-up: shared token-slot helper
+
+- `src/renderer/token-inline-style-from-definition.ts` must not import `src/exporters/*` directly.
+- `src/exporters/theme-style-resolver.ts` must not import `src/renderer/*` directly.
+- When preview and export need the same token-slot binding logic, place the shared code under `src/components/definitions/*` and let both sides import that helper.
+- Current shared entrypoint: `src/components/definitions/token-slot-style-shared.ts`.
+- Keep verification focused on both behavior parity and the boundary edge itself so future cleanup does not silently reintroduce a cross-lane import.
