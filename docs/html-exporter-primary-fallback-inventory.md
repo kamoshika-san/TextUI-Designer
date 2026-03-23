@@ -46,6 +46,20 @@ Use these labels when a behavior difference is found.
 | 5 | CLI / test usage | provider export is Primary by default | capture and explicit compatibility tests use fallback | intended and documented | do not silently widen fallback entry points |
 | 6 | Small DOM differences | evaluate case by case | evaluate case by case | investigate individually | open an issue or extend this table when found |
 
+## T-350 classification
+
+This is the current separation between intentional differences, acceptable temporary debt, and unresolved mismatch.
+
+| Topic | Current state | Classification | Why |
+|---|---|---|---|
+| Primary render stack vs legacy string renderer stack | Two rendering stacks still exist | intended difference | HR1 fixed Primary as the source of truth without claiming same-sprint fallback removal |
+| Built-in HTML provider and preview preparation | Default to Primary | intended difference | These are now the normal product-facing routes and should stay Primary-first |
+| Capture command fallback entry | Explicit helper-based fallback entry remains | acceptable temporary debt | The route is isolated, named, and guarded while replacement criteria remain outside HR1 |
+| Fallback-focused regression tests | Explicit `useReactRender: false` coverage remains | acceptable temporary debt | The tests protect the compatibility lane rather than the default contract |
+| Fallback-only code comments / handoff justification | Required for any new fallback-only change | acceptable temporary debt | This keeps compatibility fixes reviewable instead of allowing silent lane drift |
+| Normal export path behaving differently from Primary documentation | Not observed in current HR1 evidence | unresolved mismatch: none observed | Treat any future reproduction here as a new Primary-path bug first |
+| New raw fallback entrypoints outside the approved helper | Blocked by guard | unresolved mismatch: none observed | `html-exporter-fallback-entry-guard.test.js` is the mechanical stopgap |
+
 ## Route viability snapshot (HR1-S3 / T-352)
 
 This separates routes that are already safe to treat as Primary from routes that still need the compatibility lane.
@@ -64,6 +78,8 @@ Small-slice verification in `tests/unit/html-exporter-route-viability.test.js` l
 1. If drift reproduces on normal export, provider output, or preview preparation, treat it as a **Primary** issue first.
 2. If drift reproduces only on `capture` or explicit `useReactRender: false` paths, treat it as a documented fallback compatibility issue.
 3. When fallback-specific code is changed, keep Primary as the source of truth and leave a short reason in code comments or the review handoff.
+4. If a difference is still isolated to the explicit fallback lane and has a named guard, classify it as acceptable temporary debt rather than as a hidden mismatch.
+5. If a difference affects Primary-default routes or requires a new unapproved fallback entrypoint, classify it as an unresolved mismatch and open follow-up work.
 
 ## Related documents
 

@@ -66,3 +66,10 @@
   - どの entry / trigger にだけ影響するのか
   - 後で Primary へ寄せる余地があるのか、当面維持なのか
 - 新しい fallback entrypoint を足す変更では、`html-exporter-primary-fallback-inventory.md` の更新要否も合わせて判断する。
+
+### T-350 classification rule
+
+- **intended difference**: Primary-first routing, the legacy fallback render stack itself, and other behavior already documented in `html-exporter-primary-fallback-inventory.md`.
+- **acceptable temporary debt**: the explicit capture fallback route and fallback-focused regression tests, because they are named, isolated, and mechanically guarded.
+- **unresolved mismatch**: any drift that affects normal export, provider output, or preview preparation, or any change that would require a new raw fallback entrypoint outside the approved helper.
+- When in doubt, classify the issue against Primary first. Fallback should survive only as documented compatibility debt, not as an equal default lane.
