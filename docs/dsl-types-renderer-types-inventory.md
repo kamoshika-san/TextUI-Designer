@@ -5,10 +5,10 @@
 ## 概要
 
 - **正本（canonical）**: `src/domain/dsl-types/`（実体は当面 `dsl-types/dsl-types.ts`、公開は `index.ts`）に定義される共有 DSL 型（`TextUIDSL` / `ComponentDef` 等）。
-- **現状（2026-03-22）**: `src/renderer/types.ts` は **`domain/dsl-types` の再エクスポート**のみ。`scripts/check-dsl-type-imports.cjs` では **`renderer/types` 形式の import は 0 件**（`from '...renderer/types'` / 相対で `renderer/types` を含む import の総数）。非 renderer からの `renderer/types` 依存は **ゼロ**を維持する（T-128/129）。
+- **現状（2026-03-24）**: `src/renderer/types.ts` は **`domain/dsl-types` の再エクスポート**のみ。`scripts/check-dsl-type-imports.cjs` では **`renderer/types` 形式の import は 0 件**（`from '...renderer/types'` / 相対で `renderer/types` を含む import の総数）。非 renderer からの `renderer/types` 依存は **ゼロ**を維持する（T-128/129）。
 - **移行の狙い**: 共有 DSL 契約は **domain を経由**し、非 renderer からの `renderer/types` 依存を **ゼロで維持**する。
 
-## `npm run check:dsl-types-ssot` スナップショット（正本・2026-03-22）
+## `npm run check:dsl-types-ssot` スナップショット（正本・2026-03-24）
 
 以下は **`npm run check:dsl-types-ssot`**（`scripts/check-dsl-type-imports.cjs`）の標準出力を **そのまま転記**したもの。棚卸し Markdown の「現況」は **本節と矛盾しない**ように保つ（差分が出たら [棚卸し文書の更新手順](#棚卸し文書の更新手順)）。
 
