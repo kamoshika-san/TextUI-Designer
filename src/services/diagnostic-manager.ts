@@ -14,6 +14,7 @@ import {
   type ValidationSchemaKind
 } from './diagnostics/diagnostic-validation-engine';
 import { getValidationSchemaKind } from './document-kind-resolver';
+import { Logger } from '../utils/logger';
 
 /**
  * DiagnosticManager へ注入可能な依存（ユニットテストのモック差し替え用）
@@ -32,6 +33,7 @@ export type DiagnosticManagerDeps = {
  * YAML/JSONファイルのバリデーションとエラー表示を担当
  */
 export class DiagnosticManager {
+  private readonly logger = new Logger('DiagnosticManager');
   private diagnosticCollection: vscode.DiagnosticCollection;
   private validationCache: Map<string, DiagnosticCacheEntry> = new Map();
   private readonly CACHE_TTL = 5000; // 5秒
@@ -92,7 +94,7 @@ export class DiagnosticManager {
 
     const cached = this.cacheStore.getFresh(uri, text, this.CACHE_TTL, now);
     if (cached) {
-      console.log('[DiagnosticManager] キャッシュされた診断結果を使用');
+      this.logger.debug('キャッシュされた診断結果を使用');
       this.diagnosticCollection.set(document.uri, cached.diagnostics);
       return;
     }

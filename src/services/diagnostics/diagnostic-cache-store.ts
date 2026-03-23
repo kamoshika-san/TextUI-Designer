@@ -1,10 +1,13 @@
 import type * as vscode from 'vscode';
+import { Logger } from '../../utils/logger';
 
 export type DiagnosticCacheEntry = {
   content: string;
   diagnostics: vscode.Diagnostic[];
   timestamp: number;
 };
+
+const logger = new Logger('DiagnosticManager');
 
 export class DiagnosticCacheStore {
   constructor(
@@ -47,7 +50,7 @@ export class DiagnosticCacheStore {
       return;
     }
 
-    console.log('[DiagnosticManager] キャッシュサイズ制限に達したため、古いキャッシュをクリアします');
+    logger.warn('キャッシュサイズ制限に達したため、古いキャッシュをクリアします');
     this.cleanupOldCache(true);
   }
 

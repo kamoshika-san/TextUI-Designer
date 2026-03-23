@@ -2,12 +2,14 @@ import * as vscode from 'vscode';
 import { ExtensionServices } from './service-initializer';
 import { ConfigManager } from '../utils/config-manager';
 import { getDocumentKind } from './document-kind-resolver';
+import { Logger } from '../utils/logger';
 
 /**
  * イベントリスナーの登録・管理
  * VSCodeの各種イベントリスナーの登録と管理を担当
  */
 export class EventManager {
+  private readonly logger = new Logger('EventManager');
   private context: vscode.ExtensionContext;
   private services: ExtensionServices | null = null;
   private disposables: vscode.Disposable[] = [];
@@ -20,7 +22,7 @@ export class EventManager {
    * イベントマネージャーの初期化
    */
   initialize(services: ExtensionServices): void {
-    console.log('[EventManager] イベントマネージャー初期化開始');
+    this.logger.debug('イベントマネージャー初期化開始');
     
     this.services = services;
     
@@ -40,7 +42,7 @@ export class EventManager {
     this.registerDocumentOpenHandler();
     this.registerDocumentCloseHandler();
     
-    console.log('[EventManager] イベントマネージャー初期化完了');
+    this.logger.debug('イベントマネージャー初期化完了');
   }
 
   /**
@@ -62,7 +64,7 @@ export class EventManager {
     );
     
     this.disposables.push(completionDisposable);
-    console.log('[EventManager] 補完プロバイダーを登録しました');
+    this.logger.debug('補完プロバイダーを登録しました');
   }
 
   /**
@@ -81,13 +83,13 @@ export class EventManager {
       const schemaSettings = ConfigManager.getSchemaSettings();
       if (schemaSettings.validationEnabled) {
         this.services!.schemaManager.reinitialize().catch(error => {
-          console.error('スキーマの再初期化に失敗しました:', error);
+          this.logger.error('スキーマの再初期化に失敗しました:', error);
         });
       }
     });
     
     this.disposables.push(settingsWatcher);
-    console.log('[EventManager] 設定変更監視を登録しました');
+    this.logger.debug('設定変更監視を登録しました');
   }
 
   /**
@@ -105,7 +107,7 @@ export class EventManager {
     });
     
     this.disposables.push(themeChangeDisposable);
-    console.log('[EventManager] VSCodeテーマ変更監視を登録しました');
+    this.logger.debug('VSCodeテーマ変更監視を登録しました');
   }
 
   /**
@@ -115,12 +117,12 @@ export class EventManager {
     const settingsDisposable = vscode.workspace.onDidChangeConfiguration(event => {
       if (event.affectsConfiguration('textui-designer.autoPreview.enabled')) {
         // 設定変更時の処理は既にsettingsWatcherで処理済み
-        console.log('[EventManager] VSCode設定変更を検知しました');
+        this.logger.debug('VSCode設定変更を検知しました');
       }
     });
     
     this.disposables.push(settingsDisposable);
-    console.log('[EventManager] VSCode設定変更監視を登録しました');
+    this.logger.debug('VSCode設定変更監視を登録しました');
   }
 
   /**
@@ -139,7 +141,7 @@ export class EventManager {
     });
     
     this.disposables.push(documentOpenDisposable);
-    console.log('[EventManager] ドキュメントオープン監視を登録しました');
+    this.logger.debug('ドキュメントオープン監視を登録しました');
   }
 
   /**
@@ -162,27 +164,27 @@ export class EventManager {
     });
     
     this.disposables.push(documentCloseDisposable);
-    console.log('[EventManager] ドキュメントクローズ監視を登録しました');
+    this.logger.debug('ドキュメントクローズ監視を登録しました');
   }
 
   /**
    * リソースのクリーンアップ
    */
   dispose(): void {
-    console.log('[EventManager] イベントマネージャーのクリーンアップ開始');
+    this.logger.debug('イベントマネージャーのクリーンアップ開始');
     
     // 全disposableを破棄
     this.disposables.forEach(disposable => {
       try {
         disposable.dispose();
       } catch (error) {
-        console.error('[EventManager] disposable破棄中にエラーが発生しました:', error);
+        this.logger.error('disposable破棄中にエラーが発生しました:', error);
       }
     });
     
     this.disposables = [];
     this.services = null;
     
-    console.log('[EventManager] イベントマネージャーのクリーンアップ完了');
+    this.logger.debug('イベントマネージャーのクリーンアップ完了');
   }
 } 

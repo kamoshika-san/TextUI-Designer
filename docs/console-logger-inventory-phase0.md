@@ -13,14 +13,15 @@
 
 | 種別 | 行付近 | 内容 | 分類 |
 |------|--------|------|------|
-| `console.log` | 23, 43, 65, 90, 108, 118, 123, 142, 165, 172, 186 | `[EventManager]` プレフィックス付きの初期化・監視登録・クリーンアップのトレース | **移行候補** → `Logger` の `debug`/`info`（運用でノイズが多ければ `debug` に寄せる） |
-| `console.error` | 84, 179 | スキーマ再初期化失敗、disposable 破棄エラー | **移行候補（優先）** → `Logger.error`（フィルタとプレフィックス統一） |
+| `console.log` | — | `EventManager` の初期化・監視登録・クリーンアップのトレース | **移行済み（RF4-T1）** → `Logger.debug` |
+| `console.error` | — | スキーマ再初期化失敗、disposable 破棄エラー | **移行済み（RF4-T1）** → `Logger.error` |
 
 ### `src/services/diagnostic-manager.ts`
 
 | 種別 | 行付近 | 内容 | 分類 |
 |------|--------|------|------|
-| `console.log` | 77 | キャッシュヒット時「キャッシュされた診断結果を使用」 | **移行候補** → `Logger.debug` または **削除**（高頻度になりうるため） |
+| `console.log` | — | キャッシュヒット時「キャッシュされた診断結果を使用」 | **移行済み（RF4-T1）** → `Logger.debug` |
+| `console.log` | — | キャッシュサイズ制限到達時の古いキャッシュ削除 | **移行済み（RF4-T1）** → `Logger.warn` |
 
 ### `src/services/webview/yaml-parser.ts`
 

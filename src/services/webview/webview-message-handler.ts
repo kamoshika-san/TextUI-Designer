@@ -6,7 +6,7 @@ import { ConfigManager } from '../../utils/config-manager';
 import { Logger } from '../../utils/logger';
 import { ThemeDiscoveryService } from './theme-discovery-service';
 import { ThemeSwitchService } from './theme-switch-service';
-import { VsCodeWindowAdapter } from './vscode-window-adapter';
+import { VSCodeWindowAdapter } from './vscode-window-adapter';
 import { YamlPointerResolver } from './yaml-pointer-resolver';
 import { withPreviewPipelineTrace } from './preview-pipeline-observability';
 
@@ -15,7 +15,7 @@ type MessageHandler = (message: WebViewMessage) => Promise<void>;
 
 interface WebViewMessageHandlerDependencies {
   themeSwitchService?: ThemeSwitchService;
-  windowAdapter?: VsCodeWindowAdapter;
+  windowAdapter?: VSCodeWindowAdapter;
 }
 
 /**
@@ -30,7 +30,7 @@ export class WebViewMessageHandler {
   private readonly themeDiscoveryService: ThemeDiscoveryService;
   private readonly yamlPointerResolver: YamlPointerResolver;
   private readonly themeSwitchService: ThemeSwitchService;
-  private readonly windowAdapter: VsCodeWindowAdapter;
+  private readonly windowAdapter: VSCodeWindowAdapter;
   private readonly messageHandlers: Record<MessageType, MessageHandler>;
   private readonly logger = new Logger('WebViewMessageHandler');
 
@@ -48,7 +48,7 @@ export class WebViewMessageHandler {
     this.themeDiscoveryService = new ThemeDiscoveryService(() => this.updateManager.getLastTuiFile());
     this.yamlPointerResolver = new YamlPointerResolver();
     this.themeSwitchService = dependencies.themeSwitchService ?? new ThemeSwitchService();
-    this.windowAdapter = dependencies.windowAdapter ?? new VsCodeWindowAdapter();
+    this.windowAdapter = dependencies.windowAdapter ?? new VSCodeWindowAdapter();
     this.messageHandlers = {
       'export': async () => this.handleExportMessage(),
       'jump-to-dsl': async (message) => this.handleJumpToDslMessage(message),

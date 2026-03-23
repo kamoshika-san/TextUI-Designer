@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-export class VsCodeWindowAdapter {
+export class VSCodeWindowAdapter {
   showWarningMessage(message: string): Thenable<string | undefined> {
     return this.invoke('showWarningMessage', message);
   }
@@ -31,3 +31,6 @@ export class VsCodeWindowAdapter {
     return (candidate as (value: string) => Thenable<string | undefined>)(message);
   }
 }
+
+// Backward-compatible alias for older call sites and tests.
+export { VSCodeWindowAdapter as VsCodeWindowAdapter };
