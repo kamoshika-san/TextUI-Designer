@@ -12,12 +12,37 @@ function hashHtml(html) {
   return crypto.createHash('sha256').update(normalizeHtml(html)).digest('hex');
 }
 
+function compactSnippet(html, marker, radius = 120) {
+  const normalized = normalizeHtml(html);
+  const idx = normalized.indexOf(marker);
+  if (idx === -1) {
+    return null;
+  }
+  const start = Math.max(0, idx - radius);
+  const end = Math.min(normalized.length, idx + marker.length + radius);
+  return normalized.slice(start, end).replace(/\s+/g, ' ').trim();
+}
+
+function buildPrimaryRegressionDebug(sampleRelativePath, html, hash, expectedHash, marker, dsl) {
+  const normalized = normalizeHtml(html);
+  return [
+    `sample: ${sampleRelativePath}`,
+    `missing marker: ${marker}`,
+    `expected hash: ${expectedHash}`,
+    `actual hash: ${hash}`,
+    `html length: ${normalized.length}`,
+    `page title: ${dsl?.page?.title ?? '<missing>'}`,
+    `component count: ${Array.isArray(dsl?.page?.components) ? dsl.page.components.length : '<non-array>'}`,
+    `html preview: ${JSON.stringify(normalized.slice(0, 240))}`
+  ].join('\n');
+}
+
 async function exportPrimarySample(sampleRelativePath) {
   const repoRoot = path.resolve(__dirname, '../..');
   const samplePath = path.join(repoRoot, sampleRelativePath);
   const { dsl } = loadDslWithIncludesFromPath(samplePath);
   const html = await new HtmlExporter().export(dsl, { format: 'html' });
-  return { html, hash: hashHtml(html) };
+  return { dsl, html, hash: hashHtml(html) };
 }
 
 describe('HtmlExporter primary sample regression (T-20260322-348)', () => {
@@ -34,18 +59,29 @@ describe('HtmlExporter primary sample regression (T-20260322-348)', () => {
     }
   ].forEach(({ sampleRelativePath, expectedHash, markers }) => {
     it(`${sampleRelativePath} stays stable on the Primary HTML path`, async () => {
-      const { html, hash } = await exportPrimarySample(sampleRelativePath);
+      const { dsl, html, hash } = await exportPrimarySample(sampleRelativePath);
+
+      assert.ok(
+        dsl && dsl.page && Array.isArray(dsl.page.components) && dsl.page.components.length > 0,
+        `Expected sample DSL to load components before export\nsample: ${sampleRelativePath}\npage title: ${dsl?.page?.title ?? '<missing>'}`
+      );
 
       markers.forEach(marker => {
         assert.ok(
           html.includes(marker),
-          `Expected Primary HTML export for ${sampleRelativePath} to include marker: ${marker}`
+          `Expected Primary HTML export for ${sampleRelativePath} to include marker: ${marker}\n${buildPrimaryRegressionDebug(sampleRelativePath, html, hash, expectedHash, marker, dsl)}`
         );
       });
       assert.strictEqual(
         hash,
         expectedHash,
-        `Primary HTML export hash changed for ${sampleRelativePath}`
+        [
+          `Primary HTML export hash changed for ${sampleRelativePath}`,
+          `expected hash: ${expectedHash}`,
+          `actual hash: ${hash}`,
+          `first marker snippet: ${compactSnippet(html, markers[0]) ?? '<marker not found>'}`,
+          `page title: ${dsl?.page?.title ?? '<missing>'}`
+        ].join('\n')
       );
     });
   });
