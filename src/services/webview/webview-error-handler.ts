@@ -215,21 +215,6 @@ export class WebViewErrorHandler {
    */
   private generateParseErrorSuggestions(errorMessage: string): string[] {
     return buildYamlParseErrorSuggestions(errorMessage);
-    const suggestions: string[] = [];
-    
-    if (errorMessage.includes('duplicate key')) {
-      suggestions.push('重複したキーが存在します。キー名を確認してください。');
-    } else if (errorMessage.includes('mapping values')) {
-      suggestions.push('YAMLの構文エラーです。インデントとコロンの使用を確認してください。');
-    } else if (errorMessage.includes('unexpected end')) {
-      suggestions.push('YAMLファイルが不完全です。閉じ括弧やクォートを確認してください。');
-    } else if (errorMessage.includes('invalid character')) {
-      suggestions.push('無効な文字が含まれています。特殊文字やエンコーディングを確認してください。');
-    } else if (errorMessage.includes('too large') || errorMessage.includes('大きすぎます')) {
-      suggestions.push('ファイルサイズを1MB以下にしてください。');
-    }
-    
-    return suggestions;
   }
 
   /**
