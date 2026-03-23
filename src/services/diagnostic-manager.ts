@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
-import { ErrorObject } from 'ajv';
+import type { ErrorObject } from 'ajv';
 import { TextUIMemoryTracker } from '../utils/textui-memory-tracker';
-import { ISchemaManager, SchemaDefinition } from '../types';
+import type { ISchemaManager, SchemaDefinition } from '../types';
 import { suggestSimilarKeys } from './diagnostics/key-suggestion';
 import { buildDiagnosticTemplate } from './diagnostics/template-builder';
 import { assembleDiagnosticMarkdownMessage } from './diagnostics/diagnostic-message-assembler';

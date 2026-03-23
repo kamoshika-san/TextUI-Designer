@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { WebViewLifecycleManager } from './webview-lifecycle-manager';
-import { YamlErrorInfo, SchemaErrorInfo } from './yaml-parser';
+import type { YamlErrorInfo, SchemaErrorInfo } from './yaml-parser';
+import { buildYamlParseErrorSuggestions } from './yaml-error-suggestions';
 
 export interface ErrorMessage {
   type: 'error' | 'parseError' | 'schemaError';
@@ -213,6 +214,7 @@ export class WebViewErrorHandler {
    * パースエラー修正の提案を生成
    */
   private generateParseErrorSuggestions(errorMessage: string): string[] {
+    return buildYamlParseErrorSuggestions(errorMessage);
     const suggestions: string[] = [];
     
     if (errorMessage.includes('duplicate key')) {

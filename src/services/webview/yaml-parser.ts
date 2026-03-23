@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
-import { ErrorObject } from 'ajv';
+import type { ErrorObject } from 'ajv';
 import { parseYamlTextAsync } from '../../dsl/yaml-parse-async';
-import { SchemaDefinition } from '../../types';
+import type { SchemaDefinition } from '../../types';
 import { PreviewPerformanceMonitor } from '../../utils/performance-monitor-preview';
 import { YamlContentReader } from './yaml-content-reader';
+import { buildYamlParseErrorSuggestions } from './yaml-error-suggestions';
 import { YamlIncludeResolver } from './yaml-include-resolver';
 import { YamlSchemaValidator } from './yaml-schema-validator';
 
@@ -183,6 +184,7 @@ export class YamlParser {
    * パースエラー修正の提案を生成
    */
   private generateParseErrorSuggestions(errorMessage: string, _errorLine: string): string[] {
+    return buildYamlParseErrorSuggestions(errorMessage);
     const suggestions: string[] = [];
     
     if (errorMessage.includes('duplicate key')) {
