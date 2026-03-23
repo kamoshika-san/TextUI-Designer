@@ -1,7 +1,9 @@
 /**
- * Text / ナビゲーション / メディア系 DSL コンポーネント型（RF1-S2-T1）。
+ * Canonical DSL types for text, navigation, and media-facing components.
+ * Sprint 2 keeps these nearby read-oriented contracts in one operational file.
  */
 
+// Text / display
 export type TextVariant = 'h1' | 'h2' | 'h3' | 'p' | 'small' | 'caption';
 export type TextSize = 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl';
 export type TextWeight = 'normal' | 'medium' | 'semibold' | 'bold';
@@ -17,12 +19,7 @@ export interface TextComponent {
   tokenSlots?: string[];
 }
 
-export interface IconComponent {
-  name: string;
-  label?: string;
-  token?: string;
-}
-
+// Navigation
 export interface LinkComponent {
   href: string;
   label: string;
@@ -42,6 +39,7 @@ export interface BreadcrumbComponent {
   token?: string;
 }
 
+// Display feedback / media
 export type BadgeVariant = 'default' | 'primary' | 'success' | 'warning' | 'error';
 
 export interface BadgeComponent {
@@ -57,6 +55,12 @@ export interface ImageComponent {
   width?: string;
   height?: string;
   variant?: 'default' | 'avatar';
+  token?: string;
+}
+
+export interface IconComponent {
+  name: string;
+  label?: string;
   token?: string;
 }
 

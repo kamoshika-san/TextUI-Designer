@@ -8,9 +8,9 @@ Give implementers one short path for adding shared DSL types or built-in compone
 
 ## Start Here
 
-1. Add or change shared DSL types in `src/domain/dsl-types.ts`.
+1. Add or change shared DSL types through `src/domain/dsl-types/` and keep the public entry at `src/domain/dsl-types/index.ts`.
 2. If the change introduces a new built-in kind, add the name first in `src/components/definitions/built-in-components.ts`.
-3. Update `ComponentDef`, `PageDef`, related guards, and any DSL unions in `src/domain/dsl-types.ts`.
+3. Put the type body in the owning category file, then update `ComponentDef`, `PageDef`, related guards, and any DSL unions in `src/domain/dsl-types/component-def.ts`.
 4. Update descriptor and schema-facing definitions under `src/components/definitions/*`.
 5. Keep `src/renderer/types.ts` as a thin facade only. Do not add type bodies, aliases, or logic there.
 
@@ -19,7 +19,11 @@ Give implementers one short path for adding shared DSL types or built-in compone
 | What you are adding | Primary file |
 |---|---|
 | Built-in kind name | `src/components/definitions/built-in-components.ts` |
-| Shared DSL unions and guards | `src/domain/dsl-types.ts` |
+| Text / link / breadcrumb / badge / image / icon / progress types | `src/domain/dsl-types/text-navigation-media.ts` |
+| Button types | `src/domain/dsl-types/button.ts` |
+| Input / checkbox / radio / select / date / form types | `src/domain/dsl-types/form.ts` |
+| Layout / compound / nested structure types | `src/domain/dsl-types/layout-compound.ts` |
+| Shared DSL unions, `PageDef`, `TextUIDSL`, and guards | `src/domain/dsl-types/component-def.ts` |
 | Component descriptor typing | `src/components/definitions/types.ts` |
 | Descriptor metadata and properties | `src/components/definitions/manifest.ts` |
 | Preview / exporter capability metadata | `src/components/definitions/exporter-renderer-definitions.ts` |
@@ -34,12 +38,23 @@ Give implementers one short path for adding shared DSL types or built-in compone
 ## Built-In Addition Order
 
 1. `src/components/definitions/built-in-components.ts`
-2. `src/domain/dsl-types.ts`
-3. `src/components/definitions/types.ts`
-4. `src/components/definitions/manifest.ts`
-5. `src/components/definitions/exporter-renderer-definitions.ts`
-6. `src/components/definitions/component-definitions.ts`
-7. Preview / exporter registration only where the component actually needs runtime wiring
+2. The owning category file under `src/domain/dsl-types/`
+3. `src/domain/dsl-types/component-def.ts`
+4. `src/components/definitions/types.ts`
+5. `src/components/definitions/manifest.ts`
+6. `src/components/definitions/exporter-renderer-definitions.ts`
+7. `src/components/definitions/component-definitions.ts`
+8. Preview / exporter registration only where the component actually needs runtime wiring
+
+## Category Map
+
+| Category | Current physical file |
+|---|---|
+| Text / navigation / media | `src/domain/dsl-types/text-navigation-media.ts` |
+| Button | `src/domain/dsl-types/button.ts` |
+| Form | `src/domain/dsl-types/form.ts` |
+| Layout / compound | `src/domain/dsl-types/layout-compound.ts` |
+| Union / root / guards | `src/domain/dsl-types/component-def.ts` |
 
 ## Verification
 
