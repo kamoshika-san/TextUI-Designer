@@ -52,6 +52,7 @@
 
 - **推奨**: 対象クラスに **constructor / factory 注入**（例: `SchemaManager` の `SchemaManagerSeams`、`CommandManager` の `RuntimeInspectionCommandBindings`）を使い、**差し替え可能な依存**だけをテストでスタブする。
 - **統合テストのサービス束**: `tests/helpers/integration-service-factory.js` の `createIntegrationServices`（`ServiceFactory` オーバーライドの雛形）。
+- **WebView 系 unit テストのローカル補完**: `tests/unit/webview-utils.test.js` の `createTestWebviewPanel()` を基準に、`cspSource` や `asWebviewUri` のような **不足 API だけ**をテスト内 helper で補完する。`global.vscode` の手書き差し替えや、その場限りの `Module.prototype.require` 横取りで埋めない。
 - **反パターン**: `global.vscode` を手書きで上書きし続ける、テスト専用に `setup.js` にグローバルフックを追加する（方針上の詳細は [`docs/test-setup-policy.md`](../docs/test-setup-policy.md)）。
 - **レイヤと CI の対応**: [`docs/test-matrix.md`](../docs/test-matrix.md)。
 
