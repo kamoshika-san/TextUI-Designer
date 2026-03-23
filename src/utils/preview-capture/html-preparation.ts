@@ -64,6 +64,7 @@ export async function prepareCaptureArtifacts(
   const html = await new HtmlExporter().export(dsl, {
     format: 'html',
     themePath,
+    // Preview capture preparation defaults to the Primary path unless a caller overrides it.
     useReactRender: options.useReactRender ?? true,
     extensionPath: options.extensionPath
   });

@@ -22,6 +22,7 @@ const BUILTIN_PROVIDERS: CliProviderDefinition[] = [
       return new HtmlExporter().export(dsl, {
         format: 'html',
         themePath: options?.themePath,
+        // Default CLI HTML export stays on the Primary path.
         useReactRender: true
       });
     }

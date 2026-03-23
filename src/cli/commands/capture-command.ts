@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { withExplicitFallbackHtmlExport } from '../../exporters/html-export-lane-options';
 import { capturePreviewImageFromDsl } from '../../utils/preview-capture';
 import { loadDslFromFile, resolveDslFile, ensureDirectoryForFile } from '../io';
 import { validateDsl } from '../validator';
@@ -55,20 +56,19 @@ export async function handleCaptureCommand(args: FileTargetArgs): Promise<ExitCo
   const allowNoSandbox = hasFlag('--allow-no-sandbox');
   ensureDirectoryForFile(output);
 
-  const result = await capturePreviewImageFromDsl(loaded.dsl, {
+  const result = await capturePreviewImageFromDsl(loaded.dsl, withExplicitFallbackHtmlExport({
     outputPath: output,
     themePath,
     useWebViewTheme,
     dslFilePath: loaded.sourcePath,
     extensionPath,
-    useReactRender: false,
     width,
     height,
     scale,
     waitMs,
     browserPath,
     allowNoSandbox
-  });
+  }));
   const bytes = fs.statSync(output).size;
 
   if (hasFlag('--json')) {

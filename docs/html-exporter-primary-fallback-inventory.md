@@ -1,30 +1,72 @@
-# HtmlExporter: primary / fallback 差分の棚卸し（分類表）
+# HtmlExporter: primary / fallback inventory
 
-**目的**: `ExportOptions.useReactRender` による **Primary** と **Fallback** の差を、修正時に「どちらを正とするか」迷わないよう **1 ページ**に整理する。  
-**正の実装**: `src/exporters/html-exporter.ts`・`docs/exporter-boundary-guide.md`「HtmlExporter」。
+**Purpose**: keep the meaning of `ExportOptions.useReactRender` on one page so changes can be judged against a single source of truth.
+**Source of truth**: `src/exporters/html-exporter.ts` and [exporter-boundary-guide.md](exporter-boundary-guide.md).
+**How to read this page**: fallback is a compatibility lane, not the default design target. This inventory records owner, trigger, follow-up, and route viability.
 
-## 経路の要約
+## Lane summary
 
-| 経路 | 条件 | 生成の核 |
-|------|------|----------|
-| **Primary** | `useReactRender !== false`（既定） | `renderPageComponentsToStaticHtml` → `buildHtmlDocument(..., { noWrap: true })` |
-| **Fallback** | `useReactRender === false` | `renderPageComponents`（`BaseComponentRenderer`＋`html-renderers/*`）→ `buildHtmlDocument`（`noWrap` なし） |
+| Lane | Condition | Render path |
+|------|-----------|-------------|
+| **Primary** | `useReactRender !== false` (default) | `renderPageComponentsToStaticHtml` -> `buildHtmlDocument(..., { noWrap: true })` |
+| **Fallback** | `useReactRender === false` | `renderPageComponents` (`BaseComponentRenderer` + `html-renderers/*`) -> `buildHtmlDocument` |
 
-## 差分の分類表
+## Owner / Trigger / Follow-up
 
-「**意図した機能**」= アーキテクチャ上そうなるべき差。「**互換レーン**」= レガシー文字列経路として残し、新機能は primary を正とする運用（詳細は [exporter-boundary-guide.md](exporter-boundary-guide.md)「Fallback を compatibility lane として扱う」）。「**調査・個別**」= 本表では型だけ置き、発見時に追記する。
+| Item | Primary | Fallback |
+|------|---------|----------|
+| **owner** | `src/exporters/react-static-export.ts` and `src/renderer/component-map.tsx` | `src/exporters/base-component-renderer.ts` and `src/exporters/html-renderers/*` |
+| **trigger** | normal HTML export, built-in `html` provider, preview preparation | explicit `useReactRender === false` for capture, compatibility regression, or legacy behavior checks |
+| **follow-up** | treat drift as work against the main renderer contract | require a reason, keep Primary as source of truth, and record the reason in code comments or review handoff |
 
-| # | 差分の内容 | Primary | Fallback | 分類 | 根拠・メモ |
-|---|------------|---------|----------|------|------------|
-| 1 | **HTML ドキュメントのラップ** | `buildHtmlDocument` に `noWrap: true`（断片寄りの結合） | `noWrap` 指定なし（従来の全文ラップ） | **意図した機能** | `html-exporter.ts` の分岐。構造差は仕様として許容。 |
-| 2 | **マークアップ生成スタック** | React 静的経路（`react-static-export`・`component-map`） | 文字列レンダラ（`html-renderers/*`） | **意図した機能** | 二系統の役割分担。新コンポーネントは **primary 優先**（コードコメント準拠）。 |
-| 3 | **コンポーネント種別の対応差** | component-map 側の対応が先行しやすい | 文字列系が未対応・遅れることがある | **互換レーン** | 不具合は **まず primary** を確認。fallback 専用なら理由コメントを残す運用。 |
-| 4 | **テーマ / `webviewCss` の注入** | 両経路とも `buildHtmlDocument` に `themeStyles`・`webviewCss` を渡す | 同左 | **意図した一致** | 差の主因は本体マークアップ生成部。 |
-| 5 | **CLI / テストでの利用** | `provider-registry` 等は既定で React 経路 | `capture-command` 等で `useReactRender: false` を明示 | **意図した運用** | 安定化・キャプチャ用途の明示切替。 |
-| 6 | **DOM の細かな差** | — | — | **調査・個別** | 発見したら issue か本表に 1 行追記。判断は **primary を正**。 |
+## Current route inventory
 
-## 関連ドキュメント
+| Route | Current entry | Lane |
+|------|---------------|------|
+| `src/cli/provider-registry.ts` built-in `html` provider | `useReactRender: true` | **Primary** |
+| `src/utils/preview-capture/html-preparation.ts` | `options.useReactRender ?? true` | default is **Primary**, explicit override only |
+| `src/cli/commands/capture-command.ts` | `withExplicitFallbackHtmlExport(...)` | **Fallback** |
+| fallback-focused unit tests such as `tests/unit/exporter-token-style-format.test.js` | explicit `useReactRender: false` | **Fallback** |
 
-- [exporter-boundary-guide.md](exporter-boundary-guide.md) — 境界の入口・互換レーン方針
-- [export-webview-runtime-coupling-inventory.md](export-webview-runtime-coupling-inventory.md) — 結合パターンの棚卸し
-- `tests/unit/shared-kernel-preview-export-parity.test.js` — primary 系の preview/export 内側マークアップ整合（Tabs 等の jump 差分は対象外）
+## Observability
+
+- `src/exporters/html-exporter.ts` emits the debug log `using fallback HTML render path (useReactRender=false)` only on the fallback lane.
+- The Primary lane stays quiet. Use `TEXTUI_LOG_LEVEL=debug` only when fallback usage needs to be observed.
+
+## Difference categories
+
+Use these labels when a behavior difference is found.
+
+| # | Difference | Primary | Fallback | Classification | Notes |
+|---|------------|---------|----------|----------------|-------|
+| 1 | HTML document wrapper | `buildHtmlDocument(..., { noWrap: true })` | wrapper path differs | intended difference | locked in `html-exporter.ts` |
+| 2 | Markup rendering stack | React static render | legacy string renderer stack | intended difference | Primary is the design target for new work |
+| 3 | Component support expansion | new support should land here first | may lag or remain compatibility-only | compatibility lane | if fallback needs bespoke work, record why |
+| 4 | Theme / `webviewCss` handling | carried through the main document build | route-specific | intended but narrow | judge against current runtime behavior |
+| 5 | CLI / test usage | provider export is Primary by default | capture and explicit compatibility tests use fallback | intended and documented | do not silently widen fallback entry points |
+| 6 | Small DOM differences | evaluate case by case | evaluate case by case | investigate individually | open an issue or extend this table when found |
+
+## Route viability snapshot (HR1-S3 / T-352)
+
+This separates routes that are already safe to treat as Primary from routes that still need the compatibility lane.
+
+| Route | Current entry | Classification | Why |
+|---|---|---|---|
+| Built-in HTML provider | `src/cli/provider-registry.ts` | Fully movable / already Primary | The built-in `html` provider explicitly passes `useReactRender: true`, so normal CLI export is already anchored to the Primary renderer. |
+| Preview capture preparation | `src/utils/preview-capture/html-preparation.ts` | Fully movable / already Primary by default | `prepareCaptureArtifacts()` uses `options.useReactRender ?? true`, so preview HTML preparation already validates the Primary lane unless a caller asks for fallback on purpose. |
+| Capture command | `src/cli/commands/capture-command.ts` | Keep for now | `capture` still routes through `withExplicitFallbackHtmlExport(...)`; that path remains the compatibility lane until capture-specific replacement criteria are cleared. |
+| Fallback-focused regression tests | `tests/unit/*` with explicit fallback setup | Partial difference | These tests protect compatibility behavior and should remain fallback-specific even while production and default routes converge on Primary. |
+
+Small-slice verification in `tests/unit/html-exporter-route-viability.test.js` locks the first two routes as Primary and the third route as intentionally fallback-only.
+
+## Decision rules
+
+1. If drift reproduces on normal export, provider output, or preview preparation, treat it as a **Primary** issue first.
+2. If drift reproduces only on `capture` or explicit `useReactRender: false` paths, treat it as a documented fallback compatibility issue.
+3. When fallback-specific code is changed, keep Primary as the source of truth and leave a short reason in code comments or the review handoff.
+
+## Related documents
+
+- [exporter-boundary-guide.md](exporter-boundary-guide.md)
+- [export-webview-runtime-coupling-inventory.md](export-webview-runtime-coupling-inventory.md)
+- `tests/unit/shared-kernel-preview-export-parity.test.js`

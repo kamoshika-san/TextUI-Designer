@@ -57,6 +57,13 @@
 - [ ] **フェーズ 3 facade**: `src/renderer/types.ts` に型本体を追加していない（thin facade 維持）
 - [ ] `src/renderer/**` 外で `renderer/types` の **新規 import を増やしていない**
 - [ ] **フェーズ 4 guard**: `npm run compile` → `npm run check:dsl-types-ssot` → `npm test` を実行した（結果を PR に記載）
+- [ ] HTML exporter を触る場合: **Primary**（`useReactRender !== false`）を先に確認し、fallback は互換レーンとして必要時のみ別理由で扱った
+
+## HTML exporter の Primary check
+
+新しい built-in が HTML 出力に触れる場合、完了条件はまず **Primary path** を満たすこと。ここでいう Primary は `useReactRender !== false` の既定経路で、`react-static-export` と共有 WebView renderer を通る。
+
+Fallback（`useReactRender === false`）は capture / 互換維持のための明示レーンであり、新しい built-in 対応の完了条件そのものではない。差分の棚卸しや既定値契約は [exporter-boundary-guide.md](exporter-boundary-guide.md) と [html-exporter-primary-fallback-inventory.md](html-exporter-primary-fallback-inventory.md) を先に確認する。
 
 #### PR 記載例（本文テンプレ）
 
@@ -124,6 +131,7 @@ npm test
    - `tokenStyleProperty` を使う場合は `src/components/definitions/token-style-property-map.ts` と `src/renderer/token-inline-style-from-definition.ts` の整合を確認。
 11. **エクスポート**
     - `src/exporters/` 側の該当メソッド（`base-component-renderer` 等）に分岐を追加。
+    - HTML exporter を触る場合は **Primary（`useReactRender !== false`）を先に確認**し、fallback は capture / 互換レーンとして別扱いにする。
 12. **検証（フェーズ 4）**
     - `npm run compile` → `npm run check:dsl-types-ssot` → `npm test`（必要なら `npm run test:all`）。
     - 機械系: `tests/unit/dsl-types-descriptor-sync.test.js`、`component-definitions` 系の不変条件テストが通ること。

@@ -3,8 +3,14 @@
  * VSCode WebView API依存とファイルシステム操作のモックを含む
  */
 
+const Module = require('module');
+
 class WebViewManagerFactory {
   static createForTest(vscode, options = {}) {
+    void vscode;
+    /** setup と同一の完全モック（ViewColumn 等）。require フックの外側でも一貫させる */
+    const vscodeApi = require('./vscode-mock.js');
+
     // デフォルト設定
     const defaultOptions = {
       enablePerformance: true,
@@ -58,63 +64,49 @@ class WebViewManagerFactory {
       _disposeHandler: null
     };
 
-    // 拡張VSCode APIモック
-    const extendedVscode = {
-      ...vscode,
-      window: {
-        ...vscode.window,
-        activeTextEditor: null,
-        createWebviewPanel: () => mockWebviewPanel,
-        showTextDocument: () => Promise.resolve(),
-        showInformationMessage: () => Promise.resolve(),
-        showErrorMessage: () => Promise.resolve()
-      },
-      workspace: {
-        ...vscode.workspace,
-        getConfiguration: () => ({
-          get: (key, defaultValue) => {
-            const settings = {
-              'textui.performance.enabled': defaultOptions.enablePerformance,
-              'textui.performance.cacheTTL': defaultOptions.cacheTTL,
-              'textui.performance.maxCacheSize': defaultOptions.maxCacheSize,
-              'textui.performance.monitoringEnabled': defaultOptions.monitoringEnabled,
-              'textui.performance.forceEnabled': defaultOptions.forceEnabled
-            };
-            return settings[key] !== undefined ? settings[key] : defaultValue;
-          }
-        }),
-        openTextDocument: () => Promise.resolve({
-          getText: () => 'test content',
-          fileName: 'test.tui.yml',
-          languageId: 'yaml'
-        }),
-        workspaceFolders: [{
-          uri: {
-            fsPath: '/test/workspace'
-          },
-          name: 'test-workspace',
-          index: 0
-        }]
-      },
-      ViewColumn: {
-        One: 1,
-        Two: 2,
-        Three: 3,
-        Active: -1,
-        Beside: -2
-      },
-      Uri: {
-        file: (path) => ({ 
-          fsPath: path,
-          scheme: 'file',
-          path: path
-        }),
-        joinPath: (base, ...paths) => ({
-          fsPath: require('path').join(base.fsPath, ...paths),
-          scheme: base.scheme
-        })
-      }
+    const restorePatches = [];
+    const patch = (obj, key, value) => {
+      const previous = obj[key];
+      obj[key] = value;
+      restorePatches.push(() => {
+        obj[key] = previous;
+      });
     };
+
+    patch(vscodeApi.window, 'activeTextEditor', null);
+    patch(vscodeApi.window, 'createWebviewPanel', () => mockWebviewPanel);
+    patch(vscodeApi.window, 'showTextDocument', () => Promise.resolve());
+    patch(vscodeApi.window, 'showInformationMessage', () => Promise.resolve());
+    patch(vscodeApi.window, 'showErrorMessage', () => Promise.resolve());
+
+    patch(vscodeApi.workspace, 'getConfiguration', () => ({
+      get: (key, defaultValue) => {
+        const settings = {
+          'textui.performance.enabled': defaultOptions.enablePerformance,
+          'textui.performance.cacheTTL': defaultOptions.cacheTTL,
+          'textui.performance.maxCacheSize': defaultOptions.maxCacheSize,
+          'textui.performance.monitoringEnabled': defaultOptions.monitoringEnabled,
+          'textui.performance.forceEnabled': defaultOptions.forceEnabled
+        };
+        return settings[key] !== undefined ? settings[key] : defaultValue;
+      }
+    }));
+    patch(vscodeApi.workspace, 'openTextDocument', () =>
+      Promise.resolve({
+        getText: () => 'test content',
+        fileName: 'test.tui.yml',
+        languageId: 'yaml'
+      })
+    );
+    patch(vscodeApi.workspace, 'workspaceFolders', [
+      {
+        uri: {
+          fsPath: '/test/workspace'
+        },
+        name: 'test-workspace',
+        index: 0
+      }
+    ]);
 
     // Mock contextを作成
     const mockContext = {
@@ -131,17 +123,6 @@ class WebViewManagerFactory {
       }
     };
 
-    // Module requireフックを設定
-    const Module = require('module');
-    const originalRequire = Module.prototype.require;
-    
-    Module.prototype.require = function(id) {
-      if (id === 'vscode') {
-        return extendedVscode;
-      }
-      return originalRequire.apply(this, arguments);
-    };
-
     // WebView関連モジュールを毎回モック済み環境で読み込み直す
     const modulesToReload = [
       '../../out/services/webview-manager.js',
@@ -151,20 +132,33 @@ class WebViewManagerFactory {
       '../../out/services/webview/theme-discovery-service.js',
       '../../out/services/webview/yaml-pointer-resolver.js'
     ];
-    for (const modulePath of modulesToReload) {
-      const resolvedPath = require.resolve(modulePath);
-      delete require.cache[resolvedPath];
-    }
+    const parentRequire = Module.prototype.require;
+    Module.prototype.require = function (id) {
+      if (id === 'vscode') {
+        return vscodeApi;
+      }
+      return parentRequire.apply(this, arguments);
+    };
 
-    // WebViewManagerを作成
-    const { WebViewManager } = require('../../out/services/webview-manager.js');
-    const webviewManager = new WebViewManager(mockContext);
+    let webviewManager;
+    try {
+      for (const modulePath of modulesToReload) {
+        const resolvedPath = require.resolve(modulePath);
+        delete require.cache[resolvedPath];
+      }
+
+      const { WebViewManager } = require('../../out/services/webview-manager.js');
+      webviewManager = new WebViewManager(mockContext);
+    } catch (err) {
+      Module.prototype.require = parentRequire;
+      throw err;
+    }
 
     // テスト用のヘルパーメソッドを追加
     webviewManager._testHelpers = {
       mockWebviewPanel,
       mockContext,
-      extendedVscode,
+      extendedVscode: vscodeApi,
       resetAllMocks: () => {
         // ファクトリパターンでは基本的にリセット不要
         // 必要に応じて状態のリセット処理を追加
@@ -173,7 +167,11 @@ class WebViewManagerFactory {
         mockWebviewPanel.active = true;
       },
       restoreRequire: () => {
-        Module.prototype.require = originalRequire;
+        for (let i = restorePatches.length - 1; i >= 0; i--) {
+          restorePatches[i]();
+        }
+        restorePatches.length = 0;
+        Module.prototype.require = parentRequire;
       },
       // テスト用ファイル作成ヘルパー
       createTestFile: (content = 'test content') => {

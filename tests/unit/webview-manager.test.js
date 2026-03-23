@@ -4,10 +4,9 @@
  * WebViewの管理機能に関連する処理をテストします
  */
 
-// グローバルにモックを設定
-global.vscode = global.vscode || {};
-
 const assert = require('assert');
+/** setup.js の require フックと同一のモック（ViewColumn 等が常に揃う） */
+const vscode = require('../mocks/vscode-mock.js');
 const path = require('path');
 const fs = require('fs');
 const { getWebViewUpdateManagerForTest } = require('../helpers/webview-update-test-access');
@@ -27,7 +26,7 @@ describe('WebViewManager 単体テスト', () => {
       global.WebViewManagerFactory = WebViewManagerFactory;
     }
     
-    webviewManager = global.WebViewManagerFactory.createForTest(global.vscode, {
+    webviewManager = global.WebViewManagerFactory.createForTest(vscode, {
       enablePerformance: true,
       cacheTTL: 300000,
       maxCacheSize: 100
@@ -174,8 +173,8 @@ describe('WebViewManager 単体テスト', () => {
         warnings.push(message);
       };
       webviewManager._testHelpers.extendedVscode.window.showWarningMessage = captureWarning;
-      if (global.vscode && global.vscode.window) {
-        global.vscode.window.showWarningMessage = captureWarning;
+      if (vscode && vscode.window) {
+        vscode.window.showWarningMessage = captureWarning;
       }
       try {
         const sharedVscodeMock = require('../mocks/vscode-mock');
