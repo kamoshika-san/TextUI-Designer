@@ -119,6 +119,12 @@ ADR: [0001 解析パイプライン（初稿）](adr/0001-document-analysis-serv
   - `shared.ts`
 - `preview-capture.ts` は公開 API と経路オーケストレーション中心
 
+### HTML exporter: Primary default path quick check
+- 既定の HTML export provider は `src/cli/provider-registry.ts` で `useReactRender: true` を明示し、Primary path を使う。
+- preview capture 側の HTML 準備は `src/utils/preview-capture/html-preparation.ts` で `options.useReactRender ?? true` を使い、未指定時は Primary path を選ぶ。
+- 明示的な CLI fallback は `src/cli/commands/capture-command.ts` から `src/exporters/html-export-lane-options.ts` の helper を通して選ぶ。
+- built-in / exporter の差分切り分けでは、この 3 入口を先に確認してから renderer 実装や fallback 側を追う。
+
 ### 2) CLI エントリ遅延ロード
 - `src/cli/index.ts` はコマンドごとに dynamic import
 - 軽量コマンドのコールドスタート負荷を削減
@@ -303,4 +309,11 @@ npm run test:regression
 - 新規リファクタは「薄いオーケストレータ + 明確な DTO/mapper/adapter/handler 分離」を基本にする
 - 仕様変更ではなく構造変更のときは、公開契約（CLI/MCP/コマンド文言）を維持する
 - チケットを `done` にする前に、必ず「結果」「そこに至った理由」を記録する
+## Fallback-only change rule
 
+- HtmlExporter の fallback lane だけを触る変更では、Primary を source of truth として扱う前提を崩さない。
+- `useReactRender === false` に依存する変更を入れるときは、次の 3 点を review handoff か近接コメントに残す。
+  - なぜ Primary 側の修正では足りないのか
+  - どの entry / trigger だけが対象なのか
+  - 当面維持か、Primary へ寄せる前提の暫定か
+- reviewer は fallback-only 変更にこの説明が無い場合、同一 ticket 内の差し戻し候補として扱ってよい。

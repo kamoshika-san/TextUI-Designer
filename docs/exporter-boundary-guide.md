@@ -57,3 +57,12 @@
 - 新規 provider 追加時に既存 provider の契約と検証導線を壊していないか
 - フォーマット固有ロジックが共通層へ漏れ出していないか
 - Exporter の挙動差分を README / docs に反映できているか
+## Fallback-only change note
+
+- `useReactRender === false` の経路だけを変更する場合は、Primary ではなく fallback を触る理由を必ず残す。
+- 記録場所は 1 つでよい: 近接コードコメント、review handoff、または PR の影響欄。
+- 最低限残す内容:
+  - なぜ Primary 側の修正ではないのか
+  - どの entry / trigger にだけ影響するのか
+  - 後で Primary へ寄せる余地があるのか、当面維持なのか
+- 新しい fallback entrypoint を足す変更では、`html-exporter-primary-fallback-inventory.md` の更新要否も合わせて判断する。
