@@ -44,6 +44,11 @@ describe('React static export (renderToStaticMarkup)', () => {
         html.includes('background-color:rgb(240, 240, 240)') ||
         html.includes('background-color: rgb(240, 240, 240)')
     );
+    assert.ok(
+      html.includes('var(--tui-slot-container-border, rgb(240, 240, 240))') ||
+        html.includes('border-color:rgb(240, 240, 240)') ||
+        html.includes('border-color: rgb(240, 240, 240)')
+    );
     assert.ok(html.includes('inside'));
   });
 

@@ -102,4 +102,5 @@ export interface ContainerComponent {
   flexGrow?: number;
   minWidth?: string;
   token?: string;
+  tokenSlots?: string[];
 }

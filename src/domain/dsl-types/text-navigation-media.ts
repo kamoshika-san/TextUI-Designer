@@ -14,6 +14,7 @@ export interface TextComponent {
   weight?: TextWeight;
   color?: TextColor;
   token?: string;
+  tokenSlots?: string[];
 }
 
 export interface IconComponent {

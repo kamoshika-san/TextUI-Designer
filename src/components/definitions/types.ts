@@ -26,6 +26,7 @@ export type SchemaRef = `#/definitions/${string}`;
  * `token-style-property-map.ts` の `getTokenStylePropertyKebab` が参照用 Map を構築する（export の `BaseComponentRenderer` と WebView の `token-inline-style-from-definition.ts` が利用）。
  */
 export type TokenStyleProperty = string;
+export type TokenSlotId = string;
 
 /**
  * BaseComponentRenderer が dispatch する renderXxx メソッド名。
@@ -85,6 +86,7 @@ export interface ComponentDefinition {
    * 未指定時は `tokenStyleProperty` のみで従来互換（ADR 0006）。
    */
   defaultTokenSlot?: string;
+  tokenSlots?: TokenSlotId[];
   /**
    * WebView の組み込み renderer 登録キー（`component-map` の built-in キーと対応）。
    * 現状は `name` と同一。

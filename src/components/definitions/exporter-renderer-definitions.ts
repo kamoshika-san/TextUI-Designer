@@ -19,6 +19,7 @@ export type ExporterRendererDefinition = {
    * formatter 層で `var(--tui-slot-…, <token>)` 等へ変換する（T-20260322-201/202）。
    */
   defaultTokenSlot?: string;
+  tokenSlots?: string[];
 };
 
 /**
@@ -29,7 +30,7 @@ export const BUILT_IN_EXPORTER_RENDERER_DEFINITIONS: Record<
   BuiltInComponentName,
   ExporterRendererDefinition
 > = {
-  Text: { rendererMethod: 'renderText', tokenStyleProperty: 'color', defaultTokenSlot: 'text.color' },
+  Text: { rendererMethod: 'renderText', tokenStyleProperty: 'color', defaultTokenSlot: 'text.color', tokenSlots: ['text.color'] },
   Input: { rendererMethod: 'renderInput', tokenStyleProperty: 'border-color' },
   Button: { rendererMethod: 'renderButton', tokenStyleProperty: 'background-color' },
   Checkbox: { rendererMethod: 'renderCheckbox', tokenStyleProperty: 'accent-color' },
@@ -42,7 +43,8 @@ export const BUILT_IN_EXPORTER_RENDERER_DEFINITIONS: Record<
   Container: {
     rendererMethod: 'renderContainer',
     tokenStyleProperty: 'background-color',
-    defaultTokenSlot: 'container.background'
+    defaultTokenSlot: 'container.background',
+    tokenSlots: ['container.background', 'container.border']
   },
   Form: { rendererMethod: 'renderForm', tokenStyleProperty: 'border-color' },
   Accordion: { rendererMethod: 'renderAccordion', tokenStyleProperty: 'border-color' },

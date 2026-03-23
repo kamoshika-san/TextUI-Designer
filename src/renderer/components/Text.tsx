@@ -1,5 +1,6 @@
 import React from 'react';
 import { TextComponent } from '../types';
+import { tokenToPreviewInlineStyle } from '../token-inline-style-from-definition';
 
 type TextVariant = 'h1' | 'h2' | 'h3' | 'p' | 'small' | 'caption';
 
@@ -41,7 +42,9 @@ export const Text: React.FC<TextProps> = ({
   value, 
   size, 
   weight, 
-  color 
+  color,
+  token,
+  tokenSlots
 }) => {
   const Component = variant.startsWith('h') ? variant : 'p';
   
@@ -52,5 +55,8 @@ export const Text: React.FC<TextProps> = ({
     color
   ].filter(Boolean).join(' ');
 
-  return React.createElement(Component, { className }, value);
+  return React.createElement(Component, {
+    className,
+    style: tokenToPreviewInlineStyle('Text', token, tokenSlots)
+  }, value);
 }; 

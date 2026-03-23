@@ -37,6 +37,7 @@ import { HtmlTextualRenderer } from './html-renderers/html-textual-renderer';
 import { HtmlLayoutRenderer } from './html-renderers/html-layout-renderer';
 import type { HtmlRendererUtils } from './html-renderers/html-renderer-utils';
 import { resolveImageSourcesInDsl } from '../utils/image-source-resolver';
+import { Logger } from '../utils/logger';
 
 /**
  * HTML 形式へのエクスポート。
@@ -56,6 +57,7 @@ export class HtmlExporter extends BaseComponentRenderer {
   private readonly formRenderer: HtmlFormRenderer;
   private readonly textualRenderer: HtmlTextualRenderer;
   private readonly layoutRenderer: HtmlLayoutRenderer;
+  private readonly logger = new Logger('HtmlExporter');
 
   constructor() {
     super('html');
@@ -76,6 +78,7 @@ export class HtmlExporter extends BaseComponentRenderer {
     }
 
     // Primary: WebView と同じ React 静的レンダー ＋ webviewCss（既定）
+    // Primary: normally the source-of-truth path for export / provider / preview alignment.
     const useReact = options.useReactRender !== false;
     if (useReact) {
       const components = normalizedDsl.page?.components ?? [];
@@ -87,6 +90,8 @@ export class HtmlExporter extends BaseComponentRenderer {
     }
 
     // Fallback: 文字列レンダー（useReactRender: false のときのみ。テスト・capture 等）
+    // Fallback: compatibility lane used only when useReactRender is explicitly false.
+    this.logger.debug('using fallback HTML render path (useReactRender=false)');
     const componentCode = this.renderPageComponents(normalizedDsl);
     return buildHtmlDocument(componentCode, themeStyles, {
       webviewCss: webviewCss ?? undefined
@@ -190,7 +195,7 @@ export class HtmlExporter extends BaseComponentRenderer {
       escapeHtml: value => this.escapeHtml(value),
       escapeAttribute: value => this.escapeAttribute(value),
       getDisabledClass: (disabled = false) => this.getDisabledClass(disabled),
-      getHtmlTokenStyleAttr: (componentType, token) => this.getHtmlTokenStyleAttr(componentType, token),
+      getHtmlTokenStyleAttr: (componentType, token, tokenSlots) => this.getHtmlTokenStyleAttr(componentType, token, tokenSlots),
       getStyleManager: () => this.getStyleManager(),
       buildAttrs: attrs => this.buildAttrs(attrs),
       buildLabeledFieldBlock: (

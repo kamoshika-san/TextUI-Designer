@@ -10,10 +10,17 @@ describe('tokenToPreviewInlineStyle slot vocabulary (T-20260322-203)', () => {
     assert.strictEqual(style.color, 'var(--tui-slot-text-color, #112233)');
   });
 
-  it('Container uses container.background slot per naming convention', () => {
+  it('Container uses declared multi-slot bindings in preview', () => {
     const style = tokenToPreviewInlineStyle('Container', 'rgb(1,2,3)');
     assert.ok(style);
     assert.strictEqual(style.backgroundColor, 'var(--tui-slot-container-background, rgb(1,2,3))');
+    assert.strictEqual(style.borderColor, 'var(--tui-slot-container-border, rgb(1,2,3))');
+  });
+
+  it('explicit tokenSlots override is honored for preview output', () => {
+    const style = tokenToPreviewInlineStyle('Text', '#112233', ['text.color']);
+    assert.ok(style);
+    assert.strictEqual(style.color, 'var(--tui-slot-text-color, #112233)');
   });
 
   it('components without defaultTokenSlot keep literal token (compat)', () => {

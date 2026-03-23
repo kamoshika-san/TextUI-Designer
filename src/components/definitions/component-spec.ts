@@ -5,6 +5,7 @@ import type {
   ComponentProperty,
   ExporterRendererMethod,
   SchemaRef,
+  TokenSlotId,
   TokenStyleProperty
 } from './types';
 
@@ -30,6 +31,7 @@ export interface ComponentSpec {
   tokenStyleProperty?: TokenStyleProperty;
   /** 暫定: multi-slot 拡張のためのスロット名（未使用なら省略） */
   defaultTokenSlot?: string;
+  tokenSlots?: TokenSlotId[];
 }
 
 /**
@@ -49,7 +51,8 @@ export function buildComponentSpecFromDefinition(def: ComponentDefinition): Comp
     previewRendererKey: def.previewRendererKey,
     exporterRendererMethod: def.exporterRendererMethod,
     tokenStyleProperty: def.tokenStyleProperty,
-    defaultTokenSlot: def.defaultTokenSlot
+    defaultTokenSlot: def.defaultTokenSlot,
+    tokenSlots: def.tokenSlots
   };
 }
 
@@ -68,6 +71,7 @@ export function buildComponentDefinitionFromSpec(
     properties: spec.properties,
     tokenStyleProperty: spec.tokenStyleProperty,
     defaultTokenSlot: spec.defaultTokenSlot,
+    tokenSlots: spec.tokenSlots,
     previewRendererKey: spec.previewRendererKey,
     exporterRendererMethod: spec.exporterRendererMethod,
     catalogSummaryEn: coreMeta.catalogSummaryEn,

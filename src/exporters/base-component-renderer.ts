@@ -31,12 +31,14 @@ import type { ExporterRendererMethod } from '../components/definitions/types';
 import { StyleManager, type ExportFormat } from '../utils/style-manager';
 import { decodeDslComponent, decodeDslComponentUnion } from '../registry/dsl-component-codec';
 import {
+  getDeclaredTokenSlotsForComponent,
   getDefaultTokenSlotForComponent,
   getTokenStylePropertyKebab,
   slotIdToTuiCssVarName
 } from '../components/definitions/token-style-property-map';
 import { componentDescriptorRegistry } from '../registry/component-descriptor-registry';
 import { AttributeSerializer, type ExporterAstNode, renderExporterAst } from './exporter-ast';
+import { themeStyleResolver } from './theme-style-resolver';
 
 export type ComponentHandler = (props: unknown, key: number) => string;
 
@@ -305,34 +307,34 @@ export abstract class BaseComponentRenderer implements Exporter {
     return property.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
   }
 
-  protected getHtmlTokenStyleAttr(componentType: string, token?: string): string {
-    return this.buildTokenStyleAttr(componentType, token, 'raw');
+  protected getHtmlTokenStyleAttr(componentType: string, token?: string, tokenSlots?: string[]): string {
+    return this.buildTokenStyleAttr(componentType, token, 'raw', tokenSlots);
   }
 
-  protected getPugTokenStyleAttr(componentType: string, token?: string): string {
-    return this.buildTokenStyleAttr(componentType, token, 'raw');
+  protected getPugTokenStyleAttr(componentType: string, token?: string, tokenSlots?: string[]): string {
+    return this.buildTokenStyleAttr(componentType, token, 'raw', tokenSlots);
   }
 
-  protected getPugTokenStyleSuffix(componentType: string, token?: string): string {
-    return this.buildTokenStyleAttr(componentType, token, 'suffix');
+  protected getPugTokenStyleSuffix(componentType: string, token?: string, tokenSlots?: string[]): string {
+    return this.buildTokenStyleAttr(componentType, token, 'suffix', tokenSlots);
   }
 
-  protected getPugTokenStyleModifier(componentType: string, token?: string): string {
-    return this.buildTokenStyleAttr(componentType, token, 'modifier');
+  protected getPugTokenStyleModifier(componentType: string, token?: string, tokenSlots?: string[]): string {
+    return this.buildTokenStyleAttr(componentType, token, 'modifier', tokenSlots);
   }
 
   private buildTokenStyleAttr(
     componentType: string,
     token: string | undefined,
-    mode: 'raw' | 'suffix' | 'modifier'
+    mode: 'raw' | 'suffix' | 'modifier',
+    tokenSlots?: string[]
   ): string {
     const property = this.resolveTokenStyleProperty(componentType);
     if (!property || !token) {
       return '';
     }
 
-    const defaultTokenSlot = getDefaultTokenSlotForComponent(componentType);
-    const raw = ` style="${this.buildInlineCssDeclaration(property, token, defaultTokenSlot)}"`;
+    const raw = ` style="${this.buildInlineCssDeclarations(componentType, token, tokenSlots)}"`;
     if (mode === 'suffix') {
       return raw;
     }
@@ -342,10 +344,43 @@ export abstract class BaseComponentRenderer implements Exporter {
     return raw;
   }
 
-  protected getReactTokenStyleProp(componentType: string, token?: string): string {
+  private buildInlineCssDeclarations(componentType: string, token: string, tokenSlots?: string[]): string {
+    const declaredSlots = getDeclaredTokenSlotsForComponent(componentType);
+    const shouldResolveBindings = (tokenSlots && tokenSlots.length > 0) || (declaredSlots && declaredSlots.length > 0);
+    if (shouldResolveBindings) {
+      const declarations = themeStyleResolver
+        .resolveComponentTokenSlotBindings(componentType, tokenSlots)
+        .map(binding => `${binding.property}: ${themeStyleResolver.formatResolvedTokenSlotValue(binding.slotId, this.escapeAttribute(token))};`);
+      if (declarations.length > 0) {
+        return declarations.join(' ');
+      }
+    }
+
+    const property = this.resolveTokenStyleProperty(componentType);
+    if (!property) {
+      return '';
+    }
+
+    const defaultTokenSlot = getDefaultTokenSlotForComponent(componentType);
+    return this.buildInlineCssDeclaration(property, token, defaultTokenSlot);
+  }
+
+  protected getReactTokenStyleProp(componentType: string, token?: string, tokenSlots?: string[]): string {
     const property = this.resolveTokenStyleProperty(componentType);
     if (!property || !token) {
       return '';
+    }
+
+    const declaredSlots = getDeclaredTokenSlotsForComponent(componentType);
+    const shouldResolveBindings = (tokenSlots && tokenSlots.length > 0) || (declaredSlots && declaredSlots.length > 0);
+    if (shouldResolveBindings) {
+      const bindings = themeStyleResolver.resolveComponentTokenSlotBindings(componentType, tokenSlots);
+      if (bindings.length > 0) {
+        const pairs = bindings.map(binding =>
+          `${this.toReactStyleProperty(binding.property)}: ${JSON.stringify(themeStyleResolver.formatResolvedTokenSlotValue(binding.slotId, token))}`
+        );
+        return ` style={{ ${pairs.join(', ')} }}`;
+      }
     }
 
     const reactProperty = this.toReactStyleProperty(property);
@@ -356,8 +391,8 @@ export abstract class BaseComponentRenderer implements Exporter {
     return ` style={{ ${reactProperty}: ${valueExpr} }}`;
   }
 
-  protected getReactTokenStyleInline(componentType: string, token?: string): string {
-    return this.getReactTokenStyleProp(componentType, token).trim();
+  protected getReactTokenStyleInline(componentType: string, token?: string, tokenSlots?: string[]): string {
+    return this.getReactTokenStyleProp(componentType, token, tokenSlots).trim();
   }
 
   protected escapeHtml(value: unknown): string {

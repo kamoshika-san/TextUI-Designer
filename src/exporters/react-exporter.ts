@@ -34,7 +34,7 @@ export class ReactExporter extends BaseComponentRenderer {
 
   protected renderText(props: TextComponent, key: number): string {
     const styleManager = this.getStyleManager();
-    const tokenStyle = this.getReactTokenStyleInline('Text', props.token);
+    const tokenStyle = this.getReactTokenStyleInline('Text', props.token, props.tokenSlots);
     return renderTextTemplate(props, key, tokenStyle, styleManager, this.format);
   }
 
@@ -254,7 +254,7 @@ export class ReactExporter extends BaseComponentRenderer {
   }
 
   protected renderContainer(props: ContainerComponent, key: number): string {
-    const tokenStyle = this.getReactTokenStyleInline('Container', props.token);
+    const tokenStyle = this.getReactTokenStyleInline('Container', props.token, props.tokenSlots);
     return renderContainerTemplate(props, key, tokenStyle, {
       renderComponent: (component, componentKey) => this.renderComponent(component, componentKey),
       adjustIndentation: (source, indent) => this.adjustIndentation(source, indent),

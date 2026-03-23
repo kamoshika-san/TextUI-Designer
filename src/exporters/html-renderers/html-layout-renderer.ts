@@ -182,8 +182,8 @@ ${bodyCode}
   }
 
   renderContainer(props: ContainerComponent): string {
-    const { layout = 'vertical', components = [], width, flexGrow, minWidth, token } = props;
-    const tokenStyle = this.utils.getHtmlTokenStyleAttr('Container', token);
+    const { layout = 'vertical', components = [], width, flexGrow, minWidth, token, tokenSlots } = props;
+    const tokenStyle = this.utils.getHtmlTokenStyleAttr('Container', token, tokenSlots);
     const layoutClasses = {
       vertical: 'textui-container flex flex-col space-y-4',
       horizontal: 'textui-container flex flex-row space-x-4',
@@ -201,9 +201,13 @@ ${bodyCode}
     if (minWidth) {
       styleChunks.push(`min-width: ${this.utils.escapeAttribute(minWidth)};`);
     }
+    const tokenDeclarations = tokenStyle.match(/ style="([^"]*)"/)?.[1];
+    if (tokenDeclarations) {
+      styleChunks.push(tokenDeclarations);
+    }
     const styleAttr = styleChunks.length > 0 ? ` style="${styleChunks.join(' ')}"` : '';
 
-    let code = `    <div class="${layoutClasses[layout as keyof typeof layoutClasses]}"${styleAttr}${tokenStyle}>`;
+    let code = `    <div class="${layoutClasses[layout as keyof typeof layoutClasses]}"${styleAttr}>`;
     components.forEach((child: ComponentDef, index: number) => {
       const childCode = this.utils.renderComponent(child, index);
       const indentedCode = childCode.split('\n').map(line => `  ${line}`).join('\n');

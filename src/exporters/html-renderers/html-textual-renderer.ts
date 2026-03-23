@@ -16,7 +16,7 @@ export class HtmlTextualRenderer {
   constructor(private readonly utils: HtmlRendererUtils) {}
 
   renderText(props: TextComponent): string {
-    const { value, variant = 'p', size = 'base', weight = 'normal', color = 'text-gray-300', token } = props;
+    const { value, variant = 'p', size = 'base', weight = 'normal', color = 'text-gray-300', token, tokenSlots } = props;
     const safeValue = this.utils.escapeHtml(value ?? '');
 
     const styleManager = this.utils.getStyleManager();
@@ -35,7 +35,7 @@ export class HtmlTextualRenderer {
       tag = 'p';
     }
 
-    const tokenStyle = this.utils.getHtmlTokenStyleAttr('Text', token);
+    const tokenStyle = this.utils.getHtmlTokenStyleAttr('Text', token, tokenSlots);
     return `    <${tag} class="${className}"${tokenStyle}>${safeValue}</${tag}>`;
   }
 

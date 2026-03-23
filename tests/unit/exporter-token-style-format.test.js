@@ -62,6 +62,10 @@ describe('Exporter token style formatting', () => {
       html.includes('background-color: var(--tui-slot-container-background, var(--token-container-bg))'),
       'Container token wrapped with container.background slot (same vocabulary as preview)'
     );
+    assert.ok(
+      html.includes('border-color: var(--tui-slot-container-border, var(--token-container-bg))'),
+      'Container token also applies container.border slot'
+    );
   });
 
   it('HtmlExporter: Text token uses slot-aware var() when defaultTokenSlot is set (T-20260322-202)', async () => {
@@ -80,7 +84,7 @@ describe('Exporter token style formatting', () => {
     );
   });
 
-  it('HtmlExporter: React render path also applies Container token as background-color', async () => {
+  it('HtmlExporter: React render path also applies Container token across declared slots', async () => {
     const exporter = new HtmlExporter();
     const dsl = {
       page: {
@@ -97,6 +101,12 @@ describe('Exporter token style formatting', () => {
         html.includes('background-color:rgb(245, 245, 245)') ||
         html.includes('background-color: rgb(245, 245, 245)'),
       'React path uses slot-aware var or legacy literal'
+    );
+    assert.ok(
+      html.includes('var(--tui-slot-container-border, rgb(245, 245, 245))') ||
+        html.includes('border-color:rgb(245, 245, 245)') ||
+        html.includes('border-color: rgb(245, 245, 245)'),
+      'React path includes border slot styling too'
     );
     assert.ok(html.includes('inside'));
   });

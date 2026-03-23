@@ -22,12 +22,13 @@ export const Container: React.FC<ContainerProps> = ({
   flexGrow,
   minWidth,
   token,
+  tokenSlots,
   children
 }) => {
   const className = layoutClasses[layout];
   const hasFlexGrow = typeof flexGrow === 'number';
 
-  const tokenStyle = tokenToPreviewInlineStyle('Container', token);
+  const tokenStyle = tokenToPreviewInlineStyle('Container', token, tokenSlots);
 
   const style = hasFlexGrow
     ? {

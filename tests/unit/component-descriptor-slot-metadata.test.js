@@ -7,12 +7,14 @@ describe('component descriptor defaultTokenSlot (T-20260322-201)', () => {
     const text = COMPONENT_DEFINITIONS.find(d => d.name === 'Text');
     assert.ok(text);
     assert.strictEqual(text.defaultTokenSlot, 'text.color');
+    assert.deepStrictEqual(text.tokenSlots, ['text.color']);
   });
 
-  it('Container exposes defaultTokenSlot container.background (T-203 preview/export vocabulary)', () => {
+  it('Container exposes multi-slot metadata while keeping defaultTokenSlot compatibility', () => {
     const c = COMPONENT_DEFINITIONS.find(d => d.name === 'Container');
     assert.ok(c);
     assert.strictEqual(c.defaultTokenSlot, 'container.background');
+    assert.deepStrictEqual(c.tokenSlots, ['container.background', 'container.border']);
   });
 
   it('slotIdToTuiCssVarName maps text.color to --tui-slot-text-color', () => {

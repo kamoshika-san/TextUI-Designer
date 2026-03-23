@@ -5,7 +5,7 @@ export type HtmlRendererUtils = {
   escapeHtml: (value: unknown) => string;
   escapeAttribute: (value: unknown) => string;
   getDisabledClass: (disabled?: boolean) => string;
-  getHtmlTokenStyleAttr: (componentType: string, token?: string) => string;
+  getHtmlTokenStyleAttr: (componentType: string, token?: string, tokenSlots?: string[]) => string;
   getStyleManager: () => typeof StyleManager;
   buildAttrs: (attrs: Record<string, string | boolean | undefined>) => string;
   buildLabeledFieldBlock: (

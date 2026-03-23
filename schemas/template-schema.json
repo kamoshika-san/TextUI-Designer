@@ -187,6 +187,13 @@
             "token": {
               "$ref": "#/definitions/tokenRef",
               "description": "テキストに適用するデザイントークン参照。"
+            },
+            "tokenSlots": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/tokenRef"
+              },
+              "description": "Text token slot refs"
             }
           },
           "additionalProperties": false,
@@ -888,6 +895,13 @@
             "token": {
               "$ref": "#/definitions/tokenRef",
               "description": "Containerに適用するデザイントークン参照。"
+            },
+            "tokenSlots": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/tokenRef"
+              },
+              "description": "Container token slot refs"
             }
           },
           "required": [
