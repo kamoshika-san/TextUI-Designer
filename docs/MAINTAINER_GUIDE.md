@@ -11,6 +11,7 @@
 - 設計方針の正本: `docs/adr/0003-dsl-types-canonical-source.md`
 - 棚卸し・現況の正本: `docs/dsl-types-renderer-types-inventory.md`（`npm run check:dsl-types-ssot` のスナップショット節と **同一**に保つ。更新手順は同文書「棚卸し文書の更新手順」）
 - 日次運用手順の正本: `docs/adding-built-in-component.md`
+- DSL 型追加の最短導線: `docs/ssot-dsl-type-addition-rules.md`
 - 共有 DSL 型の原則: `src/domain/dsl-types.ts` を先に更新し、`src/renderer/types.ts` は thin facade を維持する
 
 | ドキュメント | 主な用途 |
