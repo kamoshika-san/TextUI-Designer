@@ -10,6 +10,8 @@
 - cli / utils / registry / types: `renderer/types` 直接参照の混入をガードで検知。
 - tests: SSoT ガード系テストで境界逸脱を検知。
 
+Related next-step planning: [ssot-renderer-sprint3-candidates.md](ssot-renderer-sprint3-candidates.md)
+
 ## 運用メモ
 
 - 新規の共有 DSL 型は `domain/dsl-types` を正本として追加する。
