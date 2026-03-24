@@ -1,6 +1,9 @@
 /**
- * レイアウト・複合 DSL コンポーネント型（RF1-S2-T3）。
- * `ComponentDef` への再帰は `import('./component-def').ComponentDef` で前方参照し、循環 import を避ける。
+ * Layout / compound DSL primitives for Sprint 2.
+ * Container, layout, and compound responsibilities stay grouped here so
+ * `component-def.ts` can import the normalized contracts in dependency order.
+ * The nested component slots reference `ComponentDef` only when rectangles
+ * include other DSL components (Accordion, Tabs, TreeView, Container, Table).
  */
 
 export type DividerOrientation = 'horizontal' | 'vertical';
@@ -31,6 +34,7 @@ export interface AlertComponent {
   token?: string;
 }
 
+// Accordion / Tabs / TreeView slot definitions
 export interface AccordionItem {
   title: string;
   content?: string;
@@ -71,6 +75,7 @@ export interface TreeViewComponent {
   token?: string;
 }
 
+// Table structure with component-valued cells
 export interface TableColumn {
   key: string;
   header: string;
@@ -93,6 +98,7 @@ export interface TableComponent {
   token?: string;
 }
 
+// Container structure
 export type ContainerLayout = 'vertical' | 'horizontal' | 'flex' | 'grid';
 
 export interface ContainerComponent {
