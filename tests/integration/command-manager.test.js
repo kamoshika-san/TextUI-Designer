@@ -9,27 +9,12 @@
 const assert = require('assert');
 const path = require('path');
 const fs = require('fs');
-
-// VSCodeモックを設定
-const mockVscode = require('../mocks/vscode-mock');
-global.vscode = mockVscode;
-
-// Module requireをフックしてVSCodeモジュールをモック化
-const Module = require('module');
-const originalRequire = Module.prototype.require;
-
-Module.prototype.require = function(id) {
-  if (id === 'vscode') {
-    return mockVscode;
-  }
-  return originalRequire.apply(this, arguments);
-};
+const vscode = require('vscode');
 
 describe('CommandManager 統合テスト', () => {
   let commandManager;
   let testFile;
   let testFilePath;
-  let vscode; // 明示的にvscode参照を保持
 
   before(async () => {
     // テスト用の.tui.ymlファイルを作成  
@@ -48,14 +33,10 @@ describe('CommandManager 統合テスト', () => {
     testFilePath = path.join(__dirname, 'command-test.tui.yml');
     fs.writeFileSync(testFilePath, testFile, 'utf-8');
 
-    // VSCodeモックを再設定（他のテストの影響を回避）
-    global.vscode = mockVscode;
-    vscode = mockVscode; // 明示的に変数にも設定
-
     // モックコンテキストを作成
     const mockContext = {
       subscriptions: [],
-      extensionUri: mockVscode.Uri.file(__dirname),
+      extensionUri: vscode.Uri.file(__dirname),
       extensionPath: __dirname
     };
 
@@ -133,9 +114,6 @@ describe('CommandManager 統合テスト', () => {
     if (commandManager && typeof commandManager.dispose === 'function') {
       commandManager.dispose();
     }
-    
-    // Module requireを復元
-    Module.prototype.require = originalRequire;
   });
 
   describe('エクスポートコマンドの処理', () => {
