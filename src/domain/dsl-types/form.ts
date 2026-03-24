@@ -1,5 +1,7 @@
 /**
- * フォーム系 DSL コンポーネント型（RF1-S2-T2）。
+ * Form/input family canonical host for Sprint 2. This file owns all form,
+ * input, option, and action contracts and only pulls in foundation helpers
+ * (layout/media contracts) that remain nested inside form fields.
  */
 
 import type { ButtonComponent } from './button';
@@ -23,6 +25,7 @@ import type {
 
 export type InputType = 'text' | 'email' | 'password' | 'number' | 'multiline';
 
+// Input primitives
 export interface InputComponent {
   label?: string;
   name?: string;
@@ -85,6 +88,7 @@ export interface DatePickerComponent {
   token?: string;
 }
 
+// Field aggregations mixing inputs and nested layout/media helpers
 export interface FormField {
   Input?: InputComponent;
   Checkbox?: CheckboxComponent;
