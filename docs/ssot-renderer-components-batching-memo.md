@@ -1,39 +1,49 @@
-# SSoT Renderer Components Batching Memo
+# SSoT Renderer Components Closeout Memo
 
-Updated: 2026-03-26
+Updated: 2026-03-27
 
-## Goal
+## Scope
 
-Turn the deferred `src/renderer/components/*` facade usage into reviewable follow-up batches without reopening a broad renderer migration.
+- Close out the `src/renderer/components/*` direct-import wave after the preview and component follow-up slices landed.
+- Replace the old batching plan with the current state and the next handoff point.
 
 ## Current State
 
-- `renderer/types` remains a thin facade only.
-- Entry files and the renderer kernel slice already import `domain/dsl-types` directly.
-- `preview-built-in-renderers.tsx` is the remaining renderer-local `./types` fan-in point and should be handled before broad component churn.
-- Component files mostly consume one concrete DSL contract each through `../types`.
+- `src/renderer/types.ts` still exists as a thin facade only.
+- `src/renderer/preview-built-in-renderers.tsx` already imports `../domain/dsl-types` directly.
+- The renderer component files now import `../domain/dsl-types` directly across:
+  - leaf batch A
+  - leaf batch B
+  - nested batch A
+  - nested batch B
+- `npm run check:dsl-types-ssot` now reports `domain/dsl-types imports: 74` and `renderer/types imports: 0`.
 
-## Recommended Order
+## What This Closes
 
-1. Finish `preview-built-in-renderers.tsx` as a single-file follow-up.
-2. Move the simple leaf component files in one small implementation batch.
-3. Move the enum/option leaf files in a second batch if the first leaf pass stays clean.
-4. Leave nested or recursive component files for a later focused pass.
+- The old component batching recommendation has been executed.
+- `src/renderer/components/*` is no longer a deferred facade-drain lane.
+- The remaining renderer discussion is no longer "how to batch component imports" but "what to do with the surviving thin facade and any future renderer-local type seam".
 
-## Proposed Batches
+## Landed Sequence
 
-| Batch | Files | Why this grouping works | Not included |
-|---|---|---|---|
-| Preview integration follow-up | `src/renderer/preview-built-in-renderers.tsx` | Only remaining renderer-local `./types` user; high fan-in but still one file | `components/*` |
-| Leaf batch A | `Alert`, `Breadcrumb`, `Button`, `Checkbox`, `Container`, `DatePicker`, `Divider`, `Icon`, `Image`, `Input`, `Link`, `Spacer`, `Text` | One primary component contract per file; minimal helper coupling | `Badge`, `Progress`, `Radio`, `Select`, nested renderers |
-| Leaf batch B | `Badge`, `Progress`, `Radio`, `Select` | Same leaf pattern, but each file also pulls a variant or option helper type | Nested renderers |
-| Nested batch hold | `Accordion`, `Form`, `Table`, `Tabs`, `TreeView` | These files carry `ComponentDef`, child item types, or decode/recursive rendering semantics | Everything else |
+1. `preview-built-in-renderers.tsx` moved off the facade.
+2. Leaf batch A moved the simple one-contract component files.
+3. Leaf batch B moved the enum and option helper component files.
+4. Nested batch A moved `Accordion`, `Tabs`, and `TreeView`.
+5. Nested batch B moved `Form` and `Table`.
 
-## Hold Conditions
+## Review Readout
 
-- Do not combine `preview-built-in-renderers.tsx` and `components/*` in one change.
-- Do not treat `src/renderer/types.ts` removal as part of any component batch.
-- Do not move nested renderer files until the preview follow-up and at least one leaf batch land without new guard or review concerns.
+- The wave stayed import-edge only.
+- The facade guards remained green throughout the sequence.
+- No batch required deleting `src/renderer/types.ts`.
+- No batch reintroduced non-renderer `renderer/types` usage.
+
+## Next Lane Handoff
+
+- Treat component migration as complete for Sprint 4 closeout purposes.
+- Use `docs/ssot-renderer-types-inventory.md` as the inventory source of truth for the post-component state.
+- Route the next PM decision to facade assessment or another renderer-local type boundary question, not back to component batching.
 
 ## Verification Anchor
 
@@ -42,9 +52,3 @@ Turn the deferred `src/renderer/components/*` facade usage into reviewable follo
 - `tests/unit/renderer-types-non-renderer-import-guard.test.js`
 - `tests/unit/non-renderer-ssot-meta-guard.test.js`
 - `tests/unit/ssot-eslint-restriction-scope.test.js`
-
-## PM / Reviewer Use
-
-- PM can dispatch the preview file independently now.
-- After that review closes, PM can cut `Leaf batch A` as the first `components/*` implementation slice.
-- Reviewer should reject any batch that expands into mixed preview-plus-component churn or tries to delete the facade outright.
