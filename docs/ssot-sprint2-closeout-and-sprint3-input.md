@@ -1,38 +1,38 @@
 # SSoT Sprint 2 Closeout And Sprint 3 Input
 
-Updated: 2026-03-25
+Updated: 2026-03-27
 
-## Sprint 2 Closeout Summary
+## Role Of This Note
 
-- **T-370**: Fixed the placement map so `text-navigation-media.ts`, `form.ts`, `layout-compound.ts`, `button.ts`, and `component-def.ts` are the canonical files for their categories; documented the rule set inside `docs/ssot-dsl-type-addition-rules.md`.
-- **T-371**: Told maintainers that `text-navigation-media.ts` is the only home for the text/navigation/media family and added a guard that ensures `dsl-types.ts`, `form.ts`, and `component-def.ts` import from it.
-- **T-372**: Rewrote `form.ts` as the single source for inputs, selects, radios, date pickers, form actions, and the nested helpers that sit inside form fields.
-- **T-373**: (In flight) keeps layout/compound structures inside `layout-compound.ts` and keeps their helpers documented by the Sprint 2 category map.
-- **T-374**: Grouped `ComponentDef`’s union/guards by category, spelled out the `DSL_COMPONENT_KINDS` → `BUILT_IN_COMPONENTS` dependency, and kept `component-def.ts` as the single bundle point for guards and unions.
-- **T-375**: This document plus the new placement map (`docs/ssot-sprint2-category-placement-map.md`) is the Sprint 2 inventory; it completes the sprint by capturing the canonical layout and the residual risks that feed Sprint 3.
+This is a historical sprint-transition note. It captures how Sprint 2 canonical file placement fed the original Sprint 3 renderer-shrinkage planning.
 
-## Guard Coverage
+## Historical Outcome
 
-- `npm run check:dsl-types-ssot`
-- `npx mocha --no-config --require ./tests/setup.js --timeout 5000 --exit tests/unit/renderer-types-thin-facade.test.js tests/unit/renderer-types-non-renderer-import-guard.test.js tests/unit/ssot-eslint-restriction-scope.test.js tests/unit/non-renderer-ssot-meta-guard.test.js`
-- `npx mocha --no-config --require ./tests/setup.js --timeout 5000 --exit tests/unit/dsl-types-descriptor-sync.test.js tests/unit/component-contract-consistency.test.js`
-- Regression coverage proves `renderer/types` is still a thin facade, layout/form/media files stay in sync with the union, and DSL component kind lists mirror `BUILT_IN_COMPONENTS`.
+- Sprint 2 fixed the canonical placement of shared DSL type families and the related addition rules.
+- Sprint 2 treated renderer shrinkage as a downstream execution track rather than part of the canonical-placement work itself.
+- The old Sprint 3 input pack reflected that earlier handoff point.
 
-## Outstanding Items
+## What Happened Later
 
-1. Layout/compound primaries (T-373) still need the final canonical note before we can mark Sprint 2 fully `done`.
-2. Renderer-side shrinkage (Sprint 3) must respect the Sprint 2 placement map rather than re-opening the canonical source question; keep `src/domain/dsl-types/` as the single survey path.
-3. Built-in component additions must continue to follow the new addition rules to keep descriptor, guard, and union updates in lockstep.
+- The renderer shrinkage work described as future input here has already landed across entry, kernel, preview, and component slices.
+- The old candidate sequencing and follow-up planning are no longer the current backlog source.
+- Current renderer work has narrowed to closeout, facade assessment, and stale-doc cleanup.
 
-## Sprint 3 Input Pack
+## How To Read This Note Now
 
-1. Use `docs/ssot-renderer-sprint3-candidates.md` as the starting list for renderer shrinkage work and only touch `src/renderer/types.ts` through a guard-confirmed drainage plan.
-2. Treat `ComponentDef`/guard synchronization and `DSL_COMPONENT_KINDS` derivation as the sprint-2 deliverable when moving to renderer types; do not re-split the canonical families.
-3. Keep validation high: `npm run check:dsl-types-ssot`, the guard suite above, and the descriptor sync tests are the ongoing checklist any Sprint 3 work should pass before landing.
-4. Any new built-in component or guard change must hit `docs/adding-built-in-component.md` and `BUILT_IN_COMPONENTS` before touching `dsl-types/component-def.ts`.
+- Treat the old Sprint 3 input pack as historical sequencing rationale.
+- Do not use the old "outstanding items" list as the current renderer work queue.
+- Use the newer inventory, guard, component closeout, and facade assessment docs for current planning.
 
-## References
+## Current Source Of Truth
 
-- `docs/ssot-sprint2-category-placement-map.md`
-- `docs/ssot-dsl-type-addition-rules.md`
-- `docs/ssot-renderer-sprint3-candidates.md`
+- Current renderer inventory: [ssot-renderer-types-inventory.md](ssot-renderer-types-inventory.md)
+- Current facade assessment: [ssot-renderer-facade-sprint3-decision.md](ssot-renderer-facade-sprint3-decision.md)
+- Current guard snapshot: [ssot-import-guard-matrix.md](ssot-import-guard-matrix.md)
+- Historical renderer candidate note: [ssot-renderer-sprint3-candidates.md](ssot-renderer-sprint3-candidates.md)
+
+## Preserved Historical Summary
+
+- Sprint 2 locked the canonical file families and addition rules.
+- Sprint 2 deliberately handed renderer shrinkage to a later execution sprint.
+- Validation expectations around `check:dsl-types-ssot`, guard tests, and descriptor sync remained part of the ongoing quality bar.
