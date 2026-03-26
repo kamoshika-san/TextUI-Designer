@@ -1,5 +1,5 @@
 import React from 'react';
-import { BadgeComponent, BadgeVariant } from '../types';
+import { BadgeComponent, BadgeVariant } from '../domain/dsl-types';
 import { tokenToPreviewInlineStyle } from '../token-inline-style-from-definition';
 
 const variantClasses: Record<BadgeVariant, string> = {

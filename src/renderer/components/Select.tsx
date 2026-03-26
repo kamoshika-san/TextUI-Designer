@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { SelectComponent, SelectOption } from '../types';
+import { SelectComponent, SelectOption } from '../domain/dsl-types';
 
 interface SelectProps extends SelectComponent {
   label?: string;
