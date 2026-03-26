@@ -13,7 +13,7 @@
 
 ### 1) 正本一元化
 
-- [ ] 共有 DSL 型の正本が `src/domain/dsl-types.ts` のみである。
+- [ ] 共有 DSL 型の正本が `src/domain/dsl-types/（公開エントリ: index.ts）` のみである。
 - [ ] 新規共有型の追加導線が `domain/dsl-types` 起点で運用されている。
 
 ### 2) thin facade 維持

@@ -12,7 +12,7 @@
 | 種別 | 代表例 | 正本の例 | 主なガード |
 |------|--------|----------|------------|
 | **Registry 互換** | `component-manifest` / `component-registry` からの再エクスポート | `built-in-components` / `component-definitions` / `schema-descriptor-selectors` | `registry-compat-import-guard.test.js` |
-| **型・契約の re-export** | `renderer/types.ts` が `domain/dsl-types` を再公開 | `src/domain/dsl-types.ts` | `dsl-types-descriptor-sync.test.js` 等 |
+| **型・契約の re-export** | `renderer/types.ts` が `domain/dsl-types` を再公開 | `src/domain/dsl-types/（公開エントリ: index.ts）` | `dsl-types-descriptor-sync.test.js` 等 |
 | **公開契約そのもの** | CLI オプション、MCP DTO、WebView メッセージ形 | 各境界ガイド | 境界ガイドのレビュー項目 |
 
 ## 2. 削除・薄化の条件（すべて満たすこと）

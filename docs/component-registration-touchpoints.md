@@ -7,7 +7,7 @@
 | 領域 | 主なファイル / モジュール | 役割（要約） | SSOT 候補 |
 |------|----------------------------|--------------|-----------|
 | 名前の列挙 | `src/components/definitions/built-in-components.ts` | `BUILT_IN_COMPONENTS`（DSL 種別の根） | **強** — 名前の集合の起点 |
-| DSL 型・判別 | `src/domain/dsl-types.ts` | `ComponentDef` union・型ガード・`DSL_COMPONENT_KINDS` | **強** — ADR 0003 の型正本（`renderer/types` は再エクスポート） |
+| DSL 型・判別 | `src/domain/dsl-types/（公開エントリ: index.ts）` | `ComponentDef` union・型ガード・`DSL_COMPONENT_KINDS` | **強** — ADR 0003 の型正本（`renderer/types` は再エクスポート） |
 | Descriptor グラフ | `src/components/definitions/component-definitions.ts` ほか | `COMPONENT_DESCRIPTIONS` / `COMPONENT_PROPERTIES` 等 | **強** — 補完・スキーマ参照の中枢 |
 | Exporter レンダラキー | `src/components/definitions/exporter-renderer-definitions.ts` | `previewRendererKey` / `exporterRendererMethod` | **中** — descriptor とペアで整合必須 |
 | WebView プレビュー | `src/renderer/component-map.tsx`、`src/renderer/components/*` | プレビュー用 React 登録 | **中** — 実行時登録はここ（理想は descriptor から機械導出） |
