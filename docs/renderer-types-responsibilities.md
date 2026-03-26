@@ -5,7 +5,7 @@ ADR 0003 の **thin facade 収束**に向け、型をどこに置くかの **残
 ## 3 分類
 
 1. **共有 DSL 契約（正本）**  
-   - **置き場所**: `src/domain/dsl-types.ts` のみに **interface / union / 型ガード本体**を定義する。  
+   - **置き場所**: `src/domain/dsl-types/（公開エントリ: index.ts）` のみに **interface / union / 型ガード本体**を定義する。  
    - **例**: `TextUIDSL`, `ComponentDef`, 各 `*Component`, `isComponentDefValue`（実装本体）。
 
 2. **Renderer 専用（WebView のみ）**  

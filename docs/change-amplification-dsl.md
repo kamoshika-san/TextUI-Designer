@@ -8,7 +8,7 @@
 
 `tests/unit/dsl-types-descriptor-sync.test.js` が次を検証する。
 
-- `src/domain/dsl-types.ts` の `DSL_COMPONENT_KINDS`（`ComponentDef` の判別子）
+- `src/domain/dsl-types/（公開エントリ: index.ts）` の `DSL_COMPONENT_KINDS`（`ComponentDef` の判別子）
 - `src/components/definitions/built-in-components.ts` の `BUILT_IN_COMPONENTS`
 
 両者は**同一集合**でなければならない。片方だけ更新すると CI で失敗する。

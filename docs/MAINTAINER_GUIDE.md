@@ -12,7 +12,7 @@
 - 棚卸し・現況の正本: `docs/dsl-types-renderer-types-inventory.md`（`npm run check:dsl-types-ssot` のスナップショット節と **同一**に保つ。更新手順は同文書「棚卸し文書の更新手順」）
 - 日次運用手順の正本: `docs/adding-built-in-component.md`
 - DSL 型追加の最短導線: `docs/ssot-dsl-type-addition-rules.md`
-- 共有 DSL 型の原則: `src/domain/dsl-types.ts` を先に更新し、`src/renderer/types.ts` は thin facade を維持する
+- 共有 DSL 型の原則: `src/domain/dsl-types/（公開エントリ: index.ts）` を先に更新し、`src/renderer/types.ts` は thin facade を維持する
 
 | ドキュメント | 主な用途 |
 |---|---|
@@ -40,7 +40,7 @@
 
 ### 役割
 
-- **正本（canonical）** は **`src/domain/dsl-types.ts`**。`renderer/types.ts` は **thin facade**（`domain` の再エクスポートに限定）として維持する。
+- **正本（canonical）** は **`src/domain/dsl-types/（公開エントリ: index.ts）`**。`renderer/types.ts` は **thin facade**（`domain` の再エクスポートに限定）として維持する。
 - **非 `src/renderer/**` から `renderer/types` を import しない**（0 件を CI ガードで維持）。詳細は [dsl-types-renderer-types-inventory.md](dsl-types-renderer-types-inventory.md) と `npm run check:dsl-types-ssot`。
 
 ### WebView 入口（T-167）
@@ -80,7 +80,7 @@ ADR: [0001 解析パイプライン（初稿）](adr/0001-document-analysis-serv
 | **HtmlExporter（HTML 出力の primary / fallback）** | **Primary（既定）**: `useReactRender !== false` → `react-static-export`。**Fallback**: `useReactRender === false` → `BaseComponentRenderer` 文字列系。詳細は [exporter-boundary-guide.md](exporter-boundary-guide.md)「HtmlExporter」・差分棚卸し [html-exporter-primary-fallback-inventory.md](html-exporter-primary-fallback-inventory.md) | `npm run compile` + 既存 exporter 系ユニット |
 | **テーマ token → CSS（プレビューとエクスポートの対応）** | **正本（kebab）**: `src/components/definitions/exporter-renderer-definitions.ts` の `tokenStyleProperty` → 集約マップ `src/components/definitions/token-style-property-map.ts`。**エクスポート**: `src/exporters/base-component-renderer.ts`（`getTokenStylePropertyKebab`）。**WebView プレビュー**: `src/renderer/token-inline-style-from-definition.ts` の `tokenToPreviewInlineStyle`（各 `src/renderer/components/*.tsx`）。`Spacer` は寸法フォールバックとして token を別用途で使うためマップと完全一致ではない。 | `npm run compile` + `npx mocha ... tests/unit/token-style-property-map.test.js` |
 | TextUI core engine 責務分割 | `src/core/textui-core-engine.ts` + `src/core/textui-core-engine-io.ts` + `src/core/textui-core-engine-domain.ts` + `src/core/textui-core-engine-format.ts` | `npm run compile` + `npx mocha ... tests/unit/textui-core-engine.test.js` |
-| DSL ドメイン型（ComponentDef / TextUIDSL） | **正本**: `src/domain/dsl-types.ts`。**built-in 名の列挙**は `src/components/definitions/built-in-components.ts` の **`BUILT_IN_COMPONENTS` のみ**更新すればよい（`DSL_COMPONENT_KINDS` はそこから導出・T-091）。共有 DSL 型の import は **`domain/dsl-types` を優先**。`src/renderer/types.ts` は **thin facade 専用**で、**非 `src/renderer/**` からの import は禁止（ゼロ必須）**。ガード: `tests/unit/renderer-types-non-renderer-import-guard.test.js`（T-129）。**境界ロードマップ（レビュー F）**: [architecture-review-F-boundary-roadmap.md](architecture-review-F-boundary-roadmap.md) | `npm run compile` + `npx mocha ... tests/unit/dsl-types-descriptor-sync.test.js` + `npx mocha ... tests/unit/component-contract-consistency.test.js` + `npx mocha ... tests/unit/renderer-types-non-renderer-import-guard.test.js`（[change amplification メモ](change-amplification-dsl.md)・T-103） |
+| DSL ドメイン型（ComponentDef / TextUIDSL） | **正本**: `src/domain/dsl-types/（公開エントリ: index.ts）`。**built-in 名の列挙**は `src/components/definitions/built-in-components.ts` の **`BUILT_IN_COMPONENTS` のみ**更新すればよい（`DSL_COMPONENT_KINDS` はそこから導出・T-091）。共有 DSL 型の import は **`domain/dsl-types` を優先**。`src/renderer/types.ts` は **thin facade 専用**で、**非 `src/renderer/**` からの import は禁止（ゼロ必須）**。ガード: `tests/unit/renderer-types-non-renderer-import-guard.test.js`（T-129）。**境界ロードマップ（レビュー F）**: [architecture-review-F-boundary-roadmap.md](architecture-review-F-boundary-roadmap.md) | `npm run compile` + `npx mocha ... tests/unit/dsl-types-descriptor-sync.test.js` + `npx mocha ... tests/unit/component-contract-consistency.test.js` + `npx mocha ... tests/unit/renderer-types-non-renderer-import-guard.test.js`（[change amplification メモ](change-amplification-dsl.md)・T-103） |
 | サービス初期化順・cleanup（宣言フェーズ） | `src/services/service-runtime-phases.ts` + `src/services/service-initializer.ts`（意図の短い説明: [service-design-service-initializer.md](service-design-service-initializer.md)） | `npm run compile` + `npx mocha ... tests/unit/service-initializer.test.js` + `extensibility-service-factories-contract.test.js`（詳細は `docs/service-registration.md`） |
 | FileWatcher / SchemaManager / WebView（プレビュー）の設計意図 | [service-design-file-watcher.md](service-design-file-watcher.md) · [service-design-schema-manager.md](service-design-schema-manager.md) · [service-design-webview-manager.md](service-design-webview-manager.md) | タイミング・キュー・スキーマ TTL 変更時は各メモの「不変条件」「罠」を確認 |
 | 拡張 activate/deactivate の順序 | `src/services/extension-lifecycle-phases.ts` + `src/services/extension-lifecycle-manager.ts` | `npm run compile` + `npx mocha ... tests/unit/extension-lifecycle-phases.test.js`（全体は `docs/service-registration.md`） |
@@ -243,7 +243,7 @@ npm run test:unit
 `npm run check:dsl-types-ssot` が失敗したら、次の順で確認する。
 
 1. 失敗ログに出るファイルで `renderer/types` import が増えていないか。
-2. shared DSL 型の参照先を `src/domain/dsl-types.ts` に寄せられるか。
+2. shared DSL 型の参照先を `src/domain/dsl-types/（公開エントリ: index.ts）` に寄せられるか。
 3. 本当に互換経路が必要な場合は、ADR とチケットで例外理由を明記できるか。
 
 ### SSoT チェックの標準実行タイミング

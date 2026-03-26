@@ -23,7 +23,7 @@ Related next-step planning: [ssot-renderer-sprint3-candidates.md](ssot-renderer-
 
 ## `src/renderer/**` 内の `types` 参照一覧（2026-03-22 棚卸し・T-166）
 
-**正本**: `src/domain/dsl-types.ts`（ADR 0003）。**窓口**: `src/renderer/types.ts` は `export * from '../domain/dsl-types'` のみ。
+**正本**: `src/domain/dsl-types/（公開エントリ: index.ts）`（ADR 0003）。**窓口**: `src/renderer/types.ts` は `export * from '../domain/dsl-types'` のみ。
 
 ### 分類キー
 
@@ -73,7 +73,7 @@ Related next-step planning: [ssot-renderer-sprint3-candidates.md](ssot-renderer-
 
 ```mermaid
 flowchart LR
-  DSL[domain/dsl-types.ts]
+  DSL[domain/dsl-types（entry: index.ts）]
   FAC[renderer/types.ts]
   ENTRY[webview / use-webview-messages]
   KERNEL[component-map / kernel / preview-built-in]

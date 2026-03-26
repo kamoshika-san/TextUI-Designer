@@ -6,7 +6,7 @@
 
 ## 現状の更新点（短い整理）
 
-- **機械同期**: `tests/unit/dsl-types-descriptor-sync.test.js` が `DSL_COMPONENT_KINDS`（`src/domain/dsl-types.ts`）と `BUILT_IN_COMPONENTS`（`src/components/definitions/built-in-components.ts`）の **集合一致**を検証する。片方だけ更新すると CI で失敗する。
+- **機械同期**: `tests/unit/dsl-types-descriptor-sync.test.js` が `DSL_COMPONENT_KINDS`（`src/domain/dsl-types/（公開エントリ: index.ts）`）と `BUILT_IN_COMPONENTS`（`src/components/definitions/built-in-components.ts`）の **集合一致**を検証する。片方だけ更新すると CI で失敗する。
 - **手動チェックリスト**: [[change-amplification-dsl.md]] に、追加時の推奨順（built-in → DSL 型 → manifest / exporter / schema 等）を記載済み。
 
 ## スパイク結果（概念実証）

@@ -1,6 +1,6 @@
 # `dsl-types` 変更の影響半径と完了監査（SSoT）
 
-**目的**: `src/domain/dsl-types.ts` および関連する共有 DSL 型を変更したときの **作業漏れを減らす**ため、影響が広がる経路を **一枚**で追えるようにする。  
+**目的**: `src/domain/dsl-types/（公開エントリ: index.ts）` および関連する共有 DSL 型を変更したときの **作業漏れを減らす**ため、影響が広がる経路を **一枚**で追えるようにする。  
 **Vault チケット**: T-20260322-158（E-DSL-SSOT-2）／エイリアス T-SSOT2-13
 
 ---
@@ -12,7 +12,7 @@
 ```mermaid
 flowchart TB
   subgraph core[正本]
-    DT["src/domain/dsl-types.ts"]
+    DT["src/domain/dsl-types/（公開エントリ: index.ts）"]
     BI["built-in-components.ts（kind 名）"]
   end
   subgraph def[descriptor / schema]

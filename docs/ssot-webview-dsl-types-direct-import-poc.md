@@ -2,7 +2,7 @@
 
 ## 目的
 
-`src/renderer/types.ts`（thin facade）を経由せず、WebView エントリ限定で `src/domain/dsl-types.ts` を直接 import した場合に、**ビルド・型・テスト**に問題がないかを確認する。
+`src/renderer/types.ts`（thin facade）を経由せず、WebView エントリ限定で `src/domain/dsl-types/（公開エントリ: index.ts）` を直接 import した場合に、**ビルド・型・テスト**に問題がないかを確認する。
 
 ## 変更範囲（1〜2 ファイル）
 
