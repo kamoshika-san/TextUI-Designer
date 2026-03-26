@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import type { ComponentDef, TabsComponent } from '../types';
+import type { ComponentDef, TabsComponent } from '../domain/dsl-types';
 
 interface RenderContext {
   dslPath: string;

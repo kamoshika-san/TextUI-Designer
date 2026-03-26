@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import type { ComponentDef, TreeViewComponent, TreeViewItem } from '../types';
+import type { ComponentDef, TreeViewComponent, TreeViewItem } from '../domain/dsl-types';
 
 interface RenderContext {
   dslPath: string;
