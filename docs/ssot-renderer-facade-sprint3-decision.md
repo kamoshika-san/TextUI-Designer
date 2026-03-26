@@ -1,51 +1,64 @@
-# SSoT Renderer Facade Sprint 3 Decision
+# SSoT Renderer Facade Post-Components Assessment
 
-Updated: 2026-03-26
+Updated: 2026-03-27
 
 ## Decision
 
-Keep `src/renderer/types.ts` as a thin facade for now and treat Sprint 3 as a renderer-internal shrinkage sprint, not a facade-removal sprint.
+Keep `src/renderer/types.ts` as a thin facade for now. Do not open a facade-deletion code slice yet.
 
-## Evidence
+## Current Evidence
 
-- `npm run check:dsl-types-ssot` reports `domain/dsl-types imports: 47` and `renderer/types imports: 0`.
-- `src/renderer/webview.tsx` and `src/renderer/use-webview-messages.ts` already prove direct `domain/dsl-types` imports work for entry files.
-- Remaining facade usage is localized to renderer kernel and leaf components, not to non-renderer layers.
-- No standalone preview-only shared type module exists today, so a `preview-types.ts` split would be speculative.
+- `npm run check:dsl-types-ssot` now reports `domain/dsl-types imports: 74` and `renderer/types imports: 0`.
+- Entry, kernel, preview, and component follow-up slices have already moved to direct `domain/dsl-types` imports.
+- `src/renderer/types.ts` still contains only `export * from '../domain/dsl-types';`.
+- The existing guards still prove two things separately:
+  - non-renderer backflow stays at `0`
+  - the facade stays re-export only
 
-## What Sprint 3 Should Do
+## Why `renderer/types imports: 0` Does Not Mean The File Should Be Deleted Immediately
 
-- Drain the lowest-risk renderer kernel files first.
-- Use direct `domain/dsl-types` imports where the file only consumes shared DSL contracts.
-- Keep the facade as the compatibility edge while component-level churn is still unproven.
+- The inventory metric is about remaining import edges, not about physical file existence.
+- ADR 0003 treats deletion as a separate future decision after the broader removal conditions are satisfied and documented.
+- The file is still an explicit compatibility edge, even if current first-party import sites have drained away.
+- Deletion would need its own scoped review because it changes the public shape of the renderer layer, not just one import edge.
 
-## What Sprint 3 Should Not Do
+## Assessment
 
-- Do not delete `src/renderer/types.ts`.
-- Do not mass-convert every renderer component import in one slice.
-- Do not create `preview-types.ts` just to justify a split.
+- The component wave succeeded. The old reason for keeping the facade during active renderer churn is gone.
+- Even so, the repo does not yet justify deleting `src/renderer/types.ts` inside a docs-only closeout slice.
+- The correct current state is:
+  - keep the facade
+  - keep it thin
+  - do not add new shared types or aliases there
+  - treat deletion as a separate backlog decision, not as an implicit cleanup
 
-## Preview PoC Readout
+## Re-entry Trigger For PM
 
-- Result: facade retention is the correct default today.
-- Reason: the current preview path does not expose a concrete preview-only shared type seam.
-- Consequence: if a future refactor introduces renderer-local shared view-model types, that is the point where `preview-types.ts` becomes justified.
+PM should open a dedicated facade-removal or facade-audit ticket only after one of the following becomes the concrete next question:
 
-## Sprint 4 Input Pack
+1. The team wants to remove `src/renderer/types.ts` physically and is ready to verify external contract impact, migration steps, and guard updates in one scoped change.
+2. A real renderer-local shared type seam appears and justifies a `preview-types.ts` or similar split.
+3. A maintainer or reviewer finds an actual consumer, build concern, or downstream contract that still depends on keeping the facade file present.
 
-### Ready Now
+Until then, the correct planning default is facade retention with no new code churn.
 
-- `src/renderer/component-map.tsx`
-- `src/renderer/registered-component-kernel.tsx`
-- `src/renderer/preview-diff.ts`
+## What The Next Slice Should Not Be
 
-### Hold For Follow-up
+- Do not delete `src/renderer/types.ts` as a drive-by cleanup.
+- Do not recreate component batching work; that lane is already closed.
+- Do not invent `preview-types.ts` without a concrete renderer-local shared type need.
 
-- `src/renderer/preview-built-in-renderers.tsx`
-- `src/renderer/components/*`
+## Verification Anchor
 
-## Review Questions
+- `npm run check:dsl-types-ssot`
+- `tests/unit/renderer-types-thin-facade.test.js`
+- `tests/unit/renderer-types-non-renderer-import-guard.test.js`
+- `tests/unit/non-renderer-ssot-meta-guard.test.js`
+- `tests/unit/ssot-eslint-restriction-scope.test.js`
 
-- Does the next slice keep diff size small enough to review file-by-file?
-- Does the next slice avoid changing runtime behavior and only change import edges?
-- If `preview-built-in-renderers.tsx` is included, what concrete simplification justifies the larger fan-in diff?
+## Related Notes
+
+- [ssot-renderer-types-inventory.md](./ssot-renderer-types-inventory.md)
+- [ssot-renderer-components-batching-memo.md](./ssot-renderer-components-batching-memo.md)
+- [adr/0003-dsl-types-canonical-source.md](./adr/0003-dsl-types-canonical-source.md)
+- [MAINTAINER_GUIDE.md](./MAINTAINER_GUIDE.md)
