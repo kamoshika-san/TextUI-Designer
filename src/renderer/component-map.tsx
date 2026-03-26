@@ -6,7 +6,7 @@
  * preview 実装本体は {@link createBuiltInPreviewRenderers}（descriptor の previewRendererKey と対応）。
  */
 import React from 'react';
-import type { ComponentDef } from './types';
+import type { ComponentDef } from '../domain/dsl-types';
 import { componentDescriptorRegistry } from '../registry/component-descriptor-registry';
 import {
   registerWebViewComponent as registerRenderer,

@@ -1,4 +1,4 @@
-import type { ComponentDef, TextUIDSL } from './types';
+import type { ComponentDef, TextUIDSL } from '../domain/dsl-types';
 
 export const hashString = (value: string): string => {
   let hash = 0;

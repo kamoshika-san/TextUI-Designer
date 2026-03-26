@@ -4,7 +4,7 @@
  * - プレビュー: jump-to-DSL 用の div（`dslPath` と `onJumpToDsl` がそろうときのみ）
  */
 import React from 'react';
-import type { ComponentDef } from './types';
+import type { ComponentDef } from '../domain/dsl-types';
 import { decodeDslComponentObjectProps } from '../registry/dsl-component-codec';
 import { UnsupportedComponent } from './components/UnsupportedComponent';
 import { getWebViewComponentRenderer } from '../registry/webview-component-registry';
