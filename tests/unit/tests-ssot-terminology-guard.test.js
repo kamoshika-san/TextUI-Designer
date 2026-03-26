@@ -22,7 +22,9 @@ const ALLOW_RENDERER_TYPES_MENTION = new Set([
   'tests/unit/dsl-load-path-ssot-import-guard.test.js',
   'tests/unit/non-renderer-ssot-meta-guard.test.js',
   'tests/unit/component-def-renderer-union-alignment.test.js',
+  'tests/unit/ssot-eslint-restriction-scope.test.js',
   'tests/unit/tests-ssot-terminology-guard.test.js',
+  'tests/helpers/renderer-types-guard-helpers.js',
 ]);
 
 function walkJsTsFiles(dir, out = []) {

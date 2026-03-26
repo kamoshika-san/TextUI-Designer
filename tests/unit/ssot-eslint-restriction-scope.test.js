@@ -16,6 +16,8 @@ describe('SSoT eslint restriction scope guard', () => {
       raw.includes('const rendererTypesImportRestriction = ["error", {'),
       'rendererTypesImportRestriction must remain error level'
     );
+    assert.ok(raw.includes('"**/renderer/types"'), 'restricted-import group must include "**/renderer/types"');
+    assert.ok(raw.includes('"**/renderer/types.ts"'), 'restricted-import group must include "**/renderer/types.ts"');
 
     const requiredGlobs = [
       'src/core/**/*.ts',
