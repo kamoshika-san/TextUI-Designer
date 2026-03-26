@@ -1,37 +1,38 @@
 # SSoT Renderer Sprint 3 Entry Closeout
 
-Updated: 2026-03-26
+Updated: 2026-03-27
 
-## Scope
+## Scope At The Time
 
 - T-301 renderer inventory refresh
 - T-302 entry direct-import closeout
 
-## Current State
+## Historical Outcome
 
-- `src/renderer/webview.tsx` imports `TextUIDSL` and `ComponentDef` from `../domain/dsl-types`.
-- `src/renderer/use-webview-messages.ts` imports `TextUIDSL` from `../domain/dsl-types`.
-- `src/renderer/types.ts` remains a thin facade for renderer-internal compatibility.
-- Non-renderer `renderer/types` imports remain at `0`.
+- `src/renderer/webview.tsx` and `src/renderer/use-webview-messages.ts` had already moved to `../domain/dsl-types`.
+- The entry-file migration was therefore complete.
+- At that point, the remaining work was renderer-internal follow-up rather than more entry migration.
 
-## Why This Closes T-301 / T-302
+## What Happened Later
 
-- The inventory now distinguishes entry, kernel, preview, component, and facade lanes.
-- The entry-file migration is no longer hypothetical; it is already the current repo state.
-- The remaining Sprint 3 work is renderer-internal follow-up, not more entry migration.
+- The kernel slice landed.
+- The preview follow-up landed.
+- The component follow-up batches landed.
+- The remaining open design question shifted from entry migration to facade handling and documentation hygiene.
 
-## Next Slice
+## How To Use This Note Now
 
-- `src/renderer/component-map.tsx`
-- `src/renderer/registered-component-kernel.tsx`
-- `src/renderer/preview-diff.ts`
+- Treat it as the closeout record for the entry phase only.
+- Do not read the old "next slice" section as current planning.
+- Current planning and assessment have moved to newer closeout and facade docs.
 
-## Deferred
+## Current Source Of Truth
 
-- `src/renderer/preview-built-in-renderers.tsx`
-- `src/renderer/components/*`
+- Current renderer inventory: [ssot-renderer-types-inventory.md](ssot-renderer-types-inventory.md)
+- Current component closeout: [ssot-renderer-components-batching-memo.md](ssot-renderer-components-batching-memo.md)
+- Current facade assessment: [ssot-renderer-facade-sprint3-decision.md](ssot-renderer-facade-sprint3-decision.md)
 
-## Verification Anchor
+## Verification Anchor At The Time
 
 - `npm run check:dsl-types-ssot`
 - `tests/unit/renderer-types-thin-facade.test.js`
