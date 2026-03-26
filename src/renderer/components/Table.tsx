@@ -1,6 +1,6 @@
 import React from 'react';
-import type { ComponentDef, TableComponent } from '../domain/dsl-types';
-import { isComponentDefValue } from '../domain/dsl-types';
+import type { ComponentDef, TableComponent } from '../../domain/dsl-types';
+import { isComponentDefValue } from '../../domain/dsl-types';
 
 interface TableProps extends TableComponent {
   renderComponent?: (component: ComponentDef, key: number) => React.ReactNode;

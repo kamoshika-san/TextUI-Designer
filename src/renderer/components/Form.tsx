@@ -2,7 +2,7 @@ import React from 'react';
 import { Input } from './Input';
 import { Button } from './Button';
 import { Checkbox } from './Checkbox';
-import type { FormComponent, FormField, FormAction } from '../domain/dsl-types';
+import type { FormComponent, FormField, FormAction } from '../../domain/dsl-types';
 
 interface FormProps extends FormComponent {
   id?: string;

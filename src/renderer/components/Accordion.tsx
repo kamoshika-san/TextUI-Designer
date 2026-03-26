@@ -1,5 +1,5 @@
 import React, { useId, useMemo, useState } from 'react';
-import type { AccordionComponent, ComponentDef } from '../domain/dsl-types';
+import type { AccordionComponent, ComponentDef } from '../../domain/dsl-types';
 
 interface RenderContext {
   dslPath: string;

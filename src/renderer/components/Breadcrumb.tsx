@@ -1,6 +1,6 @@
 import React from 'react';
 import { tokenToPreviewInlineStyle } from '../token-inline-style-from-definition';
-import type { BreadcrumbComponent } from '../domain/dsl-types';
+import type { BreadcrumbComponent } from '../../domain/dsl-types';
 
 interface BreadcrumbProps extends BreadcrumbComponent {}
 
