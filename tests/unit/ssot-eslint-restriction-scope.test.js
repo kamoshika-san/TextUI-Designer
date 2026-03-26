@@ -1,5 +1,6 @@
 /**
- * T-20260321-134: SSoT 逸脱ガードの設定が縮退していないことを検知する。
+ * T-20260321-134 / Epic A A3:
+ * `renderer/types` 削除後も legacy import path を ESLint で禁止し続ける。
  */
 const assert = require('assert');
 const fs = require('fs');
@@ -17,7 +18,7 @@ describe('SSoT eslint restriction scope guard', () => {
       'rendererTypesImportRestriction must remain error level'
     );
     assert.ok(raw.includes('"**/renderer/types"'), 'restricted-import group must include "**/renderer/types"');
-    assert.ok(raw.includes('"**/renderer/types.ts"'), 'restricted-import group must include "**/renderer/types.ts"');
+    assert.ok(!raw.includes('"**/renderer/types.ts"'), 'deleted facade path should not require a dedicated .ts restriction');
 
     const requiredGlobs = [
       'src/core/**/*.ts',

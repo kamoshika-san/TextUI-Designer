@@ -2,20 +2,22 @@ import typescriptEslint from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 
 /**
- * 方針（T-20260320-025）:
- * - 命名・表記ゆれは warn（`npm run lint` は `--max-warnings 0` のため実質ゼロ警告維持）
- * - `console.*` の統一・禁止レベルは T-20260320-020 側。ここではルールを足さず、意図のみコメントで明示
+ * 方針メモ:
+ * - 既存運用に合わせて warn 中心。`npm run lint` は `--max-warnings 0` ではなく観測用途。
+ * - `console.*` の統一・例外レベルは既存方針を維持。
  *
- * T-101: `src/domain` / `src/services` / `src/components` では `renderer/types` への新規依存を抑止（緑field レーン）。
+ * T-101 / Epic A A3:
+ * `renderer/types` は削除済みのため、非 renderer レーンでは
+ * 旧互換 import path 自体を禁止する。
  */
 const rendererTypesImportRestriction = ["error", {
     patterns: [{
-        group: ["**/renderer/types", "**/renderer/types.ts"],
-        message: "Use `src/domain/dsl-types` for shared DSL types. Do not add new imports from `renderer/types` under domain/services/components (T-101).",
+        group: ["**/renderer/types"],
+        message: "Use `src/domain/dsl-types` for shared DSL types. `renderer/types` has been removed; do not add legacy imports under non-renderer lanes (T-101 / Epic A A3).",
     }],
 }];
 
-/** T-110: WebView レーンから Export ランタイムへの直接依存を禁止（import-boundaries-4-lanes.md） */
+/** T-110: WebView レーンから Export ランタイムへの逆流を抑止（docs/import-boundaries-4-lanes.md）*/
 const rendererToExportersImportRestriction = ["warn", {
     patterns: [
         { group: ["**/exporters/**"], message: "WebView runtime must not import export runtime. See docs/import-boundaries-4-lanes.md (T-110)." },
@@ -66,7 +68,7 @@ export default [{
         ],
 
         curly: "warn",
-        /** `== null` など意図的なパターンは smart で許容 */
+        /** `== null` など限定パターンは smart で許容 */
         eqeqeq: ["warn", "smart"],
         "no-throw-literal": "warn",
         semi: "warn",
