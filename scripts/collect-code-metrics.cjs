@@ -8,7 +8,6 @@
 const fs = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
-const { globSync } = require("glob");
 
 const root = path.join(__dirname, "..");
 const outDir = path.join(root, "metrics");
@@ -16,15 +15,23 @@ const SSOT_IMPORT_THRESHOLD = Number(process.env.SSOT_IMPORT_THRESHOLD || 0);
 
 /** @typedef {{ files: number, totalLines: number, nonEmptyLines: number }} Bucket */
 
-/** @type {{ name: string, pattern: string }[]} */
+/** @type {{ name: string, baseDir: string, exts: string[] }[]} */
 const PATTERNS = [
-    { name: "src/typescript", pattern: "src/**/*.ts" },
-    { name: "src/tsx", pattern: "src/**/*.tsx" },
-    { name: "tests", pattern: "tests/**/*.{js,ts}" },
-    { name: "scripts", pattern: "scripts/**/*.cjs" },
+    { name: "src/typescript", baseDir: "src", exts: [".ts"] },
+    { name: "src/tsx", baseDir: "src", exts: [".tsx"] },
+    { name: "tests", baseDir: "tests", exts: [".js", ".ts"] },
+    { name: "scripts", baseDir: "scripts", exts: [".cjs"] },
 ];
 
-const IGNORE = ["**/node_modules/**", "**/out/**", "**/dist/**"];
+const IGNORED_SEGMENTS = new Set([
+    "node_modules",
+    "out",
+    "dist",
+    "media",
+    "metrics",
+    "coverage",
+    ".tmp-plan",
+]);
 
 /**
  * @param {string} relPosix
@@ -153,14 +160,51 @@ function isSourceLikeFile(relPosix) {
 }
 
 /**
+ * @param {string[]} exts
+ * @returns {string[]}
+ */
+function collectFilesUnder(baseDir, exts) {
+    const startDir = path.join(root, baseDir);
+    if (!fs.existsSync(startDir)) {
+        return [];
+    }
+
+    /** @type {string[]} */
+    const files = [];
+
+    /**
+     * @param {string} absDir
+     */
+    function walk(absDir) {
+        for (const entry of fs.readdirSync(absDir, { withFileTypes: true })) {
+            if (IGNORED_SEGMENTS.has(entry.name)) {
+                continue;
+            }
+            const absPath = path.join(absDir, entry.name);
+            if (entry.isDirectory()) {
+                walk(absPath);
+                continue;
+            }
+            if (!entry.isFile()) {
+                continue;
+            }
+            if (!exts.includes(path.extname(entry.name))) {
+                continue;
+            }
+            files.push(path.relative(root, absPath).split(path.sep).join("/"));
+        }
+    }
+
+    walk(startDir);
+    files.sort((a, b) => a.localeCompare(b));
+    return files;
+}
+
+/**
  * @returns {{ threshold: number, rendererTypesImports: number, violatingFiles: string[], status: "pass" | "fail" }}
  */
 function collectSsotMetrics() {
-    const candidates = globSync("**/*.{ts,tsx,js,cjs,mjs}", {
-        cwd: root,
-        nodir: true,
-        ignore: [...IGNORE, "media/**", "metrics/**", "coverage/**", ".tmp-plan/**"],
-    });
+    const candidates = collectFilesUnder(".", [".ts", ".tsx", ".js", ".cjs", ".mjs"]);
     const violatingFiles = [];
     const importPattern =
         /(?:from\s+['"][^'"]*renderer\/types['"]|require\(\s*['"][^'"]*renderer\/types['"]\s*\))/g;
@@ -201,13 +245,9 @@ function main() {
     /** @type {Bucket} */
     const grand = { files: 0, totalLines: 0, nonEmptyLines: 0 };
 
-    for (const { name, pattern } of PATTERNS) {
+    for (const { name, baseDir, exts } of PATTERNS) {
         byPattern[name] = { files: 0, totalLines: 0, nonEmptyLines: 0 };
-        const files = globSync(pattern, {
-            cwd: root,
-            nodir: true,
-            ignore: IGNORE,
-        });
+        const files = collectFilesUnder(baseDir, exts);
         for (const f of files) {
             const abs = path.join(root, f);
             const { total, nonEmpty } = analyzeFile(abs);
