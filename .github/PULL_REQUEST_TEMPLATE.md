@@ -114,3 +114,11 @@
 
 - [ ] This PR includes a fallback-only change only when the Primary path is not the right implementation target.
 - [ ] If this PR changes only fallback behavior, the reason and affected preview/export entry points are recorded in the review handoff.
+
+---
+
+## SSoT Exception Log
+
+- [ ] If this PR introduces or extends any temporary SSoT exception, the PR description records `reason`, `scope`, `owner`, `parent ticket`, and `removal deadline`.
+- [ ] No indefinite exception is introduced for `renderer/types`, lint suppression, or guard bypass.
+- [ ] If there is no exception, this section is explicitly recorded as `none`.
