@@ -33,6 +33,44 @@ Keep one current-state note for how `renderer/types` is measured, what `renderer
 - Component follow-up files already use direct `domain/dsl-types` imports.
 - `src/renderer/types.ts` remains as a thin facade only.
 
+## Repo-Wide Inventory Buckets
+
+### `src/`
+
+- Direct `renderer/types` imports are already `0`.
+- The only production-code touchpoint left is the facade file itself: `src/renderer/types.ts`.
+- Renderer migration work for `entry`, `kernel`, `preview`, and `components` is therefore historical closeout, not current implementation backlog.
+
+### `tests/`
+
+- `tests/unit/renderer-types-thin-facade.test.js`
+- `tests/unit/renderer-types-non-renderer-import-guard.test.js`
+- `tests/unit/tests-ssot-terminology-guard.test.js`
+
+These are not residual import edges. They are the active guard surface that proves the facade stays thin and that direct backflow does not reappear.
+
+### `scripts/`
+
+- `scripts/check-dsl-type-imports.cjs`
+- `scripts/collect-code-metrics.cjs`
+- `scripts/check-ssot-regression-metrics.cjs`
+
+These are measurement and CI touchpoints, not migration blockers. They remain because A2/A3 still need inventory and metrics after the physical facade-removal decision.
+
+## Recommended Migration Order
+
+1. `entry`
+2. `kernel`
+3. `preview`
+4. `components`
+5. `tests/scripts`
+
+## Current Interpretation Of That Order
+
+- The first four lanes are already complete in the current repo state.
+- The next actionable work is therefore not another renderer import rewrite.
+- A2 should treat `tests/scripts` preparation and deletion-readiness work as the remaining path, then hand off to A3 for physical facade removal.
+
 ## Operating Rule
 
 - New shared DSL type bodies go to `src/domain/dsl-types/`.
