@@ -491,6 +491,24 @@
   },
   "overrides": {
     "brace-expansion": "5.0.5",
+    "anymatch": {
+      "picomatch": "2.3.2"
+    },
+    "readdirp": {
+      "picomatch": "2.3.2"
+    },
+    "micromatch": {
+      "picomatch": "2.3.2"
+    },
+    "vite": {
+      "picomatch": "4.0.4"
+    },
+    "tinyglobby": {
+      "picomatch": "4.0.4"
+    },
+    "fdir": {
+      "picomatch": "4.0.4"
+    },
     "serialize-javascript": "7.0.3",
     "yauzl": "3.2.1"
   }
