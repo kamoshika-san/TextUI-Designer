@@ -17,6 +17,8 @@ const ALLOW_RENDERER_TYPES_MENTION = new Set([
   'tests/unit/cli-utils-registry-ssot-import-guard.test.js',
   'tests/unit/cli-utils-registry-domain-origin-guard.test.js',
   'tests/unit/services-webview-ssot-import-guard.test.js',
+  'tests/unit/utils-ssot-import-guard.test.js',
+  'tests/unit/cache-metrics-ssot-import-guard.test.js',
   'tests/unit/dsl-load-path-ssot-import-guard.test.js',
   'tests/unit/non-renderer-ssot-meta-guard.test.js',
   'tests/unit/component-def-renderer-union-alignment.test.js',
