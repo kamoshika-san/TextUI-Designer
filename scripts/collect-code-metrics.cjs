@@ -16,15 +16,32 @@ const SSOT_IMPORT_THRESHOLD = Number(process.env.SSOT_IMPORT_THRESHOLD || 0);
 
 /** @typedef {{ files: number, totalLines: number, nonEmptyLines: number }} Bucket */
 
-/** @type {{ name: string, pattern: string }[]} */
+/** @type {{ name: string, patterns: string[] }[]} */
 const PATTERNS = [
-    { name: "src/typescript", pattern: "src/**/*.ts" },
-    { name: "src/tsx", pattern: "src/**/*.tsx" },
-    { name: "tests", pattern: "tests/**/*.{js,ts}" },
-    { name: "scripts", pattern: "scripts/**/*.cjs" },
+    { name: "src/typescript", patterns: ["src/**/*.ts"] },
+    { name: "src/tsx", patterns: ["src/**/*.tsx"] },
+    { name: "tests", patterns: ["tests/**/*.js", "tests/**/*.ts"] },
+    { name: "scripts", patterns: ["scripts/**/*.cjs"] },
 ];
 
 const IGNORE = ["**/node_modules/**", "**/out/**", "**/dist/**"];
+
+/**
+ * glob の brace 展開に依存せず、複数パターン結果をユニーク化して返す。
+ * @param {string[]} patterns
+ * @param {{ cwd: string, nodir: boolean, ignore: string[] }} options
+ * @returns {string[]}
+ */
+function globFiles(patterns, options) {
+    const out = new Set();
+    for (const pattern of patterns) {
+        const files = globSync(pattern, options);
+        for (const file of files) {
+            out.add(file);
+        }
+    }
+    return Array.from(out);
+}
 
 /**
  * @param {string} relPosix
@@ -156,11 +173,14 @@ function isSourceLikeFile(relPosix) {
  * @returns {{ threshold: number, rendererTypesImports: number, violatingFiles: string[], status: "pass" | "fail" }}
  */
 function collectSsotMetrics() {
-    const candidates = globSync("**/*.{ts,tsx,js,cjs,mjs}", {
+    const candidates = globFiles(
+        ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.cjs", "**/*.mjs"],
+        {
         cwd: root,
         nodir: true,
         ignore: [...IGNORE, "media/**", "metrics/**", "coverage/**", ".tmp-plan/**"],
-    });
+        },
+    );
     const violatingFiles = [];
     const importPattern =
         /(?:from\s+['"][^'"]*renderer\/types['"]|require\(\s*['"][^'"]*renderer\/types['"]\s*\))/g;
@@ -201,9 +221,9 @@ function main() {
     /** @type {Bucket} */
     const grand = { files: 0, totalLines: 0, nonEmptyLines: 0 };
 
-    for (const { name, pattern } of PATTERNS) {
+    for (const { name, patterns } of PATTERNS) {
         byPattern[name] = { files: 0, totalLines: 0, nonEmptyLines: 0 };
-        const files = globSync(pattern, {
+        const files = globFiles(patterns, {
             cwd: root,
             nodir: true,
             ignore: IGNORE,
