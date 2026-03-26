@@ -12,6 +12,13 @@
 
 Related next-step planning: [ssot-renderer-sprint3-candidates.md](ssot-renderer-sprint3-candidates.md)
 
+## Sprint 3 Closeout (T-301 / T-302)
+
+- `T-301`: the inventory pass is now aligned with the current repo state and shows entry / kernel / preview / component lanes separately.
+- `T-302`: the WebView entry files already import `domain/dsl-types` directly, so entry migration is no longer pending work.
+- The next implementation slice starts at the renderer kernel boundary: `component-map.tsx`, `registered-component-kernel.tsx`, and `preview-diff.ts`.
+- `preview-built-in-renderers.tsx` and `components/*` stay deferred until the kernel slice lands cleanly.
+
 ## 運用メモ
 
 - 新規の共有 DSL 型は `domain/dsl-types` を正本として追加する。
