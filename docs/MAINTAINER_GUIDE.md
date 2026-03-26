@@ -14,6 +14,13 @@
 - DSL 型追加の最短導線: `docs/ssot-dsl-type-addition-rules.md`
 - 共有 DSL 型の原則: `src/domain/dsl-types/（公開エントリ: index.ts）` を先に更新し、`src/renderer/types.ts` は thin facade を維持する
 
+### Renderer SSoT の current state（2026-03-27 時点）
+
+- `npm run check:dsl-types-ssot` の current snapshot は **`domain/dsl-types imports: 74` / `renderer/types imports: 0`**。
+- renderer component migration は closeout 済み。新しい renderer 実装スライスを追加する前に、まず現行 inventory と guard を崩していないかを確認する。
+- `src/renderer/types.ts` は **維持中の thin facade**。削除判断は未実施で、削除は別チケットで扱う。
+- sprint 途中の候補調査メモや PoC メモは backlog の正本ではない。現在の判断面は `docs/ssot-renderer-facade-sprint3-decision.md` と `docs/ssot-renderer-components-batching-memo.md` を優先する。
+
 | ドキュメント | 主な用途 |
 |---|---|
 | [extension-boundary-guide.md](extension-boundary-guide.md) | VS Code 拡張ホスト側の責務と境界 |
@@ -30,6 +37,14 @@
 | [test-setup-policy.md](test-setup-policy.md) | `tests/setup.js` とグローバルフックへの **新規依存を増やさない** 方針（注入優先） |
 | [package-contributes-policy.md](package-contributes-policy.md) | `package.json` の `contributes` 肥大を抑えるための **カテゴリ・生成・設定の分離**（方針のみ） |
 
+### Historical notes の扱い
+
+- `docs/ssot-renderer-sprint3-candidates.md`
+- `docs/ssot-webview-dsl-types-direct-import-poc.md`
+- `docs/ssot-renderer-sprint3-entry-closeout.md`
+
+上の 3 文書は historical note として保持している。現行 backlog や次スプリントの入口として読むのではなく、判断の経緯参照にだけ使う。
+
 ログの混在整理（Phase 0）: [console-logger-inventory-phase0.md](console-logger-inventory-phase0.md)
 
 チーム運用（外部アーキ 4 則）: [external-arch-team-rules.md](external-arch-team-rules.md)
@@ -45,7 +60,7 @@
 
 ### WebView 入口（T-167）
 
-- プレビュー UI の **エントリ**（例: `webview.tsx`）では、`renderer/types` を経由せず **`domain/dsl-types` を直接 import してもよい**（ビルド・ルール上問題にならない）。PoCと判断材料: [ssot-webview-dsl-types-direct-import-poc.md](ssot-webview-dsl-types-direct-import-poc.md)。
+- プレビュー UI の **エントリ**（例: `webview.tsx`）では、`renderer/types` を経由せず **`domain/dsl-types` を直接 import してもよい**（ビルド・ルール上問題にならない）。PoC は [ssot-webview-dsl-types-direct-import-poc.md](ssot-webview-dsl-types-direct-import-poc.md) に残しているが、現行判断は [ssot-renderer-facade-sprint3-decision.md](ssot-renderer-facade-sprint3-decision.md) を優先する。
 - 既存ファイルが facade 経由のままでもよい。**新規だけ**方針を変える必要はない（二重正本を増やさないこと）。
 
 ### 削除や「中身の追加」
@@ -56,6 +71,7 @@
 ### 変更時のチェック
 
 - 共有 DSL 型に触れる PR では、少なくとも `npm run compile` と `npm run check:dsl-types-ssot`、関連ユニット（`renderer-types-non-renderer-import-guard` 等）を通す。
+- renderer SSoT まわりの docs 更新では、`docs/dsl-types-renderer-types-inventory.md`、`docs/ssot-import-guard-matrix.md`、`docs/ssot-renderer-facade-sprint3-decision.md` の current snapshot 記述を相互にずらさない。
 
 ADR: [0001 解析パイプライン（初稿）](adr/0001-document-analysis-service.md) · [0002 YAML 構文パース共有カーネル（T-067 第1スライス）](adr/0002-dsl-yaml-parse-shared-kernel.md) · [0003 DSL 型の正本と層境界（T-073）](adr/0003-dsl-types-canonical-source.md) · [0004 コンポーネント定義グラフの設計正本（T-090）](adr/0004-component-definition-graph-canonical.md) · [0006 tokenStyleProperty / defaultTokenSlot 互換](adr/0006-token-style-property-and-default-token-slot-compatibility.md)
 

@@ -3,6 +3,13 @@
 このチェックリストは、`E-DSL-SSOT-Complete` を Ticket Manager が `done` 判定するための固定基準です。  
 判定者が変わっても同じ結論になるよう、必須項目を明文化します。
 
+## Current closeout snapshot（2026-03-27）
+
+- `npm run check:dsl-types-ssot`: `domain/dsl-types imports: 74` / `renderer/types imports: 0`
+- renderer component migration: closeout 済み
+- `src/renderer/types.ts`: thin facade 維持中
+- facade 削除: 未実施。現時点では epic 完了条件ではなく、別 ticket 判断
+
 ## 判定ルール
 
 - 必須項目は **全て達成**で完了。
@@ -20,6 +27,7 @@
 
 - [ ] `src/renderer/types.ts` が thin facade（再エクスポート中心）を維持している。
 - [ ] 型本体や新規ロジックを `renderer/types` 側に追加していない。
+- [ ] facade を残す判断と facade を削除する判断を混同せず、削除が必要なら別 ticket / 別レビューで扱っている。
 
 ### 3) 禁止 import なし
 
@@ -31,11 +39,13 @@
 - [ ] `npm run compile` が成功。
 - [ ] `npm run lint` が成功。
 - [ ] `npm run test:unit`（または PM 指定の同等以上テスト）が成功。
+- [ ] `npm run check:dsl-types-ssot` が成功し、snapshot を関連 docs と同期できている。
 
 ### 5) 型追加手順の文書化
 
 - [ ] 型追加の手順テンプレートが開発者向けドキュメントに反映済み。
 - [ ] `renderer/types` を増やさない方針がドキュメントに明記されている。
+- [ ] historical planning / PoC docs を current backlog source と誤読しないよう、maintainer 入口文書に current source of truth が明記されている。
 
 ## 記録テンプレート（TM 用）
 
@@ -56,5 +66,8 @@
 
 - `docs/adr/0003-dsl-types-canonical-source.md`
 - `docs/adding-built-in-component.md`
+- `docs/dsl-types-renderer-types-inventory.md`
+- `docs/ssot-renderer-facade-sprint3-decision.md`
+- `docs/ssot-import-guard-matrix.md`
 - `tests/unit/*ssot*`
 - `eslint.config.mjs`
