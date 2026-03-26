@@ -1,5 +1,5 @@
 import React from 'react';
-import { ProgressComponent, ProgressVariant } from '../domain/dsl-types';
+import { ProgressComponent, ProgressVariant } from '../../domain/dsl-types';
 import { tokenToPreviewInlineStyle } from '../token-inline-style-from-definition';
 
 const variantClasses: Record<ProgressVariant, string> = {

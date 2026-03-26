@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DatePickerComponent } from '../domain/dsl-types';
+import { DatePickerComponent } from '../../domain/dsl-types';
 
 interface DatePickerProps extends DatePickerComponent {
   label?: string;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RadioComponent, RadioOption } from '../domain/dsl-types';
+import { RadioComponent, RadioOption } from '../../domain/dsl-types';
 
 interface RadioProps extends RadioComponent {
   label?: string;

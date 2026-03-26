@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { InputComponent } from '../domain/dsl-types';
+import { InputComponent } from '../../domain/dsl-types';
 
 interface InputProps extends InputComponent {
   label?: string;

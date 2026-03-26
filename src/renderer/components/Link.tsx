@@ -1,6 +1,6 @@
 import React from 'react';
 import { tokenToPreviewInlineStyle } from '../token-inline-style-from-definition';
-import { LinkComponent } from '../domain/dsl-types';
+import { LinkComponent } from '../../domain/dsl-types';
 
 interface LinkProps extends LinkComponent {}
 

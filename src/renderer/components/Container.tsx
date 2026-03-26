@@ -1,5 +1,5 @@
 import React from 'react';
-import { ContainerComponent } from '../domain/dsl-types';
+import { ContainerComponent } from '../../domain/dsl-types';
 import { tokenToPreviewInlineStyle } from '../token-inline-style-from-definition';
 
 type Layout = 'vertical' | 'horizontal' | 'flex' | 'grid';
