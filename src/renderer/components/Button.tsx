@@ -1,5 +1,5 @@
 import React from 'react';
-import { ButtonComponent } from '../types';
+import { ButtonComponent } from '../domain/dsl-types';
 
 type ButtonKind = 'primary' | 'secondary' | 'submit';
 

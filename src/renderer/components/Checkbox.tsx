@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckboxComponent } from '../types';
+import { CheckboxComponent } from '../domain/dsl-types';
 
 interface CheckboxProps extends CheckboxComponent {
   label: string;

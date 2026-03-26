@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertComponent } from '../types';
+import { AlertComponent } from '../domain/dsl-types';
 
 type AlertVariant = 'info' | 'success' | 'warning' | 'error';
 

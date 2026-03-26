@@ -1,5 +1,5 @@
 import React from 'react';
-import type { SpacerComponent } from '../types';
+import type { SpacerComponent } from '../domain/dsl-types';
 
 const sizeMap: Record<NonNullable<SpacerComponent['size']>, string> = {
   xs: '0.25rem',

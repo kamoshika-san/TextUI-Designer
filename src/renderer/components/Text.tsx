@@ -1,5 +1,5 @@
 import React from 'react';
-import { TextComponent } from '../types';
+import { TextComponent } from '../domain/dsl-types';
 import { tokenToPreviewInlineStyle } from '../token-inline-style-from-definition';
 
 type TextVariant = 'h1' | 'h2' | 'h3' | 'p' | 'small' | 'caption';

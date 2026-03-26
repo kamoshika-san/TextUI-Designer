@@ -1,5 +1,5 @@
 import React from 'react';
-import { ImageComponent } from '../types';
+import { ImageComponent } from '../domain/dsl-types';
 import { tokenToPreviewInlineStyle } from '../token-inline-style-from-definition';
 
 export const Image: React.FC<ImageComponent> = ({ src, alt, width, height, variant = 'default', token }) => {

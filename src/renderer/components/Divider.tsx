@@ -1,5 +1,5 @@
 import React from 'react';
-import { DividerComponent } from '../types';
+import { DividerComponent } from '../domain/dsl-types';
 
 interface DividerProps extends DividerComponent {
   orientation?: 'horizontal' | 'vertical';
