@@ -19,6 +19,13 @@ Related next-step planning: [ssot-renderer-sprint3-candidates.md](ssot-renderer-
 - The next implementation slice starts at the renderer kernel boundary: `component-map.tsx`, `registered-component-kernel.tsx`, and `preview-diff.ts`.
 - `preview-built-in-renderers.tsx` and `components/*` stay deferred until the kernel slice lands cleanly.
 
+## Post-kernel follow-up state (T-20260326-001 landed)
+
+- `component-map.tsx`, `registered-component-kernel.tsx`, and `preview-diff.ts` now import `domain/dsl-types` directly.
+- The only remaining renderer-local `./types` consumer is `src/renderer/preview-built-in-renderers.tsx`.
+- `src/renderer/components/*` still use `../types`, but most files only pull one component contract per file.
+- The facade decision is unchanged: keep `src/renderer/types.ts` as the thin compatibility edge while remaining renderer files move in narrow slices.
+
 ## 運用メモ
 
 - 新規の共有 DSL 型は `domain/dsl-types` を正本として追加する。
@@ -76,6 +83,14 @@ Related next-step planning: [ssot-renderer-sprint3-candidates.md](ssot-renderer-
 | `components/Text.tsx` | component | `TextComponent` |
 | `components/TreeView.tsx` | component | `ComponentDef`, `TreeViewComponent`, `TreeViewItem` |
 
+### `components/*` batching signal
+
+| Batch | Files | Import shape | Suggested stance |
+|------|-------|--------------|------------------|
+| Leaf single-contract | `Alert`, `Breadcrumb`, `Button`, `Checkbox`, `Container`, `DatePicker`, `Divider`, `Icon`, `Image`, `Input`, `Link`, `Spacer`, `Text` | 1 concrete component type per file | Best first component batch after preview follow-up lands |
+| Leaf with enum/option helpers | `Badge`, `Progress`, `Radio`, `Select` | 1 component type plus local variant/option helpers | Safe second batch; still localized but slightly noisier |
+| Nested or recursive component contracts | `Accordion`, `Form`, `Table`, `Tabs`, `TreeView` | `ComponentDef`, child item types, or decoder helpers | Hold for a later focused batch |
+
 ### 依存の読み方（簡易）
 
 ```mermaid
@@ -98,3 +113,4 @@ flowchart LR
 
 - **PoC**: [ssot-webview-dsl-types-direct-import-poc.md](./ssot-webview-dsl-types-direct-import-poc.md)（WebView 入口の `domain/dsl-types` 直参照試行・T-167）。
 - **ADR 補遺**: ADR 0003 / `MAINTAINER_GUIDE` の更新は T-168 スコープ。
+- **Batching memo**: [ssot-renderer-components-batching-memo.md](./ssot-renderer-components-batching-memo.md)（component leaf 群を次 ticket に割るための Sprint 4 follow-up メモ）。
