@@ -20,6 +20,21 @@ npm run metrics:check:ssot
 - `renderer/types imports`: `0`
 - status: `PASS`
 
+## A2 Regression Readiness Snapshot
+
+- Recorded at: `2026-03-27T07:10:19.6213376+09:00`
+- `npm run pretest:ci`: `PASS`
+- `npm run test:unit`: `560 passing`
+- `npm run test:integration`: `15 passing`
+- `npm run test:e2e`: `10 passing`
+- `npm run test:regression`: `21 passing`
+
+## A3 Readiness Meaning
+
+- The full A2-3 verification lane is green before physical `src/renderer/types.ts` removal.
+- No blocker was observed in the compile, strict typecheck, lint, unit, integration, e2e, or regression lanes.
+- A3 should treat this note as the "last known green" baseline before deleting the thin facade file.
+
 ## Current Size Snapshot
 
 | Metric | Value |
@@ -48,7 +63,7 @@ npm run metrics:check:ssot
 
 - The SSoT regression threshold is already at the target `0`.
 - The next meaningful comparison is not whether import backflow still exists, but whether facade-removal preparation and deletion preserve this `PASS` state.
-- Re-run the two commands after A2 and A3, then compare against this note.
+- Re-run the metrics commands and the full A2-3 verification lane after A3, then compare against this note.
 
 ## Related
 
