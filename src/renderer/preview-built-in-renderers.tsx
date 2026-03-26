@@ -51,7 +51,7 @@ import type {
   ProgressComponent,
   ImageComponent,
   IconComponent
-} from './types';
+} from '../domain/dsl-types';
 import { decodeDslComponentObjectProps, decodeTextDslComponent } from '../registry/dsl-component-codec';
 import { type BuiltInComponentName } from '../components/definitions/built-in-components';
 import {
