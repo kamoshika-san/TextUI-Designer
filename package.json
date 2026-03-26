@@ -490,6 +490,7 @@
     "textui": "./out/cli/index.js"
   },
   "overrides": {
+    "brace-expansion": "5.0.5",
     "serialize-javascript": "7.0.3",
     "yauzl": "3.2.1"
   }
