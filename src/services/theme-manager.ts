@@ -52,7 +52,9 @@ export class ThemeManager implements IThemeManager {
       await this.themeValidator.validateTheme(this.context, data);
 
       if (isThemeDefinition(data)) {
-        this.tokens = ThemeUtils.deepMerge(this.defaultTokens, data.theme.tokens || {}) as ThemeTokens;
+        this.tokens = ThemeUtils.normalizeTokenVocabulary(
+          ThemeUtils.deepMerge(this.defaultTokens, data.theme.tokens || {})
+        ) as ThemeTokens;
         this.components = ThemeUtils.deepMerge(this.defaultComponents, data.theme.components || {}) as ThemeComponents;
       } else {
         console.warn('[ThemeManager] テーマ定義の形式が不正なため、デフォルトを使用します');

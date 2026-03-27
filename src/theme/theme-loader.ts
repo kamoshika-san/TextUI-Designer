@@ -12,6 +12,20 @@ interface ParsedThemeCacheEntry {
 export class ThemeLoader {
   private readonly parseCache = new Map<string, ParsedThemeCacheEntry>();
 
+  private normalizeThemeDefinition(data: unknown): unknown {
+    if (!isThemeDefinition(data)) {
+      return data;
+    }
+
+    return {
+      ...data,
+      theme: {
+        ...data.theme,
+        tokens: ThemeUtils.normalizeTokenVocabulary(data.theme.tokens)
+      }
+    };
+  }
+
   /**
    * 同一パス・同一 mtime の再読込を避ける軽量キャッシュ（継承チェーン内の重複読込抑止・T-307）
    */
@@ -62,7 +76,7 @@ export class ThemeLoader {
 
     const extendsPath = typeof data.theme.extends === 'string' ? data.theme.extends.trim() : '';
     if (!extendsPath) {
-      return data;
+      return this.normalizeThemeDefinition(data);
     }
 
     if (extendsPath.startsWith('npm:')) {
@@ -72,13 +86,13 @@ export class ThemeLoader {
     const parentPath = path.resolve(path.dirname(normalizedPath), extendsPath);
     const parentData = await this.resolveThemeDefinition(parentPath, [...chain, normalizedPath]);
     if (!isThemeDefinition(parentData)) {
-      return data;
+      return this.normalizeThemeDefinition(data);
     }
 
-    return {
+    return this.normalizeThemeDefinition({
       ...parentData,
       ...data,
       theme: ThemeUtils.deepMerge(parentData.theme, data.theme)
-    };
+    });
   }
 }

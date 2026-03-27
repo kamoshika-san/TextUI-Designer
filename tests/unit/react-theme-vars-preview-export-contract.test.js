@@ -98,6 +98,7 @@ theme:
     );
 
     [
+      ['color-primary', '#445566'],
       ['colors-primary', '#445566'],
       ['colors-secondary', '#223344'],
       ['colors-accent', '#778899'],

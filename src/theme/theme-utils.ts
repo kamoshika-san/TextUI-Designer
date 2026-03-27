@@ -23,6 +23,23 @@ export class ThemeUtils {
     return result;
   }
 
+  static normalizeTokenVocabulary(tokens: unknown): Record<string, unknown> {
+    if (!ThemeUtils.isPlainObject(tokens)) {
+      return {};
+    }
+
+    const normalized = ThemeUtils.deepMerge({}, tokens) as Record<string, unknown>;
+    const legacyColor = ThemeUtils.isPlainObject(normalized.color) ? normalized.color : undefined;
+    const canonicalColors = ThemeUtils.isPlainObject(normalized.colors) ? normalized.colors : undefined;
+
+    if (legacyColor || canonicalColors) {
+      normalized.colors = ThemeUtils.deepMerge(legacyColor ?? {}, canonicalColors ?? {}) as Record<string, unknown>;
+      delete normalized.color;
+    }
+
+    return normalized;
+  }
+
   static flattenTokens(obj: unknown, prefix = ''): Record<string, string> {
     const result: Record<string, string> = {};
     if (!obj || typeof obj !== 'object') {
@@ -66,11 +83,20 @@ export class ThemeUtils {
     return result;
   }
 
-  static buildCssVariables(tokens: unknown, components: unknown): string {
-    const allVars = {
-      ...ThemeUtils.flattenTokens(tokens),
+  static buildThemeVariableMap(tokens: unknown, components: unknown): Record<string, string> {
+    const canonicalTokens = ThemeUtils.normalizeTokenVocabulary(tokens);
+    const tokenVars = ThemeUtils.flattenTokens(canonicalTokens);
+    const legacyColorAliases = ThemeUtils.buildLegacyColorAliases(tokenVars);
+
+    return {
+      ...tokenVars,
+      ...legacyColorAliases,
       ...ThemeUtils.generateComponentVariables(components)
     };
+  }
+
+  static buildCssVariables(tokens: unknown, components: unknown): string {
+    const allVars = ThemeUtils.buildThemeVariableMap(tokens, components);
     const lines = Object.entries(allVars).map(([k, v]) => `  --${k}: ${v} !important;`);
 
     return `html body :root {\n${lines.join('\n')}\n}\nhtml :root {\n${lines.join('\n')}\n}\n:root {\n${lines.join('\n')}\n}\nbody {\n${lines.join('\n')}\n}\n#root {\n${lines.join('\n')}\n}`;
@@ -86,5 +112,18 @@ export class ThemeUtils {
 
   private static isPlainObject(value: unknown): value is Record<string, unknown> {
     return value !== null && typeof value === 'object' && !Array.isArray(value);
+  }
+
+  private static buildLegacyColorAliases(tokenVars: Record<string, string>): Record<string, string> {
+    const aliases: Record<string, string> = {};
+
+    Object.entries(tokenVars).forEach(([key, value]) => {
+      if (!key.startsWith('colors-')) {
+        return;
+      }
+      aliases[`color-${key.slice('colors-'.length)}`] = value;
+    });
+
+    return aliases;
   }
 }

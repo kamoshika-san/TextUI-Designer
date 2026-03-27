@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
 import { DEFAULT_THEME_COMPONENTS, DEFAULT_THEME_TOKENS } from '../theme/default-theme';
+import { ThemeUtils } from '../theme/theme-utils';
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -55,64 +56,12 @@ function extractThemeSection(themeDefinition: unknown, key: 'tokens' | 'componen
   return isPlainObject(section) ? section : {};
 }
 
-function isTokenLeaf(value: unknown): value is { value: string } {
-  return Boolean(
-    value
-    && typeof value === 'object'
-    && !Array.isArray(value)
-    && Object.prototype.hasOwnProperty.call(value, 'value')
-    && typeof (value as { value: unknown }).value === 'string'
-  );
-}
-
-function flattenTokens(obj: Record<string, unknown>, prefix = ''): Record<string, string> {
-  const result: Record<string, string> = {};
-  Object.entries(obj).forEach(([key, value]) => {
-    const nextKey = prefix ? `${prefix}-${key}` : key;
-    if (isTokenLeaf(value)) {
-      result[nextKey] = value.value;
-      return;
-    }
-    if (isPlainObject(value)) {
-      Object.assign(result, flattenTokens(value, nextKey));
-      return;
-    }
-    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-      result[nextKey] = String(value);
-    }
-  });
-  return result;
-}
-
-function flattenComponentVars(components: Record<string, unknown>): Record<string, string> {
-  const result: Record<string, string> = {};
-  Object.entries(components).forEach(([componentName, variants]) => {
-    if (!isPlainObject(variants)) {
-      return;
-    }
-    Object.entries(variants).forEach(([variantName, styles]) => {
-      if (!isPlainObject(styles)) {
-        return;
-      }
-      Object.entries(styles).forEach(([propertyName, value]) => {
-        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-          result[`component-${componentName}-${variantName}-${propertyName}`] = String(value);
-        }
-      });
-    });
-  });
-  return result;
-}
-
 export function buildThemeVariables(themePath: string): Record<string, string> {
   const theme = loadThemeDefinition(themePath, []);
-  const tokens = extractThemeSection(theme, 'tokens');
+  const tokens = ThemeUtils.normalizeTokenVocabulary(extractThemeSection(theme, 'tokens'));
   const components = extractThemeSection(theme, 'components');
   /* WebView の ThemeManager と同様にデフォルトとマージしてから flatten する */
   const mergedTokens = deepMerge(DEFAULT_THEME_TOKENS, tokens) as Record<string, unknown>;
   const mergedComponents = deepMerge(DEFAULT_THEME_COMPONENTS, components) as Record<string, unknown>;
-  return {
-    ...flattenTokens(mergedTokens),
-    ...flattenComponentVars(mergedComponents)
-  };
+  return ThemeUtils.buildThemeVariableMap(mergedTokens, mergedComponents);
 }

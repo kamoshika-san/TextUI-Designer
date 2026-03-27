@@ -33,8 +33,28 @@ describe('Theme modules', () => {
       );
 
       assert.ok(css.includes('--colors-primary: #FF0000'));
+      assert.ok(css.includes('--color-primary: #FF0000'));
       assert.ok(css.includes('--spacing-md: 2rem'));
       assert.ok(css.includes('--component-button-primary-backgroundColor: #FF0000'));
+    });
+
+    it('normalizeTokenVocabulary canonicalizes legacy color into colors', () => {
+      const normalized = ThemeUtils.normalizeTokenVocabulary({
+        color: {
+          primary: { value: '#111111' },
+          text: {
+            primary: { value: '#222222' }
+          }
+        },
+        colors: {
+          secondary: { value: '#333333' }
+        }
+      });
+
+      assert.strictEqual(normalized.color, undefined);
+      assert.strictEqual(normalized.colors.primary.value, '#111111');
+      assert.strictEqual(normalized.colors.secondary.value, '#333333');
+      assert.strictEqual(normalized.colors.text.primary.value, '#222222');
     });
   });
 
@@ -62,6 +82,31 @@ describe('Theme modules', () => {
         const resolved = await loader.resolveThemeDefinition(childPath);
         assert.strictEqual(resolved.theme.tokens.colors.primary.value, '#FF0000');
         assert.strictEqual(resolved.theme.tokens.colors.secondary.value, '#222222');
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    });
+
+    it('normalizes legacy color tokens into canonical colors during load', async () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'theme-loader-color-legacy-'));
+      const themePath = path.join(dir, 'theme.yml');
+
+      try {
+        fs.writeFileSync(themePath, JSON.stringify({
+          theme: {
+            tokens: {
+              color: {
+                primary: { value: '#111111' }
+              }
+            }
+          }
+        }));
+
+        const loader = new ThemeLoader();
+        const resolved = await loader.resolveThemeDefinition(themePath);
+
+        assert.strictEqual(resolved.theme.tokens.color, undefined);
+        assert.strictEqual(resolved.theme.tokens.colors.primary.value, '#111111');
       } finally {
         fs.rmSync(dir, { recursive: true, force: true });
       }

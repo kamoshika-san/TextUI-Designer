@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as YAML from 'yaml';
 import type { TextUIDSL } from '../domain/dsl-types';
 import { collectComponentEntries } from './component-traversal';
+import { ThemeUtils } from '../theme/theme-utils';
 
 export type TokenErrorMode = 'error' | 'warn' | 'ignore';
 
@@ -255,7 +256,7 @@ function extractTokens(theme: unknown): Record<string, unknown> | null {
   if (!isPlainObject(tokens)) {
     return null;
   }
-  return tokens;
+  return ThemeUtils.normalizeTokenVocabulary(tokens);
 }
 
 function buildTokenIndex(tokens: Record<string, unknown>): TokenIndex {
@@ -291,7 +292,13 @@ function buildTokenIndex(tokens: Record<string, unknown>): TokenIndex {
 }
 
 function normalizeTokenPath(tokenPath: string): string {
-  return tokenPath.startsWith('tokens.') ? tokenPath.slice('tokens.'.length) : tokenPath;
+  const withoutPrefix = tokenPath.startsWith('tokens.') ? tokenPath.slice('tokens.'.length) : tokenPath;
+
+  if (withoutPrefix === 'color' || withoutPrefix.startsWith('color.')) {
+    return `colors${withoutPrefix.slice('color'.length)}`;
+  }
+
+  return withoutPrefix;
 }
 
 function parseTokenReference(value: unknown): string | null {

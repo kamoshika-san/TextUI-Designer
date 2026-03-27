@@ -103,4 +103,36 @@ theme:
     assert.strictEqual(result.dsl.page.components[0].DatePicker.token, '#654321');
     assert.deepStrictEqual(result.issues, []);
   });
+
+  it('accepts plural theme tokens while keeping color.* as the external token path', () => {
+    fs.writeFileSync(path.join(tmpDir, 'textui-theme.yml'), `
+theme:
+  name: test
+  tokens:
+    colors:
+      primary:
+        value: "#abcdef"
+`);
+
+    const sourcePath = path.join(tmpDir, 'plural-theme.tui.yml');
+    const dsl = {
+      page: {
+        id: 'p',
+        title: 't',
+        layout: 'vertical',
+        components: [
+          {
+            Button: {
+              label: 'ok',
+              token: 'color.primary'
+            }
+          }
+        ]
+      }
+    };
+
+    const result = resolveDslTokens({ dsl, sourcePath, onError: 'error' });
+    assert.strictEqual(result.dsl.page.components[0].Button.token, '#abcdef');
+    assert.deepStrictEqual(result.issues, []);
+  });
 });
