@@ -1,2 +1,56 @@
-/* TODO(T-20260319-001): Extract Tabs-related selectors from `src/renderer/index.css` (currently not implemented). */
+.textui-tabs {
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.textui-tabs-list {
+  display: flex;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.textui-tab {
+  padding: 0.5rem 1rem;
+  border: 0;
+  border-right: 1px solid var(--vscode-panel-border);
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.textui-tab:last-child {
+  border-right: 0;
+}
+
+.textui-tab:hover:not(.is-disabled) {
+  background: rgba(128, 128, 128, 0.14);
+}
+
+.textui-tab.is-active {
+  background: rgba(128, 128, 128, 0.18);
+  color: var(--vscode-foreground);
+}
+
+.textui-tab.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.textui-tab:focus-visible {
+  position: relative;
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: -2px;
+}
+
+.textui-tab-panel {
+  padding: 1rem;
+}
+
+.textui-tab-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
 

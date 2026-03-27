@@ -38,10 +38,13 @@ export const Tabs: React.FC<TabsProps> = ({
   }
 
   return (
-    <div className="textui-tabs border border-gray-700 rounded-md overflow-hidden">
-      <div className="flex border-b border-gray-700" role="tablist" aria-label="Tabs">
+    <div className="textui-tabs">
+      <div className="textui-tabs-list" role="tablist" aria-label="Tabs">
         {items.map((item, index) => {
           const isSelected = index === activeTab;
+          const className = ['textui-tab', isSelected ? 'is-active' : '', item.disabled ? 'is-disabled' : '']
+            .filter(Boolean)
+            .join(' ');
           return (
             <button
               key={`${item.label}-${index}`}
@@ -54,9 +57,7 @@ export const Tabs: React.FC<TabsProps> = ({
               onClick={() => {
                 setActiveTab(index);
               }}
-              className={`px-4 py-2 text-sm border-r border-gray-700 last:border-r-0 ${
-                isSelected ? 'bg-gray-800 text-white' : 'bg-gray-900 text-gray-300 hover:bg-gray-800'
-              } ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={className}
             >
               {item.label}
             </button>
@@ -73,14 +74,16 @@ export const Tabs: React.FC<TabsProps> = ({
             id={`tab-panel-${index}`}
             role="tabpanel"
             aria-labelledby={`tab-${index}`}
-            className="p-4 space-y-3"
+            className="textui-tab-panel"
           >
-            {(item.components || []).map((component: ComponentDef, componentIndex: number) =>
-              renderComponent(component, index * 1000 + componentIndex, {
-                dslPath: `${dslPath ?? ''}/Tabs/items/${index}/components/${componentIndex}`,
-                onJumpToDsl
-              })
-            )}
+            <div className="textui-tab-panel-body">
+              {(item.components || []).map((component: ComponentDef, componentIndex: number) =>
+                renderComponent(component, index * 1000 + componentIndex, {
+                  dslPath: `${dslPath ?? ''}/Tabs/items/${index}/components/${componentIndex}`,
+                  onJumpToDsl
+                })
+              )}
+            </div>
           </div>
         );
       })}
