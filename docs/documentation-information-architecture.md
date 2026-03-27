@@ -40,7 +40,7 @@ Define a single navigation model for project documentation so readers can reach 
 | `spec` | `Specification / Architecture` | Specs should separate current canonical contracts from historical notes |
 | `test` | `Testing / Quality Gates` | One landing page for unit / integration / e2e / regression purpose and timing |
 | `ops` | `Operations / Maintenance` | Maintainer-only recurring tasks, review cadence, playbooks, release checks |
-| `archive` | `Historical / Archive` | Archived docs must state replacement or reason for retention |
+| `archive` | `Historical / Archive` | Archived docs live under `docs/archive/` and must state replacement or reason for retention |
 
 ## Placement Rules
 
@@ -82,6 +82,7 @@ Define a single navigation model for project documentation so readers can reach 
 3. Create a single setup page and retire duplicated command/setup prose from scattered docs.
 4. Add a testing landing page that points to `test-matrix`, CI gates, smoke guidance, and guard docs.
 5. Define an archive folder policy before moving historical notes out of the live path.
+6. Use `docs/archive/README.md` as the archive landing page instead of leaving readers in orphaned historical folders.
 
 ## Out of Scope Here
 
