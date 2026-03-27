@@ -113,5 +113,6 @@ Small-slice verification in `tests/unit/html-exporter-route-viability.test.js` l
 ## Related documents
 
 - [exporter-boundary-guide.md](exporter-boundary-guide.md)
+- [export-fallback-lane-boundary-policy.md](export-fallback-lane-boundary-policy.md)
 - [export-webview-runtime-coupling-inventory.md](export-webview-runtime-coupling-inventory.md)
 - `tests/unit/shared-kernel-preview-export-parity.test.js`
