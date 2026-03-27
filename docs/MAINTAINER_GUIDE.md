@@ -34,6 +34,7 @@
 | [architecture-review-F-boundary-roadmap.md](architecture-review-F-boundary-roadmap.md) | **ロードマップ F 正本索引**（4 境界・導入候補 IF・やらないこと）。[import-boundaries-4-lanes.md](import-boundaries-4-lanes.md)（T-110）と相互リンク |
 | [dsl-types-renderer-types-inventory.md](dsl-types-renderer-types-inventory.md) | `renderer/types` 直接参照の棚卸し（移行計画用） |
 | [ssot-metrics-and-ci-checks.md](ssot-metrics-and-ci-checks.md) | **`metrics:collect` / `metrics:check:ssot`** の出力と CI（Code metrics ジョブ）の見え方・PM 向けチェックリスト（T-165） |
+| [ssot-monthly-review.md](ssot-monthly-review.md) | SSoT inventory / guard / metrics docs を月次で照合する最小レビュー手順 |
 | [test-setup-policy.md](test-setup-policy.md) | `tests/setup.js` とグローバルフックへの **新規依存を増やさない** 方針（注入優先） |
 | [package-contributes-policy.md](package-contributes-policy.md) | `package.json` の `contributes` 肥大を抑えるための **カテゴリ・生成・設定の分離**（方針のみ） |
 

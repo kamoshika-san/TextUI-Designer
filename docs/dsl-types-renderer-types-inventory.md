@@ -64,3 +64,7 @@ These remain as inventory and CI instrumentation.
 - `tests/unit/renderer-types-thin-facade.test.js`
 - `tests/unit/renderer-types-non-renderer-import-guard.test.js`
 - `tests/unit/ssot-eslint-restriction-scope.test.js`
+
+## Review Cadence
+
+- Use [ssot-monthly-review.md](./ssot-monthly-review.md) as the monthly review procedure for keeping this current-state snapshot aligned with script output and related SSoT docs.

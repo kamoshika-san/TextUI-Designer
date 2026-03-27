@@ -36,6 +36,11 @@ State which mechanism detects which kind of `renderer/types` backflow so the bou
 - The remaining decision surface is facade timing, not backflow detection.
 - The current guards still do not decide when physical facade deletion should happen; they only guarantee boundary behavior and thin-facade shape.
 
+## Review Cadence
+
+- Monthly review procedure: [ssot-monthly-review.md](./ssot-monthly-review.md)
+- During that review, treat this matrix as the current guard-state source and refresh its snapshot whenever command output changes.
+
 ## Expected Violation Patterns
 
 | Violation | First detector | Follow-up |
