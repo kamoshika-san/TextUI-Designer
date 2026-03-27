@@ -70,49 +70,6 @@ export function getWebviewContent(context: vscode.ExtensionContext, panel?: vsco
       --vscode-editor-background: unset !important;
     }
     
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #1e1e1e;
-      color: #cccccc;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    }
-    
-    #root {
-      padding: 1rem;
-    }
-
-    .textui-preview-empty {
-      text-align: center;
-      padding: 2rem;
-    }
-
-    .textui-preview-empty-title {
-      color: #cccccc;
-    }
-
-    .textui-preview-empty-message {
-      color: #9ca3af;
-    }
-
-    .textui-error-container {
-      padding: 2rem;
-      text-align: center;
-    }
-
-    .textui-error-title {
-      color: #ef4444;
-    }
-
-    .textui-error-message {
-      color: #fca5a5;
-      margin: 1rem 0;
-    }
-
-    .textui-error-help {
-      color: #9ca3af;
-      font-size: 0.875rem;
-    }
   </style>
   <!-- テーマ変数はビルドされたCSSの後に適用される -->
   <style id="theme-vars" nonce="${nonce}"></style>

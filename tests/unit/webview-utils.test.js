@@ -114,14 +114,20 @@ describe('WebViewUtils', () => {
       assert.ok(content.includes('link rel="stylesheet"'));
 
       // インラインスタイルが含まれている
-      assert.ok(content.includes('body {'));
-      assert.ok(content.includes('#root {'));
       assert.ok(content.includes('Content-Security-Policy'));
       assert.ok(content.includes('nonce='));
+      assert.ok(content.includes('<style id="theme-vars"'));
 
       // VS Codeテーマ変数の無効化が含まれている
       assert.ok(content.includes('--vscode-foreground: unset'));
       assert.ok(content.includes('--vscode-background: unset'));
+      const startupStyleMatch = content.match(/<style nonce="[^"]+">([\s\S]*?)<\/style>/);
+      assert.ok(startupStyleMatch);
+      const startupStyle = startupStyleMatch[1];
+      assert.ok(!startupStyle.includes('body {'));
+      assert.ok(!startupStyle.includes('#root {'));
+      assert.ok(!startupStyle.includes('.textui-preview-empty {'));
+      assert.ok(!startupStyle.includes('.textui-error-container {'));
     });
 
     it('メッセージ処理の分岐が正しく実装されている', () => {

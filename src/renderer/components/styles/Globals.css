@@ -29,6 +29,38 @@ body.light {
   background-color: var(--color-background, #F9FAFB);
 }
 
+.textui-preview-empty {
+  padding: 2rem;
+  text-align: center;
+}
+
+.textui-preview-empty-title {
+  color: inherit;
+}
+
+.textui-preview-empty-message {
+  color: var(--color-text-muted, #9ca3af);
+}
+
+.textui-error-container {
+  padding: 2rem;
+  text-align: center;
+}
+
+.textui-error-title {
+  color: var(--color-error, #ef4444);
+}
+
+.textui-error-message {
+  color: var(--component-alert-error-color, #fca5a5);
+  margin: 1rem 0;
+}
+
+.textui-error-help {
+  color: var(--color-text-muted, #9ca3af);
+  font-size: 0.875rem;
+}
+
 .theme-toggle {
   transition: all 0.2s ease-in-out;
 }
