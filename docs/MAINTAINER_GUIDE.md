@@ -263,6 +263,8 @@ npm run test:unit
 2. shared DSL 型の参照先を `src/domain/dsl-types/（公開エントリ: index.ts）` に寄せられるか。
 3. 本当に互換経路が必要な場合は、ADR とチケットで例外理由を明記できるか。
 
+標準対応の 1 ページ版は [ssot-violation-playbook.md](ssot-violation-playbook.md)。
+
 ### SSoT チェックの標準実行タイミング
 
 - ローカル: 共有 DSL 型に触れた変更の PR 作成前に `npm run check:dsl-types-ssot` を必ず実行する。

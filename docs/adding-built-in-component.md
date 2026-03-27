@@ -94,7 +94,7 @@ npm test
 
 | 症状 | まず確認すること | 参照 |
 |------|------------------|------|
-| `check:dsl-types-ssot` が **import 違反**を出す | `src/renderer/**` 外で `renderer/types` を新規 import していないか。共有型は `domain/dsl-types` に寄せる | [MAINTAINER_GUIDE.md](MAINTAINER_GUIDE.md#ssot-import-boundary-失敗時の調査観点) |
+| `check:dsl-types-ssot` が **import 違反**を出す | `src/renderer/**` 外で `renderer/types` を新規 import していないか。共有型は `domain/dsl-types` に寄せる | [ssot-violation-playbook.md](ssot-violation-playbook.md) |
 | `dsl-types-descriptor-sync` 等が落ちる | domain と `definitions` の kind 名・descriptor の不一致 | 本ページのチェックリスト **フェーズ 1〜2** |
 | `compile` は通るが **プレビューだけ壊れる** | `component-map.tsx`・`renderer/components/*` の登録漏れ | [component-add-contract.md](component-add-contract.md) |
 | スキーマと YAML の補完がズレる | `COMPONENT_DEFINITIONS` と `schemas/` の oneOf / `schemaRef` | `npm run compile` 後の生成物を確認 |
