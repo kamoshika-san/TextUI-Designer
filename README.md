@@ -42,7 +42,8 @@ If you only need the local packaging / install flow for the extension, use [Loca
 
 ### Testing and CI
 
-- [Test Matrix](docs/test-matrix.md): what each test lane means and when to run it
+- [Testing](docs/TESTING.md): canonical test lane guide and command entrypoints
+- [Test Matrix](docs/test-matrix.md): detailed lane semantics and CI interpretation
 - [CI Quality Gate](docs/ci-quality-gate.md): current CI entrypoints and required checks
 - [Green Main Gate](docs/quality-gate-green-main.md): green-main expectations for push / PR flow
 - [Real VS Code Smoke](docs/real-vscode-smoke.md): manual smoke checks that are not part of the default automated lane

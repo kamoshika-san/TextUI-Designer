@@ -78,6 +78,7 @@ Use the current CI / release-gate page for which checks are required on `main`:
 
 Use the test lane guide for what each lane means:
 
+- [docs/TESTING.md](docs/TESTING.md)
 - [docs/test-matrix.md](docs/test-matrix.md)
 
 ## Documentation Update Rule
@@ -106,6 +107,7 @@ Record the issue for PM when the right next step is a new ticket rather than a l
 
 - [README.md](README.md)
 - [docs/LOCAL_INSTALLER.md](docs/LOCAL_INSTALLER.md)
+- [docs/TESTING.md](docs/TESTING.md)
 - [docs/test-matrix.md](docs/test-matrix.md)
 - [docs/ci-quality-gate.md](docs/ci-quality-gate.md)
 - [docs/MAINTAINER_GUIDE.md](docs/MAINTAINER_GUIDE.md)

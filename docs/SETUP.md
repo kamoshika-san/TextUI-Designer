@@ -66,6 +66,7 @@ Detailed package and install steps stay here:
 
 Use these pages after setup depending on what you are changing:
 
+- [Testing](./TESTING.md)
 - [Settings](./SETTINGS.md)
 - [Test Matrix](./test-matrix.md)
 - [CI Quality Gate](./ci-quality-gate.md)
