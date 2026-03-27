@@ -10,7 +10,7 @@
 | `test:all:ci` | `pretest:ci` の後に `test:unit` → `test:integration` → `test:e2e` → `test:regression` を順に実行 |
 | `test:all` | `pretest:local`（compile のみ）＋上記テスト群。ローカル向け。CI 相当の厳しさは **`test:all:ci`** |
 
-**「緑の main」の技術的な定義（提案）**: 少なくとも **`npm run test:all:ci` が成功**すること。  
+**「緑の main」の技術的な定義（提案）**: **`npm run test:all:ci` が成功**し、かつ **`Code metrics` job で `threshold=0` / `status=PASS`** を満たすこと。  
 （`pretest:ci` はその一部として含まれる。）
 
 ## 2. GitHub Actions との対応（`.github/workflows/ci.yml`）
@@ -25,12 +25,15 @@
 | **Build Extension** | `needs` で **Test All CI / Test Suite / Lint** の成功後に compile・package。 |
 | **Integration Tests** | `needs` で Test All CI / Test Suite の成功後に統合テスト。 |
 | **DSL Plan (PR)** | PR 専用（差分サマリ）。必須ゲートにするかはチーム方針次第。 |
+| **Code metrics** | `npm run metrics:collect` → `npm run metrics:check:ssot`。**SSoT release gate** として `renderer/types imports = 0` を確認。 |
 
 **PR 必須チェックの提案（最小）**
 
 1. **必須（推奨）**: **`Test All CI`**  
    - `test:all:ci` 相当で、unit / integration / e2e / regression を一括で担保する。
-2. **任意（より厳格）**: **`Lint & Format Check`**、`**Build Extension**`、マトリクス **`Test Suite`**（18.x / 20.x の両方）など。  
+2. **必須（SSoT 運用）**: **`Code metrics`**  
+   - `renderer/types imports` を **閾値 0 固定**で判定する release gate。artifact と Job Summary もここで確認する。
+3. **任意（より厳格）**: **`Lint & Format Check`**、`**Build Extension**`、マトリクス **`Test Suite`**（18.x / 20.x の両方）など。  
    - マトリクスジョブは、GitHub の UI に表示されるチェック名（例: `Test Suite (20.x)`）で個別に指定する場合がある。
 
 > **注意**: 初回 PR またはワークフロー変更後は、一覧にチェックが現れてから branch protection で名前を選ぶと確実。
@@ -44,7 +47,7 @@
 - [ ] **Require a pull request before merging** を有効化（運用に合わせる）
 - [ ] **Require status checks to pass before merging** を有効化
 - [ ] **Require branches to be up to date before merging**（任意・チーム方針）
-- [ ] **Status checks that are required** で、少なくとも **`Test All CI`** を追加  
+- [ ] **Status checks that are required** で、少なくとも **`Test All CI`** と **`Code metrics`** を追加  
   - 追加で厳格化する場合は **`Lint & Format Check`**、`**Build Extension**`、`**Test Suite**`（表示名に注意）などを選択
 - [ ] **保存**し、テスト用 PR で必須チェックがブロック／通過することを確認
 

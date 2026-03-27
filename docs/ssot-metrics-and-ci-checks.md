@@ -1,6 +1,7 @@
 # SSoT メトリクスと CI での見え方（1ページ）
 
 **目的**: `npm run metrics:collect` / `npm run metrics:check:ssot` が **何を出力し、CI でどう見えるか**を、新規参加者が **この1導線**で追えるようにする。  
+**運用位置づけ**: `renderer/types imports` は **閾値 `0` 固定の release gate** として扱う。`status=PASS` は参考情報ではなく、`main` に入れるための通過条件。
 **関連**: [dsl-types-change-impact-audit.md](dsl-types-change-impact-audit.md)（T-158 監査観点）・[dsl-types-renderer-types-inventory.md](dsl-types-renderer-types-inventory.md)
 
 ---
@@ -31,6 +32,13 @@ npm run metrics:check:ssot
 - **`renderer/types imports`**: 非 renderer から `renderer/types` へ import していると判定された **ファイル数**（`collect-code-metrics.cjs` 内 `collectSsotMetrics()` と同じ探索）。
 - **`status`**: `imports <= threshold` なら `PASS`。
 
+### Release Gate Rule
+
+- `SSOT_IMPORT_THRESHOLD` の標準値は **`0`**。通常運用で閾値を緩めない。
+- `npm run metrics:check:ssot` が `FAIL` の場合、その PR / release candidate は **gate 未通過** と扱う。
+- CI では **`Code metrics` job** を required check として扱い、`status=PASS` と artifact の両方を確認する。
+- 一時解除が必要な場合は、[ssot-exception-log-rules.md](ssot-exception-log-rules.md) の期限つき例外として記録し、解除理由と復旧予定日を残す。
+
 ---
 
 ## 2. 生成物（`metrics/`）
@@ -55,7 +63,7 @@ npm run metrics:check:ssot
 3. `metrics/code-metrics.md` を **GitHub Actions の Job Summary** に追記（`$GITHUB_STEP_SUMMARY`）
 4. `metrics/` を **artifact** `code-metrics` としてアップロード
 
-PR では **Job Summary** または **Artifacts** から、当時の **閾値・検出件数・違反ファイル**を確認できる。
+PR では **Job Summary** または **Artifacts** から、当時の **閾値・検出件数・違反ファイル**を確認できる。`Test All CI` が緑でも、`Code metrics` が fail のままでは merge / release 判定を通さない。
 
 ---
 
@@ -75,6 +83,7 @@ PR では **Job Summary** または **Artifacts** から、当時の **閾値・
 以下は [dsl-types-change-impact-audit.md](dsl-types-change-impact-audit.md) **§3** の補足としてそのまま使える。
 
 - [ ] **メトリクス**: `npm run metrics:collect` → `npm run metrics:check:ssot` が **PASS**（`status=PASS`、必要なら CI の Code metrics ジョブで確認）。
+- [ ] **release gate**: branch protection / release review 上で **`Code metrics` を required check として扱っている**。ローカル実行だけで代替しない。
 - [ ] **artifact**: リリース前後で **同じ閾値**（通常 0）のまま **違反ファイルが増えていない**こと（PR の Job Summary または `code-metrics` artifact）。
 - [ ] **棚卸し**: `npm run check:dsl-types-ssot` が **違反 0** で、[dsl-types-renderer-types-inventory.md](dsl-types-renderer-types-inventory.md) のスナップショット節と矛盾しない。
 
