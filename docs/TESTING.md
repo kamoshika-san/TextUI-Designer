@@ -84,6 +84,7 @@ Use the detailed acceptance interpretation here:
 
 ## Related Documents
 
+- [FAQ.md](./FAQ.md)
 - [tests/README.md](../tests/README.md)
 - [test-matrix.md](./test-matrix.md)
 - [test-setup-policy.md](./test-setup-policy.md)
