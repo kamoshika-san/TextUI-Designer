@@ -16,15 +16,15 @@ export const Table: React.FC<TableProps> = ({ columns = [], rows = [], striped =
   }
 
   return (
-    <div className="overflow-x-auto border border-gray-700 rounded-md" style={width ? { width } : undefined}>
-      <table className="textui-table min-w-full divide-y divide-gray-700 text-sm text-gray-200">
-        <thead className="bg-gray-800">
+    <div className="textui-table-container" style={width ? { width } : undefined}>
+      <table className="textui-table">
+        <thead className="textui-table-head">
           <tr>
             {columns.map(column => (
               <th
                 key={column.key}
                 scope="col"
-                className="px-4 py-2 text-left font-semibold text-gray-100"
+                className="textui-table-header"
                 style={column.width ? { width: column.width } : undefined}
               >
                 {column.header}
@@ -32,11 +32,17 @@ export const Table: React.FC<TableProps> = ({ columns = [], rows = [], striped =
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-700 bg-gray-900">
+        <tbody className="textui-table-body">
           {rows.map((row, rowIndex) => (
             <tr
               key={rowIndex}
-              className={`${striped && rowIndex % 2 === 1 ? 'bg-gray-800/70' : ''} ${rowHover ? 'hover:bg-gray-800/80 transition-colors' : ''}`.trim()}
+              className={[
+                'textui-table-row',
+                striped && rowIndex % 2 === 1 ? 'is-striped' : '',
+                rowHover ? 'has-hover' : ''
+              ]
+                .filter(Boolean)
+                .join(' ')}
             >
               {columns.map((column, columnIndex) => {
                 const rawValue = row[column.key];
@@ -49,7 +55,7 @@ export const Table: React.FC<TableProps> = ({ columns = [], rows = [], striped =
                 return (
                   <td
                     key={`${rowIndex}-${column.key}`}
-                    className="px-4 py-2 align-top text-gray-300"
+                    className="textui-table-cell"
                     style={column.width ? { width: column.width } : undefined}
                   >
                     {cellContent}

@@ -49,12 +49,12 @@ describe('HtmlExporter primary sample regression (T-20260322-348)', () => {
   [
     {
       sampleRelativePath: 'sample/01-basic/sample.tui.yml',
-      expectedHash: 'a40f6b7a88b9a2c52a074a7c589e30ac9070818f2646bc859dcd523a554e8894',
+      expectedHash: '42112b84bcbeaf3317f2d459c06705dc82eee2604a47a6ef09018bbbd5035c53',
       markers: ['TextUI Designer - All Components', 'This sample includes every supported component.', 'Agree to terms']
     },
     {
       sampleRelativePath: 'sample/08-github/sample.tui.yml',
-      expectedHash: '5023c723c5594bdb9d668f239268a178ed4be54524070d14863faa3536c1cf16',
+      expectedHash: '32ffcc24f149ea4b1e8b7721daa982b660bc5cf200fc348cfc92876c640c6389',
       markers: ['kamoshika-san / TextUI-Designer', 'VS Code extension for designing text-based UIs with YAML/JSON DSL.', 'Pull requests']
     }
   ].forEach(({ sampleRelativePath, expectedHash, markers }) => {

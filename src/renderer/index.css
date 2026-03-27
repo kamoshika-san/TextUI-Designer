@@ -762,7 +762,53 @@
 }
 
 /* --- Table partial --- */
-/* TODO(T-20260319-001): Extract Table-related selectors from `src/renderer/index.css` (currently not implemented). */
+.textui-table-container {
+  overflow-x: auto;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 0.375rem;
+}
+
+.textui-table {
+  min-width: 100%;
+  border-collapse: collapse;
+  color: var(--vscode-foreground);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.textui-table-head {
+  background: rgba(128, 128, 128, 0.18);
+}
+
+.textui-table-header {
+  padding: 0.5rem 1rem;
+  color: var(--vscode-foreground);
+  text-align: left;
+  font-weight: 600;
+}
+
+.textui-table-body {
+  background: transparent;
+}
+
+.textui-table-row {
+  border-top: 1px solid var(--vscode-panel-border);
+  transition: background-color 0.2s ease;
+}
+
+.textui-table-row.is-striped {
+  background: rgba(128, 128, 128, 0.1);
+}
+
+.textui-table-row.has-hover:hover {
+  background: rgba(128, 128, 128, 0.16);
+}
+
+.textui-table-cell {
+  padding: 0.5rem 1rem;
+  color: var(--vscode-descriptionForeground);
+  vertical-align: top;
+}
 
 /* --- Button partial --- */
 /* Button */
