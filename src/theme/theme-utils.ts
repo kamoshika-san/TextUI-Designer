@@ -95,8 +95,27 @@ export class ThemeUtils {
     };
   }
 
+  static resolveThemeVariableInputs(
+    tokens: unknown,
+    components: unknown
+  ): { tokens: Record<string, unknown>; components: Record<string, unknown> } {
+    const canonicalTokens = ThemeUtils.normalizeTokenVocabulary(tokens);
+    const mergedTokens = ThemeUtils.deepMerge(DEFAULT_THEME_TOKENS, canonicalTokens) as Record<string, unknown>;
+    const mergedComponents = ThemeUtils.deepMerge(DEFAULT_THEME_COMPONENTS, components) as Record<string, unknown>;
+
+    return {
+      tokens: mergedTokens,
+      components: mergedComponents
+    };
+  }
+
+  static buildResolvedThemeVariableMap(tokens: unknown, components: unknown): Record<string, string> {
+    const resolved = ThemeUtils.resolveThemeVariableInputs(tokens, components);
+    return ThemeUtils.buildThemeVariableMap(resolved.tokens, resolved.components);
+  }
+
   static buildCssVariables(tokens: unknown, components: unknown): string {
-    const allVars = ThemeUtils.buildThemeVariableMap(tokens, components);
+    const allVars = ThemeUtils.buildResolvedThemeVariableMap(tokens, components);
     const lines = Object.entries(allVars).map(([k, v]) => `  --${k}: ${v} !important;`);
 
     return `html body :root {\n${lines.join('\n')}\n}\nhtml :root {\n${lines.join('\n')}\n}\n:root {\n${lines.join('\n')}\n}\nbody {\n${lines.join('\n')}\n}\n#root {\n${lines.join('\n')}\n}`;

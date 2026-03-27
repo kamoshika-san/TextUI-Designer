@@ -38,6 +38,20 @@ describe('Theme modules', () => {
       assert.ok(css.includes('--component-button-primary-backgroundColor: #FF0000'));
     });
 
+    it('buildResolvedThemeVariableMap applies the shared default merge contract', () => {
+      const allVars = ThemeUtils.buildResolvedThemeVariableMap(
+        { colors: { primary: { value: '#FF0000' } } },
+        { button: { primary: { backgroundColor: '#FF0000' } } }
+      );
+
+      assert.strictEqual(allVars['colors-primary'], '#FF0000');
+      assert.strictEqual(allVars['color-primary'], '#FF0000');
+      assert.strictEqual(allVars['colors-secondary'], '#6B7280');
+      assert.strictEqual(allVars['spacing-md'], '1rem');
+      assert.strictEqual(allVars['component-button-primary-backgroundColor'], '#FF0000');
+      assert.strictEqual(allVars['component-button-primary-color'], 'var(--color-text-primary)');
+    });
+
     it('normalizeTokenVocabulary canonicalizes legacy color into colors', () => {
       const normalized = ThemeUtils.normalizeTokenVocabulary({
         color: {

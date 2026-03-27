@@ -11,6 +11,7 @@
 ## Compatibility Notes
 
 - CSS variable builders emit both `--colors-*` and legacy `--color-*` names from the canonical `colors` tree.
+- Preview ThemeManager and Export share the same default-merge and variable-map builder contract before CSS is emitted.
 - New internal code should read and merge `colors`, not `color`.
 - If a future cleanup removes the legacy alias, it must be handled as an explicit compatibility change.
 

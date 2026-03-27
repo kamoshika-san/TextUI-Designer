@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
-import { DEFAULT_THEME_COMPONENTS, DEFAULT_THEME_TOKENS } from '../theme/default-theme';
 import { ThemeUtils } from '../theme/theme-utils';
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
@@ -24,7 +23,7 @@ function deepMerge(base: unknown, override: unknown): unknown {
 function loadThemeDefinition(themePath: string, chain: string[]): unknown {
   const absolutePath = path.resolve(themePath);
   if (chain.includes(absolutePath)) {
-    throw new Error(`テーマ継承で循環参照を検出しました: ${[...chain, absolutePath].join(' -> ')}`);
+    throw new Error(`繝・・繝樒ｶ呎価縺ｧ蠕ｪ迺ｰ蜿ら・繧呈､懷・縺励∪縺励◆: ${[...chain, absolutePath].join(' -> ')}`);
   }
 
   const raw = fs.readFileSync(absolutePath, 'utf8');
@@ -58,10 +57,9 @@ function extractThemeSection(themeDefinition: unknown, key: 'tokens' | 'componen
 
 export function buildThemeVariables(themePath: string): Record<string, string> {
   const theme = loadThemeDefinition(themePath, []);
-  const tokens = ThemeUtils.normalizeTokenVocabulary(extractThemeSection(theme, 'tokens'));
+  const tokens = extractThemeSection(theme, 'tokens');
   const components = extractThemeSection(theme, 'components');
-  /* WebView の ThemeManager と同様にデフォルトとマージしてから flatten する */
-  const mergedTokens = deepMerge(DEFAULT_THEME_TOKENS, tokens) as Record<string, unknown>;
-  const mergedComponents = deepMerge(DEFAULT_THEME_COMPONENTS, components) as Record<string, unknown>;
-  return ThemeUtils.buildThemeVariableMap(mergedTokens, mergedComponents);
+
+  // Preview ThemeManager 側と同じ default merge / canonicalize / alias 付与を共有する
+  return ThemeUtils.buildResolvedThemeVariableMap(tokens, components);
 }
