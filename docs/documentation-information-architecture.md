@@ -93,6 +93,7 @@ Define a single navigation model for project documentation so readers can reach 
 ## Use With
 
 - `README.md`
+- `docs/documentation-consolidation-rules.md`
 - `docs/MAINTAINER_GUIDE.md`
 - `docs/test-matrix.md`
 - `docs/ci-quality-gate.md`
