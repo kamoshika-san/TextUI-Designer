@@ -83,6 +83,7 @@ Use these cadence meanings consistently:
 - `DOC-303`: the Doc Debt runbook should use these owner keys when routing stale pages.
 - current runbook: [documentation-doc-debt-runbook.md](documentation-doc-debt-runbook.md)
 - `DOC-304`: KPI definitions should measure owner coverage and overdue cadence misses against this policy.
+- current KPI definition: [documentation-governance-kpi-dashboard.md](documentation-governance-kpi-dashboard.md)
 
 ## Out Of Scope Here
 
