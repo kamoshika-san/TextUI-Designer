@@ -2,6 +2,7 @@ const assert = require('assert');
 const { PugExporter } = require('../../out/exporters/pug-exporter');
 const { ReactExporter } = require('../../out/exporters/react-exporter');
 const { HtmlExporter } = require('../../out/exporters/html-exporter');
+const { withExplicitFallbackHtmlExport } = require('../../out/exporters/html-export-lane-options');
 
 describe('Exporter token style formatting', () => {
   it('PugExporter: class shorthand components inject token style modifier only when token exists', async () => {
@@ -54,7 +55,7 @@ describe('Exporter token style formatting', () => {
       }
     };
 
-    const html = await exporter.export(dsl, { format: 'html', useReactRender: false });
+    const html = await exporter.export(dsl, withExplicitFallbackHtmlExport({ format: 'html' }));
 
     assert.ok(html.includes('textui-divider my-4'), 'output contains divider with textui-divider and my-4');
     assert.ok(html.includes('textui-divider my-4') && html.includes('border-color: var(--token-divider)'));
@@ -76,7 +77,7 @@ describe('Exporter token style formatting', () => {
       }
     };
 
-    const html = await exporter.export(dsl, { format: 'html', useReactRender: false });
+    const html = await exporter.export(dsl, withExplicitFallbackHtmlExport({ format: 'html' }));
 
     assert.ok(
       html.includes('color: var(--tui-slot-text-color, #aabbcc)'),

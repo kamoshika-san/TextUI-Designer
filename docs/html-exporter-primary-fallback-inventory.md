@@ -9,14 +9,14 @@
 | Lane | Condition | Render path |
 |------|-----------|-------------|
 | **Primary** | `useReactRender !== false` (default) | `renderPageComponentsToStaticHtml` -> `buildHtmlDocument(..., { noWrap: true })` |
-| **Fallback** | `useReactRender === false` | `renderPageComponents` (`BaseComponentRenderer` + `html-renderers/*`) -> `buildHtmlDocument` |
+| **Fallback** | `useReactRender === false` via `withExplicitFallbackHtmlExport(...)` | `renderPageComponents` (`BaseComponentRenderer` + `html-renderers/*`) -> `buildHtmlDocument` |
 
 ## Owner / Trigger / Follow-up
 
 | Item | Primary | Fallback |
 |------|---------|----------|
 | **owner** | `src/exporters/react-static-export.ts` and `src/renderer/component-map.tsx` | `src/exporters/base-component-renderer.ts` and `src/exporters/html-renderers/*` |
-| **trigger** | normal HTML export, built-in `html` provider, preview preparation | explicit `useReactRender === false` for capture, compatibility regression, or legacy behavior checks |
+| **trigger** | normal HTML export, built-in `html` provider, preview preparation | explicit helper-routed fallback for capture, compatibility regression, or legacy behavior checks |
 | **follow-up** | treat drift as work against the main renderer contract | require a reason, keep Primary as source of truth, and record the reason in code comments or review handoff |
 
 ## Current route inventory
@@ -26,11 +26,12 @@
 | `src/cli/provider-registry.ts` built-in `html` provider | `useReactRender: true` | **Primary** |
 | `src/utils/preview-capture/html-preparation.ts` | `options.useReactRender ?? true` | default is **Primary**, explicit override only |
 | `src/cli/commands/capture-command.ts` | `withExplicitFallbackHtmlExport(...)` | **Fallback** |
-| fallback-focused unit tests such as `tests/unit/exporter-token-style-format.test.js` | explicit `useReactRender: false` | **Fallback** |
+| fallback-focused unit tests such as `tests/unit/exporter-token-style-format.test.js` | `withExplicitFallbackHtmlExport(...)` | **Fallback** |
 
 ## Observability
 
 - `src/exporters/html-exporter.ts` emits the debug log `using fallback HTML render path (useReactRender=false)` only on the fallback lane.
+- Raw public `useReactRender: false` requests also emit a deprecation warning; helper-routed internal fallback stays warning-free.
 - The Primary lane stays quiet. Use `TEXTUI_LOG_LEVEL=debug` only when fallback usage needs to be observed.
 
 ## Current measurement snapshot (T-20260327-055)
@@ -85,7 +86,7 @@ This is the current separation between intentional differences, acceptable tempo
 | Primary render stack vs legacy string renderer stack | Two rendering stacks still exist | intended difference | HR1 fixed Primary as the source of truth without claiming same-sprint fallback removal |
 | Built-in HTML provider and preview preparation | Default to Primary | intended difference | These are now the normal product-facing routes and should stay Primary-first |
 | Capture command fallback entry | Explicit helper-based fallback entry remains | acceptable temporary debt | The route is isolated, named, and guarded while replacement criteria remain outside HR1 |
-| Fallback-focused regression tests | Explicit `useReactRender: false` coverage remains | acceptable temporary debt | The tests protect the compatibility lane rather than the default contract |
+| Fallback-focused regression tests | Helper-routed fallback coverage remains | acceptable temporary debt | The tests protect the compatibility lane rather than the default contract |
 | Fallback-only compatibility CSS | Isolated to the fallback lane append path in `html-template-builder` | acceptable temporary debt | Primary default no longer carries badge / tabs / progress compatibility CSS unless the fallback lane asks for it |
 | Fallback-only code comments / handoff justification | Required for any new fallback-only change | acceptable temporary debt | This keeps compatibility fixes reviewable instead of allowing silent lane drift |
 | Normal export path behaving differently from Primary documentation | Not observed in current HR1 evidence | unresolved mismatch: none observed | Treat any future reproduction here as a new Primary-path bug first |
@@ -107,7 +108,7 @@ Small-slice verification in `tests/unit/html-exporter-route-viability.test.js` l
 ## Decision rules
 
 1. If drift reproduces on normal export, provider output, or preview preparation, treat it as a **Primary** issue first.
-2. If drift reproduces only on `capture` or explicit `useReactRender: false` paths, treat it as a documented fallback compatibility issue.
+2. If drift reproduces only on `capture` or helper-routed fallback paths, treat it as a documented fallback compatibility issue.
 3. When fallback-specific code is changed, keep Primary as the source of truth and leave a short reason in code comments or the review handoff.
 4. If a difference is still isolated to the explicit fallback lane and has a named guard, classify it as acceptable temporary debt rather than as a hidden mismatch.
 5. If a difference affects Primary-default routes or requires a new unapproved fallback entrypoint, classify it as an unresolved mismatch and open follow-up work.

@@ -3,7 +3,8 @@
  * Keep fallback selection behind a named helper so new call sites stay reviewable.
  */
 export const EXPLICIT_FALLBACK_HTML_EXPORT_OPTIONS = Object.freeze({
-  useReactRender: false as const
+  useReactRender: false as const,
+  __internalLegacyFallback: true as const
 });
 
 export function withExplicitFallbackHtmlExport<T extends object>(

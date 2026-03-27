@@ -2,6 +2,7 @@ const assert = require('assert');
 const { HtmlExporter } = require('../../out/exporters/html-exporter');
 const { ReactExporter } = require('../../out/exporters/react-exporter');
 const { PugExporter } = require('../../out/exporters/pug-exporter');
+const { withExplicitFallbackHtmlExport } = require('../../out/exporters/html-export-lane-options');
 
 describe('Exporter family structure regression', () => {
   it('同一DSLで HTML / React / Pug の主要構造が維持される', async () => {
@@ -18,7 +19,7 @@ describe('Exporter family structure regression', () => {
       }
     };
 
-    const html = await new HtmlExporter().export(dsl, { format: 'html', useReactRender: false });
+    const html = await new HtmlExporter().export(dsl, withExplicitFallbackHtmlExport({ format: 'html' }));
     const react = await new ReactExporter().export(dsl, { format: 'react' });
     const pug = await new PugExporter().export(dsl, { format: 'pug' });
 

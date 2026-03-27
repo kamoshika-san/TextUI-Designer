@@ -9,9 +9,12 @@ export interface ExportOptions {
   /**
    * Selects the HtmlExporter path.
    * - omitted / true: primary path via react-static-export. This is the default source-of-truth path.
-   * - false: fallback path via BaseComponentRenderer string renderers. Used for capture and explicit fallback tests.
+   * - false: deprecated public fallback request. Internal compatibility callers must pair it with
+   *   `withExplicitFallbackHtmlExport(...)` from `html-export-lane-options`.
    */
   useReactRender?: boolean;
+  /** @internal Temporary compatibility marker for the explicit fallback helper only. */
+  __internalLegacyFallback?: boolean;
   /** Extension root path used to resolve WebView CSS such as `media/assets/index-*.css`. */
   extensionPath?: string;
 }

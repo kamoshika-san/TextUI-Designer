@@ -1,6 +1,7 @@
 const assert = require('assert');
 const { HtmlExporter } = require('../../out/exporters/html-exporter');
 const { PugExporter } = require('../../out/exporters/pug-exporter');
+const { withExplicitFallbackHtmlExport } = require('../../out/exporters/html-export-lane-options');
 
 describe('Table cell component rendering', () => {
   const dsl = {
@@ -27,7 +28,7 @@ describe('Table cell component rendering', () => {
 
   it('renders component cell in HTML export', async () => {
     const exporter = new HtmlExporter();
-    const html = await exporter.export(dsl, { format: 'html', useReactRender: false });
+    const html = await exporter.export(dsl, withExplicitFallbackHtmlExport({ format: 'html' }));
 
     assert.match(html, /<td class="px-4 py-2 align-top text-gray-300">\s*<button[^>]*>(?:.|\n)*Open(?:.|\n)*<\/button>\s*<\/td>/);
   });

@@ -1,5 +1,6 @@
 const assert = require('assert');
 const { HtmlExporter } = require('../../out/exporters/html-exporter');
+const { withExplicitFallbackHtmlExport } = require('../../out/exporters/html-export-lane-options');
 
 describe('HtmlExporter lane observability', () => {
   const dsl = {
@@ -10,10 +11,12 @@ describe('HtmlExporter lane observability', () => {
 
   let originalLevel;
   let originalWrite;
+  let originalConsoleWarn;
 
   beforeEach(() => {
     originalLevel = process.env.TEXTUI_LOG_LEVEL;
     originalWrite = process.stdout.write;
+    originalConsoleWarn = console.warn;
   });
 
   afterEach(() => {
@@ -23,9 +26,10 @@ describe('HtmlExporter lane observability', () => {
       process.env.TEXTUI_LOG_LEVEL = originalLevel;
     }
     process.stdout.write = originalWrite;
+    console.warn = originalConsoleWarn;
   });
 
-  it('emits a debug log only for the fallback lane when debug logging is enabled', async () => {
+  it('emits a debug log only for the internal fallback lane when debug logging is enabled', async () => {
     process.env.TEXTUI_LOG_LEVEL = 'debug';
     const logs = [];
     process.stdout.write = (chunk, encoding, callback) => {
@@ -36,11 +40,28 @@ describe('HtmlExporter lane observability', () => {
       return true;
     };
 
-    await new HtmlExporter().export(dsl, { format: 'html', useReactRender: false });
+    await new HtmlExporter().export(dsl, withExplicitFallbackHtmlExport({ format: 'html' }));
 
     assert.ok(
       logs.some(message => message.includes('[TextUI][HtmlExporter] using fallback HTML render path (useReactRender=false)')),
       'fallback lane should be observable through a dedicated debug log'
+    );
+  });
+
+  it('warns when a public caller requests the fallback lane directly', async () => {
+    const warnings = [];
+    const exporter = new HtmlExporter();
+    const originalLoggerWarn = exporter.logger.warn.bind(exporter.logger);
+    exporter.logger.warn = (message, ...args) => {
+      warnings.push([message, ...args].map(String).join(' '));
+    };
+
+    await exporter.export(dsl, { format: 'html', useReactRender: false });
+    exporter.logger.warn = originalLoggerWarn;
+
+    assert.ok(
+      warnings.some(message => message.includes('useReactRender=false is deprecated for public export callers')),
+      'raw fallback requests should emit a deprecation warning'
     );
   });
 

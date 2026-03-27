@@ -91,6 +91,12 @@ export class HtmlExporter extends BaseComponentRenderer {
 
     // Fallback: 文字列レンダー（useReactRender: false のときのみ。テスト・capture 等）
     // Fallback: compatibility lane used only when useReactRender is explicitly false.
+    const isInternalFallback = options.__internalLegacyFallback === true;
+    if (!isInternalFallback) {
+      this.logger.warn(
+        'useReactRender=false is deprecated for public export callers; use the primary React lane or route through withExplicitFallbackHtmlExport(...) only for internal compatibility paths'
+      );
+    }
     this.logger.debug('using fallback HTML render path (useReactRender=false)');
     const componentCode = this.renderPageComponents(normalizedDsl);
     return buildHtmlDocument(componentCode, themeStyles, {
