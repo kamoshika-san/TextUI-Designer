@@ -36,6 +36,7 @@ If you only need the local packaging / install flow for the extension, use [Loca
 
 - [Local Installer](docs/LOCAL_INSTALLER.md): local `.vsix` build and installation flow
 - [Settings](docs/SETTINGS.md): extension settings and configuration surface
+- [Contributing](CONTRIBUTING.md): branch strategy, PR flow, and review expectations
 
 ### Testing and CI
 
