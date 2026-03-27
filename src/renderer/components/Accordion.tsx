@@ -48,7 +48,7 @@ export const Accordion: React.FC<AccordionProps> = ({
   const isItemOpen = (index: number): boolean => openIndexes.includes(index);
 
   return (
-    <div className="textui-accordion border border-gray-700 rounded-md divide-y divide-gray-700">
+    <div className="textui-accordion">
       {items.map((item, index) => {
         const isOpen = isItemOpen(index);
         const buttonId = `${accordionId}-button-${index}`;
@@ -60,25 +60,27 @@ export const Accordion: React.FC<AccordionProps> = ({
               <button
                 id={buttonId}
                 type="button"
-                className="w-full flex items-center justify-between px-4 py-3 text-left text-sm font-medium text-gray-200 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`textui-accordion-trigger ${isOpen ? 'is-open' : ''}`.trim()}
                 aria-expanded={isOpen}
                 aria-controls={panelId}
                 onClick={() => {
                   toggleItem(index);
                 }}
               >
-                <span>{item.title}</span>
-                <span aria-hidden="true">{isOpen ? '−' : '+'}</span>
+                <span className="textui-accordion-title">{item.title}</span>
+                <span className="textui-accordion-indicator" aria-hidden="true">
+                  {isOpen ? '−' : '+'}
+                </span>
               </button>
             </h3>
             <div
               id={panelId}
               role="region"
               aria-labelledby={buttonId}
-              className={`px-4 pb-4 text-sm text-gray-300 ${isOpen ? 'block' : 'hidden'}`}
+              className={`textui-accordion-panel ${isOpen ? 'open' : 'hidden'}`}
             >
               {Array.isArray(item.components) && item.components.length > 0 && renderComponent ? (
-                <div className="space-y-3">
+                <div className="textui-accordion-body">
                   {item.components.map((component, componentIndex) =>
                     renderComponent(component, index * 1000 + componentIndex, {
                       dslPath: `${dslPath ?? ''}/Accordion/items/${index}/components/${componentIndex}`,

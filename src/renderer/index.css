@@ -557,7 +557,73 @@
 /* TODO(T-20260319-001): Extract Spacer-related selectors from `src/renderer/index.css` (currently not implemented). */
 
 /* --- Accordion partial --- */
-/* TODO(T-20260319-001): Extract Accordion-related selectors from `src/renderer/index.css` (currently not implemented). */
+.textui-accordion {
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.textui-accordion-item + .textui-accordion-item {
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+.textui-accordion-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border: 0;
+  background: transparent;
+  color: var(--vscode-foreground);
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.textui-accordion-trigger:hover {
+  background: rgba(128, 128, 128, 0.14);
+}
+
+.textui-accordion-trigger:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: -2px;
+}
+
+.textui-accordion-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.textui-accordion-indicator {
+  flex: 0 0 auto;
+  color: var(--vscode-descriptionForeground);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.textui-accordion-panel {
+  padding: 0 1rem 1rem;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.875rem;
+}
+
+.textui-accordion-panel.hidden {
+  display: none;
+}
+
+.textui-accordion-panel.open {
+  display: block;
+}
+
+.textui-accordion-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
 
 /* --- Tabs partial --- */
 /* TODO(T-20260319-001): Extract Tabs-related selectors from `src/renderer/index.css` (currently not implemented). */
