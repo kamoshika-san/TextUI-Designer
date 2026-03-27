@@ -144,6 +144,8 @@ ADR: [0001 解析パイプライン（初稿）](adr/0001-document-analysis-serv
 - preview capture 側の HTML 準備は `src/utils/preview-capture/html-preparation.ts` で `options.useReactRender ?? true` を使い、未指定時は Primary path を選ぶ。
 - 明示的な CLI fallback は `src/cli/commands/capture-command.ts` から `src/exporters/html-export-lane-options.ts` の helper を通して選ぶ。
 - built-in / exporter の差分切り分けでは、この 3 入口を先に確認してから renderer 実装や fallback 側を追う。
+- current docs と review では通常 export / preview を React-primary path に合わせ、fallback は capture / compatibility lane としてだけ扱う。
+- fallback-only test coverage は general regression の正本ではなく、明示された observability / style lane として読む。
 
 ### 2) CLI エントリ遅延ロード
 - `src/cli/index.ts` はコマンドごとに dynamic import

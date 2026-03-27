@@ -15,14 +15,14 @@
 | 経路 | 条件 | 実装の要点 | 位置づけ |
 |------|------|------------|----------|
 | **Primary** | `ExportOptions.useReactRender` が **省略または true**（既定） | `renderPageComponentsToStaticHtml` → `buildHtmlDocument(..., { noWrap: true })`。WebView と同じ React コンポーネント＋`webviewCss` を前提とした系統。 | **通常の export / プレビュー連携で直す先**。新コンポーネントの HTML 対応もこちらを優先。 |
-| **Fallback** | `useReactRender === false` | `renderPageComponents`（`BaseComponentRenderer`＋`html-renderers/*` の文字列生成）。 | テスト・`capture` 等で **明示的に false** が渡る場合に使用。**primary との挙動差**がありうる。バグは primary を先に確認し、fallback 専用ならコメントで理由を残す。 |
+| **Fallback** | `useReactRender === false` | `renderPageComponents`（`BaseComponentRenderer`＋`html-renderers/*` の文字列生成）。 | `capture` と helper 経由の compatibility lane のみ。**primary との挙動差**がありうる。バグは primary を先に確認し、fallback 専用ならコメントで理由を残す。 |
 
 - オプションの意味の短い説明: `src/exporters/export-types.ts` の `useReactRender` JSDoc。
 - fallback の削除や primary への統一は **本ガイドのスコープ外**（別チケット）。
 
 ### Fallback を compatibility lane（互換レーン）として扱う
 
-**定義**: `useReactRender === false` の経路は、**プレビュー／CLI の既定 export と同じ React 静的経路ではない**ため、**互換・補助**のレーンとみなす。新機能・不具合修正の **正（source of truth）は Primary**。
+**定義**: `useReactRender === false` の経路は、**プレビュー／CLI の既定 export と同じ React 静的経路ではない**ため、**互換・補助**のレーンとみなす。新機能・不具合修正の **正（source of truth）は Primary**。公開経路では built-in `html` provider と preview-preparation が先に Primary を通る。
 
 | 観点 | 方針 |
 |------|------|
@@ -48,6 +48,7 @@
 
 - Exporter の `renderXxx` 抽象を **capability map** に寄せる設計案（追加コスト削減・段階移行）: [exporter-capability-map-design.md](exporter-capability-map-design.md)
 - Primary / fallback 差分の棚卸し（分類表）: [html-exporter-primary-fallback-inventory.md](html-exporter-primary-fallback-inventory.md)
+- theme token / CSS variable 契約の current state: [theme-token-vocabulary.md](theme-token-vocabulary.md)
 - Provider契約: `docs/PROVIDER_CONTRACT.md`
 - テーマ実装: `docs/THEME_IMPLEMENTATION.md`
 - API/互換方針: `docs/api-compat-policy.md`
@@ -60,6 +61,7 @@
 ## Fallback-only change note
 
 - `useReactRender === false` の経路だけを変更する場合は、Primary ではなく fallback を触る理由を必ず残す。
+- 一般 exporter regression は React-primary contract を先に見る。fallback 固有 coverage は observability / style lane のような明示レーンだけに留める。
 - 記録場所は 1 つでよい: 近接コードコメント、review handoff、または PR の影響欄。
 - 最低限残す内容:
   - なぜ Primary 側の修正ではないのか
