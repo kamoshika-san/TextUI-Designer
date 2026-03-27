@@ -69,6 +69,7 @@ If you only need the local packaging / install flow for the extension, use [Loca
 - [Maintainer Guide](docs/MAINTAINER_GUIDE.md)
 - [Documentation Owner And Review Cadence](docs/documentation-owner-and-review-cadence.md)
 - [Documentation Governance KPI Dashboard](docs/documentation-governance-kpi-dashboard.md)
+- [CSS SSoT Metrics Definition](docs/css-ssot-metrics-definition.md)
 - [SSoT Monthly Review](docs/ssot-monthly-review.md)
 - [SSoT Violation Playbook](docs/ssot-violation-playbook.md)
 
