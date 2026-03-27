@@ -1,59 +1,79 @@
-# CI 品質ゲートと branch protection（運用メモ）
+# CI Quality Gate And Branch Protection
 
-本ドキュメントは、`package.json` のスクリプトと `.github/workflows/ci.yml` を照合し、**PR でどのチェックを必須にするか**と **GitHub での branch protection 設定手順**をリポジトリ内から辿れるようにする（実際の設定変更はリポジトリ管理者の権限が必要）。
+This page defines the current CI entrypoints, the checks intended for branch protection, and the minimum release-gate interpretation for `main`.
 
-## 1. npm スクリプト（ローカル／CI 共通の定義）
+## npm Script Entry Points
 
-| スクリプト | 内容（要約） |
-|-----------|----------------|
-| `pretest:ci` | `compile` → `typecheck:strict` → `lint`（PR 前の品質前提） |
-| `test:all:ci` | `pretest:ci` の後に `test:unit` → `test:integration` → `test:e2e` → `test:regression` を順に実行 |
-| `test:all` | `pretest:local`（compile のみ）＋上記テスト群。ローカル向け。CI 相当の厳しさは **`test:all:ci`** |
+| Script | Purpose |
+|---|---|
+| `pretest:ci` | `compile` -> `typecheck:strict` -> `lint` |
+| `test:all:ci` | `pretest:ci` -> `test:unit` -> `test:integration` -> `test:e2e` -> `test:regression` |
+| `react-ssot-check` | Focused React SSoT guard for Preview / Export DOM parity and theme vars contract |
+| `metrics:collect` | Collect repo metrics used by release gates |
+| `metrics:check:ssot` | Fail when SSoT metrics drift past the allowed threshold |
+| `check:dsl-types-ssot` | Fail when `renderer/types` imports reappear |
+| `check:import-graph` | Fail when representative cross-lane import boundaries drift |
 
-**「緑の main」の技術的な定義（提案）**: **`npm run test:all:ci` が成功**し、かつ **`Code metrics` job で `threshold=0` / `status=PASS`** を満たすこと。  
-（`pretest:ci` はその一部として含まれる。）
+## GitHub Actions Checks
 
-## 2. GitHub Actions との対応（`.github/workflows/ci.yml`）
+The workflow lives in `.github/workflows/ci.yml`.
 
-主要ジョブ名（**Branch protection で選ぶ「チェック名」は通常ここに一致**）:
+| Check | What it covers |
+|---|---|
+| `React SSoT Check` | `npm run compile` followed by `npm run react-ssot-check` |
+| `Test All CI` | `npm run test:all:ci` as the single full-lane CI command |
+| `Code metrics` | `npm run metrics:collect` and `npm run metrics:check:ssot` |
+| `Test Suite` | Node `18.x` / `20.x` matrix lane for `pretest:ci`, sample validation, unit tests, and coverage |
+| `Lint & Format Check` | ESLint / formatting gate |
+| `Build Extension` | compile, package, and artifact build after core checks pass |
+| `Integration Tests` | integration lane after the main checks pass |
 
-| ワークフロー上の表示名 | 役割 |
-|------------------------|------|
-| **Test All CI** | `npm run test:all:ci` を実行。上記「緑」と直結するゲート。 |
-| **Test Suite** | Node 18.x / 20.x のマトリクス。`pretest:ci`、`validate:samples:compiled`、`test:unit`、`test:coverage` など。 |
-| **Lint & Format Check** | ESLint と `format:check`。 |
-| **Build Extension** | `needs` で **Test All CI / Test Suite / Lint** の成功後に compile・package。 |
-| **Integration Tests** | `needs` で Test All CI / Test Suite の成功後に統合テスト。 |
-| **DSL Plan (PR)** | PR 専用（差分サマリ）。必須ゲートにするかはチーム方針次第。 |
-| **Code metrics** | `npm run metrics:collect` → `npm run metrics:check:ssot`。**SSoT release gate** として `renderer/types imports = 0` を確認。 |
+## Minimum Required Checks
 
-**PR 必須チェックの提案（最小）**
+The minimum branch-protection set for `main` is:
 
-1. **必須（推奨）**: **`Test All CI`**  
-   - `test:all:ci` 相当で、unit / integration / e2e / regression を一括で担保する。
-2. **必須（SSoT 運用）**: **`Code metrics`**  
-   - `renderer/types imports` を **閾値 0 固定**で判定する release gate。artifact と Job Summary もここで確認する。
-3. **任意（より厳格）**: **`Lint & Format Check`**、`**Build Extension**`、マトリクス **`Test Suite`**（18.x / 20.x の両方）など。  
-   - マトリクスジョブは、GitHub の UI に表示されるチェック名（例: `Test Suite (20.x)`）で個別に指定する場合がある。
+1. `React SSoT Check`
+2. `Test All CI`
+3. `Code metrics`
 
-> **注意**: 初回 PR またはワークフロー変更後は、一覧にチェックが現れてから branch protection で名前を選ぶと確実。
+Recommended additional checks when the repository host allows more required checks:
 
-## 3. GitHub branch protection 設定チェックリスト（管理者向け）
+1. `Lint & Format Check`
+2. `Build Extension`
+3. `Test Suite`
 
-対象ブランチ例: `main`（運用に合わせて `master` 等に読み替え）。
+## Release-Gate Meaning
 
-- [ ] **Settings** → **Branches** → **Branch protection rules** → **Add branch protection rule**（または既存ルールを編集）
-- [ ] **Branch name pattern** に `main`（など保護対象）を入力
-- [ ] **Require a pull request before merging** を有効化（運用に合わせる）
-- [ ] **Require status checks to pass before merging** を有効化
-- [ ] **Require branches to be up to date before merging**（任意・チーム方針）
-- [ ] **Status checks that are required** で、少なくとも **`Test All CI`** と **`Code metrics`** を追加  
-  - 追加で厳格化する場合は **`Lint & Format Check`**、`**Build Extension**`、`**Test Suite**`（表示名に注意）などを選択
-- [ ] **保存**し、テスト用 PR で必須チェックがブロック／通過することを確認
+- `React SSoT Check` is the fail-fast guard for the React canonical rendering path.
+- `Test All CI` proves the standard unit / integration / e2e / regression lanes still pass together.
+- `Code metrics` is the SSoT release gate and must keep `renderer/types imports = 0`.
 
-**ホストが GitHub 以外の場合**: 同等の「必須パイプライン／必須ジョブ」機能に、上記 npm／ジョブの対応表を写し替えて運用する。
+## React SSoT Check Scope
 
-## 4. 関連ドキュメント
+`npm run react-ssot-check` currently runs these focused tests:
 
-- 開発コマンド一覧: リポジトリ直下 `AGENTS.md`
-- 保守性スコアとフェーズ計画: `docs/maintainability-score.md`
+1. `tests/unit/shared-kernel-preview-export-parity.test.js`
+2. `tests/unit/react-theme-vars-preview-export-contract.test.js`
+
+Use this lane when a change may affect:
+
+- Preview vs Export DOM shape
+- React shared-kernel rendering parity
+- theme variable generation and export contract alignment
+
+Keep this lane focused. Do not expand it into a second full test suite.
+
+## Branch Protection Checklist
+
+- Add a protection rule for `main`
+- Require pull requests before merging
+- Require branches to be up to date before merging
+- Require status checks to pass before merging
+- Mark `React SSoT Check`, `Test All CI`, and `Code metrics` as required
+
+## Related Documents
+
+- `AGENTS.md`
+- `docs/ssot-metrics-and-ci-checks.md`
+- `docs/import-boundaries-4-lanes.md`
+- `docs/html-exporter-primary-fallback-inventory.md`
