@@ -33,6 +33,36 @@
 - `src/exporters/html-exporter.ts` emits the debug log `using fallback HTML render path (useReactRender=false)` only on the fallback lane.
 - The Primary lane stays quiet. Use `TEXTUI_LOG_LEVEL=debug` only when fallback usage needs to be observed.
 
+## Current measurement snapshot (T-20260327-055)
+
+Rerun command:
+
+```bash
+npm run report:react-fallback-usage
+```
+
+Current snapshot on `2026-03-27`:
+
+| Metric | Value | Notes |
+|---|---|---|
+| runtime fallback entries | `1` | current runtime fallback entry stays isolated to `src/cli/commands/capture-command.ts` |
+| fallback helper definitions | `1` | helper stays centralized in `src/exporters/html-export-lane-options.ts` |
+| primary-default routes | `2` | built-in HTML provider and preview-capture preparation remain Primary by default |
+| fallback execution test files | `5` | compatibility lane remains covered by explicit fallback-only tests |
+| fallback governance files | `4` | guard, route-viability, taxonomy, and this inventory page document the lane |
+
+Lane ownership in the current snapshot:
+
+- CLI runtime fallback entry: `src/cli/commands/capture-command.ts`
+- Fallback helper owner: `src/exporters/html-export-lane-options.ts`
+- Primary-default routes: `src/cli/provider-registry.ts`, `src/utils/preview-capture/html-preparation.ts`
+- Fallback execution test lane:
+  - `tests/unit/exporter-family-structure-regression.test.js`
+  - `tests/unit/exporter-table-cell-component.test.js`
+  - `tests/unit/exporter-token-style-format.test.js`
+  - `tests/unit/html-exporter-lane-observability.test.js`
+  - `tests/unit/new-built-in-stub-sample-regression.test.js`
+
 ## Difference categories
 
 Use these labels when a behavior difference is found.
