@@ -57,6 +57,7 @@ If you only need the local packaging / install flow for the extension, use [Loca
 
 ### Architecture and specification
 
+- [Spec Authoring Guide](docs/spec-authoring-guide.md)
 - [Theme Implementation](docs/THEME_IMPLEMENTATION.md)
 - [Schema Pipeline From Spec](docs/schema-pipeline-from-spec.md)
 - [ADR directory](docs/adr)
