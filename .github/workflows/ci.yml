@@ -73,6 +73,9 @@ jobs:
     - name: Check SSoT import boundary
       run: npm run check:dsl-types-ssot
 
+    - name: Check import graph boundary
+      run: npm run check:import-graph
+
     - name: Check non-renderer SSoT meta guard
       run: npm run check:ssot:non-renderer
 
@@ -109,6 +112,9 @@ jobs:
 
     - name: Check SSoT import boundary
       run: npm run check:dsl-types-ssot
+
+    - name: Check import graph boundary
+      run: npm run check:import-graph
 
     - name: Check non-renderer SSoT meta guard
       run: npm run check:ssot:non-renderer

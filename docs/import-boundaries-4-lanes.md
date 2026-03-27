@@ -44,6 +44,30 @@ Export runtime
 - **ルール**: `no-restricted-imports` — パターン `**/exporters/**` および相対パス `../exporters` / `../../exporters` 相当を拒否
 - **根拠**: 上表「WebView → Export runtime」を機械的に守る（新規違反の混入防止）。
 
+## Import graph check（B2-3）
+
+- **コマンド**: `npm run check:import-graph`
+- **スクリプト**: `scripts/check-import-graph-boundaries.cjs`
+- **CI**: `.github/workflows/ci.yml` の `Test All CI` / `Test Suite`
+
+このチェックは 4 レーン全体の完全証明ではなく、再流入リスクが高い **代表境界** を静的解析で固定する。
+
+### 現在の検査対象
+
+| 境界 | 扱い | 備考 |
+|------|------|------|
+| **WebView runtime → Export runtime** | **禁止** | `src/renderer/**` から `src/exporters/**` への直接 import を fail |
+| **Shared domain → VS Code API** | **禁止** | `src/domain/**` / `src/components/definitions/**` から `vscode` import を fail |
+| **Export runtime → WebView runtime** | **allowlist 管理** | 既存の primary static HTML export bridge だけを許可 |
+
+### 現在の allowlist
+
+- `src/exporters/react-static-export.ts` -> `src/renderer/preview-diff.ts`
+- `src/exporters/react-static-export.ts` -> `src/renderer/component-map.tsx`
+- `src/exporters/static-html-render-adapter.ts` -> `src/renderer/render-context.ts`
+
+allowlist は既存の正当な bridge を固定するためのもの。新規 edge は review-only にせず、専用 ticket で増減を判断する。
+
 ## 次の作業（バックログ）
 
 - Export 側の `renderer/types` 依存を `dsl-types` へ寄せる（T-101 レーンと整合）。

@@ -29,6 +29,7 @@
 | [exporter-boundary-guide.md](exporter-boundary-guide.md) | 各 Exporter / provider の境界 |
 | [quality-gate-green-main.md](quality-gate-green-main.md) | ローカルで緑にしてから push/PR する運用（フェーズ 0） |
 | [ci-quality-gate.md](ci-quality-gate.md) | CI ジョブ・`test:all:ci`・branch protection の対応 |
+| [import-boundaries-4-lanes.md](import-boundaries-4-lanes.md) | 4 レーン境界の正本と `npm run check:import-graph` の allowlist |
 | [observability-and-cache-boundary.md](observability-and-cache-boundary.md) | 公開 API と観測・キャッシュ実装の**横断**境界（内側に閉じる方針） |
 | [runtime-inspection-boundary.md](runtime-inspection-boundary.md) | performance / memory inspection コマンドの service・bindings・登録境界 |
 | [architecture-review-F-boundary-roadmap.md](architecture-review-F-boundary-roadmap.md) | **ロードマップ F 正本索引**（4 境界・導入候補 IF・やらないこと）。[import-boundaries-4-lanes.md](import-boundaries-4-lanes.md)（T-110）と相互リンク |
@@ -58,6 +59,7 @@
 
 - **正本（canonical）** は **`src/domain/dsl-types/（公開エントリ: index.ts）`**。`renderer/types.ts` は **thin facade**（`domain` の再エクスポートに限定）として維持する。
 - **非 `src/renderer/**` から `renderer/types` を import しない**（0 件を CI ガードで維持）。詳細は [dsl-types-renderer-types-inventory.md](dsl-types-renderer-types-inventory.md) と `npm run check:dsl-types-ssot`。
+- **代表 import graph を崩さない**。`npm run check:import-graph` は `renderer -> exporters`、`domain -> vscode`、非 allowlisted `exporters -> renderer` を fail にする。
 
 ### WebView 入口（T-167）
 
@@ -249,6 +251,7 @@ ADR: [0001 解析パイプライン（初稿）](adr/0001-document-analysis-serv
 ```bash
 npm run compile
 npm run check:dsl-types-ssot
+npm run check:import-graph
 npm run check:configuration
 npm run check:commands
 npm run check:contributes
@@ -264,6 +267,14 @@ npm run test:unit
 3. 本当に互換経路が必要な場合は、ADR とチケットで例外理由を明記できるか。
 
 標準対応の 1 ページ版は [ssot-violation-playbook.md](ssot-violation-playbook.md)。
+
+### Import graph 失敗時の調査観点
+
+`npm run check:import-graph` が失敗したら、次の順で確認する。
+
+1. `src/renderer/**` から `src/exporters/**` を直接 import していないか。
+2. `src/domain/**` / `src/components/definitions/**` から `vscode` を直接 import していないか。
+3. `src/exporters/**` から `src/renderer/**` へ新しい edge を足していないか。必要なら shared helper へ寄せるか、allowlist 更新を含む専用 ticket に切り出す。
 
 ### SSoT チェックの標準実行タイミング
 
