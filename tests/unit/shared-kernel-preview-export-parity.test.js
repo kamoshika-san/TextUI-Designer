@@ -1,10 +1,10 @@
 /**
  * E3-S1-T3: preview shell と export shell が共有する renderSharedRegisteredOutput の
- * DOM 出力が、jump 枠を除き同一であることを保証する（T-195）。
+ * DOM 出力を、jump wrapper を除いて同一であることを検証する (T-195)。
  *
- * 注: Tabs / Accordion 等、子を `renderRegisteredComponent` で再帰するコンポーネントでは
- * プレビュー時のみ子に `textui-jump-target` が付く（意図的）。その差分は共有カーネル parity の
- * 対象外。葉に近いコンポーネント列で __renderContext が DOM に漏れないことを担保する。
+ * 注: Tabs / Accordion などを renderRegisteredComponent で再帰するコンポーネントでは
+ * プレビュー時のみ textui-jump-target が付く。共有カーネル parity の比較では
+ * __renderContext 由来の wrapper 差分を除き、inner markup が同一であることを見る。
  */
 const assert = require('assert');
 const React = require('react');
@@ -18,6 +18,25 @@ describe('shared kernel: preview vs export inner markup parity (T-195)', () => {
   before(() => {
     registerBuiltInComponents();
   });
+
+  function stripPreviewJumpTargets(node) {
+    if (Array.isArray(node)) {
+      return node.map(stripPreviewJumpTargets);
+    }
+
+    if (!React.isValidElement(node)) {
+      return node;
+    }
+
+    const { className, children, ...restProps } = node.props || {};
+    const normalizedChildren = React.Children.map(children, stripPreviewJumpTargets);
+
+    if (className === 'textui-jump-target') {
+      return normalizedChildren;
+    }
+
+    return React.cloneElement(node, restProps, normalizedChildren);
+  }
 
   function assertSharedKernelParity(components) {
     const keys = createComponentKeys(components);
@@ -37,13 +56,17 @@ describe('shared kernel: preview vs export inner markup parity (T-195)', () => {
       React.createElement(React.Fragment, null, ...innerExport)
     );
     const markupPreview = renderToStaticMarkup(
-      React.createElement(React.Fragment, null, ...innerPreview)
+      React.createElement(
+        React.Fragment,
+        null,
+        ...innerPreview.map(stripPreviewJumpTargets)
+      )
     );
 
     assert.strictEqual(
       markupExport,
       markupPreview,
-      '共有カーネルはプレビュー用 __renderContext 付きでも静的エクスポートと同一のマークアップであること'
+      'shared kernel inner markup must stay identical between preview and export when jump wrappers are excluded'
     );
 
     const staticHtml = renderPageComponentsToStaticHtml(components);
@@ -57,11 +80,11 @@ describe('shared kernel: preview vs export inner markup parity (T-195)', () => {
     assert.strictEqual(
       staticHtml,
       fromSharedOnly,
-      'renderPageComponentsToStaticHtml は共有カーネル出力＋padding div と一致すること'
+      'renderPageComponentsToStaticHtml must remain a thin wrapper around the shared kernel output'
     );
   }
 
-  it('Text / Button / Badge でプレビュー文脈と undefined の内側マークアップが一致', () => {
+  it('keeps parity for simple text, button, and badge components', () => {
     assertSharedKernelParity([
       { Text: { value: 'Hello', variant: 'h2' } },
       { Button: { label: 'Go' } },
@@ -69,11 +92,85 @@ describe('shared kernel: preview vs export inner markup parity (T-195)', () => {
     ]);
   });
 
-  it('Alert / Divider など子再帰を持たないコンポーネントでも一致', () => {
+  it('keeps parity for alert, divider, and spacer components', () => {
     assertSharedKernelParity([
       { Alert: { title: 'Note', message: 'Hello', variant: 'info' } },
       { Divider: {} },
       { Spacer: { height: 8 } }
+    ]);
+  });
+
+  it('keeps parity for Button / Alert / Form / Layout representative cases for Epic C safety net', () => {
+    assertSharedKernelParity([
+      {
+        Button: {
+          label: 'Save changes',
+          kind: 'primary',
+          icon: 'check',
+          iconPosition: 'left',
+          size: 'lg'
+        }
+      },
+      {
+        Alert: {
+          title: 'Heads up',
+          message: 'Preview and export should keep the same alert structure.',
+          variant: 'warning'
+        }
+      },
+      {
+        Form: {
+          id: 'react-ssot-form',
+          fields: [
+            { Input: { name: 'email', label: 'Email', placeholder: 'user@example.com' } },
+            { Checkbox: { name: 'agree', label: 'Agree to terms' } }
+          ],
+          actions: [
+            { Button: { label: 'Submit', submit: true, kind: 'submit' } },
+            { Button: { label: 'Cancel', kind: 'secondary' } }
+          ]
+        }
+      },
+      {
+        Container: {
+          layout: 'horizontal',
+          width: '100%',
+          components: [
+            { Text: { value: 'Left pane', variant: 'h3' } },
+            { Badge: { label: 'beta', variant: 'secondary' } }
+          ]
+        }
+      }
+    ]);
+  });
+
+  it('keeps parity for nested layout structures across preview and export', () => {
+    assertSharedKernelParity([
+      {
+        Container: {
+          layout: 'grid',
+          token: '#f5f5f5',
+          components: [
+            {
+              Alert: {
+                title: 'Grid item 1',
+                message: 'Alert inside a layout container',
+                variant: 'success'
+              }
+            },
+            {
+              Container: {
+                layout: 'vertical',
+                minWidth: '240px',
+                components: [
+                  { Button: { label: 'Nested action', kind: 'secondary' } },
+                  { Text: { value: 'Nested text body' } }
+                ]
+              }
+            }
+          ]
+        }
+      }
     ]);
   });
 });
