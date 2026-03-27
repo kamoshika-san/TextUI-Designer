@@ -22,12 +22,11 @@ export const Spacer: React.FC<SpacerComponent> = ({
 
   return (
     <div
-      className="textui-spacer"
+      className={`textui-spacer axis-${axis}`}
       aria-hidden="true"
       style={{
         width: resolvedWidth,
-        height: resolvedHeight,
-        flexShrink: 0
+        height: resolvedHeight
       }}
     />
   );

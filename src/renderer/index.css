@@ -554,7 +554,19 @@
 }
 
 /* --- Spacer partial --- */
-/* TODO(T-20260319-001): Extract Spacer-related selectors from `src/renderer/index.css` (currently not implemented). */
+.textui-spacer {
+  display: block;
+  flex-shrink: 0;
+  background: transparent;
+}
+
+.textui-spacer.axis-horizontal {
+  min-width: 0;
+}
+
+.textui-spacer.axis-vertical {
+  min-height: 0;
+}
 
 /* --- Accordion partial --- */
 .textui-accordion {
