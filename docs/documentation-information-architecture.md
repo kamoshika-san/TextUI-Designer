@@ -27,7 +27,7 @@ Define a single navigation model for project documentation so readers can reach 
 | `Runtime Boundaries` | subsystem ownership map | extension, CLI, MCP, exporter, services, runtime coupling | `docs/extension-boundary-guide.md`, `docs/cli-boundary-guide.md`, `docs/mcp-boundary-guide.md`, `docs/exporter-boundary-guide.md` |
 | `Specification / Architecture` | canonical contracts and ADR-backed design | ADRs, type rules, schema pipeline, theme implementation, provider contracts | `docs/adr/*`, `docs/schema-pipeline-from-spec.md`, `docs/THEME_IMPLEMENTATION.md` |
 | `Testing / Quality Gates` | verification and release gates | test matrix, CI gates, smoke guidance, guard matrices | `docs/test-matrix.md`, `docs/ci-quality-gate.md`, `docs/quality-gate-green-main.md`, `docs/ssot-import-guard-matrix.md` |
-| `Operations / Maintenance` | recurring review and governance | maintainer guide, monthly review, playbooks, roadmap/checklists | `docs/MAINTAINER_GUIDE.md`, `docs/ssot-monthly-review.md`, `docs/ssot-violation-playbook.md` |
+| `Operations / Maintenance` | recurring review and governance | maintainer guide, monthly review, playbooks, roadmap/checklists | `docs/MAINTAINER_GUIDE.md`, `docs/ssot-monthly-review.md`, `docs/ssot-violation-playbook.md`, `docs/documentation-owner-and-review-cadence.md` |
 | `Historical / Archive` | superseded context with replacement pointers | release notes, closeout notes, historical sprint input | `docs/RELEASE_NOTES_v*.md`, `docs/ssot-renderer-sprint3-candidates.md` |
 
 ## Required Destination Map
@@ -74,6 +74,7 @@ Define a single navigation model for project documentation so readers can reach 
 2. monthly review and playbook pages
 3. quality gate / CI docs
 4. historical notes only when investigating drift
+5. `docs/documentation-owner-and-review-cadence.md` when changing documentation governance
 
 ## Near-Term Cleanup Targets
 
@@ -95,6 +96,7 @@ Define a single navigation model for project documentation so readers can reach 
 
 - `README.md`
 - `docs/documentation-consolidation-rules.md`
+- `docs/documentation-owner-and-review-cadence.md`
 - `docs/MAINTAINER_GUIDE.md`
 - `docs/test-matrix.md`
 - `docs/ci-quality-gate.md`

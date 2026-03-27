@@ -67,6 +67,7 @@ If you only need the local packaging / install flow for the extension, use [Loca
 ### Operations and maintenance
 
 - [Maintainer Guide](docs/MAINTAINER_GUIDE.md)
+- [Documentation Owner And Review Cadence](docs/documentation-owner-and-review-cadence.md)
 - [SSoT Monthly Review](docs/ssot-monthly-review.md)
 - [SSoT Violation Playbook](docs/ssot-violation-playbook.md)
 
