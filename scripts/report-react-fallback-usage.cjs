@@ -17,11 +17,8 @@ const primaryDefaultRouteFiles = [
 ];
 
 const fallbackExecutionTestFiles = [
-  'tests/unit/exporter-family-structure-regression.test.js',
-  'tests/unit/exporter-table-cell-component.test.js',
-  'tests/unit/exporter-token-style-format.test.js',
   'tests/unit/html-exporter-lane-observability.test.js',
-  'tests/unit/new-built-in-stub-sample-regression.test.js'
+  'tests/unit/html-exporter-fallback-style-lane.test.js'
 ];
 
 const fallbackGovernanceFiles = [

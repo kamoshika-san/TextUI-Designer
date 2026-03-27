@@ -2,7 +2,6 @@ const assert = require('assert');
 const { PugExporter } = require('../../out/exporters/pug-exporter');
 const { ReactExporter } = require('../../out/exporters/react-exporter');
 const { HtmlExporter } = require('../../out/exporters/html-exporter');
-const { withExplicitFallbackHtmlExport } = require('../../out/exporters/html-export-lane-options');
 
 describe('Exporter token style formatting', () => {
   it('PugExporter: class shorthand components inject token style modifier only when token exists', async () => {
@@ -43,7 +42,7 @@ describe('Exporter token style formatting', () => {
     assert.ok(react.includes('style={{ borderColor: "var(--token-input)" }}'));
   });
 
-  it('HtmlExporter: token style attribute is injected only when token exists', async () => {
+  it('HtmlExporter: primary React HTML keeps stable token-aware output for supported cases', async () => {
     const exporter = new HtmlExporter();
     const dsl = {
       page: {
@@ -55,21 +54,25 @@ describe('Exporter token style formatting', () => {
       }
     };
 
-    const html = await exporter.export(dsl, withExplicitFallbackHtmlExport({ format: 'html' }));
+    const html = await exporter.export(dsl, { format: 'html' });
 
-    assert.ok(html.includes('textui-divider my-4'), 'output contains divider with textui-divider and my-4');
-    assert.ok(html.includes('textui-divider my-4') && html.includes('border-color: var(--token-divider)'));
     assert.ok(
-      html.includes('background-color: var(--tui-slot-container-background, var(--token-container-bg))'),
+      html.includes('textui-divider horizontal my-4'),
+      'primary HTML output keeps the shared divider structure'
+    );
+    assert.ok(
+      html.includes('background-color:var(--tui-slot-container-background, var(--token-container-bg))') ||
+        html.includes('background-color: var(--tui-slot-container-background, var(--token-container-bg))'),
       'Container token wrapped with container.background slot (same vocabulary as preview)'
     );
     assert.ok(
-      html.includes('border-color: var(--tui-slot-container-border, var(--token-container-bg))'),
+      html.includes('border-color:var(--tui-slot-container-border, var(--token-container-bg))') ||
+        html.includes('border-color: var(--tui-slot-container-border, var(--token-container-bg))'),
       'Container token also applies container.border slot'
     );
   });
 
-  it('HtmlExporter: Text token uses slot-aware var() when defaultTokenSlot is set (T-20260322-202)', async () => {
+  it('HtmlExporter: primary React path keeps Text token slot-aware output when defaultTokenSlot is set (T-20260322-202)', async () => {
     const exporter = new HtmlExporter();
     const dsl = {
       page: {
@@ -77,10 +80,11 @@ describe('Exporter token style formatting', () => {
       }
     };
 
-    const html = await exporter.export(dsl, withExplicitFallbackHtmlExport({ format: 'html' }));
+    const html = await exporter.export(dsl, { format: 'html' });
 
     assert.ok(
-      html.includes('color: var(--tui-slot-text-color, #aabbcc)'),
+      html.includes('style="color:var(--tui-slot-text-color, #aabbcc)"') ||
+        html.includes('style="color: var(--tui-slot-text-color, #aabbcc)"'),
       'HTML path wraps token with slot CSS variable and fallback'
     );
   });

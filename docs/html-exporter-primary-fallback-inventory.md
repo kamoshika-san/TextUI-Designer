@@ -26,7 +26,7 @@
 | `src/cli/provider-registry.ts` built-in `html` provider | `useReactRender: true` | **Primary** |
 | `src/utils/preview-capture/html-preparation.ts` | `options.useReactRender ?? true` | default is **Primary**, explicit override only |
 | `src/cli/commands/capture-command.ts` | `withExplicitFallbackHtmlExport(...)` | **Fallback** |
-| fallback-focused unit tests such as `tests/unit/exporter-token-style-format.test.js` | `withExplicitFallbackHtmlExport(...)` | **Fallback** |
+| fallback-focused unit tests such as `tests/unit/html-exporter-lane-observability.test.js` | `withExplicitFallbackHtmlExport(...)` or explicit deprecation-boundary requests | **Fallback** |
 
 ## Observability
 
@@ -49,7 +49,7 @@ Current snapshot on `2026-03-27`:
 | runtime fallback entries | `1` | current runtime fallback entry stays isolated to `src/cli/commands/capture-command.ts` |
 | fallback helper definitions | `1` | helper stays centralized in `src/exporters/html-export-lane-options.ts` |
 | primary-default routes | `2` | built-in HTML provider and preview-capture preparation remain Primary by default |
-| fallback execution test files | `5` | compatibility lane remains covered by explicit fallback-only tests |
+| fallback execution test files | `2` | compatibility lane remains covered only by explicit fallback-lane observability and style-lane tests |
 | fallback governance files | `4` | guard, route-viability, taxonomy, and this inventory page document the lane |
 
 Lane ownership in the current snapshot:
@@ -58,11 +58,8 @@ Lane ownership in the current snapshot:
 - Fallback helper owner: `src/exporters/html-export-lane-options.ts`
 - Primary-default routes: `src/cli/provider-registry.ts`, `src/utils/preview-capture/html-preparation.ts`
 - Fallback execution test lane:
-  - `tests/unit/exporter-family-structure-regression.test.js`
-  - `tests/unit/exporter-table-cell-component.test.js`
-  - `tests/unit/exporter-token-style-format.test.js`
   - `tests/unit/html-exporter-lane-observability.test.js`
-  - `tests/unit/new-built-in-stub-sample-regression.test.js`
+  - `tests/unit/html-exporter-fallback-style-lane.test.js`
 
 ## Difference categories
 
@@ -86,7 +83,7 @@ This is the current separation between intentional differences, acceptable tempo
 | Primary render stack vs legacy string renderer stack | Two rendering stacks still exist | intended difference | HR1 fixed Primary as the source of truth without claiming same-sprint fallback removal |
 | Built-in HTML provider and preview preparation | Default to Primary | intended difference | These are now the normal product-facing routes and should stay Primary-first |
 | Capture command fallback entry | Explicit helper-based fallback entry remains | acceptable temporary debt | The route is isolated, named, and guarded while replacement criteria remain outside HR1 |
-| Fallback-focused regression tests | Helper-routed fallback coverage remains | acceptable temporary debt | The tests protect the compatibility lane rather than the default contract |
+| Fallback-focused regression tests | Only explicit fallback-lane observability/style coverage remains | acceptable temporary debt | General regression coverage moved back to the React-primary contract |
 | Fallback-only compatibility CSS | Isolated to the fallback lane append path in `html-template-builder` | acceptable temporary debt | Primary default no longer carries badge / tabs / progress compatibility CSS unless the fallback lane asks for it |
 | Fallback-only code comments / handoff justification | Required for any new fallback-only change | acceptable temporary debt | This keeps compatibility fixes reviewable instead of allowing silent lane drift |
 | Normal export path behaving differently from Primary documentation | Not observed in current HR1 evidence | unresolved mismatch: none observed | Treat any future reproduction here as a new Primary-path bug first |
