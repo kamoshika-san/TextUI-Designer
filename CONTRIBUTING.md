@@ -106,6 +106,7 @@ Record the issue for PM when the right next step is a new ticket rather than a l
 ## Related Pages
 
 - [README.md](README.md)
+- [docs/GLOSSARY.md](docs/GLOSSARY.md)
 - [docs/LOCAL_INSTALLER.md](docs/LOCAL_INSTALLER.md)
 - [docs/TESTING.md](docs/TESTING.md)
 - [docs/test-matrix.md](docs/test-matrix.md)
