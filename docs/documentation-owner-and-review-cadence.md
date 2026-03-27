@@ -77,10 +77,11 @@ Use these cadence meanings consistently:
 | `on decision` | review only when an architecture decision is added, amended, or superseded |
 | `frozen unless referenced` | do not routinely review; touch only for archive, replacement, or investigation reasons |
 
-## How Later D4 Work Uses This
+## D4 Follow-Through
 
 - `DOC-302`: PR-template checks should point at this owner / cadence model instead of inventing a separate one.
 - `DOC-303`: the Doc Debt runbook should use these owner keys when routing stale pages.
+- current runbook: [documentation-doc-debt-runbook.md](documentation-doc-debt-runbook.md)
 - `DOC-304`: KPI definitions should measure owner coverage and overdue cadence misses against this policy.
 
 ## Out Of Scope Here
