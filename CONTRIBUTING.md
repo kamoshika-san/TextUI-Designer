@@ -2,11 +2,11 @@
 
 This page is the canonical contributor workflow for TextUI Designer.
 
-Use [README.md](README.md) for entry, setup links, and the main documentation map. Use this page for branch strategy, pull request flow, and review expectations.
+Use [README.md](README.md) for entry and the main documentation map. Use [docs/SETUP.md](docs/SETUP.md) for environment bootstrap and daily command entry. Use this page for branch strategy, pull request flow, and review expectations.
 
 ## Workflow At A Glance
 
-1. Start from [README.md](README.md) and complete the local setup steps.
+1. Start from [README.md](README.md) and complete the local bootstrap in [docs/SETUP.md](docs/SETUP.md).
 2. Create a focused working branch for one ticket or one tightly coupled slice.
 3. Implement the change and run the verification that matches the touched area.
 4. Open a pull request with the required context, checks, and doc-update notes.
@@ -87,7 +87,7 @@ If the change affects contributor flow, quality gates, runtime boundaries, or ca
 Typical examples:
 
 - README or workflow changes -> update [README.md](README.md) or this page
-- setup or install changes -> update the setup / installer docs
+- setup or install changes -> update [docs/SETUP.md](docs/SETUP.md) and, if needed, [docs/LOCAL_INSTALLER.md](docs/LOCAL_INSTALLER.md)
 - CI / release-gate changes -> update [docs/ci-quality-gate.md](docs/ci-quality-gate.md)
 - built-in component workflow changes -> update [docs/adding-built-in-component.md](docs/adding-built-in-component.md)
 

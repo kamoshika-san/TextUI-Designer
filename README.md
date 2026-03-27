@@ -6,10 +6,11 @@ This page is the entry point for contributors. Use it to get from local setup to
 
 ## Start Here
 
-1. Install dependencies: `npm install`
-2. Build the extension output: `npm run compile`
-3. Build the WebView assets: `npm run build-webview`
-4. Run the unit lane: `npm test`
+1. Follow the canonical [Setup](docs/SETUP.md) page
+2. Install dependencies: `npm install`
+3. Build the extension output: `npm run compile`
+4. Build the WebView assets: `npm run build-webview`
+5. Run the unit lane: `npm test`
 5. Open the subsystem guide that matches your change area
 
 If you only need the local packaging / install flow for the extension, use [Local Installer](docs/LOCAL_INSTALLER.md).
@@ -34,6 +35,7 @@ If you only need the local packaging / install flow for the extension, use [Loca
 
 ### Setup and local install
 
+- [Setup](docs/SETUP.md): canonical local environment bootstrap and daily command entry point
 - [Local Installer](docs/LOCAL_INSTALLER.md): local `.vsix` build and installation flow
 - [Settings](docs/SETTINGS.md): extension settings and configuration surface
 - [Contributing](CONTRIBUTING.md): branch strategy, PR flow, and review expectations
@@ -151,10 +153,10 @@ new HtmlExporter().export(dsl, { format: 'html' }).then(html => console.log(html
 
 - full contributor workflow policy
 - branch strategy and PR expectations
-- canonical setup consolidation across all docs
+- detailed setup procedure beyond the setup landing page
 - archive policy for historical docs
 
-Those belong to upcoming documentation slices after this README rewrite.
+Those belong to dedicated pages rather than this entry page.
 
 ## License
 
