@@ -117,6 +117,15 @@
 - [ ] If no docs update is required, I stated the reason explicitly in this PR.
 - [ ] I used the current owner and review-cadence policy when deciding which page to update: [`docs/documentation-owner-and-review-cadence.md`](docs/documentation-owner-and-review-cadence.md)
 
+## CSS SSoT Check
+
+<!-- CSS canonicalization baseline: docs/css-ssot-contributor-checklist.md and docs/css-ssot-metrics-definition.md -->
+
+- [ ] If this PR touches built-in component CSS or export-side CSS, I checked the current CSS SSoT checklist: [`docs/css-ssot-contributor-checklist.md`](docs/css-ssot-contributor-checklist.md)
+- [ ] I checked whether this PR changes one of the approved CSS SSoT metrics in [`docs/css-ssot-metrics-definition.md`](docs/css-ssot-metrics-definition.md)
+- [ ] If a CSS SSoT metric moved, I stated which metric changed and why in this PR or in the review handoff
+- [ ] If this PR changes fallback compatibility CSS only, I recorded why the Primary path was not the right target
+
 ## Fallback-only note
 
 <!-- HtmlExporter fallback lane (useReactRender === false) changes require an explicit local reason. -->

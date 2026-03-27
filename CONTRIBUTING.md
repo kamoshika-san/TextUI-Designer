@@ -41,6 +41,7 @@ Use the repository PR template as the source of truth for the exact checklist:
 
 - [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md)
 - [docs/documentation-owner-and-review-cadence.md](docs/documentation-owner-and-review-cadence.md)
+- [docs/css-ssot-contributor-checklist.md](docs/css-ssot-contributor-checklist.md) when the PR touches component or export CSS
 
 ## Review Expectations
 
@@ -96,6 +97,7 @@ Typical examples:
 - setup or install changes -> update [docs/SETUP.md](docs/SETUP.md) and, if needed, [docs/LOCAL_INSTALLER.md](docs/LOCAL_INSTALLER.md)
 - CI / release-gate changes -> update [docs/ci-quality-gate.md](docs/ci-quality-gate.md)
 - built-in component workflow changes -> update [docs/adding-built-in-component.md](docs/adding-built-in-component.md)
+- component or export CSS SSoT changes -> update [docs/css-ssot-contributor-checklist.md](docs/css-ssot-contributor-checklist.md) or the linked metric definition when the counting rule changes
 
 ## When To Escalate Instead Of Expanding
 
@@ -117,6 +119,7 @@ Record the issue for PM when the right next step is a new ticket rather than a l
 - [docs/test-matrix.md](docs/test-matrix.md)
 - [docs/ci-quality-gate.md](docs/ci-quality-gate.md)
 - [docs/MAINTAINER_GUIDE.md](docs/MAINTAINER_GUIDE.md)
+- [docs/css-ssot-contributor-checklist.md](docs/css-ssot-contributor-checklist.md)
 
 ## Out Of Scope Here
 
