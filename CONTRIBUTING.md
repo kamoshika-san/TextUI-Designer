@@ -40,6 +40,7 @@ Every PR should make these items easy to find:
 Use the repository PR template as the source of truth for the exact checklist:
 
 - [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md)
+- [docs/documentation-owner-and-review-cadence.md](docs/documentation-owner-and-review-cadence.md)
 
 ## Review Expectations
 
@@ -84,6 +85,10 @@ Use the test lane guide for what each lane means:
 ## Documentation Update Rule
 
 If the change affects contributor flow, quality gates, runtime boundaries, or canonical contracts, update the related docs in the same PR or state explicitly why no doc change is needed.
+
+Use the current owner and review-cadence model when deciding which canonical page should move:
+
+- [docs/documentation-owner-and-review-cadence.md](docs/documentation-owner-and-review-cadence.md)
 
 Typical examples:
 

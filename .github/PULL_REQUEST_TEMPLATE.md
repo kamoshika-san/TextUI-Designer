@@ -108,6 +108,15 @@
 - SSoT 譁ｹ驥・ADR: [`docs/adr/0003-dsl-types-canonical-source.md`](docs/adr/0003-dsl-types-canonical-source.md)
 - 蝙玖ｿｽ蜉繝輔Ο繝ｼ: [`docs/adding-built-in-component.md`](docs/adding-built-in-component.md)
 - 蠖ｱ髻ｿ蜊雁ｾ・・螳御ｺ・屮譟ｻ: [`docs/dsl-types-change-impact-audit.md`](docs/dsl-types-change-impact-audit.md)
+## Docs Update Check
+
+<!-- Documentation governance baseline: docs/documentation-owner-and-review-cadence.md -->
+
+- [ ] I checked whether this PR changes contributor flow, setup, testing or CI, runtime boundaries, canonical contracts, or operations docs.
+- [ ] If docs updates are required, I updated the canonical page and the narrow entry or workflow links that point to it.
+- [ ] If no docs update is required, I stated the reason explicitly in this PR.
+- [ ] I used the current owner and review-cadence policy when deciding which page to update: [`docs/documentation-owner-and-review-cadence.md`](docs/documentation-owner-and-review-cadence.md)
+
 ## Fallback-only note
 
 <!-- HtmlExporter fallback lane (useReactRender === false) changes require an explicit local reason. -->
