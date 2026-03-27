@@ -69,10 +69,24 @@ This runs `pretest:ci` first, so it covers:
 4. [ci-quality-gate.md](./ci-quality-gate.md) for required CI and branch-protection checks
 5. [real-vscode-smoke.md](./real-vscode-smoke.md) when you need real-host manual verification
 
+## Release Candidate Path
+
+When the goal is release-candidate confidence for the React-primary contract, run:
+
+1. `npm run react-ssot-check`
+2. `npm run test:all:ci`
+3. `npm run metrics:collect`
+4. `npm run metrics:check:ssot`
+
+Use the detailed acceptance interpretation here:
+
+- [react-primary-release-gate.md](./react-primary-release-gate.md)
+
 ## Related Documents
 
 - [tests/README.md](../tests/README.md)
 - [test-matrix.md](./test-matrix.md)
 - [test-setup-policy.md](./test-setup-policy.md)
 - [ci-quality-gate.md](./ci-quality-gate.md)
+- [react-primary-release-gate.md](./react-primary-release-gate.md)
 - [real-vscode-smoke.md](./real-vscode-smoke.md)

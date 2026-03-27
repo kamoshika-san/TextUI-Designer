@@ -48,6 +48,24 @@ Recommended additional checks when the repository host allows more required chec
 - `Test All CI` proves the standard unit / integration / e2e / regression lanes still pass together.
 - `Code metrics` is the SSoT release gate and must keep `renderer/types imports = 0`.
 
+## React-Primary Release Checklist
+
+Use this checklist when a branch or candidate is being judged against the current React-primary release contract:
+
+1. `npm run react-ssot-check`
+2. `npm run test:all:ci`
+3. `npm run metrics:collect`
+4. `npm run metrics:check:ssot`
+
+Interpret the results as:
+
+- structure parity: `react-ssot-check`
+- theme parity: `react-ssot-check`
+- representative sample coverage: `test:all:ci`
+- SSoT threshold and drift gate: `metrics:check:ssot`
+
+Use `npm run check:dsl-types-ssot` and `npm run check:ssot:*` as focused diagnosis when the release candidate or review evidence needs the cause of drift, not as a replacement for the release gate itself.
+
 ## React SSoT Check Scope
 
 `npm run react-ssot-check` currently runs these focused tests:
@@ -74,6 +92,7 @@ Keep this lane focused. Do not expand it into a second full test suite.
 ## Related Documents
 
 - `AGENTS.md`
+- `docs/react-primary-release-gate.md`
 - `docs/ssot-metrics-and-ci-checks.md`
 - `docs/import-boundaries-4-lanes.md`
 - `docs/html-exporter-primary-fallback-inventory.md`
