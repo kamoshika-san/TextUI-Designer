@@ -102,6 +102,8 @@ This separates routes that are already safe to treat as Primary from routes that
 
 Small-slice verification in `tests/unit/html-exporter-route-viability.test.js` locks the first two routes as Primary and the third route as intentionally fallback-only.
 
+`T-20260328-097` adds one more guard on the Primary-first CSS path: when an explicit `extensionPath` does not contain `media/assets/index-*.css`, Export now falls back to the local built WebView assets before treating the route as a missing-WebView-CSS case.
+
 ## Decision rules
 
 1. If drift reproduces on normal export, provider output, or preview preparation, treat it as a **Primary** issue first.

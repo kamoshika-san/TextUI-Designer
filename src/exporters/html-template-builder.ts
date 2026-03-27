@@ -224,12 +224,13 @@ export function buildFallbackCompatibilityStyleBlock(): string {
  * This keeps export / screenshot flows aligned with the WebView when assets exist.
  */
 export function readWebviewCssIfPresent(fromDir?: string): string | undefined {
+  const localCandidates = [
+    path.join(__dirname, '..', 'media', 'assets'),
+    path.join(__dirname, '..', '..', 'media', 'assets')
+  ];
   const candidates = fromDir
-    ? [path.join(fromDir, 'media', 'assets')]
-    : [
-        path.join(__dirname, '..', 'media', 'assets'),
-        path.join(__dirname, '..', '..', 'media', 'assets')
-      ];
+    ? [path.join(fromDir, 'media', 'assets'), ...localCandidates]
+    : localCandidates;
   for (const assetsDir of candidates) {
     try {
       if (!fs.existsSync(assetsDir)) {
