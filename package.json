@@ -402,7 +402,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile && npm run package && npm run build-webview",
-    "compile": "tsc -p ./ && node ./scripts/generate-schemas-from-definitions.cjs",
+    "compile": "tsc -p ./ && node ./scripts/generate-schemas-from-definitions.cjs && node ./scripts/check-generated-schema-chain.cjs",
     "build": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "package": "webpack --mode production --devtool hidden-source-map",
@@ -412,6 +412,7 @@
     "validate:samples": "node ./scripts/validate-samples.cjs",
     "validate:samples:fresh": "npm run compile && npm run validate:samples",
     "validate:samples:compiled": "npm run validate:samples",
+    "check:schema-generation": "node ./scripts/check-generated-schema-chain.cjs",
     "metrics:collect": "node ./scripts/collect-code-metrics.cjs",
     "metrics:check:ssot": "node ./scripts/check-ssot-regression-metrics.cjs",
     "check:dsl-types-ssot": "node ./scripts/check-dsl-type-imports.cjs",

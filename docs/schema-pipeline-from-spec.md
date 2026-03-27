@@ -14,10 +14,11 @@
 | oneOf 配列の組み立て | `src/services/schema/schema-component-oneof-builder.ts` |
 | descriptor からの列挙（正本 API） | `src/services/schema/schema-descriptor-selectors.ts` |
 | 生成スクリプト（compile 連動） | `scripts/generate-schemas-from-definitions.cjs` |
+| compile 後の生成物検証 | `scripts/check-generated-schema-chain.cjs` |
 | 読み込み時の整合チェック | `src/services/schema/schema-consistency-checker.ts` |
 
 ## メンテ時の手順
 
 1. **意味論・schemaRef**: `src/components/definitions/component-spec.ts`（`builtInSchemaRef`）と `BUILT_IN_COMPONENT_SPECS` 合成経路を更新する。
-2. `npm run compile`（内部で `schema.json` / `template-schema.json` が必要に応じて更新される）。
+2. `npm run compile`（内部で `schema.json` / `template-schema.json` が必要に応じて更新され、末尾で生成物整合チェックまで実行される）。
 3. `npm test`（`schema-descriptor-consistency` 等で oneOf / definitions が descriptor と一致することを確認）。
