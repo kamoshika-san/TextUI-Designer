@@ -72,7 +72,7 @@ Use these labels when a behavior difference is found.
 | 1 | HTML document wrapper | `buildHtmlDocument(..., { noWrap: true })` | wrapper path differs | intended difference | locked in `html-exporter.ts` |
 | 2 | Markup rendering stack | React static render | legacy string renderer stack | intended difference | Primary is the design target for new work |
 | 3 | Component support expansion | new support should land here first | may lag or remain compatibility-only | compatibility lane | if fallback needs bespoke work, record why |
-| 4 | Theme / `webviewCss` handling | carried through the main document build | route-specific | intended but narrow | judge against current runtime behavior |
+| 4 | Theme / `webviewCss` handling | carried through the main document build; default document CSS stays minimal when `webviewCss` is absent | route-specific; fallback-only compatibility CSS may be appended explicitly | intended but narrow | judge against current runtime behavior |
 | 5 | CLI / test usage | provider export is Primary by default | capture and explicit compatibility tests use fallback | intended and documented | do not silently widen fallback entry points |
 | 6 | Small DOM differences | evaluate case by case | evaluate case by case | investigate individually | open an issue or extend this table when found |
 
@@ -86,6 +86,7 @@ This is the current separation between intentional differences, acceptable tempo
 | Built-in HTML provider and preview preparation | Default to Primary | intended difference | These are now the normal product-facing routes and should stay Primary-first |
 | Capture command fallback entry | Explicit helper-based fallback entry remains | acceptable temporary debt | The route is isolated, named, and guarded while replacement criteria remain outside HR1 |
 | Fallback-focused regression tests | Explicit `useReactRender: false` coverage remains | acceptable temporary debt | The tests protect the compatibility lane rather than the default contract |
+| Fallback-only compatibility CSS | Isolated to the fallback lane append path in `html-template-builder` | acceptable temporary debt | Primary default no longer carries badge / tabs / progress compatibility CSS unless the fallback lane asks for it |
 | Fallback-only code comments / handoff justification | Required for any new fallback-only change | acceptable temporary debt | This keeps compatibility fixes reviewable instead of allowing silent lane drift |
 | Normal export path behaving differently from Primary documentation | Not observed in current HR1 evidence | unresolved mismatch: none observed | Treat any future reproduction here as a new Primary-path bug first |
 | New raw fallback entrypoints outside the approved helper | Blocked by guard | unresolved mismatch: none observed | `html-exporter-fallback-entry-guard.test.js` is the mechanical stopgap |

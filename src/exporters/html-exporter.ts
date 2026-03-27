@@ -27,7 +27,7 @@ import type {
 } from '../domain/dsl-types';
 import type { ExportOptions } from './export-types';
 import { BaseComponentRenderer } from './base-component-renderer';
-import { buildHtmlDocument, readWebviewCssIfPresent } from './html-template-builder';
+import { buildFallbackCompatibilityStyleBlock, buildHtmlDocument, readWebviewCssIfPresent } from './html-template-builder';
 import { renderPageComponentsToStaticHtml } from './react-static-export';
 import { buildThemeStyleBlock } from './theme-style-builder';
 import { buildThemeVariables } from './theme-definition-resolver';
@@ -94,7 +94,8 @@ export class HtmlExporter extends BaseComponentRenderer {
     this.logger.debug('using fallback HTML render path (useReactRender=false)');
     const componentCode = this.renderPageComponents(normalizedDsl);
     return buildHtmlDocument(componentCode, themeStyles, {
-      webviewCss: webviewCss ?? undefined
+      webviewCss: webviewCss ?? undefined,
+      compatibilityCss: buildFallbackCompatibilityStyleBlock()
     });
   }
 

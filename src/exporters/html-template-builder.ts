@@ -3,22 +3,22 @@ import * as path from 'path';
 import { getSharedLayoutStyles, getExportCriticalLayoutUtilities } from '../shared/layout-styles';
 
 export interface BuildHtmlDocumentOptions {
-  /** WebView ビルド済み CSS（media/assets/index-*.css）。指定時はこれを <style> に使い、従来のインライン CSS は使わない */
+  /** WebView built CSS (media/assets/index-*.css). Prefer this when present. */
   webviewCss?: string;
-  /** true のとき body 内に componentCode のみを入れ、外側の <div class="p-6"> でラップしない（React 静的レンダー出力用） */
+  /** React static export path writes the component HTML directly without the default wrapper. */
   noWrap?: boolean;
+  /** Fallback lane only: append compatibility CSS without widening the primary default contract. */
+  compatibilityCss?: string;
 }
 
 function getDefaultExportStyleBlock(): string {
   return `
-    /* 基本的なスタイルリセット */
     *,
     *::before,
     *::after {
       box-sizing: border-box;
     }
 
-    /* HTML要素の基本設定 */
     html {
       font-size: 16px;
       line-height: 1.5;
@@ -38,8 +38,6 @@ function getDefaultExportStyleBlock(): string {
       -moz-osx-font-smoothing: grayscale;
     }
 
-
-    /* フォーム要素の基本リセット */
     input,
     button,
     textarea,
@@ -52,21 +50,28 @@ function getDefaultExportStyleBlock(): string {
       padding: 0;
     }
 
-    /* multipleセレクトの選択項目ハイライト保持 */
     select[multiple] option:checked {
-      background-color: #3b82f6 !important; /* blue-500 */
+      background-color: #3b82f6 !important;
       color: #ffffff !important;
     }
 
     select[multiple] option:checked:not(:focus) {
-      background-color: #3b82f6 !important; /* blue-500 */
+      background-color: #3b82f6 !important;
       color: #ffffff !important;
     }
 
 ${getSharedLayoutStyles()}
 ${getExportCriticalLayoutUtilities()}
 
-    /* バッジ: 高さを最低限統一（sm は固定高さで Public とトピックを揃える） */
+    select[multiple]:focus option:checked {
+      background-color: #3b82f6 !important;
+      color: #ffffff !important;
+    }
+`;
+}
+
+function getFallbackCompatibilityStyleBlock(): string {
+  return `
     .textui-badge {
       display: inline-flex;
       align-items: center;
@@ -92,11 +97,11 @@ ${getExportCriticalLayoutUtilities()}
       padding: 0.25em 0.6em;
     }
 
-    /* Divider: WebView index.css と同一（余白は my-2 / my-4 / my-6 で指定） */
     .textui-divider {
       border: none;
       border-top: 1px solid rgb(75 85 99);
     }
+
     .textui-divider.vertical {
       margin-left: 1rem;
       margin-right: 1rem;
@@ -114,12 +119,15 @@ ${getExportCriticalLayoutUtilities()}
     .textui-badge-warning { background-color: rgba(245, 158, 11, 0.22); color: #fcd34d; }
     .textui-badge-error { background-color: rgba(239, 68, 68, 0.2); color: #fca5a5; }
 
-
-    /* WebView Tabs.tsx と同一: アクティブ bg-gray-800 text-white / 非アクティブ bg-gray-900 text-gray-300 */
     .textui-tabs {
       border-color: rgb(55 65 81);
     }
-    .textui-tabs .flex { display: flex; flex-wrap: nowrap; }
+
+    .textui-tabs .flex {
+      display: flex;
+      flex-wrap: nowrap;
+    }
+
     .textui-tabs .flex > button {
       flex-shrink: 0;
       min-height: 2.25rem;
@@ -128,7 +136,11 @@ ${getExportCriticalLayoutUtilities()}
       background-color: rgb(17 24 39);
       color: rgb(209 213 219);
     }
-    .textui-tabs .flex > button:last-child { border-right-width: 0; }
+
+    .textui-tabs .flex > button:last-child {
+      border-right-width: 0;
+    }
+
     .textui-tabs .flex > button.textui-tab-active {
       background-color: rgb(31 41 55);
       color: rgb(255 255 255);
@@ -172,12 +184,6 @@ ${getExportCriticalLayoutUtilities()}
     .textui-progress-success { background-color: #22c55e; }
     .textui-progress-warning { background-color: #f59e0b; }
     .textui-progress-error { background-color: #ef4444; }
-
-    /* フォーカス時のスタイル（選択項目のハイライトを妨げない） */
-    select[multiple]:focus option:checked {
-      background-color: #3b82f6 !important; /* blue-500 */
-      color: #ffffff !important;
-    }
 `;
 }
 
@@ -187,6 +193,7 @@ export function buildHtmlDocument(
   options?: BuildHtmlDocumentOptions
 ): string {
   const styleContent = options?.webviewCss ?? getDefaultExportStyleBlock();
+  const compatibilityCss = options?.compatibilityCss ?? '';
   const bodyContent = options?.noWrap
     ? componentCode
     : `  <div class="p-6">\n${componentCode}\n  </div>`;
@@ -198,6 +205,7 @@ export function buildHtmlDocument(
   <title>TextUI Export</title>
   <style>
 ${styleContent}
+${compatibilityCss}
 ${themeStyles}
   </style>
 </head>
@@ -207,12 +215,13 @@ ${bodyContent}
 </html>`;
 }
 
+export function buildFallbackCompatibilityStyleBlock(): string {
+  return getFallbackCompatibilityStyleBlock();
+}
+
 /**
- * 拡張コードから media/assets を解決し、index-*.css を 1 件読み込む。
- * WebView と同一 CSS を使うことで Export/スクリーンショットの見た目を統一する。
- * - webpack バンドル時: __dirname は out/ になるため base = __dirname/..
- * - 未バンドル時: __dirname は out/exporters の可能性があるため base = __dirname/../..
- * @param fromDir - 基準ディレクトリ。省略時は __dirname から複数候補を試す
+ * Resolve built WebView CSS from media/assets/index-*.css.
+ * This keeps export / screenshot flows aligned with the WebView when assets exist.
  */
 export function readWebviewCssIfPresent(fromDir?: string): string | undefined {
   const candidates = fromDir
