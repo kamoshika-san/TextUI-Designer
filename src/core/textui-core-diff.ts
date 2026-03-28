@@ -6,7 +6,7 @@ export type DiffEntityStatus = 'pending';
 export type DiffEventKind = 'add' | 'remove' | 'update' | 'reorder' | 'move' | 'rename' | 'remove+add';
 export type DiffIdentitySource = 'explicit-id' | 'fallback-key' | 'structural-path' | 'none';
 export type DiffFallbackMarker = 'none' | 'heuristic-pending' | 'remove-add-fallback';
-export type DiffExplicitnessMarker = 'preserved' | 'not-applicable' | 'unknown';
+export type DiffExplicitnessMarker = 'preserved' | 'not-applicable' | 'unknown' | 'absent-on-previous' | 'absent-on-next';
 export type DiffPairingReason = 'deterministic-explicit-id' | 'deterministic-fallback-key' | 'deterministic-structural-path' | 'unpaired';
 
 export interface DiffCompareDocument {
@@ -471,9 +471,15 @@ function buildPropertyEntity(
   const hasPrevious = previousValue !== undefined;
   const hasNext = nextValue !== undefined;
   const entityKey = `property:${path}`;
+  const kind: DiffEventKind = hasPrevious && hasNext ? 'update' : hasPrevious ? 'remove' : 'add';
+  const explicitness: DiffExplicitnessMarker = hasPrevious && hasNext
+    ? 'preserved'
+    : hasPrevious
+      ? 'absent-on-next'
+      : 'absent-on-previous';
   const event = createPendingEvent(
-    `event:${entityKey}:update`,
-    'update',
+    `event:${entityKey}:${kind}`,
+    kind,
     entityKey,
     'property',
     path,
@@ -485,6 +491,7 @@ function buildPropertyEntity(
     'none',
     hasPrevious && hasNext ? 'deterministic-structural-path' : 'unpaired'
   );
+  event.trace.explicitness = explicitness;
   const refs = buildEntityRefs('property', path, path, previous.page.id, next.page.id, hasPrevious, hasNext);
 
   return {

@@ -165,6 +165,27 @@ page:
     assert.ok(result.result.events.some(event => event.entityKind === 'component' && event.kind === 'remove+add'));
   });
 
+  it('compareUi marks property additions with explicitness carry', () => {
+    const engine = new TextUICoreEngine();
+    const result = engine.compareUi({
+      previousDsl: {
+        page: { id: 'same-page', title: 'Before', layout: 'vertical', components: [{ Input: { name: 'email', label: 'Email', type: 'text' } }] }
+      },
+      nextDsl: {
+        page: { id: 'same-page', title: 'After', layout: 'vertical', components: [{ Input: { name: 'email', label: 'Email', type: 'text', placeholder: 'enter email' } }] }
+      }
+    });
+
+    assert.strictEqual(result.ok, true);
+    assert.ok(result.result);
+    const placeholderEvent = result.result.events.find(event => event.entityKey === 'property:/page/components/0/props/placeholder');
+    assert.ok(placeholderEvent);
+    assert.strictEqual(placeholderEvent.kind, 'add');
+    assert.strictEqual(placeholderEvent.trace.explicitness, 'absent-on-previous');
+    assert.strictEqual(placeholderEvent.trace.nextSourceRef.entityPath, '/page/components/0/props/placeholder');
+    assert.strictEqual(placeholderEvent.trace.previousSourceRef, undefined);
+  });
+
   it('compareUi prefixes diagnostics with the invalid side', () => {
     const engine = new TextUICoreEngine();
     const result = engine.compareUi({
