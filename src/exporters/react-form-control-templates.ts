@@ -18,7 +18,7 @@ export function buildReactInputInnerHtml(params: {
   return `        <input
           type="${type}"
           placeholder="${placeholder}"${inputAttrs}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"
+          className="textui-input w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"
           ${tokenStyle}
         />`;
 }
@@ -33,7 +33,7 @@ export function buildReactCheckboxInputInnerHtml(params: {
   return `        <input
           type="checkbox"
           defaultChecked={${checked}}${checkboxAttrs}
-          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${disabledClass}"
+          className="textui-checkbox h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${disabledClass}"
           ${tokenStyle}
         />`;
 }
@@ -86,7 +86,7 @@ export function buildReactDateInputInnerHtml(params: {
           id="${name}"
           name="${name}"
           type="date"${dateInputAttrs}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"
+          className="textui-input w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"
           ${tokenStyle}
         />`;
 }

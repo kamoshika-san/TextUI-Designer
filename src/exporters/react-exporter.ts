@@ -61,7 +61,7 @@ export class ReactExporter extends BaseComponentRenderer {
       inputHtml,
       `      <div key={${key}} className="mb-4">`,
       '      </div>',
-      safeLabel => `        <label className="block text-sm font-medium text-gray-700 mb-2">${safeLabel}</label>`
+      safeLabel => `        <label className="block text-sm font-medium text-gray-700 mb-2 textui-text">${safeLabel}</label>`
     );
   }
 
@@ -88,7 +88,7 @@ export class ReactExporter extends BaseComponentRenderer {
       checkboxInput,
       `      <div key={${key}} className="flex items-center mb-4">`,
       '      </div>',
-      safeLabel => `        <label className="ml-2 block text-sm text-gray-900">${safeLabel}</label>`
+      safeLabel => `        <label className="ml-2 block text-sm text-gray-900 textui-text">${safeLabel}</label>`
     );
   }
 
@@ -109,9 +109,9 @@ export class ReactExporter extends BaseComponentRenderer {
     return this.buildControlRowWithLabel(
       label,
       radioInput,
-      `      <div key={${key}} className="flex items-center mb-4">`,
+      `      <div key={${key}} className="textui-radio-option flex items-center mb-4">`,
       '      </div>',
-      safeLabel => `        <label className="ml-2 block text-sm text-gray-900">${safeLabel}</label>`
+      safeLabel => `        <label className="ml-2 block text-sm text-gray-900 textui-text">${safeLabel}</label>`
     );
   }
 
@@ -165,9 +165,9 @@ export class ReactExporter extends BaseComponentRenderer {
     return this.buildLabeledFieldBlock(
       label,
       dateInputHtml,
-      `      <div key={${key}} className="mb-4">`,
+      `      <div key={${key}} className="textui-datepicker mb-4">`,
       '      </div>',
-      safeLabel => `        <label htmlFor="${name}" className="block text-sm font-medium text-gray-700 mb-2">${safeLabel}</label>`
+      safeLabel => `        <label htmlFor="${name}" className="block text-sm font-medium text-gray-700 mb-2 textui-text">${safeLabel}</label>`
     );
   }
 

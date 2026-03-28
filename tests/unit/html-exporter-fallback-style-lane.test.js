@@ -80,4 +80,35 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(html.includes('textui-table-row'));
     assert.ok(html.includes('hover:bg-gray-800/80 transition-colors has-hover'));
   });
+
+  it('fallback HTML lane keeps FormControl and Alert semantic classes alongside compatibility utilities', async () => {
+    const exporter = new HtmlExporter();
+    const html = await exporter.export({
+      page: {
+        id: 'fallback-form-alert-structure',
+        title: 'Fallback Form Alert Structure',
+        layout: 'vertical',
+        components: [
+          { Input: { label: 'Email', type: 'email', disabled: true, placeholder: 'name@example.com' } },
+          { Checkbox: { label: 'Agree', checked: true, disabled: true } },
+          { Radio: { label: 'Priority', name: 'priority', options: [{ label: 'High', value: 'high', checked: true }], disabled: true } },
+          { DatePicker: { label: 'Due', name: 'dueDate', disabled: true } },
+          { Alert: { title: 'Heads up', message: 'needs attention', variant: 'warning' } }
+        ]
+      }
+    }, withExplicitFallbackHtmlExport({ format: 'html' }));
+
+    assert.ok(html.includes('textui-input'));
+    assert.ok(html.includes('textui-checkbox'));
+    assert.ok(html.includes('textui-radio-group'));
+    assert.ok(html.includes('textui-radio-option'));
+    assert.ok(html.includes('textui-datepicker'));
+    assert.ok(html.includes('data-alert-variant="warning"'));
+    assert.ok(html.includes('class="textui-alert'));
+    assert.ok(html.includes('textui-alert-title'));
+    assert.ok(html.includes('textui-alert-message'));
+    assert.ok(html.includes('textui-text'));
+    assert.ok(html.includes('opacity-50 cursor-not-allowed'));
+    assert.ok(html.includes('border-yellow-700'));
+  });
 });

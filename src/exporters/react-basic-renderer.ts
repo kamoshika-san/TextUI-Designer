@@ -40,12 +40,13 @@ export function renderSpacerTemplate(key: number, resolvedWidth: string, resolve
 }
 
 export function renderAlertTemplate(props: AlertComponent, key: number, tokenStyle: string, styleManager: typeof StyleManager, format: string): string {
-  const { message, variant = 'info' } = props;
+  const { message, title, variant = 'info' } = props;
   const variantClasses = styleManager.getAlertVariantClasses(format);
   const className = variantClasses[variant as keyof typeof variantClasses] || variantClasses.info;
 
-  return `      <div key={${key}} className="p-4 border rounded-md ${className}"${tokenStyle}>
-        <p className="text-sm">${message}</p>
+  return `      <div key={${key}} className="textui-alert ${variant} p-4 border rounded-md ${className}"${tokenStyle}>
+        ${title ? `<div className="textui-alert-title text-sm font-medium mb-1">${title}</div>` : ''}
+        <p className="textui-alert-message text-sm">${message}</p>
       </div>`;
 }
 

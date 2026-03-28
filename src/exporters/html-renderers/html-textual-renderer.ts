@@ -169,11 +169,11 @@ export class HtmlTextualRenderer {
     const variantClasses = this.utils.getStyleManager().getAlertVariantClasses('html');
 
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('Alert', token);
-    let code = `    <div data-alert-variant="${safeVariant}" class="p-4 border rounded-md ${variantClasses[variant as keyof typeof variantClasses]}"${tokenStyle}>`;
+    let code = `    <div data-alert-variant="${safeVariant}" class="textui-alert ${safeVariant} p-4 border rounded-md ${variantClasses[variant as keyof typeof variantClasses]}"${tokenStyle}>`;
     if (title) {
-      code += `\n      <h3 class="text-sm font-medium mb-1">${safeTitle}</h3>`;
+      code += `\n      <h3 class="textui-alert-title text-sm font-medium mb-1">${safeTitle}</h3>`;
     }
-    code += `\n      <p class="text-sm">${safeMessage}</p>`;
+    code += `\n      <p class="textui-alert-message text-sm">${safeMessage}</p>`;
     code += `\n    </div>`;
 
     return code;

@@ -24,14 +24,14 @@ export class HtmlFormRenderer {
 
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('Input', token);
     const inputAttrs = this.utils.buildAttrs({ required, disabled });
-    const inputHtml = `      <input type="${safeType}" placeholder="${safePlaceholder}" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${inputAttrs}${tokenStyle}>`;
+    const inputHtml = `      <input type="${safeType}" placeholder="${safePlaceholder}" class="textui-input w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${inputAttrs}${tokenStyle}>`;
 
     return this.utils.buildLabeledFieldBlock(
       label,
       inputHtml,
       '    <div class="mb-4">',
       '    </div>',
-      safeLabel => `      <label class="block text-sm font-medium text-gray-400 mb-2">${safeLabel}</label>`
+      safeLabel => `      <label class="block text-sm font-medium text-gray-400 mb-2 textui-text">${safeLabel}</label>`
     );
   }
 
@@ -60,14 +60,14 @@ export class HtmlFormRenderer {
     const disabledClass = this.utils.getDisabledClass(disabled);
     const checkboxAttrs = this.utils.buildAttrs({ checked, disabled });
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('Checkbox', token);
-    const checkboxInput = `      <input type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-800 ${disabledClass}"${checkboxAttrs}${tokenStyle}>`;
+    const checkboxInput = `      <input type="checkbox" class="textui-checkbox h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-800 ${disabledClass}"${checkboxAttrs}${tokenStyle}>`;
 
     return this.utils.buildControlRowWithLabel(
       label,
       checkboxInput,
       '    <div class="flex items-center mb-4">',
       '    </div>',
-      safeLabel => `      <label class="ml-2 block text-sm text-gray-400">${safeLabel}</label>`
+      safeLabel => `      <label class="ml-2 block text-sm text-gray-400 textui-text">${safeLabel}</label>`
     );
   }
 
@@ -84,9 +84,9 @@ export class HtmlFormRenderer {
         return this.utils.buildControlRowWithLabel(
           opt.label,
           radioInput,
-          '      <div class="flex items-center mb-2">',
+          '      <div class="textui-radio-option flex items-center mb-2">',
           '      </div>',
-          safeLabel => `        <label class="ml-2 block text-sm text-gray-400">${safeLabel}</label>`
+          safeLabel => `        <label class="ml-2 block text-sm text-gray-400 textui-text">${safeLabel}</label>`
         );
       }).join('\n')
       : (() => {
@@ -96,18 +96,18 @@ export class HtmlFormRenderer {
         return this.utils.buildControlRowWithLabel(
           label,
           radioInput,
-          '      <div class="flex items-center mb-2">',
+          '      <div class="textui-radio-option flex items-center mb-2">',
           '      </div>',
-          safeLabel => `        <label class="ml-2 block text-sm text-gray-400">${safeLabel}</label>`
+          safeLabel => `        <label class="ml-2 block text-sm text-gray-400 textui-text">${safeLabel}</label>`
         );
       })();
 
     return this.utils.buildLabeledFieldBlock(
       label,
       optionRows,
-      '    <div class="mb-4">',
+      '    <div class="textui-radio-group mb-4">',
       '    </div>',
-      safeLabel => `      <label class="block text-sm font-medium text-gray-400 mb-2">${safeLabel}</label>`
+      safeLabel => `      <label class="block text-sm font-medium text-gray-400 mb-2 textui-text">${safeLabel}</label>`
     );
   }
 
@@ -149,14 +149,14 @@ export class HtmlFormRenderer {
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('DatePicker', token);
 
     const dateInputAttrs = this.utils.buildAttrs({ required, disabled, min, max, value });
-    const inputHtml = `      <input id="${safeName}" name="${safeName}" type="date" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${dateInputAttrs}${tokenStyle}>`;
+    const inputHtml = `      <input id="${safeName}" name="${safeName}" type="date" class="textui-input w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabledClass}"${dateInputAttrs}${tokenStyle}>`;
 
     return this.utils.buildLabeledFieldBlock(
       label,
       inputHtml,
-      '    <div class="mb-4">',
+      '    <div class="textui-datepicker mb-4">',
       '    </div>',
-      safeLabel => `      <label for="${safeName}" class="block text-sm font-medium text-gray-400 mb-2">${safeLabel}</label>`
+      safeLabel => `      <label for="${safeName}" class="block text-sm font-medium text-gray-400 mb-2 textui-text">${safeLabel}</label>`
     );
   }
 
