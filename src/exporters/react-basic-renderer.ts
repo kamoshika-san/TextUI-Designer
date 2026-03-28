@@ -27,12 +27,13 @@ export function renderButtonTemplate(props: ButtonComponent, key: number, tokenS
 export function renderDividerTemplate(props: DividerComponent, key: number, tokenStyle: string, styleManager: typeof StyleManager, format: string): string {
   const { orientation = 'horizontal', spacing = 'md' } = props;
   const spacingClasses = styleManager.getSpacingClasses(format);
+  const spacingClass = spacingClasses[spacing as keyof typeof spacingClasses] ?? spacingClasses.md;
 
   if (orientation === 'vertical') {
-    return `      <div key={${key}} className="inline-block w-px h-6 bg-gray-300 mx-4"${tokenStyle}></div>`;
+    return `      <div key={${key}} className="textui-divider vertical ${spacingClass}"${tokenStyle}></div>`;
   }
 
-  return `      <hr key={${key}} className="border-gray-300 ${spacingClasses[spacing as keyof typeof spacingClasses]}"${tokenStyle} />`;
+  return `      <hr key={${key}} className="textui-divider horizontal ${spacingClass}"${tokenStyle} />`;
 }
 
 export function renderSpacerTemplate(key: number, resolvedWidth: string, resolvedHeight: string): string {

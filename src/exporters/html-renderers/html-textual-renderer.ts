@@ -153,7 +153,7 @@ export class HtmlTextualRenderer {
       return `    <div class="textui-divider vertical ${spacingClass}"${tokenStyle}></div>`;
     }
 
-    return `    <hr class="textui-divider ${spacingClass}"${tokenStyle}>`;
+    return `    <hr class="textui-divider horizontal ${spacingClass}"${tokenStyle}>`;
   }
 
   renderSpacer(props: SpacerComponent): string {

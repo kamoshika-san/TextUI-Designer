@@ -16,6 +16,8 @@ describe('ReactExporter template rendering split', () => {
           { Checkbox: { label: 'Agree', checked: true, disabled: true } },
           { Radio: { label: 'Primary choice', name: 'choice', value: 'a', checked: true, disabled: true } },
           { DatePicker: { label: 'Due', name: 'dueDate', disabled: true } },
+          { Divider: { orientation: 'horizontal', spacing: 'md' } },
+          { Divider: { orientation: 'vertical', spacing: 'md' } },
           { Alert: { title: 'Heads up', message: 'needs attention', variant: 'warning' } },
           { Accordion: { items: [{ title: 'A1', components: [{ Text: { value: 'A body' } }] }] } },
           { Tabs: { defaultTab: 0, items: [{ label: 't1', components: [{ Text: { value: 'tab body' } }] }] } },
@@ -43,6 +45,8 @@ describe('ReactExporter template rendering split', () => {
     assert.ok(code.includes('textui-checkbox'));
     assert.ok(code.includes('textui-radio-option'));
     assert.ok(code.includes('textui-datepicker'));
+    assert.ok(code.includes('textui-divider horizontal my-4'));
+    assert.ok(code.includes('textui-divider vertical my-4'));
     assert.ok(code.includes('textui-alert warning'));
     assert.ok(code.includes('textui-alert-title'));
     assert.ok(code.includes('textui-alert-message'));

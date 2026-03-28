@@ -81,6 +81,41 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(html.includes('hover:bg-gray-800/80 transition-colors has-hover'));
   });
 
+  it('fallback HTML lane keeps Tabs and Divider parity hooks for sample-style structures', async () => {
+    const exporter = new HtmlExporter();
+    const html = await exporter.export({
+      page: {
+        id: 'fallback-tabs-divider-structure',
+        title: 'Fallback Tabs Divider Structure',
+        layout: 'vertical',
+        components: [
+          {
+            Tabs: {
+              defaultTab: 0,
+              items: [
+                {
+                  label: 'Code',
+                  components: [
+                    { Divider: { orientation: 'horizontal', spacing: 'md' } },
+                    { Text: { value: 'body content' } }
+                  ]
+                }
+              ]
+            }
+          },
+          { Divider: { orientation: 'vertical', spacing: 'md' } }
+        ]
+      }
+    }, withExplicitFallbackHtmlExport({ format: 'html' }));
+
+    assert.ok(html.includes('textui-tabs'));
+    assert.ok(html.includes('textui-tabs-list'));
+    assert.ok(html.includes('textui-tab-active is-active'));
+    assert.ok(html.includes('textui-tab-panel-body'));
+    assert.ok(html.includes('textui-divider horizontal my-4'));
+    assert.ok(html.includes('textui-divider vertical my-4'));
+  });
+
   it('fallback HTML lane keeps FormControl and Alert semantic classes alongside compatibility utilities', async () => {
     const exporter = new HtmlExporter();
     const html = await exporter.export({
