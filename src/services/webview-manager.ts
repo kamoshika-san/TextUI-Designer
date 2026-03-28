@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 import { WebViewLifecycleManager } from './webview/webview-lifecycle-manager';
 import { WebViewUpdateManager } from './webview/webview-update-manager';
 import { WebViewMessageHandler } from './webview/webview-message-handler';
@@ -47,7 +49,9 @@ export class WebViewManager implements IWebViewManager {
   }
 
   setLastTuiFile(filePath: string, updatePreview: boolean = false): void {
+    const previousFilePath = this.updateManager.getLastTuiFile();
     this.updateManager.setLastTuiFile(filePath, updatePreview);
+    void this.syncThemeForDslFile(filePath, previousFilePath);
   }
 
   getLastTuiFile(): string | undefined {
@@ -85,5 +89,34 @@ export class WebViewManager implements IWebViewManager {
 
   async sendAvailableThemes(): Promise<void> {
     return await this.messageHandler.sendAvailableThemes();
+  }
+
+  private async syncThemeForDslFile(filePath: string, previousFilePath?: string): Promise<void> {
+    if (!this.themeManager) {
+      return;
+    }
+
+    const nextFolder = path.dirname(filePath);
+    const previousFolder = previousFilePath ? path.dirname(previousFilePath) : undefined;
+    if (previousFolder === nextFolder) {
+      return;
+    }
+
+    const resolvedThemePath = this.resolveThemePathForDirectory(nextFolder);
+    this.themeManager.setThemePath(resolvedThemePath);
+    await this.themeManager.loadTheme();
+    this.applyThemeVariables(this.themeManager.generateCSSVariables());
+    await this.sendAvailableThemes();
+  }
+
+  private resolveThemePathForDirectory(directoryPath: string): string | undefined {
+    for (const themeFileName of ['textui-theme.yml', 'textui-theme.yaml']) {
+      const candidatePath = path.join(directoryPath, themeFileName);
+      if (fs.existsSync(candidatePath)) {
+        return candidatePath;
+      }
+    }
+
+    return undefined;
   }
 }

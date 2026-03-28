@@ -259,14 +259,14 @@ describe('WebViewManager 単体テスト', () => {
     beforeEach(() => {
       // ThemeManagerのモック作成
       mockThemeManager = {
-        _themePath: '',
+        _themePath: undefined,
         loadTheme: async () => {},
         generateCSSVariables: () => 'mock-css-variables',
         getThemePath() {
           return this._themePath;
         },
         setThemePath(themePath) {
-          this._themePath = themePath || '';
+          this._themePath = themePath;
         }
       };
       
@@ -403,102 +403,175 @@ describe('WebViewManager 単体テスト', () => {
   });
 
   describe('メモリ管理機能のテスト', () => {
+    it('cross-folder switch reloads the folder theme and same-folder switch preserves manual selection', async () => {
+      const waitForSync = (ms = 50) => new Promise(resolve => setTimeout(resolve, ms));
+      const workspaceRoot = fs.mkdtempSync(path.join(__dirname, '../fixtures/theme-switch-'));
+      const folderA = path.join(workspaceRoot, 'folder-a');
+      const folderB = path.join(workspaceRoot, 'folder-b');
+      fs.mkdirSync(folderA, { recursive: true });
+      fs.mkdirSync(folderB, { recursive: true });
+
+      const folderATheme = path.join(folderA, 'textui-theme.yml');
+      const manualTheme = path.join(folderA, 'manual-theme.yml');
+      const folderAFile = path.join(folderA, 'first.tui.yml');
+      const sameFolderFile = path.join(folderA, 'second.tui.yml');
+      const folderBFile = path.join(folderB, 'third.tui.yml');
+
+      fs.writeFileSync(folderATheme, 'theme:\n  name: "Folder A"');
+      fs.writeFileSync(manualTheme, 'theme:\n  name: "Manual Theme"');
+      fs.writeFileSync(folderAFile, 'page:\n  id: first\n  components: []');
+      fs.writeFileSync(sameFolderFile, 'page:\n  id: second\n  components: []');
+      fs.writeFileSync(folderBFile, 'page:\n  id: third\n  components: []');
+
+      const loadCalls = [];
+      const cssMessages = [];
+      const themeManager = {
+        _themePath: undefined,
+        getThemePath() {
+          return this._themePath;
+        },
+        setThemePath(themePath) {
+          this._themePath = themePath;
+        },
+        watchThemeFile() {},
+        dispose() {},
+        loadTheme: async function() {
+          loadCalls.push(this._themePath);
+        },
+        generateCSSVariables: function() {
+          return this._themePath
+            ? `css:${path.basename(path.dirname(this._themePath))}`
+            : 'css:default';
+        }
+      };
+      webviewManager.themeManager = themeManager;
+      if (webviewManager.messageHandler) {
+        webviewManager.messageHandler.themeManager = themeManager;
+      }
+
+      themeManager.loadTheme = async function() {
+        loadCalls.push(this._themePath);
+      };
+      themeManager.generateCSSVariables = function() {
+        return this._themePath
+          ? `css:${path.basename(path.dirname(this._themePath))}`
+          : 'css:default';
+      };
+
+      try {
+        await webviewManager.openPreview();
+        const panel = webviewManager.getPanel();
+        assert.ok(panel, 'WebView panel should open for theme sync test');
+
+        panel.webview.postMessage = (message) => {
+          if (message.type === 'theme-variables') {
+            cssMessages.push(message.css);
+          }
+          return Promise.resolve(true);
+        };
+
+        webviewManager.setLastTuiFile(folderAFile);
+        await waitForSync();
+
+        assert.deepStrictEqual(loadCalls, [folderATheme], 'initial DSL selection should load the folder theme');
+        assert.strictEqual(cssMessages.at(-1), 'css:folder-a', 'folder theme CSS should be applied after initial selection');
+
+        themeManager.setThemePath(manualTheme);
+        webviewManager.setLastTuiFile(sameFolderFile);
+        await waitForSync();
+
+        assert.deepStrictEqual(loadCalls, [folderATheme], 'same-folder switch should not force a theme reload');
+        assert.strictEqual(themeManager.getThemePath(), manualTheme, 'same-folder switch should preserve manual theme selection');
+
+        webviewManager.setLastTuiFile(folderBFile);
+        await waitForSync();
+
+        assert.deepStrictEqual(loadCalls, [folderATheme, undefined], 'cross-folder switch without a theme should fall back to default');
+        assert.strictEqual(themeManager.getThemePath(), undefined, 'theme path should reset when the new folder has no theme');
+        assert.strictEqual(cssMessages.at(-1), 'css:default', 'default CSS should be applied when the next folder has no theme');
+      } finally {
+        if (fs.existsSync(workspaceRoot)) {
+          fs.rmSync(workspaceRoot, { recursive: true, force: true });
+        }
+      }
+    });
+  });
+
+  describe('memory pressure handling', () => {
     let originalProcessMemoryUsage;
 
     beforeEach(() => {
-      // process.memoryUsageをモック
       originalProcessMemoryUsage = process.memoryUsage;
     });
 
     afterEach(() => {
-      // process.memoryUsageを復元
       process.memoryUsage = originalProcessMemoryUsage;
     });
 
-         it('150MB以上でキャッシュが強制クリアされる', async () => {
-       const updateMgr = getWebViewUpdateManagerForTest(webviewManager);
-       const yamlTest = updateMgr.createYamlCacheTestAdapter();
-       // 150MB以上のメモリ使用量をシミュレート
-       process.memoryUsage = () => ({
-         heapUsed: 160 * 1024 * 1024, // 160MB
-         heapTotal: 200 * 1024 * 1024,
-         external: 10 * 1024 * 1024,
-         rss: 200 * 1024 * 1024
-       });
+    it('clears the cache above 150MB', async () => {
+      const updateMgr = getWebViewUpdateManagerForTest(webviewManager);
+      const yamlTest = updateMgr.createYamlCacheTestAdapter();
+      process.memoryUsage = () => ({
+        heapUsed: 160 * 1024 * 1024,
+        heapTotal: 200 * 1024 * 1024,
+        external: 10 * 1024 * 1024,
+        rss: 200 * 1024 * 1024
+      });
 
-       // キャッシュにデータを設定
-       yamlTest.setYamlCacheContent('test content');
+      yamlTest.setYamlCacheContent('test content');
+      yamlTest.runMemoryPressureCheckForTest();
 
-       // テスト用メソッドを直接実行
-       yamlTest.runMemoryPressureCheckForTest();
+      assert.strictEqual(yamlTest.getYamlCacheContent(), '', 'YAML cache should be cleared above 150MB');
+    });
 
-       // キャッシュがクリアされていることを確認
-       assert.strictEqual(yamlTest.getYamlCacheContent(), '', 'YAMLキャッシュがクリアされた');
-     });
+    it('clears the cache between 100MB and 150MB', async () => {
+      const updateMgr = getWebViewUpdateManagerForTest(webviewManager);
+      const yamlTest = updateMgr.createYamlCacheTestAdapter();
+      process.memoryUsage = () => ({
+        heapUsed: 120 * 1024 * 1024,
+        heapTotal: 150 * 1024 * 1024,
+        external: 10 * 1024 * 1024,
+        rss: 150 * 1024 * 1024
+      });
 
-         it('100-150MBでキャッシュが予防的にクリアされる', async () => {
-       const updateMgr = getWebViewUpdateManagerForTest(webviewManager);
-       const yamlTest = updateMgr.createYamlCacheTestAdapter();
-       // 100-150MBのメモリ使用量をシミュレート
-       process.memoryUsage = () => ({
-         heapUsed: 120 * 1024 * 1024, // 120MB
-         heapTotal: 150 * 1024 * 1024,
-         external: 10 * 1024 * 1024,
-         rss: 150 * 1024 * 1024
-       });
+      yamlTest.setYamlCacheContent('test content');
+      yamlTest.runMemoryPressureCheckForTest();
 
-       // キャッシュにデータを設定
-       yamlTest.setYamlCacheContent('test content');
+      assert.strictEqual(yamlTest.getYamlCacheContent(), '', 'YAML cache should be cleared between 100MB and 150MB');
+    });
 
-       // テスト用メソッドを直接実行
-       yamlTest.runMemoryPressureCheckForTest();
+    it('keeps the cache between 50MB and 100MB', async () => {
+      const updateMgr = getWebViewUpdateManagerForTest(webviewManager);
+      const yamlTest = updateMgr.createYamlCacheTestAdapter();
+      process.memoryUsage = () => ({
+        heapUsed: 70 * 1024 * 1024,
+        heapTotal: 100 * 1024 * 1024,
+        external: 10 * 1024 * 1024,
+        rss: 100 * 1024 * 1024
+      });
 
-       // キャッシュがクリアされていることを確認
-       assert.strictEqual(yamlTest.getYamlCacheContent(), '', 'YAMLキャッシュがクリアされた');
-     });
+      const testContent = 'test content';
+      yamlTest.setYamlCacheContent(testContent);
+      yamlTest.runMemoryPressureCheckForTest();
 
-         it('50-100MBではキャッシュが保持される', async () => {
-       const updateMgr = getWebViewUpdateManagerForTest(webviewManager);
-       const yamlTest = updateMgr.createYamlCacheTestAdapter();
-       // 50-100MBのメモリ使用量をシミュレート
-       process.memoryUsage = () => ({
-         heapUsed: 70 * 1024 * 1024, // 70MB
-         heapTotal: 100 * 1024 * 1024,
-         external: 10 * 1024 * 1024,
-         rss: 100 * 1024 * 1024
-       });
+      assert.strictEqual(yamlTest.getYamlCacheContent(), testContent, 'YAML cache should remain below 100MB');
+    });
 
-       // キャッシュにデータを設定
-       const testContent = 'test content';
-       yamlTest.setYamlCacheContent(testContent);
+    it('keeps the cache below 50MB', async () => {
+      const updateMgr = getWebViewUpdateManagerForTest(webviewManager);
+      const yamlTest = updateMgr.createYamlCacheTestAdapter();
+      process.memoryUsage = () => ({
+        heapUsed: 30 * 1024 * 1024,
+        heapTotal: 50 * 1024 * 1024,
+        external: 5 * 1024 * 1024,
+        rss: 50 * 1024 * 1024
+      });
 
-       // テスト用メソッドを直接実行
-       yamlTest.runMemoryPressureCheckForTest();
+      const testContent = 'test content';
+      yamlTest.setYamlCacheContent(testContent);
+      yamlTest.runMemoryPressureCheckForTest();
 
-       // キャッシュが保持されていることを確認
-       assert.strictEqual(yamlTest.getYamlCacheContent(), testContent, 'YAMLキャッシュが保持されている');
-     });
-
-         it('50MB未満ではキャッシュが完全に保持される', async () => {
-       const updateMgr = getWebViewUpdateManagerForTest(webviewManager);
-       const yamlTest = updateMgr.createYamlCacheTestAdapter();
-       // 50MB未満のメモリ使用量をシミュレート
-       process.memoryUsage = () => ({
-         heapUsed: 30 * 1024 * 1024, // 30MB
-         heapTotal: 50 * 1024 * 1024,
-         external: 5 * 1024 * 1024,
-         rss: 50 * 1024 * 1024
-       });
-
-       // キャッシュにデータを設定
-       const testContent = 'test content';
-       yamlTest.setYamlCacheContent(testContent);
-
-       // テスト用メソッドを直接実行
-       yamlTest.runMemoryPressureCheckForTest();
-
-       // キャッシュが完全に保持されていることを確認
-       assert.strictEqual(yamlTest.getYamlCacheContent(), testContent, 'YAMLキャッシュが完全に保持されている');
-     });
+      assert.strictEqual(yamlTest.getYamlCacheContent(), testContent, 'YAML cache should remain below 50MB');
+    });
   });
-}); 
+});
