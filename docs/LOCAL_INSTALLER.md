@@ -19,7 +19,7 @@ npm run package:vsix
 3. `npx @vscode/vsce package` … .vsix を生成（dependencies を同梱）
 
 成功するとプロジェクトルートに `textui-designer-<version>.vsix` が作成されます  
-（例: 現在の `package.json` が `0.7.1` の場合は `textui-designer-0.7.1.vsix`）。
+（例: 現在の `package.json` が `0.7.2` の場合は `textui-designer-0.7.2.vsix`）。
 
 ### 生成された VSIX 名の確認
 

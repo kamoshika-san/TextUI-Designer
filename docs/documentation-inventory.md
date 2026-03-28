@@ -5,10 +5,10 @@ Updated: 2026-03-28
 ## Scope
 
 - Coverage target: `README.md`, `docs/*.md`, `docs/adr/*.md`
-- Coverage result: `110/110` entries covered
+- Coverage result: `111/111` entries covered
 - Directory coverage:
   - repo root entry docs: `1`
-  - `docs/`: `101`
+  - `docs/`: `102`
   - `docs/adr/`: `8`
 - Missing canonical destinations already visible in current state:
   - no missing canonical destinations currently identified in the covered scope
@@ -213,6 +213,7 @@ Updated: 2026-03-28
   - `docs/hr1-next-epic-backlog-split.md (2026-03-24)`
   - `docs/RELEASE_NOTES_v0.5.0.md (2026-03-20)`
   - `docs/RELEASE_NOTES_v0.6.0.md (2026-03-20)`
+  - `docs/RELEASE_NOTES_v0.7.2.md (2026-03-28)`
   - `docs/RELEASE_NOTES_v0.7.1.md (2026-03-28)`
   - `docs/RELEASE_NOTES_v0.7.0.md (2026-03-22)`
   - `docs/ssot-renderer-sprint3-candidates.md (2026-03-27)`
@@ -256,6 +257,7 @@ Updated: 2026-03-28
 - `docs/hr1-next-epic-backlog-split.md`
 - `docs/RELEASE_NOTES_v0.5.0.md`
 - `docs/RELEASE_NOTES_v0.6.0.md`
+- `docs/RELEASE_NOTES_v0.7.2.md`
 - `docs/RELEASE_NOTES_v0.7.1.md`
 - `docs/RELEASE_NOTES_v0.7.0.md`
 - `docs/ssot-renderer-sprint3-candidates.md`

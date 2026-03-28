@@ -4,6 +4,16 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.7.2] - 2026-03-28
+
+### Fixed
+- Tabs export colors and borders now align more closely with the preview output.
+- Divider and Tabs export style contracts were tightened to reduce drift in generated output.
+- Transitive dependency overrides were refreshed to address the `serialize-javascript` advisory.
+
+### Added
+- Diff IR design references were added for vocabulary, identity, extraction, reorder / move, rename / remove-add, similarity matching, and extension points.
+
 ## [0.7.1] - 2026-03-28
 
 ### Fixed
