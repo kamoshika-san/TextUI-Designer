@@ -59,6 +59,46 @@ page:
     assert.strictEqual(typeof result.value, 'object');
   });
 
+  it('compareUi returns a normalized compare skeleton', () => {
+    const engine = new TextUICoreEngine();
+    const result = engine.compareUi({
+      previousDsl: {
+        page: { id: 'before-page', title: 'Before', layout: 'vertical', components: [] }
+      },
+      nextDsl: {
+        page: { id: 'after-page', title: 'After', layout: 'vertical', components: [{ Text: { value: 'Hello', variant: 'p' } }] }
+      }
+    });
+
+    assert.strictEqual(result.ok, true);
+    assert.deepStrictEqual(result.diagnostics, []);
+    assert.ok(result.previous);
+    assert.ok(result.next);
+    assert.ok(result.result);
+    assert.strictEqual(result.previous.page.componentCount, 0);
+    assert.strictEqual(result.next.page.componentCount, 1);
+    assert.strictEqual(result.result.kind, 'textui-diff-result');
+    assert.strictEqual(result.result.metadata.compareStage, 'c1-skeleton');
+    assert.strictEqual(result.result.entityResults.length, 1);
+    assert.strictEqual(result.result.entityResults[0].entityKind, 'page');
+    assert.strictEqual(result.result.entityResults[0].status, 'pending');
+  });
+
+  it('compareUi prefixes diagnostics with the invalid side', () => {
+    const engine = new TextUICoreEngine();
+    const result = engine.compareUi({
+      previousDsl: 'page: [',
+      nextDsl: {
+        page: { id: 'after-page', title: 'After', layout: 'vertical', components: [] }
+      }
+    });
+
+    assert.strictEqual(result.ok, false);
+    assert.ok(result.diagnostics.length >= 1);
+    assert.ok(result.diagnostics[0].message.includes('[previous]'));
+    assert.strictEqual(result.result, undefined);
+  });
+
   it('listComponents はButton/Image定義を含む', async () => {
     const engine = new TextUICoreEngine();
     const result = await engine.listComponents();

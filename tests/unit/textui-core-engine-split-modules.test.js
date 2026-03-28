@@ -1,6 +1,7 @@
 const assert = require('assert');
 
 const { TextUiCoreComponentBuilder } = require('../../out/core/textui-core-component-builder');
+const diff = require('../../out/core/textui-core-diff');
 const domain = require('../../out/core/textui-core-engine-domain');
 const format = require('../../out/core/textui-core-engine-format');
 const io = require('../../out/core/textui-core-engine-io');
@@ -38,6 +39,22 @@ describe('TextUICoreEngine split modules', () => {
   it('getSupportedProvidersIo includes built-in provider names', async () => {
     const providers = await io.getSupportedProvidersIo();
     assert.ok(providers.includes('html'));
+  });
+
+  it('diff module builds compare documents and skeleton result', () => {
+    const previous = diff.createNormalizedDiffDocument({
+      page: { id: 'before', title: 'Before', layout: 'vertical', components: [] }
+    }, { side: 'previous' });
+    const next = diff.createNormalizedDiffDocument({
+      page: { id: 'after', title: 'After', layout: 'vertical', components: [] }
+    }, { side: 'next' });
+    const result = diff.createDiffResultSkeleton(previous, next);
+
+    assert.strictEqual(previous.metadata.normalizationState, 'normalized-dsl');
+    assert.strictEqual(next.page.componentCount, 0);
+    assert.strictEqual(result.metadata.entityCount, 1);
+    assert.strictEqual(result.entityResults[0].previous.path, '/page');
+    assert.strictEqual(result.entityResults[0].next.path, '/page');
   });
 });
 

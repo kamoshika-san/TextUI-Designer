@@ -2,6 +2,12 @@ import type { ValidationIssue } from '../cli/types';
 import type { TextUIDSL } from '../domain/dsl-types';
 import { getTextUiComponentCatalog, type TextUIComponentCatalogEntry } from './component-catalog';
 import { TextUiCoreComponentBuilder, getComponentSpecHandlerFlagsForTesting, getComponentSpecTypesForTesting } from './textui-core-component-builder';
+import {
+  createDiffResultSkeleton,
+  createNormalizedDiffDocument,
+  type DiffCompareDocument,
+  type DiffCompareResult
+} from './textui-core-diff';
 import { buildGenerateUiDsl, buildExplainErrorResponseDomain, normalizeDslDomain } from './textui-core-engine-domain';
 import {
   exportUiDslToCode,
@@ -57,6 +63,22 @@ export interface ExplainErrorRequest {
   diagnostics: Array<Pick<CoreDiagnostic, 'message' | 'path' | 'level'>>;
 }
 
+export interface CompareUiRequest {
+  previousDsl: unknown;
+  nextDsl: unknown;
+  previousSourcePath?: string;
+  nextSourcePath?: string;
+  skipTokenValidation?: boolean;
+}
+
+export interface CompareUiResponse {
+  ok: boolean;
+  diagnostics: CoreDiagnostic[];
+  previous?: DiffCompareDocument;
+  next?: DiffCompareDocument;
+  result?: DiffCompareResult;
+}
+
 export interface PreviewSchemaRequest {
   schema?: 'main' | 'template' | 'theme';
   jsonPointer?: string;
@@ -73,6 +95,13 @@ export { getComponentSpecTypesForTesting, getComponentSpecHandlerFlagsForTesting
 
 export class TextUICoreEngine {
   private readonly componentBuilder = new TextUiCoreComponentBuilder();
+
+  private annotateCompareDiagnostics(source: 'previous' | 'next', diagnostics: CoreDiagnostic[]): CoreDiagnostic[] {
+    return diagnostics.map(diagnostic => ({
+      ...diagnostic,
+      message: `[${source}] ${diagnostic.message}`
+    }));
+  }
 
   async generateUi(request: GenerateUiRequest): Promise<GenerateUiResponse> {
     const dsl: TextUIDSL = buildGenerateUiDsl(request, this.componentBuilder);
@@ -114,6 +143,48 @@ export class TextUICoreEngine {
 
   explainError(request: ExplainErrorRequest): { summary: string; suggestions: Array<{ path: string; message: string; hint: string }> } {
     return buildExplainErrorResponseDomain(request);
+  }
+
+  compareUi(request: CompareUiRequest): CompareUiResponse {
+    const previousValidation = this.validateUi({
+      dsl: request.previousDsl,
+      sourcePath: request.previousSourcePath,
+      skipTokenValidation: request.skipTokenValidation ?? true
+    });
+    const nextValidation = this.validateUi({
+      dsl: request.nextDsl,
+      sourcePath: request.nextSourcePath,
+      skipTokenValidation: request.skipTokenValidation ?? true
+    });
+
+    const diagnostics: CoreDiagnostic[] = [];
+    if (!previousValidation.valid) {
+      diagnostics.push(...this.annotateCompareDiagnostics('previous', previousValidation.diagnostics));
+    }
+    if (!nextValidation.valid) {
+      diagnostics.push(...this.annotateCompareDiagnostics('next', nextValidation.diagnostics));
+    }
+
+    if (diagnostics.length > 0 || !previousValidation.normalizedDsl || !nextValidation.normalizedDsl) {
+      return { ok: false, diagnostics };
+    }
+
+    const previous = createNormalizedDiffDocument(previousValidation.normalizedDsl, {
+      side: 'previous',
+      sourcePath: request.previousSourcePath
+    });
+    const next = createNormalizedDiffDocument(nextValidation.normalizedDsl, {
+      side: 'next',
+      sourcePath: request.nextSourcePath
+    });
+
+    return {
+      ok: true,
+      diagnostics: [],
+      previous,
+      next,
+      result: createDiffResultSkeleton(previous, next)
+    };
   }
 
   previewSchema(request: PreviewSchemaRequest = {}): { schema: 'main' | 'template' | 'theme'; jsonPointer?: string; value: unknown } {
