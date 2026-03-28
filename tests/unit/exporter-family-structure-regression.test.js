@@ -28,7 +28,7 @@ describe('Exporter family structure regression', () => {
 
     assert.ok(react.includes('Hello Exporters'));
     assert.ok(react.includes('contact-form'));
-    assert.ok(react.includes('overflow-x-auto'));
+    assert.ok(react.includes('textui-table-container'));
 
     assert.ok(pug.includes('Hello Exporters'));
     assert.ok(pug.includes('form') && pug.includes('contact-form'));

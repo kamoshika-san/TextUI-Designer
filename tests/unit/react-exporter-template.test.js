@@ -22,10 +22,15 @@ describe('ReactExporter template rendering split', () => {
 
     assert.ok(code.includes('textui-tabs'));
     assert.ok(code.includes('textui-treeview'));
-    assert.ok(code.includes('overflow-x-auto'));
+    assert.ok(code.includes('textui-tabs-list'));
+    assert.ok(code.includes('textui-tab-panel-body'));
+    assert.ok(code.includes('textui-table-container'));
+    assert.ok(code.includes('textui-table-header'));
+    assert.ok(code.includes('textui-table-row'));
     assert.ok(code.includes('<form key={1} id="f1"'));
     assert.ok(code.includes('inside'));
-    assert.ok(code.includes('hover:bg-gray-100 transition-colors'));
+    assert.ok(code.includes('hover:bg-gray-100 transition-colors has-hover'));
+    assert.ok(code.includes('textui-tab-active is-active'));
     assert.match(code, /(?:>|\s)Edit(?:<|\s)/);
   });
 });

@@ -38,7 +38,7 @@ export function renderTabsTemplate(props: TabsComponent, key: number, tokenStyle
   const activeIndex = resolveActiveTabIndex(defaultTab, items.length);
 
   const tabsHeader = items
-    .map((item, index) => `        <button type="button" className="px-4 py-2 text-sm border-r border-gray-700 last:border-r-0 ${index === activeIndex ? 'bg-gray-800 text-white' : 'bg-gray-900 text-gray-300'} ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}" ${item.disabled ? 'disabled' : ''}>${item.label}</button>`)
+    .map((item, index) => `        <button type="button" className={['textui-tab', 'px-4', 'py-2', 'text-sm', 'border-r', 'border-gray-700', 'last:border-r-0', ${index} === ${activeIndex} ? 'bg-gray-800 text-white textui-tab-active is-active' : 'bg-gray-900 text-gray-300', ${item.disabled ? 'true' : 'false'} ? 'opacity-50 cursor-not-allowed is-disabled' : ''].filter(Boolean).join(' ')} ${item.disabled ? 'disabled' : ''}>${item.label}</button>`)
     .join('\n');
 
   const panelItems = (items[activeIndex]?.components || [])
@@ -46,11 +46,13 @@ export function renderTabsTemplate(props: TabsComponent, key: number, tokenStyle
     .join('\n');
 
   return `      <div key={${key}} className="textui-tabs border border-gray-300 rounded-md overflow-hidden"${tokenStyle}>
-        <div className="flex border-b border-gray-300">
+        <div className="textui-tabs-list flex border-b border-gray-300">
 ${tabsHeader}
         </div>
-        <div className="p-4 space-y-3">
+        <div className="textui-tab-panel p-4">
+          <div className="textui-tab-panel-body space-y-3">
 ${panelItems}
+          </div>
         </div>
       </div>`;
 }
@@ -122,7 +124,7 @@ export function renderTableTemplate(props: TableComponent, key: number, tokenSty
   }
 
   const headerCode = columns
-    .map(column => `              <th key="${column.key}" className="px-4 py-2 text-left font-semibold text-gray-900"${column.width ? ` style={{ width: '${column.width}' }}` : ''}>${column.header}</th>`)
+    .map(column => `              <th key="${column.key}" className="textui-table-header px-4 py-2 text-left font-semibold text-gray-900"${column.width ? ` style={{ width: '${column.width}' }}` : ''}>${column.header}</th>`)
     .join('\n');
 
   const bodyCode = rows
@@ -133,22 +135,22 @@ export function renderTableTemplate(props: TableComponent, key: number, tokenSty
           const cellContent = isComponentDefValue(cellValue)
             ? context.adjustIndentation(context.renderComponent(cellValue, rowIndex * 1000 + columnIndex), '                ')
             : context.toTableCellText(cellValue);
-          return `              <td key="${rowIndex}-${column.key}" className="px-4 py-2 align-top text-gray-700"${column.width ? ` style={{ width: '${column.width}' }}` : ''}>${cellContent}</td>`;
+          return `              <td key="${rowIndex}-${column.key}" className="textui-table-cell px-4 py-2 align-top text-gray-700"${column.width ? ` style={{ width: '${column.width}' }}` : ''}>${cellContent}</td>`;
         })
         .join('\n');
 
-      return `            <tr key={${rowIndex}} className={[${striped} && ${rowIndex} % 2 === 1 ? 'bg-gray-50' : '', ${rowHover} ? 'hover:bg-gray-100 transition-colors' : ''].filter(Boolean).join(' ')}>\n${cells}\n            </tr>`;
+      return `            <tr key={${rowIndex}} className={['textui-table-row', ${striped} && ${rowIndex} % 2 === 1 ? 'bg-gray-50 is-striped' : '', ${rowHover} ? 'hover:bg-gray-100 transition-colors has-hover' : ''].filter(Boolean).join(' ')}>\n${cells}\n            </tr>`;
     })
     .join('\n');
 
-  return `      <div key={${key}} className="overflow-x-auto border border-gray-300 rounded-md"${tokenStyle}>
-        <table className="min-w-full divide-y divide-gray-200 text-sm text-gray-900">
-          <thead className="bg-gray-100">
+  return `      <div key={${key}} className="textui-table-container overflow-x-auto border border-gray-300 rounded-md"${tokenStyle}>
+        <table className="textui-table min-w-full divide-y divide-gray-200 text-sm text-gray-900">
+          <thead className="textui-table-head bg-gray-100">
             <tr>
 ${headerCode}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
+          <tbody className="textui-table-body divide-y divide-gray-200 bg-white">
 ${bodyCode}
           </tbody>
         </table>
