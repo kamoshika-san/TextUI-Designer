@@ -55,5 +55,5 @@ Exporter は少なくとも以下を「契約」とみなして扱います。
 - `docs/SETTINGS.md`（設定単一ソース化と生成/同期）
 - `docs/contributes-commands.md`（command/mensues の単一ソース）
 - `docs/PROVIDER_CONTRACT.md`（provider の契約観点）
-- `docs/RELEASE_NOTES_v0.7.0.md` / `docs/RELEASE_NOTES_v0.6.0.md` / `docs/RELEASE_NOTES_v0.5.0.md`（運用例）
+- `docs/RELEASE_NOTES_v0.7.1.md` / `docs/RELEASE_NOTES_v0.7.0.md` / `docs/RELEASE_NOTES_v0.6.0.md`（運用例）
 

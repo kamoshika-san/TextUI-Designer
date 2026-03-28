@@ -1,19 +1,17 @@
 # Documentation Inventory
 
-Updated: 2026-03-27
+Updated: 2026-03-28
 
 ## Scope
 
 - Coverage target: `README.md`, `docs/*.md`, `docs/adr/*.md`
-- Coverage result: `109/109` entries covered
+- Coverage result: `110/110` entries covered
 - Directory coverage:
   - repo root entry docs: `1`
-  - `docs/`: `100`
+  - `docs/`: `101`
   - `docs/adr/`: `8`
 - Missing canonical destinations already visible in current state:
-  - `CONTRIBUTING.md` does not exist
-  - standalone setup page does not exist
-  - testing landing page does not exist
+  - no missing canonical destinations currently identified in the covered scope
 
 ## Proposed Owner Keys
 
@@ -47,7 +45,7 @@ Updated: 2026-03-27
 
 - Location: workflow and setup guidance under `docs/`
 - Purpose: explain how to install, configure, and safely modify the project
-- Updated: `2026-03-20..2026-03-27`
+- Updated: `2026-03-20..2026-03-28`
 - Owner: `Maintainer`
 - Frequency: `per change`
 - Members:
@@ -103,7 +101,7 @@ Updated: 2026-03-27
 
 - Location: test and CI reference docs under `docs/`
 - Purpose: define test lanes, smoke coverage, branch gates, import guards, and metrics checks
-- Updated: `2026-03-20..2026-03-27`
+- Updated: `2026-03-20..2026-03-28`
 - Owner: `Reviewer`
 - Frequency: `per change`
 - Members:
@@ -202,7 +200,7 @@ Updated: 2026-03-27
 
 - Location: historical notes currently still living in `docs/`
 - Purpose: retain prior planning context, release history, and superseded sprint notes until archive policy lands
-- Updated: `2026-03-20..2026-03-27`
+- Updated: `2026-03-20..2026-03-28`
 - Owner: `Maintainer`
 - Frequency: `frozen`
 - Members:
@@ -215,6 +213,7 @@ Updated: 2026-03-27
   - `docs/hr1-next-epic-backlog-split.md (2026-03-24)`
   - `docs/RELEASE_NOTES_v0.5.0.md (2026-03-20)`
   - `docs/RELEASE_NOTES_v0.6.0.md (2026-03-20)`
+  - `docs/RELEASE_NOTES_v0.7.1.md (2026-03-28)`
   - `docs/RELEASE_NOTES_v0.7.0.md (2026-03-22)`
   - `docs/ssot-renderer-sprint3-candidates.md (2026-03-27)`
   - `docs/ssot-renderer-sprint3-entry-closeout.md (2026-03-27)`
@@ -244,9 +243,7 @@ Updated: 2026-03-27
 
 ### Missing canonical destinations
 
-- `CONTRIBUTING.md` is missing even though the IA target model expects it as the workflow home.
-- setup is still spread across `README.md`, `docs/LOCAL_INSTALLER.md`, and maintainer-oriented pages.
-- test entry information is spread across `docs/test-matrix.md`, `docs/ci-quality-gate.md`, `docs/quality-gate-green-main.md`, and `docs/real-vscode-smoke.md`; no single landing page exists.
+- No missing canonical destinations are currently called out in the covered scope.
 
 ### Historical docs mixed into the live root
 
@@ -259,6 +256,7 @@ Updated: 2026-03-27
 - `docs/hr1-next-epic-backlog-split.md`
 - `docs/RELEASE_NOTES_v0.5.0.md`
 - `docs/RELEASE_NOTES_v0.6.0.md`
+- `docs/RELEASE_NOTES_v0.7.1.md`
 - `docs/RELEASE_NOTES_v0.7.0.md`
 - `docs/ssot-renderer-sprint3-candidates.md`
 - `docs/ssot-renderer-sprint3-entry-closeout.md`
@@ -298,8 +296,6 @@ Updated: 2026-03-27
 
 ## Recommended Follow-Up Seeds
 
-1. Create `CONTRIBUTING.md` and move branch / PR / review expectations out of `README.md` and maintainer-oriented docs.
-2. Create one setup page and treat `README.md` as an entry page only.
-3. Introduce an archive policy, then move the historical-note family out of the live `docs/` root.
-4. Consolidate test / CI guidance behind one landing page.
-5. Add page metadata fields in the governance sprint so proposed owners become in-file owners.
+1. Introduce an archive policy, then move the historical-note family out of the live `docs/` root.
+2. Consolidate overlapping test / CI leaf guides further behind the testing landing page.
+3. Add page metadata fields in the governance sprint so proposed owners become in-file owners.

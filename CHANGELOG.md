@@ -4,6 +4,18 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.7.1] - 2026-03-28
+
+### Fixed
+- Preview theme reset now follows DSL switches correctly, so changing files no longer leaves the preview in a stale theme state.
+- Export style contracts for `Accordion`, `Tabs`, `Table`, `TreeView`, `Form`, and `Alert` were aligned to reduce drift between preview and export output.
+- WebView CSS fallback resolution and startup inline-style handling were tightened to reduce styling inconsistencies in the primary render lane.
+
+### Changed
+- CSS SSoT release gates were expanded with dedicated metrics, contributor guidance, regression checks, and CI verification.
+- React / export parity and fallback-lane documentation were consolidated, and the public fallback export lane was deprecated in favor of the primary path.
+- Project entry and workflow documentation were refreshed, including canonical setup, testing, contributing, and release references.
+
 ## [0.7.0] - 2026-03-22
 
 ### 新機能
