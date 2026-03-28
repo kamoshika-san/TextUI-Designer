@@ -7,7 +7,8 @@ export type DiffEventKind = 'add' | 'remove' | 'update' | 'reorder' | 'move' | '
 export type DiffIdentitySource = 'explicit-id' | 'fallback-key' | 'structural-path' | 'none';
 export type DiffFallbackMarker = 'none' | 'heuristic-pending' | 'remove-add-fallback';
 export type DiffExplicitnessMarker = 'preserved' | 'not-applicable' | 'unknown' | 'absent-on-previous' | 'absent-on-next';
-export type DiffPairingReason = 'deterministic-explicit-id' | 'deterministic-fallback-key' | 'deterministic-structural-path' | 'unpaired';
+export type DiffPairingReason = 'deterministic-explicit-id' | 'deterministic-fallback-key' | 'deterministic-structural-path' | 'heuristic-similarity' | 'unpaired';
+export type DiffFallbackConfidence = 'not-applicable' | 'high';
 
 export interface DiffCompareDocument {
   side: DiffCompareSide;
@@ -46,6 +47,7 @@ export interface DiffTracePayload {
   explicitness: DiffExplicitnessMarker;
   identitySource: DiffIdentitySource;
   fallbackMarker: DiffFallbackMarker;
+  fallbackConfidence: DiffFallbackConfidence;
   pairingReason: DiffPairingReason;
 }
 
@@ -107,6 +109,9 @@ type DiffCollectionCandidate = {
 type DiffPairedCandidate = {
   previous?: DiffCollectionCandidate;
   next?: DiffCollectionCandidate;
+  pairingReason?: DiffPairingReason;
+  fallbackMarker?: DiffFallbackMarker;
+  fallbackConfidence?: DiffFallbackConfidence;
 };
 type DiffDeterministicIdentity = {
   entityKeySuffix: string;
@@ -181,7 +186,8 @@ function createPendingEvent(
   hasNext: boolean,
   identitySource: DiffIdentitySource,
   pairingReason: DiffPairingReason,
-  fallbackMarker: DiffFallbackMarker = 'none'
+  fallbackMarker: DiffFallbackMarker = 'none',
+  fallbackConfidence: DiffFallbackConfidence = 'not-applicable'
 ): DiffEvent {
   return {
     eventId,
@@ -203,6 +209,7 @@ function createPendingEvent(
       explicitness: entityKind === 'property' ? 'unknown' : 'preserved',
       identitySource,
       fallbackMarker,
+      fallbackConfidence,
       pairingReason
     }
   };
@@ -298,6 +305,147 @@ function resolveSingleComponentAnchor(node: DiffComponentNode | undefined): stri
   }
 
   return undefined;
+}
+
+function normalizeComparableScalar(value: unknown): string | undefined {
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    return normalized.length > 0 ? normalized : undefined;
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return undefined;
+}
+
+function collectComparableScalarMap(node: DiffComponentNode | undefined): Map<string, string> {
+  const scalars = new Map<string, string>();
+  if (!node) {
+    return scalars;
+  }
+
+  for (const key of collectScalarPropertyKeys(node)) {
+    const normalized = normalizeComparableScalar(node[key]);
+    if (normalized) {
+      scalars.set(key, normalized);
+    }
+  }
+
+  return scalars;
+}
+
+function collectChildCollectionSignature(node: DiffComponentNode | undefined): string {
+  if (!node) {
+    return '';
+  }
+
+  return collectChildComponentLists(node)
+    .map(entry => `${entry.key}:${entry.items.length}`)
+    .sort()
+    .join('|');
+}
+
+function scoreHeuristicSimilarity(
+  previousCandidate: DiffCollectionCandidate,
+  nextCandidate: DiffCollectionCandidate
+): number {
+  if (previousCandidate.collectionKey !== nextCandidate.collectionKey) {
+    return 0;
+  }
+
+  const previousNode = toComponentNode(previousCandidate.item);
+  const nextNode = toComponentNode(nextCandidate.item);
+  if (!previousNode || !nextNode || previousNode.__kind !== nextNode.__kind) {
+    return 0;
+  }
+
+  if (resolveSingleComponentAnchor(previousNode) || resolveSingleComponentAnchor(nextNode)) {
+    return 0;
+  }
+
+  const previousScalars = collectComparableScalarMap(previousNode);
+  const nextScalars = collectComparableScalarMap(nextNode);
+  let score = 0;
+
+  for (const [key, value] of previousScalars.entries()) {
+    if (nextScalars.get(key) === value) {
+      score += 2;
+    }
+  }
+
+  const previousSignature = collectChildCollectionSignature(previousNode);
+  const nextSignature = collectChildCollectionSignature(nextNode);
+  if (previousSignature.length > 0 && previousSignature === nextSignature) {
+    score += 1;
+  }
+
+  if (previousScalars.size > 0 && previousScalars.size === nextScalars.size) {
+    const previousKeys = [...previousScalars.keys()].sort().join('|');
+    const nextKeys = [...nextScalars.keys()].sort().join('|');
+    if (previousKeys === nextKeys) {
+      score += 1;
+    }
+  }
+
+  return score;
+}
+
+function selectUniqueHeuristicMatches(
+  previousCandidates: DiffCollectionCandidate[],
+  nextCandidates: DiffCollectionCandidate[]
+): Array<{ previousIndex: number; nextIndex: number }> {
+  const matches: Array<{ previousIndex: number; nextIndex: number }> = [];
+  const bestNextByPrevious = new Map<number, { nextIndex: number; score: number }>();
+  const bestPreviousByNext = new Map<number, { previousIndex: number; score: number }>();
+
+  for (let previousIndex = 0; previousIndex < previousCandidates.length; previousIndex++) {
+    let bestScore = 0;
+    let bestNextIndex = -1;
+    let tied = false;
+    for (let nextIndex = 0; nextIndex < nextCandidates.length; nextIndex++) {
+      const score = scoreHeuristicSimilarity(previousCandidates[previousIndex], nextCandidates[nextIndex]);
+      if (score > bestScore) {
+        bestScore = score;
+        bestNextIndex = nextIndex;
+        tied = false;
+      } else if (score > 0 && score === bestScore) {
+        tied = true;
+      }
+    }
+
+    if (!tied && bestScore >= 2 && bestNextIndex >= 0) {
+      bestNextByPrevious.set(previousIndex, { nextIndex: bestNextIndex, score: bestScore });
+    }
+  }
+
+  for (let nextIndex = 0; nextIndex < nextCandidates.length; nextIndex++) {
+    let bestScore = 0;
+    let bestPreviousIndex = -1;
+    let tied = false;
+    for (let previousIndex = 0; previousIndex < previousCandidates.length; previousIndex++) {
+      const score = scoreHeuristicSimilarity(previousCandidates[previousIndex], nextCandidates[nextIndex]);
+      if (score > bestScore) {
+        bestScore = score;
+        bestPreviousIndex = previousIndex;
+        tied = false;
+      } else if (score > 0 && score === bestScore) {
+        tied = true;
+      }
+    }
+
+    if (!tied && bestScore >= 2 && bestPreviousIndex >= 0) {
+      bestPreviousByNext.set(nextIndex, { previousIndex: bestPreviousIndex, score: bestScore });
+    }
+  }
+
+  for (const [previousIndex, nextMatch] of bestNextByPrevious.entries()) {
+    const previousMatch = bestPreviousByNext.get(nextMatch.nextIndex);
+    if (previousMatch?.previousIndex === previousIndex) {
+      matches.push({ previousIndex, nextIndex: nextMatch.nextIndex });
+    }
+  }
+
+  return matches.sort((left, right) => left.previousIndex - right.previousIndex);
 }
 
 function getPathIndex(path: string): number | undefined {
@@ -414,6 +562,31 @@ function pairCollectionCandidates(
     });
   }
 
+  const remainingPrevious = previousCandidates
+    .map((candidate, index) => ({ candidate, index }))
+    .filter(entry => !consumedPrevious.has(entry.index));
+  const remainingNext = nextCandidates
+    .map((candidate, index) => ({ candidate, index }))
+    .filter(entry => !consumedNext.has(entry.index));
+  const heuristicMatches = selectUniqueHeuristicMatches(
+    remainingPrevious.map(entry => entry.candidate),
+    remainingNext.map(entry => entry.candidate)
+  );
+
+  for (const heuristicMatch of heuristicMatches) {
+    const previousIndex = remainingPrevious[heuristicMatch.previousIndex].index;
+    const nextIndex = remainingNext[heuristicMatch.nextIndex].index;
+    consumedPrevious.add(previousIndex);
+    consumedNext.add(nextIndex);
+    paired.push({
+      previous: previousCandidates[previousIndex],
+      next: nextCandidates[nextIndex],
+      pairingReason: 'heuristic-similarity',
+      fallbackMarker: 'heuristic-pending',
+      fallbackConfidence: 'high'
+    });
+  }
+
   const maxLength = Math.max(previousCandidates.length, nextCandidates.length);
   for (let index = 0; index < maxLength; index++) {
     const previousCandidate = index < previousCandidates.length && !consumedPrevious.has(index) ? previousCandidates[index] : undefined;
@@ -520,15 +693,20 @@ function buildComponentEntity(
   nextPath: string,
   previous: DiffCompareDocument,
   next: DiffCompareDocument,
-  traversalOrder: number
+  traversalOrder: number,
+  pairedCandidateMetadata?: DiffPairedCandidate
 ): DiffTreeBuild {
   const previousNode = toComponentNode(previousComponent);
   const nextNode = toComponentNode(nextComponent);
   const hasPrevious = previousNode !== undefined;
   const hasNext = nextNode !== undefined;
-  const previousKind = previousNode?.__kind;
-  const nextKind = nextNode?.__kind;
   const deterministicIdentity = resolveComponentDeterministicIdentity(previousNode, nextNode, nextPath);
+  const pairingReason = pairedCandidateMetadata?.pairingReason ?? deterministicIdentity.pairingReason;
+  const identitySource = pairingReason === 'heuristic-similarity'
+    ? 'none'
+    : deterministicIdentity.identitySource;
+  const fallbackMarker = pairedCandidateMetadata?.fallbackMarker ?? 'none';
+  const fallbackConfidence = pairedCandidateMetadata?.fallbackConfidence ?? 'not-applicable';
   const entityKey = `component:${deterministicIdentity.entityKeySuffix}`;
   const refs = buildEntityRefs('component', previousPath, nextPath, previous.page.id, next.page.id, hasPrevious, hasNext);
   const classification = classifyComponentEventKind(
@@ -536,8 +714,8 @@ function buildComponentEntity(
     nextNode,
     previousPath,
     nextPath,
-    deterministicIdentity.identitySource,
-    deterministicIdentity.pairingReason
+    identitySource,
+    pairingReason
   );
   const rootEvent = createPendingEvent(
     `event:${entityKey}:${classification.kind}`,
@@ -550,9 +728,10 @@ function buildComponentEntity(
     next,
     hasPrevious,
     hasNext,
-    deterministicIdentity.identitySource,
-    deterministicIdentity.pairingReason,
-    classification.fallbackMarker
+    identitySource,
+    pairingReason,
+    fallbackMarker === 'none' ? classification.fallbackMarker : fallbackMarker,
+    fallbackConfidence
   );
 
   let nextOrder = traversalOrder + 1;
@@ -601,7 +780,8 @@ function buildComponentEntity(
       pairedCandidate.next?.path ?? pairedCandidate.previous?.path ?? `${nextPath}/components/0`,
       previous,
       next,
-      nextOrder
+      nextOrder,
+      pairedCandidate
     );
     children.push(childBuild.entity);
     events.push(...childBuild.events);
@@ -709,7 +889,8 @@ export function createDiffResultSkeleton(
       pairedCandidate.next?.path ?? pairedCandidate.previous?.path ?? '/page/components/0',
       previous,
       next,
-      nextTraversalOrder
+      nextTraversalOrder,
+      pairedCandidate
     );
     childEntities.push(componentBuild.entity);
     childEvents.push(...componentBuild.events);

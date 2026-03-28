@@ -165,6 +165,45 @@ page:
     assert.ok(result.result.events.some(event => event.entityKind === 'component' && event.kind === 'remove+add'));
   });
 
+  it('compareUi uses bounded heuristic similarity for missing-id sibling swaps', () => {
+    const engine = new TextUICoreEngine();
+    const result = engine.compareUi({
+      previousDsl: {
+        page: {
+          id: 'same-page',
+          title: 'Before',
+          layout: 'vertical',
+          components: [
+            { Text: { value: 'Alpha', variant: 'p' } },
+            { Text: { value: 'Beta', variant: 'p' } }
+          ]
+        }
+      },
+      nextDsl: {
+        page: {
+          id: 'same-page',
+          title: 'After',
+          layout: 'vertical',
+          components: [
+            { Text: { value: 'Beta', variant: 'p' } },
+            { Text: { value: 'Alpha', variant: 'p' } }
+          ]
+        }
+      }
+    });
+
+    assert.strictEqual(result.ok, true);
+    assert.ok(result.result);
+    const heuristicReorder = result.result.events.find(
+      event => event.entityKind === 'component'
+        && event.kind === 'reorder'
+        && event.trace.pairingReason === 'heuristic-similarity'
+    );
+    assert.ok(heuristicReorder);
+    assert.strictEqual(heuristicReorder.trace.fallbackMarker, 'heuristic-pending');
+    assert.strictEqual(heuristicReorder.trace.fallbackConfidence, 'high');
+  });
+
   it('compareUi marks property additions with explicitness carry', () => {
     const engine = new TextUICoreEngine();
     const result = engine.compareUi({
