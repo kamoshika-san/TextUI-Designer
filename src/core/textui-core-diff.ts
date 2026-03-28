@@ -98,6 +98,16 @@ type DiffTreeBuild = {
   events: DiffEvent[];
   nextTraversalOrder: number;
 };
+type DiffCollectionCandidate = {
+  item: unknown;
+  path: string;
+  index: number;
+  collectionKey: string;
+};
+type DiffPairedCandidate = {
+  previous?: DiffCollectionCandidate;
+  next?: DiffCollectionCandidate;
+};
 type DiffDeterministicIdentity = {
   entityKeySuffix: string;
   identitySource: DiffIdentitySource;
@@ -135,7 +145,8 @@ function toComponentNode(component: unknown): DiffComponentNode | undefined {
 
 function buildEntityRefs(
   entityKind: DiffEntityKind,
-  path: string,
+  previousPath: string,
+  nextPath: string,
   previousPageId: string,
   nextPageId: string,
   hasPrevious: boolean,
@@ -145,13 +156,13 @@ function buildEntityRefs(
     previous: hasPrevious ? {
       side: 'previous',
       entityKind,
-      path,
+      path: previousPath,
       pageId: previousPageId
     } : undefined,
     next: hasNext ? {
       side: 'next',
       entityKind,
-      path,
+      path: nextPath,
       pageId: nextPageId
     } : undefined
   };
@@ -162,13 +173,15 @@ function createPendingEvent(
   kind: DiffEventKind,
   entityKey: string,
   entityKind: DiffEntityKind,
-  path: string,
+  previousPath: string,
+  nextPath: string,
   previous: DiffCompareDocument,
   next: DiffCompareDocument,
   hasPrevious: boolean,
   hasNext: boolean,
   identitySource: DiffIdentitySource,
-  pairingReason: DiffPairingReason
+  pairingReason: DiffPairingReason,
+  fallbackMarker: DiffFallbackMarker = 'none'
 ): DiffEvent {
   return {
     eventId,
@@ -180,16 +193,16 @@ function createPendingEvent(
       previousSourceRef: hasPrevious ? {
         side: 'previous',
         documentPath: previous.metadata.sourcePath,
-        entityPath: path
+        entityPath: previousPath
       } : undefined,
       nextSourceRef: hasNext ? {
         side: 'next',
         documentPath: next.metadata.sourcePath,
-        entityPath: path
+        entityPath: nextPath
       } : undefined,
       explicitness: entityKind === 'property' ? 'unknown' : 'preserved',
       identitySource,
-      fallbackMarker: 'none',
+      fallbackMarker,
       pairingReason
     }
   };
@@ -266,6 +279,159 @@ function resolveComponentDeterministicIdentity(
   };
 }
 
+function resolveSingleComponentAnchor(node: DiffComponentNode | undefined): string | undefined {
+  if (!node) {
+    return undefined;
+  }
+
+  const kind = node.__kind;
+  const explicitId = normalizeIdentityValue(node.id);
+  if (explicitId) {
+    return `${kind}:explicit-id:${explicitId}`;
+  }
+
+  for (const key of FALLBACK_IDENTITY_KEYS) {
+    const fallback = normalizeIdentityValue(node[key]);
+    if (fallback) {
+      return `${kind}:fallback-key:${key}:${fallback}`;
+    }
+  }
+
+  return undefined;
+}
+
+function getPathIndex(path: string): number | undefined {
+  const match = path.match(/\/(\d+)$/);
+  return match ? Number(match[1]) : undefined;
+}
+
+function getParentPath(path: string): string {
+  return path.replace(/\/[^/]+$/, '');
+}
+
+function resolveRenameClassification(
+  previousNode: DiffComponentNode | undefined,
+  nextNode: DiffComponentNode | undefined,
+  identitySource: DiffIdentitySource
+): DiffEventKind | undefined {
+  if (identitySource !== 'explicit-id' || !previousNode || !nextNode || previousNode.__kind !== nextNode.__kind) {
+    return undefined;
+  }
+
+  for (const key of FALLBACK_IDENTITY_KEYS) {
+    const previousValue = normalizeIdentityValue(previousNode[key]);
+    const nextValue = normalizeIdentityValue(nextNode[key]);
+    if (previousValue && nextValue && previousValue !== nextValue) {
+      return 'rename';
+    }
+  }
+
+  return undefined;
+}
+
+function classifyComponentEventKind(
+  previousNode: DiffComponentNode | undefined,
+  nextNode: DiffComponentNode | undefined,
+  previousPath: string,
+  nextPath: string,
+  identitySource: DiffIdentitySource,
+  pairingReason: DiffPairingReason
+): { kind: DiffEventKind; fallbackMarker: DiffFallbackMarker } {
+  const hasPrevious = previousNode !== undefined;
+  const hasNext = nextNode !== undefined;
+
+  if (hasPrevious && !hasNext) {
+    return { kind: 'remove', fallbackMarker: 'none' };
+  }
+  if (!hasPrevious && hasNext) {
+    return { kind: 'add', fallbackMarker: 'none' };
+  }
+  if (!hasPrevious || !hasNext || previousNode.__kind !== nextNode.__kind || pairingReason === 'unpaired') {
+    return { kind: 'remove+add', fallbackMarker: 'remove-add-fallback' };
+  }
+
+  const renameKind = resolveRenameClassification(previousNode, nextNode, identitySource);
+  if (renameKind) {
+    return { kind: renameKind, fallbackMarker: 'none' };
+  }
+
+  const previousParentPath = getParentPath(previousPath);
+  const nextParentPath = getParentPath(nextPath);
+  if (previousParentPath !== nextParentPath) {
+    return { kind: 'move', fallbackMarker: 'none' };
+  }
+
+  const previousIndex = getPathIndex(previousPath);
+  const nextIndex = getPathIndex(nextPath);
+  if (previousIndex !== undefined && nextIndex !== undefined && previousIndex !== nextIndex) {
+    return { kind: 'reorder', fallbackMarker: 'none' };
+  }
+
+  return { kind: 'update', fallbackMarker: 'none' };
+}
+
+function pairCollectionCandidates(
+  previousCandidates: DiffCollectionCandidate[],
+  nextCandidates: DiffCollectionCandidate[]
+): DiffPairedCandidate[] {
+  const paired: DiffPairedCandidate[] = [];
+  const consumedPrevious = new Set<number>();
+  const consumedNext = new Set<number>();
+  const previousAnchorMap = new Map<string, number[]>();
+  const nextAnchorMap = new Map<string, number[]>();
+
+  for (let index = 0; index < previousCandidates.length; index++) {
+    const anchor = resolveSingleComponentAnchor(toComponentNode(previousCandidates[index].item));
+    if (!anchor) {
+      continue;
+    }
+    const list = previousAnchorMap.get(anchor) ?? [];
+    list.push(index);
+    previousAnchorMap.set(anchor, list);
+  }
+
+  for (let index = 0; index < nextCandidates.length; index++) {
+    const anchor = resolveSingleComponentAnchor(toComponentNode(nextCandidates[index].item));
+    if (!anchor) {
+      continue;
+    }
+    const list = nextAnchorMap.get(anchor) ?? [];
+    list.push(index);
+    nextAnchorMap.set(anchor, list);
+  }
+
+  for (const [anchor, previousIndexes] of previousAnchorMap.entries()) {
+    const nextIndexes = nextAnchorMap.get(anchor);
+    if (!nextIndexes || previousIndexes.length !== 1 || nextIndexes.length !== 1) {
+      continue;
+    }
+
+    consumedPrevious.add(previousIndexes[0]);
+    consumedNext.add(nextIndexes[0]);
+    paired.push({
+      previous: previousCandidates[previousIndexes[0]],
+      next: nextCandidates[nextIndexes[0]]
+    });
+  }
+
+  const maxLength = Math.max(previousCandidates.length, nextCandidates.length);
+  for (let index = 0; index < maxLength; index++) {
+    const previousCandidate = index < previousCandidates.length && !consumedPrevious.has(index) ? previousCandidates[index] : undefined;
+    const nextCandidate = index < nextCandidates.length && !consumedNext.has(index) ? nextCandidates[index] : undefined;
+
+    if (!previousCandidate && !nextCandidate) {
+      continue;
+    }
+
+    paired.push({
+      previous: previousCandidate,
+      next: nextCandidate
+    });
+  }
+
+  return paired;
+}
+
 function collectChildComponentLists(node: DiffComponentNode | undefined): Array<{ key: string; items: unknown[] }> {
   if (!node) {
     return [];
@@ -311,6 +477,7 @@ function buildPropertyEntity(
     entityKey,
     'property',
     path,
+    path,
     previous,
     next,
     hasPrevious,
@@ -318,7 +485,7 @@ function buildPropertyEntity(
     'none',
     hasPrevious && hasNext ? 'deterministic-structural-path' : 'unpaired'
   );
-  const refs = buildEntityRefs('property', path, previous.page.id, next.page.id, hasPrevious, hasNext);
+  const refs = buildEntityRefs('property', path, path, previous.page.id, next.page.id, hasPrevious, hasNext);
 
   return {
     entity: {
@@ -342,7 +509,8 @@ function buildPropertyEntity(
 function buildComponentEntity(
   previousComponent: unknown,
   nextComponent: unknown,
-  path: string,
+  previousPath: string,
+  nextPath: string,
   previous: DiffCompareDocument,
   next: DiffCompareDocument,
   traversalOrder: number
@@ -353,21 +521,31 @@ function buildComponentEntity(
   const hasNext = nextNode !== undefined;
   const previousKind = previousNode?.__kind;
   const nextKind = nextNode?.__kind;
-  const deterministicIdentity = resolveComponentDeterministicIdentity(previousNode, nextNode, path);
+  const deterministicIdentity = resolveComponentDeterministicIdentity(previousNode, nextNode, nextPath);
   const entityKey = `component:${deterministicIdentity.entityKeySuffix}`;
-  const refs = buildEntityRefs('component', path, previous.page.id, next.page.id, hasPrevious, hasNext);
+  const refs = buildEntityRefs('component', previousPath, nextPath, previous.page.id, next.page.id, hasPrevious, hasNext);
+  const classification = classifyComponentEventKind(
+    previousNode,
+    nextNode,
+    previousPath,
+    nextPath,
+    deterministicIdentity.identitySource,
+    deterministicIdentity.pairingReason
+  );
   const rootEvent = createPendingEvent(
-    `event:${entityKey}:update`,
-    'update',
+    `event:${entityKey}:${classification.kind}`,
+    classification.kind,
     entityKey,
     'component',
-    path,
+    previousPath,
+    nextPath,
     previous,
     next,
     hasPrevious,
     hasNext,
     deterministicIdentity.identitySource,
-    deterministicIdentity.pairingReason
+    deterministicIdentity.pairingReason,
+    classification.fallbackMarker
   );
 
   let nextOrder = traversalOrder + 1;
@@ -380,7 +558,7 @@ function buildComponentEntity(
   ]);
   for (const propertyKey of propertyKeys) {
     const propertyBuild = buildPropertyEntity(
-      `${path}/props/${propertyKey}`,
+      `${nextPath}/props/${propertyKey}`,
       previousNode?.[propertyKey],
       nextNode?.[propertyKey],
       previous,
@@ -392,27 +570,35 @@ function buildComponentEntity(
     nextOrder = propertyBuild.nextTraversalOrder;
   }
 
-  const childCollections = new Set([
-    ...collectChildComponentLists(previousNode).map(entry => entry.key),
-    ...collectChildComponentLists(nextNode).map(entry => entry.key)
-  ]);
-  for (const collectionKey of childCollections) {
-    const previousItems = previousNode && Array.isArray(previousNode[collectionKey]) ? previousNode[collectionKey] as unknown[] : [];
-    const nextItems = nextNode && Array.isArray(nextNode[collectionKey]) ? nextNode[collectionKey] as unknown[] : [];
-    const maxLength = Math.max(previousItems.length, nextItems.length);
-    for (let index = 0; index < maxLength; index++) {
-      const childBuild = buildComponentEntity(
-        previousItems[index],
-        nextItems[index],
-        `${path}/${collectionKey}/${index}`,
-        previous,
-        next,
-        nextOrder
-      );
-      children.push(childBuild.entity);
-      events.push(...childBuild.events);
-      nextOrder = childBuild.nextTraversalOrder;
-    }
+  const previousCandidates = collectChildComponentLists(previousNode).flatMap(entry =>
+    entry.items.map((item, index) => ({
+      item,
+      path: `${previousPath}/${entry.key}/${index}`,
+      index,
+      collectionKey: entry.key
+    }))
+  );
+  const nextCandidates = collectChildComponentLists(nextNode).flatMap(entry =>
+    entry.items.map((item, index) => ({
+      item,
+      path: `${nextPath}/${entry.key}/${index}`,
+      index,
+      collectionKey: entry.key
+    }))
+  );
+  for (const pairedCandidate of pairCollectionCandidates(previousCandidates, nextCandidates)) {
+    const childBuild = buildComponentEntity(
+      pairedCandidate.previous?.item,
+      pairedCandidate.next?.item,
+      pairedCandidate.previous?.path ?? pairedCandidate.next?.path ?? `${previousPath}/components/0`,
+      pairedCandidate.next?.path ?? pairedCandidate.previous?.path ?? `${nextPath}/components/0`,
+      previous,
+      next,
+      nextOrder
+    );
+    children.push(childBuild.entity);
+    events.push(...childBuild.events);
+    nextOrder = childBuild.nextTraversalOrder;
   }
 
   return {
@@ -475,6 +661,7 @@ export function createDiffResultSkeleton(
     `page:${pageIdentity.entityKeySuffix}`,
     'page',
     '/page',
+    '/page',
     previous,
     next,
     true,
@@ -503,11 +690,16 @@ export function createDiffResultSkeleton(
   }
 
   const maxComponents = Math.max(previous.normalizedDsl.page.components.length, next.normalizedDsl.page.components.length);
-  for (let index = 0; index < maxComponents; index++) {
+  const pairedPageComponents = pairCollectionCandidates(
+    previous.normalizedDsl.page.components.map((item, index) => ({ item, path: `/page/components/${index}`, index, collectionKey: 'components' })),
+    next.normalizedDsl.page.components.map((item, index) => ({ item, path: `/page/components/${index}`, index, collectionKey: 'components' }))
+  );
+  for (const pairedCandidate of pairedPageComponents) {
     const componentBuild = buildComponentEntity(
-      previous.normalizedDsl.page.components[index],
-      next.normalizedDsl.page.components[index],
-      `/page/components/${index}`,
+      pairedCandidate.previous?.item,
+      pairedCandidate.next?.item,
+      pairedCandidate.previous?.path ?? pairedCandidate.next?.path ?? '/page/components/0',
+      pairedCandidate.next?.path ?? pairedCandidate.previous?.path ?? '/page/components/0',
       previous,
       next,
       nextTraversalOrder

@@ -92,6 +92,7 @@ page:
     assert.strictEqual(result.result.entityResults[0].children[2].entityKind, 'component');
     assert.strictEqual(result.result.entityResults[0].children[2].children[0].entityKind, 'property');
     assert.strictEqual(result.result.entityResults[0].children[2].metadata.eventIds.length >= 1, true);
+    assert.ok(result.result.events.some(event => event.entityKind === 'component' && event.kind === 'update'));
     assert.strictEqual(result.result.entityResults[0].metadata.eventIds.length, result.result.events.length);
   });
 
@@ -113,7 +114,55 @@ page:
     assert.strictEqual(result.result.entityResults[0].children[2].previous.path, '/page/components/0');
     assert.strictEqual(result.result.entityResults[0].children[2].next.path, '/page/components/0');
     assert.strictEqual(result.result.entityResults[0].children[2].metadata.eventIds.length >= 1, true);
-    assert.ok(result.result.entityResults[0].children[2].metadata.eventIds[0].includes('component:Form:profile-form'));
+    assert.ok(result.result.entityResults[0].children[2].metadata.eventIds[0].includes('component:Form:profile-form:'));
+  });
+
+  it('compareUi classifies sibling swaps as reorder when fallback identity is stable', () => {
+    const engine = new TextUICoreEngine();
+    const result = engine.compareUi({
+      previousDsl: {
+        page: {
+          id: 'same-page',
+          title: 'Before',
+          layout: 'vertical',
+          components: [
+            { Input: { name: 'email', label: 'Email', type: 'text' } },
+            { Input: { name: 'password', label: 'Password', type: 'text' } }
+          ]
+        }
+      },
+      nextDsl: {
+        page: {
+          id: 'same-page',
+          title: 'After',
+          layout: 'vertical',
+          components: [
+            { Input: { name: 'password', label: 'Password', type: 'text' } },
+            { Input: { name: 'email', label: 'Email', type: 'text' } }
+          ]
+        }
+      }
+    });
+
+    assert.strictEqual(result.ok, true);
+    assert.ok(result.result);
+    assert.ok(result.result.events.some(event => event.entityKind === 'component' && event.kind === 'reorder'));
+  });
+
+  it('compareUi falls back to remove+add when kind continuity breaks', () => {
+    const engine = new TextUICoreEngine();
+    const result = engine.compareUi({
+      previousDsl: {
+        page: { id: 'same-page', title: 'Before', layout: 'vertical', components: [{ Text: { value: 'Before', variant: 'p' } }] }
+      },
+      nextDsl: {
+        page: { id: 'same-page', title: 'After', layout: 'vertical', components: [{ Link: { href: '/next', label: 'Before' } }] }
+      }
+    });
+
+    assert.strictEqual(result.ok, true);
+    assert.ok(result.result);
+    assert.ok(result.result.events.some(event => event.entityKind === 'component' && event.kind === 'remove+add'));
   });
 
   it('compareUi prefixes diagnostics with the invalid side', () => {

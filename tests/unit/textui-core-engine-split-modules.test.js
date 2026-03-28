@@ -59,6 +59,7 @@ describe('TextUICoreEngine split modules', () => {
     assert.strictEqual(result.entityResults[0].next.path, '/page');
     assert.strictEqual(result.entityResults[0].children[2].entityKind, 'component');
     assert.strictEqual(result.entityResults[0].children[2].children[0].entityKind, 'property');
+    assert.ok(result.events.some(event => event.entityKind === 'component' && event.kind === 'update'));
   });
 });
 
