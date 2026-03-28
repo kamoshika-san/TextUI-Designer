@@ -43,20 +43,22 @@ describe('TextUICoreEngine split modules', () => {
 
   it('diff module builds compare documents and skeleton result', () => {
     const previous = diff.createNormalizedDiffDocument({
-      page: { id: 'before', title: 'Before', layout: 'vertical', components: [] }
+      page: { id: 'before', title: 'Before', layout: 'vertical', components: [{ Text: { value: 'Before', variant: 'p' } }] }
     }, { side: 'previous' });
     const next = diff.createNormalizedDiffDocument({
-      page: { id: 'after', title: 'After', layout: 'vertical', components: [] }
+      page: { id: 'after', title: 'After', layout: 'vertical', components: [{ Text: { value: 'After', variant: 'p' } }] }
     }, { side: 'next' });
     const result = diff.createDiffResultSkeleton(previous, next);
 
     assert.strictEqual(previous.metadata.normalizationState, 'normalized-dsl');
-    assert.strictEqual(next.page.componentCount, 0);
-    assert.strictEqual(result.metadata.entityCount, 1);
-    assert.strictEqual(result.events.length, 1);
+    assert.strictEqual(next.page.componentCount, 1);
+    assert.ok(result.metadata.entityCount >= 6);
+    assert.ok(result.events.length >= 6);
     assert.strictEqual(result.events[0].trace.pairingReason, 'pending');
     assert.strictEqual(result.entityResults[0].previous.path, '/page');
     assert.strictEqual(result.entityResults[0].next.path, '/page');
+    assert.strictEqual(result.entityResults[0].children[2].entityKind, 'component');
+    assert.strictEqual(result.entityResults[0].children[2].children[0].entityKind, 'property');
   });
 });
 

@@ -63,7 +63,7 @@ page:
     const engine = new TextUICoreEngine();
     const result = engine.compareUi({
       previousDsl: {
-        page: { id: 'before-page', title: 'Before', layout: 'vertical', components: [] }
+        page: { id: 'before-page', title: 'Before', layout: 'vertical', components: [{ Text: { value: 'Before hello', variant: 'p' } }] }
       },
       nextDsl: {
         page: { id: 'after-page', title: 'After', layout: 'vertical', components: [{ Text: { value: 'Hello', variant: 'p' } }] }
@@ -75,18 +75,22 @@ page:
     assert.ok(result.previous);
     assert.ok(result.next);
     assert.ok(result.result);
-    assert.strictEqual(result.previous.page.componentCount, 0);
+    assert.strictEqual(result.previous.page.componentCount, 1);
     assert.strictEqual(result.next.page.componentCount, 1);
     assert.strictEqual(result.result.kind, 'textui-diff-result');
     assert.strictEqual(result.result.metadata.compareStage, 'c1-skeleton');
     assert.deepStrictEqual(result.result.metadata.supportedEventKinds, ['add', 'remove', 'update', 'reorder', 'move', 'rename', 'remove+add']);
     assert.strictEqual(result.result.entityResults.length, 1);
-    assert.strictEqual(result.result.events.length, 1);
+    assert.ok(result.result.events.length >= 4);
     assert.strictEqual(result.result.events[0].kind, 'update');
     assert.strictEqual(result.result.events[0].trace.explicitness, 'preserved');
     assert.strictEqual(result.result.entityResults[0].entityKind, 'page');
     assert.strictEqual(result.result.entityResults[0].status, 'pending');
-    assert.deepStrictEqual(result.result.entityResults[0].metadata.eventIds, [result.result.events[0].eventId]);
+    assert.strictEqual(result.result.entityResults[0].children.length >= 3, true);
+    assert.strictEqual(result.result.entityResults[0].children[0].entityKind, 'property');
+    assert.strictEqual(result.result.entityResults[0].children[2].entityKind, 'component');
+    assert.strictEqual(result.result.entityResults[0].children[2].children[0].entityKind, 'property');
+    assert.strictEqual(result.result.entityResults[0].metadata.eventIds.length, result.result.events.length);
   });
 
   it('compareUi prefixes diagnostics with the invalid side', () => {
