@@ -46,7 +46,7 @@ export function renderTabsTemplate(props: TabsComponent, key: number, tokenStyle
   const activeIndex = resolveActiveTabIndex(defaultTab, items.length);
 
   const tabsHeader = items
-    .map((item, index) => `        <button type="button" className={['textui-tab', 'px-4', 'py-2', 'text-sm', 'border-r', 'border-gray-700', 'last:border-r-0', ${index} === ${activeIndex} ? 'bg-gray-800 text-white textui-tab-active is-active' : 'bg-gray-900 text-gray-300', ${item.disabled ? 'true' : 'false'} ? 'opacity-50 cursor-not-allowed is-disabled' : ''].filter(Boolean).join(' ')} ${item.disabled ? 'disabled' : ''}>${item.label}</button>`)
+    .map((item, index) => `        <button type="button" className={['textui-tab', 'px-4', 'py-2', 'text-sm', 'border-r', 'border-gray-300', 'last:border-r-0', ${index} === ${activeIndex} ? 'bg-gray-200 text-gray-900 textui-tab-active is-active' : 'bg-gray-100 text-gray-700', ${item.disabled ? 'true' : 'false'} ? 'opacity-50 cursor-not-allowed is-disabled' : ''].filter(Boolean).join(' ')} ${item.disabled ? 'disabled' : ''}>${item.label}</button>`)
     .join('\n');
 
   const panelItems = (items[activeIndex]?.components || [])

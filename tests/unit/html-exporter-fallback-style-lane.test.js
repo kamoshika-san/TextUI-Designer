@@ -30,11 +30,12 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
       buildHtmlDocument('<div class="textui-tabs"></div>', '', { noWrap: true })
     );
 
-    assert.ok(!styleBlock.includes('.border-gray-300 {'));
-    assert.ok(!styleBlock.includes('.text-gray-700 {'));
-    assert.ok(!styleBlock.includes('.text-gray-900 {'));
-    assert.ok(!styleBlock.includes('.bg-gray-100 {'));
-    assert.ok(!styleBlock.includes('.bg-gray-200 {'));
+    assert.ok(styleBlock.includes('.border-gray-300 {'));
+    assert.ok(styleBlock.includes('.border-r {'));
+    assert.ok(styleBlock.includes('.text-gray-700 {'));
+    assert.ok(styleBlock.includes('.text-gray-900 {'));
+    assert.ok(styleBlock.includes('.bg-gray-100 {'));
+    assert.ok(styleBlock.includes('.bg-gray-200 {'));
   });
 
   it('keeps compatibility CSS available only when the fallback lane appends it explicitly', () => {
@@ -58,7 +59,10 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
           {
             Tabs: {
               defaultTab: 0,
-              items: [{ label: 'Tab 1', components: [{ Text: { value: 'tab body' } }] }]
+              items: [
+                { label: 'Tab 1', components: [{ Text: { value: 'tab body' } }] },
+                { label: 'Tab 2', components: [{ Text: { value: 'other body' } }] }
+              ]
             }
           },
           {
@@ -75,6 +79,8 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(html.includes('textui-tabs-list'));
     assert.ok(html.includes('textui-tab-panel-body'));
     assert.ok(html.includes('textui-tab-active is-active'));
+    assert.ok(html.includes('bg-gray-200 text-gray-900'));
+    assert.ok(html.includes('bg-gray-100 text-gray-700'));
     assert.ok(html.includes('textui-table-container'));
     assert.ok(html.includes('textui-table-header'));
     assert.ok(html.includes('textui-table-row'));
@@ -99,6 +105,10 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
                     { Divider: { orientation: 'horizontal', spacing: 'md' } },
                     { Text: { value: 'body content' } }
                   ]
+                },
+                {
+                  label: 'Issues',
+                  components: [{ Text: { value: 'issue body' } }]
                 }
               ]
             }
@@ -111,6 +121,8 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(html.includes('textui-tabs'));
     assert.ok(html.includes('textui-tabs-list'));
     assert.ok(html.includes('textui-tab-active is-active'));
+    assert.ok(html.includes('bg-gray-200 text-gray-900'));
+    assert.ok(html.includes('bg-gray-100 text-gray-700'));
     assert.ok(html.includes('textui-tab-panel-body'));
     assert.ok(html.includes('textui-divider horizontal my-4'));
     assert.ok(html.includes('textui-divider vertical my-4'));

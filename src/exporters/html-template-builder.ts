@@ -120,12 +120,13 @@ function getFallbackCompatibilityStyleBlock(): string {
     .textui-badge-error { background-color: rgba(239, 68, 68, 0.2); color: #fca5a5; }
 
     .textui-tabs {
-      border-color: rgb(55 65 81);
+      border-color: rgb(208 215 222);
     }
 
     .textui-tabs .flex {
       display: flex;
       flex-wrap: nowrap;
+      border-bottom-color: rgb(208 215 222);
     }
 
     .textui-tabs .flex > button {
@@ -133,8 +134,9 @@ function getFallbackCompatibilityStyleBlock(): string {
       min-height: 2.25rem;
       padding: 0.5rem 1rem;
       font-size: 0.875rem;
-      background-color: rgb(17 24 39);
-      color: rgb(209 213 219);
+      border-right-color: rgb(208 215 222);
+      background-color: rgb(246 248 250);
+      color: rgb(101 109 118);
     }
 
     .textui-tabs .flex > button:last-child {
@@ -142,8 +144,8 @@ function getFallbackCompatibilityStyleBlock(): string {
     }
 
     .textui-tabs .flex > button.textui-tab-active {
-      background-color: rgb(31 41 55);
-      color: rgb(255 255 255);
+      background-color: rgb(234 238 242);
+      color: rgb(31 35 40);
     }
 
     .textui-progress {

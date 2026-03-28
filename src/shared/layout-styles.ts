@@ -39,10 +39,13 @@ export function getExportCriticalLayoutUtilities(): string {
     .space-y-3 > * + * { margin-top: 0.75rem; }
     .gap-4 { gap: 1rem; }
     .divide-y > * + * { border-top-width: 1px; }
+    .divide-gray-200 > * + * { border-color: rgb(229 231 235); }
     .divide-gray-700 > * + * { border-color: rgb(55 65 81); }
     .border { border-width: 1px; }
+    .border-gray-300 { border-color: rgb(209 213 219); }
     .border-gray-700 { border-color: rgb(55 65 81); }
     .border-b { border-bottom-width: 1px; }
+    .border-r { border-right-width: 1px; }
     .rounded-md { border-radius: 0.375rem; }
     .px-4 { padding-left: 1rem; padding-right: 1rem; }
     .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
@@ -57,6 +60,10 @@ export function getExportCriticalLayoutUtilities(): string {
     .text-gray-200 { color: rgb(229 231 235); }
     .text-gray-300 { color: rgb(209 213 219); }
     .text-gray-400 { color: rgb(156 163 175); }
+    .text-gray-700 { color: rgb(55 65 81); }
+    .text-gray-900 { color: rgb(17 24 39); }
+    .bg-gray-100 { background-color: rgb(243 244 246); }
+    .bg-gray-200 { background-color: rgb(229 231 235); }
     .bg-gray-800 { background-color: rgb(31 41 55); }
     .bg-gray-800\\/70 { background-color: rgba(31, 41, 55, 0.7); }
     .bg-gray-900 { background-color: rgb(17 24 39); }

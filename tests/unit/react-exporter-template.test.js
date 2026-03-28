@@ -56,6 +56,8 @@ describe('ReactExporter template rendering split', () => {
     assert.ok(code.includes('inside'));
     assert.ok(code.includes('hover:bg-gray-100 transition-colors has-hover'));
     assert.ok(code.includes('textui-tab-active is-active'));
+    assert.ok(code.includes('bg-gray-200 text-gray-900'));
+    assert.ok(code.includes('bg-gray-100 text-gray-700'));
     assert.ok(code.includes('opacity-50 cursor-not-allowed'));
     assert.match(code, /(?:>|\s)Edit(?:<|\s)/);
   });
