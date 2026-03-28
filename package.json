@@ -513,7 +513,8 @@
     "fdir": {
       "picomatch": "4.0.4"
     },
-    "serialize-javascript": "7.0.3",
+    "serialize-javascript": "7.0.5",
+    "terser-webpack-plugin": "5.3.17",
     "yauzl": "3.2.1"
   }
 }
