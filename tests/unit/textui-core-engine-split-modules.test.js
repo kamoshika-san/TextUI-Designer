@@ -53,6 +53,8 @@ describe('TextUICoreEngine split modules', () => {
     assert.strictEqual(previous.metadata.normalizationState, 'normalized-dsl');
     assert.strictEqual(next.page.componentCount, 0);
     assert.strictEqual(result.metadata.entityCount, 1);
+    assert.strictEqual(result.events.length, 1);
+    assert.strictEqual(result.events[0].trace.pairingReason, 'pending');
     assert.strictEqual(result.entityResults[0].previous.path, '/page');
     assert.strictEqual(result.entityResults[0].next.path, '/page');
   });

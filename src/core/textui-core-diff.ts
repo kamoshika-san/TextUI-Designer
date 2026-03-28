@@ -3,6 +3,10 @@ import type { TextUIDSL } from '../domain/dsl-types';
 export type DiffCompareSide = 'previous' | 'next';
 export type DiffEntityKind = 'page' | 'component';
 export type DiffEntityStatus = 'pending';
+export type DiffEventKind = 'add' | 'remove' | 'update' | 'reorder' | 'move' | 'rename' | 'remove+add';
+export type DiffIdentitySource = 'explicit-id' | 'fallback-key' | 'structural-path' | 'none';
+export type DiffFallbackMarker = 'none' | 'heuristic-pending' | 'remove-add-fallback';
+export type DiffExplicitnessMarker = 'preserved' | 'not-applicable' | 'unknown';
 
 export interface DiffCompareDocument {
   side: DiffCompareSide;
@@ -29,6 +33,30 @@ export interface DiffEntityRef {
   pageId: string;
 }
 
+export interface DiffSourceRef {
+  side: DiffCompareSide;
+  documentPath?: string;
+  entityPath: string;
+}
+
+export interface DiffTracePayload {
+  previousSourceRef?: DiffSourceRef;
+  nextSourceRef?: DiffSourceRef;
+  explicitness: DiffExplicitnessMarker;
+  identitySource: DiffIdentitySource;
+  fallbackMarker: DiffFallbackMarker;
+  pairingReason: 'pending';
+}
+
+export interface DiffEvent {
+  eventId: string;
+  kind: DiffEventKind;
+  entityKey: string;
+  entityKind: DiffEntityKind;
+  status: 'pending';
+  trace: DiffTracePayload;
+}
+
 export interface DiffEntityResult {
   entityKey: string;
   entityKind: DiffEntityKind;
@@ -39,6 +67,7 @@ export interface DiffEntityResult {
   metadata: {
     classification: 'pending';
     eventCount: number;
+    eventIds: string[];
   };
 }
 
@@ -49,7 +78,7 @@ export interface DiffCompareResult {
     next: DiffCompareDocument;
   };
   entityResults: DiffEntityResult[];
-  events: [];
+  events: DiffEvent[];
   metadata: {
     schemaVersion: 'diff-result/v0';
     compareStage: 'c1-skeleton';
@@ -57,6 +86,7 @@ export interface DiffCompareResult {
     entityCount: number;
     traversal: 'pending';
     classification: 'pending';
+    supportedEventKinds: DiffEventKind[];
   };
 }
 
@@ -90,8 +120,32 @@ export function createDiffResultSkeleton(
   previous: DiffCompareDocument,
   next: DiffCompareDocument
 ): DiffCompareResult {
-  const rootEntity: DiffEntityResult = {
+  const rootEvent: DiffEvent = {
+    eventId: `event:page:${previous.page.id}->${next.page.id}:update`,
+    kind: 'update',
     entityKey: `page:${previous.page.id}->${next.page.id}`,
+    entityKind: 'page',
+    status: 'pending',
+    trace: {
+      previousSourceRef: {
+        side: 'previous',
+        documentPath: previous.metadata.sourcePath,
+        entityPath: '/page'
+      },
+      nextSourceRef: {
+        side: 'next',
+        documentPath: next.metadata.sourcePath,
+        entityPath: '/page'
+      },
+      explicitness: 'preserved',
+      identitySource: previous.page.id === next.page.id ? 'fallback-key' : 'structural-path',
+      fallbackMarker: 'none',
+      pairingReason: 'pending'
+    }
+  };
+
+  const rootEntity: DiffEntityResult = {
+    entityKey: rootEvent.entityKey,
     entityKind: 'page',
     status: 'pending',
     previous: {
@@ -109,7 +163,8 @@ export function createDiffResultSkeleton(
     children: [],
     metadata: {
       classification: 'pending',
-      eventCount: 0
+      eventCount: 1,
+      eventIds: [rootEvent.eventId]
     }
   };
 
@@ -117,14 +172,15 @@ export function createDiffResultSkeleton(
     kind: 'textui-diff-result',
     input: { previous, next },
     entityResults: [rootEntity],
-    events: [],
+    events: [rootEvent],
     metadata: {
       schemaVersion: 'diff-result/v0',
       compareStage: 'c1-skeleton',
-      eventCount: 0,
+      eventCount: 1,
       entityCount: 1,
       traversal: 'pending',
-      classification: 'pending'
+      classification: 'pending',
+      supportedEventKinds: ['add', 'remove', 'update', 'reorder', 'move', 'rename', 'remove+add']
     }
   };
 }

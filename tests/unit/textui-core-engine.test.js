@@ -79,9 +79,14 @@ page:
     assert.strictEqual(result.next.page.componentCount, 1);
     assert.strictEqual(result.result.kind, 'textui-diff-result');
     assert.strictEqual(result.result.metadata.compareStage, 'c1-skeleton');
+    assert.deepStrictEqual(result.result.metadata.supportedEventKinds, ['add', 'remove', 'update', 'reorder', 'move', 'rename', 'remove+add']);
     assert.strictEqual(result.result.entityResults.length, 1);
+    assert.strictEqual(result.result.events.length, 1);
+    assert.strictEqual(result.result.events[0].kind, 'update');
+    assert.strictEqual(result.result.events[0].trace.explicitness, 'preserved');
     assert.strictEqual(result.result.entityResults[0].entityKind, 'page');
     assert.strictEqual(result.result.entityResults[0].status, 'pending');
+    assert.deepStrictEqual(result.result.entityResults[0].metadata.eventIds, [result.result.events[0].eventId]);
   });
 
   it('compareUi prefixes diagnostics with the invalid side', () => {
