@@ -7,6 +7,7 @@ export type DiffEventKind = 'add' | 'remove' | 'update' | 'reorder' | 'move' | '
 export type DiffIdentitySource = 'explicit-id' | 'fallback-key' | 'structural-path' | 'none';
 export type DiffFallbackMarker = 'none' | 'heuristic-pending' | 'remove-add-fallback';
 export type DiffExplicitnessMarker = 'preserved' | 'not-applicable' | 'unknown';
+export type DiffPairingReason = 'deterministic-explicit-id' | 'deterministic-fallback-key' | 'deterministic-structural-path' | 'unpaired';
 
 export interface DiffCompareDocument {
   side: DiffCompareSide;
@@ -45,7 +46,7 @@ export interface DiffTracePayload {
   explicitness: DiffExplicitnessMarker;
   identitySource: DiffIdentitySource;
   fallbackMarker: DiffFallbackMarker;
-  pairingReason: 'pending';
+  pairingReason: DiffPairingReason;
 }
 
 export interface DiffEvent {
@@ -97,8 +98,14 @@ type DiffTreeBuild = {
   events: DiffEvent[];
   nextTraversalOrder: number;
 };
+type DiffDeterministicIdentity = {
+  entityKeySuffix: string;
+  identitySource: DiffIdentitySource;
+  pairingReason: DiffPairingReason;
+};
 
 const CHILD_COLLECTION_KEYS = ['components', 'fields', 'actions', 'items', 'children'] as const;
+const FALLBACK_IDENTITY_KEYS = ['key', 'name', 'route', 'event', 'state', 'transition'] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -160,7 +167,8 @@ function createPendingEvent(
   next: DiffCompareDocument,
   hasPrevious: boolean,
   hasNext: boolean,
-  identitySource: DiffIdentitySource
+  identitySource: DiffIdentitySource,
+  pairingReason: DiffPairingReason
 ): DiffEvent {
   return {
     eventId,
@@ -182,8 +190,79 @@ function createPendingEvent(
       explicitness: entityKind === 'property' ? 'unknown' : 'preserved',
       identitySource,
       fallbackMarker: 'none',
-      pairingReason: 'pending'
+      pairingReason
     }
+  };
+}
+
+function normalizeIdentityValue(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function resolvePageDeterministicIdentity(previous: DiffCompareDocument, next: DiffCompareDocument): DiffDeterministicIdentity {
+  if (previous.page.id === next.page.id) {
+    return {
+      entityKeySuffix: previous.page.id,
+      identitySource: 'explicit-id',
+      pairingReason: 'deterministic-explicit-id'
+    };
+  }
+
+  return {
+    entityKeySuffix: '/page',
+    identitySource: 'structural-path',
+    pairingReason: 'deterministic-structural-path'
+  };
+}
+
+function resolveComponentDeterministicIdentity(
+  previousNode: DiffComponentNode | undefined,
+  nextNode: DiffComponentNode | undefined,
+  path: string
+): DiffDeterministicIdentity {
+  const previousKind = previousNode?.__kind;
+  const nextKind = nextNode?.__kind;
+  const kind = previousKind ?? nextKind ?? 'Unknown';
+
+  const previousExplicitId = normalizeIdentityValue(previousNode?.id);
+  const nextExplicitId = normalizeIdentityValue(nextNode?.id);
+  if (previousExplicitId && nextExplicitId && previousExplicitId === nextExplicitId && previousKind === nextKind) {
+    return {
+      entityKeySuffix: `${kind}:${previousExplicitId}`,
+      identitySource: 'explicit-id',
+      pairingReason: 'deterministic-explicit-id'
+    };
+  }
+
+  for (const key of FALLBACK_IDENTITY_KEYS) {
+    const previousFallback = normalizeIdentityValue(previousNode?.[key]);
+    const nextFallback = normalizeIdentityValue(nextNode?.[key]);
+    if (previousFallback && nextFallback && previousFallback === nextFallback && previousKind === nextKind) {
+      return {
+        entityKeySuffix: `${kind}:${key}:${previousFallback}`,
+        identitySource: 'fallback-key',
+        pairingReason: 'deterministic-fallback-key'
+      };
+    }
+  }
+
+  if (previousKind === nextKind && previousKind) {
+    return {
+      entityKeySuffix: `${kind}:${path}`,
+      identitySource: 'structural-path',
+      pairingReason: 'deterministic-structural-path'
+    };
+  }
+
+  return {
+    entityKeySuffix: `${kind}:${path}`,
+    identitySource: 'none',
+    pairingReason: 'unpaired'
   };
 }
 
@@ -236,7 +315,8 @@ function buildPropertyEntity(
     next,
     hasPrevious,
     hasNext,
-    'none'
+    'none',
+    hasPrevious && hasNext ? 'deterministic-structural-path' : 'unpaired'
   );
   const refs = buildEntityRefs('property', path, previous.page.id, next.page.id, hasPrevious, hasNext);
 
@@ -273,8 +353,8 @@ function buildComponentEntity(
   const hasNext = nextNode !== undefined;
   const previousKind = previousNode?.__kind;
   const nextKind = nextNode?.__kind;
-  const entityKindLabel = previousKind ?? nextKind ?? 'Unknown';
-  const entityKey = `component:${path}:${entityKindLabel}`;
+  const deterministicIdentity = resolveComponentDeterministicIdentity(previousNode, nextNode, path);
+  const entityKey = `component:${deterministicIdentity.entityKeySuffix}`;
   const refs = buildEntityRefs('component', path, previous.page.id, next.page.id, hasPrevious, hasNext);
   const rootEvent = createPendingEvent(
     `event:${entityKey}:update`,
@@ -286,7 +366,8 @@ function buildComponentEntity(
     next,
     hasPrevious,
     hasNext,
-    previousKind === nextKind && previousKind ? 'structural-path' : 'none'
+    deterministicIdentity.identitySource,
+    deterministicIdentity.pairingReason
   );
 
   let nextOrder = traversalOrder + 1;
@@ -387,17 +468,19 @@ export function createDiffResultSkeleton(
   previous: DiffCompareDocument,
   next: DiffCompareDocument
 ): DiffCompareResult {
+  const pageIdentity = resolvePageDeterministicIdentity(previous, next);
   const rootEvent = createPendingEvent(
     `event:page:${previous.page.id}->${next.page.id}:update`,
     'update',
-    `page:${previous.page.id}->${next.page.id}`,
+    `page:${pageIdentity.entityKeySuffix}`,
     'page',
     '/page',
     previous,
     next,
     true,
     true,
-    previous.page.id === next.page.id ? 'fallback-key' : 'structural-path'
+    pageIdentity.identitySource,
+    pageIdentity.pairingReason
   );
 
   let nextTraversalOrder = 1;

@@ -54,7 +54,7 @@ describe('TextUICoreEngine split modules', () => {
     assert.strictEqual(next.page.componentCount, 1);
     assert.ok(result.metadata.entityCount >= 6);
     assert.ok(result.events.length >= 6);
-    assert.strictEqual(result.events[0].trace.pairingReason, 'pending');
+    assert.strictEqual(result.events[0].trace.pairingReason, 'deterministic-structural-path');
     assert.strictEqual(result.entityResults[0].previous.path, '/page');
     assert.strictEqual(result.entityResults[0].next.path, '/page');
     assert.strictEqual(result.entityResults[0].children[2].entityKind, 'component');

@@ -84,13 +84,36 @@ page:
     assert.ok(result.result.events.length >= 4);
     assert.strictEqual(result.result.events[0].kind, 'update');
     assert.strictEqual(result.result.events[0].trace.explicitness, 'preserved');
+    assert.strictEqual(result.result.events[0].trace.pairingReason, 'deterministic-structural-path');
     assert.strictEqual(result.result.entityResults[0].entityKind, 'page');
     assert.strictEqual(result.result.entityResults[0].status, 'pending');
     assert.strictEqual(result.result.entityResults[0].children.length >= 3, true);
     assert.strictEqual(result.result.entityResults[0].children[0].entityKind, 'property');
     assert.strictEqual(result.result.entityResults[0].children[2].entityKind, 'component');
     assert.strictEqual(result.result.entityResults[0].children[2].children[0].entityKind, 'property');
+    assert.strictEqual(result.result.entityResults[0].children[2].metadata.eventIds.length >= 1, true);
     assert.strictEqual(result.result.entityResults[0].metadata.eventIds.length, result.result.events.length);
+  });
+
+  it('compareUi keeps deterministic continuity when component ids match', () => {
+    const engine = new TextUICoreEngine();
+    const result = engine.compareUi({
+      previousDsl: {
+        page: { id: 'same-page', title: 'Before', layout: 'vertical', components: [{ Form: { id: 'profile-form', fields: [] } }] }
+      },
+      nextDsl: {
+        page: { id: 'same-page', title: 'After', layout: 'vertical', components: [{ Form: { id: 'profile-form', fields: [] } }] }
+      }
+    });
+
+    assert.strictEqual(result.ok, true);
+    assert.ok(result.result);
+    assert.strictEqual(result.result.events[0].trace.pairingReason, 'deterministic-explicit-id');
+    assert.strictEqual(result.result.events[0].trace.identitySource, 'explicit-id');
+    assert.strictEqual(result.result.entityResults[0].children[2].previous.path, '/page/components/0');
+    assert.strictEqual(result.result.entityResults[0].children[2].next.path, '/page/components/0');
+    assert.strictEqual(result.result.entityResults[0].children[2].metadata.eventIds.length >= 1, true);
+    assert.ok(result.result.entityResults[0].children[2].metadata.eventIds[0].includes('component:Form:profile-form'));
   });
 
   it('compareUi prefixes diagnostics with the invalid side', () => {
