@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * リポジトリ内のソース規模を集計し、JSON / Markdown を metrics/ に出力する。
- * CI（Linux）では PATH に cloc がある場合、言語別行数も取り込む。
+ * Collect repository line-count metrics and SSoT regression metrics into
+ * metrics/code-metrics.{json,md}.
  */
 "use strict";
 
@@ -12,6 +12,19 @@ const { spawnSync } = require("child_process");
 const root = path.join(__dirname, "..");
 const outDir = path.join(root, "metrics");
 const SSOT_IMPORT_THRESHOLD = Number(process.env.SSOT_IMPORT_THRESHOLD || 0);
+const CSS_SSOT_BASELINES = {
+    todoPartialCount: 0,
+    nonExemptInlineUtilityClassOccurrences: 6,
+    fallbackCompatibilitySelectorCount: 24,
+};
+const INLINE_UTILITY_TARGET_COMPONENTS = new Set([
+    "Checkbox.tsx",
+    "Form.tsx",
+    "Input.tsx",
+    "Radio.tsx",
+]);
+const INLINE_UTILITY_TOKEN_PATTERN =
+    /^(?:text-|border-|px-|py-|mb-|space-|flex$|items-|block$|font-|ml-)/;
 
 /** @typedef {{ files: number, totalLines: number, nonEmptyLines: number }} Bucket */
 
@@ -33,9 +46,6 @@ const IGNORED_SEGMENTS = new Set([
     ".tmp-plan",
 ]);
 
-/**
- * @param {string} relPosix
- */
 function topSegment(relPosix) {
     const parts = relPosix.split("/");
     if (parts[0] === "src" && parts.length >= 2) {
@@ -44,125 +54,90 @@ function topSegment(relPosix) {
     return parts[0] || "root";
 }
 
-/**
- * @param {string} absPath
- * @returns {{ total: number, nonEmpty: number }}
- */
 function analyzeFile(absPath) {
     const text = fs.readFileSync(absPath, "utf8");
     const lines = text.split(/\r?\n/);
     const total = lines.length;
-    const nonEmpty = lines.filter((l) => l.trim().length > 0).length;
+    const nonEmpty = lines.filter((line) => line.trim().length > 0).length;
     return { total, nonEmpty };
 }
 
-/**
- * @returns {Record<string, unknown> | null}
- */
 function runClocJson() {
-    const r = spawnSync(
+    const result = spawnSync(
         "cloc",
         ["src", "tests", "scripts", "--json", "--quiet"],
         { cwd: root, encoding: "utf8" },
     );
-    if (r.error || r.status !== 0 || !r.stdout) {
+    if (result.error || result.status !== 0 || !result.stdout) {
         return null;
     }
     try {
-        return JSON.parse(r.stdout);
+        return JSON.parse(result.stdout);
     } catch {
         return null;
     }
 }
 
-/**
- * @param {Record<string, Bucket>} bySegment
- * @returns {string}
- */
 function formatSegmentTable(bySegment) {
     const rows = Object.entries(bySegment)
         .sort((a, b) => b[1].nonEmptyLines - a[1].nonEmptyLines)
         .map(
-            ([seg, b]) =>
-                `| ${seg} | ${b.files} | ${b.totalLines} | ${b.nonEmptyLines} |`,
+            ([segment, bucket]) =>
+                `| ${segment} | ${bucket.files} | ${bucket.totalLines} | ${bucket.nonEmptyLines} |`,
         );
     return [
-        "| 区分 | ファイル数 | 行数（全行） | 行数（空行除く） |",
+        "| Segment | Files | Total lines | Non-empty lines |",
         "| --- | ---: | ---: | ---: |",
         ...rows,
     ].join("\n");
 }
 
-/**
- * @param {Record<string, unknown> | null} cloc
- * @returns {string}
- */
 function formatClocSection(cloc) {
     if (!cloc || typeof cloc !== "object") {
         return [
-            "## cloc（言語別）",
+            "## cloc",
             "",
-            "_cloc が利用できませんでした（ローカルでは未インストールの場合があります）。CI では Linux ランナーに cloc を入れて実行します。_",
+            "_cloc output unavailable in this environment._",
             "",
         ].join("\n");
     }
-    const langKeys = Object.keys(cloc).filter((k) => {
-        if (k === "header" || k === "SUM") {
+    const langKeys = Object.keys(cloc).filter((key) => {
+        if (key === "header" || key === "SUM") {
             return false;
         }
-        const o = cloc[k];
-        return (
-            o !== null &&
-            typeof o === "object" &&
-            "code" in /** @type {object} */ (o)
-        );
+        const value = cloc[key];
+        return value !== null && typeof value === "object" && "code" in value;
     });
-    const header = "| 言語 | code | comment | blank | 合計 |";
-    const sep = "| --- | ---: | ---: | ---: | ---: |";
-    const body = langKeys
+    const rows = langKeys
         .sort((a, b) => a.localeCompare(b))
         .map((lang) => {
-            const o = /** @type {{ code?: number, comment?: number, blank?: number }} */ (
-                cloc[lang]
-            );
-            const code = Number(o.code) || 0;
-            const comment = Number(o.comment) || 0;
-            const blank = Number(o.blank) || 0;
-            const sum = code + comment + blank;
-            return `| ${lang} | ${code} | ${comment} | ${blank} | ${sum} |`;
+            const value = cloc[lang];
+            const code = Number(value.code) || 0;
+            const comment = Number(value.comment) || 0;
+            const blank = Number(value.blank) || 0;
+            return `| ${lang} | ${code} | ${comment} | ${blank} | ${code + comment + blank} |`;
         });
-    const sumObj = cloc.SUM;
-    let footer = "";
-    if (sumObj && typeof sumObj === "object" && "code" in sumObj) {
-        const s = /** @type {{ code?: number, comment?: number, blank?: number }} */ (
-            sumObj
-        );
-        const code = Number(s.code) || 0;
-        const comment = Number(s.comment) || 0;
-        const blank = Number(s.blank) || 0;
-        const total = code + comment + blank;
-        footer = `| **SUM** | ${code} | ${comment} | ${blank} | ${total} |`;
-    }
-    const lines = ["## cloc（言語別）", "", header, sep, ...body];
-    if (footer) {
-        lines.push("", footer);
+    const lines = [
+        "## cloc",
+        "",
+        "| Language | Code | Comment | Blank | Total |",
+        "| --- | ---: | ---: | ---: | ---: |",
+        ...rows,
+    ];
+    if (cloc.SUM && typeof cloc.SUM === "object") {
+        const code = Number(cloc.SUM.code) || 0;
+        const comment = Number(cloc.SUM.comment) || 0;
+        const blank = Number(cloc.SUM.blank) || 0;
+        lines.push("", `| **SUM** | ${code} | ${comment} | ${blank} | ${code + comment + blank} |`);
     }
     lines.push("");
     return lines.join("\n");
 }
 
-/**
- * @param {string} relPosix
- * @returns {boolean}
- */
 function isSourceLikeFile(relPosix) {
     return /\.(ts|tsx|js|cjs|mjs)$/.test(relPosix);
 }
 
-/**
- * @param {string[]} exts
- * @returns {string[]}
- */
 function collectFilesUnder(baseDir, exts) {
     const startDir = path.join(root, baseDir);
     if (!fs.existsSync(startDir)) {
@@ -172,9 +147,6 @@ function collectFilesUnder(baseDir, exts) {
     /** @type {string[]} */
     const files = [];
 
-    /**
-     * @param {string} absDir
-     */
     function walk(absDir) {
         for (const entry of fs.readdirSync(absDir, { withFileTypes: true })) {
             if (IGNORED_SEGMENTS.has(entry.name)) {
@@ -200,38 +172,147 @@ function collectFilesUnder(baseDir, exts) {
     return files;
 }
 
-/**
- * @returns {{ threshold: number, rendererTypesImports: number, violatingFiles: string[], status: "pass" | "fail" }}
- */
+function extractClassNameTokens(line) {
+    const match = line.match(/className\s*=\s*"([^"]+)"/);
+    if (!match) {
+        return [];
+    }
+    return match[1]
+        .split(/\s+/)
+        .map((token) => token.trim())
+        .filter(Boolean);
+}
+
+function collectTodoPartialCount(lines) {
+    /** @type {string[]} */
+    const matches = [];
+    for (let i = 0; i < lines.length; i += 1) {
+        if (/TODO partial/i.test(lines[i])) {
+            matches.push(`line ${i + 1}: ${lines[i].trim()}`);
+        }
+    }
+    return { count: matches.length, matches };
+}
+
+function collectInlineUtilityClassOccurrences() {
+    const files = collectFilesUnder("src/renderer/components", [".tsx"]);
+    /** @type {string[]} */
+    const matches = [];
+
+    for (const relPosix of files) {
+        const baseName = path.posix.basename(relPosix);
+        if (!INLINE_UTILITY_TARGET_COMPONENTS.has(baseName)) {
+            continue;
+        }
+
+        const lines = fs.readFileSync(path.join(root, relPosix), "utf8").split(/\r?\n/);
+        for (let i = 0; i < lines.length; i += 1) {
+            const tokens = extractClassNameTokens(lines[i]);
+            if (tokens.length === 0) {
+                continue;
+            }
+            const utilityTokens = tokens.filter((token) =>
+                INLINE_UTILITY_TOKEN_PATTERN.test(token),
+            );
+            const spacingOnlyUtilityLine =
+                utilityTokens.length > 0 &&
+                utilityTokens.every((token) => /^mb-\d+$/.test(token));
+            const allTokensAllowed = tokens.every(
+                (token) =>
+                    token.startsWith("textui-") ||
+                    INLINE_UTILITY_TOKEN_PATTERN.test(token),
+            );
+            if (
+                utilityTokens.length === 0 ||
+                spacingOnlyUtilityLine ||
+                !allTokensAllowed
+            ) {
+                continue;
+            }
+            matches.push(`${relPosix}:${i + 1}: ${lines[i].trim()}`);
+        }
+    }
+
+    return { count: matches.length, matches };
+}
+
+function collectFallbackCompatibilitySelectorCount() {
+    const relPosix = "src/exporters/html-template-builder.ts";
+    const text = fs.readFileSync(path.join(root, relPosix), "utf8");
+    const blockMatch = text.match(
+        /function getFallbackCompatibilityStyleBlock\(\): string \{\s+return `([\s\S]*?)`;\s+\}/,
+    );
+    if (!blockMatch) {
+        return { count: 0, matches: [] };
+    }
+
+    const matches = [...blockMatch[1].matchAll(/(\.textui-[^{]+)\{/g)].map(
+        (match) => match[1].trim(),
+    );
+    return { count: matches.length, matches };
+}
+
 function collectSsotMetrics() {
     const candidates = collectFilesUnder(".", [".ts", ".tsx", ".js", ".cjs", ".mjs"]);
     const violatingFiles = [];
     const importPattern =
         /(?:from\s+['"][^'"]*renderer\/types['"]|require\(\s*['"][^'"]*renderer\/types['"]\s*\))/g;
 
-    for (const f of candidates) {
-        const relPosix = f.split(path.sep).join("/");
+    for (const relPosix of candidates) {
         if (!isSourceLikeFile(relPosix)) {
             continue;
         }
-        // thin facade 自身や build 生成物はカウント対象外
         if (relPosix === "src/renderer/types.ts" || relPosix.startsWith("out/")) {
             continue;
         }
-        const abs = path.join(root, f);
-        const text = fs.readFileSync(abs, "utf8");
+        const text = fs.readFileSync(path.join(root, relPosix), "utf8");
         if (importPattern.test(text)) {
             violatingFiles.push(relPosix);
         }
     }
-
     violatingFiles.sort((a, b) => a.localeCompare(b));
+
+    const todoPartialFiles = [
+        ...collectFilesUnder("src/renderer/components/styles", [".css"]),
+        ...collectFilesUnder("src/renderer/components", [".tsx"]),
+    ];
+    /** @type {string[]} */
+    const todoPartialMatches = [];
+    for (const relPosix of todoPartialFiles) {
+        const lines = fs.readFileSync(path.join(root, relPosix), "utf8").split(/\r?\n/);
+        const result = collectTodoPartialCount(lines);
+        for (const match of result.matches) {
+            todoPartialMatches.push(`${relPosix}:${match}`);
+        }
+    }
+
+    const inlineUtility = collectInlineUtilityClassOccurrences();
+    const fallbackSelectors = collectFallbackCompatibilitySelectorCount();
+    const cssMetrics = {
+        todoPartialCount: todoPartialMatches.length,
+        nonExemptInlineUtilityClassOccurrences: inlineUtility.count,
+        fallbackCompatibilitySelectorCount: fallbackSelectors.count,
+    };
+    const importPass = violatingFiles.length <= SSOT_IMPORT_THRESHOLD;
+    const cssPass =
+        cssMetrics.todoPartialCount <= CSS_SSOT_BASELINES.todoPartialCount &&
+        cssMetrics.nonExemptInlineUtilityClassOccurrences <=
+            CSS_SSOT_BASELINES.nonExemptInlineUtilityClassOccurrences &&
+        cssMetrics.fallbackCompatibilitySelectorCount <=
+            CSS_SSOT_BASELINES.fallbackCompatibilitySelectorCount;
+
     return {
         threshold: SSOT_IMPORT_THRESHOLD,
         rendererTypesImports: violatingFiles.length,
         violatingFiles,
-        status:
-            violatingFiles.length <= SSOT_IMPORT_THRESHOLD ? "pass" : "fail",
+        cssThresholds: { ...CSS_SSOT_BASELINES },
+        cssMetrics,
+        cssViolations: {
+            todoPartialCount: todoPartialMatches,
+            nonExemptInlineUtilityClassOccurrences: inlineUtility.matches,
+            fallbackCompatibilitySelectorCount: fallbackSelectors.matches,
+        },
+        status: importPass && cssPass ? "pass" : "fail",
     };
 }
 
@@ -242,35 +323,32 @@ function main() {
     const byPattern = {};
     /** @type {Record<string, Bucket>} */
     const bySegment = {};
-    /** @type {Bucket} */
     const grand = { files: 0, totalLines: 0, nonEmptyLines: 0 };
 
     for (const { name, baseDir, exts } of PATTERNS) {
         byPattern[name] = { files: 0, totalLines: 0, nonEmptyLines: 0 };
         const files = collectFilesUnder(baseDir, exts);
-        for (const f of files) {
-            const abs = path.join(root, f);
-            const { total, nonEmpty } = analyzeFile(abs);
-            const relPosix = f.split(path.sep).join("/");
+        for (const relPosix of files) {
+            const absPath = path.join(root, relPosix);
+            const { total, nonEmpty } = analyzeFile(absPath);
             byPattern[name].files += 1;
             byPattern[name].totalLines += total;
             byPattern[name].nonEmptyLines += nonEmpty;
             grand.files += 1;
             grand.totalLines += total;
             grand.nonEmptyLines += nonEmpty;
-            const seg = topSegment(relPosix);
-            if (!bySegment[seg]) {
-                bySegment[seg] = { files: 0, totalLines: 0, nonEmptyLines: 0 };
+            const segment = topSegment(relPosix);
+            if (!bySegment[segment]) {
+                bySegment[segment] = { files: 0, totalLines: 0, nonEmptyLines: 0 };
             }
-            bySegment[seg].files += 1;
-            bySegment[seg].totalLines += total;
-            bySegment[seg].nonEmptyLines += nonEmpty;
+            bySegment[segment].files += 1;
+            bySegment[segment].totalLines += total;
+            bySegment[segment].nonEmptyLines += nonEmpty;
         }
     }
 
     const cloc = runClocJson();
     const ssot = collectSsotMetrics();
-
     const payload = {
         generatedAt: new Date().toISOString(),
         summary: grand,
@@ -287,57 +365,70 @@ function main() {
     );
 
     const md = [
-        "# コードメトリクス",
+        "# Code Metrics",
         "",
-        `_生成: ${payload.generatedAt}_`,
+        `_Generated: ${payload.generatedAt}_`,
         "",
-        "## サマリー",
+        "## Summary",
         "",
-        "| 指標 | 値 |",
+        "| Metric | Value |",
         "| --- | ---: |",
-        `| 対象ファイル数 | ${grand.files} |`,
-        `| 行数（全行） | ${grand.totalLines} |`,
-        `| 行数（空行除く） | ${grand.nonEmptyLines} |`,
+        `| Files | ${grand.files} |`,
+        `| Total lines | ${grand.totalLines} |`,
+        `| Non-empty lines | ${grand.nonEmptyLines} |`,
         "",
-        "## パターン別",
+        "## By Pattern",
         "",
-        "| パターン | ファイル数 | 行数（全行） | 行数（空行除く） |",
+        "| Pattern | Files | Total lines | Non-empty lines |",
         "| --- | ---: | ---: | ---: |",
         ...Object.entries(byPattern).map(
-            ([n, b]) =>
-                `| ${n} | ${b.files} | ${b.totalLines} | ${b.nonEmptyLines} |`,
+            ([name, bucket]) =>
+                `| ${name} | ${bucket.files} | ${bucket.totalLines} | ${bucket.nonEmptyLines} |`,
         ),
         "",
-        "## ディレクトリ区分（src の第1階層ほか）",
+        "## By Segment",
         "",
         formatSegmentTable(bySegment),
         "",
-        "## SSoT 回帰メトリクス（renderer/types import）",
+        "## SSoT Import Metrics",
         "",
-        "| 指標 | 値 |",
+        "| Metric | Value |",
         "| --- | ---: |",
-        `| 閾値（許容件数） | ${ssot.threshold} |`,
-        `| 検出件数 | ${ssot.rendererTypesImports} |`,
-        `| 判定 | ${ssot.status === "pass" ? "PASS" : "FAIL"} |`,
+        `| renderer/types threshold | ${ssot.threshold} |`,
+        `| renderer/types imports | ${ssot.rendererTypesImports} |`,
+        `| status | ${ssot.status === "pass" ? "PASS" : "FAIL"} |`,
         "",
         ssot.violatingFiles.length > 0
             ? [
-                  "### 検出ファイル",
+                  "### renderer/types violating files",
                   "",
-                  ...ssot.violatingFiles.map((f) => `- \`${f}\``),
-                  "",
-                  "_対応方針: 閾値超過時は CI の SSoT metrics check で失敗させる。_",
+                  ...ssot.violatingFiles.map((file) => `- \`${file}\``),
                   "",
               ].join("\n")
-            : "_検出なし（閾値内）。_",
+            : "_No renderer/types violations._",
+        "",
+        "## CSS SSoT Metrics",
+        "",
+        "| Metric | Baseline | Current |",
+        "| --- | ---: | ---: |",
+        `| TODO partial count | ${ssot.cssThresholds.todoPartialCount} | ${ssot.cssMetrics.todoPartialCount} |`,
+        `| Non-exempt inline utility class occurrences | ${ssot.cssThresholds.nonExemptInlineUtilityClassOccurrences} | ${ssot.cssMetrics.nonExemptInlineUtilityClassOccurrences} |`,
+        `| Fallback compatibility selector count | ${ssot.cssThresholds.fallbackCompatibilitySelectorCount} | ${ssot.cssMetrics.fallbackCompatibilitySelectorCount} |`,
         "",
         formatClocSection(cloc),
     ].join("\n");
 
     fs.writeFileSync(path.join(outDir, "code-metrics.md"), md, "utf8");
-
-    // CI などからそのままサマリーに追記しやすいよう stdout にも Markdown を出す
     process.stdout.write(`${md}\n`);
 }
 
-main();
+module.exports = {
+    collectSsotMetrics,
+    collectTodoPartialCount,
+    collectInlineUtilityClassOccurrences,
+    collectFallbackCompatibilitySelectorCount,
+};
+
+if (require.main === module) {
+    main();
+}

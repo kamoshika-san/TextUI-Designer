@@ -1,98 +1,102 @@
-# SSoT メトリクスと CI での見え方（1ページ）
+# SSoT Metrics And CI Checks
 
-**目的**: `npm run metrics:collect` / `npm run metrics:check:ssot` が **何を出力し、CI でどう見えるか**を、新規参加者が **この1導線**で追えるようにする。  
-**運用位置づけ**: `renderer/types imports` は **閾値 `0` 固定の release gate** として扱う。`status=PASS` は参考情報ではなく、`main` に入れるための通過条件。
-**関連**: [dsl-types-change-impact-audit.md](dsl-types-change-impact-audit.md)（T-158 監査観点）・[dsl-types-renderer-types-inventory.md](dsl-types-renderer-types-inventory.md)
+Updated: 2026-03-28
+Owner: Maintainer
+Audience: Maintainer, Reviewer, PM
+Review cadence: per change
 
----
+## Goal
 
-## 1. コマンド一覧（`package.json` 正）
+Explain what `npm run metrics:collect` and `npm run metrics:check:ssot` emit, and how CI should read the current SSoT gate results.
 
-| npm script | スクリプト | 役割 |
-|------------|------------|------|
-| `metrics:collect` | `node ./scripts/collect-code-metrics.cjs` | リポジトリの行数集計に加え、**SSoT 回帰用**の `renderer/types` 違反ファイル一覧を **`metrics/code-metrics.json`**（および **`metrics/code-metrics.md`**）に書き出す。 |
-| `metrics:check:ssot` | `node ./scripts/check-ssot-regression-metrics.cjs` | 上記 JSON の **`ssot`** ブロックを読み、**閾値 vs 検出件数**で **PASS/FAIL** を返す（exit code）。 |
+## Scripts
 
-**前提**: `metrics:check:ssot` は **`metrics/code-metrics.json` が存在すること**を要求する。先に `metrics:collect` を実行する。
+| npm script | command | purpose |
+| --- | --- | --- |
+| `metrics:collect` | `node ./scripts/collect-code-metrics.cjs` | writes `metrics/code-metrics.json` and `metrics/code-metrics.md` with repo line counts, `renderer/types` SSoT metrics, and CSS SSoT baseline metrics |
+| `metrics:check:ssot` | `node ./scripts/check-ssot-regression-metrics.cjs` | reads the `ssot` block from `metrics/code-metrics.json` and returns PASS / FAIL by comparing current values against the approved threshold or baseline |
 
-**ローカルでの典型手順**:
+Run them in this order:
 
 ```bash
 npm run metrics:collect
 npm run metrics:check:ssot
 ```
 
-**標準出力の例**（`metrics:check:ssot`）:
+## Current Gate Surface
+
+`metrics:check:ssot` currently evaluates four checks:
+
+1. `renderer/types` imports outside the allowed renderer lane
+2. CSS `TODO partial` markers in the approved component CSS migration scope
+3. approved narrow inline utility `className` occurrences in the target built-in renderer components
+4. fallback compatibility selectors in `src/exporters/html-template-builder.ts`
+
+The current approved CSS baseline is:
+
+| metric | baseline |
+| --- | ---: |
+| `TODO partial count` | `0` |
+| `Non-exempt inline utility class occurrences` | `6` |
+| `Fallback compatibility selector count` | `24` |
+
+`renderer/types` keeps the existing threshold rule:
+
+| metric | threshold |
+| --- | ---: |
+| `renderer/types imports` | `0` |
+
+## Example Output
 
 ```text
-[ssot-metrics] threshold=0, renderer/types imports=0, status=PASS
+[ssot-metrics] renderer/types imports: threshold=0, current=0, status=PASS
+[ssot-metrics] css TODO partial count: baseline=0, current=0, status=PASS
+[ssot-metrics] css inline utility class occurrences: baseline=6, current=6, status=PASS
+[ssot-metrics] css fallback compatibility selector count: baseline=24, current=24, status=PASS
+[ssot-metrics] overall status=PASS
 ```
 
-- **`threshold`**: 環境変数 `SSOT_IMPORT_THRESHOLD`（既定 `0`）。許容する **違反ファイル数の上限**。
-- **`renderer/types imports`**: 非 renderer から `renderer/types` へ import していると判定された **ファイル数**（`collect-code-metrics.cjs` 内 `collectSsotMetrics()` と同じ探索）。
-- **`status`**: `imports <= threshold` なら `PASS`。
+Interpretation:
 
-### Release Gate Rule
+- `renderer/types imports` fails if current exceeds the configured threshold.
+- each CSS metric fails if current exceeds the approved baseline.
+- `overall status` is `PASS` only when every check passes.
 
-- `SSOT_IMPORT_THRESHOLD` の標準値は **`0`**。通常運用で閾値を緩めない。
-- `npm run metrics:check:ssot` が `FAIL` の場合、その PR / release candidate は **gate 未通過** と扱う。
-- CI では **`Code metrics` job** を required check として扱い、`status=PASS` と artifact の両方を確認する。
-- 一時解除が必要な場合は、[ssot-exception-log-rules.md](ssot-exception-log-rules.md) の期限つき例外として記録し、解除理由と復旧予定日を残す。
+## Generated Files
 
----
+| file | contents |
+| --- | --- |
+| `metrics/code-metrics.json` | machine-readable summary, including `ssot.threshold`, `rendererTypesImports`, `violatingFiles`, `cssThresholds`, `cssMetrics`, `cssViolations`, and `status` |
+| `metrics/code-metrics.md` | human-readable summary for CI job output and review evidence |
 
-## 2. 生成物（`metrics/`）
+`metrics/` remains ignored by git.
 
-`metrics/` は **`.gitignore` 対象**（生成物のためリポジトリにはコミットしない）。
+## CI Use
 
-| ファイル | 内容 |
-|----------|------|
-| `metrics/code-metrics.json` | `generatedAt`・行数サマリー・**`ssot`: `{ threshold, rendererTypesImports, violatingFiles, status }`** など |
-| `metrics/code-metrics.md` | 人間可読の Markdown（**「SSoT 回帰メトリクス」**表・違反ファイル一覧） |
+The `Code metrics` CI job should:
 
-`metrics:collect` は **stdout にも** `code-metrics.md` 相当を出す（CI の Job Summary 追記用）。
+1. run `npm run metrics:collect`
+2. run `npm run metrics:check:ssot`
+3. publish `metrics/code-metrics.md` to the job summary
+4. upload `metrics/` as an artifact when review evidence is needed
 
----
+Treat `metrics:check:ssot` as a gate. A failing result means the branch or release candidate is not ready to merge until the drift is removed or explicitly reticketed.
 
-## 3. CI での位置づけ（`.github/workflows/ci.yml`）
+## Relationship To `check:dsl-types-ssot`
 
-**ジョブ名**: `Code metrics`（`code-metrics`）
+`check:dsl-types-ssot` and `metrics:check:ssot` are related but different:
 
-1. `npm run metrics:collect`
-2. `npm run metrics:check:ssot`
-3. `metrics/code-metrics.md` を **GitHub Actions の Job Summary** に追記（`$GITHUB_STEP_SUMMARY`）
-4. `metrics/` を **artifact** `code-metrics` としてアップロード
+| command | primary use |
+| --- | --- |
+| `npm run check:dsl-types-ssot` | focused diagnosis of import-path violations and import counts |
+| `npm run metrics:check:ssot` | gate-oriented threshold / baseline enforcement for the current approved SSoT metric surface |
 
-PR では **Job Summary** または **Artifacts** から、当時の **閾値・検出件数・違反ファイル**を確認できる。`Test All CI` が緑でも、`Code metrics` が fail のままでは merge / release 判定を通さない。
+Use the focused checks when triaging. Use `metrics:check:ssot` when deciding whether the branch passes the gate.
 
----
+## Troubleshooting
 
-## 4. `check:dsl-types-ssot` との違い（ざっくり）
-
-| 観点 | `npm run check:dsl-types-ssot` | `metrics:collect` の SSoT 部分 |
-|------|-------------------------------|--------------------------------|
-| 主目的 | **import パス規約**の棚卸し（`domain` vs `renderer/types` の一覧・スクリプト `check-dsl-type-imports.cjs`） | **回帰検知用**の JSON/Markdown 化と **閾値チェック**（`metrics:check:ssot`） |
-| CI | lint / 専用チェックに依存（リポジトリ設定に従う） | **`code-metrics` ジョブ**で artifact として残る |
-
-両方 **緑**であることが、SSoT 境界を壊していないことの **多層防御**になる。
-
----
-
-## 5. PM / TM 向けチェックリスト（T-158 監査への貼り付け用）
-
-以下は [dsl-types-change-impact-audit.md](dsl-types-change-impact-audit.md) **§3** の補足としてそのまま使える。
-
-- [ ] **メトリクス**: `npm run metrics:collect` → `npm run metrics:check:ssot` が **PASS**（`status=PASS`、必要なら CI の Code metrics ジョブで確認）。
-- [ ] **release gate**: branch protection / release review 上で **`Code metrics` を required check として扱っている**。ローカル実行だけで代替しない。
-- [ ] **artifact**: リリース前後で **同じ閾値**（通常 0）のまま **違反ファイルが増えていない**こと（PR の Job Summary または `code-metrics` artifact）。
-- [ ] **棚卸し**: `npm run check:dsl-types-ssot` が **違反 0** で、[dsl-types-renderer-types-inventory.md](dsl-types-renderer-types-inventory.md) のスナップショット節と矛盾しない。
-
----
-
-## 6. トラブルシュート
-
-| 症状 | 確認 |
-|------|------|
-| `metrics:check:ssot` が `metrics/code-metrics.json が見つかりません` | 先に `npm run metrics:collect` を実行したか |
-| `FAIL` と違反ファイル一覧 | 該当ファイルで `renderer/types` への import をやめ、`domain/dsl-types` 等へ寄せる（[ADR 0003](adr/0003-dsl-types-canonical-source.md)） |
-| 閾値を一時的に上げたい | **`非推奨`**: `SSOT_IMPORT_THRESHOLD` はチケット・レビュー合意の上でのみ。恒久対応は違反の解消 |
+| symptom | action |
+| --- | --- |
+| `metrics/code-metrics.json was not found` | run `npm run metrics:collect` first |
+| `renderer/types` check fails | remove the non-renderer import and route it through the approved shared path |
+| CSS metric fails | inspect the reported details, reduce the drift, and record the affected metric in the review handoff if the change is intentional but still within ticket scope |
