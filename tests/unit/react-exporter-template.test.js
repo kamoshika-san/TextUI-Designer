@@ -25,8 +25,15 @@ describe('ReactExporter template rendering split', () => {
       }
     }, { format: 'react' });
 
+    assert.ok(code.includes('textui-accordion'));
+    assert.ok(code.includes('textui-accordion-trigger'));
+    assert.ok(code.includes('textui-accordion-panel'));
+    assert.ok(code.includes('textui-accordion-body'));
     assert.ok(code.includes('textui-tabs'));
     assert.ok(code.includes('textui-treeview'));
+    assert.ok(code.includes('textui-treeview-actions'));
+    assert.ok(code.includes('textui-treeview-action-link'));
+    assert.ok(code.includes('textui-treeview-children'));
     assert.ok(code.includes('textui-tabs-list'));
     assert.ok(code.includes('textui-tab-panel-body'));
     assert.ok(code.includes('textui-table-container'));
@@ -40,6 +47,7 @@ describe('ReactExporter template rendering split', () => {
     assert.ok(code.includes('textui-alert-title'));
     assert.ok(code.includes('textui-alert-message'));
     assert.ok(code.includes('textui-text'));
+    assert.ok(code.includes('is-open'));
     assert.ok(code.includes('<form key={1} id="f1"'));
     assert.ok(code.includes('inside'));
     assert.ok(code.includes('hover:bg-gray-100 transition-colors has-hover'));

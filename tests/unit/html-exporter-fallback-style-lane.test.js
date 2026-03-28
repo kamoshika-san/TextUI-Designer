@@ -111,4 +111,42 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(html.includes('opacity-50 cursor-not-allowed'));
     assert.ok(html.includes('border-yellow-700'));
   });
+
+  it('fallback HTML lane keeps Accordion/TreeView semantic classes alongside compatibility utilities', async () => {
+    const exporter = new HtmlExporter();
+    const html = await exporter.export({
+      page: {
+        id: 'fallback-accordion-tree-structure',
+        title: 'Fallback Accordion Tree Structure',
+        layout: 'vertical',
+        components: [
+          {
+            Accordion: {
+              items: [{ title: 'Section 1', open: true, components: [{ Text: { value: 'body content' } }] }]
+            }
+          },
+          {
+            TreeView: {
+              showLines: true,
+              expandAll: true,
+              items: [{ label: 'root', children: [{ label: 'child' }] }]
+            }
+          }
+        ]
+      }
+    }, withExplicitFallbackHtmlExport({ format: 'html' }));
+
+    assert.ok(html.includes('textui-accordion'));
+    assert.ok(html.includes('textui-accordion-item'));
+    assert.ok(html.includes('textui-accordion-trigger'));
+    assert.ok(html.includes('textui-accordion-title'));
+    assert.ok(html.includes('textui-accordion-indicator'));
+    assert.ok(html.includes('textui-accordion-panel'));
+    assert.ok(html.includes('textui-accordion-body'));
+    assert.ok(html.includes('is-open'));
+    assert.ok(html.includes('textui-treeview-actions'));
+    assert.ok(html.includes('textui-treeview-action-link'));
+    assert.ok(html.includes('textui-treeview-list with-lines'));
+    assert.ok(html.includes('textui-treeview-children'));
+  });
 });

@@ -18,17 +18,25 @@ export function renderAccordionTemplate(props: AccordionComponent, key: number, 
         )
         .join('\n');
       const contentCode = nestedCode || `            ${item.content ?? ''}`;
+      const isOpen = Boolean(item.open);
 
-      return `        <details key={${index}} className="border-b border-gray-200 last:border-b-0" ${item.open ? 'open' : ''}>
-          <summary className="px-4 py-3 text-sm font-medium cursor-pointer">${item.title}</summary>
-          <div className="px-4 pb-4 text-sm text-gray-600">
+      return `        <div key={${index}} className="textui-accordion-item" data-open={${isOpen}}>
+          <h3>
+            <button type="button" className={['textui-accordion-trigger', 'px-4', 'py-3', 'text-sm', 'font-medium', 'cursor-pointer', ${isOpen} ? 'is-open' : ''].filter(Boolean).join(' ')} aria-expanded={${isOpen}}>
+              <span className="textui-accordion-title">${item.title}</span>
+              <span className="textui-accordion-indicator" aria-hidden="true">${isOpen ? '−' : '+'}</span>
+            </button>
+          </h3>
+          <div className={['textui-accordion-panel', 'px-4', 'pb-4', 'text-sm', 'text-gray-600', ${isOpen} ? 'open' : 'hidden'].filter(Boolean).join(' ')}>
+            <div className="textui-accordion-body">
 ${contentCode}
+            </div>
           </div>
-        </details>`;
+        </div>`;
     })
     .join('\n');
 
-  return `      <div key={${key}} className="border border-gray-300 rounded-md divide-y divide-gray-200" data-allow-multiple={${allowMultiple}}${tokenStyle}>
+  return `      <div key={${key}} className="textui-accordion border border-gray-300 rounded-md divide-y divide-gray-200" data-allow-multiple={${allowMultiple}}${tokenStyle}>
 ${itemsCode}
       </div>`;
 }
@@ -60,6 +68,7 @@ ${panelItems}
 export function renderTreeViewTemplate(props: TreeViewComponent, key: number, tokenStyle: string, context: RenderContext): string {
   const { items = [], showLines = true, expandAll = false } = props;
   const listClass = showLines ? 'textui-treeview-list with-lines' : 'textui-treeview-list without-lines';
+  const hasExpandableNodes = items.some(node => (node.children?.length || 0) > 0 || (node.components?.length || 0) > 0);
 
   const renderNodeList = (nodes: TreeViewComponent['items'], path: string, depth: number, indent: string): string => {
     const nodeCode = nodes.map((node, index) => {
@@ -112,6 +121,9 @@ ${indent}</ul>`;
 
   const treeCode = renderNodeList(items, `tree-${key}`, 0, '        ');
   return `      <div key={${key}} className="textui-treeview"${tokenStyle}>
+        ${hasExpandableNodes ? `<div className="textui-treeview-actions">
+          <button type="button" className="textui-treeview-action-link">${expandAll ? 'Collapse all' : 'Expand all'}</button>
+        </div>` : ''}
 ${treeCode}
       </div>`;
 }

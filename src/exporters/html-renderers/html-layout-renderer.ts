@@ -27,15 +27,22 @@ export class HtmlLayoutRenderer {
         .join('\n');
       const contentCode = nestedCode || `          ${safeContent}`;
       code += `
-      <details class="textui-accordion-item" ${item.open ? 'open' : ''} data-open="${isOpen}">`;
+      <div class="textui-accordion-item" data-open="${isOpen}">`;
       code += `
-        <summary class="px-4 py-3 text-sm font-medium text-gray-200 cursor-pointer">${safeTitle}</summary>`;
+        <h3>
+          <button type="button" class="textui-accordion-trigger px-4 py-3 text-sm font-medium text-gray-200 cursor-pointer ${item.open ? 'is-open' : ''}" aria-expanded="${isOpen}">
+            <span class="textui-accordion-title">${safeTitle}</span>
+            <span class="textui-accordion-indicator" aria-hidden="true">${item.open ? '−' : '+'}</span>
+          </button>
+        </h3>`;
       code += `
-        <div class="px-4 pb-4 text-sm text-gray-300">
+        <div class="textui-accordion-panel px-4 pb-4 text-sm text-gray-300 ${item.open ? 'open' : 'hidden'}">
+          <div class="textui-accordion-body">
 ${contentCode}
+          </div>
         </div>`;
       code += `
-      </details>`;
+      </div>`;
     });
     code += '\n    </div>';
 
@@ -86,6 +93,7 @@ ${panelItems}
     const { items = [], showLines = true, expandAll = false, token } = props;
     const tokenStyle = this.utils.getHtmlTokenStyleAttr('TreeView', token);
     const listClass = showLines ? 'textui-treeview-list with-lines' : 'textui-treeview-list without-lines';
+    const hasExpandableNodes = items.some(node => (node.children?.length || 0) > 0 || (node.components?.length || 0) > 0);
 
     const renderNodeList = (nodes: TreeViewComponent['items'], depth: number, indent: string): string => {
       const nodeCode = nodes.map((node, index) => {
@@ -138,7 +146,10 @@ ${indent}</ul>`;
 
     const treeCode = renderNodeList(items, 0, '      ');
     return `    <div class="textui-treeview"${tokenStyle}>
-${treeCode}
+${hasExpandableNodes ? `      <div class="textui-treeview-actions">
+        <button type="button" class="textui-treeview-action-link">${expandAll ? 'Collapse all' : 'Expand all'}</button>
+      </div>
+` : ''}${treeCode}
     </div>`;
   }
 
