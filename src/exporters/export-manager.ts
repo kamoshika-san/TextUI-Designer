@@ -1,6 +1,5 @@
-import * as fs from 'fs';
-import * as YAML from 'yaml';
 import type { TextUIDSL } from '../domain/dsl-types';
+import { loadDslWithIncludesFromPath } from '../dsl/load-dsl-with-includes';
 import { CacheManager } from '../utils/cache-manager';
 import { DiffManager } from './metrics/diff-manager';
 import { PerformanceMonitor } from '../utils/performance-monitor';
@@ -69,18 +68,7 @@ export class ExportManager {
   async exportFromFile(filePath: string, options: ExportOptions): Promise<string> {
     return this.performanceMonitor.measureExportTime(async () => {
       try {
-        const content = fs.readFileSync(filePath, 'utf-8');
-
-        const dsl = await new Promise<TextUIDSL>((resolve, reject) => {
-          setImmediate(() => {
-            try {
-              const parsed = YAML.parse(content) as TextUIDSL;
-              resolve(parsed);
-            } catch (error) {
-              reject(error);
-            }
-          });
-        });
+        const { dsl } = loadDslWithIncludesFromPath(filePath);
 
         const exporter = this.exporters.get(options.format);
         if (!exporter) {
