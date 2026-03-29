@@ -9,6 +9,7 @@ generated/
 .tmp-cli-test-*/
 .tmp-cli-regression-test/
 .vscode-test/
+.claude/
 *.vsix
 media/
 !media/
