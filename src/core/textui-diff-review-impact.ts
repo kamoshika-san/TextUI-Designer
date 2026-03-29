@@ -259,7 +259,7 @@ function severityRank(s: DiffSummarySeverity): number {
 }
 
 function highestSeverity(impacts: DiffReviewImpact[]): DiffSummarySeverity | null {
-  if (impacts.length === 0) return null;
+  if (impacts.length === 0) { return null; }
   return impacts.reduce<DiffSummarySeverity>((best, imp) => {
     return severityRank(imp.severity) > severityRank(best) ? imp.severity : best;
   }, impacts[0].severity);

@@ -292,7 +292,7 @@ export function applySummaryRule(
   baseImpact: DiffReviewImpact,
   hookContext?: DiffExtensionHookContext,
 ): DiffReviewImpact {
-  if (hookContext === undefined) return baseImpact;
+  if (hookContext === undefined) { return baseImpact; }
 
   let refinement: DiffSummaryRuleRefinement | null = null;
 
@@ -310,8 +310,8 @@ export function applySummaryRule(
     refinement = applyEventRule(baseImpact, hookContext.event);
   }
 
-  if (refinement === null) return baseImpact;
-  if (!isRefinementAllowed(baseImpact, refinement)) return baseImpact;
+  if (refinement === null) { return baseImpact; }
+  if (!isRefinementAllowed(baseImpact, refinement)) { return baseImpact; }
 
   return {
     ...baseImpact,
