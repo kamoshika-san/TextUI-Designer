@@ -1,0 +1,150 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/textui/diff-result-external/v0/schema.json",
+  "title": "TextUI Designer Diff Result External Schema v0",
+  "description": "External contract schema for TextUI Designer diff result output. This schema defines what downstream consumers (CI tools, review formatters, external adapters) may rely on. It is intentionally decoupled from the internal Epic C/D shapes — consumers must not rely on DiffCompareResult or any internal type directly.",
+  "type": "object",
+  "required": ["kind", "schemaVersion", "producer", "events", "metadata"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema URI for this document."
+    },
+    "kind": {
+      "type": "string",
+      "const": "textui-diff-result-external",
+      "description": "Discriminant type marker identifying this as an external diff result payload."
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "diff-result-external/v0",
+      "description": "Schema version string. Format: '<schema-name>/<major>'. Minor/patch compatibility expansions add new optional fields without incrementing the major version. Breaking changes (field removal, enum value removal, semantic reinterpretation) require a new major version. E3 compatibility strategy will define cross-version upgrade paths."
+    },
+    "producer": {
+      "$ref": "#/definitions/DiffResultProducer"
+    },
+    "events": {
+      "type": "array",
+      "description": "Flat list of diff events, one entry per detected entity change. Consumers may filter by kind and entityKind. Order is informational and should not be assumed stable across engine versions.",
+      "items": {
+        "$ref": "#/definitions/DiffExternalEvent"
+      }
+    },
+    "metadata": {
+      "$ref": "#/definitions/DiffExternalMetadata"
+    }
+  },
+  "definitions": {
+    "DiffResultProducer": {
+      "title": "DiffResultProducer",
+      "description": "Identifies the engine and pipeline stage that produced this diff result. Consumers must not branch on compareStage — it is informational traceability only.",
+      "type": "object",
+      "required": ["engine", "engineVersion", "compareStage"],
+      "additionalProperties": false,
+      "properties": {
+        "engine": {
+          "type": "string",
+          "description": "Producer engine identifier, e.g. 'textui-diff-core'."
+        },
+        "engineVersion": {
+          "type": "string",
+          "description": "Semver version string of the producing engine, e.g. '0.7.2'."
+        },
+        "compareStage": {
+          "type": "string",
+          "description": "Internal pipeline stage label at capture time, e.g. 'c1-skeleton'. Present for traceability; consumers must treat this as opaque."
+        },
+        "producedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 UTC timestamp when this result was produced. Optional."
+        }
+      }
+    },
+    "DiffExternalEvent": {
+      "title": "DiffExternalEvent",
+      "description": "A single diff event representing one entity change between previous and next documents. Only contract-stable fields are included here. Internal pairing metadata beyond pairingReason and fallbackMarker is not part of the external contract.",
+      "type": "object",
+      "required": ["eventId", "kind", "entityKind", "pairingReason", "fallbackMarker"],
+      "additionalProperties": false,
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "description": "Stable identifier for this event within this result payload."
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["add", "remove", "update", "reorder", "move", "rename", "remove+add"],
+          "description": "Change kind for this entity."
+        },
+        "entityKind": {
+          "type": "string",
+          "enum": ["page", "component", "property"],
+          "description": "Type of entity affected."
+        },
+        "pairingReason": {
+          "type": "string",
+          "enum": [
+            "deterministic-explicit-id",
+            "deterministic-fallback-key",
+            "deterministic-structural-path",
+            "heuristic-similarity",
+            "unpaired"
+          ],
+          "description": "How the previous and next entities were matched. 'unpaired' indicates no match was found."
+        },
+        "fallbackMarker": {
+          "type": "string",
+          "enum": ["none", "heuristic-pending", "remove-add-fallback"],
+          "description": "Fallback signal. 'none' means deterministic and unambiguous pairing. 'heuristic-pending' means similarity-scored match; treat classification results with care. 'remove-add-fallback' means a kind mismatch forced a remove+add interpretation."
+        },
+        "previousPath": {
+          "type": "string",
+          "description": "Structural path of the entity in the previous document. Absent for 'add' events."
+        },
+        "nextPath": {
+          "type": "string",
+          "description": "Structural path of the entity in the next document. Absent for 'remove' events."
+        }
+      }
+    },
+    "DiffExternalMetadata": {
+      "title": "DiffExternalMetadata",
+      "description": "Summary counts and source document references for this diff result.",
+      "type": "object",
+      "required": ["eventCount", "previousSource", "nextSource"],
+      "additionalProperties": false,
+      "properties": {
+        "eventCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of diff events in this result."
+        },
+        "previousSource": {
+          "$ref": "#/definitions/DiffExternalSourceRef"
+        },
+        "nextSource": {
+          "$ref": "#/definitions/DiffExternalSourceRef"
+        }
+      }
+    },
+    "DiffExternalSourceRef": {
+      "title": "DiffExternalSourceRef",
+      "description": "Reference to one side of the comparison (previous or next).",
+      "type": "object",
+      "required": ["pageId"],
+      "additionalProperties": false,
+      "properties": {
+        "pageId": {
+          "type": "string",
+          "description": "Page identifier from the compared document."
+        },
+        "sourcePath": {
+          "type": "string",
+          "description": "File path of the compared document, when available. Optional."
+        }
+      }
+    }
+  }
+}
