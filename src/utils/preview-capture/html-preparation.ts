@@ -32,6 +32,14 @@ export function parseDslFile(sourcePath: string): TextUIDSL {
   return dsl as TextUIDSL;
 }
 
+function resolveDslForCapture(dsl: TextUIDSL, dslFilePath?: string): TextUIDSL {
+  if (!dslFilePath) {
+    return dsl;
+  }
+  const { dsl: resolvedDsl } = loadDslWithIncludesFromPath(dslFilePath);
+  return resolvedDsl as TextUIDSL;
+}
+
 export async function prepareCaptureArtifacts(
   dsl: TextUIDSL,
   options: PreviewCaptureOptions
@@ -61,7 +69,8 @@ export async function prepareCaptureArtifacts(
     options.useWebViewTheme
   );
 
-  const html = await new HtmlExporter().export(dsl, {
+  const resolvedDsl = resolveDslForCapture(dsl, options.dslFilePath);
+  const html = await new HtmlExporter().export(resolvedDsl, {
     format: 'html',
     themePath,
     // Preview capture preparation defaults to the Primary path unless a caller overrides it.
@@ -85,4 +94,3 @@ export async function prepareCaptureArtifacts(
     themePath
   };
 }
-
