@@ -198,7 +198,7 @@ export function buildHtmlDocument(
   const compatibilityCss = options?.compatibilityCss ?? '';
   const bodyContent = options?.noWrap
     ? componentCode
-    : `  <div class="p-6">\n${componentCode}\n  </div>`;
+    : `  <div style="box-sizing:border-box;width:100%;max-width:100%;padding:1.5rem;">\n${componentCode}\n  </div>`;
   return `<!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -209,6 +209,7 @@ export function buildHtmlDocument(
 ${styleContent}
 ${compatibilityCss}
 ${themeStyles}
+    html, body { max-width: 100%; overflow-x: hidden; }
   </style>
 </head>
 <body class="bg-gray-900 text-gray-300 min-h-screen">
