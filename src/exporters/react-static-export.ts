@@ -24,6 +24,6 @@ export function renderPageComponentsToStaticHtml(components: ComponentDef[]): st
   );
 
   return renderToStaticMarkup(
-    React.createElement('div', { style: { padding: 24 } }, ...children)
+    React.createElement('div', { style: { boxSizing: 'border-box', width: '100%', maxWidth: '100%', padding: 24 } }, ...children)
   );
 }

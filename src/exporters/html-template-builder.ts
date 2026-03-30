@@ -209,7 +209,7 @@ export function buildHtmlDocument(
 ${styleContent}
 ${compatibilityCss}
 ${themeStyles}
-    html, body { max-width: 100%; overflow-x: hidden; }
+    html, body { max-width: 100%; overflow-x: auto; }
   </style>
 </head>
 <body class="bg-gray-900 text-gray-300 min-h-screen">

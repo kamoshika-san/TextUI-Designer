@@ -73,7 +73,7 @@ describe('shared kernel: preview vs export inner markup parity (T-195)', () => {
     const fromSharedOnly = renderToStaticMarkup(
       React.createElement(
         'div',
-        { style: { padding: 24 } },
+        { style: { boxSizing: 'border-box', width: '100%', maxWidth: '100%', padding: 24 } },
         ...components.map((comp, i) => renderSharedRegisteredOutput(comp, keys[i] ?? i, undefined).node)
       )
     );
