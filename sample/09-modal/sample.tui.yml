@@ -7,6 +7,7 @@ page:
         variant: h1
         value: "Modal / Dialog"
     - Text:
+        variant: p
         value: "削除確認ダイアログ、詳細ポップアップなど、あらゆる場面で使われるモーダルコンポーネントのサンプルです。"
     - Text:
         variant: h3
