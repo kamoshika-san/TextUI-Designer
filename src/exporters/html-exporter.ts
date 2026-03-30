@@ -198,9 +198,45 @@ export class HtmlExporter extends BaseComponentRenderer {
     return this.textualRenderer.renderIcon(props);
   }
 
-  // TODO T-20260330-303: implement full Modal HTML output
-  protected renderModal(_props: ModalComponent, _key: number): string {
-    return '';
+  protected renderModal(props: ModalComponent, _key: number): string {
+    const { title, open = true, body, actions, token } = props;
+    if (!open) {
+      return '';
+    }
+    const tokenStyle = this.getHtmlTokenStyleAttr('Modal', token);
+    const safeTitle = title ? this.escapeHtml(title) : '';
+    const safeBody = body ? this.escapeHtml(body) : '';
+
+    const actionKindStyle: Record<string, string> = {
+      primary: 'background-color:#3b82f6;color:#fff;border:none;',
+      secondary: 'background-color:rgba(107,114,128,0.25);color:#d1d5db;border:1px solid rgba(107,114,128,0.4);',
+      danger: 'background-color:#ef4444;color:#fff;border:none;',
+      ghost: 'background-color:transparent;color:#d1d5db;border:1px solid rgba(107,114,128,0.3);'
+    };
+
+    let html = `    <div class="textui-modal" style="max-width:32rem;margin-bottom:1rem;"${tokenStyle}>\n`;
+    html += `      <div style="background-color:rgb(31 41 55);border:1px solid rgb(75 85 99);border-radius:0.5rem;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5);">\n`;
+    if (safeTitle) {
+      html += `        <div class="textui-modal-header" style="padding:1rem 1.25rem 0.75rem;border-bottom:1px solid rgb(55 65 81);">\n`;
+      html += `          <span class="textui-modal-title" style="font-size:1rem;font-weight:600;color:rgb(243 244 246);">${safeTitle}</span>\n`;
+      html += `        </div>\n`;
+    }
+    if (safeBody) {
+      html += `        <div class="textui-modal-body" style="padding:1rem 1.25rem;font-size:0.875rem;color:rgb(209 213 219);">${safeBody}</div>\n`;
+    }
+    if (actions && actions.length > 0) {
+      html += `        <div class="textui-modal-footer" style="display:flex;justify-content:flex-end;gap:0.5rem;padding:0.75rem 1.25rem;border-top:1px solid rgb(55 65 81);">\n`;
+      for (const action of actions) {
+        const kind = action.kind ?? 'secondary';
+        const style = actionKindStyle[kind] ?? actionKindStyle.secondary;
+        const safeLabel = this.escapeHtml(action.label ?? '');
+        html += `          <button style="padding:0.375rem 0.875rem;border-radius:0.375rem;font-size:0.875rem;font-weight:500;cursor:default;${style}">${safeLabel}</button>\n`;
+      }
+      html += `        </div>\n`;
+    }
+    html += `      </div>\n`;
+    html += `    </div>`;
+    return html;
   }
 
   private createRendererUtils(): HtmlRendererUtils {

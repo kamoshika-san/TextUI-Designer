@@ -1,0 +1,51 @@
+page:
+  id: sample-modal
+  title: "Modal / Dialog Sample"
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: "Modal / Dialog"
+    - Text:
+        value: "削除確認ダイアログ、詳細ポップアップなど、あらゆる場面で使われるモーダルコンポーネントのサンプルです。"
+    - Text:
+        variant: h3
+        value: "削除確認ダイアログ"
+    - Modal:
+        title: "削除の確認"
+        open: true
+        body: "この操作は元に戻せません。本当に削除しますか？"
+        actions:
+          - label: "キャンセル"
+            kind: secondary
+          - label: "削除する"
+            kind: danger
+    - Text:
+        variant: h3
+        value: "詳細情報ダイアログ"
+    - Modal:
+        title: "ユーザー詳細"
+        open: true
+        body: "名前: 山田 太郎\nメール: taro@example.com\nロール: 管理者"
+        actions:
+          - label: "閉じる"
+            kind: secondary
+    - Text:
+        variant: h3
+        value: "操作確認ダイアログ（プライマリアクション）"
+    - Modal:
+        title: "変更を保存しますか？"
+        open: true
+        body: "入力内容を保存して次のステップへ進みます。"
+        actions:
+          - label: "キャンセル"
+            kind: ghost
+          - label: "保存して続ける"
+            kind: primary
+    - Text:
+        variant: h3
+        value: "非表示状態の Modal"
+    - Modal:
+        title: "非表示モーダル"
+        open: false
+        body: "この Modal は open: false のため非表示です。"

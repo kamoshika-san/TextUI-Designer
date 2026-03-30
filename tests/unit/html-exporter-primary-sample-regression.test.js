@@ -56,6 +56,11 @@ describe('HtmlExporter primary sample regression (T-20260322-348)', () => {
       sampleRelativePath: 'sample/08-github/sample.tui.yml',
       expectedHash: 'b27ee516c4df5b1d760891ef092c0a7e799ed3fc1ea3f270a2e8159e83957a75', // updated: overflow-x:hidden + max-width:100% added to html/body (T-20260330-221)
       markers: ['kamoshika-san / TextUI-Designer', 'VS Code extension for designing text-based UIs with YAML/JSON DSL.', 'Pull requests']
+    },
+    {
+      sampleRelativePath: 'sample/09-modal/sample.tui.yml',
+      expectedHash: '61898e5f154c096f9faf485380a036795249a909989c5994b181cf0b5eddcad8', // baseline: Modal HTML exporter (T-20260330-303)
+      markers: ['削除の確認', 'この操作は元に戻せません', '削除する', 'ユーザー詳細']
     }
   ].forEach(({ sampleRelativePath, expectedHash, markers }) => {
     it(`${sampleRelativePath} stays stable on the Primary HTML path`, async () => {
