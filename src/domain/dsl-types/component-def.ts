@@ -30,6 +30,7 @@ import type {
   AlertComponent,
   ContainerComponent,
   DividerComponent,
+  ModalComponent,
   SpacerComponent,
   TableComponent,
   TabsComponent,
@@ -61,7 +62,8 @@ export type ComponentDef =
   | { Accordion: AccordionComponent }
   | { Tabs: TabsComponent }
   | { TreeView: TreeViewComponent }
-  | { Table: TableComponent };
+  | { Table: TableComponent }
+  | { Modal: ModalComponent };
 
 export interface PageDef {
   id: string;
@@ -165,6 +167,10 @@ export function isTreeViewComponent(comp: ComponentDef): comp is { TreeView: Tre
 
 export function isTableComponent(comp: ComponentDef): comp is { Table: TableComponent } {
   return 'Table' in comp;
+}
+
+export function isModalComponent(comp: ComponentDef): comp is { Modal: ModalComponent } {
+  return 'Modal' in comp;
 }
 
 /**

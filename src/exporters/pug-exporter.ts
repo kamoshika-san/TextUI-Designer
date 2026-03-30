@@ -21,6 +21,7 @@ import type {
   ProgressComponent,
   ImageComponent,
   IconComponent,
+  ModalComponent,
   FormComponent
 } from '../domain/dsl-types';
 import type { ExportOptions } from './export-types';
@@ -171,6 +172,11 @@ export class PugExporter extends BaseComponentRenderer {
   protected renderIcon(props: IconComponent, _key: number): string {
     const { token } = props;
     return renderPugIcon(props, this.escapeHtml.bind(this), this.escapeAttribute.bind(this), this.getPugTokenStyleSuffix('Icon', token));
+  }
+
+  // TODO T-20260330-303: implement full Modal Pug output
+  protected renderModal(_props: ModalComponent, _key: number): string {
+    return '';
   }
 
   protected renderLink(props: LinkComponent, _key: number): string {

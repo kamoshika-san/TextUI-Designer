@@ -56,7 +56,8 @@ export const BUILT_IN_EXPORTER_RENDERER_DEFINITIONS: Record<
   Badge: { rendererMethod: 'renderBadge', tokenStyleProperty: 'background-color' },
   Progress: { rendererMethod: 'renderProgress', tokenStyleProperty: 'background-color' },
   Image: { rendererMethod: 'renderImage', tokenStyleProperty: 'border-color' },
-  Icon: { rendererMethod: 'renderIcon', tokenStyleProperty: 'color' }
+  Icon: { rendererMethod: 'renderIcon', tokenStyleProperty: 'color' },
+  Modal: { rendererMethod: 'renderModal', tokenStyleProperty: 'background-color' }
 };
 
 // 取り違えを早期に検知するため、BUILT_IN_COMPONENTS とキーの一致を確認。

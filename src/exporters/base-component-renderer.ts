@@ -24,7 +24,8 @@ import type {
   BadgeComponent,
   ProgressComponent,
   ImageComponent,
-  IconComponent
+  IconComponent,
+  ModalComponent
 } from '../domain/dsl-types';
 import type { ExportOptions, Exporter } from './export-types';
 import type { ExporterRendererMethod } from '../components/definitions/types';
@@ -79,7 +80,8 @@ export abstract class BaseComponentRenderer implements Exporter {
     renderBadge: (self, p, k) => self.renderBadge(p as BadgeComponent, k),
     renderProgress: (self, p, k) => self.renderProgress(p as ProgressComponent, k),
     renderImage: (self, p, k) => self.renderImage(p as ImageComponent, k),
-    renderIcon: (self, p, k) => self.renderIcon(p as IconComponent, k)
+    renderIcon: (self, p, k) => self.renderIcon(p as IconComponent, k),
+    renderModal: (self, p, k) => self.renderModal(p as ModalComponent, k)
   };
 
   protected format: ExportFormat;
@@ -245,6 +247,7 @@ export abstract class BaseComponentRenderer implements Exporter {
   protected abstract renderProgress(props: ProgressComponent, key: number): string;
   protected abstract renderImage(props: ImageComponent, key: number): string;
   protected abstract renderIcon(props: IconComponent, key: number): string;
+  protected abstract renderModal(props: ModalComponent, key: number): string;
 
   protected getStyleManager(): typeof StyleManager {
     return StyleManager;

@@ -370,6 +370,19 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
       { name: 'label', description: 'アイコン横に表示するラベル' },
       { name: 'token', description: '適用するデザイントークン参照' }
     ]
+  },
+  Modal: {
+    description: 'モーダル / ダイアログ',
+    properties: [
+      { name: 'title', description: 'モーダルのタイトル' },
+      { name: 'open', description: '開いた状態で描画するか（true/false）' },
+      { name: 'body', description: 'モーダル本文テキスト' },
+      {
+        name: 'actions',
+        description: 'フッタに表示するアクションボタン配列（label, kind: primary|secondary|danger|ghost）'
+      },
+      { name: 'token', description: '適用するデザイントークン参照' }
+    ]
   }
 };
 

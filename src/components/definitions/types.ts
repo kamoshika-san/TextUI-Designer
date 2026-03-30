@@ -54,7 +54,8 @@ export type ExporterRendererMethod =
   | 'renderBadge'
   | 'renderProgress'
   | 'renderImage'
-  | 'renderIcon';
+  | 'renderIcon'
+  | 'renderModal';
 
 /**
  * コンポーネント定義（単一ソース化の土台）

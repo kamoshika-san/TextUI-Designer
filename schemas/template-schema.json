@@ -119,6 +119,9 @@
         },
         {
           "$ref": "#/definitions/Icon"
+        },
+        {
+          "$ref": "#/definitions/Modal"
         }
       ]
     },
@@ -1365,6 +1368,66 @@
       },
       "additionalProperties": false,
       "description": "アイコンを表示するコンポーネント。"
+    },
+    "Modal": {
+      "type": "object",
+      "required": [
+        "Modal"
+      ],
+      "properties": {
+        "Modal": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "モーダルのタイトル。"
+            },
+            "open": {
+              "type": "boolean",
+              "description": "開いた状態で描画するか（デフォルト: true）。"
+            },
+            "body": {
+              "type": "string",
+              "description": "モーダルの本文テキスト。"
+            },
+            "actions": {
+              "type": "array",
+              "description": "フッタに表示するアクションボタン配列。",
+              "items": {
+                "type": "object",
+                "required": [
+                  "label"
+                ],
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "description": "ボタンのラベル。"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "primary",
+                      "secondary",
+                      "danger",
+                      "ghost"
+                    ],
+                    "description": "ボタンの種別。"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "token": {
+              "$ref": "#/definitions/tokenRef",
+              "description": "Modalに適用するデザイントークン参照。"
+            }
+          },
+          "additionalProperties": false,
+          "description": "モーダル / ダイアログコンポーネント。利用可能な属性: title, open, body, actions, token"
+        }
+      },
+      "additionalProperties": false,
+      "description": "モーダル / ダイアログを表示するコンポーネント。"
     }
   },
   "additionalProperties": false,

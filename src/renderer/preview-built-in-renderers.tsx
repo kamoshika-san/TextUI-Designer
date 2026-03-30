@@ -50,7 +50,8 @@ import type {
   BadgeComponent,
   ProgressComponent,
   ImageComponent,
-  IconComponent
+  IconComponent,
+  ModalComponent
 } from '../domain/dsl-types';
 import { decodeDslComponentObjectProps, decodeTextDslComponent } from '../registry/dsl-component-codec';
 import { type BuiltInComponentName } from '../components/definitions/built-in-components';
@@ -172,6 +173,15 @@ export function createBuiltInPreviewRenderers(deps: PreviewRendererDeps): Record
     Progress: simplePreview(Progress, p => p as ProgressComponent),
     Image: simplePreview(Image, p => p as ImageComponent),
     Icon: simplePreview(Icon, p => p as IconComponent),
+    // TODO T-20260330-302: replace with real Modal preview renderer
+    Modal: (_props, key) => {
+      const modal = _props as unknown as ModalComponent;
+      return (
+        <div key={key} style={{ border: '1px dashed #6b7280', borderRadius: '0.5rem', padding: '1rem', color: '#9ca3af', fontSize: '0.875rem' }}>
+          Modal{modal.title ? `: ${modal.title}` : ''} (preview pending T-20260330-302)
+        </div>
+      );
+    },
     Container: (props, key) => {
       const containerProps = props as unknown as ContainerComponent;
       const children = containerProps.components;

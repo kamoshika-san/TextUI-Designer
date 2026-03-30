@@ -98,6 +98,22 @@ export interface TableComponent {
   token?: string;
 }
 
+// Modal / Dialog
+export type ModalActionKind = 'primary' | 'secondary' | 'danger' | 'ghost';
+
+export interface ModalActionItem {
+  label: string;
+  kind?: ModalActionKind;
+}
+
+export interface ModalComponent {
+  title?: string;
+  open?: boolean;
+  body?: string;
+  actions?: ModalActionItem[];
+  token?: string;
+}
+
 // Container structure
 export type ContainerLayout = 'vertical' | 'horizontal' | 'flex' | 'grid';
 

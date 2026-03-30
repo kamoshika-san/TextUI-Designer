@@ -20,7 +20,8 @@ export const BUILT_IN_COMPONENTS = [
   'Badge',
   'Progress',
   'Image',
-  'Icon'
+  'Icon',
+  'Modal'
 ] as const;
 
 export type BuiltInComponentName = typeof BUILT_IN_COMPONENTS[number];

@@ -2,7 +2,7 @@ import type {
   TextUIDSL, FormComponent,
   TextComponent, InputComponent, ButtonComponent, CheckboxComponent,
   RadioComponent, SelectComponent, DatePickerComponent, DividerComponent, SpacerComponent, AlertComponent,
-  ContainerComponent, AccordionComponent, TabsComponent, TreeViewComponent, TableComponent, LinkComponent, BreadcrumbComponent, BadgeComponent, ProgressComponent, ImageComponent, IconComponent
+  ContainerComponent, AccordionComponent, TabsComponent, TreeViewComponent, TableComponent, LinkComponent, BreadcrumbComponent, BadgeComponent, ProgressComponent, ImageComponent, IconComponent, ModalComponent
 } from '../domain/dsl-types';
 import type { ExportOptions } from './export-types';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -251,6 +251,11 @@ export class ReactExporter extends BaseComponentRenderer {
   protected renderIcon(props: IconComponent, key: number): string {
     const tokenStyle = this.getReactTokenStyleInline('Icon', props.token);
     return renderIconTemplate(props, key, tokenStyle);
+  }
+
+  // TODO T-20260330-303: implement full Modal React output
+  protected renderModal(_props: ModalComponent, _key: number): string {
+    return '';
   }
 
   protected renderContainer(props: ContainerComponent, key: number): string {

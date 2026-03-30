@@ -240,6 +240,23 @@ export const CORE_CATALOG_METADATA: Record<BuiltInComponentName, CoreCatalogMeta
     optionalProps: ['label', 'token'],
     supportsChildren: false,
     example: { Icon: { name: '📁', label: 'Folder' } }
+  },
+  Modal: {
+    catalogSummaryEn: 'Modal dialog overlay with title, body, and action buttons.',
+    requiredProps: [],
+    optionalProps: ['title', 'open', 'body', 'actions', 'token'],
+    supportsChildren: false,
+    example: {
+      Modal: {
+        title: '削除の確認',
+        open: true,
+        body: 'この操作は元に戻せません。',
+        actions: [
+          { label: 'キャンセル', kind: 'secondary' },
+          { label: '削除する', kind: 'danger' }
+        ]
+      }
+    }
   }
 };
 

@@ -23,7 +23,8 @@ import type {
   BadgeComponent,
   ProgressComponent,
   ImageComponent,
-  IconComponent
+  IconComponent,
+  ModalComponent
 } from '../domain/dsl-types';
 import type { ExportOptions } from './export-types';
 import { BaseComponentRenderer } from './base-component-renderer';
@@ -195,6 +196,11 @@ export class HtmlExporter extends BaseComponentRenderer {
 
   protected renderIcon(props: IconComponent, _key: number): string {
     return this.textualRenderer.renderIcon(props);
+  }
+
+  // TODO T-20260330-303: implement full Modal HTML output
+  protected renderModal(_props: ModalComponent, _key: number): string {
+    return '';
   }
 
   private createRendererUtils(): HtmlRendererUtils {
