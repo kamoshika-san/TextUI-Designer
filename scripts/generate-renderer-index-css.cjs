@@ -64,7 +64,8 @@ function main() {
     'Form.css',
     'Container.css',
     'ButtonExtras.css',
-    'Icon.css'
+    'Icon.css',
+    'Modal.css'
   ];
 
   const chunks = [];
