@@ -4,6 +4,16 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.7.3] - 2026-03-31
+
+### Added
+- **Modal/Dialog component**: New built-in component with preview renderer and HTML exporter. Supports `title`, `body`, `open`, and `actions` (kind: `primary` / `secondary` / `danger` / `ghost`). Closed modals (`open: false`) render as a placeholder in preview and are omitted from HTML export.
+- **sample/09-modal**: New sample demonstrating delete-confirm, user-detail, and save-confirm Modal variants plus the `open: false` hidden-state pattern.
+- **Diff normalization foundation (Epic K)**: Stage 0 intake validation and Stage 1 structural canonicalization for the `normalize()` API. Includes `NormalizationTrace` evidence chain (`entityPathMap` / `explicitnessMap` / `ownershipMap`), 16 unit tests, and an acceptance-matrix fixture seed (20 fixtures across 5 rule families: identity, reorder, rename, similarity, normalization).
+
+### Fixed
+- HTML export: `max-width: 100%; overflow-x: hidden` constraint added to `html` and `body` to prevent viewport overflow on narrow screens.
+
 ## [0.7.2] - 2026-03-28
 
 ### Fixed
