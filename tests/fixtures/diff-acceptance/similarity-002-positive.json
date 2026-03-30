@@ -1,0 +1,31 @@
+{
+  "scenario_id": "similarity-002-positive",
+  "rule_family": "similarity",
+  "description": "Button label changed slightly — heuristic similarity pairing expected",
+  "input_previous": {
+    "page": {
+      "id": "page-sim-002",
+      "title": "Form",
+      "layout": "vertical",
+      "components": [
+        { "Button": { "label": "Save Changes", "token": "btn-x" } }
+      ]
+    }
+  },
+  "input_next": {
+    "page": {
+      "id": "page-sim-002",
+      "title": "Form",
+      "layout": "vertical",
+      "components": [
+        { "Button": { "label": "Save All Changes", "token": "btn-y" } }
+      ]
+    }
+  },
+  "expected": {
+    "eventKind": "update",
+    "pairingReason": "heuristic-similarity",
+    "fallbackMarker": "heuristic-pending",
+    "structuralChangeCount": 1
+  }
+}

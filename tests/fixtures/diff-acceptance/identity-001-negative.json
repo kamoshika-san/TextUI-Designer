@@ -1,0 +1,31 @@
+{
+  "scenario_id": "identity-001-negative",
+  "rule_family": "identity",
+  "description": "Adjacent negative: minimal text change produces a structural update event (not identity)",
+  "input_previous": {
+    "page": {
+      "id": "page-id-001",
+      "title": "Page",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "Hello world", "token": "text-1" } }
+      ]
+    }
+  },
+  "input_next": {
+    "page": {
+      "id": "page-id-001",
+      "title": "Page",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "Hello world (changed)", "token": "text-1" } }
+      ]
+    }
+  },
+  "expected": {
+    "eventKind": "update",
+    "pairingReason": "deterministic-structural-path",
+    "fallbackMarker": "none",
+    "structuralChangeCount": 1
+  }
+}

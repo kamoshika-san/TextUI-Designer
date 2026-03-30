@@ -1,0 +1,31 @@
+{
+  "scenario_id": "normalization-002-negative",
+  "rule_family": "normalization",
+  "description": "Adjacent negative: DSL with invalid explicitness field — Stage0 intake-invalid blocks diff",
+  "input_previous": {
+    "page": {
+      "id": "page-norm-002",
+      "title": "Valid",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "A", "token": "t-a" } }
+      ]
+    }
+  },
+  "input_next": {
+    "page": {
+      "id": "page-norm-002",
+      "title": "Valid",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "B", "explicitness": "bad-value" } }
+      ]
+    }
+  },
+  "expected": {
+    "eventKind": "normalization-failure",
+    "fallbackMarker": "intake-invalid",
+    "structuralChangeCount": 0,
+    "normalizationNote": "Stage0 returns intake-invalid; diff cannot proceed without degradeOnFailure:true"
+  }
+}

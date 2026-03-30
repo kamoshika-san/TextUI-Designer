@@ -1,0 +1,126 @@
+{
+  "schema_version": "1.0",
+  "description": "T-20260331-408: Diff acceptance fixture index. Covers T-20260328-128 acceptance scenarios across 5 rule families. Each entry pairs a positive scenario with an adjacent negative.",
+  "fixtures": [
+    {
+      "scenario_id": "identity-001-positive",
+      "rule_family": "identity",
+      "fixture_file": "identity-001-positive.json",
+      "expected_summary": "identical DSL → no structural events"
+    },
+    {
+      "scenario_id": "identity-001-negative",
+      "rule_family": "identity",
+      "fixture_file": "identity-001-negative.json",
+      "expected_summary": "minimal text change → update event (not identity)"
+    },
+    {
+      "scenario_id": "identity-002-positive",
+      "rule_family": "identity",
+      "fixture_file": "identity-002-positive.json",
+      "expected_summary": "multi-component identical DSL → no structural events"
+    },
+    {
+      "scenario_id": "identity-002-negative",
+      "rule_family": "identity",
+      "fixture_file": "identity-002-negative.json",
+      "expected_summary": "component added at end → add event"
+    },
+    {
+      "scenario_id": "reorder-001-positive",
+      "rule_family": "reorder",
+      "fixture_file": "reorder-001-positive.json",
+      "expected_summary": "two components swapped → reorder events"
+    },
+    {
+      "scenario_id": "reorder-001-negative",
+      "rule_family": "reorder",
+      "fixture_file": "reorder-001-negative.json",
+      "expected_summary": "same order → identity"
+    },
+    {
+      "scenario_id": "reorder-002-positive",
+      "rule_family": "reorder",
+      "fixture_file": "reorder-002-positive.json",
+      "expected_summary": "three-item list: middle moved to first → reorder"
+    },
+    {
+      "scenario_id": "reorder-002-negative",
+      "rule_family": "reorder",
+      "fixture_file": "reorder-002-negative.json",
+      "expected_summary": "item removed (not reordered) → remove event"
+    },
+    {
+      "scenario_id": "rename-001-positive",
+      "rule_family": "rename",
+      "fixture_file": "rename-001-positive.json",
+      "expected_summary": "token renamed, content same → rename event"
+    },
+    {
+      "scenario_id": "rename-001-negative",
+      "rule_family": "rename",
+      "fixture_file": "rename-001-negative.json",
+      "expected_summary": "token unchanged → identity"
+    },
+    {
+      "scenario_id": "rename-002-positive",
+      "rule_family": "rename",
+      "fixture_file": "rename-002-positive.json",
+      "expected_summary": "page title renamed → update on page-level field"
+    },
+    {
+      "scenario_id": "rename-002-negative",
+      "rule_family": "rename",
+      "fixture_file": "rename-002-negative.json",
+      "expected_summary": "page id+title same → identity"
+    },
+    {
+      "scenario_id": "similarity-001-positive",
+      "rule_family": "similarity",
+      "fixture_file": "similarity-001-positive.json",
+      "expected_summary": "visually similar text with different token → heuristic-similarity pairing"
+    },
+    {
+      "scenario_id": "similarity-001-negative",
+      "rule_family": "similarity",
+      "fixture_file": "similarity-001-negative.json",
+      "expected_summary": "completely different component types → remove+add, no similarity"
+    },
+    {
+      "scenario_id": "similarity-002-positive",
+      "rule_family": "similarity",
+      "fixture_file": "similarity-002-positive.json",
+      "expected_summary": "button label slightly changed with different token → heuristic-similarity"
+    },
+    {
+      "scenario_id": "similarity-002-negative",
+      "rule_family": "similarity",
+      "fixture_file": "similarity-002-negative.json",
+      "expected_summary": "same token → deterministic-explicit-id, not heuristic"
+    },
+    {
+      "scenario_id": "normalization-001-positive",
+      "rule_family": "normalization",
+      "fixture_file": "normalization-001-positive.json",
+      "expected_summary": "whitespace difference → update event pre-normalization"
+    },
+    {
+      "scenario_id": "normalization-001-negative",
+      "rule_family": "normalization",
+      "fixture_file": "normalization-001-negative.json",
+      "expected_summary": "already canonical content → identity"
+    },
+    {
+      "scenario_id": "normalization-002-positive",
+      "rule_family": "normalization",
+      "fixture_file": "normalization-002-positive.json",
+      "expected_summary": "valid DSLs passing Stage0 → normal diff proceeds"
+    },
+    {
+      "scenario_id": "normalization-002-negative",
+      "rule_family": "normalization",
+      "fixture_file": "normalization-002-negative.json",
+      "expected_summary": "invalid explicitness → Stage0 intake-invalid blocks diff"
+    }
+  ]
+}

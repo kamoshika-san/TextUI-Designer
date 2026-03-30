@@ -1,0 +1,27 @@
+{
+  "scenario_id": "rename-002-positive",
+  "rule_family": "rename",
+  "description": "Page title rename produces update event on page-level field",
+  "input_previous": {
+    "page": {
+      "id": "page-rn-002",
+      "title": "Old Title",
+      "layout": "vertical",
+      "components": []
+    }
+  },
+  "input_next": {
+    "page": {
+      "id": "page-rn-002",
+      "title": "New Title",
+      "layout": "vertical",
+      "components": []
+    }
+  },
+  "expected": {
+    "eventKind": "update",
+    "pairingReason": "deterministic-explicit-id",
+    "fallbackMarker": "none",
+    "structuralChangeCount": 1
+  }
+}

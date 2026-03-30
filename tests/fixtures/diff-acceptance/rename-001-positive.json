@@ -1,0 +1,31 @@
+{
+  "scenario_id": "rename-001-positive",
+  "rule_family": "rename",
+  "description": "Component token/id renamed while content unchanged produces rename event",
+  "input_previous": {
+    "page": {
+      "id": "page-rn-001",
+      "title": "Rename Page",
+      "layout": "vertical",
+      "components": [
+        { "Button": { "label": "Save", "token": "btn-save-old" } }
+      ]
+    }
+  },
+  "input_next": {
+    "page": {
+      "id": "page-rn-001",
+      "title": "Rename Page",
+      "layout": "vertical",
+      "components": [
+        { "Button": { "label": "Save", "token": "btn-save-new" } }
+      ]
+    }
+  },
+  "expected": {
+    "eventKind": "rename",
+    "pairingReason": "deterministic-explicit-id",
+    "fallbackMarker": "none",
+    "structuralChangeCount": 1
+  }
+}

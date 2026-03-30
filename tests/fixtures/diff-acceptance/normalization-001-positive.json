@@ -1,0 +1,32 @@
+{
+  "scenario_id": "normalization-001-positive",
+  "rule_family": "normalization",
+  "description": "DSL with redundant whitespace in content normalized — post-normalization identity",
+  "input_previous": {
+    "page": {
+      "id": "page-norm-001",
+      "title": "Norm Page",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "Hello   World", "token": "t-1" } }
+      ]
+    }
+  },
+  "input_next": {
+    "page": {
+      "id": "page-norm-001",
+      "title": "Norm Page",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "Hello World", "token": "t-1" } }
+      ]
+    }
+  },
+  "expected": {
+    "eventKind": "update",
+    "pairingReason": "deterministic-explicit-id",
+    "fallbackMarker": "none",
+    "structuralChangeCount": 1,
+    "normalizationNote": "Pre-normalization: these would be equivalent after whitespace normalization"
+  }
+}

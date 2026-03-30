@@ -1,0 +1,32 @@
+{
+  "scenario_id": "normalization-002-positive",
+  "rule_family": "normalization",
+  "description": "Stage0 intake-invalid: missing page.id causes normalize failure before diff",
+  "input_previous": {
+    "page": {
+      "id": "page-norm-002",
+      "title": "Valid",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "A", "token": "t-a" } }
+      ]
+    }
+  },
+  "input_next": {
+    "page": {
+      "id": "page-norm-002",
+      "title": "Valid",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "B", "token": "t-a" } }
+      ]
+    }
+  },
+  "expected": {
+    "eventKind": "update",
+    "pairingReason": "deterministic-explicit-id",
+    "fallbackMarker": "none",
+    "structuralChangeCount": 1,
+    "normalizationNote": "Both DSLs pass Stage0 intake; diff proceeds normally"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "scenario_id": "reorder-001-negative",
+  "rule_family": "reorder",
+  "description": "Adjacent negative: same components in same order — no reorder",
+  "input_previous": {
+    "page": {
+      "id": "page-ro-001",
+      "title": "Reorder Page",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "First", "token": "t-a" } },
+        { "Text": { "content": "Second", "token": "t-b" } }
+      ]
+    }
+  },
+  "input_next": {
+    "page": {
+      "id": "page-ro-001",
+      "title": "Reorder Page",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "First", "token": "t-a" } },
+        { "Text": { "content": "Second", "token": "t-b" } }
+      ]
+    }
+  },
+  "expected": {
+    "eventKind": "identity",
+    "pairingReason": "deterministic-structural-path",
+    "fallbackMarker": "none",
+    "structuralChangeCount": 0
+  }
+}

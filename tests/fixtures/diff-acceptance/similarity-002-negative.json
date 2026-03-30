@@ -1,0 +1,31 @@
+{
+  "scenario_id": "similarity-002-negative",
+  "rule_family": "similarity",
+  "description": "Adjacent negative: same token — deterministic path, not heuristic",
+  "input_previous": {
+    "page": {
+      "id": "page-sim-002",
+      "title": "Form",
+      "layout": "vertical",
+      "components": [
+        { "Button": { "label": "Save Changes", "token": "btn-x" } }
+      ]
+    }
+  },
+  "input_next": {
+    "page": {
+      "id": "page-sim-002",
+      "title": "Form",
+      "layout": "vertical",
+      "components": [
+        { "Button": { "label": "Save All Changes", "token": "btn-x" } }
+      ]
+    }
+  },
+  "expected": {
+    "eventKind": "update",
+    "pairingReason": "deterministic-explicit-id",
+    "fallbackMarker": "none",
+    "structuralChangeCount": 1
+  }
+}

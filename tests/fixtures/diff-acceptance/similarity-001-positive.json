@@ -1,0 +1,31 @@
+{
+  "scenario_id": "similarity-001-positive",
+  "rule_family": "similarity",
+  "description": "Component removed and visually similar one added triggers heuristic-similarity pairing",
+  "input_previous": {
+    "page": {
+      "id": "page-sim-001",
+      "title": "Similarity Page",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "Welcome, Alice!", "token": "greeting-a" } }
+      ]
+    }
+  },
+  "input_next": {
+    "page": {
+      "id": "page-sim-001",
+      "title": "Similarity Page",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "Welcome, Bob!", "token": "greeting-b" } }
+      ]
+    }
+  },
+  "expected": {
+    "eventKind": "update",
+    "pairingReason": "heuristic-similarity",
+    "fallbackMarker": "heuristic-pending",
+    "structuralChangeCount": 1
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "scenario_id": "reorder-002-positive",
+  "rule_family": "reorder",
+  "description": "Three-component list: middle item moved to first position",
+  "input_previous": {
+    "page": {
+      "id": "page-ro-002",
+      "title": "List Page",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "A", "token": "item-a" } },
+        { "Text": { "content": "B", "token": "item-b" } },
+        { "Text": { "content": "C", "token": "item-c" } }
+      ]
+    }
+  },
+  "input_next": {
+    "page": {
+      "id": "page-ro-002",
+      "title": "List Page",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "B", "token": "item-b" } },
+        { "Text": { "content": "A", "token": "item-a" } },
+        { "Text": { "content": "C", "token": "item-c" } }
+      ]
+    }
+  },
+  "expected": {
+    "eventKind": "reorder",
+    "pairingReason": "deterministic-explicit-id",
+    "fallbackMarker": "none",
+    "structuralChangeCount": 2
+  }
+}

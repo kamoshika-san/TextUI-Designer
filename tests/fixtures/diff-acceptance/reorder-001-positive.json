@@ -1,0 +1,33 @@
+{
+  "scenario_id": "reorder-001-positive",
+  "rule_family": "reorder",
+  "description": "Two components swapped in position produces reorder events",
+  "input_previous": {
+    "page": {
+      "id": "page-ro-001",
+      "title": "Reorder Page",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "First", "token": "t-a" } },
+        { "Text": { "content": "Second", "token": "t-b" } }
+      ]
+    }
+  },
+  "input_next": {
+    "page": {
+      "id": "page-ro-001",
+      "title": "Reorder Page",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "Second", "token": "t-b" } },
+        { "Text": { "content": "First", "token": "t-a" } }
+      ]
+    }
+  },
+  "expected": {
+    "eventKind": "reorder",
+    "pairingReason": "deterministic-explicit-id",
+    "fallbackMarker": "none",
+    "structuralChangeCount": 2
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "scenario_id": "rename-001-negative",
+  "rule_family": "rename",
+  "description": "Adjacent negative: token unchanged — no rename event",
+  "input_previous": {
+    "page": {
+      "id": "page-rn-001",
+      "title": "Rename Page",
+      "layout": "vertical",
+      "components": [
+        { "Button": { "label": "Save", "token": "btn-save-old" } }
+      ]
+    }
+  },
+  "input_next": {
+    "page": {
+      "id": "page-rn-001",
+      "title": "Rename Page",
+      "layout": "vertical",
+      "components": [
+        { "Button": { "label": "Save", "token": "btn-save-old" } }
+      ]
+    }
+  },
+  "expected": {
+    "eventKind": "identity",
+    "pairingReason": "deterministic-structural-path",
+    "fallbackMarker": "none",
+    "structuralChangeCount": 0
+  }
+}

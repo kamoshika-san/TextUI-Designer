@@ -1,0 +1,34 @@
+{
+  "scenario_id": "reorder-002-negative",
+  "rule_family": "reorder",
+  "description": "Adjacent negative: item removed (not reordered)",
+  "input_previous": {
+    "page": {
+      "id": "page-ro-002",
+      "title": "List Page",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "A", "token": "item-a" } },
+        { "Text": { "content": "B", "token": "item-b" } },
+        { "Text": { "content": "C", "token": "item-c" } }
+      ]
+    }
+  },
+  "input_next": {
+    "page": {
+      "id": "page-ro-002",
+      "title": "List Page",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "A", "token": "item-a" } },
+        { "Text": { "content": "C", "token": "item-c" } }
+      ]
+    }
+  },
+  "expected": {
+    "eventKind": "remove",
+    "pairingReason": "deterministic-explicit-id",
+    "fallbackMarker": "none",
+    "structuralChangeCount": 1
+  }
+}

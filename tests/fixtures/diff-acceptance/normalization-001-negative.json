@@ -1,0 +1,31 @@
+{
+  "scenario_id": "normalization-001-negative",
+  "rule_family": "normalization",
+  "description": "Adjacent negative: content already canonical — no normalization needed, identity result",
+  "input_previous": {
+    "page": {
+      "id": "page-norm-001",
+      "title": "Norm Page",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "Hello World", "token": "t-1" } }
+      ]
+    }
+  },
+  "input_next": {
+    "page": {
+      "id": "page-norm-001",
+      "title": "Norm Page",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "Hello World", "token": "t-1" } }
+      ]
+    }
+  },
+  "expected": {
+    "eventKind": "identity",
+    "pairingReason": "deterministic-structural-path",
+    "fallbackMarker": "none",
+    "structuralChangeCount": 0
+  }
+}

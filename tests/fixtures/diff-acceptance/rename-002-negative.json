@@ -1,0 +1,27 @@
+{
+  "scenario_id": "rename-002-negative",
+  "rule_family": "rename",
+  "description": "Adjacent negative: page id same, title same — no change",
+  "input_previous": {
+    "page": {
+      "id": "page-rn-002",
+      "title": "Old Title",
+      "layout": "vertical",
+      "components": []
+    }
+  },
+  "input_next": {
+    "page": {
+      "id": "page-rn-002",
+      "title": "Old Title",
+      "layout": "vertical",
+      "components": []
+    }
+  },
+  "expected": {
+    "eventKind": "identity",
+    "pairingReason": "deterministic-structural-path",
+    "fallbackMarker": "none",
+    "structuralChangeCount": 0
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "scenario_id": "identity-002-positive",
+  "rule_family": "identity",
+  "description": "Multiple components — no changes produces identity result",
+  "input_previous": {
+    "page": {
+      "id": "page-id-002",
+      "title": "Multi Page",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "Line 1", "token": "t-1" } },
+        { "Button": { "label": "Submit", "token": "btn-1" } }
+      ]
+    }
+  },
+  "input_next": {
+    "page": {
+      "id": "page-id-002",
+      "title": "Multi Page",
+      "layout": "vertical",
+      "components": [
+        { "Text": { "content": "Line 1", "token": "t-1" } },
+        { "Button": { "label": "Submit", "token": "btn-1" } }
+      ]
+    }
+  },
+  "expected": {
+    "eventKind": "identity",
+    "pairingReason": "deterministic-structural-path",
+    "fallbackMarker": "none",
+    "structuralChangeCount": 0
+  }
+}
