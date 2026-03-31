@@ -1,5 +1,8 @@
 import type { ValidationIssue } from '../cli/types';
 import type { TextUIDSL } from '../domain/dsl-types';
+import { normalize } from './diff-normalization/normalize';
+import { toDiagnosticEntry } from './diff-normalization/degrade-policy';
+import type { NormalizationDiagnosticEntry } from './diff-normalization/degrade-policy';
 import { getTextUiComponentCatalog, type TextUIComponentCatalogEntry } from './component-catalog';
 import { TextUiCoreComponentBuilder, getComponentSpecHandlerFlagsForTesting, getComponentSpecTypesForTesting } from './textui-core-component-builder';
 import {
@@ -74,6 +77,8 @@ export interface CompareUiRequest {
 export interface CompareUiResponse {
   ok: boolean;
   diagnostics: CoreDiagnostic[];
+  /** Normalization warnings/errors from the normalize() step. Absent when both sides normalized cleanly. */
+  normalizationDiagnostics?: NormalizationDiagnosticEntry[];
   previous?: DiffCompareDocument;
   next?: DiffCompareDocument;
   result?: DiffCompareResult;
@@ -169,11 +174,30 @@ export class TextUICoreEngine {
       return { ok: false, diagnostics };
     }
 
-    const previous = createNormalizedDiffDocument(previousValidation.normalizedDsl, {
+    // compareStage extension point: currently 'c1-skeleton'; future 'c2-normalized' migration here
+    const normalizationDiagnostics: NormalizationDiagnosticEntry[] = [];
+
+    const prevNormResult = normalize(previousValidation.normalizedDsl);
+    const prevDsl: TextUIDSL = prevNormResult.ok
+      ? prevNormResult.dsl
+      : (() => {
+          normalizationDiagnostics.push(toDiagnosticEntry(prevNormResult, 'previous'));
+          return previousValidation.normalizedDsl!;
+        })();
+
+    const nextNormResult = normalize(nextValidation.normalizedDsl);
+    const nextDsl: TextUIDSL = nextNormResult.ok
+      ? nextNormResult.dsl
+      : (() => {
+          normalizationDiagnostics.push(toDiagnosticEntry(nextNormResult, 'next'));
+          return nextValidation.normalizedDsl!;
+        })();
+
+    const previous = createNormalizedDiffDocument(prevDsl, {
       side: 'previous',
       sourcePath: request.previousSourcePath
     });
-    const next = createNormalizedDiffDocument(nextValidation.normalizedDsl, {
+    const next = createNormalizedDiffDocument(nextDsl, {
       side: 'next',
       sourcePath: request.nextSourcePath
     });
@@ -181,6 +205,7 @@ export class TextUICoreEngine {
     return {
       ok: true,
       diagnostics: [],
+      ...(normalizationDiagnostics.length > 0 ? { normalizationDiagnostics } : {}),
       previous,
       next,
       result: createDiffResultSkeleton(previous, next)
