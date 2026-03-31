@@ -449,7 +449,8 @@
     "cli": "node ./out/cli/index.js",
     "mcp:serve": "node ./out/mcp/server.js",
     "prepare": "node ./scripts/prepare.cjs",
-    "precli": "npm run compile"
+    "precli": "npm run compile",
+    "generate:diff-traceability": "node scripts/generate-diff-traceability.cjs"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.6",
