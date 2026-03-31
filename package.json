@@ -450,7 +450,8 @@
     "mcp:serve": "node ./out/mcp/server.js",
     "prepare": "node ./scripts/prepare.cjs",
     "precli": "npm run compile",
-    "generate:diff-traceability": "node scripts/generate-diff-traceability.cjs"
+    "generate:diff-traceability": "node scripts/generate-diff-traceability.cjs",
+    "test:diff-coverage-guard": "node scripts/check-diff-coverage.cjs"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.6",

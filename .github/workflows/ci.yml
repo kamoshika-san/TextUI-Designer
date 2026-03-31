@@ -112,6 +112,9 @@ jobs:
     - name: Run full CI test command
       run: npm run test:all:ci
 
+    - name: Diff coverage guard (K2-3a)
+      run: npm run test:diff-coverage-guard
+
   test:
     name: Test Suite
     permissions:
