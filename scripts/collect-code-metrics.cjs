@@ -148,7 +148,18 @@ function collectFilesUnder(baseDir, exts) {
     const files = [];
 
     function walk(absDir) {
-        for (const entry of fs.readdirSync(absDir, { withFileTypes: true })) {
+        let dirEntries;
+        try {
+            dirEntries = fs.readdirSync(absDir, { withFileTypes: true });
+        } catch (error) {
+            // Transient race when a temp directory is removed while walking
+            if (error.code === 'ENOENT' || error.code === 'ENOTDIR') {
+                return;
+            }
+            throw error;
+        }
+
+        for (const entry of dirEntries) {
             if (IGNORED_SEGMENTS.has(entry.name)) {
                 continue;
             }
