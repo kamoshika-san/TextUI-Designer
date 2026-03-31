@@ -90,7 +90,7 @@ export interface NormalizeSuccess {
 
 export interface NormalizeFailure {
   ok: false;
-  errorKind: 'intake-invalid' | 'stage-error' | 'unknown';
+  errorKind: 'intake-invalid' | 'stage-error' | 'unknown' | 'rule-conflict';
   message: string;
   /** Partial trace up to the point of failure (may be undefined on very early failure) */
   trace?: Partial<NormalizationTrace>;
