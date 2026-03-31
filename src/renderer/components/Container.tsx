@@ -33,10 +33,10 @@ export const Container: React.FC<ContainerProps> = ({
   const style = hasFlexGrow
     ? {
         flexGrow,
-        flexShrink: 0,
+        flexShrink: 1,
         flexBasis: width ?? 0,
+        minWidth: minWidth ?? 0,
         ...(width ? { width } : {}),
-        ...(minWidth ? { minWidth } : {}),
         ...tokenStyle
       }
     : width || minWidth || token

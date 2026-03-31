@@ -41,7 +41,11 @@ async function exportPrimarySample(sampleRelativePath) {
   const repoRoot = path.resolve(__dirname, '../..');
   const samplePath = path.join(repoRoot, sampleRelativePath);
   const { dsl } = loadDslWithIncludesFromPath(samplePath);
-  const html = await new HtmlExporter().export(dsl, { format: 'html' });
+  // Pass a sentinel extensionPath that is guaranteed to not resolve to any real CSS file.
+  // This ensures the export always uses getDefaultExportStyleBlock() regardless of
+  // local build artifacts (media/assets/index-*.css) present on developer machines.
+  // CI and local machines produce identical output.
+  const html = await new HtmlExporter().export(dsl, { format: 'html', extensionPath: path.join(repoRoot, '_test_no_assets_sentinel') });
   return { dsl, html, hash: hashHtml(html) };
 }
 
@@ -54,7 +58,7 @@ describe('HtmlExporter primary sample regression (T-20260322-348)', () => {
     },
     {
       sampleRelativePath: 'sample/08-github/sample.tui.yml',
-      expectedHash: '7f999633a7e79e6883450ebef871be5e79b15a2420e7e1890b3ea62d3b51b71d', // updated: box-sizing/width/maxWidth on root div + overflow-x:auto (html-export-width-fix)
+      expectedHash: 'a200c92d609e2fb6cae0a0b644313f50840ddedc62cf0f74f4f9b6621381fa99', // updated: flexShrink:0→1 + minWidth:0 on flex-grow children (html-export-include-clip-fix)
       markers: ['kamoshika-san / TextUI-Designer', 'VS Code extension for designing text-based UIs with YAML/JSON DSL.', 'Pull requests']
     },
     {
