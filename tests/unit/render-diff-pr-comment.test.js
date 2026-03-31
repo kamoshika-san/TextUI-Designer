@@ -146,7 +146,7 @@ describe('renderDiffPRComment (T-20260401-006)', () => {
       const payload = makePayload({ links });
       const output = renderDiffPRComment(payload, { mode: 'full' });
       assert.ok(output.includes('CI Artifact'));
-      assert.ok(output.includes('https://ci.example.com/artifact/123'));
+      assert.match(output, /\[CI Artifact\]\(https:\/\/ci\.example\.com\/artifact\/123\)/);
     });
 
     it('omits links section when no links provided', () => {
