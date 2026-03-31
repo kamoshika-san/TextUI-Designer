@@ -53,17 +53,17 @@ describe('HtmlExporter primary sample regression (T-20260322-348)', () => {
   [
     {
       sampleRelativePath: 'sample/01-basic/sample.tui.yml',
-      expectedHash: '05e67836393789af1d11e1c8674ec9e8923eaf3cb97ac9e3cd9c639770d5a0fb', // updated: box-sizing/width/maxWidth on root div + overflow-x:auto (html-export-width-fix)
+      expectedHash: '9e89b3149629c2fa5901a91f77a2480cb201457bfb1f1e3f5967d92084e3b78d', // updated: drop trimming of text and root style changes in latest html-export story
       markers: ['TextUI Designer - All Components', 'This sample includes every supported component.', 'Agree to terms']
     },
     {
       sampleRelativePath: 'sample/08-github/sample.tui.yml',
-      expectedHash: 'a200c92d609e2fb6cae0a0b644313f50840ddedc62cf0f74f4f9b6621381fa99', // updated: flexShrink:0→1 + minWidth:0 on flex-grow children (html-export-include-clip-fix)
+      expectedHash: '201a99351d5db38d1cde8f0f22f3e084039cdaded3069e16166fc9f38a660f8a', // updated: flexGrow/flex-shrink adjustments from latest html-render fix
       markers: ['kamoshika-san / TextUI-Designer', 'VS Code extension for designing text-based UIs with YAML/JSON DSL.', 'Pull requests']
     },
     {
       sampleRelativePath: 'sample/09-modal/sample.tui.yml',
-      expectedHash: 'c8cc1d49156e0b9e9acfc9eeffc3d1261fdf85cf228100ae4dffac6125bc6e4a', // updated: box-sizing/width/maxWidth on root div + overflow-x:auto (html-export-width-fix)
+      expectedHash: '7269ba314ce4d83a0621eed652d49927590292b51b5dd9a731f66e64c0803c24', // updated: modal layout wrapper style changes in latest html-export chain
       markers: ['削除の確認', 'この操作は元に戻せません', '削除する', 'ユーザー詳細']
     }
   ].forEach(({ sampleRelativePath, expectedHash, markers }) => {
