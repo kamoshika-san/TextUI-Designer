@@ -110,6 +110,6 @@ export function validateDiffResultExternal(payload: DiffResultExternal): Validat
  * Reset the compiled validator (for testing with custom schemas).
  * @internal
  */
-export function _resetValidatorForTesting(): void {
+export function resetValidatorForTesting(): void {
   _validate = undefined;
 }
