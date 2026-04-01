@@ -1,4 +1,9 @@
 import type { TextUIDSL } from '../domain/dsl-types';
+import {
+  type HeuristicPolicy,
+  DEFAULT_HEURISTIC_POLICY,
+  computePolicyHash,
+} from './diff/heuristic-policy';
 
 export type DiffCompareSide = 'previous' | 'next';
 export type DiffEntityKind = 'page' | 'component' | 'property';
@@ -41,6 +46,8 @@ export interface DiffSourceRef {
   entityPath: string;
 }
 
+export type DiffAmbiguityReason = 'tie-best-score' | 'multi-candidate' | 'below-threshold';
+
 export interface DiffTracePayload {
   previousSourceRef?: DiffSourceRef;
   nextSourceRef?: DiffSourceRef;
@@ -49,6 +56,8 @@ export interface DiffTracePayload {
   fallbackMarker: DiffFallbackMarker;
   fallbackConfidence: DiffFallbackConfidence;
   pairingReason: DiffPairingReason;
+  /** Set when heuristic pairing was rejected due to ambiguity (tie/multi/below-threshold). */
+  ambiguityReason?: DiffAmbiguityReason;
 }
 
 export interface DiffEvent {
@@ -91,6 +100,8 @@ export interface DiffCompareResult {
     traversal: 'pending';
     classification: 'pending';
     supportedEventKinds: DiffEventKind[];
+    /** Short hash of the HeuristicPolicy used during this diff (for reproducibility). */
+    policyHash?: string;
   };
 }
 
@@ -105,6 +116,8 @@ type DiffCollectionCandidate = {
   path: string;
   index: number;
   collectionKey: string;
+  /** Optional ownership domain for cross-owner forbidden-zone guard. Undefined == undefined is same. */
+  ownerScope?: string;
 };
 type DiffPairedCandidate = {
   previous?: DiffCollectionCandidate;
@@ -112,6 +125,10 @@ type DiffPairedCandidate = {
   pairingReason?: DiffPairingReason;
   fallbackMarker?: DiffFallbackMarker;
   fallbackConfidence?: DiffFallbackConfidence;
+  /** Set when a heuristic candidate was rejected due to ambiguity. */
+  ambiguityReason?: DiffAmbiguityReason;
+  /** Type stub for M2-1 heuristicTrace: records forbidden-zone rejection. */
+  heuristicRejected?: { rejectedBy: 'forbidden-zone' };
 };
 type DiffDeterministicIdentity = {
   entityKeySuffix: string;
@@ -121,6 +138,48 @@ type DiffDeterministicIdentity = {
 
 const CHILD_COLLECTION_KEYS = ['components', 'fields', 'actions', 'items', 'children'] as const;
 const FALLBACK_IDENTITY_KEYS = ['key', 'name', 'route', 'event', 'state', 'transition'] as const;
+
+// -- Forbidden-zone guard (T-20260401-501 / M1-2) ----------------------------
+
+/**
+ * Returns the parent collection path of a candidate path by stripping the
+ * trailing numeric index segment.
+ * e.g. "/page/components/0/children/1" → "/page/components/0/children"
+ */
+function getCollectionParentPath(path: string): string {
+  return path.replace(/\/\d+$/, '');
+}
+
+/**
+ * Hard filter applied before heuristic scoring.
+ * Returns false (reject) when the two candidates belong to different semantic
+ * slots, different parent collection paths, or different owner scopes.
+ * This is called for every (previous, next) pair inside selectHeuristicMatches.
+ *
+ * Exported for unit testing (HH-FZ series).
+ */
+export function isHeuristicAllowed(
+  candidateA: DiffCollectionCandidate,
+  candidateB: DiffCollectionCandidate
+): boolean {
+  // cross-semantic-slot: different collection keys
+  if (candidateA.collectionKey !== candidateB.collectionKey) {
+    return false;
+  }
+  // cross-parent: different parent collection path
+  const parentA = getCollectionParentPath(candidateA.path);
+  const parentB = getCollectionParentPath(candidateB.path);
+  if (parentA !== parentB) {
+    return false;
+  }
+  // cross-owner: ownerScope mismatch (undefined == undefined treated as same)
+  if (candidateA.ownerScope !== candidateB.ownerScope) {
+    return false;
+  }
+  return true;
+}
+
+// ---------------------------------------------------------------------------
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -187,7 +246,8 @@ function createPendingEvent(
   identitySource: DiffIdentitySource,
   pairingReason: DiffPairingReason,
   fallbackMarker: DiffFallbackMarker = 'none',
-  fallbackConfidence: DiffFallbackConfidence = 'not-applicable'
+  fallbackConfidence: DiffFallbackConfidence = 'not-applicable',
+  ambiguityReason?: DiffAmbiguityReason
 ): DiffEvent {
   return {
     eventId,
@@ -210,7 +270,8 @@ function createPendingEvent(
       identitySource,
       fallbackMarker,
       fallbackConfidence,
-      pairingReason
+      pairingReason,
+      ambiguityReason,
     }
   };
 }
@@ -347,7 +408,8 @@ function collectChildCollectionSignature(node: DiffComponentNode | undefined): s
 
 function scoreHeuristicSimilarity(
   previousCandidate: DiffCollectionCandidate,
-  nextCandidate: DiffCollectionCandidate
+  nextCandidate: DiffCollectionCandidate,
+  policy: HeuristicPolicy
 ): number {
   if (previousCandidate.collectionKey !== nextCandidate.collectionKey) {
     return 0;
@@ -369,83 +431,135 @@ function scoreHeuristicSimilarity(
 
   for (const [key, value] of previousScalars.entries()) {
     if (nextScalars.get(key) === value) {
-      score += 2;
+      score += policy.weightScalarExact;
     }
   }
 
   const previousSignature = collectChildCollectionSignature(previousNode);
   const nextSignature = collectChildCollectionSignature(nextNode);
   if (previousSignature.length > 0 && previousSignature === nextSignature) {
-    score += 1;
+    score += policy.weightChildSignature;
   }
 
   if (previousScalars.size > 0 && previousScalars.size === nextScalars.size) {
     const previousKeys = [...previousScalars.keys()].sort().join('|');
     const nextKeys = [...nextScalars.keys()].sort().join('|');
     if (previousKeys === nextKeys) {
-      score += 1;
+      score += policy.weightKeysetMatch;
     }
   }
 
   return score;
 }
 
-function selectUniqueHeuristicMatches(
+type HeuristicMatchResult = {
+  matched: Array<{ previousIndex: number; nextIndex: number }>;
+  ambiguous: Array<{ previousIndex: number; ambiguityReason: DiffAmbiguityReason }>;
+};
+
+/**
+ * Select mutually-best heuristic pairs from two candidate lists.
+ *
+ * - Applies the forbidden-zone guard (isHeuristicAllowed) before scoring.
+ * - Tracks ambiguous candidates (tie / multi-candidate / below-threshold) so
+ *   callers can route them to remove+add rather than silent index pairing.
+ * - Respects policy weights and thresholds.
+ */
+function selectHeuristicMatches(
   previousCandidates: DiffCollectionCandidate[],
-  nextCandidates: DiffCollectionCandidate[]
-): Array<{ previousIndex: number; nextIndex: number }> {
-  const matches: Array<{ previousIndex: number; nextIndex: number }> = [];
+  nextCandidates: DiffCollectionCandidate[],
+  policy: HeuristicPolicy
+): HeuristicMatchResult {
   const bestNextByPrevious = new Map<number, { nextIndex: number; score: number }>();
   const bestPreviousByNext = new Map<number, { previousIndex: number; score: number }>();
+  const ambiguityByPrevious = new Map<number, DiffAmbiguityReason>();
 
-  for (let previousIndex = 0; previousIndex < previousCandidates.length; previousIndex++) {
+  // Forward pass: for each previous, find best next
+  for (let pi = 0; pi < previousCandidates.length; pi++) {
     let bestScore = 0;
-    let bestNextIndex = -1;
+    let bestNI = -1;
     let tied = false;
-    for (let nextIndex = 0; nextIndex < nextCandidates.length; nextIndex++) {
-      const score = scoreHeuristicSimilarity(previousCandidates[previousIndex], nextCandidates[nextIndex]);
+
+    for (let ni = 0; ni < nextCandidates.length; ni++) {
+      if (!isHeuristicAllowed(previousCandidates[pi], nextCandidates[ni])) {
+        continue; // hard block: forbidden-zone
+      }
+      const score = scoreHeuristicSimilarity(previousCandidates[pi], nextCandidates[ni], policy);
       if (score > bestScore) {
         bestScore = score;
-        bestNextIndex = nextIndex;
+        bestNI = ni;
         tied = false;
       } else if (score > 0 && score === bestScore) {
         tied = true;
       }
     }
 
-    if (!tied && bestScore >= 2 && bestNextIndex >= 0) {
-      bestNextByPrevious.set(previousIndex, { nextIndex: bestNextIndex, score: bestScore });
+    if (policy.rejectTie && tied) {
+      ambiguityByPrevious.set(pi, 'tie-best-score');
+    } else if (!tied && bestNI >= 0 && bestScore >= policy.minScore) {
+      bestNextByPrevious.set(pi, { nextIndex: bestNI, score: bestScore });
+    } else if (bestScore >= policy.weightScalarExact && bestScore < policy.minScore) {
+      // below-threshold: candidate had at least one scalar-value match but fell short of
+      // minScore. Only applies when minScore > weightScalarExact (e.g. custom policies).
+      // Pure-structural matches (keyset only, score < weightScalarExact) are NOT flagged
+      // here — they fall through to natural index pairing (structural-path) as before.
+      ambiguityByPrevious.set(pi, 'below-threshold');
     }
+    // Other cases: no scalar signal → not ambiguous, falls through to natural pairing
   }
 
-  for (let nextIndex = 0; nextIndex < nextCandidates.length; nextIndex++) {
+  // Backward pass: for each next, find best previous
+  for (let ni = 0; ni < nextCandidates.length; ni++) {
     let bestScore = 0;
-    let bestPreviousIndex = -1;
+    let bestPI = -1;
     let tied = false;
-    for (let previousIndex = 0; previousIndex < previousCandidates.length; previousIndex++) {
-      const score = scoreHeuristicSimilarity(previousCandidates[previousIndex], nextCandidates[nextIndex]);
+
+    for (let pi = 0; pi < previousCandidates.length; pi++) {
+      if (!isHeuristicAllowed(previousCandidates[pi], nextCandidates[ni])) {
+        continue;
+      }
+      const score = scoreHeuristicSimilarity(previousCandidates[pi], nextCandidates[ni], policy);
       if (score > bestScore) {
         bestScore = score;
-        bestPreviousIndex = previousIndex;
+        bestPI = pi;
         tied = false;
       } else if (score > 0 && score === bestScore) {
         tied = true;
       }
     }
 
-    if (!tied && bestScore >= 2 && bestPreviousIndex >= 0) {
-      bestPreviousByNext.set(nextIndex, { previousIndex: bestPreviousIndex, score: bestScore });
+    if (!tied && bestScore >= policy.minScore && bestPI >= 0) {
+      bestPreviousByNext.set(ni, { previousIndex: bestPI, score: bestScore });
     }
   }
 
-  for (const [previousIndex, nextMatch] of bestNextByPrevious.entries()) {
-    const previousMatch = bestPreviousByNext.get(nextMatch.nextIndex);
-    if (previousMatch?.previousIndex === previousIndex) {
-      matches.push({ previousIndex, nextIndex: nextMatch.nextIndex });
+  // Mutual-best check
+  const matched: Array<{ previousIndex: number; nextIndex: number }> = [];
+  const ambiguous: Array<{ previousIndex: number; ambiguityReason: DiffAmbiguityReason }> = [];
+
+  for (const [pi, nextMatch] of bestNextByPrevious.entries()) {
+    if (!policy.requireMutualBest) {
+      matched.push({ previousIndex: pi, nextIndex: nextMatch.nextIndex });
+      continue;
+    }
+    const reverseMatch = bestPreviousByNext.get(nextMatch.nextIndex);
+    if (reverseMatch?.previousIndex === pi) {
+      matched.push({ previousIndex: pi, nextIndex: nextMatch.nextIndex });
+    } else {
+      // mutual check failed → multi-candidate ambiguity
+      ambiguous.push({ previousIndex: pi, ambiguityReason: 'multi-candidate' });
     }
   }
 
-  return matches.sort((left, right) => left.previousIndex - right.previousIndex);
+  // Add tie / below-threshold ambiguities
+  for (const [pi, reason] of ambiguityByPrevious.entries()) {
+    ambiguous.push({ previousIndex: pi, ambiguityReason: reason });
+  }
+
+  return {
+    matched: matched.sort((a, b) => a.previousIndex - b.previousIndex),
+    ambiguous,
+  };
 }
 
 function getPathIndex(path: string): number | undefined {
@@ -520,7 +634,8 @@ function classifyComponentEventKind(
 
 function pairCollectionCandidates(
   previousCandidates: DiffCollectionCandidate[],
-  nextCandidates: DiffCollectionCandidate[]
+  nextCandidates: DiffCollectionCandidate[],
+  policy: HeuristicPolicy = DEFAULT_HEURISTIC_POLICY
 ): DiffPairedCandidate[] {
   const paired: DiffPairedCandidate[] = [];
   const consumedPrevious = new Set<number>();
@@ -568,12 +683,15 @@ function pairCollectionCandidates(
   const remainingNext = nextCandidates
     .map((candidate, index) => ({ candidate, index }))
     .filter(entry => !consumedNext.has(entry.index));
-  const heuristicMatches = selectUniqueHeuristicMatches(
+
+  const heuristicResult = selectHeuristicMatches(
     remainingPrevious.map(entry => entry.candidate),
-    remainingNext.map(entry => entry.candidate)
+    remainingNext.map(entry => entry.candidate),
+    policy
   );
 
-  for (const heuristicMatch of heuristicMatches) {
+  // Consume heuristic matches
+  for (const heuristicMatch of heuristicResult.matched) {
     const previousIndex = remainingPrevious[heuristicMatch.previousIndex].index;
     const nextIndex = remainingNext[heuristicMatch.nextIndex].index;
     consumedPrevious.add(previousIndex);
@@ -584,6 +702,19 @@ function pairCollectionCandidates(
       pairingReason: 'heuristic-similarity',
       fallbackMarker: 'heuristic-pending',
       fallbackConfidence: 'high'
+    });
+  }
+
+  // Consume ambiguous candidates — route to remove+add instead of index pairing
+  for (const ambiguousItem of heuristicResult.ambiguous) {
+    const previousIndex = remainingPrevious[ambiguousItem.previousIndex].index;
+    consumedPrevious.add(previousIndex);
+    paired.push({
+      previous: previousCandidates[previousIndex],
+      next: undefined,
+      pairingReason: 'unpaired',
+      fallbackMarker: 'remove-add-fallback',
+      ambiguityReason: ambiguousItem.ambiguityReason,
     });
   }
 
@@ -694,7 +825,8 @@ function buildComponentEntity(
   previous: DiffCompareDocument,
   next: DiffCompareDocument,
   traversalOrder: number,
-  pairedCandidateMetadata?: DiffPairedCandidate
+  pairedCandidateMetadata?: DiffPairedCandidate,
+  policy: HeuristicPolicy = DEFAULT_HEURISTIC_POLICY
 ): DiffTreeBuild {
   const previousNode = toComponentNode(previousComponent);
   const nextNode = toComponentNode(nextComponent);
@@ -707,6 +839,7 @@ function buildComponentEntity(
     : deterministicIdentity.identitySource;
   const fallbackMarker = pairedCandidateMetadata?.fallbackMarker ?? 'none';
   const fallbackConfidence = pairedCandidateMetadata?.fallbackConfidence ?? 'not-applicable';
+  const ambiguityReason = pairedCandidateMetadata?.ambiguityReason;
   const entityKey = `component:${deterministicIdentity.entityKeySuffix}`;
   const refs = buildEntityRefs('component', previousPath, nextPath, previous.page.id, next.page.id, hasPrevious, hasNext);
   const classification = classifyComponentEventKind(
@@ -731,7 +864,8 @@ function buildComponentEntity(
     identitySource,
     pairingReason,
     fallbackMarker === 'none' ? classification.fallbackMarker : fallbackMarker,
-    fallbackConfidence
+    fallbackConfidence,
+    ambiguityReason
   );
 
   let nextOrder = traversalOrder + 1;
@@ -772,7 +906,7 @@ function buildComponentEntity(
       collectionKey: entry.key
     }))
   );
-  for (const pairedCandidate of pairCollectionCandidates(previousCandidates, nextCandidates)) {
+  for (const pairedCandidate of pairCollectionCandidates(previousCandidates, nextCandidates, policy)) {
     const childBuild = buildComponentEntity(
       pairedCandidate.previous?.item,
       pairedCandidate.next?.item,
@@ -781,7 +915,8 @@ function buildComponentEntity(
       previous,
       next,
       nextOrder,
-      pairedCandidate
+      pairedCandidate,
+      policy
     );
     children.push(childBuild.entity);
     events.push(...childBuild.events);
@@ -839,8 +974,10 @@ export function createNormalizedDiffDocument(
 
 export function createDiffResultSkeleton(
   previous: DiffCompareDocument,
-  next: DiffCompareDocument
+  next: DiffCompareDocument,
+  policy?: HeuristicPolicy
 ): DiffCompareResult {
+  const effectivePolicy = policy ?? DEFAULT_HEURISTIC_POLICY;
   const pageIdentity = resolvePageDeterministicIdentity(previous, next);
   const rootEvent = createPendingEvent(
     `event:page:${previous.page.id}->${next.page.id}:update`,
@@ -877,9 +1014,11 @@ export function createDiffResultSkeleton(
   }
 
   const maxComponents = Math.max(previous.normalizedDsl.page.components.length, next.normalizedDsl.page.components.length);
+  void maxComponents; // unused after pairing refactor; kept for clarity
   const pairedPageComponents = pairCollectionCandidates(
     previous.normalizedDsl.page.components.map((item, index) => ({ item, path: `/page/components/${index}`, index, collectionKey: 'components' })),
-    next.normalizedDsl.page.components.map((item, index) => ({ item, path: `/page/components/${index}`, index, collectionKey: 'components' }))
+    next.normalizedDsl.page.components.map((item, index) => ({ item, path: `/page/components/${index}`, index, collectionKey: 'components' })),
+    effectivePolicy
   );
   for (const pairedCandidate of pairedPageComponents) {
     const componentBuild = buildComponentEntity(
@@ -890,7 +1029,8 @@ export function createDiffResultSkeleton(
       previous,
       next,
       nextTraversalOrder,
-      pairedCandidate
+      pairedCandidate,
+      effectivePolicy
     );
     childEntities.push(componentBuild.entity);
     childEvents.push(...componentBuild.events);
@@ -938,7 +1078,8 @@ export function createDiffResultSkeleton(
       entityCount,
       traversal: 'pending',
       classification: 'pending',
-      supportedEventKinds: ['add', 'remove', 'update', 'reorder', 'move', 'rename', 'remove+add']
+      supportedEventKinds: ['add', 'remove', 'update', 'reorder', 'move', 'rename', 'remove+add'],
+      policyHash: computePolicyHash(effectivePolicy),
     }
   };
 }
