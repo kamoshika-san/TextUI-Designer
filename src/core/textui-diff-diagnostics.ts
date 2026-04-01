@@ -6,6 +6,7 @@ import type {
   DiffFallbackMarker,
   DiffFallbackConfidence,
   DiffPairingReason,
+  DiffHeuristicTrace,
 } from './textui-core-diff';
 
 // -- Pairing classification --------------------------------------------------
@@ -59,6 +60,8 @@ export interface DiffEventTrace {
    * (fallbackMarker !== 'none').  Convenience flag for downstream filtering.
    */
   hasFallback: boolean;
+  /** Heuristic scoring breakdown for heuristic-attempted events. */
+  heuristicTrace?: DiffHeuristicTrace;
 }
 
 // -- Aggregated summary -----------------------------------------------------
@@ -156,6 +159,7 @@ function buildEventTrace(event: DiffEvent): DiffEventTrace {
     fallbackConfidence,
     reasonSummary: buildReasonSummary(pairingReason, identitySource, fallbackMarker, fallbackConfidence),
     hasFallback,
+    heuristicTrace: event.trace.heuristicTrace,
   };
 }
 
