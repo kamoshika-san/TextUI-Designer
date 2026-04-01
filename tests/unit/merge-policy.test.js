@@ -72,6 +72,7 @@ describe('merge policy', () => {
 
     assert.strictEqual(result.decision, 'auto-merge-safe');
     assert.strictEqual(result.reason, 'non-overlap');
+    assert.strictEqual(result.explanationKey, 'merge.safe.non-overlap');
   });
 
   it('marks reorder-only same-collection changes as auto-merge-safe', () => {
@@ -97,6 +98,7 @@ describe('merge policy', () => {
 
     assert.strictEqual(result.decision, 'auto-merge-safe');
     assert.strictEqual(result.reason, 'commutative-reorder');
+    assert.strictEqual(result.explanationKey, 'merge.safe.commutative-reorder');
   });
 
   it('keeps one-side-noop lane auto-merge-safe when payload already marks it so', () => {
@@ -106,6 +108,7 @@ describe('merge policy', () => {
 
     assert.strictEqual(result.decision, 'auto-merge-safe');
     assert.strictEqual(result.reason, 'one-side-noop');
+    assert.strictEqual(result.explanationKey, 'merge.safe.one-side-noop');
   });
 
   it('excludes heuristic conflicts from the safe lane', () => {
@@ -122,6 +125,24 @@ describe('merge policy', () => {
 
     assert.strictEqual(result.decision, 'manual-review-required');
     assert.strictEqual(result.reason, 'heuristic-excluded');
+    assert.strictEqual(result.explanationKey, 'merge.manual.heuristic-derived');
+  });
+
+  it('excludes fallback-marked conflicts from the safe lane', () => {
+    const result = policy.evaluateMergeConflictPolicy(makeConflict({
+      right: {
+        eventId: 'event:right',
+        eventKind: 'update',
+        pairingReason: 'deterministic-structural-path',
+        fallbackMarker: 'remove-add-fallback',
+        path: '/page/props/subtitle',
+        sourceRef: { side: 'next', entityPath: '/page/props/subtitle' },
+      },
+    }));
+
+    assert.strictEqual(result.decision, 'manual-review-required');
+    assert.strictEqual(result.reason, 'fallback-excluded');
+    assert.strictEqual(result.explanationKey, 'merge.manual.fallback-present');
   });
 
   it('excludes permission-sensitive conflicts from the safe lane', () => {
@@ -138,6 +159,24 @@ describe('merge policy', () => {
 
     assert.strictEqual(result.decision, 'manual-review-required');
     assert.strictEqual(result.reason, 'permission-excluded');
+    assert.strictEqual(result.explanationKey, 'merge.manual.permission-sensitive');
+  });
+
+  it('excludes divergent identity conflicts from the safe lane', () => {
+    const result = policy.evaluateMergeConflictPolicy(makeConflict({
+      type: 'rename-vs-replace',
+      taxonomy: {
+        family: 'structural-conflict',
+        type: 'rename-vs-replace',
+        impactAxis: 'structure',
+        summaryKey: 'structure.conflict.rename-vs-replace',
+        ruleTrace: 'taxonomy',
+      },
+    }));
+
+    assert.strictEqual(result.decision, 'manual-review-required');
+    assert.strictEqual(result.reason, 'divergent-identity');
+    assert.strictEqual(result.explanationKey, 'merge.manual.divergent-identity');
   });
 
   it('defaults ambiguous dependency edges to manual review', () => {
@@ -162,5 +201,6 @@ describe('merge policy', () => {
 
     assert.strictEqual(result.decision, 'manual-review-required');
     assert.strictEqual(result.reason, 'ambiguous-dependency');
+    assert.strictEqual(result.explanationKey, 'merge.manual.ambiguous-dependency');
   });
 });
