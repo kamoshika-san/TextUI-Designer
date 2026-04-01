@@ -1,0 +1,10 @@
+{
+  "diffWorkflow": {
+    "enablementAxis": "local-only",
+    "mode": "advisory",
+    "features": {
+      "prComment": false,
+      "checkRunGate": false
+    }
+  }
+}

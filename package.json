@@ -451,7 +451,10 @@
     "prepare": "node ./scripts/prepare.cjs",
     "precli": "npm run compile",
     "generate:diff-traceability": "node scripts/generate-diff-traceability.cjs",
-    "test:diff-coverage-guard": "node scripts/check-diff-coverage.cjs"
+    "test:diff-coverage-guard": "node scripts/check-diff-coverage.cjs",
+    "diff:smoke:local": "node scripts/diff-smoke.cjs --axis=local-only",
+    "diff:smoke:ci": "node scripts/diff-smoke.cjs --axis=ci-only",
+    "diff:smoke:pr": "node scripts/diff-smoke.cjs --axis=pr-enabled --dry-run"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.6",
