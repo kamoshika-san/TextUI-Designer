@@ -253,9 +253,47 @@ export class ReactExporter extends BaseComponentRenderer {
     return renderIconTemplate(props, key, tokenStyle);
   }
 
-  // TODO T-20260330-303: implement full Modal React output
-  protected renderModal(_props: ModalComponent, _key: number): string {
-    return '';
+  protected renderModal(props: ModalComponent, key: number): string {
+    const { title, open = true, body, actions, token } = props;
+    if (!open) {
+      return '';
+    }
+
+    const tokenStyle = this.getReactTokenStyleInline('Modal', token);
+    const safeTitle = title ? JSON.stringify(title) : undefined;
+    const safeBody = body ? JSON.stringify(body) : undefined;
+    const actionKindClass: Record<'primary' | 'secondary' | 'danger' | 'ghost', string> = {
+      primary: 'bg-blue-600 hover:bg-blue-700 text-white',
+      secondary: 'bg-gray-700 hover:bg-gray-600 text-gray-300',
+      danger: 'bg-red-600 hover:bg-red-700 text-white',
+      ghost: 'bg-transparent border border-gray-500 text-gray-300 hover:bg-gray-700/30',
+    };
+
+    const actionCode = (actions && actions.length > 0)
+      ? actions.map((action, index) => {
+          const kind = action.kind ?? 'secondary';
+          const className = actionKindClass[kind] ?? actionKindClass.secondary;
+          return `          <button
+            key={${index}}
+            type="button"
+            className="textui-modal-action inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${className} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <span className="textui-button-label">{${JSON.stringify(action.label ?? '')}}</span>
+          </button>`;
+        }).join('\n')
+      : '';
+
+    return `      <div key={${key}} className="textui-modal max-w-2xl mb-4"${tokenStyle}>
+        <div className="textui-modal-surface bg-gray-800 border border-gray-600 rounded-lg overflow-hidden shadow-2xl">
+${safeTitle ? `          <div className="textui-modal-header px-5 pt-4 pb-3 border-b border-gray-700">
+            <span className="textui-modal-title text-base font-semibold text-gray-100">{${safeTitle}}</span>
+          </div>` : ''}
+${safeBody ? `          <div className="textui-modal-body px-5 py-4 text-sm text-gray-300 whitespace-pre-line">{${safeBody}}</div>` : ''}
+${actionCode ? `          <div className="textui-modal-footer flex justify-end gap-2 px-5 py-3 border-t border-gray-700">
+${actionCode}
+          </div>` : ''}
+        </div>
+      </div>`;
   }
 
   protected renderContainer(props: ContainerComponent, key: number): string {
