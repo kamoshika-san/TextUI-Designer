@@ -55,7 +55,7 @@ describe('buildThreeWayDiffResult', () => {
     assert.ok(result.rightDiff.events.length > 0);
   });
 
-  it('creates conservative candidate conflicts for overlapping entity keys', () => {
+  it('creates classified conflict payloads for overlapping entity keys', () => {
     const base = makeDocument({
       page: {
         id: 'base-page',
@@ -85,12 +85,16 @@ describe('buildThreeWayDiffResult', () => {
     const pageTitleConflict = result.conflicts.find(conflict => conflict.entityKey === 'property:/page/props/title');
 
     assert.ok(pageTitleConflict);
+    assert.strictEqual(pageTitleConflict.type, 'same-property-different-value');
+    assert.strictEqual(pageTitleConflict.severity, 's1-notice');
+    assert.strictEqual(pageTitleConflict.resolutionHint, 'auto-merge-safe');
     assert.strictEqual(pageTitleConflict.status, 'candidate');
     assert.strictEqual(pageTitleConflict.matchingBasis, 'entity-key-and-trace');
     assert.ok(pageTitleConflict.leftEventIds.length >= 1);
     assert.ok(pageTitleConflict.rightEventIds.length >= 1);
-    assert.strictEqual(pageTitleConflict.evidence.left[0].pairingReason, 'deterministic-structural-path');
-    assert.strictEqual(pageTitleConflict.evidence.right[0].fallbackMarker, 'none');
+    assert.strictEqual(pageTitleConflict.evidence.left.pairingReason, 'deterministic-structural-path');
+    assert.strictEqual(pageTitleConflict.evidence.right.fallbackMarker, 'none');
+    assert.ok(pageTitleConflict.evidence.base);
     assert.strictEqual(result.metadata.conflictCount, result.conflicts.length);
   });
 

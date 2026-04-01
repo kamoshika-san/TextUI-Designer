@@ -8,6 +8,7 @@ import type {
   DiffPairingReason,
   DiffSourceRef,
 } from '../textui-core-diff';
+import type { DiffSummaryImpactAxis } from '../textui-diff-review-impact';
 
 export interface ThreeWayCompareInput {
   base: DiffCompareDocument;
@@ -25,7 +26,46 @@ export interface ThreeWayConflictEvidence {
   nextSourceRef?: DiffSourceRef;
 }
 
-export interface MergeConflict {
+export type ConflictFamily =
+  | 'structural-conflict'
+  | 'semantic-conflict'
+  | 'permission-conflict';
+
+export type ConflictType =
+  | 'same-entity-divergent-move'
+  | 'same-slot-divergent-add'
+  | 'reorder-vs-remove'
+  | 'rename-vs-replace'
+  | 'same-property-different-value'
+  | 'presentation-vs-behavior-escalation'
+  | 'heuristic-vs-deterministic-disagreement'
+  | 'permission-tighten-vs-loosen'
+  | 'permission-gate-vs-state-transition'
+  | 'permission-context-mismatch';
+
+export type ConflictSeverity = 's1-notice' | 's2-review' | 's3-critical';
+export type ConflictResolutionHint = 'auto-merge-safe' | 'manual-review-required';
+
+export interface ConflictTaxonomy {
+  family: ConflictFamily;
+  type: ConflictType;
+  impactAxis: DiffSummaryImpactAxis;
+  summaryKey: string;
+  ruleTrace: string;
+}
+
+export interface ConflictEvidenceSide {
+  eventId: string;
+  eventKind: DiffEventKind;
+  pairingReason: DiffPairingReason;
+  fallbackMarker: DiffFallbackMarker;
+  path?: string;
+  sourceRef?: DiffSourceRef;
+  ruleTrace?: string;
+  ambiguityReason?: DiffAmbiguityReason;
+}
+
+export interface CandidateMergeConflict {
   conflictId: string;
   entityKey: string;
   status: 'candidate';
@@ -33,9 +73,28 @@ export interface MergeConflict {
   leftEventIds: string[];
   rightEventIds: string[];
   evidence: {
+    base?: ThreeWayConflictEvidence[];
     left: ThreeWayConflictEvidence[];
     right: ThreeWayConflictEvidence[];
   };
+}
+
+export interface MergeConflict {
+  conflictId: string;
+  type: ConflictType;
+  severity: ConflictSeverity;
+  entityKey: string;
+  leftEventIds: string[];
+  rightEventIds: string[];
+  evidence: {
+    base?: ConflictEvidenceSide;
+    left: ConflictEvidenceSide;
+    right: ConflictEvidenceSide;
+  };
+  resolutionHint: ConflictResolutionHint;
+  status: 'candidate';
+  matchingBasis: 'entity-key-and-trace';
+  taxonomy: ConflictTaxonomy;
 }
 
 export interface ThreeWayDiffResult {
@@ -59,5 +118,22 @@ export function toThreeWayConflictEvidence(event: DiffEvent): ThreeWayConflictEv
     ambiguityReason: event.trace.ambiguityReason,
     previousSourceRef: event.trace.previousSourceRef,
     nextSourceRef: event.trace.nextSourceRef,
+  };
+}
+
+export function toConflictEvidenceSide(
+  evidence: ThreeWayConflictEvidence,
+  ruleTrace?: string,
+): ConflictEvidenceSide {
+  const sourceRef = evidence.nextSourceRef ?? evidence.previousSourceRef;
+  return {
+    eventId: evidence.eventId,
+    eventKind: evidence.kind,
+    pairingReason: evidence.pairingReason,
+    fallbackMarker: evidence.fallbackMarker,
+    path: sourceRef?.entityPath,
+    sourceRef,
+    ruleTrace,
+    ambiguityReason: evidence.ambiguityReason,
   };
 }

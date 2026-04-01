@@ -1,37 +1,8 @@
-import type { DiffSummaryImpactAxis } from '../textui-diff-review-impact';
 import type {
-  MergeConflict,
+  CandidateMergeConflict,
+  ConflictTaxonomy,
   ThreeWayConflictEvidence,
 } from './types';
-
-export type ConflictFamily =
-  | 'structural-conflict'
-  | 'semantic-conflict'
-  | 'permission-conflict';
-
-export type ConflictType =
-  | 'same-entity-divergent-move'
-  | 'same-slot-divergent-add'
-  | 'reorder-vs-remove'
-  | 'rename-vs-replace'
-  | 'same-property-different-value'
-  | 'presentation-vs-behavior-escalation'
-  | 'heuristic-vs-deterministic-disagreement'
-  | 'permission-tighten-vs-loosen'
-  | 'permission-gate-vs-state-transition'
-  | 'permission-context-mismatch';
-
-export interface ConflictTaxonomy {
-  family: ConflictFamily;
-  type: ConflictType;
-  impactAxis: DiffSummaryImpactAxis;
-  summaryKey: string;
-  ruleTrace: string;
-}
-
-export interface ClassifiedMergeConflict extends MergeConflict {
-  taxonomy: ConflictTaxonomy;
-}
 
 function hasKind(events: ThreeWayConflictEvidence[], kind: string): boolean {
   return events.some(event => event.kind === kind);
@@ -45,7 +16,11 @@ function hasDeterministic(events: ThreeWayConflictEvidence[]): boolean {
   return events.some(event => event.pairingReason !== 'heuristic-similarity');
 }
 
-function collectPaths(conflict: MergeConflict): string[] {
+export interface ClassifiedConflictCandidate extends CandidateMergeConflict {
+  taxonomy: ConflictTaxonomy;
+}
+
+function collectPaths(conflict: CandidateMergeConflict): string[] {
   return [...conflict.evidence.left, ...conflict.evidence.right]
     .flatMap(event => [
       event.previousSourceRef?.entityPath,
@@ -58,7 +33,7 @@ function pathIncludesAny(paths: string[], needles: string[]): boolean {
   return needles.some(needle => paths.some(path => path.includes(needle)));
 }
 
-function classifyPermissionConflict(conflict: MergeConflict): ConflictTaxonomy | undefined {
+function classifyPermissionConflict(conflict: CandidateMergeConflict): ConflictTaxonomy | undefined {
   const paths = collectPaths(conflict);
   const touchesPermission = pathIncludesAny(paths, ['/permission', '/permissions', '/guards']);
   if (!touchesPermission) {
@@ -109,7 +84,7 @@ function classifyPermissionConflict(conflict: MergeConflict): ConflictTaxonomy |
   };
 }
 
-function classifyStructuralConflict(conflict: MergeConflict): ConflictTaxonomy | undefined {
+function classifyStructuralConflict(conflict: CandidateMergeConflict): ConflictTaxonomy | undefined {
   const left = conflict.evidence.left;
   const right = conflict.evidence.right;
 
@@ -160,7 +135,7 @@ function classifyStructuralConflict(conflict: MergeConflict): ConflictTaxonomy |
   return undefined;
 }
 
-function classifySemanticConflict(conflict: MergeConflict): ConflictTaxonomy {
+function classifySemanticConflict(conflict: CandidateMergeConflict): ConflictTaxonomy {
   const left = conflict.evidence.left;
   const right = conflict.evidence.right;
   const paths = collectPaths(conflict);
@@ -198,7 +173,7 @@ function classifySemanticConflict(conflict: MergeConflict): ConflictTaxonomy {
   };
 }
 
-export function classifyConflict(conflict: MergeConflict): ClassifiedMergeConflict {
+export function classifyConflict(conflict: CandidateMergeConflict): ClassifiedConflictCandidate {
   const taxonomy = classifyPermissionConflict(conflict)
     ?? classifyStructuralConflict(conflict)
     ?? classifySemanticConflict(conflict);
@@ -208,6 +183,6 @@ export function classifyConflict(conflict: MergeConflict): ClassifiedMergeConfli
   };
 }
 
-export function classifyConflicts(conflicts: MergeConflict[]): ClassifiedMergeConflict[] {
+export function classifyConflicts(conflicts: CandidateMergeConflict[]): ClassifiedConflictCandidate[] {
   return conflicts.map(classifyConflict);
 }

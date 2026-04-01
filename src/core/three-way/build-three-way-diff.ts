@@ -4,10 +4,15 @@ import {
   type DiffCompareDocument,
   type DiffEvent,
 } from '../textui-core-diff';
+import { classifyConflict } from './classify-conflicts';
 import {
+  type CandidateMergeConflict,
+  type ConflictResolutionHint,
+  type ConflictSeverity,
   type MergeConflict,
   type ThreeWayCompareInput,
   type ThreeWayDiffResult,
+  toConflictEvidenceSide,
   toThreeWayConflictEvidence,
 } from './types';
 
@@ -39,10 +44,32 @@ function groupEventsByEntityKey(events: DiffEvent[]): Map<string, EventGroup> {
   return grouped;
 }
 
-function buildCandidateConflicts(leftEvents: DiffEvent[], rightEvents: DiffEvent[]): MergeConflict[] {
+function buildBaseEvidence(
+  leftEvents: DiffEvent[],
+  rightEvents: DiffEvent[],
+): CandidateMergeConflict['evidence']['base'] {
+  const baseEvent = [...leftEvents, ...rightEvents].find(
+    event => event.trace.previousSourceRef || event.trace.nextSourceRef,
+  );
+  if (!baseEvent) {
+    return undefined;
+  }
+  const baseSourceRef = baseEvent.trace.previousSourceRef ?? baseEvent.trace.nextSourceRef;
+  return [{
+    eventId: `base:${baseEvent.eventId}`,
+    kind: baseEvent.kind,
+    pairingReason: baseEvent.trace.pairingReason,
+    fallbackMarker: baseEvent.trace.fallbackMarker,
+    ambiguityReason: baseEvent.trace.ambiguityReason,
+    previousSourceRef: baseSourceRef,
+    nextSourceRef: undefined,
+  }];
+}
+
+function buildCandidateConflicts(leftEvents: DiffEvent[], rightEvents: DiffEvent[]): CandidateMergeConflict[] {
   const leftByEntityKey = groupEventsByEntityKey(leftEvents);
   const rightByEntityKey = groupEventsByEntityKey(rightEvents);
-  const conflicts: MergeConflict[] = [];
+  const conflicts: CandidateMergeConflict[] = [];
 
   for (const [entityKey, leftGroup] of leftByEntityKey.entries()) {
     const rightGroup = rightByEntityKey.get(entityKey);
@@ -57,6 +84,7 @@ function buildCandidateConflicts(leftEvents: DiffEvent[], rightEvents: DiffEvent
       leftEventIds: leftGroup.events.map(event => event.eventId),
       rightEventIds: rightGroup.events.map(event => event.eventId),
       evidence: {
+        base: buildBaseEvidence(leftGroup.events, rightGroup.events),
         left: leftGroup.events.map(toThreeWayConflictEvidence),
         right: rightGroup.events.map(toThreeWayConflictEvidence),
       },
@@ -64,6 +92,57 @@ function buildCandidateConflicts(leftEvents: DiffEvent[], rightEvents: DiffEvent
   }
 
   return conflicts;
+}
+
+function resolveConflictSeverity(type: MergeConflict['type']): ConflictSeverity {
+  switch (type) {
+    case 'rename-vs-replace':
+    case 'reorder-vs-remove':
+    case 'permission-tighten-vs-loosen':
+    case 'permission-gate-vs-state-transition':
+    case 'permission-context-mismatch':
+      return 's3-critical';
+    case 'same-entity-divergent-move':
+    case 'same-slot-divergent-add':
+    case 'presentation-vs-behavior-escalation':
+    case 'heuristic-vs-deterministic-disagreement':
+      return 's2-review';
+    case 'same-property-different-value':
+    default:
+      return 's1-notice';
+  }
+}
+
+function resolveResolutionHint(type: MergeConflict['type']): ConflictResolutionHint {
+  switch (type) {
+    case 'same-property-different-value':
+      return 'auto-merge-safe';
+    default:
+      return 'manual-review-required';
+  }
+}
+
+export function materializeMergeConflict(candidate: CandidateMergeConflict): MergeConflict {
+  const classified = classifyConflict(candidate);
+  return {
+    conflictId: classified.conflictId,
+    type: classified.taxonomy.type,
+    severity: resolveConflictSeverity(classified.taxonomy.type),
+    entityKey: classified.entityKey,
+    leftEventIds: classified.leftEventIds,
+    rightEventIds: classified.rightEventIds,
+    evidence: {
+      base: classified.evidence.base?.[0]
+        ? toConflictEvidenceSide(classified.evidence.base[0], classified.taxonomy.ruleTrace)
+        : undefined,
+      left: toConflictEvidenceSide(classified.evidence.left[0], classified.taxonomy.ruleTrace),
+      right: toConflictEvidenceSide(classified.evidence.right[0], classified.taxonomy.ruleTrace),
+    },
+    resolutionHint: resolveResolutionHint(classified.taxonomy.type),
+    status: classified.status,
+    matchingBasis: classified.matchingBasis,
+    taxonomy: classified.taxonomy,
+  };
 }
 
 export function buildThreeWayDiffResult(
@@ -80,7 +159,7 @@ export function buildThreeWayDiffResult(
     retagDocument(input.right, 'next'),
     policy
   );
-  const conflicts = buildCandidateConflicts(leftDiff.events, rightDiff.events);
+  const conflicts = buildCandidateConflicts(leftDiff.events, rightDiff.events).map(materializeMergeConflict);
 
   return {
     kind: 'textui-three-way-diff-result',
