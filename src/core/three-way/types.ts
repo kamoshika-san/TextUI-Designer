@@ -8,6 +8,7 @@ import type {
   DiffPairingReason,
   DiffSourceRef,
 } from '../textui-core-diff';
+import type { TextUIDSL } from '../../domain/dsl-types';
 import type { DiffSummaryImpactAxis } from '../textui-diff-review-impact';
 
 export interface ThreeWayCompareInput {
@@ -107,6 +108,28 @@ export interface ThreeWayDiffResult {
     schemaVersion: 'three-way-diff/v0';
     conflictCount: number;
   };
+}
+
+export type MergePreviewMode = 'safe-only' | 'with-conflicts';
+
+export interface MergePreviewPatch {
+  path: string;
+  op: 'add' | 'remove' | 'replace';
+  from?: unknown;
+  to?: unknown;
+}
+
+export interface MergePreviewRequest {
+  base: DiffCompareDocument;
+  left: DiffCompareDocument;
+  right: DiffCompareDocument;
+  mode: MergePreviewMode;
+}
+
+export interface MergePreviewResponse {
+  mergedDsl?: TextUIDSL;
+  conflicts: MergeConflict[];
+  previewPatches: MergePreviewPatch[];
 }
 
 export function toThreeWayConflictEvidence(event: DiffEvent): ThreeWayConflictEvidence {
