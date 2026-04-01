@@ -496,7 +496,7 @@ function selectHeuristicMatches(
 
     if (policy.rejectTie && tied) {
       ambiguityByPrevious.set(pi, 'tie-best-score');
-    } else if (!tied && bestNI >= 0 && bestScore >= policy.minScore) {
+    } else if (bestNI >= 0 && bestScore >= policy.minScore) {
       bestNextByPrevious.set(pi, { nextIndex: bestNI, score: bestScore });
     } else if (bestScore >= policy.weightScalarExact && bestScore < policy.minScore) {
       // below-threshold: candidate had at least one scalar-value match but fell short of
@@ -528,7 +528,7 @@ function selectHeuristicMatches(
       }
     }
 
-    if (!tied && bestScore >= policy.minScore && bestPI >= 0) {
+    if (!(policy.rejectTie && tied) && bestScore >= policy.minScore && bestPI >= 0) {
       bestPreviousByNext.set(ni, { previousIndex: bestPI, score: bestScore });
     }
   }

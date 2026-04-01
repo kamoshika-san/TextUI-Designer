@@ -11,9 +11,11 @@ const assert = require('assert');
 
 describe('HeuristicPolicy configuration (M1-1)', () => {
   let diff;
+  let engineModule;
 
   before(() => {
     diff = require('../../out/core/textui-core-diff');
+    engineModule = require('../../out/core/textui-core-engine');
   });
 
   function makePrev(components) {
@@ -107,6 +109,71 @@ describe('HeuristicPolicy configuration (M1-1)', () => {
       e => e.trace.ambiguityReason === 'tie-best-score'
     );
     assert.strictEqual(tieFallback.length, 0, 'rejectTie=false should not produce tie-best-score fallback');
+  });
+
+  it('custom policy: rejectTie=false also works for reverse-tie candidates', () => {
+    const policy = {
+      minScore: 2,
+      weightScalarExact: 2,
+      weightChildSignature: 1,
+      weightKeysetMatch: 1,
+      requireMutualBest: true,
+      rejectTie: false,
+    };
+    const result = diff.createDiffResultSkeleton(
+      makePrev([
+        { Text: { label: 'same' } },
+        { Text: { label: 'same' } }
+      ]),
+      makeNext([{ Text: { label: 'same' } }]),
+      policy
+    );
+    const heuristicEvents = result.events.filter(
+      e => e.entityKind === 'component' && e.trace.pairingReason === 'heuristic-similarity'
+    );
+    assert.ok(heuristicEvents.length >= 1, 'rejectTie=false should preserve at least one reverse-tie heuristic match');
+  });
+
+  it('compareUi threads heuristicPolicy through the public engine API', () => {
+    const engine = new engineModule.TextUICoreEngine();
+    const response = engine.compareUi({
+      previousDsl: {
+        page: {
+          id: 'p',
+          title: 'Prev',
+          layout: 'vertical',
+          components: [
+            { Text: { value: 'Alpha', variant: 'p' } },
+            { Text: { value: 'Beta', variant: 'p' } }
+          ]
+        }
+      },
+      nextDsl: {
+        page: {
+          id: 'p',
+          title: 'Next',
+          layout: 'vertical',
+          components: [
+            { Text: { value: 'Beta', variant: 'p' } },
+            { Text: { value: 'Alpha', variant: 'p' } }
+          ]
+        }
+      },
+      heuristicPolicy: {
+        minScore: 6,
+        weightScalarExact: 2,
+        weightChildSignature: 1,
+        weightKeysetMatch: 1,
+        requireMutualBest: true,
+        rejectTie: true,
+      }
+    });
+    assert.strictEqual(response.ok, true);
+    assert.ok(response.result, 'compareUi should return a diff result');
+    const belowThreshold = response.result.events.filter(
+      e => e.entityKind === 'component' && e.trace.ambiguityReason === 'below-threshold'
+    );
+    assert.ok(belowThreshold.length >= 1, 'public compareUi API should honor heuristicPolicy overrides');
   });
 
   // -- policyHash in metadata -------------------------------------------------

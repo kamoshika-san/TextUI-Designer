@@ -1,5 +1,6 @@
 import type { ValidationIssue } from '../cli/types';
 import type { TextUIDSL } from '../domain/dsl-types';
+import type { HeuristicPolicy } from './diff/heuristic-policy';
 import { normalize } from './diff-normalization/normalize';
 import { toDiagnosticEntry } from './diff-normalization/degrade-policy';
 import type { NormalizationDiagnosticEntry } from './diff-normalization/degrade-policy';
@@ -72,6 +73,7 @@ export interface CompareUiRequest {
   previousSourcePath?: string;
   nextSourcePath?: string;
   skipTokenValidation?: boolean;
+  heuristicPolicy?: HeuristicPolicy;
 }
 
 export interface CompareUiResponse {
@@ -208,7 +210,7 @@ export class TextUICoreEngine {
       ...(normalizationDiagnostics.length > 0 ? { normalizationDiagnostics } : {}),
       previous,
       next,
-      result: createDiffResultSkeleton(previous, next)
+      result: createDiffResultSkeleton(previous, next, request.heuristicPolicy)
     };
   }
 
