@@ -1,0 +1,224 @@
+{
+  "kind": "diff-matrix-snapshot/v1",
+  "fixtures": [
+    {
+      "fixtureId": "HH-N1",
+      "family": "HH-N",
+      "description": "Alias collapse rescue",
+      "outcome": "accept",
+      "evidence": {
+        "heuristicAccepted": true,
+        "heuristicReview": false,
+        "fallbackApplied": false,
+        "ambiguityReasons": [],
+        "rejectedBy": []
+      }
+    },
+    {
+      "fixtureId": "HH-N2",
+      "family": "HH-N",
+      "description": "Canonical typing rescue",
+      "outcome": "accept",
+      "evidence": {
+        "heuristicAccepted": true,
+        "heuristicReview": false,
+        "fallbackApplied": false,
+        "ambiguityReasons": [],
+        "rejectedBy": []
+      }
+    },
+    {
+      "fixtureId": "HH-N3",
+      "family": "HH-N",
+      "description": "Shorthand projection rescue",
+      "outcome": "accept",
+      "evidence": {
+        "heuristicAccepted": true,
+        "heuristicReview": false,
+        "fallbackApplied": false,
+        "ambiguityReasons": [],
+        "rejectedBy": []
+      }
+    },
+    {
+      "fixtureId": "HH-N4",
+      "family": "HH-N",
+      "description": "Wrapper-free rescue (same-parent reorder)",
+      "outcome": "accept-review",
+      "evidence": {
+        "heuristicAccepted": true,
+        "heuristicReview": true,
+        "fallbackApplied": false,
+        "ambiguityReasons": [],
+        "rejectedBy": []
+      }
+    },
+    {
+      "fixtureId": "HH-N5",
+      "family": "HH-N",
+      "description": "Default explicitness rescue",
+      "outcome": "accept",
+      "evidence": {
+        "heuristicAccepted": true,
+        "heuristicReview": false,
+        "fallbackApplied": false,
+        "ambiguityReasons": [],
+        "rejectedBy": []
+      }
+    },
+    {
+      "fixtureId": "HH-N6",
+      "family": "HH-N",
+      "description": "Duplicate collapse rescue",
+      "outcome": "accept",
+      "evidence": {
+        "heuristicAccepted": true,
+        "heuristicReview": false,
+        "fallbackApplied": false,
+        "ambiguityReasons": [],
+        "rejectedBy": []
+      }
+    },
+    {
+      "fixtureId": "HH-FZ01",
+      "family": "HH-FZ",
+      "description": "Children to actions must not rescue",
+      "outcome": "fallback",
+      "evidence": {
+        "heuristicAccepted": false,
+        "heuristicReview": false,
+        "fallbackApplied": true,
+        "ambiguityReasons": [],
+        "rejectedBy": [
+          "forbidden-zone"
+        ]
+      }
+    },
+    {
+      "fixtureId": "HH-FZ02",
+      "family": "HH-FZ",
+      "description": "Actions to children must not rescue",
+      "outcome": "fallback",
+      "evidence": {
+        "heuristicAccepted": false,
+        "heuristicReview": false,
+        "fallbackApplied": true,
+        "ambiguityReasons": [],
+        "rejectedBy": [
+          "forbidden-zone"
+        ]
+      }
+    },
+    {
+      "fixtureId": "HH-FZ03",
+      "family": "HH-FZ",
+      "description": "Fields to actions must not rescue",
+      "outcome": "fallback",
+      "evidence": {
+        "heuristicAccepted": false,
+        "heuristicReview": false,
+        "fallbackApplied": true,
+        "ambiguityReasons": [],
+        "rejectedBy": [
+          "forbidden-zone"
+        ]
+      }
+    },
+    {
+      "fixtureId": "HH-FZ04",
+      "family": "HH-FZ",
+      "description": "Items to children must not rescue",
+      "outcome": "fallback",
+      "evidence": {
+        "heuristicAccepted": false,
+        "heuristicReview": false,
+        "fallbackApplied": true,
+        "ambiguityReasons": [],
+        "rejectedBy": [
+          "forbidden-zone"
+        ]
+      }
+    },
+    {
+      "fixtureId": "HH-FZ05",
+      "family": "HH-FZ",
+      "description": "Actions to items must not rescue",
+      "outcome": "fallback",
+      "evidence": {
+        "heuristicAccepted": false,
+        "heuristicReview": false,
+        "fallbackApplied": true,
+        "ambiguityReasons": [],
+        "rejectedBy": [
+          "forbidden-zone"
+        ]
+      }
+    },
+    {
+      "fixtureId": "HH-FZ06",
+      "family": "HH-FZ",
+      "description": "Fields to items must not rescue",
+      "outcome": "fallback",
+      "evidence": {
+        "heuristicAccepted": false,
+        "heuristicReview": false,
+        "fallbackApplied": true,
+        "ambiguityReasons": [],
+        "rejectedBy": [
+          "forbidden-zone"
+        ]
+      }
+    },
+    {
+      "fixtureId": "HH-MC01",
+      "family": "HH-MC",
+      "description": "Tie-best-score ambiguity",
+      "outcome": "reject-ambiguous",
+      "evidence": {
+        "heuristicAccepted": false,
+        "heuristicReview": false,
+        "fallbackApplied": true,
+        "ambiguityReasons": [
+          "tie-best-score"
+        ],
+        "rejectedBy": [
+          "tie"
+        ]
+      }
+    },
+    {
+      "fixtureId": "HH-MC02",
+      "family": "HH-MC",
+      "description": "Multi-candidate ambiguity",
+      "outcome": "reject-ambiguous",
+      "evidence": {
+        "heuristicAccepted": true,
+        "heuristicReview": false,
+        "fallbackApplied": true,
+        "ambiguityReasons": [
+          "multi-candidate"
+        ],
+        "rejectedBy": [
+          "tie"
+        ]
+      }
+    },
+    {
+      "fixtureId": "HH-MC03",
+      "family": "HH-MC",
+      "description": "Below-threshold ambiguity",
+      "outcome": "reject-ambiguous",
+      "evidence": {
+        "heuristicAccepted": false,
+        "heuristicReview": false,
+        "fallbackApplied": true,
+        "ambiguityReasons": [
+          "below-threshold"
+        ],
+        "rejectedBy": [
+          "threshold"
+        ]
+      }
+    }
+  ]
+}

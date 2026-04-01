@@ -454,7 +454,8 @@
     "test:diff-coverage-guard": "node scripts/check-diff-coverage.cjs",
     "diff:smoke:local": "node scripts/diff-smoke.cjs --axis=local-only",
     "diff:smoke:ci": "node scripts/diff-smoke.cjs --axis=ci-only",
-    "diff:smoke:pr": "node scripts/diff-smoke.cjs --axis=pr-enabled --dry-run"
+    "diff:smoke:pr": "node scripts/diff-smoke.cjs --axis=pr-enabled --dry-run",
+    "diff:matrix:delta": "ts-node scripts/diff-matrix-delta.ts"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.6",
