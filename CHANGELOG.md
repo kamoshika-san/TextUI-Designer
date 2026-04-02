@@ -13,6 +13,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Fixed
 - HTML export: `max-width: 100%; overflow-x: hidden` constraint added to `html` and `body` to prevent viewport overflow on narrow screens.
+- **Modal exporter parity**: React and Pug now follow the same shipped Modal contract as HTML for `open`, optional `title` / `body` / `actions`, and `action.kind` fallback behavior. Maintainers should expect generated React/Pug Modal output to change from earlier placeholder / TODO states to real dialog markup.
+
+### Changed
+- **Modal release guard**: `sample/09-modal` is now covered by focused React/Pug marker-based regression tests in addition to the existing HTML path. Automated coverage now lives on the existing `test:unit` / `test:all:ci` rails, while any remaining manual smoke is limited to interactive preview/export UX.
 
 ## [0.7.2] - 2026-03-28
 
