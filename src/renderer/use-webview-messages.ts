@@ -47,11 +47,19 @@ interface UseWebviewMessagesOptions {
   applyDslUpdate: (dsl: TextUIDSL) => void;
   setError: (value: ErrorInfo | string | null) => void;
   setUpdateStatus: (updater: (current: PreviewUpdateStatus) => PreviewUpdateStatus) => void;
+  setLastCompletedAt: (value: number | null) => void;
   setShowJumpToDslHoverIndicator: (value: boolean) => void;
 }
 
 export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
-  const { postReady, applyDslUpdate, setError, setUpdateStatus, setShowJumpToDslHoverIndicator } = options;
+  const {
+    postReady,
+    applyDslUpdate,
+    setError,
+    setUpdateStatus,
+    setLastCompletedAt,
+    setShowJumpToDslHoverIndicator
+  } = options;
 
   useEffect(() => {
     postReady();
@@ -68,23 +76,28 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
       switch (message.type) {
         case 'json':
           applyDslUpdate(message.json as TextUIDSL);
+          setLastCompletedAt(Date.now());
           setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-complete'));
           setError(null);
           break;
         case 'update':
           applyDslUpdate(message.data as TextUIDSL);
+          setLastCompletedAt(Date.now());
           setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-complete'));
           setError(null);
           break;
         case 'preview-updating':
+          setLastCompletedAt(null);
           setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-updating'));
           break;
         case 'error':
+          setLastCompletedAt(null);
           setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-error'));
           setError(mapSimpleError(message));
           break;
         case 'schema-error': {
           const schemaErrors = formatSchemaErrors(message.errors);
+          setLastCompletedAt(null);
           setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-error'));
           setError(mapSchemaValidationError(message, schemaErrors));
           break;
@@ -104,14 +117,17 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
           );
           break;
         case 'parseError':
+          setLastCompletedAt(null);
           setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-error'));
           setError(mapParseError(message));
           break;
         case 'schemaError':
+          setLastCompletedAt(null);
           setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-error'));
           setError(mapDetailedSchemaError(message));
           break;
         case 'clearError':
+          setLastCompletedAt(null);
           setUpdateStatus(current => reducePreviewUpdateStatus(current, 'clear-error'));
           setError(null);
           break;
@@ -124,5 +140,5 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
 
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [postReady, applyDslUpdate, setError, setUpdateStatus, setShowJumpToDslHoverIndicator]);
+  }, [postReady, applyDslUpdate, setError, setUpdateStatus, setLastCompletedAt, setShowJumpToDslHoverIndicator]);
 }
