@@ -25,8 +25,129 @@ body.light {
   font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
 }
 
+.textui-preview-root {
+  --textui-jump-indicator-outline-color: rgba(96, 165, 250, 0.95);
+  --textui-jump-indicator-halo-color: rgba(59, 130, 246, 0.16);
+  --textui-jump-indicator-background-color: rgba(59, 130, 246, 0.06);
+  --textui-jump-badge-background-color: rgba(15, 23, 42, 0.92);
+  --textui-jump-badge-text-color: rgb(239 246 255);
+  --textui-jump-badge-shadow: 0 10px 24px rgba(15, 23, 42, 0.22);
+  --textui-jump-badge-accent-background-color: rgba(96, 165, 250, 0.22);
+  --textui-jump-badge-accent-text-color: rgb(191 219 254);
+}
+
 .light #root {
   background-color: var(--color-background, #F9FAFB);
+}
+
+.light .textui-preview-root {
+  --textui-jump-indicator-outline-color: rgba(37, 99, 235, 0.9);
+  --textui-jump-indicator-halo-color: rgba(59, 130, 246, 0.12);
+  --textui-jump-indicator-background-color: rgba(59, 130, 246, 0.08);
+  --textui-jump-badge-background-color: rgba(255, 255, 255, 0.96);
+  --textui-jump-badge-text-color: rgb(30 41 59);
+  --textui-jump-badge-shadow: 0 10px 24px rgba(37, 99, 235, 0.16);
+  --textui-jump-badge-accent-background-color: rgba(37, 99, 235, 0.12);
+  --textui-jump-badge-accent-text-color: rgb(29 78 216);
+}
+
+.textui-jump-target {
+  position: relative;
+  border-radius: 0.5rem;
+  transition: outline-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease, cursor 0.16s ease;
+}
+
+.textui-jump-target:hover,
+.textui-jump-target:focus-visible {
+  cursor: pointer;
+}
+
+.textui-jump-target:hover,
+.textui-jump-target:focus-visible {
+  outline: 2px solid var(--textui-jump-indicator-outline-color);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--textui-jump-indicator-halo-color);
+  background-color: var(--textui-jump-indicator-background-color);
+}
+
+.textui-preview-root-hide-jump-hover .textui-jump-target:hover {
+  outline: none;
+  box-shadow: none;
+  background-color: transparent;
+  cursor: default;
+}
+
+.textui-jump-target.is-jump-success {
+  animation: textui-jump-success-flash 0.48s ease-out;
+}
+
+.textui-jump-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  max-width: calc(100% - 1rem);
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  background: var(--textui-jump-badge-background-color);
+  color: var(--textui-jump-badge-text-color);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  box-shadow: var(--textui-jump-badge-shadow);
+  opacity: 0;
+  transform: translateY(-0.25rem);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.textui-jump-target:hover .textui-jump-badge,
+.textui-jump-target:focus-visible .textui-jump-badge {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.textui-preview-root-hide-jump-hover .textui-jump-target:hover .textui-jump-badge {
+  opacity: 0;
+  transform: translateY(-0.25rem);
+}
+
+.textui-jump-badge-component {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.textui-jump-badge-link {
+  padding: 0.125rem 0.375rem;
+  border-radius: 9999px;
+  background: var(--textui-jump-badge-accent-background-color);
+  color: var(--textui-jump-badge-accent-text-color);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@keyframes textui-jump-success-flash {
+  0% {
+    outline-color: rgba(34, 197, 94, 0.95);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.34);
+    background-color: rgba(34, 197, 94, 0.18);
+  }
+  45% {
+    outline-color: rgba(34, 197, 94, 0.92);
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.18);
+    background-color: rgba(34, 197, 94, 0.12);
+  }
+  100% {
+    outline-color: var(--textui-jump-indicator-outline-color);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    background-color: transparent;
+  }
 }
 
 .textui-preview-empty {
