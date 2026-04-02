@@ -12,6 +12,10 @@ import { ExportButton } from './components/ExportButton';
 import { useWebviewMessages } from './use-webview-messages';
 import { attachDevToolsListener } from './devtools-listener';
 import { getSharedLayoutStyles } from '../shared/layout-styles';
+import {
+  persistJumpToDslOnboardingDismissed,
+  shouldShowJumpToDslOnboarding
+} from './jump-to-dsl-onboarding';
 
 const vscodeApi = getVSCodeApi();
 
@@ -23,6 +27,10 @@ const isDevelopmentMode = Boolean(
 const App: React.FC = () => {
   const [json, setJson] = useState<TextUIDSL | null>(null);
   const [error, setError] = useState<ErrorInfo | string | null>(null);
+  const [showJumpToDslOnboarding, setShowJumpToDslOnboarding] = useState(() =>
+    shouldShowJumpToDslOnboarding(typeof window !== 'undefined' ? window.localStorage : undefined)
+  );
+  const [dismissJumpToDslForever, setDismissJumpToDslForever] = useState(false);
   const prevComponentsKeysRef = useRef<{ components: ComponentDef[]; keys: string[] } | null>(null);
 
   useEffect(() => {
@@ -137,6 +145,14 @@ const App: React.FC = () => {
     });
   };
 
+  const handleDismissJumpToDslOnboarding = () => {
+    persistJumpToDslOnboardingDismissed(
+      typeof window !== 'undefined' ? window.localStorage : undefined,
+      dismissJumpToDslForever
+    );
+    setShowJumpToDslOnboarding(false);
+  };
+
   if (error) {
     return <ErrorPanel error={error} />;
   }
@@ -158,6 +174,72 @@ const App: React.FC = () => {
 
   return (
     <div style={{ padding: 24, position: 'relative' }}>
+      {showJumpToDslOnboarding ? (
+        <div
+          style={{
+            marginBottom: '1rem',
+            padding: '0.875rem 1rem',
+            borderRadius: '0.75rem',
+            border: '1px solid rgba(96, 165, 250, 0.45)',
+            background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.96), rgba(30, 64, 175, 0.88))',
+            color: '#eff6ff',
+            boxShadow: '0 16px 32px rgba(15, 23, 42, 0.22)'
+          }}
+        >
+          <div style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.35rem' }}>
+            Preview tips
+          </div>
+          <div style={{ fontSize: '0.9rem', lineHeight: 1.5, opacity: 0.96 }}>
+            コンポーネントを <strong>Ctrl+Shift+Click</strong> すると DSL ソースへジャンプできます。
+          </div>
+          <div style={{ fontSize: '0.8rem', lineHeight: 1.45, opacity: 0.82, marginTop: '0.35rem' }}>
+            Ctrl+Shift+Click a component in the preview to jump back to its DSL source.
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.75rem',
+              flexWrap: 'wrap',
+              marginTop: '0.75rem'
+            }}
+          >
+            <label
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.8rem',
+                cursor: 'pointer'
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={dismissJumpToDslForever}
+                onChange={(event) => setDismissJumpToDslForever(event.target.checked)}
+              />
+              今後表示しない / Don&apos;t show again
+            </label>
+            <button
+              type="button"
+              onClick={handleDismissJumpToDslOnboarding}
+              style={{
+                border: '1px solid rgba(191, 219, 254, 0.45)',
+                background: 'rgba(255, 255, 255, 0.08)',
+                color: '#eff6ff',
+                borderRadius: '9999px',
+                padding: '0.45rem 0.85rem',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      ) : null}
       <ThemeToggle />
       <CustomThemeSelector />
       <ExportButton onExport={handleExport} />
