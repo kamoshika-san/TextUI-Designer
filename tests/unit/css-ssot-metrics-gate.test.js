@@ -11,21 +11,16 @@ describe('CSS SSoT metrics gate', () => {
     const ssot = collectSsotMetrics();
 
     assert.strictEqual(ssot.cssMetrics.todoPartialCount, 0);
-    assert.strictEqual(ssot.cssMetrics.nonExemptInlineUtilityClassOccurrences, 6);
+    assert.strictEqual(ssot.cssMetrics.nonExemptInlineUtilityClassOccurrences, 0);
     assert.strictEqual(ssot.cssMetrics.fallbackCompatibilitySelectorCount, 24);
     assert.strictEqual(ssot.status, 'pass');
   });
 
   it('limits inline utility counting to the approved target components', () => {
     const result = collectInlineUtilityClassOccurrences();
-    const files = new Set(
-      result.matches.map((entry) => entry.split(':')[0].split('/').pop())
-    );
 
-    assert.deepStrictEqual(
-      [...files].sort(),
-      ['Checkbox.tsx', 'Form.tsx', 'Input.tsx', 'Radio.tsx']
-    );
+    assert.strictEqual(result.count, 0);
+    assert.deepStrictEqual(result.matches, []);
   });
 
   it('counts selectors inside the append-only fallback compatibility block', () => {
