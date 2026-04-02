@@ -112,6 +112,9 @@ jobs:
     - name: Run full CI test command
       run: npm run test:all:ci
 
+    - name: CLI coverage gate
+      run: npm run test:cli-coverage:gate
+
     - name: Diff coverage guard (K2-3a)
       run: npm run test:diff-coverage-guard
 
@@ -168,6 +171,9 @@ jobs:
 
     - name: Run full CI test command with coverage
       run: npm run test:all:ci
+
+    - name: CLI coverage gate
+      run: npm run test:cli-coverage:gate
     
     - name: Upload coverage to Codecov
       if: matrix.node-version == '20.x'
