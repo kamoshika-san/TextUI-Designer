@@ -10,6 +10,12 @@ import type { ExportPipelineDeps } from './export-pipeline';
 import { OptimizingExportExecutor } from './export-optimizing-executor';
 import { runBatchExport } from './export-batch';
 import { createPerformanceMonitorExportObserver } from './export-metrics-observer';
+import {
+  buildRenderTargetsFromDiffResult,
+  createDiffResultSkeleton,
+  createNormalizedDiffDocument,
+  type DiffRenderTarget
+} from '../core/textui-core-diff';
 
 /**
  * ユーザー向けの export 結果を組み立てる **本流**（ファイル読込・形式に応じた `Exporter`・`CacheManager`）と、
@@ -25,6 +31,8 @@ export class ExportManager {
   private performanceMonitor: PerformanceMonitor;
   private readonly maxConcurrentOperations: number;
   private readonly optimizingExecutor: OptimizingExportExecutor;
+  private lastExportDsl: TextUIDSL | null = null;
+  private lastExportSourcePath?: string;
 
   constructor() {
     populateBuiltInExporters(this.exporters);
@@ -80,11 +88,47 @@ export class ExportManager {
           sourcePath: options.sourcePath ?? filePath
         };
 
-        return await this.optimizingExecutor.runOptimizedExport(dsl, normalizedOptions);
+        let result: string;
+        const incrementalTargets = this.buildIncrementalRenderTargets(dsl, normalizedOptions);
+        if (incrementalTargets) {
+          result = (await this.exportWithDiffUpdate(dsl, {
+            ...normalizedOptions,
+            incrementalRenderTargets: incrementalTargets
+          })).result;
+        } else {
+          result = await this.optimizingExecutor.runOptimizedExport(dsl, normalizedOptions);
+        }
+
+        this.lastExportDsl = dsl;
+        this.lastExportSourcePath = normalizedOptions.sourcePath;
+        return result;
       } catch (error) {
         throw new Error(`Export failed: ${error instanceof Error ? error.message : String(error)}`);
       }
     });
+  }
+
+  private buildIncrementalRenderTargets(
+    dsl: TextUIDSL,
+    options: ExportOptions
+  ): DiffRenderTarget[] | undefined {
+    if (options.enableIncrementalDiffRoute !== true || !this.lastExportDsl) {
+      return undefined;
+    }
+
+    const previous = createNormalizedDiffDocument(this.lastExportDsl, {
+      side: 'previous',
+      sourcePath: this.lastExportSourcePath
+    });
+    const next = createNormalizedDiffDocument(dsl, {
+      side: 'next',
+      sourcePath: options.sourcePath
+    });
+    const renderTargets = buildRenderTargetsFromDiffResult(createDiffResultSkeleton(previous, next));
+
+    return renderTargets.length > 0 && renderTargets.every(target => target.resolution === 'resolved')
+      ? renderTargets
+      : undefined;
   }
 
   /**
@@ -113,6 +157,8 @@ export class ExportManager {
   clearCache(): void {
     this.cacheManager.clear();
     this.diffManager.reset();
+    this.lastExportDsl = null;
+    this.lastExportSourcePath = undefined;
   }
 
   clearFormatCache(format: string): void {
@@ -190,5 +236,7 @@ ${report}
     this.cacheManager.clear();
     this.diffManager.reset();
     this.performanceMonitor.dispose();
+    this.lastExportDsl = null;
+    this.lastExportSourcePath = undefined;
   }
 }

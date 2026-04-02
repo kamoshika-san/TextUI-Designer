@@ -123,6 +123,25 @@ export interface DiffCompareResult {
   };
 }
 
+export type DiffRenderTargetScope = 'page' | 'component';
+export type DiffRenderTargetResolution = 'resolved' | 'unresolved';
+
+export interface DiffRenderTargetRef {
+  side: DiffEntityRef['side'];
+  path: string;
+  pageId: string;
+}
+
+export interface DiffRenderTarget {
+  targetId: string;
+  entityKey: string;
+  scope: DiffRenderTargetScope;
+  eventKinds: DiffEventKind[];
+  previous?: DiffRenderTargetRef;
+  next?: DiffRenderTargetRef;
+  resolution: DiffRenderTargetResolution;
+}
+
 type DiffComponentNode = Record<string, unknown> & { __kind: string };
 type DiffTreeBuild = {
   entity: DiffEntityResult;
@@ -1048,6 +1067,60 @@ function buildComponentEntity(
 
 function countEntities(entity: DiffEntityResult): number {
   return 1 + entity.children.reduce((sum, child) => sum + countEntities(child), 0);
+}
+
+function toRenderTargetRef(ref: DiffEntityRef | undefined): DiffRenderTargetRef | undefined {
+  if (!ref?.path || !ref.pageId) {
+    return undefined;
+  }
+
+  return {
+    side: ref.side,
+    path: ref.path,
+    pageId: ref.pageId
+  };
+}
+
+function collectRenderTargets(
+  entity: DiffEntityResult,
+  eventKindById: Map<string, DiffEventKind>,
+  targets: DiffRenderTarget[]
+): void {
+  if (entity.entityKind === 'page' || entity.entityKind === 'component') {
+    const primaryEventKind = entity.metadata.eventIds.length > 0
+      ? eventKindById.get(entity.metadata.eventIds[0])
+      : undefined;
+    const eventKinds = primaryEventKind ? [primaryEventKind] : [];
+    const previous = toRenderTargetRef(entity.previous);
+    const next = toRenderTargetRef(entity.next);
+
+    targets.push({
+      targetId: entity.entityKey,
+      entityKey: entity.entityKey,
+      scope: entity.entityKind,
+      eventKinds,
+      previous,
+      next,
+      resolution: eventKinds.length > 0 && (previous !== undefined || next !== undefined)
+        ? 'resolved'
+        : 'unresolved'
+    });
+  }
+
+  for (const child of entity.children) {
+    collectRenderTargets(child, eventKindById, targets);
+  }
+}
+
+export function buildRenderTargetsFromDiffResult(result: DiffCompareResult): DiffRenderTarget[] {
+  const eventKindById = new Map(result.events.map(event => [event.eventId, event.kind]));
+  const targets: DiffRenderTarget[] = [];
+
+  for (const entity of result.entityResults) {
+    collectRenderTargets(entity, eventKindById, targets);
+  }
+
+  return targets;
 }
 
 export function createNormalizedDiffDocument(

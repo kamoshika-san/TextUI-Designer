@@ -1,4 +1,5 @@
 import type { TextUIDSL } from '../domain/dsl-types';
+import type { DiffRenderTarget } from '../core/textui-core-diff';
 
 export interface ExportOptions {
   format: string;
@@ -17,6 +18,10 @@ export interface ExportOptions {
   __internalLegacyFallback?: boolean;
   /** Extension root path used to resolve WebView CSS such as `media/assets/index-*.css`. */
   extensionPath?: string;
+  /** Explicit OFF-by-default route gate for the incremental diff export path. */
+  enableIncrementalDiffRoute?: boolean;
+  /** Stable exporter-facing render targets derived from diff output. */
+  incrementalRenderTargets?: DiffRenderTarget[];
 }
 
 export interface Exporter {
