@@ -27,6 +27,7 @@ const isDevelopmentMode = Boolean(
 const App: React.FC = () => {
   const [json, setJson] = useState<TextUIDSL | null>(null);
   const [error, setError] = useState<ErrorInfo | string | null>(null);
+  const [showJumpToDslHoverIndicator, setShowJumpToDslHoverIndicator] = useState(true);
   const [showJumpToDslOnboarding, setShowJumpToDslOnboarding] = useState(() =>
     shouldShowJumpToDslOnboarding(typeof window !== 'undefined' ? window.localStorage : undefined)
   );
@@ -123,7 +124,8 @@ const App: React.FC = () => {
   useWebviewMessages({
     postReady,
     applyDslUpdate,
-    setError
+    setError,
+    setShowJumpToDslHoverIndicator
   });
 
   const handleExport = () => {
@@ -173,7 +175,10 @@ const App: React.FC = () => {
   prevComponentsKeysRef.current = { components, keys: componentKeys };
 
   return (
-    <div style={{ padding: 24, position: 'relative' }}>
+    <div
+      className={showJumpToDslHoverIndicator ? 'textui-preview-root' : 'textui-preview-root textui-preview-root-hide-jump-hover'}
+      style={{ padding: 24, position: 'relative' }}
+    >
       {showJumpToDslOnboarding ? (
         <div
           style={{

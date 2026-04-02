@@ -66,6 +66,10 @@ export class WebViewManager implements IWebViewManager {
     this.messageHandler.notifyThemeChange(theme);
   }
 
+  notifyPreviewSettingsChanged(): void {
+    this.messageHandler.sendPreviewSettings();
+  }
+
   hasPanel(): boolean {
     return this.lifecycleManager.hasPanel();
   }

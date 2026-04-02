@@ -10,6 +10,7 @@ export type SettingsDefaults = {
   'webview.disableThemeVariables': boolean;
   'webview.theme': string;
   'webview.fontSize': number;
+  'webview.jumpToDsl.showHoverIndicator': boolean;
   'export.defaultFormat': string;
   'export.includeComments': boolean;
   'export.minify': boolean;
@@ -46,6 +47,7 @@ export const SETTINGS_DEFAULTS: SettingsDefaults = {
   'webview.disableThemeVariables': true,
   'webview.theme': 'auto',
   'webview.fontSize': 14,
+  'webview.jumpToDsl.showHoverIndicator': true,
   'export.defaultFormat': 'html',
   'export.includeComments': true,
   'export.minify': false,
@@ -114,6 +116,11 @@ export function buildConfigurationSchema(defaults: SettingsDefaults): Record<str
         type: 'number',
         default: defaultValue('webview.fontSize'),
         description: 'WebViewのフォントサイズ'
+      },
+      'webview.jumpToDsl.showHoverIndicator': {
+        type: 'boolean',
+        default: defaultValue('webview.jumpToDsl.showHoverIndicator'),
+        description: 'Preview jump-to-DSL hover indicator visibility'
       },
       'export.defaultFormat': {
         type: 'string',

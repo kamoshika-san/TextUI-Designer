@@ -46,10 +46,11 @@ interface UseWebviewMessagesOptions {
   postReady: () => void;
   applyDslUpdate: (dsl: TextUIDSL) => void;
   setError: (value: ErrorInfo | string | null) => void;
+  setShowJumpToDslHoverIndicator: (value: boolean) => void;
 }
 
 export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
-  const { postReady, applyDslUpdate, setError } = options;
+  const { postReady, applyDslUpdate, setError, setShowJumpToDslHoverIndicator } = options;
 
   useEffect(() => {
     postReady();
@@ -100,6 +101,15 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
         case 'theme-variables':
           applyThemeVariables(message.css);
           break;
+        case 'preview-settings':
+          setShowJumpToDslHoverIndicator(
+            Boolean(
+              isRecord(message.settings) &&
+              isRecord(message.settings.jumpToDsl) &&
+              message.settings.jumpToDsl.showHoverIndicator
+            )
+          );
+          break;
         case 'parseError':
           if (isDevelopmentMode) {
             console.log('[React] 詳細パースエラーメッセージを受信:', message.error);
@@ -127,5 +137,5 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
 
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [postReady, applyDslUpdate, setError]);
+  }, [postReady, applyDslUpdate, setError, setShowJumpToDslHoverIndicator]);
 }

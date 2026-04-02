@@ -76,6 +76,7 @@ export class EventManager {
     }
 
     const settingsWatcher = this.services.settingsService.startWatching(() => {
+      this.services!.webViewManager.notifyPreviewSettingsChanged();
       // Auto Preview設定の変更は、プレビュー画面の自動表示/非表示のみに影響
       // 既に開かれているプレビュー画面は維持する
       

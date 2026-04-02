@@ -9,7 +9,10 @@ const mockConfig = {
   supportedFileExtensions: ['.tui.yml', '.tui.json'],
   autoPreview: { enabled: true },
   devTools: { enabled: false },
-  webview: { theme: 'light' },
+  webview: {
+    theme: 'light',
+    jumpToDsl: { showHoverIndicator: true }
+  },
   export: { format: 'html' },
   diagnostics: { lint: true },
   schema: { strict: true },
@@ -91,6 +94,7 @@ describe('SettingsService', () => {
     assert.strictEqual(settings.autoPreview.enabled, true);
     assert.strictEqual(settings.devTools.enabled, false);
     assert.strictEqual(settings.webview.theme, 'light');
+    assert.strictEqual(settings.webview.jumpToDsl.showHoverIndicator, true);
     assert.strictEqual(settings.export.format, 'html');
     assert.strictEqual(settings.diagnostics.lint, true);
     assert.strictEqual(settings.schema.strict, true);

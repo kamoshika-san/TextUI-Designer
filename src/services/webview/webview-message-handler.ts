@@ -156,6 +156,7 @@ export class WebViewMessageHandler {
     const lightThemeKind = vscode.ColorThemeKind?.Light;
     const initialTheme = colorThemeKind === lightThemeKind ? 'light' : 'dark';
     this.notifyThemeChange(initialTheme);
+    this.sendPreviewSettings();
 
     await withPreviewPipelineTrace(
       {
@@ -223,6 +224,23 @@ export class WebViewMessageHandler {
     panel.webview.postMessage({
       type: 'theme-change',
       theme: theme
+    });
+  }
+
+  sendPreviewSettings(): void {
+    const panel = this.lifecycleManager.getPanel();
+    if (!panel) {
+      return;
+    }
+
+    const webviewSettings = ConfigManager.getWebViewSettings();
+    panel.webview.postMessage({
+      type: 'preview-settings',
+      settings: {
+        jumpToDsl: {
+          showHoverIndicator: Boolean(webviewSettings.jumpToDsl?.showHoverIndicator)
+        }
+      }
     });
   }
 

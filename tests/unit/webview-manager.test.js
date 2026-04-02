@@ -574,4 +574,31 @@ describe('WebViewManager 単体テスト', () => {
       assert.strictEqual(yamlTest.getYamlCacheContent(), testContent, 'YAML cache should remain below 50MB');
     });
   });
+
+  describe('preview settings message', () => {
+    it('sends jump-to-DSL hover-indicator settings on webview-ready', async () => {
+      await webviewManager.openPreview();
+      const panel = webviewManager.getPanel();
+      assert.ok(panel, 'WebView panel should be available');
+
+      let previewSettingsMessage = null;
+      panel.webview.postMessage = (message) => {
+        if (message.type === 'preview-settings') {
+          previewSettingsMessage = message;
+        }
+        return Promise.resolve(true);
+      };
+
+      const handler = panel._messageHandler;
+      assert.strictEqual(typeof handler, 'function', 'message handler should be registered');
+      await handler({ type: 'webview-ready' });
+
+      assert.ok(previewSettingsMessage, 'preview-settings message should be sent');
+      assert.deepStrictEqual(previewSettingsMessage.settings, {
+        jumpToDsl: {
+          showHoverIndicator: true
+        }
+      });
+    });
+  });
 });

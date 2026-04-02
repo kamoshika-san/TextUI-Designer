@@ -82,6 +82,11 @@
           "default": 14,
           "description": "WebViewのフォントサイズ"
         },
+        "textui-designer.webview.jumpToDsl.showHoverIndicator": {
+          "type": "boolean",
+          "default": true,
+          "description": "Preview jump-to-DSL hover indicator visibility"
+        },
         "textui-designer.export.defaultFormat": {
           "type": "string",
           "enum": [

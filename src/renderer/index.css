@@ -957,10 +957,21 @@ body.light {
 .textui-jump-target:hover,
 .textui-jump-target:focus-visible {
   cursor: pointer;
+}
+
+.textui-jump-target:hover,
+.textui-jump-target:focus-visible {
   outline: 2px solid var(--textui-jump-indicator-outline-color);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px var(--textui-jump-indicator-halo-color);
   background-color: var(--textui-jump-indicator-background-color);
+}
+
+.textui-preview-root-hide-jump-hover .textui-jump-target:hover {
+  outline: none;
+  box-shadow: none;
+  background-color: transparent;
+  cursor: default;
 }
 
 .textui-jump-target.is-jump-success {
@@ -994,6 +1005,11 @@ body.light {
 .textui-jump-target:focus-visible .textui-jump-badge {
   opacity: 1;
   transform: translateY(0);
+}
+
+.textui-preview-root-hide-jump-hover .textui-jump-target:hover .textui-jump-badge {
+  opacity: 0;
+  transform: translateY(-0.25rem);
 }
 
 .textui-jump-badge-component {

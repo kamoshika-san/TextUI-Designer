@@ -32,6 +32,7 @@ export interface IWebViewManager {
   getLastTuiFile(): string | undefined;
   applyThemeVariables(css: string): void;
   notifyThemeChange(theme: 'light' | 'dark'): void;
+  notifyPreviewSettingsChanged(): void;
   dispose(): void;
   hasPanel(): boolean;
   getPanel(): vscode.WebviewPanel | undefined;
