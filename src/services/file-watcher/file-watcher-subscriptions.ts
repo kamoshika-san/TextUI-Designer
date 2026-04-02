@@ -232,6 +232,7 @@ export class DocumentChangeSubscription {
     this.previewTimeout = setTimeout(async () => {
       try {
         this.deps.memoryMonitor.checkMemoryUsageRealTime();
+        services.webViewManager.sendUpdatingSignal();
         await services.webViewManager.updatePreview();
       } catch (error) {
         this.deps.logger.error('ドキュメント変更処理（プレビュー）でエラーが発生しました:', error);

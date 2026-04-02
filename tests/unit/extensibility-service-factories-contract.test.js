@@ -60,6 +60,7 @@ function createWebViewManagerMock() {
     disposeCalled: 0,
     async openPreview() {},
     async updatePreview() {},
+    sendUpdatingSignal() {},
     closePreview() {},
     setLastTuiFile() {},
     getLastTuiFile() {

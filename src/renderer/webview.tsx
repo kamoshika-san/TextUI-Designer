@@ -9,6 +9,7 @@ import { createComponentKeys, hashString, mergeDslWithPrevious } from './preview
 import type { ErrorInfo } from './error-guidance';
 import { ErrorPanel } from './components/ErrorPanel';
 import { ExportButton } from './components/ExportButton';
+import { UpdateIndicator } from './components/UpdateIndicator';
 import { useWebviewMessages } from './use-webview-messages';
 import { attachDevToolsListener } from './devtools-listener';
 import { getSharedLayoutStyles } from '../shared/layout-styles';
@@ -27,6 +28,7 @@ const isDevelopmentMode = Boolean(
 const App: React.FC = () => {
   const [json, setJson] = useState<TextUIDSL | null>(null);
   const [error, setError] = useState<ErrorInfo | string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [showJumpToDslHoverIndicator, setShowJumpToDslHoverIndicator] = useState(true);
   const [showJumpToDslOnboarding, setShowJumpToDslOnboarding] = useState(() =>
     shouldShowJumpToDslOnboarding(typeof window !== 'undefined' ? window.localStorage : undefined)
@@ -46,6 +48,22 @@ const App: React.FC = () => {
     const styleEl = document.createElement('style');
     styleEl.id = styleId;
     styleEl.textContent = getSharedLayoutStyles();
+    document.head.appendChild(styleEl);
+  }, []);
+
+  useEffect(() => {
+    const styleId = 'textui-update-indicator-styles';
+    if (document.getElementById(styleId)) {
+      return;
+    }
+    const styleEl = document.createElement('style');
+    styleEl.id = styleId;
+    styleEl.textContent = `
+      @keyframes textui-update-indicator-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+    `;
     document.head.appendChild(styleEl);
   }, []);
 
@@ -125,6 +143,7 @@ const App: React.FC = () => {
     postReady,
     applyDslUpdate,
     setError,
+    setIsUpdating,
     setShowJumpToDslHoverIndicator
   });
 
@@ -248,6 +267,7 @@ const App: React.FC = () => {
       <ThemeToggle />
       <CustomThemeSelector />
       <ExportButton onExport={handleExport} />
+      <UpdateIndicator isUpdating={isUpdating} />
       {components.map((comp, i) => renderRegisteredComponent(comp, componentKeys[i] || i, {
         dslPath: `/page/components/${i}`,
         onJumpToDsl: handleJumpToDsl

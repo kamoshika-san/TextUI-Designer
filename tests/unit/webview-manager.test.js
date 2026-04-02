@@ -600,5 +600,23 @@ describe('WebViewManager 単体テスト', () => {
         }
       });
     });
+
+    it('sends preview-updating when requested through the manager facade', async () => {
+      await webviewManager.openPreview();
+      const panel = webviewManager.getPanel();
+      assert.ok(panel, 'WebView panel should be available');
+
+      let updatingMessage = null;
+      panel.webview.postMessage = (message) => {
+        if (message.type === 'preview-updating') {
+          updatingMessage = message;
+        }
+        return Promise.resolve(true);
+      };
+
+      webviewManager.sendUpdatingSignal();
+
+      assert.deepStrictEqual(updatingMessage, { type: 'preview-updating' });
+    });
   });
 });

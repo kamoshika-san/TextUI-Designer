@@ -227,6 +227,17 @@ export class WebViewMessageHandler {
     });
   }
 
+  sendUpdatingSignal(): void {
+    const panel = this.lifecycleManager.getPanel();
+    if (!panel) {
+      return;
+    }
+
+    panel.webview.postMessage({
+      type: 'preview-updating'
+    });
+  }
+
   sendPreviewSettings(): void {
     const panel = this.lifecycleManager.getPanel();
     if (!panel) {

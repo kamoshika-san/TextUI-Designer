@@ -27,6 +27,7 @@ export interface IThemeManager {
 export interface IWebViewManager {
   openPreview(): Promise<void>;
   updatePreview(forceUpdate?: boolean): Promise<void>;
+  sendUpdatingSignal(): void;
   closePreview(): void;
   setLastTuiFile(filePath: string, updatePreview?: boolean): void;
   getLastTuiFile(): string | undefined;

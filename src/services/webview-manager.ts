@@ -44,6 +44,10 @@ export class WebViewManager implements IWebViewManager {
     await this.updateManager.updatePreview(forceUpdate);
   }
 
+  sendUpdatingSignal(): void {
+    this.messageHandler.sendUpdatingSignal();
+  }
+
   closePreview(): void {
     this.lifecycleManager.closePanel();
   }
