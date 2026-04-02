@@ -929,6 +929,28 @@ body.light {
   background-color: var(--color-background, #F9FAFB);
 }
 
+.textui-jump-target {
+  position: relative;
+  border-radius: 0.5rem;
+  transition: outline-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease, cursor 0.16s ease;
+}
+
+.textui-jump-target:hover,
+.textui-jump-target:focus-visible {
+  cursor: pointer;
+  outline: 2px solid rgba(96, 165, 250, 0.95);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16);
+  background-color: rgba(59, 130, 246, 0.06);
+}
+
+.light .textui-jump-target:hover,
+.light .textui-jump-target:focus-visible {
+  outline-color: rgba(37, 99, 235, 0.9);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+  background-color: rgba(59, 130, 246, 0.08);
+}
+
 .textui-preview-empty {
   padding: 2rem;
   text-align: center;
