@@ -15,7 +15,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const isDevelopmentMode = Boolean(
   (typeof globalThis !== 'undefined' && (globalThis as { __TUI_DEV_MODE__?: boolean }).__TUI_DEV_MODE__) ||
-  window.location.search.includes('textui-dev=true')
+  (typeof window !== 'undefined' && window.location.search.includes('textui-dev=true'))
 );
 
 function applyThemeVariables(css: unknown): void {
@@ -48,7 +48,21 @@ interface UseWebviewMessagesOptions {
   setError: (value: ErrorInfo | string | null) => void;
   setUpdateStatus: (updater: (current: PreviewUpdateStatus) => PreviewUpdateStatus) => void;
   setLastCompletedAt: (value: number | null) => void;
+  setShowUpdateIndicator: (value: boolean) => void;
   setShowJumpToDslHoverIndicator: (value: boolean) => void;
+}
+
+export function readPreviewSettings(
+  settings: unknown
+): { showUpdateIndicator: boolean; showJumpToDslHoverIndicator: boolean } {
+  const settingsRecord = isRecord(settings) ? settings : null;
+  const previewSettings = settingsRecord && isRecord(settingsRecord.preview) ? settingsRecord.preview : null;
+  const jumpToDslSettings = settingsRecord && isRecord(settingsRecord.jumpToDsl) ? settingsRecord.jumpToDsl : null;
+
+  return {
+    showUpdateIndicator: previewSettings?.showUpdateIndicator !== false,
+    showJumpToDslHoverIndicator: Boolean(jumpToDslSettings?.showHoverIndicator)
+  };
 }
 
 export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
@@ -58,6 +72,7 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
     setError,
     setUpdateStatus,
     setLastCompletedAt,
+    setShowUpdateIndicator,
     setShowJumpToDslHoverIndicator
   } = options;
 
@@ -107,15 +122,12 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
         case 'theme-variables':
           applyThemeVariables(message.css);
           break;
-        case 'preview-settings':
-          setShowJumpToDslHoverIndicator(
-            Boolean(
-              isRecord(message.settings) &&
-              isRecord(message.settings.jumpToDsl) &&
-              message.settings.jumpToDsl.showHoverIndicator
-            )
-          );
+        case 'preview-settings': {
+          const previewSettings = readPreviewSettings(message.settings);
+          setShowUpdateIndicator(previewSettings.showUpdateIndicator);
+          setShowJumpToDslHoverIndicator(previewSettings.showJumpToDslHoverIndicator);
           break;
+        }
         case 'parseError':
           setLastCompletedAt(null);
           setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-error'));
@@ -140,5 +152,5 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
 
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [postReady, applyDslUpdate, setError, setUpdateStatus, setLastCompletedAt, setShowJumpToDslHoverIndicator]);
+  }, [postReady, applyDslUpdate, setError, setUpdateStatus, setLastCompletedAt, setShowUpdateIndicator, setShowJumpToDslHoverIndicator]);
 }

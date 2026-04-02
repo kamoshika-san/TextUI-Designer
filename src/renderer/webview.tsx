@@ -31,6 +31,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<ErrorInfo | string | null>(null);
   const [updateStatus, setUpdateStatus] = useState<PreviewUpdateStatus>('idle');
   const [lastCompletedAt, setLastCompletedAt] = useState<number | null>(null);
+  const [showUpdateIndicator, setShowUpdateIndicator] = useState(true);
   const [showJumpToDslHoverIndicator, setShowJumpToDslHoverIndicator] = useState(true);
   const [showJumpToDslOnboarding, setShowJumpToDslOnboarding] = useState(() =>
     shouldShowJumpToDslOnboarding(typeof window !== 'undefined' ? window.localStorage : undefined)
@@ -162,6 +163,7 @@ const App: React.FC = () => {
     setError,
     setUpdateStatus,
     setLastCompletedAt,
+    setShowUpdateIndicator,
     setShowJumpToDslHoverIndicator
   });
 
@@ -285,11 +287,13 @@ const App: React.FC = () => {
       <ThemeToggle />
       <CustomThemeSelector />
       <ExportButton onExport={handleExport} />
-      <UpdateIndicator
-        status={updateStatus}
-        lastCompletedAt={lastCompletedAt}
-        showRelativeTimestamp={isDevelopmentMode}
-      />
+      {showUpdateIndicator ? (
+        <UpdateIndicator
+          status={updateStatus}
+          lastCompletedAt={lastCompletedAt}
+          showRelativeTimestamp={isDevelopmentMode}
+        />
+      ) : null}
       {components.map((comp, i) => renderRegisteredComponent(comp, componentKeys[i] || i, {
         dslPath: `/page/components/${i}`,
         onJumpToDsl: handleJumpToDsl
