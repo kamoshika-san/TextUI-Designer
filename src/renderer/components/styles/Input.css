@@ -1,12 +1,18 @@
 /* Input */
-.textui-input label {
-  color: var(--color-text-primary, rgb(255 255 255));
-  font-size: var(--typography-fontSize-base, 1rem);
-  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
-  font-weight: normal;
+.textui-input-wrapper {
+  margin-bottom: var(--spacing-md, 1rem);
 }
 
-.light .textui-input label {
+.textui-input-wrapper label {
+  display: block;
+  font-size: var(--typography-fontSize-sm, 0.875rem);
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
+  font-weight: 500;
+  margin-bottom: var(--spacing-xs, 0.5rem);
+  color: var(--color-text-primary, rgb(255 255 255));
+}
+
+.light .textui-input-wrapper label {
   color: var(--color-text-dark, rgb(17 24 39));
 }
 

@@ -4,6 +4,13 @@
   gap: var(--spacing-xs, 0.5rem);
 }
 
+.textui-radio-group > label {
+  display: block;
+  font-size: var(--typography-fontSize-sm, 0.875rem);
+  font-weight: 500;
+  margin-bottom: var(--spacing-xs, 0.5rem);
+}
+
 .textui-radio-option {
   @apply flex items-center;
 }

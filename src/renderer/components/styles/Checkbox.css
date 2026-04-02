@@ -1,18 +1,26 @@
 /* Checkbox */
+.textui-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-md, 1rem);
+}
+
 .textui-checkbox {
   @apply h-4 w-4;
   border-radius: var(--borderRadius-sm, 0.25rem);
   accent-color: var(--color-primary, rgb(59 130 246));
 }
 
-.textui-checkbox label {
+.textui-checkbox-label {
+  margin-left: var(--spacing-xs, 0.5rem);
+  display: block;
   font-size: var(--typography-fontSize-sm, 0.875rem);
   font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
   font-weight: normal;
   color: var(--color-text-secondary, rgb(229 231 235));
 }
 
-.light .textui-checkbox label {
+.light .textui-checkbox-label {
   color: var(--color-text-dark, rgb(55 65 81));
 }
 

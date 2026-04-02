@@ -75,13 +75,13 @@ Do not count:
 - lines that use only canonical `.textui-*` classes
 - intentionally local diagnostic or invalid-state fallback blocks that are not part of the normal component presentation contract
 
-Current snapshot on `2026-03-28`:
+Current snapshot on `2026-04-02`:
 
-- `Checkbox.tsx`: `2`
-- `Form.tsx`: `1`
-- `Input.tsx`: `2`
-- `Radio.tsx`: `1`
-- total: `6`
+- `Checkbox.tsx`: `0` (was `2` — replaced with `.textui-checkbox-wrapper` / `.textui-checkbox-label`)
+- `Form.tsx`: `0` (was `1` — dead commented-out code removed)
+- `Input.tsx`: `0` (was `2` — replaced with `.textui-input-wrapper`; broken `.textui-input label` selector fixed to `.textui-input-wrapper label`)
+- `Radio.tsx`: `0` (was `1` — group label now styled via `.textui-radio-group > label` CSS rule)
+- total: `0`
 
 Current excluded example:
 
@@ -115,11 +115,11 @@ Current snapshot on `2026-03-28`:
 
 Use this snapshot as the baseline for later PR comparison until a follow-up ticket updates the metric definition itself.
 
-| Metric | Baseline on 2026-03-28 |
-| --- | --- |
-| TODO partial count | `0` |
-| Non-exempt inline utility class occurrences | `6` |
-| Fallback compatibility selector count | `24` |
+| Metric | Baseline on 2026-03-28 | Updated on 2026-04-02 |
+| --- | --- | --- |
+| TODO partial count | `0` | `0` |
+| Non-exempt inline utility class occurrences | `6` | `0` |
+| Fallback compatibility selector count | `24` | `24` |
 
 ## How A Future Gate Should Consume This
 

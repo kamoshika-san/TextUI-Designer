@@ -23,7 +23,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
   };
 
   return (
-    <div className="flex items-center mb-4">
+    <div className="textui-checkbox-wrapper">
       <input
         type="checkbox"
         id={name}
@@ -33,7 +33,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
         onChange={handleChange}
         className="textui-checkbox"
       />
-      <label htmlFor={name} className="ml-2 block text-sm textui-text">
+      <label htmlFor={name} className="textui-checkbox-label textui-text">
         {label}
       </label>
     </div>

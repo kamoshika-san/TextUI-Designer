@@ -31,9 +31,9 @@ export const Input: React.FC<InputProps> = ({
   
   if (inputType === 'multiline') {
     return (
-      <div className="mb-4">
+      <div className="textui-input-wrapper">
         {label && (
-          <label htmlFor={name} className="block text-sm font-medium mb-2 textui-text">
+          <label htmlFor={name} className="textui-text">
             {label}
           </label>
         )}
@@ -53,9 +53,9 @@ export const Input: React.FC<InputProps> = ({
   }
 
   return (
-    <div className="mb-4">
+    <div className="textui-input-wrapper">
       {label && (
-        <label htmlFor={name} className="block text-sm font-medium mb-2 textui-text">
+        <label htmlFor={name} className="textui-text">
           {label}
         </label>
       )}
