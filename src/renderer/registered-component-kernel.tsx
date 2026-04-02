@@ -58,6 +58,8 @@ export function wrapWithPreviewJumpShell(
   inner: React.ReactNode,
   componentName: string | undefined
 ): React.ReactNode {
+  const badgeLabel = componentName ?? 'Component';
+
   return (
     <div
       key={key}
@@ -75,6 +77,10 @@ export function wrapWithPreviewJumpShell(
         context.onJumpToDsl(context.dslPath!, componentName);
       }}
     >
+      <span className="textui-jump-badge" aria-hidden="true">
+        <span className="textui-jump-badge-component">{badgeLabel}</span>
+        <span className="textui-jump-badge-link">DSL</span>
+      </span>
       {inner}
     </div>
   );

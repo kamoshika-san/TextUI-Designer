@@ -35,6 +35,10 @@ describe('shared kernel: preview vs export inner markup parity (T-195)', () => {
       return normalizedChildren;
     }
 
+    if (className === 'textui-jump-badge') {
+      return null;
+    }
+
     return React.cloneElement(node, restProps, normalizedChildren);
   }
 
