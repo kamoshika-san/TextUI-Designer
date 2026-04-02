@@ -31,8 +31,7 @@ export class ExportManager {
   private performanceMonitor: PerformanceMonitor;
   private readonly maxConcurrentOperations: number;
   private readonly optimizingExecutor: OptimizingExportExecutor;
-  private lastExportDsl: TextUIDSL | null = null;
-  private lastExportSourcePath?: string;
+  private readonly exportSnapshots = new Map<string, TextUIDSL>();
 
   constructor() {
     populateBuiltInExporters(this.exporters);
@@ -99,8 +98,9 @@ export class ExportManager {
           result = await this.optimizingExecutor.runOptimizedExport(dsl, normalizedOptions);
         }
 
-        this.lastExportDsl = dsl;
-        this.lastExportSourcePath = normalizedOptions.sourcePath;
+        if (normalizedOptions.sourcePath) {
+          this.exportSnapshots.set(normalizedOptions.sourcePath, dsl);
+        }
         return result;
       } catch (error) {
         throw new Error(`Export failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -112,17 +112,22 @@ export class ExportManager {
     dsl: TextUIDSL,
     options: ExportOptions
   ): DiffRenderTarget[] | undefined {
-    if (options.enableIncrementalDiffRoute !== true || !this.lastExportDsl) {
+    const sourcePath = options.sourcePath;
+    if (options.enableIncrementalDiffRoute !== true || !sourcePath) {
+      return undefined;
+    }
+    const previousDsl = this.exportSnapshots.get(sourcePath);
+    if (!previousDsl) {
       return undefined;
     }
 
-    const previous = createNormalizedDiffDocument(this.lastExportDsl, {
+    const previous = createNormalizedDiffDocument(previousDsl, {
       side: 'previous',
-      sourcePath: this.lastExportSourcePath
+      sourcePath
     });
     const next = createNormalizedDiffDocument(dsl, {
       side: 'next',
-      sourcePath: options.sourcePath
+      sourcePath
     });
     const renderTargets = buildRenderTargetsFromDiffResult(createDiffResultSkeleton(previous, next));
 
@@ -157,8 +162,7 @@ export class ExportManager {
   clearCache(): void {
     this.cacheManager.clear();
     this.diffManager.reset();
-    this.lastExportDsl = null;
-    this.lastExportSourcePath = undefined;
+    this.exportSnapshots.clear();
   }
 
   clearFormatCache(format: string): void {
@@ -236,7 +240,6 @@ ${report}
     this.cacheManager.clear();
     this.diffManager.reset();
     this.performanceMonitor.dispose();
-    this.lastExportDsl = null;
-    this.lastExportSourcePath = undefined;
+    this.exportSnapshots.clear();
   }
 }

@@ -95,4 +95,38 @@ describe('ExportManager incremental diff route flag', () => {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
   });
+
+  it('keeps the legacy route for cross-file exports even when the flag is ON', async () => {
+    const manager = new ExportManager();
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-export-'));
+    const fileA = path.join(tempDir, 'a.tui.yml');
+    const fileB = path.join(tempDir, 'b.tui.yml');
+    let optimizedCalls = 0;
+    let diffCalls = 0;
+
+    writeDsl(fileA, 'First-A');
+    writeDsl(fileB, 'First-B');
+
+    manager.optimizingExecutor.runOptimizedExport = async () => {
+      optimizedCalls += 1;
+      return 'optimized';
+    };
+    manager.exportWithDiffUpdate = async () => {
+      diffCalls += 1;
+      return { result: 'diff', isFullUpdate: true, changedComponents: [0] };
+    };
+
+    try {
+      const first = await manager.exportFromFile(fileA, { format: 'html', enableIncrementalDiffRoute: true });
+      const second = await manager.exportFromFile(fileB, { format: 'html', enableIncrementalDiffRoute: true });
+
+      assert.strictEqual(first, 'optimized');
+      assert.strictEqual(second, 'optimized');
+      assert.strictEqual(optimizedCalls, 2);
+      assert.strictEqual(diffCalls, 0);
+    } finally {
+      manager.dispose();
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
 });
