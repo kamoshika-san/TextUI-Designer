@@ -11,6 +11,9 @@ import { getWebViewComponentRenderer } from '../registry/webview-component-regis
 import type { RenderContext } from './render-context';
 import { attachRenderContext } from './render-context';
 
+const JUMP_SUCCESS_FLASH_CLASS = 'is-jump-success';
+const JUMP_SUCCESS_FLASH_DURATION_MS = 480;
+
 function resolveWebViewRenderer(name: string | undefined) {
   if (!name) {
     return undefined;
@@ -21,6 +24,20 @@ function resolveWebViewRenderer(name: string | undefined) {
 /** プレビューで Ctrl+Shift ジャンプが有効になる条件。静的 HTML では通常 false（T-194）。 */
 export function isPreviewJumpInteractive(context?: RenderContext): boolean {
   return Boolean(context?.dslPath && context?.onJumpToDsl);
+}
+
+export function flashPreviewJumpSuccess(
+  element: { classList?: { add(name: string): void; remove(name: string): void } } | undefined,
+  scheduleClear: (callback: () => void, delayMs: number) => unknown = setTimeout
+): void {
+  if (!element?.classList) {
+    return;
+  }
+  element.classList.remove(JUMP_SUCCESS_FLASH_CLASS);
+  element.classList.add(JUMP_SUCCESS_FLASH_CLASS);
+  scheduleClear(() => {
+    element.classList?.remove(JUMP_SUCCESS_FLASH_CLASS);
+  }, JUMP_SUCCESS_FLASH_DURATION_MS);
 }
 
 /**
@@ -86,6 +103,7 @@ export function wrapWithPreviewJumpShell(
         }
         event.preventDefault();
         event.stopPropagation();
+        flashPreviewJumpSuccess(event.currentTarget);
         triggerJump();
       }}
       onKeyDown={(event) => {
@@ -94,6 +112,7 @@ export function wrapWithPreviewJumpShell(
         }
         event.preventDefault();
         event.stopPropagation();
+        flashPreviewJumpSuccess(event.currentTarget);
         triggerJump();
       }}
     >
