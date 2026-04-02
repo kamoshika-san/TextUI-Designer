@@ -87,6 +87,11 @@
           "default": true,
           "description": "Preview jump-to-DSL hover indicator visibility"
         },
+        "textui-designer.preview.showUpdateIndicator": {
+          "type": "boolean",
+          "default": true,
+          "description": "Preview update indicator visibility"
+        },
         "textui-designer.export.defaultFormat": {
           "type": "string",
           "enum": [

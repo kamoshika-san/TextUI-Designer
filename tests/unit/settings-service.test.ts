@@ -11,6 +11,7 @@ const mockConfig = {
   devTools: { enabled: false },
   webview: {
     theme: 'light',
+    preview: { showUpdateIndicator: true },
     jumpToDsl: { showHoverIndicator: true }
   },
   export: { format: 'html' },
@@ -94,6 +95,7 @@ describe('SettingsService', () => {
     assert.strictEqual(settings.autoPreview.enabled, true);
     assert.strictEqual(settings.devTools.enabled, false);
     assert.strictEqual(settings.webview.theme, 'light');
+    assert.strictEqual(settings.webview.preview.showUpdateIndicator, true);
     assert.strictEqual(settings.webview.jumpToDsl.showHoverIndicator, true);
     assert.strictEqual(settings.export.format, 'html');
     assert.strictEqual(settings.diagnostics.lint, true);

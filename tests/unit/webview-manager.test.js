@@ -576,7 +576,18 @@ describe('WebViewManager 単体テスト', () => {
   });
 
   describe('preview settings message', () => {
-    it('sends jump-to-DSL hover-indicator settings on webview-ready', async () => {
+    it('sends preview settings on webview-ready', async () => {
+      const { ConfigManager } = require('../../out/utils/config-manager.js');
+      const originalGetWebViewSettings = ConfigManager.getWebViewSettings;
+      ConfigManager.getWebViewSettings = () => ({
+        preview: {
+          showUpdateIndicator: true
+        },
+        jumpToDsl: {
+          showHoverIndicator: true
+        }
+      });
+
       await webviewManager.openPreview();
       const panel = webviewManager.getPanel();
       assert.ok(panel, 'WebView panel should be available');
@@ -591,14 +602,21 @@ describe('WebViewManager 単体テスト', () => {
 
       const handler = panel._messageHandler;
       assert.strictEqual(typeof handler, 'function', 'message handler should be registered');
-      await handler({ type: 'webview-ready' });
+      try {
+        await handler({ type: 'webview-ready' });
 
-      assert.ok(previewSettingsMessage, 'preview-settings message should be sent');
-      assert.deepStrictEqual(previewSettingsMessage.settings, {
-        jumpToDsl: {
-          showHoverIndicator: true
-        }
-      });
+        assert.ok(previewSettingsMessage, 'preview-settings message should be sent');
+        assert.deepStrictEqual(previewSettingsMessage.settings, {
+          preview: {
+            showUpdateIndicator: true
+          },
+          jumpToDsl: {
+            showHoverIndicator: true
+          }
+        });
+      } finally {
+        ConfigManager.getWebViewSettings = originalGetWebViewSettings;
+      }
     });
 
     it('sends preview-updating when requested through the manager facade', async () => {

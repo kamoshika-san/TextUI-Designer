@@ -248,6 +248,9 @@ export class WebViewMessageHandler {
     panel.webview.postMessage({
       type: 'preview-settings',
       settings: {
+        preview: {
+          showUpdateIndicator: Boolean(webviewSettings.preview?.showUpdateIndicator)
+        },
         jumpToDsl: {
           showHoverIndicator: Boolean(webviewSettings.jumpToDsl?.showHoverIndicator)
         }

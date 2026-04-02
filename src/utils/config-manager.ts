@@ -102,6 +102,9 @@ export class ConfigManager {
       disableThemeVariables: this.getDefaultValue('webview.disableThemeVariables'),
       theme: this.getDefaultValue('webview.theme'),
       fontSize: this.getDefaultValue('webview.fontSize'),
+      preview: {
+        showUpdateIndicator: this.getDefaultValue('preview.showUpdateIndicator')
+      },
       jumpToDsl: {
         showHoverIndicator: this.getDefaultValue('webview.jumpToDsl.showHoverIndicator')
       }
