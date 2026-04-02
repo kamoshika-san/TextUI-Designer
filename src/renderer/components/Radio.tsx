@@ -28,7 +28,7 @@ export const Radio: React.FC<RadioProps> = ({
   return (
     <div className="textui-radio-group">
       {label && (
-        <label className="block text-sm font-medium mb-2 textui-text">{label}</label>
+        <label className="textui-text">{label}</label>
       )}
       {options.map((option, index) => (
         <div key={index} className="textui-radio-option">
