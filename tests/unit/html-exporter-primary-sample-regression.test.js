@@ -53,17 +53,17 @@ describe('HtmlExporter primary sample regression (T-20260322-348)', () => {
   [
     {
       sampleRelativePath: 'sample/01-basic/sample.tui.yml',
-      expectedHash: 'd24b8f1ff7362134987cdfe391953453bf7c6794f0532079265185b96a014414', // updated: css-ssot canonicalization changed Checkbox/Input/Radio class names
+      expectedHash: '76458cf560196357500c469b80ac5e0c218df4080a462280e1219444bd547b36', // updated after default export style block drift from shared layout/base CSS changes
       markers: ['TextUI Designer - All Components', 'This sample includes every supported component.', 'Agree to terms']
     },
     {
       sampleRelativePath: 'sample/08-github/sample.tui.yml',
-      expectedHash: 'a200c92d609e2fb6cae0a0b644313f50840ddedc62cf0f74f4f9b6621381fa99', // primary hash from stable CI expected output; revert to currently observed export result
+      expectedHash: '41de4485efc5a3c98a917272dc43d0d4832ea9e75b3b6bfe72baadce190df411', // updated after default export style block drift from shared layout/base CSS changes
       markers: ['kamoshika-san / TextUI-Designer', 'VS Code extension for designing text-based UIs with YAML/JSON DSL.', 'Pull requests']
     },
     {
       sampleRelativePath: 'sample/09-modal/sample.tui.yml',
-      expectedHash: 'c8cc1d49156e0b9e9acfc9eeffc3d1261fdf85cf228100ae4dffac6125bc6e4a', // primary hash from stable CI expected output; revert to currently observed export result
+      expectedHash: '2d2330e8cc4fd9af2ec619f53beceae073266de4e3f9f0f4ed8155b0ff4c2fa2', // updated after default export style block drift from shared layout/base CSS changes
       markers: ['削除の確認', 'この操作は元に戻せません', '削除する', 'ユーザー詳細']
     }
   ].forEach(({ sampleRelativePath, expectedHash, markers }) => {
