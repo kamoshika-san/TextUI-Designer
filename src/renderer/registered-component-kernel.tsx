@@ -59,12 +59,14 @@ export function wrapWithPreviewJumpShell(
   componentName: string | undefined
 ): React.ReactNode {
   const badgeLabel = componentName ?? 'Component';
+  const jumpTitle =
+    `Ctrl+Shift+Click to jump to DSL / Ctrl+Shift+\u30af\u30ea\u30c3\u30af\u3067DSL\u3078\u30b8\u30e3\u30f3\u30d7: ${context.dslPath}`;
 
   return (
     <div
       key={key}
       className="textui-jump-target"
-      title={`Ctrl+Shift+クリックでDSLへジャンプ: ${context.dslPath}`}
+      title={jumpTitle}
       onClick={(event) => {
         if (!context.onJumpToDsl || !componentName) {
           return;

@@ -247,6 +247,32 @@ const App: React.FC = () => {
         dslPath: `/page/components/${i}`,
         onJumpToDsl: handleJumpToDsl
       }))}
+      <div
+        style={{
+          position: 'sticky',
+          bottom: 0,
+          marginTop: '1rem',
+          padding: '0.7rem 0.9rem',
+          borderRadius: '0.75rem',
+          border: '1px solid rgba(148, 163, 184, 0.22)',
+          background: 'rgba(15, 23, 42, 0.72)',
+          backdropFilter: 'blur(10px)',
+          color: '#dbeafe',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '0.75rem',
+          flexWrap: 'wrap'
+        }}
+      >
+        <div style={{ fontSize: '0.8rem', lineHeight: 1.45 }}>
+          <strong style={{ fontWeight: 700 }}>Jump to DSL</strong>
+          <span style={{ opacity: 0.9 }}>  Ctrl+Shift+Click / Ctrl+Shift+クリック</span>
+        </div>
+        <div style={{ fontSize: '0.76rem', opacity: 0.78, lineHeight: 1.4 }}>
+          Preview component to source navigation stays available after the first-run tip.
+        </div>
+      </div>
     </div>
   );
 };
