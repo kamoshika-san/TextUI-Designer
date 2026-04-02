@@ -67,6 +67,11 @@ const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
     ],
     callback: deps => (filePath?: unknown) =>
       deps.executeExport(typeof filePath === 'string' ? filePath : undefined)
+  },
+  {
+    command: 'textui-designer.showJumpToDslHelp',
+    title: 'TextUI: Preview to DSL Jump (How to Use)',
+    callback: deps => () => deps.showJumpToDslHelp()
   }
 ];
 

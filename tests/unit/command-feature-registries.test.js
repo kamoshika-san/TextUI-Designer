@@ -90,6 +90,7 @@ describe('command feature registries', () => {
     await registry.createTemplate();
     await registry.insertTemplate();
     await registry.openSettings();
+    await registry.showJumpToDslHelp();
     await registry.resetSettings();
     await registry.showAutoPreviewSetting();
     await registry.reinitializeSchemas();
@@ -119,6 +120,7 @@ describe('command feature registries', () => {
       createTemplate: async () => {},
       insertTemplate: async () => {},
       openSettings: async () => {},
+      showJumpToDslHelp: async () => {},
       resetSettings: async () => {},
       showAutoPreviewSetting: async () => {},
       checkAutoPreviewSetting: async () => {},
@@ -141,5 +143,37 @@ describe('command feature registries', () => {
     assert.strictEqual(bindings.openPreviewWithCheck, previewExport.openPreviewWithCheck);
     assert.strictEqual(bindings.checkAutoPreviewSetting, authoring.checkAutoPreviewSetting);
     assert.strictEqual(bindings.showMemoryReport, runtimeInspection.showMemoryReport);
+  });
+
+  it('authoring registry exposes jump-to-dsl help as an info-only command', async () => {
+    let infoMessage;
+
+    ErrorHandler.showInfo = (message) => {
+      infoMessage = message;
+    };
+
+    const registry = createAuthoringFeatureRegistry({
+      templateService: {
+        createTemplate: async () => {},
+        insertTemplate: async () => {}
+      },
+      settingsService: {
+        openSettings: async () => {},
+        resetSettings: async () => {},
+        showAutoPreviewSetting: async () => {}
+      },
+      schemaManager: {
+        reinitialize: async () => {},
+        debugSchemas: async () => {}
+      },
+      logger: { info() {}, warn() {}, error() {}, debug() {} }
+    });
+
+    await registry.showJumpToDslHelp();
+
+    assert.strictEqual(
+      infoMessage,
+      'Preview tip: Ctrl+Shift+Click a component to jump to its DSL source. プレビュー上のコンポーネントを Ctrl+Shift+クリックすると DSL ソースへジャンプできます。'
+    );
   });
 });

@@ -20,6 +20,7 @@ export interface CommandCatalogDependencies {
   createTemplate: () => Promise<void>;
   insertTemplate: () => Promise<void>;
   openSettings: () => Promise<void>;
+  showJumpToDslHelp: () => Promise<void>;
   resetSettings: () => Promise<void>;
   showAutoPreviewSetting: () => Promise<void>;
   checkAutoPreviewSetting: () => Promise<void>;

@@ -293,6 +293,10 @@
         "title": "TextUI: Export to Code"
       },
       {
+        "command": "textui-designer.showJumpToDslHelp",
+        "title": "TextUI: Preview to DSL Jump (How to Use)"
+      },
+      {
         "command": "textui-designer.createTemplate",
         "title": "TextUI: 新規テンプレート作成"
       },

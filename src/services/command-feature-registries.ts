@@ -39,6 +39,7 @@ export type CommandFeatureBindings = Pick<
   | 'createTemplate'
   | 'insertTemplate'
   | 'openSettings'
+  | 'showJumpToDslHelp'
   | 'resetSettings'
   | 'showAutoPreviewSetting'
   | 'checkAutoPreviewSetting'
@@ -73,6 +74,7 @@ export function createAuthoringFeatureRegistry(
   | 'createTemplate'
   | 'insertTemplate'
   | 'openSettings'
+  | 'showJumpToDslHelp'
   | 'resetSettings'
   | 'showAutoPreviewSetting'
   | 'checkAutoPreviewSetting'
@@ -83,6 +85,12 @@ export function createAuthoringFeatureRegistry(
     createTemplate: () => deps.templateService.createTemplate(),
     insertTemplate: () => deps.templateService.insertTemplate(),
     openSettings: () => deps.settingsService.openSettings(),
+    showJumpToDslHelp: async () => {
+      const message =
+        'Preview tip: Ctrl+Shift+Click a component to jump to its DSL source. プレビュー上のコンポーネントを Ctrl+Shift+クリックすると DSL ソースへジャンプできます。';
+      deps.logger.info('jump-to-dsl usage help requested');
+      ErrorHandler.showInfo(message);
+    },
     resetSettings: () => deps.settingsService.resetSettings(),
     showAutoPreviewSetting: () => deps.settingsService.showAutoPreviewSetting(),
     checkAutoPreviewSetting: async () => {
