@@ -53,7 +53,7 @@ describe('HtmlExporter primary sample regression (T-20260322-348)', () => {
   [
     {
       sampleRelativePath: 'sample/01-basic/sample.tui.yml',
-      expectedHash: '05e67836393789af1d11e1c8674ec9e8923eaf3cb97ac9e3cd9c639770d5a0fb', // primary hash from stable CI expected output; revert to currently observed export result
+      expectedHash: 'd24b8f1ff7362134987cdfe391953453bf7c6794f0532079265185b96a014414', // updated: css-ssot canonicalization changed Checkbox/Input/Radio class names
       markers: ['TextUI Designer - All Components', 'This sample includes every supported component.', 'Agree to terms']
     },
     {
