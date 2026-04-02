@@ -59,24 +59,42 @@ export function wrapWithPreviewJumpShell(
   componentName: string | undefined
 ): React.ReactNode {
   const badgeLabel = componentName ?? 'Component';
+  const actionLabel = componentName ?? 'component';
   const jumpTitle =
     `Ctrl+Shift+Click to jump to DSL / Ctrl+Shift+\u30af\u30ea\u30c3\u30af\u3067DSL\u3078\u30b8\u30e3\u30f3\u30d7: ${context.dslPath}`;
+  const ariaLabel =
+    `Jump to DSL for ${actionLabel} / ${actionLabel} \u306e DSL \u30bd\u30fc\u30b9\u3078\u30b8\u30e3\u30f3\u30d7`;
+
+  const triggerJump = () => {
+    if (!context.onJumpToDsl || !componentName) {
+      return;
+    }
+    context.onJumpToDsl(context.dslPath!, componentName);
+  };
 
   return (
     <div
       key={key}
       className="textui-jump-target"
+      role="button"
+      tabIndex={0}
+      aria-label={ariaLabel}
       title={jumpTitle}
       onClick={(event) => {
-        if (!context.onJumpToDsl || !componentName) {
-          return;
-        }
         if (!(event.ctrlKey && event.shiftKey)) {
           return;
         }
         event.preventDefault();
         event.stopPropagation();
-        context.onJumpToDsl(context.dslPath!, componentName);
+        triggerJump();
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== 'Enter') {
+          return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        triggerJump();
       }}
     >
       <span className="textui-jump-badge" aria-hidden="true">
