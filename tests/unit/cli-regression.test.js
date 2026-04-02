@@ -1,25 +1,19 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { spawnSync } = require('child_process');
+const { createCliTestHarness } = require('../helpers/cli-test-harness');
 
 describe('CLI Regression Guard', () => {
-  const repoRoot = path.resolve(__dirname, '../..');
-  const cliPath = path.join(repoRoot, 'out/cli/index.js');
-  const tmpDir = path.join(repoRoot, '.tmp-cli-regression-test');
+  const harness = createCliTestHarness({ tempPrefix: '.tmp-cli-regression-test-' });
+  let tmpDir;
 
   beforeEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
-    fs.mkdirSync(tmpDir, { recursive: true });
+    tmpDir = harness.createTempDir();
   });
 
   afterEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    harness.cleanupTempDir(tmpDir);
   });
-
-  function runCli(args) {
-    return spawnSync('node', [cliPath, ...args], { encoding: 'utf8' });
-  }
 
   function runExport({ dslFile, provider, outputPath, deterministic = false, extraArgs = [] }) {
     const args = [
@@ -33,7 +27,7 @@ describe('CLI Regression Guard', () => {
       args.push('--deterministic');
     }
     args.push('--json');
-    return runCli(args);
+    return harness.runCli(args);
   }
 
   function writeTokenTheme() {
@@ -166,7 +160,7 @@ module.exports = {
 };
 `, 'utf8');
 
-    const result = runCli([
+    const result = harness.runCli([
       'export',
       '--file', dslFile,
       '--provider', 'solid',

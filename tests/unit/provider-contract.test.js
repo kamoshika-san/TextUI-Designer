@@ -1,13 +1,12 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { spawnSync } = require('child_process');
+const { createCliTestHarness } = require('../helpers/cli-test-harness');
 
 describe('Provider contract', () => {
-  const repoRoot = path.resolve(__dirname, '../..');
-  const cliPath = path.join(repoRoot, 'out/cli/index.js');
-  const sampleFile = path.join(repoRoot, 'sample/01-basic/sample.tui.yml');
-  const tmpDir = path.join(repoRoot, '.tmp-provider-contract-test');
+  const harness = createCliTestHarness({ tempPrefix: '.tmp-provider-contract-test-' });
+  const sampleFile = harness.sampleFile;
+  let tmpDir;
 
   const expectedBuiltins = [
     { name: 'html', extension: '.html' },
@@ -18,20 +17,15 @@ describe('Provider contract', () => {
   ];
 
   beforeEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
-    fs.mkdirSync(tmpDir, { recursive: true });
+    tmpDir = harness.createTempDir();
   });
 
   afterEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    harness.cleanupTempDir(tmpDir);
   });
 
-  function runCli(args) {
-    return spawnSync('node', [cliPath, ...args], { encoding: 'utf8' });
-  }
-
   it('providers --json returns required fields and built-in set', () => {
-    const result = runCli(['providers', '--json']);
+    const result = harness.runCli(['providers', '--json']);
     assert.strictEqual(result.status, 0);
 
     const parsed = JSON.parse(result.stdout);
@@ -53,7 +47,7 @@ describe('Provider contract', () => {
       this.timeout(10000);
 
       const outputPath = path.join(tmpDir, `result-${provider.name}${provider.extension}`);
-      const result = runCli([
+      const result = harness.runCli([
         'export',
         '--file', sampleFile,
         '--provider', provider.name,
