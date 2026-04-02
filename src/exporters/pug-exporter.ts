@@ -174,9 +174,51 @@ export class PugExporter extends BaseComponentRenderer {
     return renderPugIcon(props, this.escapeHtml.bind(this), this.escapeAttribute.bind(this), this.getPugTokenStyleSuffix('Icon', token));
   }
 
-  // TODO T-20260330-303: implement full Modal Pug output
-  protected renderModal(_props: ModalComponent, _key: number): string {
-    return '';
+  protected renderModal(props: ModalComponent, _key: number): string {
+    const { title, open = true, body, actions, token } = props;
+    if (!open) {
+      return '';
+    }
+
+    const tokenStyle = this.getPugTokenStyleModifier('Modal', token);
+    const safeTitle = title ? this.escapeHtml(title) : '';
+    const safeBody = body ? this.escapeHtml(body) : '';
+    const actionKindClass: Record<'primary' | 'secondary' | 'danger' | 'ghost', string> = {
+      primary: 'bg-blue-600 hover:bg-blue-700 text-white',
+      secondary: 'bg-gray-700 hover:bg-gray-600 text-gray-300',
+      danger: 'bg-red-600 hover:bg-red-700 text-white',
+      ghost: 'bg-transparent border border-gray-500 text-gray-300 hover:bg-gray-700/30'
+    };
+    const renderBlockText = (value: string, indent: string): string =>
+      value
+        .split('\n')
+        .map(line => `${indent}| ${line}`)
+        .join('\n');
+
+    let code = `      .textui-modal(style="max-width: 32rem; margin-bottom: 1rem;"${tokenStyle})`;
+    code += '\n        .textui-modal-surface(style="background-color: rgb(31 41 55); border: 1px solid rgb(75 85 99); border-radius: 0.5rem; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5);")';
+
+    if (safeTitle) {
+      code += '\n          .textui-modal-header(style="padding: 1rem 1.25rem 0.75rem; border-bottom: 1px solid rgb(55 65 81);")';
+      code += `\n            span.textui-modal-title(style="font-size: 1rem; font-weight: 600; color: rgb(243 244 246);") ${safeTitle}`;
+    }
+
+    if (safeBody) {
+      code += '\n          .textui-modal-body(style="padding: 1rem 1.25rem; font-size: 0.875rem; color: rgb(209 213 219); white-space: pre-line;")';
+      code += `\n${renderBlockText(safeBody, '            ')}`;
+    }
+
+    if (actions && actions.length > 0) {
+      code += '\n          .textui-modal-footer(style="display: flex; justify-content: flex-end; gap: 0.5rem; padding: 0.75rem 1.25rem; border-top: 1px solid rgb(55 65 81);")';
+      actions.forEach(action => {
+        const kind = action.kind ?? 'secondary';
+        const className = actionKindClass[kind] ?? actionKindClass.secondary;
+        const safeLabel = this.escapeHtml(action.label ?? '');
+        code += `\n            button(type="button" class="textui-modal-action inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${className} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500") ${safeLabel}`;
+      });
+    }
+
+    return code;
   }
 
   protected renderLink(props: LinkComponent, _key: number): string {
