@@ -8,6 +8,7 @@ import {
   mapSimpleError
 } from './error-mappers';
 import type { ErrorInfo } from './error-guidance';
+import { reducePreviewUpdateStatus, type PreviewUpdateStatus } from './preview-update-status';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -45,12 +46,12 @@ interface UseWebviewMessagesOptions {
   postReady: () => void;
   applyDslUpdate: (dsl: TextUIDSL) => void;
   setError: (value: ErrorInfo | string | null) => void;
-  setIsUpdating: (value: boolean) => void;
+  setUpdateStatus: (updater: (current: PreviewUpdateStatus) => PreviewUpdateStatus) => void;
   setShowJumpToDslHoverIndicator: (value: boolean) => void;
 }
 
 export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
-  const { postReady, applyDslUpdate, setError, setIsUpdating, setShowJumpToDslHoverIndicator } = options;
+  const { postReady, applyDslUpdate, setError, setUpdateStatus, setShowJumpToDslHoverIndicator } = options;
 
   useEffect(() => {
     postReady();
@@ -67,24 +68,24 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
       switch (message.type) {
         case 'json':
           applyDslUpdate(message.json as TextUIDSL);
-          setIsUpdating(false);
+          setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-complete'));
           setError(null);
           break;
         case 'update':
           applyDslUpdate(message.data as TextUIDSL);
-          setIsUpdating(false);
+          setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-complete'));
           setError(null);
           break;
         case 'preview-updating':
-          setIsUpdating(true);
+          setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-updating'));
           break;
         case 'error':
-          setIsUpdating(false);
+          setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-error'));
           setError(mapSimpleError(message));
           break;
         case 'schema-error': {
           const schemaErrors = formatSchemaErrors(message.errors);
-          setIsUpdating(false);
+          setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-error'));
           setError(mapSchemaValidationError(message, schemaErrors));
           break;
         }
@@ -103,15 +104,15 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
           );
           break;
         case 'parseError':
-          setIsUpdating(false);
+          setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-error'));
           setError(mapParseError(message));
           break;
         case 'schemaError':
-          setIsUpdating(false);
+          setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-error'));
           setError(mapDetailedSchemaError(message));
           break;
         case 'clearError':
-          setIsUpdating(false);
+          setUpdateStatus(current => reducePreviewUpdateStatus(current, 'clear-error'));
           setError(null);
           break;
         default:
@@ -123,5 +124,5 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
 
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [postReady, applyDslUpdate, setError, setIsUpdating, setShowJumpToDslHoverIndicator]);
+  }, [postReady, applyDslUpdate, setError, setUpdateStatus, setShowJumpToDslHoverIndicator]);
 }

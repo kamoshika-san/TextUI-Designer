@@ -13,6 +13,7 @@ import { UpdateIndicator } from './components/UpdateIndicator';
 import { useWebviewMessages } from './use-webview-messages';
 import { attachDevToolsListener } from './devtools-listener';
 import { getSharedLayoutStyles } from '../shared/layout-styles';
+import type { PreviewUpdateStatus } from './preview-update-status';
 import {
   persistJumpToDslOnboardingDismissed,
   shouldShowJumpToDslOnboarding
@@ -28,7 +29,7 @@ const isDevelopmentMode = Boolean(
 const App: React.FC = () => {
   const [json, setJson] = useState<TextUIDSL | null>(null);
   const [error, setError] = useState<ErrorInfo | string | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<PreviewUpdateStatus>('idle');
   const [showJumpToDslHoverIndicator, setShowJumpToDslHoverIndicator] = useState(true);
   const [showJumpToDslOnboarding, setShowJumpToDslOnboarding] = useState(() =>
     shouldShowJumpToDslOnboarding(typeof window !== 'undefined' ? window.localStorage : undefined)
@@ -63,9 +64,24 @@ const App: React.FC = () => {
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
       }
+      @keyframes textui-update-indicator-fadeout {
+        0% { opacity: 1; transform: translateY(0); }
+        70% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(0.35rem); }
+      }
     `;
     document.head.appendChild(styleEl);
   }, []);
+
+  useEffect(() => {
+    if (updateStatus !== 'done') {
+      return;
+    }
+    const timeout = window.setTimeout(() => {
+      setUpdateStatus('idle');
+    }, 1200);
+    return () => window.clearTimeout(timeout);
+  }, [updateStatus]);
 
   const applyDslUpdate = useCallback((incomingDsl: TextUIDSL) => {
     const startedAt = performance.now();
@@ -143,7 +159,7 @@ const App: React.FC = () => {
     postReady,
     applyDslUpdate,
     setError,
-    setIsUpdating,
+    setUpdateStatus,
     setShowJumpToDslHoverIndicator
   });
 
@@ -267,7 +283,7 @@ const App: React.FC = () => {
       <ThemeToggle />
       <CustomThemeSelector />
       <ExportButton onExport={handleExport} />
-      <UpdateIndicator isUpdating={isUpdating} />
+      <UpdateIndicator status={updateStatus} />
       {components.map((comp, i) => renderRegisteredComponent(comp, componentKeys[i] || i, {
         dslPath: `/page/components/${i}`,
         onJumpToDsl: handleJumpToDsl
