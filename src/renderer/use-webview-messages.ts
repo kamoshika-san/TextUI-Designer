@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
 import type { TextUIDSL } from '../domain/dsl-types';
 import {
   formatSchemaErrors,
@@ -8,7 +8,16 @@ import {
   mapSimpleError
 } from './error-mappers';
 import type { ErrorInfo } from './error-guidance';
-import { reducePreviewUpdateStatus, type PreviewUpdateStatus } from './preview-update-status';
+import type { PreviewUpdateStatus } from './preview-update-status';
+import {
+  abortPreviewUpdateIndicatorGate,
+  beginPreviewUpdateIndicatorGate,
+  completePreviewUpdateIndicatorGate,
+  INITIAL_PREVIEW_UPDATE_INDICATOR_GATE_STATE,
+  PREVIEW_UPDATE_INDICATOR_THRESHOLD_MS,
+  revealPreviewUpdateIndicator,
+  type PreviewUpdateIndicatorGateState
+} from './preview-update-indicator-gate';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -46,7 +55,7 @@ interface UseWebviewMessagesOptions {
   postReady: () => void;
   applyDslUpdate: (dsl: TextUIDSL) => void;
   setError: (value: ErrorInfo | string | null) => void;
-  setUpdateStatus: (updater: (current: PreviewUpdateStatus) => PreviewUpdateStatus) => void;
+  setUpdateStatus: Dispatch<SetStateAction<PreviewUpdateStatus>>;
   setLastCompletedAt: (value: number | null) => void;
   setShowUpdateIndicator: (value: boolean) => void;
   setShowJumpToDslHoverIndicator: (value: boolean) => void;
@@ -75,9 +84,18 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
     setShowUpdateIndicator,
     setShowJumpToDslHoverIndicator
   } = options;
+  const updateIndicatorGateRef = useRef<PreviewUpdateIndicatorGateState>(INITIAL_PREVIEW_UPDATE_INDICATOR_GATE_STATE);
+  const updateIndicatorTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     postReady();
+
+    const clearPendingUpdateIndicator = () => {
+      if (updateIndicatorTimeoutRef.current !== null) {
+        window.clearTimeout(updateIndicatorTimeoutRef.current);
+        updateIndicatorTimeoutRef.current = null;
+      }
+    };
 
     const onMessage = (event: MessageEvent<unknown>) => {
       const message = event.data;
@@ -91,29 +109,54 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
       switch (message.type) {
         case 'json':
           applyDslUpdate(message.json as TextUIDSL);
+          clearPendingUpdateIndicator();
+          {
+            const next = completePreviewUpdateIndicatorGate(updateIndicatorGateRef.current);
+            updateIndicatorGateRef.current = next.gate;
           setLastCompletedAt(Date.now());
-          setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-complete'));
+            setUpdateStatus(next.status);
+          }
           setError(null);
           break;
         case 'update':
           applyDslUpdate(message.data as TextUIDSL);
+          clearPendingUpdateIndicator();
+          {
+            const next = completePreviewUpdateIndicatorGate(updateIndicatorGateRef.current);
+            updateIndicatorGateRef.current = next.gate;
           setLastCompletedAt(Date.now());
-          setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-complete'));
+            setUpdateStatus(next.status);
+          }
           setError(null);
           break;
         case 'preview-updating':
+          clearPendingUpdateIndicator();
+          updateIndicatorGateRef.current = beginPreviewUpdateIndicatorGate();
           setLastCompletedAt(null);
-          setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-updating'));
+          updateIndicatorTimeoutRef.current = window.setTimeout(() => {
+            const next = revealPreviewUpdateIndicator();
+            updateIndicatorGateRef.current = next.gate;
+            updateIndicatorTimeoutRef.current = null;
+            setUpdateStatus(next.status);
+          }, PREVIEW_UPDATE_INDICATOR_THRESHOLD_MS);
           break;
         case 'error':
+          clearPendingUpdateIndicator();
+          {
+            const next = abortPreviewUpdateIndicatorGate();
+            updateIndicatorGateRef.current = next.gate;
           setLastCompletedAt(null);
-          setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-error'));
+            setUpdateStatus(next.status);
+          }
           setError(mapSimpleError(message));
           break;
         case 'schema-error': {
           const schemaErrors = formatSchemaErrors(message.errors);
+          clearPendingUpdateIndicator();
+          const next = abortPreviewUpdateIndicatorGate();
+          updateIndicatorGateRef.current = next.gate;
           setLastCompletedAt(null);
-          setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-error'));
+          setUpdateStatus(next.status);
           setError(mapSchemaValidationError(message, schemaErrors));
           break;
         }
@@ -129,18 +172,33 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
           break;
         }
         case 'parseError':
+          clearPendingUpdateIndicator();
+          {
+            const next = abortPreviewUpdateIndicatorGate();
+            updateIndicatorGateRef.current = next.gate;
           setLastCompletedAt(null);
-          setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-error'));
+            setUpdateStatus(next.status);
+          }
           setError(mapParseError(message));
           break;
         case 'schemaError':
+          clearPendingUpdateIndicator();
+          {
+            const next = abortPreviewUpdateIndicatorGate();
+            updateIndicatorGateRef.current = next.gate;
           setLastCompletedAt(null);
-          setUpdateStatus(current => reducePreviewUpdateStatus(current, 'preview-update-error'));
+            setUpdateStatus(next.status);
+          }
           setError(mapDetailedSchemaError(message));
           break;
         case 'clearError':
+          clearPendingUpdateIndicator();
+          {
+            const next = abortPreviewUpdateIndicatorGate();
+            updateIndicatorGateRef.current = next.gate;
           setLastCompletedAt(null);
-          setUpdateStatus(current => reducePreviewUpdateStatus(current, 'clear-error'));
+            setUpdateStatus(next.status);
+          }
           setError(null);
           break;
         default:
@@ -151,6 +209,9 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
     };
 
     window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
+    return () => {
+      clearPendingUpdateIndicator();
+      window.removeEventListener('message', onMessage);
+    };
   }, [postReady, applyDslUpdate, setError, setUpdateStatus, setLastCompletedAt, setShowUpdateIndicator, setShowJumpToDslHoverIndicator]);
 }
