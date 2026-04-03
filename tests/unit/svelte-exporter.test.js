@@ -2,7 +2,9 @@ const assert = require('assert');
 const { SvelteExporter } = require('../../out/exporters/svelte-exporter');
 const {
   loadSample,
-  assertRepresentativeMarkup
+  assertRepresentativeMarkup,
+  exportPrimaryHtmlSample,
+  assertPrimaryLaneCompatibility
 } = require('./helpers/framework-exporter-test-utils');
 
 describe('SvelteExporter', () => {
@@ -36,6 +38,14 @@ describe('SvelteExporter', () => {
     assert.match(output, /Props: Future props should land here as `export let` declarations\./);
     assert.match(output, /Derived state: Future derived state should stay in the script block as reactive declarations\/helpers\./);
     assert.match(output, /Events: Future events should stay dispatcher-based so the static markup contract remains intact\./);
+  });
+
+  it('keeps primary-lane visible semantics and semantic class hooks for the representative sample', async () => {
+    const { dsl, html } = await exportPrimaryHtmlSample('sample/01-basic/sample.tui.yml');
+
+    const output = await exporter.export(dsl, { format: 'svelte' });
+
+    assertPrimaryLaneCompatibility(output, html);
   });
 
   it('is deterministic for repeated exports of the same DSL input', async () => {

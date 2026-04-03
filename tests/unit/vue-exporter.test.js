@@ -2,7 +2,9 @@ const assert = require('assert');
 const { VueExporter } = require('../../out/exporters/vue-exporter');
 const {
   loadSample,
-  assertRepresentativeMarkup
+  assertRepresentativeMarkup,
+  exportPrimaryHtmlSample,
+  assertPrimaryLaneCompatibility
 } = require('./helpers/framework-exporter-test-utils');
 
 describe('VueExporter', () => {
@@ -36,6 +38,14 @@ describe('VueExporter', () => {
     assert.match(output, /Props: Future props should land here through `defineProps`\./);
     assert.match(output, /Derived state: Future derived state should stay in the script setup block via refs\/computed helpers\./);
     assert.match(output, /Events: Future events should land here through `defineEmits` without changing template structure by default\./);
+  });
+
+  it('keeps primary-lane visible semantics and semantic class hooks for the representative sample', async () => {
+    const { dsl, html } = await exportPrimaryHtmlSample('sample/01-basic/sample.tui.yml');
+
+    const output = await exporter.export(dsl, { format: 'vue' });
+
+    assertPrimaryLaneCompatibility(output, html);
   });
 
   it('is deterministic for repeated exports of the same DSL input', async () => {
