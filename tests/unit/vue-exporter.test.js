@@ -27,6 +27,17 @@ describe('VueExporter', () => {
     assertRepresentativeMarkup(output, 'main');
   });
 
+  it('documents reserved script-side extension points for future props, derived state, and events', async () => {
+    const dsl = loadSample('sample/01-basic/sample.tui.yml');
+
+    const output = await exporter.export(dsl, { format: 'vue' });
+
+    assert.match(output, /Reserved extension points for future framework-aware generation\./);
+    assert.match(output, /Props: Future props should land here through `defineProps`\./);
+    assert.match(output, /Derived state: Future derived state should stay in the script setup block via refs\/computed helpers\./);
+    assert.match(output, /Events: Future events should land here through `defineEmits` without changing template structure by default\./);
+  });
+
   it('is deterministic for repeated exports of the same DSL input', async () => {
     const dsl = loadSample('sample/01-basic/sample.tui.yml');
 
