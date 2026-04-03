@@ -1,6 +1,12 @@
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 const LOGGER_PREFIX = '[TextUI]';
+const LOG_LEVEL_LABELS: Record<LogLevel, string> = {
+  debug: 'DEBUG',
+  info: 'INFO',
+  warn: 'WARN',
+  error: 'ERROR'
+};
 const LOG_LEVEL_ORDER: Record<LogLevel, number> = {
   debug: 10,
   info: 20,
@@ -53,7 +59,7 @@ export class Logger {
       return;
     }
 
-    const formattedMessage = `${LOGGER_PREFIX}[${this.scope}] ${message}`;
+    const formattedMessage = `${LOGGER_PREFIX}[${LOG_LEVEL_LABELS[level]}][${this.scope}] ${message}`;
     switch (level) {
       case 'debug':
       case 'info':
