@@ -156,6 +156,27 @@ const dsl = yaml.parse(fs.readFileSync('./sample/01-basic/sample.tui.yml', 'utf8
 new HtmlExporter().export(dsl, { format: 'html' }).then(html => console.log(html));
 ```
 
+Generated framework files are also available for Svelte and Vue in the current exporter wave:
+
+- `.svelte` output uses a stable `<script lang="ts">`, `<main class="textui-generated">`, and `<style>` layout.
+- `.vue` output uses a stable `<template>`, `<script setup lang="ts">`, and `<style scoped>` layout.
+- both formats preserve the same representative text content and semantic class hooks as the primary HTML lane where intended.
+- both formats keep Tailwind-oriented classes in the generated markup. Enable Tailwind in the consuming app when you want those classes to take effect.
+- current “production-ready” scope means stable generated file shape, compatibility coverage against the primary HTML lane, and release-gate validation. It does not yet mean full framework-specific reactive bindings.
+
+You can sanity-check the compiled framework exporters without launching VS Code:
+
+```js
+const { SvelteExporter } = require('./out/exporters/svelte-exporter');
+const { VueExporter } = require('./out/exporters/vue-exporter');
+const yaml = require('yaml');
+const fs = require('fs');
+
+const dsl = yaml.parse(fs.readFileSync('./sample/01-basic/sample.tui.yml', 'utf8'));
+new SvelteExporter().export(dsl, { format: 'svelte' }).then(code => console.log(code));
+new VueExporter().export(dsl, { format: 'vue' }).then(code => console.log(code));
+```
+
 ## What This Page Does Not Cover
 
 - full contributor workflow policy
