@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const COVERAGE_SUMMARY_PATH = path.resolve('coverage/coverage-summary.json');
-const CLI_SOURCE_PREFIX = `${path.resolve('src/cli')}${path.sep}`;
+const CLI_SCOPE_SEGMENTS = ['src', 'cli'];
 const DEFAULT_THRESHOLDS = {
   statements: Number(process.env.TEXTUI_CLI_COVERAGE_STATEMENTS ?? 80),
   branches: Number(process.env.TEXTUI_CLI_COVERAGE_BRANCHES ?? 70),
@@ -25,63 +25,110 @@ function appendStepSummary(lines) {
   fs.appendFileSync(summaryPath, `${lines.join('\n')}\n`, 'utf8');
 }
 
-if (!fs.existsSync(COVERAGE_SUMMARY_PATH)) {
-  console.error(`[cli-coverage] ERROR: coverage summary not found: ${COVERAGE_SUMMARY_PATH}`);
-  process.exit(1);
+function normalizeCoveragePath(filePath) {
+  return path.normalize(filePath).replace(/[\\/]+/g, '/');
 }
 
-const coverageSummary = JSON.parse(fs.readFileSync(COVERAGE_SUMMARY_PATH, 'utf8'));
-const cliEntries = Object.entries(coverageSummary).filter(([filePath]) =>
-  filePath !== 'total' && filePath.startsWith(CLI_SOURCE_PREFIX)
-);
+function isCliCoverageEntry(filePath) {
+  if (!filePath || filePath === 'total') {
+    return false;
+  }
 
-if (cliEntries.length === 0) {
-  console.error(`[cli-coverage] ERROR: no CLI coverage entries found under ${CLI_SOURCE_PREFIX}`);
-  process.exit(1);
+  const normalizedPath = normalizeCoveragePath(filePath);
+  return normalizedPath.includes('/src/cli/') || normalizedPath.startsWith('src/cli/');
 }
 
-const aggregate = {
-  statements: { total: 0, covered: 0 },
-  branches: { total: 0, covered: 0 },
-  functions: { total: 0, covered: 0 },
-  lines: { total: 0, covered: 0 }
-};
+function collectCliEntries(coverageSummary) {
+  return Object.entries(coverageSummary).filter(([filePath]) => isCliCoverageEntry(filePath));
+}
 
-for (const [, fileCoverage] of cliEntries) {
+function evaluateCliCoverage(coverageSummary, thresholds = DEFAULT_THRESHOLDS) {
+  const cliEntries = collectCliEntries(coverageSummary);
+
+  if (cliEntries.length === 0) {
+    return {
+      cliEntries,
+      aggregate: null,
+      failures: ['no-cli-entries']
+    };
+  }
+
+  const aggregate = {
+    statements: { total: 0, covered: 0 },
+    branches: { total: 0, covered: 0 },
+    functions: { total: 0, covered: 0 },
+    lines: { total: 0, covered: 0 }
+  };
+
+  for (const [, fileCoverage] of cliEntries) {
+    for (const metricName of Object.keys(aggregate)) {
+      aggregate[metricName].total += fileCoverage[metricName].total;
+      aggregate[metricName].covered += fileCoverage[metricName].covered;
+    }
+  }
+
+  const failures = [];
   for (const metricName of Object.keys(aggregate)) {
-    aggregate[metricName].total += fileCoverage[metricName].total;
-    aggregate[metricName].covered += fileCoverage[metricName].covered;
+    const pct = Number(formatPct(aggregate[metricName]));
+    const threshold = thresholds[metricName];
+    if (pct < threshold) {
+      failures.push(`${metricName} ${pct.toFixed(2)} < ${threshold}`);
+    }
   }
+
+  return { cliEntries, aggregate, failures };
 }
 
-console.log(`[cli-coverage] checking CLI coverage across ${cliEntries.length} file(s)`);
-
-const failures = [];
-for (const metricName of Object.keys(aggregate)) {
-  const pct = Number(formatPct(aggregate[metricName]));
-  const threshold = DEFAULT_THRESHOLDS[metricName];
-  const status = pct >= threshold ? 'PASS' : 'FAIL';
-  console.log(
-    `[cli-coverage] ${metricName}: threshold=${threshold}, current=${pct.toFixed(2)}, status=${status}`
-  );
-  if (pct < threshold) {
-    failures.push(`${metricName} ${pct.toFixed(2)} < ${threshold}`);
+function runCliCoverageGate() {
+  if (!fs.existsSync(COVERAGE_SUMMARY_PATH)) {
+    console.error(`[cli-coverage] ERROR: coverage summary not found: ${COVERAGE_SUMMARY_PATH}`);
+    process.exit(1);
   }
+
+  const coverageSummary = JSON.parse(fs.readFileSync(COVERAGE_SUMMARY_PATH, 'utf8'));
+  const { cliEntries, aggregate, failures } = evaluateCliCoverage(coverageSummary);
+
+  if (cliEntries.length === 0) {
+    console.error(`[cli-coverage] ERROR: no CLI coverage entries found under src/cli/**`);
+    process.exit(1);
+  }
+
+  console.log(`[cli-coverage] checking CLI coverage across ${cliEntries.length} file(s)`);
+
+  for (const metricName of Object.keys(aggregate)) {
+    const pct = Number(formatPct(aggregate[metricName]));
+    const threshold = DEFAULT_THRESHOLDS[metricName];
+    const status = pct >= threshold ? 'PASS' : 'FAIL';
+    console.log(
+      `[cli-coverage] ${metricName}: threshold=${threshold}, current=${pct.toFixed(2)}, status=${status}`
+    );
+  }
+
+  appendStepSummary([
+    '## CLI Coverage Gate',
+    `- Scope: \`src/cli/**\``,
+    `- Files: ${cliEntries.length}`,
+    `- Statements: ${formatPct(aggregate.statements)}% (threshold ${DEFAULT_THRESHOLDS.statements}%)`,
+    `- Branches: ${formatPct(aggregate.branches)}% (threshold ${DEFAULT_THRESHOLDS.branches}%)`,
+    `- Functions: ${formatPct(aggregate.functions)}% (threshold ${DEFAULT_THRESHOLDS.functions}%)`,
+    `- Lines: ${formatPct(aggregate.lines)}% (threshold ${DEFAULT_THRESHOLDS.lines}%)`
+  ]);
+
+  if (failures.length > 0) {
+    console.error(`[cli-coverage] FAIL: ${failures.join('; ')}`);
+    process.exit(1);
+  }
+
+  console.log('[cli-coverage] PASS: CLI slice meets the current baseline');
 }
 
-appendStepSummary([
-  '## CLI Coverage Gate',
-  `- Scope: \`src/cli/**\``,
-  `- Files: ${cliEntries.length}`,
-  `- Statements: ${formatPct(aggregate.statements)}% (threshold ${DEFAULT_THRESHOLDS.statements}%)`,
-  `- Branches: ${formatPct(aggregate.branches)}% (threshold ${DEFAULT_THRESHOLDS.branches}%)`,
-  `- Functions: ${formatPct(aggregate.functions)}% (threshold ${DEFAULT_THRESHOLDS.functions}%)`,
-  `- Lines: ${formatPct(aggregate.lines)}% (threshold ${DEFAULT_THRESHOLDS.lines}%)`
-]);
-
-if (failures.length > 0) {
-  console.error(`[cli-coverage] FAIL: ${failures.join('; ')}`);
-  process.exit(1);
+if (require.main === module) {
+  runCliCoverageGate();
 }
 
-console.log('[cli-coverage] PASS: CLI slice meets the current baseline');
+module.exports = {
+  normalizeCoveragePath,
+  isCliCoverageEntry,
+  collectCliEntries,
+  evaluateCliCoverage
+};
