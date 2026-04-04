@@ -4,7 +4,7 @@
  * vscode APIを使わない純粋なロジック部分をテストします
  */
 
-const { describe, it } = require('mocha');
+
 const assert = require('assert');
 const path = require('path');
 const fs = require('fs');

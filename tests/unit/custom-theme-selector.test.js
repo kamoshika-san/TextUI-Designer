@@ -4,7 +4,7 @@
  * React コンポーネントのテーマ切り替えUI機能をテストします
  */
 
-const { describe, it, beforeEach, afterEach } = require('mocha');
+
 const assert = require('assert');
 
 describe('CustomThemeSelector 単体テスト', () => {
