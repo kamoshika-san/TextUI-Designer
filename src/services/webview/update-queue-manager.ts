@@ -1,4 +1,5 @@
 import { ConfigManager } from '../../utils/config-manager';
+import { Logger } from '../../utils/logger';
 import type { IWebViewUpdateQueue } from './webview-update-manager-deps';
 import type { PreviewPipelineQueueTrace } from './preview-pipeline-observability';
 import {
@@ -36,6 +37,7 @@ export class UpdateQueueManager implements IWebViewUpdateQueue {
   private pendingLatestTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   private readonly MAX_QUEUE_SIZE: number = 5; // キューサイズ制限
   private taskIdCounter: number = 0;
+  private readonly logger = new Logger('UpdateQueueManager');
 
   constructor() {
     // コンストラクタで初期化
@@ -69,8 +71,8 @@ export class UpdateQueueManager implements IWebViewUpdateQueue {
     ) {
       const wait = Math.max(0, minInterval - (now - this.lastUpdateTime));
       const replacedPending = this.pendingLatest !== null;
-      console.log(
-        `[UpdateQueueManager] 最小更新間隔（${minInterval}ms）のため ${wait}ms 後に最新タスクを実行します`
+      this.logger.debug(
+        `最小更新間隔（${minInterval}ms）のため ${wait}ms 後に最新タスクを実行します`
       );
       logPreviewQueueCoalescedMinInterval({ waitMs: wait, trace, replacedPending });
       this.pendingLatest = { fn: updateFunction, priority, trace };
@@ -146,7 +148,7 @@ export class UpdateQueueManager implements IWebViewUpdateQueue {
         const task = this.updateQueue.shift();
         if (task) {
           try {
-            console.log(`[UpdateQueueManager] タスク実行中: ${task.id} (優先度: ${task.priority})`);
+            this.logger.debug(`タスク実行中: ${task.id} (優先度: ${task.priority})`);
             await (task.trace
               ? withPreviewPipelineTrace(task.trace, () => task.execute())
               : task.execute());
@@ -157,7 +159,7 @@ export class UpdateQueueManager implements IWebViewUpdateQueue {
               await new Promise(resolve => setTimeout(resolve, 20));
             }
           } catch (error) {
-            console.error(`[UpdateQueueManager] タスク実行でエラーが発生しました: ${task.id}`, error);
+            this.logger.error(`タスク実行でエラーが発生しました: ${task.id}`, error);
           }
         }
       }
@@ -207,7 +209,7 @@ export class UpdateQueueManager implements IWebViewUpdateQueue {
     }
 
     const removedTask = this.updateQueue.splice(lowestPriorityIndex, 1)[0];
-    console.log(`[UpdateQueueManager] 古いタスクを削除: ${removedTask.id} (優先度: ${removedTask.priority})`);
+    this.logger.info(`古いタスクを削除: ${removedTask.id} (優先度: ${removedTask.priority})`);
     logPreviewQueueDropped({
       droppedTaskId: removedTask.id,
       droppedPriority: removedTask.priority,
@@ -222,7 +224,7 @@ export class UpdateQueueManager implements IWebViewUpdateQueue {
     const queueSize = this.updateQueue.length;
     this.updateQueue = [];
     this.clearPendingLatestSchedule();
-    console.log(`[UpdateQueueManager] キューをクリアしました (${queueSize}個のタスク)`);
+    this.logger.info(`キューをクリアしました (${queueSize}個のタスク)`);
   }
 
   /**
@@ -247,7 +249,7 @@ export class UpdateQueueManager implements IWebViewUpdateQueue {
     const index = this.updateQueue.findIndex(task => task.id === taskId);
     if (index !== -1) {
       this.updateQueue.splice(index, 1);
-      console.log(`[UpdateQueueManager] タスクをキャンセル: ${taskId}`);
+      this.logger.info(`タスクをキャンセル: ${taskId}`);
       return true;
     }
     return false;
@@ -260,7 +262,7 @@ export class UpdateQueueManager implements IWebViewUpdateQueue {
     if (this.updateTimeout) {
       clearTimeout(this.updateTimeout);
       this.updateTimeout = undefined;
-      console.log('[UpdateQueueManager] デバウンスタイマーをクリアしました');
+      this.logger.info('デバウンスタイマーをクリアしました');
     }
   }
 

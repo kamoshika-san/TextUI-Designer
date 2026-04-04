@@ -7,6 +7,7 @@ import { YamlContentReader } from './yaml-content-reader';
 import { buildYamlParseErrorSuggestions } from './yaml-error-suggestions';
 import { YamlIncludeResolver } from './yaml-include-resolver';
 import { YamlSchemaValidator } from './yaml-schema-validator';
+import { Logger } from '../../utils/logger';
 
 export interface YamlSchemaLoader {
   loadSchema(): Promise<SchemaDefinition>;
@@ -44,6 +45,7 @@ export class YamlParser {
   private readonly contentReader: YamlContentReader;
   private readonly includeResolver: YamlIncludeResolver;
   private readonly schemaValidator: YamlSchemaValidator;
+  private readonly logger = new Logger('YamlParser');
 
   constructor(schemaLoader?: YamlSchemaLoader) {
     this.performanceMonitor = new PreviewPerformanceMonitor();
@@ -88,7 +90,7 @@ export class YamlParser {
     try {
       return await parseYamlTextAsync(yamlContent);
     } catch (parseError) {
-      console.error('[YamlParser] YAMLパースエラー:', parseError);
+      this.logger.error('YAMLパースエラー:', parseError);
       throw this.createParseError(parseError, yamlContent, fileName);
     }
   }
@@ -111,19 +113,15 @@ export class YamlParser {
     try {
       const validationErrors = await this.schemaValidator.validate(yaml);
       if (validationErrors && validationErrors.length > 0) {
-        console.warn('[YamlParser] スキーマバリデーションエラー:', validationErrors);
+        this.logger.warn('スキーマバリデーションエラー:', validationErrors);
         throw this.createSchemaError(validationErrors, _yamlContent, fileName);
       }
     } catch (error: unknown) {
       if (error instanceof Error && error.name === 'SchemaValidationError') {
         throw error;
       }
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[YamlParser] スキーマバリデーションでエラーが発生しました:', error);
-      } else {
-        const message = error instanceof Error ? error.message : String(error);
-        console.error(`[YamlParser] スキーマバリデーションでエラーが発生しました: ${message}`);
-      }
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`スキーマバリデーションでエラーが発生しました: ${message}`, error);
       throw error;
     }
   }
