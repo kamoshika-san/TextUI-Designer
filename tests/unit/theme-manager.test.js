@@ -3,7 +3,7 @@
  */
 
 const assert = require('assert');
-const { describe, it, beforeEach, afterEach } = require('mocha');
+
 
 // グローバルにモックを設定
 global.vscode = global.vscode || {};

@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { describe, it } = require('mocha');
+
 
 const { themeStyleResolver } = require('../../out/exporters/theme-style-resolver.js');
 

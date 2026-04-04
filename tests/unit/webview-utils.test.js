@@ -7,7 +7,7 @@
 
 const assert = require('assert');
 const path = require('path');
-const { describe, it } = require('mocha');
+
 
 // tests/setup.js が差し替えた require('vscode')
 const vscode = require('vscode');
