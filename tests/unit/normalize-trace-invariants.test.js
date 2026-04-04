@@ -22,11 +22,13 @@ const assert = require('assert');
 let runStage0Intake;
 let runStage1Structural;
 let runStage2Value;
+let normalize;
 
 before(() => {
   runStage0Intake = require('../../out/core/diff-normalization/stage0-intake.js').runStage0Intake;
   runStage1Structural = require('../../out/core/diff-normalization/stage1-structural.js').runStage1Structural;
   runStage2Value = require('../../out/core/diff-normalization/stage2-value.js').runStage2Value;
+  normalize = require('../../out/core/diff-normalization/normalize.js').normalize;
 });
 
 // ---------------------------------------------------------------------------
@@ -134,10 +136,21 @@ describe('NormalizationTrace invariants (T-20260331-405)', () => {
     );
   });
 
-  it.skip('golden trace snapshot — requires normalize() public API (T-404 committed as 2506ed0; un-skip in follow-up)', () => {
-    // TODO: un-skip after T-404 review is approved.
-    // Import normalize from '../../out/core/diff-normalization/normalize.js'
-    // Call normalize(dslWithTokens())
-    // Assert trace snapshot matches expected shape
+  it('golden trace snapshot — verifies normalize() public API', () => {
+    const dsl = dslWithTokens();
+    const result = normalize(dsl);
+
+    assert.strictEqual(result.ok, true);
+    assert.ok(result.dsl, 'Normalized DSL should be present');
+    assert.ok(result.trace, 'Trace should be present');
+
+    // Verify trace shape
+    assert.ok(result.trace.entityPathMap, 'Trace should have entityPathMap');
+    assert.ok(result.trace.explicitnessMap, 'Trace should have explicitnessMap');
+    assert.ok(result.trace.ownershipMap, 'Trace should have ownershipMap');
+
+    // Verify some content
+    assert.ok(Object.values(result.trace.entityPathMap).includes('comp-a'));
+    assert.ok('page' in result.trace.ownershipMap);
   });
 });

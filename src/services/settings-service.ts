@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ConfigManager } from '../utils/config-manager';
 import { ErrorHandler } from '../utils/error-handler';
 import { ISettingsService } from '../types';
+import { Logger } from '../utils/logger';
 
 /**
  * 設定管理を担当するサービス
@@ -9,6 +10,7 @@ import { ISettingsService } from '../types';
 export class SettingsService implements ISettingsService {
   private configManager: typeof ConfigManager;
   private errorHandler: typeof ErrorHandler;
+  private readonly logger = new Logger('SettingsService');
 
   constructor(
     configManager: typeof ConfigManager = ConfigManager,
@@ -84,7 +86,7 @@ export class SettingsService implements ISettingsService {
     const result = await this.errorHandler.executeSafely(async () => {
       const autoPreviewEnabled = this.configManager.isAutoPreviewEnabled();
       const message = `自動プレビュー設定: ${autoPreviewEnabled ? 'ON' : 'OFF'}`;
-      console.log(`[SettingsService] ${message}`);
+      this.logger.info(message);
       this.errorHandler.showInfo(message);
     }, '自動プレビュー設定の表示に失敗しました');
 
@@ -127,12 +129,12 @@ export class SettingsService implements ISettingsService {
   startWatching(callback: () => void): vscode.Disposable {
     return vscode.workspace.onDidChangeConfiguration(event => {
       if (event.affectsConfiguration('textui-designer')) {
-        console.log('[SettingsService] TextUI Designer設定が変更されました');
+        this.logger.info('TextUI Designer設定が変更されました');
         
         // 自動プレビュー設定の変更を詳細にログ出力
         if (event.affectsConfiguration('textui-designer.autoPreview.enabled')) {
           const newValue = this.configManager.isAutoPreviewEnabled();
-          console.log(`[SettingsService] 自動プレビュー設定が変更されました: ${newValue ? 'ON' : 'OFF'}`);
+          this.logger.info(`自動プレビュー設定が変更されました: ${newValue ? 'ON' : 'OFF'}`);
         }
         callback();
       }
