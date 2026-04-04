@@ -20,6 +20,8 @@ export interface ExportOptions {
   extensionPath?: string;
   /** Whether to include descriptive comments in the generated output. */
   includeComments?: boolean;
+  /** PoC: Use native framework renderer instead of static HTML extraction. */
+  useNativeFrameworkRenderer?: boolean;
   /** Explicit OFF-by-default route gate for the incremental diff export path. */
   enableIncrementalDiffRoute?: boolean;
   /** Stable exporter-facing render targets derived from diff output. */
