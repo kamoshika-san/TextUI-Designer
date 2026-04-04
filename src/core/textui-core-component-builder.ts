@@ -155,6 +155,74 @@ const COMPONENT_SPECS = {
       }
     }
   },
+  Modal: {
+    applyDefaults: props => {
+      if (props.open === undefined) {
+        props.open = true;
+      }
+      if (typeof props.title !== 'string' || !props.title.trim()) {
+        props.title = 'メッセージ';
+      }
+    }
+  },
+  Link: {
+    applyDefaults: props => {
+      if (typeof props.label !== 'string' || !props.label.trim()) {
+        props.label = 'リンク';
+      }
+      if (typeof props.href !== 'string' || !props.href.trim()) {
+        props.href = '#';
+      }
+    }
+  },
+  Badge: {
+    applyDefaults: props => {
+      if (typeof props.label !== 'string' || !props.label.trim()) {
+        props.label = 'バッジ';
+      }
+    }
+  },
+  Progress: {
+    applyDefaults: props => {
+      if (props.value === undefined && !Array.isArray(props.segments)) {
+        props.value = 50;
+      }
+    }
+  },
+  Image: {
+    applyDefaults: props => {
+      if (typeof props.src !== 'string' || !props.src.trim()) {
+        props.src = 'https://via.placeholder.com/150';
+      }
+      if (typeof props.alt !== 'string' || !props.alt.trim()) {
+        props.alt = '画像';
+      }
+    }
+  },
+  Icon: {
+    applyDefaults: props => {
+      if (typeof props.name !== 'string' || !props.name.trim()) {
+        props.name = 'info';
+      }
+    }
+  },
+  Divider: {
+    applyDefaults: props => {
+      if (typeof props.orientation !== 'string' || !props.orientation.trim()) {
+        props.orientation = 'horizontal';
+      }
+    }
+  },
+  Spacer: {
+    applyDefaults: props => {
+      if (typeof props.axis !== 'string' || !props.axis.trim()) {
+        props.axis = 'vertical';
+      }
+      if (typeof props.size !== 'string' || !props.size.trim()) {
+        props.size = 'md';
+      }
+    }
+  },
 
   Breadcrumb: {
     applyDefaults: props => {
