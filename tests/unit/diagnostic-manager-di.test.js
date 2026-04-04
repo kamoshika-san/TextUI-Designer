@@ -4,7 +4,7 @@
  */
 
 const assert = require('assert');
-const { describe, it } = require('mocha');
+
 
 describe('DiagnosticManager DI (T-209)', () => {
   it('注入した scheduler / validationEngine / diagnosticCollection が使われる', async () => {

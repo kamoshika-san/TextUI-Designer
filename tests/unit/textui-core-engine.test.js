@@ -400,7 +400,15 @@ page:
       'DatePicker',
       'Alert',
       'Table',
-      'Breadcrumb'
+      'Breadcrumb',
+      'Modal',
+      'Link',
+      'Badge',
+      'Progress',
+      'Image',
+      'Icon',
+      'Divider',
+      'Spacer'
     ];
 
     const specTypes = getComponentSpecTypesForTesting();

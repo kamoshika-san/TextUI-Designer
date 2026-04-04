@@ -3,7 +3,7 @@
  */
 
 const assert = require('assert');
-const { describe, it } = require('mocha');
+
 
 const StyleManager = require('../../out/utils/style-manager.js').StyleManager;
 

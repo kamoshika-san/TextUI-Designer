@@ -23,3 +23,6 @@ icon.svg
 
 # コードメトリクス（CI / ローカルで生成）
 metrics/
+
+# Coverage reports
+coverage/

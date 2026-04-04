@@ -6,6 +6,7 @@ import { suggestSimilarKeys } from './diagnostics/key-suggestion';
 import { buildDiagnosticTemplate } from './diagnostics/template-builder';
 import { assembleDiagnosticMarkdownMessage } from './diagnostics/diagnostic-message-assembler';
 import { resolveDiagnosticLocation, resolveDiagnosticRange } from './diagnostics/range-resolver';
+import { SemanticDiagnosticEngine, type SemanticDiagnostic } from './diagnostics/semantic-diagnostic-engine';
 import { DiagnosticCacheStore, type DiagnosticCacheEntry } from './diagnostics/diagnostic-cache-store';
 import { DiagnosticScheduler, type IDiagnosticScheduler } from './diagnostics/diagnostic-scheduler';
 import {
@@ -44,6 +45,7 @@ export class DiagnosticManager {
   private cacheStore: DiagnosticCacheStore;
   private scheduler: IDiagnosticScheduler;
   private validationEngine: IDiagnosticValidationEngine;
+  private semanticEngine: SemanticDiagnosticEngine;
 
   constructor(schemaManager: ISchemaManager, deps?: DiagnosticManagerDeps) {
     this.diagnosticCollection =
@@ -53,6 +55,7 @@ export class DiagnosticManager {
     this.scheduler = deps?.scheduler ?? new DiagnosticScheduler();
     this.validationEngine =
       deps?.validationEngine ?? new DiagnosticValidationEngine(schemaManager, this.CACHE_TTL);
+    this.semanticEngine = new SemanticDiagnosticEngine();
   }
 
   /**
@@ -109,8 +112,16 @@ export class DiagnosticManager {
         vscode.DiagnosticSeverity.Error
       );
       diagnostics.push(diag);
-    } else if (result.errors && result.schema) {
-      diagnostics = this.createDiagnosticsFromErrors(result.errors, text, document, result.schema);
+    } else {
+      if (result.errors && result.schema) {
+        diagnostics = this.createDiagnosticsFromErrors(result.errors, text, document, result.schema);
+      }
+
+      // 意味論的診断を追加
+      if (schemaKind === 'main') {
+        const semanticResults = await this.semanticEngine.analyze(text);
+        diagnostics.push(...this.createDiagnosticsFromSemantic(semanticResults, text, document));
+      }
     }
 
     const cacheEntry = {
@@ -158,6 +169,63 @@ export class DiagnosticManager {
     }
 
     return diagnostics;
+  }
+
+  /**
+   * 意味論的診断情報から VS Code の診断オブジェクトを作成
+   */
+  private createDiagnosticsFromSemantic(
+    semanticResults: SemanticDiagnostic[],
+    text: string,
+    document: vscode.TextDocument
+  ): vscode.Diagnostic[] {
+    return semanticResults.map(res => {
+      const range = this.resolvePathToRange(res.path, text, document);
+
+      const severityMap = {
+        'error': vscode.DiagnosticSeverity.Error,
+        'warning': vscode.DiagnosticSeverity.Warning,
+        'info': vscode.DiagnosticSeverity.Information
+      };
+
+      const diag = new vscode.Diagnostic(
+        range,
+        `[${res.code}] ${res.message}`,
+        severityMap[res.severity]
+      );
+      diag.code = res.code;
+      return diag;
+    });
+  }
+
+  /**
+   * インスタンスパスをドキュメントのレンジに変換
+   */
+  private resolvePathToRange(path: string, text: string, document: vscode.TextDocument): vscode.Range {
+    const parts = path.split('/').filter(Boolean);
+
+    // 既存の resolveDiagnosticRange 内のロジックを流用（private メソッド経由にしたいところだが一旦手動）
+    // findRangeByPath があれば良いのだが range-resolver.ts でエクスポートされていない可能性があるため、一旦 range-resolver の resolveDiagnosticRange を利用できる形を模索
+    // 暫定的に range-resolver.ts で findRangeByPath をエクスポートするか、簡易的な実装をここで行う
+    // 今回は簡易的なパス一致ロジックを利用
+
+    let currentPos = 0;
+    for (const part of parts) {
+      if (/^\d+$/.test(part)) {
+        continue;
+      }
+      const index = text.indexOf(`${part}:`, currentPos);
+      if (index !== -1) {
+        currentPos = index;
+      }
+    }
+
+    if (currentPos > 0) {
+      const line = document.lineAt(document.positionAt(currentPos).line);
+      return line.range;
+    }
+
+    return new vscode.Range(0, 0, 0, 1);
   }
 
   private collectSuggestedKeys(error: ErrorObject, schema: SchemaDefinition): string[] {

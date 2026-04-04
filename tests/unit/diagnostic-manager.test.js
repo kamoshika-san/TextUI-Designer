@@ -5,7 +5,7 @@
  */
 
 const assert = require('assert');
-const { describe, it, beforeEach, afterEach } = require('mocha');
+
 
 describe('DiagnosticManager', () => {
   let diagnosticManager;
