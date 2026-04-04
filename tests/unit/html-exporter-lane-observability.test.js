@@ -32,18 +32,18 @@ describe('HtmlExporter lane observability', () => {
   it('emits a debug log only for the internal fallback lane when debug logging is enabled', async () => {
     process.env.TEXTUI_LOG_LEVEL = 'debug';
     const logs = [];
-    process.stdout.write = (chunk, encoding, callback) => {
-      logs.push(String(chunk));
-      if (typeof callback === 'function') {
-        callback();
-      }
-      return true;
+
+    const exporter = new HtmlExporter();
+    const originalDebug = exporter.logger.debug.bind(exporter.logger);
+    exporter.logger.debug = (message, ...args) => {
+      logs.push(message);
+      originalDebug(message, ...args);
     };
 
-    await new HtmlExporter().export(dsl, withExplicitFallbackHtmlExport({ format: 'html' }));
+    await exporter.export(dsl, withExplicitFallbackHtmlExport({ format: 'html' }));
 
     assert.ok(
-      logs.some(message => message.includes('[TextUI][HtmlExporter] using fallback HTML render path (useReactRender=false)')),
+      logs.some(message => message.includes('using fallback HTML render path (useReactRender=false)')),
       'fallback lane should be observable through a dedicated debug log'
     );
   });
@@ -68,15 +68,15 @@ describe('HtmlExporter lane observability', () => {
   it('does not emit the fallback debug log on the primary lane', async () => {
     process.env.TEXTUI_LOG_LEVEL = 'debug';
     const logs = [];
-    process.stdout.write = (chunk, encoding, callback) => {
-      logs.push(String(chunk));
-      if (typeof callback === 'function') {
-        callback();
-      }
-      return true;
+
+    const exporter = new HtmlExporter();
+    const originalDebug = exporter.logger.debug.bind(exporter.logger);
+    exporter.logger.debug = (message, ...args) => {
+      logs.push(message);
+      originalDebug(message, ...args);
     };
 
-    await new HtmlExporter().export(dsl, { format: 'html' });
+    await exporter.export(dsl, { format: 'html' });
 
     assert.ok(
       logs.every(message => !message.includes('using fallback HTML render path')),

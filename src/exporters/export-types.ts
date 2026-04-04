@@ -18,6 +18,8 @@ export interface ExportOptions {
   __internalLegacyFallback?: boolean;
   /** Extension root path used to resolve WebView CSS such as `media/assets/index-*.css`. */
   extensionPath?: string;
+  /** Whether to include descriptive comments in the generated output. */
+  includeComments?: boolean;
   /** Explicit OFF-by-default route gate for the incremental diff export path. */
   enableIncrementalDiffRoute?: boolean;
   /** Stable exporter-facing render targets derived from diff output. */
