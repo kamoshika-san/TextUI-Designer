@@ -6,8 +6,34 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [0.7.4] - 2026-04-05
 
+### Added
+- **Overlay Diff Viewer**: New visual comparison feature for DSL files with transparent overlay and slider controls. Supports side-by-side comparison of two TextUI DSL files with opacity control for visual diff analysis.
+- **Visual Diff System (Epic F)**: Complete visual diff infrastructure including view models, presentation rules, navigation contracts, and performance budgets. Includes diff display modes, change-kind rules, and fixture inventory for regression testing.
+- **Conflict Detection (Epic I)**: Advanced conflict detection system for DSL components with taxonomy classification, evidence payloads, and WebView integration. Detects same-index conflicts, both-added conflicts, and mixed conflicts with visual indicators.
+- **Diff Engine Enhancements (Epic M)**: Heuristic guardrails implementation with trace scoring, reviewer attention rules, and diff matrix delta baseline. Includes policy wiring through engine API and comprehensive scoring breakdown.
+- **Diff Normalization Foundation (Epic K)**: Stage 0-3 normalization pipeline with traceability generation, evidence chains, and degraded path handling. Includes NormalizationTrace schema, invariant tests, and public API integration.
+- **Cursor-to-Component Mapping**: Interactive component highlighting with hover affordances, jump-to-DSL functionality, and accessibility support. Includes onboarding banners, help commands, and success feedback.
+- **Preview Update Indicators**: Real-time feedback system for long-running preview updates with themed indicators, completion feedback, and loading states.
+- **Export Preview Flow**: Direct code generation from preview with OutputChannel display, export-confirm dialogs, and file write bypass options.
+- **Modal Component Exporter Parity**: Complete React and Pug exporter support for Modal components with full feature parity including open/close states, titles, bodies, and action buttons.
+- **Framework Exporter Extensions**: Svelte and Vue exporter normalization with incremental diff routing, compatibility checks, and release quality gates.
+- **CLI Coverage Gates**: Comprehensive CLI testing harness with coverage for apply commands, batch path resolution, and runtime type guards.
+- **CSS SSoT Improvements**: Canonical inline utility classes, VSCode variable fallbacks, and metrics-driven optimization reducing CSS drift.
+
+### Changed
+- **Export Architecture Renovation**: Complete overhaul of exporters and core component builders with standardized logging, invariant tests, and alignment confirmation.
+- **CI Pipeline Enhancement**: Integrated c8 coverage, external artifact pipelines, gate configuration runtime, and evidence link assertions.
+- **WebView Panel UX**: Removed Preview button, added highlight-component handlers, and improved error state preservation.
+- **Merge Policy Framework**: Auto-merge safe policies, manual review guards, and three-way diff IR contracts.
+- **Performance Optimizations**: Preview indicator gating, memory buffer limits (10MB), and path traversal guards in CLI runner.
+
 ### Fixed
 - **Overlay Diff**: Fixed infinite loop in overlay-diff-init message exchange and browser compatibility issues with path.basename usage in OverlayDiffViewer component.
+- **Visual Diff Badge**: Fixed disappearing badges on duplicate save events and improved conflict state management.
+- **HTML Export**: Fixed horizontal overflow clipping and updated regression hashes for CSS SSoT changes.
+- **CI Pipeline**: Fixed hash regressions, missing test files, and pipeline errors with proper artifact commits.
+- **ESLint Warnings**: Fixed naming convention warnings and curly brace lint issues in conflict detector.
+- **WebView Assets**: Removed stale assets and ensured proper build artifact inclusion.
 
 ## [0.7.3] - 2026-03-31
 

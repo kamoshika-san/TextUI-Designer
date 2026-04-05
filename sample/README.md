@@ -13,6 +13,7 @@
 | **[05-theme-inheritance](05-theme-inheritance/)** | テーマ継承（extends）の使い方 | `inheritance-demo.tui.yml` |
 | **[06-token](06-token/)** | `token` 属性とテーマトークン解決 | `token-demo.tui.yml` |
 | **[09-new-built-in-stub](09-new-built-in-stub/)** | **新規ビルトイン追加用**の最小 DSL スタブ（コピー起点） | `new-built-in-stub.tui.yml` |
+| **[10-diff-preview](10-diff-preview/)** | ビジュアルDiffプレビュー機能のデモンストレーション | `ver1.tui.yml` |
 
 各フォルダ内の `README.md` に、ファイルの説明と使い方が書いてあります。
 
@@ -23,6 +24,7 @@
 3. **$include を試す**: `03-include/include-sample.tui.yml` を開いてプレビュー（ネストしたテンプレートと params の動作確認）
 4. **テーマ継承を試す**: `05-theme-inheritance/README.md` の手順でテーマ一式をコピー → `inheritance-demo.tui.yml` で継承結果を確認
 5. **token解決を試す**: `06-token/README.md` の手順でテーマをコピー → `token-demo.tui.yml` で token 適用を確認
+6. **Diffプレビューを試す**: `10-diff-preview/ver1.tui.yml` と `ver2.tui.yml` を開いてDiffプレビュー機能で比較（変更前後のフォーム比較）
 
 ## 参考
 
