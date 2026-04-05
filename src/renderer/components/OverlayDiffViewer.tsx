@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import * as path from 'path';
 import { renderRegisteredComponent } from '../component-map';
 import type { OverlayDiffState } from '../../domain/diff/overlay-diff-types';
+
+// Browser-compatible basename function
+function basename(filePath: string): string {
+  return filePath.split(/[/\\]/).pop() || filePath;
+}
 
 interface OverlayDiffViewerProps {
   state: OverlayDiffState;
@@ -19,13 +23,14 @@ interface OverlayDiffViewerProps {
  * - スライダー 100%: DSL B のみ表示
  */
 export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) => {
+  console.log('[OverlayDiffViewer] Rendering with state:', state);
   const [slider, setSlider] = useState(50);
 
   const opacityA = 1 - slider / 100;
   const opacityB = slider / 100;
 
-  const labelA = path.basename(state.fileNameA);
-  const labelB = path.basename(state.fileNameB);
+  const labelA = basename(state.fileNameA);
+  const labelB = basename(state.fileNameB);
 
   const componentsA = state.dslA.page?.components ?? [];
   const componentsB = state.dslB.page?.components ?? [];

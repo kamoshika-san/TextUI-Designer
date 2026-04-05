@@ -21,14 +21,19 @@ export function setupOverlayDiffMessageHandler(
     return;
   }
 
+  let hasSentInit = false;
+
   panel.webview.onDidReceiveMessage(
     async (message: unknown) => {
       if (
         typeof message === 'object' &&
         message !== null &&
-        (message as Record<string, unknown>).type === 'webview-ready'
+        (message as Record<string, unknown>).type === 'webview-ready' &&
+        !hasSentInit
       ) {
+        console.log('[Extension] Received webview-ready, sending overlay-diff-init');
         sendOverlayDiffInit(panel, dslA, fileNameA, dslB, fileNameB);
+        hasSentInit = true;
       }
     },
     undefined,
@@ -43,6 +48,7 @@ function sendOverlayDiffInit(
   dslB: TextUIDSL,
   fileNameB: string
 ): void {
+  console.log('[Extension] Sending overlay-diff-init message');
   const resolvedDslA = resolveImageSourcesInDsl(dslA, {
     dslFileDir: path.dirname(fileNameA),
     mapResolvedSrc: (absolutePath: string) =>

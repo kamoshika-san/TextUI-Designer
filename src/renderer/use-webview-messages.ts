@@ -88,9 +88,14 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
     onOverlayDiffInit
   } = options;
   const previewUpdateFeedbackRef = useRef<ReturnType<typeof createPreviewUpdateFeedbackController> | null>(null);
+  const hasPostedReadyRef = useRef(false);
 
   useEffect(() => {
-    postReady();
+    if (!hasPostedReadyRef.current) {
+      console.log('[useWebviewMessages] Posting webview-ready');
+      postReady();
+      hasPostedReadyRef.current = true;
+    }
     previewUpdateFeedbackRef.current = createPreviewUpdateFeedbackController({
       setUpdateStatus,
       setLastCompletedAt
@@ -162,6 +167,7 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
           onHighlightComponent?.(message.index as number | null);
           break;
         case 'overlay-diff-init':
+          console.log('[useWebviewMessages] Received overlay-diff-init:', message);
           onOverlayDiffInit?.({
             dslA: message.dslA as import('../domain/dsl-types').TextUIDSL,
             fileNameA: message.fileNameA as string,

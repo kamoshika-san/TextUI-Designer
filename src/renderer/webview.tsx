@@ -207,6 +207,7 @@ const App: React.FC = () => {
   };
 
   if (overlayDiffState) {
+    console.log('[WebView] Rendering OverlayDiffViewer with state:', overlayDiffState);
     return <OverlayDiffViewer state={overlayDiffState} />;
   }
 
