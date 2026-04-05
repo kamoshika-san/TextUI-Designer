@@ -151,9 +151,6 @@ export class TextUiMcpServer {
 
   private async runCli(args: Record<string, unknown>): Promise<CliRunResponse> {
     const rawArgs = getObjectStringArray(args, 'args');
-    if (!rawArgs || rawArgs.length === 0) {
-      throw new Error('run_cli requires args (string[])');
-    }
     return this.cliRunner.run({
       args: rawArgs,
       cwd: getObjectValue(args, 'cwd'),
