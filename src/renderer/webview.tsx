@@ -4,6 +4,7 @@ import { ThemeToggle } from './components/ThemeToggle';
 import { CustomThemeSelector } from './components/CustomThemeSelector';
 import { renderRegisteredComponent, registerBuiltInComponents } from './component-map';
 import type { TextUIDSL, ComponentDef } from '../domain/dsl-types';
+import type { VisualDiffResult } from '../domain/diff/visual-diff-model';
 import { getVSCodeApi } from './vscode-api';
 import { createComponentKeys, hashString, mergeDslWithPrevious } from './preview-diff';
 import type { ErrorInfo } from './error-guidance';
@@ -32,6 +33,7 @@ const App: React.FC = () => {
   const [updateStatus, setUpdateStatus] = useState<PreviewUpdateStatus>('idle');
   const [lastCompletedAt, setLastCompletedAt] = useState<number | null>(null);
   const [showUpdateIndicator, setShowUpdateIndicator] = useState(true);
+  const [diffResult, setDiffResult] = useState<VisualDiffResult | null>(null);
   const [showJumpToDslHoverIndicator, setShowJumpToDslHoverIndicator] = useState(true);
   const [showJumpToDslOnboarding, setShowJumpToDslOnboarding] = useState(() =>
     shouldShowJumpToDslOnboarding(typeof window !== 'undefined' ? window.localStorage : undefined)
@@ -164,7 +166,8 @@ const App: React.FC = () => {
     setUpdateStatus,
     setLastCompletedAt,
     setShowUpdateIndicator,
-    setShowJumpToDslHoverIndicator
+    setShowJumpToDslHoverIndicator,
+    onDiffUpdate: setDiffResult
   });
 
   const handleExport = () => {
@@ -293,6 +296,11 @@ const App: React.FC = () => {
           lastCompletedAt={lastCompletedAt}
           showRelativeTimestamp={isDevelopmentMode}
         />
+      ) : null}
+      {diffResult?.hasChanges ? (
+        <span style={{ fontSize: '0.75rem', color: '#fbbf24', padding: '0.2rem 0.5rem', borderRadius: '0.375rem', background: 'rgba(251,191,36,0.12)' }}>
+          {diffResult.nodes.filter(n => n.changeType !== 'unchanged').length} changes
+        </span>
       ) : null}
       {components.map((comp, i) => renderRegisteredComponent(comp, componentKeys[i] || i, {
         dslPath: `/page/components/${i}`,

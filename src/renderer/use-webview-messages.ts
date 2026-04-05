@@ -1,5 +1,6 @@
 import { useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
 import type { TextUIDSL } from '../domain/dsl-types';
+import type { VisualDiffResult } from '../domain/diff/visual-diff-model';
 import {
   formatSchemaErrors,
   mapDetailedSchemaError,
@@ -51,6 +52,7 @@ interface UseWebviewMessagesOptions {
   setLastCompletedAt: (value: number | null) => void;
   setShowUpdateIndicator: (value: boolean) => void;
   setShowJumpToDslHoverIndicator: (value: boolean) => void;
+  onDiffUpdate?: (diff: VisualDiffResult) => void;
 }
 
 export function readPreviewSettings(
@@ -74,7 +76,8 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
     setUpdateStatus,
     setLastCompletedAt,
     setShowUpdateIndicator,
-    setShowJumpToDslHoverIndicator
+    setShowJumpToDslHoverIndicator,
+    onDiffUpdate
   } = options;
   const previewUpdateFeedbackRef = useRef<ReturnType<typeof createPreviewUpdateFeedbackController> | null>(null);
 
@@ -141,6 +144,9 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
           previewUpdateFeedbackRef.current?.handlePreviewAbort();
           setError(null);
           break;
+        case 'diff-update':
+          onDiffUpdate?.(message.diff as VisualDiffResult);
+          break;
         default:
           if (isDevelopmentMode) {
             console.log('[React] unhandled message type', message.type);
@@ -154,5 +160,5 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
       previewUpdateFeedbackRef.current = null;
       window.removeEventListener('message', onMessage);
     };
-  }, [postReady, applyDslUpdate, setError, setUpdateStatus, setLastCompletedAt, setShowUpdateIndicator, setShowJumpToDslHoverIndicator]);
+  }, [postReady, applyDslUpdate, setError, setUpdateStatus, setLastCompletedAt, setShowUpdateIndicator, setShowJumpToDslHoverIndicator, onDiffUpdate]);
 }
