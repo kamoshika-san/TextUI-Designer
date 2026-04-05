@@ -166,15 +166,20 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
         case 'highlight-component':
           onHighlightComponent?.(message.index as number | null);
           break;
-        case 'overlay-diff-init':
+        case 'overlay-diff-init': {
           console.log('[useWebviewMessages] Received overlay-diff-init:', message);
-          onOverlayDiffInit?.({
+          const overlayState: import('../domain/diff/overlay-diff-types').OverlayDiffState = {
             dslA: message.dslA as import('../domain/dsl-types').TextUIDSL,
             fileNameA: message.fileNameA as string,
             dslB: message.dslB as import('../domain/dsl-types').TextUIDSL,
-            fileNameB: message.fileNameB as string
-          });
+            fileNameB: message.fileNameB as string,
+          };
+          if (message.semanticSummary !== undefined) {
+            overlayState.semanticSummary = message.semanticSummary as import('../domain/diff/overlay-diff-types').OverlayDiffState['semanticSummary'];
+          }
+          onOverlayDiffInit?.(overlayState);
           break;
+        }
         default:
           if (isDevelopmentMode) {
             console.log('[React] unhandled message type', message.type);

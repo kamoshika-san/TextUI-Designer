@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import type { OverlayDiffLifecycleManager } from './overlay-diff-lifecycle-manager';
 import type { TextUIDSL } from '../../domain/dsl-types';
+import type { SemanticSummaryResult } from '../../core/textui-semantic-diff-summary';
 import { resolveImageSourcesInDsl } from '../../utils/image-source-resolver';
 
 /**
@@ -14,7 +15,8 @@ export function setupOverlayDiffMessageHandler(
   fileNameA: string,
   dslB: TextUIDSL,
   fileNameB: string,
-  context: vscode.ExtensionContext
+  context: vscode.ExtensionContext,
+  semanticSummary?: SemanticSummaryResult
 ): void {
   const panel = lifecycleManager.getPanel();
   if (!panel) {
@@ -32,7 +34,7 @@ export function setupOverlayDiffMessageHandler(
         !hasSentInit
       ) {
         console.log('[Extension] Received webview-ready, sending overlay-diff-init');
-        sendOverlayDiffInit(panel, dslA, fileNameA, dslB, fileNameB);
+        sendOverlayDiffInit(panel, dslA, fileNameA, dslB, fileNameB, semanticSummary);
         hasSentInit = true;
       }
     },
@@ -46,7 +48,8 @@ function sendOverlayDiffInit(
   dslA: TextUIDSL,
   fileNameA: string,
   dslB: TextUIDSL,
-  fileNameB: string
+  fileNameB: string,
+  semanticSummary?: SemanticSummaryResult
 ): void {
   console.log('[Extension] Sending overlay-diff-init message');
   const resolvedDslA = resolveImageSourcesInDsl(dslA, {
@@ -61,11 +64,17 @@ function sendOverlayDiffInit(
       panel.webview.asWebviewUri(vscode.Uri.file(absolutePath)).toString()
   });
 
-  panel.webview.postMessage({
+  const msg: Record<string, unknown> = {
     type: 'overlay-diff-init',
     dslA: resolvedDslA,
     fileNameA,
     dslB: resolvedDslB,
     fileNameB
-  });
+  };
+
+  if (semanticSummary !== undefined) {
+    msg['semanticSummary'] = semanticSummary;
+  }
+
+  panel.webview.postMessage(msg);
 }
