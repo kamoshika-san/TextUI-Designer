@@ -24,4 +24,11 @@ export class VscodeExportInteractionPort implements ExportInteractionPort {
   notifyExportSuccess(message: string): void {
     ErrorHandler.showInfo(message);
   }
+
+  async previewCode(code: string, format: string): Promise<void> {
+    const channel = vscode.window.createOutputChannel(`TextUI Export Preview (${format})`);
+    channel.clear();
+    channel.appendLine(code);
+    channel.show(true);
+  }
 }

@@ -6,4 +6,5 @@ export interface ExportInteractionPort {
   pickExportFormat(sortedFormats: string[], defaultFormat: string): Promise<string | undefined>;
   pickOutputFilePath(format: string, filterExtension: string): Promise<string | undefined>;
   notifyExportSuccess(message: string): void;
+  previewCode(code: string, format: string): Promise<void>;
 }
