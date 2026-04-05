@@ -36,6 +36,7 @@ const App: React.FC = () => {
   const [showUpdateIndicator, setShowUpdateIndicator] = useState(true);
   const [diffResult, setDiffResult] = useState<VisualDiffResult | null>(null);
   const [conflictResult, setConflictResult] = useState<ConflictViewResult | null>(null);
+  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
   const [showJumpToDslHoverIndicator, setShowJumpToDslHoverIndicator] = useState(true);
   const [showJumpToDslOnboarding, setShowJumpToDslOnboarding] = useState(() =>
     shouldShowJumpToDslOnboarding(typeof window !== 'undefined' ? window.localStorage : undefined)
@@ -170,7 +171,8 @@ const App: React.FC = () => {
     setShowUpdateIndicator,
     setShowJumpToDslHoverIndicator,
     onDiffUpdate: setDiffResult,
-    onConflictUpdate: setConflictResult
+    onConflictUpdate: setConflictResult,
+    onHighlightComponent: setHighlightedIndex
   });
 
   const handleExport = () => {
@@ -311,10 +313,14 @@ const App: React.FC = () => {
           &#9888; {conflictResult.entries.length} conflicts
         </span>
       ) : null}
-      {components.map((comp, i) => renderRegisteredComponent(comp, componentKeys[i] || i, {
-        dslPath: `/page/components/${i}`,
-        onJumpToDsl: handleJumpToDsl
-      }))}
+      {components.map((comp, i) => (
+        <div key={componentKeys[i] || i} style={highlightedIndex === i ? { outline: '2px solid #60a5fa' } : undefined}>
+          {renderRegisteredComponent(comp, componentKeys[i] || i, {
+            dslPath: `/page/components/${i}`,
+            onJumpToDsl: handleJumpToDsl
+          })}
+        </div>
+      ))}
       <div
         style={{
           position: 'sticky',

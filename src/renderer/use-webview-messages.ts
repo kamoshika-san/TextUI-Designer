@@ -55,6 +55,7 @@ interface UseWebviewMessagesOptions {
   setShowJumpToDslHoverIndicator: (value: boolean) => void;
   onDiffUpdate?: (diff: VisualDiffResult) => void;
   onConflictUpdate?: (conflict: ConflictViewResult) => void;
+  onHighlightComponent?: (index: number | null) => void;
 }
 
 export function readPreviewSettings(
@@ -80,7 +81,8 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
     setShowUpdateIndicator,
     setShowJumpToDslHoverIndicator,
     onDiffUpdate,
-    onConflictUpdate
+    onConflictUpdate,
+    onHighlightComponent
   } = options;
   const previewUpdateFeedbackRef = useRef<ReturnType<typeof createPreviewUpdateFeedbackController> | null>(null);
 
@@ -153,6 +155,9 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
         case 'conflict-update':
           onConflictUpdate?.(message.conflict as ConflictViewResult);
           break;
+        case 'highlight-component':
+          onHighlightComponent?.(message.index as number | null);
+          break;
         default:
           if (isDevelopmentMode) {
             console.log('[React] unhandled message type', message.type);
@@ -166,5 +171,5 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
       previewUpdateFeedbackRef.current = null;
       window.removeEventListener('message', onMessage);
     };
-  }, [postReady, applyDslUpdate, setError, setUpdateStatus, setLastCompletedAt, setShowUpdateIndicator, setShowJumpToDslHoverIndicator, onDiffUpdate, onConflictUpdate]);
+  }, [postReady, applyDslUpdate, setError, setUpdateStatus, setLastCompletedAt, setShowUpdateIndicator, setShowJumpToDslHoverIndicator, onDiffUpdate, onConflictUpdate, onHighlightComponent]);
 }
