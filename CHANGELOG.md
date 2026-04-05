@@ -4,6 +4,11 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.7.4] - 2026-04-05
+
+### Fixed
+- **Overlay Diff**: Fixed infinite loop in overlay-diff-init message exchange and browser compatibility issues with path.basename usage in OverlayDiffViewer component.
+
 ## [0.7.3] - 2026-03-31
 
 ### Added
