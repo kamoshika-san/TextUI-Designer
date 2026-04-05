@@ -5,7 +5,11 @@ import { YamlParser } from '../webview/yaml-parser';
 import { OverlayDiffLifecycleManager } from '../webview/overlay-diff-lifecycle-manager';
 import { setupOverlayDiffMessageHandler } from '../webview/overlay-diff-message-handler';
 import type { TextUIDSL } from '../../domain/dsl-types';
-import { TextUICoreEngine } from '../../core/textui-core-engine';
+import { normalize } from '../../core/diff-normalization/normalize';
+import {
+  createNormalizedDiffDocument,
+  createDiffResultSkeleton,
+} from '../../core/textui-core-diff';
 import { classifyReviewImpact } from '../../core/textui-diff-review-impact';
 import { buildSemanticSummary } from '../../core/textui-semantic-diff-summary';
 import type { SemanticSummaryResult } from '../../core/textui-semantic-diff-summary';
@@ -110,8 +114,11 @@ export async function executeOpenOverlayDiffCommand(
 /**
  * 両 DSL から D4 セマンティック差分要約を計算する。
  *
- * 差分計算はベストエフォート：失敗した場合は null を返し、
- * 呼び出し元はパネルを semanticSummary なしで開く。
+ * エンジンの二重バリデーションを迂回し、正規化パイプラインと
+ * コア差分関数を直接呼び出すことで、パース済み DSL から
+ * 直接セマンティック要約を生成する。
+ *
+ * 失敗した場合は null を返し、呼び出し元はパネルを要約なしで開く。
  */
 function computeSemanticSummary(
   dslA: TextUIDSL,
@@ -121,24 +128,38 @@ function computeSemanticSummary(
   logger: LoggerLike
 ): SemanticSummaryResult | null {
   try {
-    const engine = new TextUICoreEngine();
-    const compareResponse = engine.compareUi({
-      previousDsl: dslA,
-      previousSourcePath: fileNameA,
-      nextDsl: dslB,
-      nextSourcePath: fileNameB,
-      skipTokenValidation: true
-    });
+    // 正規化（失敗時は元の DSL をそのまま使用）
+    const prevNorm = normalize(dslA);
+    const nextNorm = normalize(dslB);
+    const prevDsl = prevNorm.ok ? prevNorm.dsl : dslA;
+    const nextDsl = nextNorm.ok ? nextNorm.dsl : dslB;
 
-    if (!compareResponse.ok || !compareResponse.result) {
-      logger.debug('Overlay Diff: 差分計算に失敗（バリデーションエラー）。要約をスキップします。');
-      return null;
+    if (!prevNorm.ok) {
+      logger.debug('Overlay Diff: DSL A の正規化に失敗（フォールバック継続）:', prevNorm.message);
+    }
+    if (!nextNorm.ok) {
+      logger.debug('Overlay Diff: DSL B の正規化に失敗（フォールバック継続）:', nextNorm.message);
     }
 
-    const reviewImpact = classifyReviewImpact(compareResponse.result);
-    return buildSemanticSummary(compareResponse.result, reviewImpact);
+    // 差分ドキュメント + スケルトン生成
+    const previous = createNormalizedDiffDocument(prevDsl, {
+      side: 'previous',
+      sourcePath: fileNameA,
+    });
+    const next = createNormalizedDiffDocument(nextDsl, {
+      side: 'next',
+      sourcePath: fileNameB,
+    });
+    const compareResult = createDiffResultSkeleton(previous, next);
+
+    // D2-1 + D4
+    const reviewImpact = classifyReviewImpact(compareResult);
+    const summary = buildSemanticSummary(compareResult, reviewImpact);
+
+    logger.debug(`Overlay Diff: セマンティック要約を生成しました (${summary.lines.length} 件)`);
+    return summary;
   } catch (err) {
-    logger.debug('Overlay Diff: セマンティック要約計算中に予期しないエラー:', err);
+    logger.error('Overlay Diff: セマンティック要約計算中に予期しないエラー:', err);
     return null;
   }
 }

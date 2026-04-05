@@ -8,13 +8,20 @@ function basename(filePath: string): string {
   return filePath.split(/[/\\]/).pop() || filePath;
 }
 
-// -- Semantic summary styles --------------------------------------------------
+// -- Design tokens ------------------------------------------------------------
+
+const COLOR: Record<string, string> = {
+  add:       '#4ade80',
+  update:    '#60a5fa',
+  remove:    '#f87171',
+  ambiguous: '#fbbf24',
+};
 
 const PREFIX_COLOR: Record<string, string> = {
-  '+': '#4ade80', // green
-  '~': '#60a5fa', // blue
-  '-': '#f87171', // red
-  '?': '#fbbf24', // amber
+  '+': COLOR.add,
+  '~': COLOR.update,
+  '-': COLOR.remove,
+  '?': COLOR.ambiguous,
 };
 
 const PREFIX_LABEL: Record<string, string> = {
@@ -24,109 +31,146 @@ const PREFIX_LABEL: Record<string, string> = {
   '?': '要確認',
 };
 
-function SemanticSummarySection({ lines }: { lines: SemanticSummaryLine[] }) {
-  const [collapsed, setCollapsed] = useState(false);
+// -- Right pane: semantic summary --------------------------------------------
 
-  // Sort: + first, then ~, then -, then ?
-  const PREFIX_ORDER: Record<string, number> = { '+': 0, '~': 1, '-': 2, '?': 3 };
-  const sorted = [...lines].sort(
-    (a, b) => (PREFIX_ORDER[a.prefix] ?? 9) - (PREFIX_ORDER[b.prefix] ?? 9)
+function SummaryBadge({ count, color, symbol }: { count: number; color: string; symbol: string }) {
+  if (count === 0) { return null; }
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 2,
+        fontSize: '0.72rem',
+        fontWeight: 700,
+        color,
+      }}
+    >
+      {symbol}{count}
+    </span>
   );
+}
 
-  const counts = {
-    add: lines.filter(l => l.prefix === '+').length,
-    update: lines.filter(l => l.prefix === '~').length,
-    remove: lines.filter(l => l.prefix === '-').length,
-    ambiguous: lines.filter(l => l.prefix === '?').length,
-  };
+function SummaryLine({ line }: { line: SemanticSummaryLine }) {
+  return (
+    <li
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 8,
+        padding: '5px 12px',
+        borderBottom: '1px solid rgba(148,163,184,0.08)',
+        fontFamily: 'var(--vscode-editor-font-family, monospace)',
+        fontSize: '0.78rem',
+        lineHeight: 1.4,
+        color: '#cbd5e1',
+      }}
+    >
+      <span
+        style={{
+          color: PREFIX_COLOR[line.prefix] ?? '#e2e8f0',
+          fontWeight: 700,
+          flexShrink: 0,
+          marginTop: 1,
+          width: 12,
+          textAlign: 'center',
+        }}
+        title={PREFIX_LABEL[line.prefix]}
+      >
+        {line.prefix}
+      </span>
+      <span style={{ wordBreak: 'break-word', flex: 1 }}>{line.text}</span>
+    </li>
+  );
+}
+
+function SemanticSummaryPane({ lines }: { lines: SemanticSummaryLine[] }) {
+  // Sort: + first, then ~, then -, then ?
+  const ORDER: Record<string, number> = { '+': 0, '~': 1, '-': 2, '?': 3 };
+  const sorted = [...lines].sort((a, b) => (ORDER[a.prefix] ?? 9) - (ORDER[b.prefix] ?? 9));
+
+  const addCount    = lines.filter(l => l.prefix === '+').length;
+  const updateCount = lines.filter(l => l.prefix === '~').length;
+  const removeCount = lines.filter(l => l.prefix === '-').length;
+  const ambigCount  = lines.filter(l => l.prefix === '?').length;
 
   return (
     <div
       style={{
-        marginBottom: 12,
-        borderRadius: 8,
-        border: '1px solid rgba(148, 163, 184, 0.2)',
+        display: 'flex',
+        flexDirection: 'column',
+        width: 280,
+        minWidth: 240,
+        maxWidth: 320,
+        flexShrink: 0,
+        background: 'rgba(15, 23, 42, 0.55)',
+        borderLeft: '1px solid rgba(148,163,184,0.15)',
+        height: '100%',
         overflow: 'hidden',
       }}
     >
-      {/* Section header */}
-      <button
-        onClick={() => setCollapsed(c => !c)}
+      {/* Pane header */}
+      <div
         style={{
+          padding: '10px 12px',
+          borderBottom: '1px solid rgba(148,163,184,0.15)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          width: '100%',
-          padding: '8px 12px',
+          flexShrink: 0,
           background: 'rgba(15, 23, 42, 0.6)',
-          border: 'none',
-          cursor: 'pointer',
-          color: '#dbeafe',
-          fontFamily: 'sans-serif',
         }}
-        aria-expanded={!collapsed}
       >
-        <span style={{ fontWeight: 600, fontSize: '0.82rem' }}>
-          変更サマリー ({lines.length} 件)
+        <span style={{ fontWeight: 700, fontSize: '0.80rem', color: '#dbeafe' }}>
+          変更サマリー
         </span>
-        <span style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: '0.75rem' }}>
-          {counts.add > 0 && (
-            <span style={{ color: PREFIX_COLOR['+'] }}>+{counts.add}</span>
-          )}
-          {counts.update > 0 && (
-            <span style={{ color: PREFIX_COLOR['~'] }}>~{counts.update}</span>
-          )}
-          {counts.remove > 0 && (
-            <span style={{ color: PREFIX_COLOR['-'] }}>-{counts.remove}</span>
-          )}
-          {counts.ambiguous > 0 && (
-            <span style={{ color: PREFIX_COLOR['?'] }}>?{counts.ambiguous}</span>
-          )}
-          <span style={{ opacity: 0.5, marginLeft: 4 }}>{collapsed ? '▶' : '▼'}</span>
+        <span style={{ display: 'flex', gap: 8 }}>
+          <SummaryBadge count={addCount}    color={COLOR.add}       symbol="+" />
+          <SummaryBadge count={updateCount} color={COLOR.update}    symbol="~" />
+          <SummaryBadge count={removeCount} color={COLOR.remove}    symbol="-" />
+          <SummaryBadge count={ambigCount}  color={COLOR.ambiguous} symbol="?" />
         </span>
-      </button>
+      </div>
 
       {/* Line list */}
-      {!collapsed && (
-        <ul
-          style={{
-            margin: 0,
-            padding: '6px 0',
-            listStyle: 'none',
-            background: 'rgba(15, 23, 42, 0.4)',
-            maxHeight: 240,
-            overflowY: 'auto',
-          }}
-        >
-          {sorted.map(line => (
-            <li
-              key={line.eventId}
-              style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: 8,
-                padding: '3px 12px',
-                fontFamily: 'monospace',
-                fontSize: '0.80rem',
-                color: '#e2e8f0',
-              }}
-            >
-              <span
-                style={{
-                  color: PREFIX_COLOR[line.prefix] ?? '#e2e8f0',
-                  fontWeight: 700,
-                  minWidth: 14,
-                  flexShrink: 0,
-                }}
-                title={PREFIX_LABEL[line.prefix]}
-              >
-                {line.prefix}
-              </span>
-              <span style={{ wordBreak: 'break-word' }}>{line.text}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <ul
+        style={{
+          margin: 0,
+          padding: 0,
+          listStyle: 'none',
+          overflowY: 'auto',
+          flex: 1,
+        }}
+      >
+        {sorted.map(line => (
+          <SummaryLine key={line.eventId} line={line} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// -- Empty state for right pane (no summary available) -----------------------
+
+function NoSummaryPane() {
+  return (
+    <div
+      style={{
+        width: 200,
+        minWidth: 160,
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(15, 23, 42, 0.3)',
+        borderLeft: '1px solid rgba(148,163,184,0.1)',
+        color: 'rgba(148,163,184,0.5)',
+        fontSize: '0.75rem',
+        textAlign: 'center',
+        padding: '0 16px',
+      }}
+    >
+      変更サマリーを<br />生成できませんでした
     </div>
   );
 }
@@ -140,17 +184,12 @@ interface OverlayDiffViewerProps {
 /**
  * Overlay Diff Viewer コンポーネント。
  *
- * 上部に「変更サマリー」セクション（D4 セマンティック差分要約）を表示し、
- * 続いて 2つの TextUI DSL プレビューを重ねて表示する。
- * スライダーで一方（DSL B）の透過度を操作することで
- * 「印刷した図案を透かして差分を確認する」UX を提供する。
+ * 左ペイン: 透過スライダーによるオーバーレイ比較
+ * 右ペイン: D4 セマンティック変更サマリー（+/~/−/? の1行リスト）
  *
- * - スライダー 0%: DSL A のみ表示
- * - スライダー 50%: 両方 50%（差分がゴーストとして見える）
- * - スライダー 100%: DSL B のみ表示
+ * 右ペインはセマンティック要約が存在しない場合もプレースホルダーを表示する。
  */
 export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) => {
-  console.log('[OverlayDiffViewer] Rendering with state:', state);
   const [slider, setSlider] = useState(50);
 
   const opacityA = 1 - slider / 100;
@@ -161,114 +200,142 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
 
   const componentsA = state.dslA.page?.components ?? [];
   const componentsB = state.dslB.page?.components ?? [];
-
-  // 2レイヤーの高さを確保するため、コンポーネント数が多い方に合わせる
   const maxCount = Math.max(componentsA.length, componentsB.length);
 
+  const summaryLines = state.semanticSummary?.lines ?? null;
+
   return (
-    <div style={{ padding: 16, fontFamily: 'sans-serif' }}>
-      {/* D4: 変更サマリー（存在する場合のみ） */}
-      {state.semanticSummary && state.semanticSummary.lines.length > 0 && (
-        <SemanticSummarySection lines={state.semanticSummary.lines} />
-      )}
-
-      {/* ヘッダー: ファイル名 + スライダー */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          marginBottom: 16,
-          padding: '10px 14px',
-          borderRadius: 8,
-          background: 'rgba(15, 23, 42, 0.72)',
-          color: '#dbeafe',
-          flexWrap: 'wrap'
-        }}
-      >
-        <span
+    <div
+      style={{
+        display: 'flex',
+        height: '100vh',
+        overflow: 'hidden',
+        fontFamily: 'sans-serif',
+      }}
+    >
+      {/* ── 左ペイン: Overlay Diff ── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Header: ファイル名 + スライダー */}
+        <div
           style={{
-            fontSize: '0.82rem',
-            fontWeight: 600,
-            opacity: opacityA < 0.15 ? 0.4 : 1,
-            transition: 'opacity 0.2s',
-            whiteSpace: 'nowrap'
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '10px 16px',
+            background: 'rgba(15, 23, 42, 0.72)',
+            color: '#dbeafe',
+            flexWrap: 'wrap',
+            flexShrink: 0,
           }}
-          title={state.fileNameA}
         >
-          Before: {labelA}
-        </span>
+          <span
+            style={{
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              opacity: opacityA < 0.15 ? 0.4 : 1,
+              transition: 'opacity 0.2s',
+              whiteSpace: 'nowrap',
+            }}
+            title={state.fileNameA}
+          >
+            Before: {labelA}
+          </span>
 
-        <div style={{ flex: 1, minWidth: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={slider}
-            onChange={e => setSlider(Number(e.target.value))}
-            style={{ width: '100%', cursor: 'pointer' }}
-            aria-label="透過度スライダー（Before ↔ After）"
-          />
-          <span style={{ fontSize: '0.72rem', opacity: 0.7 }}>
-            {slider === 0 ? 'Before のみ' : slider === 100 ? 'After のみ' : `After ${slider}%`}
+          <div
+            style={{
+              flex: 1,
+              minWidth: 120,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 2,
+            }}
+          >
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={slider}
+              onChange={e => setSlider(Number(e.target.value))}
+              style={{ width: '100%', cursor: 'pointer' }}
+              aria-label="透過度スライダー（Before ↔ After）"
+            />
+            <span style={{ fontSize: '0.72rem', opacity: 0.7 }}>
+              {slider === 0
+                ? 'Before のみ'
+                : slider === 100
+                ? 'After のみ'
+                : `After ${slider}%`}
+            </span>
+          </div>
+
+          <span
+            style={{
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              opacity: opacityB < 0.15 ? 0.4 : 1,
+              transition: 'opacity 0.2s',
+              whiteSpace: 'nowrap',
+            }}
+            title={state.fileNameB}
+          >
+            After: {labelB}
           </span>
         </div>
 
-        <span
-          style={{
-            fontSize: '0.82rem',
-            fontWeight: 600,
-            opacity: opacityB < 0.15 ? 0.4 : 1,
-            transition: 'opacity 0.2s',
-            whiteSpace: 'nowrap'
-          }}
-          title={state.fileNameB}
-        >
-          After: {labelB}
-        </span>
-      </div>
-
-      {/* オーバーレイキャンバス */}
-      <div
-        style={{
-          position: 'relative',
-          minHeight: maxCount > 0 ? maxCount * 60 : 200
-        }}
-      >
-        {/* Layer A: Before */}
+        {/* Overlay canvas */}
         <div
           style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            opacity: opacityA,
-            transition: 'opacity 0.05s',
-            pointerEvents: slider >= 100 ? 'none' : 'auto'
+            flex: 1,
+            overflow: 'auto',
+            padding: 16,
+            position: 'relative',
           }}
         >
-          {componentsA.map((comp, i) =>
-            renderRegisteredComponent(comp, `overlay-a-${i}`)
-          )}
-        </div>
+          <div style={{ position: 'relative', minHeight: maxCount > 0 ? maxCount * 60 : 200 }}>
+            {/* Layer A: Before */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                opacity: opacityA,
+                transition: 'opacity 0.05s',
+                pointerEvents: slider >= 100 ? 'none' : 'auto',
+              }}
+            >
+              {componentsA.map((comp, i) =>
+                renderRegisteredComponent(comp, `overlay-a-${i}`)
+              )}
+            </div>
 
-        {/* Layer B: After */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            opacity: opacityB,
-            transition: 'opacity 0.05s',
-            pointerEvents: 'none'
-          }}
-        >
-          {componentsB.map((comp, i) =>
-            renderRegisteredComponent(comp, `overlay-b-${i}`)
-          )}
+            {/* Layer B: After */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                opacity: opacityB,
+                transition: 'opacity 0.05s',
+                pointerEvents: 'none',
+              }}
+            >
+              {componentsB.map((comp, i) =>
+                renderRegisteredComponent(comp, `overlay-b-${i}`)
+              )}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* ── 右ペイン: 変更サマリー ── */}
+      {summaryLines !== null && summaryLines.length > 0 ? (
+        <SemanticSummaryPane lines={summaryLines} />
+      ) : (
+        <NoSummaryPane />
+      )}
     </div>
   );
 };
