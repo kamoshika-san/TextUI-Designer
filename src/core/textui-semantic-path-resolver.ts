@@ -74,7 +74,7 @@ export function resolveAtPath(dsl: TextUIDSL, path: string): ResolvedPathValue {
     return { kind: 'page' };
   }
 
-  let current: unknown = dsl.page as Record<string, unknown>;
+  let current: unknown = dsl.page as unknown as Record<string, unknown>;
   let i = 1; // skip 'page'
 
   while (i < segments.length) {
