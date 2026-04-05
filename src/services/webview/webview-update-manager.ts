@@ -8,6 +8,9 @@ import { WebViewErrorHandler } from './webview-error-handler';
 import { ConfigManager } from '../../utils/config-manager';
 import { Logger } from '../../utils/logger';
 import { deliverPreviewPayload } from './preview-webview-deliver';
+import { deliverDiffPayload } from './diff-webview-deliver';
+import { DiffManager } from '../../exporters/metrics/diff-manager';
+import type { TextUIDSL } from '../../domain/dsl-types';
 import { PreviewUpdateSessionState, shouldBlockYamlSend } from './preview-update-session-state';
 import { parseValidateYamlForPreview } from './preview-parser-validator-port';
 import { lookupPreviewCacheData } from './preview-cache-port';
@@ -69,6 +72,8 @@ export class WebViewUpdateManager {
   private readonly applyFailurePolicy: PreviewFailurePolicyApplyFn;
   private readonly session = new PreviewUpdateSessionState();
   private readonly logger = new Logger('WebViewUpdateManager');
+  private readonly diffManager = new DiffManager();
+  private lastDeliveredDsl: TextUIDSL | null = null;
 
   constructor(
     lifecycleManager: WebViewLifecycleManager,
@@ -230,6 +235,14 @@ export class WebViewUpdateManager {
       // WebViewにデータを送信
       this.previewUpdateCoordinator.setPhase(PreviewUpdatePhase.Delivering);
       deliverPreviewPayload(this.lifecycleManager, parsedResult.data, parsedResult.fileName);
+
+      // Visual Diff をプレビューと同時に配信
+      const newDsl = parsedResult.data as TextUIDSL;
+      const oldComponents = this.lastDeliveredDsl?.page?.components ?? [];
+      const newComponents = newDsl?.page?.components ?? [];
+      const diffResult = this.diffManager.computeDiff(newDsl);
+      deliverDiffPayload(this.lifecycleManager, diffResult, oldComponents, newComponents);
+      this.lastDeliveredDsl = newDsl;
 
       // メモリ使用量をチェック
       this.cacheManager.checkMemoryUsage();
