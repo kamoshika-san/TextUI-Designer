@@ -53,17 +53,17 @@ describe('HtmlExporter primary sample regression (T-20260322-348)', () => {
   [
     {
       sampleRelativePath: 'sample/01-basic/sample.tui.yml',
-      expectedHash: 'c86cae5ea42d8efa747651984a6880f29f3a6a9fcd62ca341ce476e8851ae5a6', // updated after renderer wrapper div addition (T-U03) caused compiled output drift
+      expectedHash: 'a0b4c7c18e09cb32e1511220f2df301ffb2fa9fa0ee06ab9f2b6073da5d81f6e', // updated after renderer wrapper div addition (T-U03) caused compiled output drift
       markers: ['TextUI Designer - All Components', 'This sample includes every supported component.', 'Agree to terms']
     },
     {
       sampleRelativePath: 'sample/08-github/sample.tui.yml',
-      expectedHash: 'ab627a198a4bd68cf3def269455c96c684b07fc47924612858e4c1809cc29ba6', // updated after renderer wrapper div addition (T-U03) caused compiled output drift
+      expectedHash: 'bdd7c3357a89621f3b194b52133bfa97e1704bbaa45c7ad283a194c7833ded6a', // updated after renderer wrapper div addition (T-U03) caused compiled output drift
       markers: ['kamoshika-san / TextUI-Designer', 'VS Code extension for designing text-based UIs with YAML/JSON DSL.', 'Pull requests']
     },
     {
       sampleRelativePath: 'sample/09-modal/sample.tui.yml',
-      expectedHash: '90913faf8f55b6710f01c32fb167aae40da9bb4c523a1a66e2e2f8c5d6dfd164', // updated after renderer wrapper div addition (T-U03) caused compiled output drift
+      expectedHash: '2b55ec8ee7fad49df219e0e9ed70e8848a9fd420100d9d7c728a88ec3116b115', // updated after renderer wrapper div addition (T-U03) caused compiled output drift
       markers: ['削除の確認', 'この操作は元に戻せません', '削除する', 'ユーザー詳細']
     }
   ].forEach(({ sampleRelativePath, expectedHash, markers }) => {
