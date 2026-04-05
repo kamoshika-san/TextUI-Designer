@@ -3,6 +3,7 @@ import { ExtensionServices } from './service-initializer';
 import { ConfigManager } from '../utils/config-manager';
 import { getDocumentKind } from './document-kind-resolver';
 import { Logger } from '../utils/logger';
+import { cursorLineToComponentIndex } from './webview/cursor-to-component';
 
 /**
  * イベントリスナーの登録・管理
@@ -41,7 +42,10 @@ export class EventManager {
     // ドキュメントオープン・クローズハンドラー
     this.registerDocumentOpenHandler();
     this.registerDocumentCloseHandler();
-    
+
+    // カーソル位置 → コンポーネントハイライト
+    this.registerCursorHighlightHandler();
+
     this.logger.debug('イベントマネージャー初期化完了');
   }
 
@@ -166,6 +170,34 @@ export class EventManager {
     
     this.disposables.push(documentCloseDisposable);
     this.logger.debug('ドキュメントクローズ監視を登録しました');
+  }
+
+  /**
+   * カーソル行からコンポーネントインデックスを解決し、
+   * WebView に `{ type: 'highlight-component', index }` を postMessage する。
+   * アクティブファイルが `.tui.yaml` の場合のみ動作する。
+   */
+  private registerCursorHighlightHandler(): void {
+    const disposable = vscode.window.onDidChangeTextEditorSelection(event => {
+      const doc = event.textEditor.document;
+      if (!doc.fileName.endsWith('.tui.yaml')) {
+        return;
+      }
+      if (!this.services) {
+        return;
+      }
+      const line = event.selections[0]?.active.line ?? null;
+      if (line === null) {
+        return;
+      }
+      const index = cursorLineToComponentIndex(doc.getText(), line);
+      this.services.webViewManager.getPanel()?.webview.postMessage({
+        type: 'highlight-component',
+        index,
+      });
+    });
+    this.disposables.push(disposable);
+    this.logger.debug('カーソルハイライトハンドラーを登録しました');
   }
 
   /**
