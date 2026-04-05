@@ -114,20 +114,24 @@ function scalarIsIdentical(a: unknown, b: unknown): boolean {
 /**
  * Compute the set of event IDs that should be suppressed from the summary.
  *
- * Suppression rules (applied in two passes):
+ * Three-pass suppression strategy:
  *
- * Pass 1 — Event-level suppression:
- *   - Page entity `update` events (entityKind='page', path='/page') are always suppressed.
- *     They fire whenever any child changes; they carry no additional information.
- *   - Property `update` events where prevScalar === nextScalar are suppressed.
- *     These arise when the diff engine detects a structural change but the final
- *     scalar value is identical (normalization artifact or false positive).
+ * Pass 1 — Scalar-level noise:
+ *   - Page entity `update` at path `/page` (always fires; no useful content).
+ *   - Property `update` where prevScalar === nextScalar (normalization artifact).
  *
- * Pass 2 — Component entity suppression:
- *   - Component `update` events are suppressed when the resolved vocabulary
- *     (displayName) is identical on both sides AND all their property children
- *     were already suppressed in Pass 1.
- *     This removes "~ Primary Button を更新" noise lines that have no real sub-changes.
+ * Pass 1.5 — Property children of non-update component events:
+ *   - `add` components: property children are always `(none) → value` — the
+ *     parent `+ Component を追加` line already conveys the addition.
+ *   - `remove` / `remove+add` components: same reasoning as add.
+ *   - `reorder` / `move` components: property children show `(none) → value`
+ *     because the path changed; they are path-change artifacts, not real edits.
+ *
+ * Pass 2 — Redundant component `update` lines:
+ *   - When a component `update` event has active (unsuppressed) property
+ *     children, the property lines are more specific — suppress the parent.
+ *   - When a component `update` event has no active children AND the resolved
+ *     vocabulary is identical before and after, suppress it (no visible change).
  */
 function computeSuppressedEventIds(
   events: DiffEvent[],
@@ -137,9 +141,12 @@ function computeSuppressedEventIds(
   const suppressed = new Set<string>();
 
   // ── Pass 1 ──────────────────────────────────────────────────────────────────
+  // Paths of components whose property children should be suppressed.
+  // Populated here; applied in Pass 1.5.
+  const suppressChildrenOfPaths = new Set<string>();
 
   for (const event of events) {
-    // Suppress page entity update events (they are always-present noise)
+    // Suppress page entity update events (always-present noise)
     if (event.entityKind === 'page' && event.kind === 'update') {
       const path = event.trace.nextSourceRef?.entityPath
         ?? event.trace.previousSourceRef?.entityPath
@@ -164,43 +171,72 @@ function computeSuppressedEventIds(
         continue;
       }
     }
+
+    // Collect component paths for add / remove / remove+add / reorder / move.
+    // Property children of these events are either redundant with the parent
+    // line or are path-change artifacts produced by the diff engine.
+    if (event.entityKind === 'component' && event.kind !== 'update') {
+      const compPath = event.kind === 'remove'
+        ? (event.trace.previousSourceRef?.entityPath ?? '')
+        : (event.trace.nextSourceRef?.entityPath
+            ?? event.trace.previousSourceRef?.entityPath
+            ?? '');
+      if (compPath) {
+        suppressChildrenOfPaths.add(compPath);
+      }
+    }
+  }
+
+  // ── Pass 1.5 ─────────────────────────────────────────────────────────────────
+  // Suppress property events whose parent component is in suppressChildrenOfPaths.
+  for (const event of events) {
+    if (suppressed.has(event.eventId)) { continue; }
+    if (event.entityKind !== 'property') { continue; }
+    const rawPath = event.trace.nextSourceRef?.entityPath
+      ?? event.trace.previousSourceRef?.entityPath
+      ?? '';
+    const split = splitPropertyPath(rawPath);
+    if (split && suppressChildrenOfPaths.has(split.componentPath)) {
+      suppressed.add(event.eventId);
+    }
   }
 
   // ── Pass 2 ──────────────────────────────────────────────────────────────────
-  // Suppress component-level update events that have no meaningful children left.
-
+  // Suppress component-level update events that are redundant.
   for (const event of events) {
     if (suppressed.has(event.eventId)) { continue; }
     if (event.kind !== 'update' || event.entityKind !== 'component') { continue; }
 
     const pathA = event.trace.previousSourceRef?.entityPath ?? '';
     const pathB = event.trace.nextSourceRef?.entityPath ?? '';
+    const componentPath = pathB || pathA;
 
-    // Resolve component from both sides
+    // If there are active (unsuppressed) property children, the property lines
+    // are more specific — suppress the parent component update line.
+    const hasActiveChildren = events.some(child =>
+      !suppressed.has(child.eventId) &&
+      child.eventId !== event.eventId &&
+      child.entityKind === 'property' &&
+      (() => {
+        const childPath = child.trace.nextSourceRef?.entityPath
+          ?? child.trace.previousSourceRef?.entityPath
+          ?? '';
+        return childPath.startsWith(componentPath + '/');
+      })()
+    );
+    if (hasActiveChildren) {
+      suppressed.add(event.eventId);
+      continue;
+    }
+
+    // No active children — suppress if vocabulary is identical (nothing visible changed).
     const compA = pathA ? resolveComponentAtPath(previousDsl, pathA) : null;
     const compB = pathB ? resolveComponentAtPath(nextDsl, pathB) : null;
-
-    // If vocabulary is identical before and after, check for active children
     if (compA && compB) {
       const vocabA = normalizeComponentVocabulary(compA);
       const vocabB = normalizeComponentVocabulary(compB);
       if (vocabA.displayName === vocabB.displayName && vocabA.labelText === vocabB.labelText) {
-        // Check if any property child of this component remains unsuppressed
-        const componentPath = pathB || pathA;
-        const hasActiveChildren = events.some(child =>
-          !suppressed.has(child.eventId) &&
-          child.eventId !== event.eventId &&
-          child.entityKind === 'property' &&
-          (() => {
-            const childPath = child.trace.nextSourceRef?.entityPath
-              ?? child.trace.previousSourceRef?.entityPath
-              ?? '';
-            return childPath.startsWith(componentPath + '/');
-          })()
-        );
-        if (!hasActiveChildren) {
-          suppressed.add(event.eventId);
-        }
+        suppressed.add(event.eventId);
       }
     }
   }
