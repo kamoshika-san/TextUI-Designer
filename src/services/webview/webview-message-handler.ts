@@ -10,7 +10,7 @@ import { VSCodeWindowAdapter } from './vscode-window-adapter';
 import { YamlPointerResolver } from './yaml-pointer-resolver';
 import { withPreviewPipelineTrace } from './preview-pipeline-observability';
 
-type MessageType = 'export' | 'jump-to-dsl' | 'webview-ready' | 'theme-switch' | 'get-themes';
+type MessageType = 'export' | 'export-preview' | 'jump-to-dsl' | 'webview-ready' | 'theme-switch' | 'get-themes';
 type MessageHandler = (message: WebViewMessage) => Promise<void>;
 
 interface WebViewMessageHandlerDependencies {
@@ -51,6 +51,7 @@ export class WebViewMessageHandler {
     this.windowAdapter = dependencies.windowAdapter ?? new VSCodeWindowAdapter();
     this.messageHandlers = {
       'export': async () => this.handleExportMessage(),
+      'export-preview': async () => this.handleExportPreviewMessage(),
       'jump-to-dsl': async (message) => this.handleJumpToDslMessage(message),
       'webview-ready': async () => this.handleWebViewReady(),
       'theme-switch': async (message) => this.handleThemeSwitchMessage(message),
@@ -143,6 +144,30 @@ export class WebViewMessageHandler {
     } else {
       this.logger.debug('エクスポート用ファイルが見つかりません');
       this.windowAdapter.showWarningMessage('エクスポートするファイルが見つかりません。先に.tui.ymlファイルを開いてください。');
+    }
+  }
+
+  /**
+   * エクスポートプレビューメッセージを処理
+   * previewCode の完全統合は後続チケットで対応する。
+   */
+  private async handleExportPreviewMessage(): Promise<void> {
+    this.logger.debug('エクスポートプレビューメッセージを受信');
+    const lastTuiFile = this.updateManager.getLastTuiFile();
+
+    if (!lastTuiFile) {
+      this.windowAdapter.showWarningMessage('プレビューするファイルが見つかりません。先に.tui.ymlファイルを開いてください。');
+      return;
+    }
+
+    const choice = await vscode.window.showInformationMessage(
+      `エクスポートプレビュー: ${lastTuiFile}`,
+      'Export',
+      'Cancel'
+    );
+
+    if (choice === 'Export') {
+      await vscode.commands.executeCommand('textui-designer.export', lastTuiFile);
     }
   }
 
