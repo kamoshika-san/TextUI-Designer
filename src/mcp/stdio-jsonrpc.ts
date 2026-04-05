@@ -1,6 +1,8 @@
 import { EventEmitter } from 'events';
 import type { Readable, Writable } from 'stream';
 
+const MAX_BUFFER_SIZE = 10 * 1024 * 1024; // 10MB
+
 export interface JsonRpcRequest {
   jsonrpc: '2.0';
   id?: string | number | null;
@@ -35,7 +37,12 @@ export class StdioJsonRpcTransport extends EventEmitter {
 
   start(): void {
     this.input.on('data', chunk => {
-      this.buffer = Buffer.concat([this.buffer, Buffer.from(chunk)]);
+      const incoming = Buffer.from(chunk);
+      if (this.buffer.length + incoming.length > MAX_BUFFER_SIZE) {
+        this.emit('error', new Error('MCP buffer limit exceeded (10MB)'));
+        return;
+      }
+      this.buffer = Buffer.concat([this.buffer, incoming]);
       this.processBuffer();
     });
 
