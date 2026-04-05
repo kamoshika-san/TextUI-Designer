@@ -97,7 +97,7 @@ export class WebViewUpdateManager {
    * 競合結果を保持する（外部から注入）。
    * プレビュー更新ごとに WebView へ再配信される。
    */
-  setConflictResult(result: ConflictResult): void {
+  setConflictResult(result: ConflictResult | null): void {
     this.lastConflictResult = result;
   }
 
