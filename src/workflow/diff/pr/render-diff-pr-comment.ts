@@ -24,6 +24,7 @@
 import type { DiffPRCommentPayload, DiffPRCommentFinding } from './build-diff-pr-comment-payload';
 import type { DiffSummarySeverity } from '../../../core/textui-diff-review-impact';
 import type { DiffNarrativeGroup } from '../../../core/textui-diff-summary-narrative';
+import type { SemanticSummaryLine } from '../../../core/textui-semantic-diff-summary';
 
 // -- Options -----------------------------------------------------------------
 
@@ -82,10 +83,36 @@ function renderLinks(links: Array<{ label: string; href: string }>): string {
   return links.map(l => `- [${l.label}](${l.href})`).join('\n');
 }
 
+function renderSemanticLine(line: SemanticSummaryLine): string {
+  return `${line.prefix} ${line.text}`;
+}
+
+/**
+ * Render the D4 semantic summary block.
+ *
+ * Lines are sorted: additions first (+), then updates (~), then removals (-),
+ * then ambiguous (?), with severity descending within each group.
+ * This ordering lets reviewers scan additions and critical updates first.
+ */
+function renderSemanticSummaryBlock(lines: SemanticSummaryLine[]): string {
+  const PREFIX_ORDER: Record<string, number> = { '+': 0, '~': 1, '-': 2, '?': 3 };
+  const SEVERITY_RANK: Record<DiffSummarySeverity, number> = {
+    's3-critical': 3, 's2-review': 2, 's1-notice': 1, 's0-minor': 0,
+  };
+
+  const sorted = [...lines].sort((a, b) => {
+    const prefixDiff = (PREFIX_ORDER[a.prefix] ?? 9) - (PREFIX_ORDER[b.prefix] ?? 9);
+    if (prefixDiff !== 0) { return prefixDiff; }
+    return SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity];
+  });
+
+  return sorted.map(renderSemanticLine).join('\n');
+}
+
 // -- Compact mode renderer ---------------------------------------------------
 
 function renderCompact(payload: DiffPRCommentPayload): string {
-  const { header, highlights } = payload;
+  const { header, highlights, semanticSummary } = payload;
   const badge = signalBadge(header.signal);
 
   const lines: string[] = [];
@@ -94,6 +121,16 @@ function renderCompact(payload: DiffPRCommentPayload): string {
   lines.push(`**Events:** ${header.totalEvents} total` +
     (header.criticalCount > 0 ? ` — **${header.criticalCount} critical**` : '') +
     (header.highestSeverity ? ` — highest: \`${severityLabel(header.highestSeverity)}\`` : ''));
+
+  // D4: semantic summary (compact shows all lines — scannable before detail table)
+  if (semanticSummary && semanticSummary.lines.length > 0) {
+    lines.push('');
+    lines.push('### 変更サマリー');
+    lines.push('');
+    lines.push('```');
+    lines.push(renderSemanticSummaryBlock(semanticSummary.lines));
+    lines.push('```');
+  }
 
   if (highlights.length > 0) {
     lines.push('');
@@ -111,7 +148,7 @@ function renderCompact(payload: DiffPRCommentPayload): string {
 // -- Full mode renderer -------------------------------------------------------
 
 function renderFull(payload: DiffPRCommentPayload): string {
-  const { header, findings, narrative, links } = payload;
+  const { header, findings, narrative, semanticSummary, links } = payload;
   const badge = signalBadge(header.signal);
 
   const lines: string[] = [];
@@ -120,6 +157,16 @@ function renderFull(payload: DiffPRCommentPayload): string {
   lines.push(`**Events:** ${header.totalEvents} total` +
     (header.criticalCount > 0 ? ` — **${header.criticalCount} critical**` : '') +
     (header.highestSeverity ? ` — highest: \`${severityLabel(header.highestSeverity)}\`` : ''));
+
+  // D4: semantic summary — shown first so reviewers see "what changed" before detail
+  if (semanticSummary && semanticSummary.lines.length > 0) {
+    lines.push('');
+    lines.push('### 変更サマリー');
+    lines.push('');
+    lines.push('```');
+    lines.push(renderSemanticSummaryBlock(semanticSummary.lines));
+    lines.push('```');
+  }
 
   // Narrative groups (D2-3 output, verbatim)
   if (narrative.groups.length > 0) {

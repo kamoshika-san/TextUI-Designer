@@ -14,6 +14,7 @@ import type {
   DiffNarrativeItem,
   DiffNarrativeResult,
 } from './textui-diff-summary-narrative';
+import type { SemanticSummaryResult } from './textui-semantic-diff-summary';
 
 export const VISUAL_DIFF_CHANGE_KINDS: readonly DiffExternalEventKind[] = [
   'add',
@@ -76,6 +77,13 @@ export interface BuildVisualDiffViewModelInput {
   external: DiffResultExternal;
   reviewImpact: DiffReviewImpactResult;
   narrative: DiffNarrativeResult;
+  /**
+   * D4: semantic one-line summaries. Optional.
+   * When provided, each VisualDiffChangeNode.label is replaced with the
+   * semantic description (e.g., 'Primary Button "Save" を追加') instead of
+   * the generic narrative label (e.g., 'Entity added (structure)').
+   */
+  semanticSummary?: SemanticSummaryResult;
 }
 
 function isHeuristicEvent(event: DiffExternalEvent, impact?: DiffReviewImpact): boolean {
@@ -124,9 +132,22 @@ export function buildVisualDiffViewModel(input: BuildVisualDiffViewModelInput): 
   );
   const narrativeByEventId = buildNarrativeItemLookup(input.narrative);
 
+  // D4: build semantic label lookup when semanticSummary is provided
+  const semanticLabelByEventId = input.semanticSummary
+    ? new Map<string, string>(
+        input.semanticSummary.lines.map(line => [line.eventId, line.text])
+      )
+    : null;
+
   const items: VisualDiffChangeNode[] = input.external.events.map((event) => {
     const impact = impactByEventId.get(event.eventId);
     const narrativeEntry = narrativeByEventId.get(event.eventId);
+
+    // Label priority: D4 semantic > D2-3 narrative > fallback
+    const label =
+      semanticLabelByEventId?.get(event.eventId) ??
+      narrativeEntry?.item.label ??
+      fallbackLabel(event, impact);
 
     return {
       nodeId: event.eventId,
@@ -137,7 +158,7 @@ export function buildVisualDiffViewModel(input: BuildVisualDiffViewModelInput): 
       isAmbiguous: isAmbiguousEvent(event, impact),
       beforePath: event.previousPath,
       afterPath: event.nextPath,
-      label: narrativeEntry?.item.label ?? fallbackLabel(event, impact),
+      label,
       evidenceRefs: {
         eventId: event.eventId,
         impactEventId: impact?.eventId,
