@@ -21,9 +21,11 @@ import type { DiffCheckSignal } from '../gate/build-diff-check-run-result';
 
 import type { DiffReviewImpactResult, DiffSummarySeverity } from '../../../core/textui-diff-review-impact';
 import type { DiffNarrativeResult } from '../../../core/textui-diff-summary-narrative';
+import type { SemanticSummaryResult } from '../../../core/textui-semantic-diff-summary';
 
 // Re-export D2 types for single-import convenience
 export type { DiffReviewImpactResult, DiffNarrativeResult };
+export type { SemanticSummaryResult };
 
 // -- Output types ------------------------------------------------------------
 
@@ -74,6 +76,12 @@ export interface DiffPRCommentPayload {
    * through verbatim. Rendering layer uses this for full-mode output.
    */
   narrative: DiffNarrativeResult;
+  /**
+   * D4 semantic one-line summaries.
+   * When present, the rendering layer displays a scannable change list
+   * before the detailed findings table. Optional for backward compatibility.
+   */
+  semanticSummary?: SemanticSummaryResult;
   /** Optional evidence links (artifact URLs, CI run links, etc.). */
   links?: DiffPRCommentLink[];
 }
@@ -98,6 +106,11 @@ export interface BuildDiffPRCommentPayloadOpts {
   highlightCount?: number;
   /** Optional evidence links. */
   links?: DiffPRCommentLink[];
+  /**
+   * D4: semantic one-line summaries. Optional.
+   * When provided, included in the payload for the rendering layer.
+   */
+  semanticSummary?: SemanticSummaryResult;
 }
 
 // -- Internal helpers --------------------------------------------------------
@@ -172,6 +185,7 @@ export function buildDiffPRCommentPayload(
     signal,
     highlightCount = 5,
     links,
+    semanticSummary,
   } = opts;
 
   const findings = buildFindings(external.events, refinedImpact);
@@ -191,6 +205,10 @@ export function buildDiffPRCommentPayload(
     findings,
     narrative,
   };
+
+  if (semanticSummary !== undefined) {
+    payload.semanticSummary = semanticSummary;
+  }
 
   if (links !== undefined) {
     payload.links = links;
