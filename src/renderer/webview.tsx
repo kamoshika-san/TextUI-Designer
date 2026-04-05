@@ -182,13 +182,6 @@ const App: React.FC = () => {
     }
   };
 
-  const handlePreview = () => {
-    if (vscodeApi?.postMessage) {
-      console.log('[React] プレビューボタンがクリックされました');
-      vscodeApi.postMessage({ type: 'export-preview' });
-    }
-  };
-
   const handleJumpToDsl = (dslPath: string, componentName: string) => {
     const runtimeApi = getVSCodeApi();
     if (!runtimeApi?.postMessage) {
@@ -302,7 +295,7 @@ const App: React.FC = () => {
       ) : null}
       <ThemeToggle />
       <CustomThemeSelector />
-      <ExportButton onExport={handleExport} onPreview={handlePreview} />
+      <ExportButton onExport={handleExport} />
       {showUpdateIndicator ? (
         <UpdateIndicator
           status={updateStatus}
