@@ -86,7 +86,7 @@ export class TextUiMcpServer {
 
   private async handleToolCall(params: unknown): Promise<unknown> {
     const name = requireStringParam(params, 'name', 'tools/call requires name');
-    const args = getObject(params, 'arguments');
+    const args = getObject(params, 'arguments') ?? {};
 
     const toolHandlers = createToolHandlers({
       engine: await this.getCoreEngine(),

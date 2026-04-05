@@ -1,10 +1,10 @@
-export function getObject(value: unknown, key: string): Record<string, unknown> {
+export function getObject(value: unknown, key: string): Record<string, unknown> | null {
   if (!value || typeof value !== 'object') {
-    return {};
+    return null;
   }
   const candidate = (value as Record<string, unknown>)[key];
   if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return {};
+    return null;
   }
   return candidate as Record<string, unknown>;
 }

@@ -68,6 +68,6 @@ async function handlePromptsGet(
   resolvePrompt: (name: string, args: Record<string, unknown>) => unknown
 ): Promise<unknown> {
   const name = requireStringParam(params, 'name', 'prompts/get requires name');
-  const argumentsValue = getObject(params, 'arguments');
+  const argumentsValue = getObject(params, 'arguments') ?? {};
   return resolvePrompt(name, argumentsValue);
 }
