@@ -61,13 +61,13 @@ export function detectConflicts(
   const conflicts: ConflictEntry[] = [];
 
   for (const idx of oursChanged) {
-    if (!theirsChanged.has(idx)) continue;
+    if (!theirsChanged.has(idx)) { continue; }
 
     const oursComp = ours[idx];
     const theirsComp = theirs[idx];
     // both-added の場合 base[idx] は存在しないため undefined を許容
     const baseComp = base[idx] as ComponentDef | undefined;
-    if (!oursComp || !theirsComp) continue;
+    if (!oursComp || !theirsComp) { continue; }
 
     let conflictKind: ConflictEntry['conflictKind'];
     if (oursModified.has(idx) && theirsModified.has(idx)) {
