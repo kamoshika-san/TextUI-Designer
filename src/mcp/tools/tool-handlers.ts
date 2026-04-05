@@ -1,5 +1,11 @@
 import type { ComponentBlueprint, TextUICoreEngine } from '../../core/textui-core-engine';
 
+function isComponentBlueprintArray(value: unknown): value is ComponentBlueprint[] {
+  return Array.isArray(value) && value.every(
+    item => item !== null && typeof item === 'object' && typeof (item as Record<string, unknown>).type === 'string'
+  );
+}
+
 type GetObjectValue = (obj: Record<string, unknown>, key: string) => string | undefined;
 type GetObjectUnknown = (obj: Record<string, unknown>, key: string) => unknown;
 type GetObjectBoolean = (obj: Record<string, unknown>, key: string) => boolean | undefined;
@@ -36,7 +42,7 @@ export function createToolHandlers(context: ToolHandlerContext): ToolHandlers {
       title: getObjectValue(args, 'title') ?? '',
       pageId: getObjectValue(args, 'pageId'),
       layout: getObjectValue(args, 'layout'),
-      components: getObjectArray(args, 'components') as unknown as ComponentBlueprint[] | undefined,
+      components: (() => { const raw = getObjectArray(args, 'components'); return isComponentBlueprintArray(raw) ? raw : undefined; })(),
       format: getObjectValue(args, 'format'),
       providerModulePath: getObjectValue(args, 'providerModulePath'),
       themePath: getObjectValue(args, 'themePath')
