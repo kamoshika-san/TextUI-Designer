@@ -1,0 +1,36 @@
+page:
+  id: form-sample-v1
+  title: "User Registration Form - Version 1"
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: "User Registration"
+    - Text:
+        variant: p
+        value: "Please fill out the form below to register."
+    - Input:
+        label: "Full Name"
+        name: "fullName"
+        type: text
+        placeholder: "Enter your full name"
+        required: true
+    - Input:
+        label: "Email Address"
+        name: "email"
+        type: email
+        placeholder: "Enter your email"
+        required: true
+    - Input:
+        label: "Password"
+        name: "password"
+        type: password
+        placeholder: "Enter a password"
+        required: true
+    - DatePicker:
+        label: "Date of Birth"
+        name: "dob"
+        min: "1900-01-01"
+    - Button:
+        label: "Register"
+        kind: primary
