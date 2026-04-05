@@ -5,6 +5,7 @@ import { CustomThemeSelector } from './components/CustomThemeSelector';
 import { renderRegisteredComponent, registerBuiltInComponents } from './component-map';
 import type { TextUIDSL, ComponentDef } from '../domain/dsl-types';
 import type { VisualDiffResult } from '../domain/diff/visual-diff-model';
+import type { ConflictViewResult } from '../domain/diff/conflict-webview-model';
 import { getVSCodeApi } from './vscode-api';
 import { createComponentKeys, hashString, mergeDslWithPrevious } from './preview-diff';
 import type { ErrorInfo } from './error-guidance';
@@ -34,6 +35,7 @@ const App: React.FC = () => {
   const [lastCompletedAt, setLastCompletedAt] = useState<number | null>(null);
   const [showUpdateIndicator, setShowUpdateIndicator] = useState(true);
   const [diffResult, setDiffResult] = useState<VisualDiffResult | null>(null);
+  const [conflictResult, setConflictResult] = useState<ConflictViewResult | null>(null);
   const [showJumpToDslHoverIndicator, setShowJumpToDslHoverIndicator] = useState(true);
   const [showJumpToDslOnboarding, setShowJumpToDslOnboarding] = useState(() =>
     shouldShowJumpToDslOnboarding(typeof window !== 'undefined' ? window.localStorage : undefined)
@@ -167,7 +169,8 @@ const App: React.FC = () => {
     setLastCompletedAt,
     setShowUpdateIndicator,
     setShowJumpToDslHoverIndicator,
-    onDiffUpdate: setDiffResult
+    onDiffUpdate: setDiffResult,
+    onConflictUpdate: setConflictResult
   });
 
   const handleExport = () => {
@@ -300,6 +303,11 @@ const App: React.FC = () => {
       {diffResult?.hasChanges ? (
         <span style={{ fontSize: '0.75rem', color: '#fbbf24', padding: '0.2rem 0.5rem', borderRadius: '0.375rem', background: 'rgba(251,191,36,0.12)' }}>
           {diffResult.nodes.filter(n => n.changeType !== 'unchanged').length} changes
+        </span>
+      ) : null}
+      {conflictResult?.hasConflicts ? (
+        <span style={{ fontSize: '0.75rem', color: '#f87171', padding: '0.2rem 0.5rem', borderRadius: '0.375rem', background: 'rgba(248,113,113,0.12)' }}>
+          &#9888; {conflictResult.entries.length} conflicts
         </span>
       ) : null}
       {components.map((comp, i) => renderRegisteredComponent(comp, componentKeys[i] || i, {
