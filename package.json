@@ -307,6 +307,10 @@
         "title": "TextUI: Preview to DSL Jump (How to Use)"
       },
       {
+        "command": "textui-designer.openOverlayDiff",
+        "title": "TextUI: Overlay Diff (透かし比較)"
+      },
+      {
         "command": "textui-designer.createTemplate",
         "title": "TextUI: 新規テンプレート作成"
       },
@@ -380,6 +384,11 @@
         },
         {
           "command": "textui-designer.export",
+          "when": "resourceLangId == yaml",
+          "group": "navigation"
+        },
+        {
+          "command": "textui-designer.openOverlayDiff",
           "when": "resourceLangId == yaml",
           "group": "navigation"
         }

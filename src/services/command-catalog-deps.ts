@@ -34,6 +34,7 @@ export interface CommandCatalogDependencies {
   showMemoryReport: () => Promise<void>;
   toggleMemoryTracking: () => Promise<void>;
   enableMemoryTracking: () => Promise<void>;
+  openOverlayDiff: () => Promise<void>;
 }
 
 export interface CommandCatalogEntry {

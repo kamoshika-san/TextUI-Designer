@@ -2,6 +2,7 @@ import { useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
 import type { TextUIDSL } from '../domain/dsl-types';
 import type { VisualDiffResult } from '../domain/diff/visual-diff-model';
 import type { ConflictViewResult } from '../domain/diff/conflict-webview-model';
+import type { OverlayDiffState } from '../domain/diff/overlay-diff-types';
 import {
   formatSchemaErrors,
   mapDetailedSchemaError,
@@ -56,6 +57,7 @@ interface UseWebviewMessagesOptions {
   onDiffUpdate?: (diff: VisualDiffResult) => void;
   onConflictUpdate?: (conflict: ConflictViewResult) => void;
   onHighlightComponent?: (index: number | null) => void;
+  onOverlayDiffInit?: (state: OverlayDiffState) => void;
 }
 
 export function readPreviewSettings(
@@ -82,7 +84,8 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
     setShowJumpToDslHoverIndicator,
     onDiffUpdate,
     onConflictUpdate,
-    onHighlightComponent
+    onHighlightComponent,
+    onOverlayDiffInit
   } = options;
   const previewUpdateFeedbackRef = useRef<ReturnType<typeof createPreviewUpdateFeedbackController> | null>(null);
 
@@ -158,6 +161,14 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
         case 'highlight-component':
           onHighlightComponent?.(message.index as number | null);
           break;
+        case 'overlay-diff-init':
+          onOverlayDiffInit?.({
+            dslA: message.dslA as import('../domain/dsl-types').TextUIDSL,
+            fileNameA: message.fileNameA as string,
+            dslB: message.dslB as import('../domain/dsl-types').TextUIDSL,
+            fileNameB: message.fileNameB as string
+          });
+          break;
         default:
           if (isDevelopmentMode) {
             console.log('[React] unhandled message type', message.type);
@@ -171,5 +182,5 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
       previewUpdateFeedbackRef.current = null;
       window.removeEventListener('message', onMessage);
     };
-  }, [postReady, applyDslUpdate, setError, setUpdateStatus, setLastCompletedAt, setShowUpdateIndicator, setShowJumpToDslHoverIndicator, onDiffUpdate, onConflictUpdate, onHighlightComponent]);
+  }, [postReady, applyDslUpdate, setError, setUpdateStatus, setLastCompletedAt, setShowUpdateIndicator, setShowJumpToDslHoverIndicator, onDiffUpdate, onConflictUpdate, onHighlightComponent, onOverlayDiffInit]);
 }
