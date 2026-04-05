@@ -9,6 +9,8 @@ import { ConfigManager } from '../../utils/config-manager';
 import { Logger } from '../../utils/logger';
 import { deliverPreviewPayload } from './preview-webview-deliver';
 import { deliverDiffPayload } from './diff-webview-deliver';
+import { deliverConflictPayload } from '../diff/conflict-webview-deliver';
+import type { ConflictResult } from '../../domain/diff/conflict-detector';
 import { DiffManager } from '../../exporters/metrics/diff-manager';
 import type { TextUIDSL } from '../../domain/dsl-types';
 import { PreviewUpdateSessionState, shouldBlockYamlSend } from './preview-update-session-state';
@@ -74,6 +76,7 @@ export class WebViewUpdateManager {
   private readonly logger = new Logger('WebViewUpdateManager');
   private readonly diffManager = new DiffManager();
   private lastDeliveredDsl: TextUIDSL | null = null;
+  private lastConflictResult: ConflictResult | null = null;
 
   constructor(
     lifecycleManager: WebViewLifecycleManager,
@@ -88,6 +91,14 @@ export class WebViewUpdateManager {
     this.cacheManager = deps?.cacheManager ?? new WebViewPreviewCacheManager();
     this.errorHandler = new WebViewErrorHandler(lifecycleManager);
     this.applyFailurePolicy = deps?.applyFailurePolicy ?? applyPreviewFailurePolicy;
+  }
+
+  /**
+   * 競合結果を保持する（外部から注入）。
+   * プレビュー更新ごとに WebView へ再配信される。
+   */
+  setConflictResult(result: ConflictResult): void {
+    this.lastConflictResult = result;
   }
 
   /**
@@ -219,6 +230,9 @@ export class WebViewUpdateManager {
           if (cachedDiffResult.hasChanges) {
             deliverDiffPayload(this.lifecycleManager, cachedDiffResult, oldComponentsC, newComponentsC);
           }
+          if (this.lastConflictResult) {
+            deliverConflictPayload(this.lifecycleManager, this.lastConflictResult);
+          }
           this.lastDeliveredDsl = cachedDsl;
           return;
         }
@@ -251,6 +265,9 @@ export class WebViewUpdateManager {
       const diffResult = this.diffManager.computeDiff(newDsl);
       if (diffResult.hasChanges) {
         deliverDiffPayload(this.lifecycleManager, diffResult, oldComponents, newComponents);
+      }
+      if (this.lastConflictResult) {
+        deliverConflictPayload(this.lifecycleManager, this.lastConflictResult);
       }
       this.lastDeliveredDsl = newDsl;
 
