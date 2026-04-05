@@ -48,7 +48,12 @@ export class CliRunner {
       throw new Error('run_cli capture does not allow --browser or --allow-no-sandbox via MCP');
     }
 
-    const cwd = request.cwd ? path.resolve(request.cwd) : process.cwd();
+    const baseCwd = process.cwd();
+    const resolvedCwd = request.cwd ? path.resolve(request.cwd) : baseCwd;
+    if (resolvedCwd !== baseCwd && !resolvedCwd.startsWith(baseCwd + path.sep)) {
+      throw new Error(`run_cli cwd must be within the project directory: ${resolvedCwd}`);
+    }
+    const cwd = resolvedCwd;
     const timeoutMs = request.timeoutMs ?? 120000;
     const parseJson = request.parseJson ?? true;
     const cliEntry = path.resolve(__dirname, '../cli/index.js');
