@@ -200,15 +200,16 @@ const App: React.FC = () => {
     setShowJumpToDslOnboarding(false);
   };
 
-  if (error) {
-    return <ErrorPanel error={error} />;
-  }
-  if (!json) {
+  if (!json && !error) {
     return (
       <div style={{ padding: 24 }}>
         <div>Loading...</div>
       </div>
     );
+  }
+  if (!json) {
+    // First-load error — no previous preview to show behind it
+    return <ErrorPanel error={error!} />;
   }
 
   const components: ComponentDef[] = json.page?.components || [];
@@ -340,6 +341,19 @@ const App: React.FC = () => {
           Preview component to source navigation stays available after the first-run tip.
         </div>
       </div>
+      {error ? (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 9999,
+          background: 'rgba(20, 5, 5, 0.96)',
+          borderBottom: '1px solid rgba(239, 68, 68, 0.5)',
+        }}>
+          <ErrorPanel error={error} />
+        </div>
+      ) : null}
     </div>
   );
 };
