@@ -72,6 +72,18 @@ const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
     command: 'textui-designer.showJumpToDslHelp',
     title: 'TextUI: Preview to DSL Jump (How to Use)',
     callback: deps => () => deps.showJumpToDslHelp()
+  },
+  {
+    command: 'textui-designer.openOverlayDiff',
+    title: 'TextUI: Overlay Diff (透かし比較)',
+    menus: [
+      {
+        location: 'editor/title',
+        when: 'resourceLangId == yaml',
+        group: 'navigation'
+      }
+    ],
+    callback: deps => () => deps.openOverlayDiff()
   }
 ];
 

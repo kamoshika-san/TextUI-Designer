@@ -119,6 +119,10 @@ export function getWebviewContent(context: vscode.ExtensionContext, panel?: vsco
           console.log('[WebView] schema-errorメッセージを処理:', message.errors);
           window.postMessage({ type: 'schema-error', errors: message.errors }, '*');
           break;
+        case 'overlay-diff-init':
+          // Overlay Diff の初期化メッセージを React に転送
+          window.postMessage({ ...message }, '*');
+          break;
         case 'openDevTools':
           // 開発者ツールを開く（開発モードのみ）
           if (process.env.NODE_ENV === 'development') {

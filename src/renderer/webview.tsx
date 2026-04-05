@@ -2,10 +2,12 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ThemeToggle } from './components/ThemeToggle';
 import { CustomThemeSelector } from './components/CustomThemeSelector';
+import { OverlayDiffViewer } from './components/OverlayDiffViewer';
 import { renderRegisteredComponent, registerBuiltInComponents } from './component-map';
 import type { TextUIDSL, ComponentDef } from '../domain/dsl-types';
 import type { VisualDiffResult } from '../domain/diff/visual-diff-model';
 import type { ConflictViewResult } from '../domain/diff/conflict-webview-model';
+import type { OverlayDiffState } from '../domain/diff/overlay-diff-types';
 import { getVSCodeApi } from './vscode-api';
 import { createComponentKeys, hashString, mergeDslWithPrevious } from './preview-diff';
 import type { ErrorInfo } from './error-guidance';
@@ -42,6 +44,7 @@ const App: React.FC = () => {
     shouldShowJumpToDslOnboarding(typeof window !== 'undefined' ? window.localStorage : undefined)
   );
   const [dismissJumpToDslForever, setDismissJumpToDslForever] = useState(false);
+  const [overlayDiffState, setOverlayDiffState] = useState<OverlayDiffState | null>(null);
   const prevComponentsKeysRef = useRef<{ components: ComponentDef[]; keys: string[] } | null>(null);
 
   useEffect(() => {
@@ -172,7 +175,8 @@ const App: React.FC = () => {
     setShowJumpToDslHoverIndicator,
     onDiffUpdate: setDiffResult,
     onConflictUpdate: setConflictResult,
-    onHighlightComponent: setHighlightedIndex
+    onHighlightComponent: setHighlightedIndex,
+    onOverlayDiffInit: setOverlayDiffState
   });
 
   const handleExport = () => {
@@ -208,6 +212,10 @@ const App: React.FC = () => {
     );
     setShowJumpToDslOnboarding(false);
   };
+
+  if (overlayDiffState) {
+    return <OverlayDiffViewer state={overlayDiffState} />;
+  }
 
   if (!json && !error) {
     return (

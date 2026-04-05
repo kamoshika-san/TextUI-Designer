@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import { ErrorHandler } from '../utils/error-handler';
 import { ConfigManager } from '../utils/config-manager';
 import type {
@@ -13,6 +14,7 @@ import type { RuntimeInspectionCommandBindings } from './runtime-inspection-comm
 import { executeCapturePreviewCommand } from './commands/capture-preview-command';
 import { executeExportCommand } from './commands/export-command';
 import { executeOpenPreviewCommand } from './commands/open-preview-command';
+import { executeOpenOverlayDiffCommand } from './commands/open-overlay-diff-command';
 import { Logger } from '../utils/logger';
 
 export interface PreviewExportFeatureRegistryDependencies {
@@ -20,6 +22,7 @@ export interface PreviewExportFeatureRegistryDependencies {
   exportService: IExportService;
   themeManager?: IThemeManager;
   extensionPath: string;
+  context: vscode.ExtensionContext;
   logger: Logger;
 }
 
@@ -45,13 +48,14 @@ export type CommandFeatureBindings = Pick<
   | 'checkAutoPreviewSetting'
   | 'reinitializeSchemas'
   | 'debugSchemas'
+  | 'openOverlayDiff'
 >;
 
 export function createPreviewExportFeatureRegistry(
   deps: PreviewExportFeatureRegistryDependencies
 ): Pick<
   CommandFeatureBindings,
-  'openPreviewWithCheck' | 'capturePreviewImage' | 'openDevTools' | 'executeExport'
+  'openPreviewWithCheck' | 'capturePreviewImage' | 'openDevTools' | 'executeExport' | 'openOverlayDiff'
 > {
   return {
     openPreviewWithCheck: () => executeOpenPreviewCommand(deps.webViewManager, deps.logger),
@@ -63,7 +67,8 @@ export function createPreviewExportFeatureRegistry(
         logger: deps.logger
       }),
     openDevTools: () => deps.webViewManager.openDevTools(),
-    executeExport: (filePath?: string) => executeExportCommand(deps.exportService, filePath)
+    executeExport: (filePath?: string) => executeExportCommand(deps.exportService, filePath),
+    openOverlayDiff: () => executeOpenOverlayDiffCommand(deps.context, deps.logger)
   };
 }
 

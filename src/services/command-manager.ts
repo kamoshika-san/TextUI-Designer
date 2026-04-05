@@ -78,6 +78,7 @@ export class CommandManager implements ICommandManager {
       exportService: this.exportService,
       themeManager: this.themeManager,
       extensionPath: this.context.extensionPath,
+      context: this.context,
       logger: this.logger
     });
     const authoring = createAuthoringFeatureRegistry({
