@@ -5,6 +5,10 @@ import { YamlParser } from '../webview/yaml-parser';
 import { OverlayDiffLifecycleManager } from '../webview/overlay-diff-lifecycle-manager';
 import { setupOverlayDiffMessageHandler } from '../webview/overlay-diff-message-handler';
 import type { TextUIDSL } from '../../domain/dsl-types';
+import { TextUICoreEngine } from '../../core/textui-core-engine';
+import { classifyReviewImpact } from '../../core/textui-diff-review-impact';
+import { buildSemanticSummary } from '../../core/textui-semantic-diff-summary';
+import type { SemanticSummaryResult } from '../../core/textui-semantic-diff-summary';
 
 type LoggerLike = {
   debug: (message: string, ...args: unknown[]) => void;
@@ -17,7 +21,8 @@ type LoggerLike = {
  * 1. アクティブエディタの .tui.yml を DSL A として解決
  * 2. ファイルダイアログで DSL B を選択
  * 3. 両ファイルを並列パース
- * 4. Overlay Diff パネルを作成して init メッセージを登録
+ * 4. D4 セマンティック差分要約を計算（失敗しても続行）
+ * 5. Overlay Diff パネルを作成して init メッセージを登録
  */
 export async function executeOpenOverlayDiffCommand(
   context: vscode.ExtensionContext,
@@ -81,6 +86,9 @@ export async function executeOpenOverlayDiffCommand(
     return;
   }
 
+  // D4: セマンティック差分要約を計算（失敗してもパネルは開く）
+  const semanticSummary = computeSemanticSummary(dslA, fileNameA, dslB, fileNameB, logger);
+
   // パネル作成
   const lifecycleManager = new OverlayDiffLifecycleManager(context);
   await lifecycleManager.getOrCreatePanel();
@@ -92,10 +100,47 @@ export async function executeOpenOverlayDiffCommand(
     fileNameA,
     dslB,
     fileNameB,
-    context
+    context,
+    semanticSummary ?? undefined
   );
 
   logger.debug('Overlay Diff パネルを開きました');
+}
+
+/**
+ * 両 DSL から D4 セマンティック差分要約を計算する。
+ *
+ * 差分計算はベストエフォート：失敗した場合は null を返し、
+ * 呼び出し元はパネルを semanticSummary なしで開く。
+ */
+function computeSemanticSummary(
+  dslA: TextUIDSL,
+  fileNameA: string,
+  dslB: TextUIDSL,
+  fileNameB: string,
+  logger: LoggerLike
+): SemanticSummaryResult | null {
+  try {
+    const engine = new TextUICoreEngine();
+    const compareResponse = engine.compareUi({
+      previousDsl: dslA,
+      previousSourcePath: fileNameA,
+      nextDsl: dslB,
+      nextSourcePath: fileNameB,
+      skipTokenValidation: true
+    });
+
+    if (!compareResponse.ok || !compareResponse.result) {
+      logger.debug('Overlay Diff: 差分計算に失敗（バリデーションエラー）。要約をスキップします。');
+      return null;
+    }
+
+    const reviewImpact = classifyReviewImpact(compareResponse.result);
+    return buildSemanticSummary(compareResponse.result, reviewImpact);
+  } catch (err) {
+    logger.debug('Overlay Diff: セマンティック要約計算中に予期しないエラー:', err);
+    return null;
+  }
 }
 
 function resolveActiveTuiPath(): string | undefined {
