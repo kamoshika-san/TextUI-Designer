@@ -17,6 +17,32 @@ export class ExportApplicationService {
     private readonly performExportWrite: ExportPerformWrite
   ) {}
 
+  async runPreview(lastTuiFile?: string): Promise<void> {
+    const filePath = await this.resolveTargetPath(lastTuiFile);
+    if (!filePath) {
+      return;
+    }
+
+    const settings = ConfigManager.getExportSettings();
+    const formats = [...this.exportManager.getSupportedFormats()].sort((a, b) => {
+      if (a === settings.defaultFormat) {
+        return -1;
+      }
+      if (b === settings.defaultFormat) {
+        return 1;
+      }
+      return 0;
+    });
+
+    const format = await this.port.pickExportFormat(formats, settings.defaultFormat);
+    if (!format) {
+      return;
+    }
+
+    const code = await this.exportManager.exportFromFile(filePath, { format });
+    await this.port.previewCode(code, format);
+  }
+
   async run(lastTuiFile?: string): Promise<void> {
     const filePath = await this.resolveTargetPath(lastTuiFile);
     if (!filePath) {

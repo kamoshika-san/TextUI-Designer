@@ -68,6 +68,7 @@ export interface IExportManager {
 
 export interface IExportService {
   executeExport(lastTuiFile?: string): Promise<void>;
+  executeExportPreview(lastTuiFile?: string): Promise<void>;
 }
 
 export interface ITemplateService {

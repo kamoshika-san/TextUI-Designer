@@ -46,6 +46,12 @@ export class ExportService implements IExportService {
     }
   }
 
+  async executeExportPreview(lastTuiFile?: string): Promise<void> {
+    await ErrorHandler.executeSafely(async () => {
+      await this.application.runPreview(lastTuiFile);
+    }, 'エクスポートプレビューに失敗しました');
+  }
+
   /**
    * エクスポート対象ファイルのパスを取得
    */
