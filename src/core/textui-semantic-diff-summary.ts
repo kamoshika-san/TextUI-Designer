@@ -91,10 +91,121 @@ function formatScalar(value: unknown): string {
   if (typeof value === 'string') {
     const trimmed = value.trim();
     if (trimmed.length === 0) { return '(empty)'; }
-    const truncated = trimmed.length > 30 ? trimmed.slice(0, 30) + '…' : trimmed;
+    const truncated = trimmed.length > 50 ? trimmed.slice(0, 50) + '…' : trimmed;
     return `"${truncated}"`;
   }
   return String(value);
+}
+
+/**
+ * Returns true when two scalar values are considered identical for diff purposes.
+ * Handles undefined/null symmetrically and uses strict equality for primitives.
+ */
+function scalarIsIdentical(a: unknown, b: unknown): boolean {
+  if (a === undefined && b === undefined) { return true; }
+  if (a === null && b === null) { return true; }
+  if (a === undefined || a === null || b === undefined || b === null) { return false; }
+  if (typeof a === 'string' && typeof b === 'string') {
+    return a.trim() === b.trim();
+  }
+  return a === b;
+}
+
+/**
+ * Compute the set of event IDs that should be suppressed from the summary.
+ *
+ * Suppression rules (applied in two passes):
+ *
+ * Pass 1 — Event-level suppression:
+ *   - Page entity `update` events (entityKind='page', path='/page') are always suppressed.
+ *     They fire whenever any child changes; they carry no additional information.
+ *   - Property `update` events where prevScalar === nextScalar are suppressed.
+ *     These arise when the diff engine detects a structural change but the final
+ *     scalar value is identical (normalization artifact or false positive).
+ *
+ * Pass 2 — Component entity suppression:
+ *   - Component `update` events are suppressed when the resolved vocabulary
+ *     (displayName) is identical on both sides AND all their property children
+ *     were already suppressed in Pass 1.
+ *     This removes "~ Primary Button を更新" noise lines that have no real sub-changes.
+ */
+function computeSuppressedEventIds(
+  events: DiffEvent[],
+  previousDsl: TextUIDSL,
+  nextDsl: TextUIDSL
+): Set<string> {
+  const suppressed = new Set<string>();
+
+  // ── Pass 1 ──────────────────────────────────────────────────────────────────
+
+  for (const event of events) {
+    // Suppress page entity update events (they are always-present noise)
+    if (event.entityKind === 'page' && event.kind === 'update') {
+      const path = event.trace.nextSourceRef?.entityPath
+        ?? event.trace.previousSourceRef?.entityPath
+        ?? '';
+      if (path === '/page') {
+        suppressed.add(event.eventId);
+        continue;
+      }
+    }
+
+    // Suppress property update events where the scalar value is unchanged
+    if (event.kind === 'update' && event.entityKind === 'property') {
+      const rawPath = event.trace.nextSourceRef?.entityPath
+        ?? event.trace.previousSourceRef?.entityPath
+        ?? '';
+      const prevResult = rawPath ? resolveAtPath(previousDsl, rawPath) : null;
+      const nextResult = rawPath ? resolveAtPath(nextDsl, rawPath) : null;
+      const prevScalar = prevResult?.kind === 'scalar' ? prevResult.value : undefined;
+      const nextScalar = nextResult?.kind === 'scalar' ? nextResult.value : undefined;
+      if (scalarIsIdentical(prevScalar, nextScalar)) {
+        suppressed.add(event.eventId);
+        continue;
+      }
+    }
+  }
+
+  // ── Pass 2 ──────────────────────────────────────────────────────────────────
+  // Suppress component-level update events that have no meaningful children left.
+
+  for (const event of events) {
+    if (suppressed.has(event.eventId)) { continue; }
+    if (event.kind !== 'update' || event.entityKind !== 'component') { continue; }
+
+    const pathA = event.trace.previousSourceRef?.entityPath ?? '';
+    const pathB = event.trace.nextSourceRef?.entityPath ?? '';
+
+    // Resolve component from both sides
+    const compA = pathA ? resolveComponentAtPath(previousDsl, pathA) : null;
+    const compB = pathB ? resolveComponentAtPath(nextDsl, pathB) : null;
+
+    // If vocabulary is identical before and after, check for active children
+    if (compA && compB) {
+      const vocabA = normalizeComponentVocabulary(compA);
+      const vocabB = normalizeComponentVocabulary(compB);
+      if (vocabA.displayName === vocabB.displayName && vocabA.labelText === vocabB.labelText) {
+        // Check if any property child of this component remains unsuppressed
+        const componentPath = pathB || pathA;
+        const hasActiveChildren = events.some(child =>
+          !suppressed.has(child.eventId) &&
+          child.eventId !== event.eventId &&
+          child.entityKind === 'property' &&
+          (() => {
+            const childPath = child.trace.nextSourceRef?.entityPath
+              ?? child.trace.previousSourceRef?.entityPath
+              ?? '';
+            return childPath.startsWith(componentPath + '/');
+          })()
+        );
+        if (!hasActiveChildren) {
+          suppressed.add(event.eventId);
+        }
+      }
+    }
+  }
+
+  return suppressed;
 }
 
 /**
@@ -376,10 +487,15 @@ export function buildSemanticSummary(
     reviewImpact.impacts.map(impact => [impact.eventId, impact.severity])
   );
 
-  const lines: SemanticSummaryLine[] = compareResult.events.map(event => {
-    const severity = impactBySeverity.get(event.eventId) ?? 's0-minor';
-    return buildLine(event, previousDsl, nextDsl, severity);
-  });
+  // Compute suppression set before building lines
+  const suppressed = computeSuppressedEventIds(compareResult.events, previousDsl, nextDsl);
+
+  const lines: SemanticSummaryLine[] = compareResult.events
+    .filter(event => !suppressed.has(event.eventId))
+    .map(event => {
+      const severity = impactBySeverity.get(event.eventId) ?? 's0-minor';
+      return buildLine(event, previousDsl, nextDsl, severity);
+    });
 
   const additions = lines.filter(l => l.prefix === '+').length;
   const removals = lines.filter(l => l.prefix === '-').length;
