@@ -212,6 +212,14 @@ export class WebViewUpdateManager {
         if (cachedData) {
           this.previewUpdateCoordinator.setPhase(PreviewUpdatePhase.Delivering);
           deliverPreviewPayload(this.lifecycleManager, cachedData, currentYaml.fileName);
+          const cachedDsl = cachedData as TextUIDSL;
+          const oldComponentsC = this.lastDeliveredDsl?.page?.components ?? [];
+          const newComponentsC = cachedDsl?.page?.components ?? [];
+          const cachedDiffResult = this.diffManager.computeDiff(cachedDsl);
+          if (cachedDiffResult.hasChanges) {
+            deliverDiffPayload(this.lifecycleManager, cachedDiffResult, oldComponentsC, newComponentsC);
+          }
+          this.lastDeliveredDsl = cachedDsl;
           return;
         }
       }
@@ -241,7 +249,9 @@ export class WebViewUpdateManager {
       const oldComponents = this.lastDeliveredDsl?.page?.components ?? [];
       const newComponents = newDsl?.page?.components ?? [];
       const diffResult = this.diffManager.computeDiff(newDsl);
-      deliverDiffPayload(this.lifecycleManager, diffResult, oldComponents, newComponents);
+      if (diffResult.hasChanges) {
+        deliverDiffPayload(this.lifecycleManager, diffResult, oldComponents, newComponents);
+      }
       this.lastDeliveredDsl = newDsl;
 
       // メモリ使用量をチェック
