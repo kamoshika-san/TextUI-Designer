@@ -189,8 +189,11 @@ interface OverlayDiffViewerProps {
  *
  * 右ペインはセマンティック要約が存在しない場合もプレースホルダーを表示する。
  */
+const STEPS = [0, 33, 67, 100] as const;
+
 export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) => {
-  const [slider, setSlider] = useState(50);
+  const [stepIndex, setStepIndex] = useState(1);
+  const slider = STEPS[stepIndex];
 
   const opacityA = 1 - slider / 100;
   const opacityB = slider / 100;
@@ -254,9 +257,10 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
             <input
               type="range"
               min={0}
-              max={100}
-              value={slider}
-              onChange={e => setSlider(Number(e.target.value))}
+              max={3}
+              step={1}
+              value={stepIndex}
+              onChange={e => setStepIndex(Number(e.target.value))}
               style={{ width: '100%', cursor: 'pointer' }}
               aria-label="透過度スライダー（Before ↔ After）"
             />
