@@ -889,7 +889,8 @@ function buildPropertyEntity(
   nextValue: unknown,
   previous: DiffCompareDocument,
   next: DiffCompareDocument,
-  traversalOrder: number
+  traversalOrder: number,
+  previousPath?: string
 ): DiffTreeBuild {
   const hasPrevious = previousValue !== undefined;
   const hasNext = nextValue !== undefined;
@@ -900,12 +901,13 @@ function buildPropertyEntity(
     : hasPrevious
       ? 'absent-on-next'
       : 'absent-on-previous';
+  const prevPath = previousPath ?? path;
   const event = createPendingEvent(
     `event:${entityKey}:${kind}`,
     kind,
     entityKey,
     'property',
-    path,
+    prevPath,
     path,
     previous,
     next,
@@ -915,7 +917,7 @@ function buildPropertyEntity(
     hasPrevious && hasNext ? 'deterministic-structural-path' : 'unpaired'
   );
   event.trace.explicitness = explicitness;
-  const refs = buildEntityRefs('property', path, path, previous.page.id, next.page.id, hasPrevious, hasNext);
+  const refs = buildEntityRefs('property', prevPath, path, previous.page.id, next.page.id, hasPrevious, hasNext);
 
   return {
     entity: {
@@ -1005,7 +1007,8 @@ function buildComponentEntity(
       nextNode?.[propertyKey],
       previous,
       next,
-      nextOrder
+      nextOrder,
+      previousPath !== nextPath ? `${previousPath}/props/${propertyKey}` : undefined
     );
     children.push(propertyBuild.entity);
     events.push(...propertyBuild.events);
