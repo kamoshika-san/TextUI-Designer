@@ -55,6 +55,10 @@ export interface SemanticSummaryLine {
   displayName?: string;
   /** Severity from D2-1 classification (for display prioritization). */
   severity: DiffSummarySeverity;
+  /** Index into dslA.page.components for component-level events. Undefined for page/property events. */
+  componentIndexA?: number;
+  /** Index into dslB.page.components for component-level events. Undefined for page/property events. */
+  componentIndexB?: number;
 }
 
 export interface SemanticSummaryResult {
@@ -532,6 +536,12 @@ function buildFallbackLine(
   };
 }
 
+function extractComponentIndex(entityPath: string | undefined): number | undefined {
+  if (!entityPath) { return undefined; }
+  const m = entityPath.match(/\/(\d+)$/);
+  return m ? parseInt(m[1], 10) : undefined;
+}
+
 function buildLine(
   event: DiffEvent,
   previousDsl: TextUIDSL,
@@ -559,7 +569,10 @@ function buildLine(
 
   // entityKind === 'component'
   const dsl = event.kind === 'remove' ? previousDsl : nextDsl;
-  return buildComponentLine(event, dsl, severity);
+  const line = buildComponentLine(event, dsl, severity);
+  line.componentIndexA = extractComponentIndex(event.trace.previousSourceRef?.entityPath);
+  line.componentIndexB = extractComponentIndex(event.trace.nextSourceRef?.entityPath);
+  return line;
 }
 
 // -- Public API ---------------------------------------------------------------

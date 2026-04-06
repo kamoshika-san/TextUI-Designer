@@ -51,9 +51,18 @@ function SummaryBadge({ count, color, symbol }: { count: number; color: string; 
   );
 }
 
-function SummaryLine({ line }: { line: SemanticSummaryLine }) {
+function SummaryLine({
+  line,
+  isSelected,
+  onClick,
+}: {
+  line: SemanticSummaryLine;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
   return (
     <li
+      onClick={onClick}
       style={{
         display: 'flex',
         alignItems: 'flex-start',
@@ -64,6 +73,10 @@ function SummaryLine({ line }: { line: SemanticSummaryLine }) {
         fontSize: '0.78rem',
         lineHeight: 1.4,
         color: '#cbd5e1',
+        cursor: 'pointer',
+        background: isSelected ? 'rgba(96,165,250,0.12)' : undefined,
+        borderLeft: isSelected ? '2px solid #60a5fa' : '2px solid transparent',
+        boxSizing: 'border-box',
       }}
     >
       <span
@@ -84,7 +97,15 @@ function SummaryLine({ line }: { line: SemanticSummaryLine }) {
   );
 }
 
-function SemanticSummaryPane({ lines }: { lines: SemanticSummaryLine[] }) {
+function SemanticSummaryPane({
+  lines,
+  highlightedEventId,
+  onLineClick,
+}: {
+  lines: SemanticSummaryLine[];
+  highlightedEventId: string | null;
+  onLineClick: (eventId: string) => void;
+}) {
   // Sort: + first, then ~, then -, then ?
   const ORDER: Record<string, number> = { '+': 0, '~': 1, '-': 2, '?': 3 };
   const sorted = [...lines].sort((a, b) => (ORDER[a.prefix] ?? 9) - (ORDER[b.prefix] ?? 9));
@@ -143,7 +164,12 @@ function SemanticSummaryPane({ lines }: { lines: SemanticSummaryLine[] }) {
         }}
       >
         {sorted.map(line => (
-          <SummaryLine key={line.eventId} line={line} />
+          <SummaryLine
+            key={line.eventId}
+            line={line}
+            isSelected={highlightedEventId === line.eventId}
+            onClick={() => onLineClick(line.eventId)}
+          />
         ))}
       </ul>
     </div>
@@ -194,6 +220,7 @@ const STEPS = [0, 33, 67, 100] as const;
 export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) => {
   const [stepIndex, setStepIndex] = useState(1);
   const slider = STEPS[stepIndex];
+  const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null);
 
   const opacityA = 1 - slider / 100;
   const opacityB = slider / 100;
@@ -206,6 +233,20 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
   const maxCount = Math.max(componentsA.length, componentsB.length);
 
   const summaryLines = state.semanticSummary?.lines ?? null;
+
+  // Build index → eventId maps for component-level highlights
+  const highlightIndexA = new Map<number, string>();
+  const highlightIndexB = new Map<number, string>();
+  if (summaryLines) {
+    for (const line of summaryLines) {
+      if (line.componentIndexA !== undefined) { highlightIndexA.set(line.componentIndexA, line.eventId); }
+      if (line.componentIndexB !== undefined) { highlightIndexB.set(line.componentIndexB, line.eventId); }
+    }
+  }
+
+  const handleLineClick = (eventId: string) => {
+    setHighlightedEventId(prev => (prev === eventId ? null : eventId));
+  };
 
   return (
     <div
@@ -309,9 +350,23 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
                 pointerEvents: slider >= 100 ? 'none' : 'auto',
               }}
             >
-              {componentsA.map((comp, i) =>
-                renderRegisteredComponent(comp, `overlay-a-${i}`)
-              )}
+              {componentsA.map((comp, i) => {
+                const isHighlighted = highlightIndexA.get(i) === highlightedEventId && highlightedEventId !== null;
+                return (
+                  <div key={`overlay-a-${i}`} style={{ position: 'relative' }}>
+                    {renderRegisteredComponent(comp, `overlay-a-${i}`)}
+                    {isHighlighted && (
+                      <div style={{
+                        position: 'absolute', inset: 0,
+                        border: '2px solid #60a5fa',
+                        boxShadow: '0 0 8px 2px rgba(96,165,250,0.5)',
+                        pointerEvents: 'none',
+                        borderRadius: 2,
+                      }} />
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Layer B: After */}
@@ -326,9 +381,23 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
                 pointerEvents: 'none',
               }}
             >
-              {componentsB.map((comp, i) =>
-                renderRegisteredComponent(comp, `overlay-b-${i}`)
-              )}
+              {componentsB.map((comp, i) => {
+                const isHighlighted = highlightIndexB.get(i) === highlightedEventId && highlightedEventId !== null;
+                return (
+                  <div key={`overlay-b-${i}`} style={{ position: 'relative' }}>
+                    {renderRegisteredComponent(comp, `overlay-b-${i}`)}
+                    {isHighlighted && (
+                      <div style={{
+                        position: 'absolute', inset: 0,
+                        border: '2px solid #60a5fa',
+                        boxShadow: '0 0 8px 2px rgba(96,165,250,0.5)',
+                        pointerEvents: 'none',
+                        borderRadius: 2,
+                      }} />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -336,7 +405,11 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
 
       {/* ── 右ペイン: 変更サマリー ── */}
       {summaryLines !== null && summaryLines.length > 0 ? (
-        <SemanticSummaryPane lines={summaryLines} />
+        <SemanticSummaryPane
+          lines={summaryLines}
+          highlightedEventId={highlightedEventId}
+          onLineClick={handleLineClick}
+        />
       ) : (
         <NoSummaryPane />
       )}
