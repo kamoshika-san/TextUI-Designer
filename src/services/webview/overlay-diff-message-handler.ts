@@ -23,19 +23,15 @@ export function setupOverlayDiffMessageHandler(
     return;
   }
 
-  let hasSentInit = false;
-
   panel.webview.onDidReceiveMessage(
     async (message: unknown) => {
       if (
         typeof message === 'object' &&
         message !== null &&
-        (message as Record<string, unknown>).type === 'webview-ready' &&
-        !hasSentInit
+        (message as Record<string, unknown>).type === 'webview-ready'
       ) {
         console.log('[Extension] Received webview-ready, sending overlay-diff-init');
         sendOverlayDiffInit(panel, dslA, fileNameA, dslB, fileNameB, semanticSummary);
-        hasSentInit = true;
       }
     },
     undefined,
