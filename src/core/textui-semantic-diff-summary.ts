@@ -114,18 +114,28 @@ function scalarIsIdentical(a: unknown, b: unknown): boolean {
 /**
  * Compute the set of event IDs that should be suppressed from the summary.
  *
- * Three-pass suppression strategy:
+ * Four-pass suppression strategy:
  *
  * Pass 1 — Scalar-level noise:
  *   - Page entity `update` at path `/page` (always fires; no useful content).
  *   - Property `update` where prevScalar === nextScalar (normalization artifact).
+ *     For reorder/move components the property event's previousSourceRef already
+ *     uses the component's actual previous path, so this check correctly
+ *     distinguishes genuine changes from path-change artifacts.
  *
- * Pass 1.5 — Property children of non-update component events:
+ * Pass 1.5 — Property children of add / remove / remove+add component events:
  *   - `add` components: property children are always `(none) → value` — the
  *     parent `+ Component を追加` line already conveys the addition.
  *   - `remove` / `remove+add` components: same reasoning as add.
- *   - `reorder` / `move` components: property children show `(none) → value`
- *     because the path changed; they are path-change artifacts, not real edits.
+ *   - `reorder` / `move` components are intentionally excluded from this pass;
+ *     Pass 1 scalar suppression handles path-change artifacts for them, and
+ *     Pass 1.6 suppresses the reorder event when genuine children are present.
+ *
+ * Pass 1.6 — Reorder / move component events that are redundant:
+ *   - When a reorder/move event has active (unsuppressed) property children,
+ *     the property lines are more specific — suppress the reorder event.
+ *   - When a reorder/move event has no active children AND it was paired
+ *     heuristically AND vocabulary is identical, suppress it (positional noise).
  *
  * Pass 2 — Redundant component `update` lines:
  *   - When a component `update` event has active (unsuppressed) property
@@ -157,13 +167,14 @@ function computeSuppressedEventIds(
       }
     }
 
-    // Suppress property update events where the scalar value is unchanged
+    // Suppress property update events where the scalar value is unchanged.
+    // Use each side's own sourceRef path so that reorder/move components
+    // resolve against the correct component position in each DSL.
     if (event.kind === 'update' && event.entityKind === 'property') {
-      const rawPath = event.trace.nextSourceRef?.entityPath
-        ?? event.trace.previousSourceRef?.entityPath
-        ?? '';
-      const prevResult = rawPath ? resolveAtPath(previousDsl, rawPath) : null;
-      const nextResult = rawPath ? resolveAtPath(nextDsl, rawPath) : null;
+      const prevPath = event.trace.previousSourceRef?.entityPath ?? '';
+      const nextPath = event.trace.nextSourceRef?.entityPath ?? '';
+      const prevResult = prevPath ? resolveAtPath(previousDsl, prevPath) : null;
+      const nextResult = nextPath ? resolveAtPath(nextDsl, nextPath) : null;
       const prevScalar = prevResult?.kind === 'scalar' ? prevResult.value : undefined;
       const nextScalar = nextResult?.kind === 'scalar' ? nextResult.value : undefined;
       if (scalarIsIdentical(prevScalar, nextScalar)) {
@@ -172,10 +183,15 @@ function computeSuppressedEventIds(
       }
     }
 
-    // Collect component paths for add / remove / remove+add / reorder / move.
-    // Property children of these events are either redundant with the parent
-    // line or are path-change artifacts produced by the diff engine.
-    if (event.entityKind === 'component' && event.kind !== 'update') {
+    // Collect component paths for add / remove / remove+add.
+    // Property children of these events are redundant with the parent line.
+    // reorder / move are excluded: Pass 1 scalar check handles their property
+    // artifacts (since property events now carry correct prev paths), and
+    // Pass 1.6 suppresses the reorder event when genuine children are present.
+    if (event.entityKind === 'component' &&
+        event.kind !== 'update' &&
+        event.kind !== 'reorder' &&
+        event.kind !== 'move') {
       const compPath = event.kind === 'remove'
         ? (event.trace.previousSourceRef?.entityPath ?? '')
         : (event.trace.nextSourceRef?.entityPath
@@ -198,6 +214,49 @@ function computeSuppressedEventIds(
     const split = splitPropertyPath(rawPath);
     if (split && suppressChildrenOfPaths.has(split.componentPath)) {
       suppressed.add(event.eventId);
+    }
+  }
+
+  // ── Pass 1.6 ─────────────────────────────────────────────────────────────────
+  // Suppress reorder / move component events that are redundant.
+  for (const event of events) {
+    if (suppressed.has(event.eventId)) { continue; }
+    if (event.entityKind !== 'component') { continue; }
+    if (event.kind !== 'reorder' && event.kind !== 'move') { continue; }
+
+    const pathA = event.trace.previousSourceRef?.entityPath ?? '';
+    const pathB = event.trace.nextSourceRef?.entityPath ?? event.trace.previousSourceRef?.entityPath ?? '';
+
+    // If there are active (unsuppressed) property children, the property lines
+    // are more specific — suppress the reorder/move event.
+    const hasActiveChildren = events.some(child =>
+      !suppressed.has(child.eventId) &&
+      child.eventId !== event.eventId &&
+      child.entityKind === 'property' &&
+      (() => {
+        const childPath = child.trace.nextSourceRef?.entityPath
+          ?? child.trace.previousSourceRef?.entityPath
+          ?? '';
+        return childPath.startsWith(pathB + '/');
+      })()
+    );
+    if (hasActiveChildren) {
+      suppressed.add(event.eventId);
+      continue;
+    }
+
+    // No active children and heuristic pairing — suppress if vocabulary is
+    // identical (positional shift with no visible change is noise).
+    if (event.trace.pairingReason === 'heuristic-similarity') {
+      const compA = pathA ? resolveComponentAtPath(previousDsl, pathA) : null;
+      const compB = pathB ? resolveComponentAtPath(nextDsl, pathB) : null;
+      if (compA && compB) {
+        const vocabA = normalizeComponentVocabulary(compA);
+        const vocabB = normalizeComponentVocabulary(compB);
+        if (vocabA.displayName === vocabB.displayName && vocabA.labelText === vocabB.labelText) {
+          suppressed.add(event.eventId);
+        }
+      }
     }
   }
 
