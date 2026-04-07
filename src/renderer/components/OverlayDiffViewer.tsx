@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { renderRegisteredComponent } from '../component-map';
 import type { OverlayDiffState } from '../../domain/diff/overlay-diff-types';
 import type { SemanticSummaryLine } from '../../core/textui-semantic-diff-summary';
@@ -247,6 +247,37 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
   const handleLineClick = (eventId: string) => {
     setHighlightedEventId(prev => (prev === eventId ? null : eventId));
   };
+
+  const SUMMARY_ORDER: Record<string, number> = { '+': 0, '~': 1, '-': 2, '?': 3 };
+  const sortedEventIds = summaryLines
+    ? [...summaryLines]
+        .sort((a, b) => (SUMMARY_ORDER[a.prefix] ?? 9) - (SUMMARY_ORDER[b.prefix] ?? 9))
+        .map(l => l.eventId)
+    : [];
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === 'INPUT') { return; }
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setStepIndex(prev => Math.max(0, prev - 1));
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setStepIndex(prev => Math.min(3, prev + 1));
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        if (sortedEventIds.length === 0) { return; }
+        e.preventDefault();
+        const idx = sortedEventIds.indexOf(highlightedEventId ?? '');
+        if (e.key === 'ArrowDown') {
+          setHighlightedEventId(sortedEventIds[(idx + 1) % sortedEventIds.length]);
+        } else {
+          setHighlightedEventId(sortedEventIds[(idx - 1 + sortedEventIds.length) % sortedEventIds.length]);
+        }
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [sortedEventIds, highlightedEventId]);
 
   return (
     <div
