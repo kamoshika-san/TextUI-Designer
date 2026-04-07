@@ -6,6 +6,7 @@ import { OverlayDiffLifecycleManager } from '../webview/overlay-diff-lifecycle-m
 import { setupOverlayDiffMessageHandler } from '../webview/overlay-diff-message-handler';
 import type { TextUIDSL } from '../../domain/dsl-types';
 import { normalize } from '../../core/diff-normalization/normalize';
+import { STAGE2_DEFAULT_ALLOWED_RULES } from '../../core/diff-normalization/stage2-value';
 import {
   createNormalizedDiffDocument,
   createDiffResultSkeleton,
@@ -129,8 +130,14 @@ function computeSemanticSummary(
 ): SemanticSummaryResult | null {
   try {
     // 正規化（失敗時は元の DSL をそのまま使用）
-    const prevNorm = normalize(dslA);
-    const nextNorm = normalize(dslB);
+    // stage1-sort-children-by-type-index を除外: type ソートで変わる normalized インデックスが
+    // webview に送る original DSL のインデックスとずれ、キャンバスハイライトが狂うため。
+    const overlayDiffAllowedRules = [
+      'stage1-sort-children-by-token',
+      ...STAGE2_DEFAULT_ALLOWED_RULES,
+    ];
+    const prevNorm = normalize(dslA, { allowedRules: overlayDiffAllowedRules });
+    const nextNorm = normalize(dslB, { allowedRules: overlayDiffAllowedRules });
     const prevDsl = prevNorm.ok ? prevNorm.dsl : dslA;
     const nextDsl = nextNorm.ok ? nextNorm.dsl : dslB;
 
