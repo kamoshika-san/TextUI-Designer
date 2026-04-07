@@ -143,7 +143,11 @@ function AccordionItem({
 }) {
   const [isOpen, setIsOpen] = useState(true);
   const childLines = group.lines.filter(l => !l.isComponentEvent);
-  const hasChildren = childLines.length > 0;
+  const hasPositionChange =
+    group.componentIndexA !== undefined &&
+    group.componentIndexB !== undefined &&
+    group.componentIndexA !== group.componentIndexB;
+  const hasChildren = childLines.length > 0 || hasPositionChange;
 
   return (
     <li style={{ borderBottom: '1px solid rgba(148,163,184,0.10)' }}>
@@ -186,6 +190,18 @@ function AccordionItem({
       {/* Property child lines */}
       {isOpen && hasChildren && (
         <ul style={{ margin: 0, padding: 0, listStyle: 'none', background: 'rgba(0,0,0,0.18)' }}>
+          {hasPositionChange && (
+            <li key="__reorder__" style={{
+              display: 'flex', alignItems: 'flex-start', gap: 6,
+              padding: '4px 12px 4px 30px',
+              borderBottom: '1px solid rgba(148,163,184,0.05)',
+              fontFamily: 'var(--vscode-editor-font-family, monospace)',
+              fontSize: '0.74rem', lineHeight: 1.4, color: '#94a3b8',
+            }}>
+              <span style={{ color: PREFIX_COLOR['~'], fontWeight: 700, flexShrink: 0, width: 10, textAlign: 'center' }}>~</span>
+              <span>並び替え: {group.componentIndexA! + 1}番目 → {group.componentIndexB! + 1}番目</span>
+            </li>
+          )}
           {childLines.map(line => (
             <li
               key={line.eventId}
