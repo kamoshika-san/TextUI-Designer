@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { renderRegisteredComponent } from '../component-map';
 import type { OverlayDiffState } from '../../domain/diff/overlay-diff-types';
-import type { SemanticSummaryLine } from '../../core/textui-semantic-diff-summary';
+import type { SemanticSummaryLine, SemanticChangePrefix } from '../../core/textui-semantic-diff-summary';
 
 // Browser-compatible basename function
 function basename(filePath: string): string {
@@ -33,6 +33,53 @@ const PREFIX_LABEL: Record<string, string> = {
 
 // -- Right pane: semantic summary --------------------------------------------
 
+interface ComponentGroup {
+  groupKey: string;
+  componentIndexA?: number;
+  componentIndexB?: number;
+  label: string;
+  prefix: SemanticChangePrefix;
+  lines: SemanticSummaryLine[];
+}
+
+const GROUP_ORDER: Record<string, number> = { '+': 0, '~': 1, '-': 2, '?': 3 };
+
+function groupSummaryLines(lines: SemanticSummaryLine[]): ComponentGroup[] {
+  const map = new Map<string, ComponentGroup>();
+
+  for (const line of lines) {
+    const idx = line.componentIndexA ?? line.componentIndexB;
+    const key = idx !== undefined ? `comp-${idx}` : 'page';
+
+    if (!map.has(key)) {
+      map.set(key, {
+        groupKey: key,
+        componentIndexA: line.componentIndexA,
+        componentIndexB: line.componentIndexB,
+        label: line.displayName ?? line.componentType ?? (idx !== undefined ? 'コンポーネント' : 'ページ'),
+        prefix: line.prefix,
+        lines: [],
+      });
+    }
+
+    const group = map.get(key)!;
+    if (line.isComponentEvent) {
+      group.label = line.displayName ?? line.componentType ?? group.label;
+      group.prefix = line.prefix;
+    }
+    if (line.componentIndexA !== undefined && group.componentIndexA === undefined) { group.componentIndexA = line.componentIndexA; }
+    if (line.componentIndexB !== undefined && group.componentIndexB === undefined) { group.componentIndexB = line.componentIndexB; }
+    group.lines.push(line);
+  }
+
+  return [...map.values()].sort((a, b) => {
+    const ai = a.componentIndexA ?? a.componentIndexB ?? Infinity;
+    const bi = b.componentIndexA ?? b.componentIndexB ?? Infinity;
+    if (ai !== bi) { return ai - bi; }
+    return (GROUP_ORDER[a.prefix] ?? 9) - (GROUP_ORDER[b.prefix] ?? 9);
+  });
+}
+
 function SummaryBadge({ count, color, symbol }: { count: number; color: string; symbol: string }) {
   if (count === 0) { return null; }
   return (
@@ -51,64 +98,105 @@ function SummaryBadge({ count, color, symbol }: { count: number; color: string; 
   );
 }
 
-function SummaryLine({
-  line,
-  isSelected,
-  onClick,
+function AccordionItem({
+  group,
+  isHighlighted,
+  onToggleHighlight,
 }: {
-  line: SemanticSummaryLine;
-  isSelected: boolean;
-  onClick: () => void;
+  group: ComponentGroup;
+  isHighlighted: boolean;
+  onToggleHighlight: () => void;
 }) {
+  const [isOpen, setIsOpen] = useState(true);
+  const childLines = group.lines.filter(l => !l.isComponentEvent);
+  const hasChildren = childLines.length > 0;
+
   return (
-    <li
-      onClick={onClick}
-      style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: 8,
-        padding: '5px 12px',
-        borderBottom: '1px solid rgba(148,163,184,0.08)',
-        fontFamily: 'var(--vscode-editor-font-family, monospace)',
-        fontSize: '0.78rem',
-        lineHeight: 1.4,
-        color: '#cbd5e1',
-        cursor: 'pointer',
-        background: isSelected ? 'rgba(96,165,250,0.12)' : undefined,
-        borderLeft: isSelected ? '2px solid #60a5fa' : '2px solid transparent',
-        boxSizing: 'border-box',
-      }}
-    >
-      <span
+    <li style={{ borderBottom: '1px solid rgba(148,163,184,0.10)' }}>
+      {/* Accordion header */}
+      <div
+        onClick={() => { onToggleHighlight(); if (hasChildren) { setIsOpen(o => !o); } }}
         style={{
-          color: PREFIX_COLOR[line.prefix] ?? '#e2e8f0',
-          fontWeight: 700,
-          flexShrink: 0,
-          marginTop: 1,
-          width: 12,
-          textAlign: 'center',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '7px 12px',
+          cursor: 'pointer',
+          userSelect: 'none',
+          background: isHighlighted ? 'rgba(96,165,250,0.12)' : undefined,
+          borderLeft: isHighlighted ? '2px solid #60a5fa' : '2px solid transparent',
+          boxSizing: 'border-box',
         }}
-        title={PREFIX_LABEL[line.prefix]}
       >
-        {line.prefix}
-      </span>
-      <span style={{ wordBreak: 'break-word', flex: 1 }}>{line.text}</span>
+        <span style={{ width: 10, flexShrink: 0, color: '#94a3b8', fontSize: '0.65rem', textAlign: 'center' }}>
+          {hasChildren ? (isOpen ? '▾' : '▸') : ''}
+        </span>
+        <span
+          style={{
+            color: PREFIX_COLOR[group.prefix] ?? '#e2e8f0',
+            fontWeight: 700,
+            flexShrink: 0,
+            width: 10,
+            textAlign: 'center',
+            fontSize: '0.78rem',
+          }}
+          title={PREFIX_LABEL[group.prefix]}
+        >
+          {group.prefix}
+        </span>
+        <span style={{ fontSize: '0.80rem', fontWeight: 600, color: '#e2e8f0', flex: 1, wordBreak: 'break-word' }}>
+          {group.label}
+        </span>
+      </div>
+
+      {/* Property child lines */}
+      {isOpen && hasChildren && (
+        <ul style={{ margin: 0, padding: 0, listStyle: 'none', background: 'rgba(0,0,0,0.18)' }}>
+          {childLines.map(line => (
+            <li
+              key={line.eventId}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 6,
+                padding: '4px 12px 4px 30px',
+                borderBottom: '1px solid rgba(148,163,184,0.05)',
+                fontFamily: 'var(--vscode-editor-font-family, monospace)',
+                fontSize: '0.74rem',
+                lineHeight: 1.4,
+                color: '#94a3b8',
+              }}
+            >
+              <span
+                style={{
+                  color: PREFIX_COLOR[line.prefix] ?? '#e2e8f0',
+                  fontWeight: 700,
+                  flexShrink: 0,
+                  width: 10,
+                  textAlign: 'center',
+                }}
+              >
+                {line.prefix}
+              </span>
+              <span style={{ wordBreak: 'break-word', flex: 1 }}>{line.text}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </li>
   );
 }
 
 function SemanticSummaryPane({
   lines,
-  highlightedEventId,
-  onLineClick,
+  highlightedGroupKey,
+  onGroupClick,
 }: {
   lines: SemanticSummaryLine[];
-  highlightedEventId: string | null;
-  onLineClick: (eventId: string) => void;
+  highlightedGroupKey: string | null;
+  onGroupClick: (groupKey: string) => void;
 }) {
-  // Sort: + first, then ~, then -, then ?
-  const ORDER: Record<string, number> = { '+': 0, '~': 1, '-': 2, '?': 3 };
-  const sorted = [...lines].sort((a, b) => (ORDER[a.prefix] ?? 9) - (ORDER[b.prefix] ?? 9));
+  const groups = groupSummaryLines(lines);
 
   const addCount    = lines.filter(l => l.prefix === '+').length;
   const updateCount = lines.filter(l => l.prefix === '~').length;
@@ -153,7 +241,7 @@ function SemanticSummaryPane({
         </span>
       </div>
 
-      {/* Line list */}
+      {/* Accordion list */}
       <ul
         style={{
           margin: 0,
@@ -163,12 +251,12 @@ function SemanticSummaryPane({
           flex: 1,
         }}
       >
-        {sorted.map(line => (
-          <SummaryLine
-            key={line.eventId}
-            line={line}
-            isSelected={highlightedEventId === line.eventId}
-            onClick={() => onLineClick(line.eventId)}
+        {groups.map(group => (
+          <AccordionItem
+            key={group.groupKey}
+            group={group}
+            isHighlighted={highlightedGroupKey === group.groupKey}
+            onToggleHighlight={() => onGroupClick(group.groupKey)}
           />
         ))}
       </ul>
@@ -220,7 +308,7 @@ const STEPS = [0, 33, 67, 100] as const;
 export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) => {
   const [stepIndex, setStepIndex] = useState(1);
   const slider = STEPS[stepIndex];
-  const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null);
+  const [highlightedGroupKey, setHighlightedGroupKey] = useState<string | null>(null);
 
   const opacityA = 1 - slider / 100;
   const opacityB = slider / 100;
@@ -234,26 +322,20 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
 
   const summaryLines = state.semanticSummary?.lines ?? null;
 
-  // Build index → eventId maps for component-level highlights
+  // Build groups and index → groupKey maps for canvas highlight
+  const groups = summaryLines ? groupSummaryLines(summaryLines) : [];
   const highlightIndexA = new Map<number, string>();
   const highlightIndexB = new Map<number, string>();
-  if (summaryLines) {
-    for (const line of summaryLines) {
-      if (line.componentIndexA !== undefined) { highlightIndexA.set(line.componentIndexA, line.eventId); }
-      if (line.componentIndexB !== undefined) { highlightIndexB.set(line.componentIndexB, line.eventId); }
-    }
+  for (const g of groups) {
+    if (g.componentIndexA !== undefined) { highlightIndexA.set(g.componentIndexA, g.groupKey); }
+    if (g.componentIndexB !== undefined) { highlightIndexB.set(g.componentIndexB, g.groupKey); }
   }
 
-  const handleLineClick = (eventId: string) => {
-    setHighlightedEventId(prev => (prev === eventId ? null : eventId));
+  const handleGroupClick = (groupKey: string) => {
+    setHighlightedGroupKey(prev => (prev === groupKey ? null : groupKey));
   };
 
-  const SUMMARY_ORDER: Record<string, number> = { '+': 0, '~': 1, '-': 2, '?': 3 };
-  const sortedEventIds = summaryLines
-    ? [...summaryLines]
-        .sort((a, b) => (SUMMARY_ORDER[a.prefix] ?? 9) - (SUMMARY_ORDER[b.prefix] ?? 9))
-        .map(l => l.eventId)
-    : [];
+  const sortedGroupKeys = groups.map(g => g.groupKey);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -265,19 +347,19 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
         e.preventDefault();
         setStepIndex(prev => Math.min(3, prev + 1));
       } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        if (sortedEventIds.length === 0) { return; }
+        if (sortedGroupKeys.length === 0) { return; }
         e.preventDefault();
-        const idx = sortedEventIds.indexOf(highlightedEventId ?? '');
+        const idx = sortedGroupKeys.indexOf(highlightedGroupKey ?? '');
         if (e.key === 'ArrowDown') {
-          setHighlightedEventId(sortedEventIds[(idx + 1) % sortedEventIds.length]);
+          setHighlightedGroupKey(sortedGroupKeys[(idx + 1) % sortedGroupKeys.length]);
         } else {
-          setHighlightedEventId(sortedEventIds[(idx - 1 + sortedEventIds.length) % sortedEventIds.length]);
+          setHighlightedGroupKey(sortedGroupKeys[(idx - 1 + sortedGroupKeys.length) % sortedGroupKeys.length]);
         }
       }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [sortedEventIds, highlightedEventId]);
+  }, [sortedGroupKeys, highlightedGroupKey]);
 
   return (
     <div
@@ -382,7 +464,7 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
               }}
             >
               {componentsA.map((comp, i) => {
-                const isHighlighted = highlightIndexA.get(i) === highlightedEventId && highlightedEventId !== null;
+                const isHighlighted = highlightIndexA.get(i) === highlightedGroupKey && highlightedGroupKey !== null;
                 return (
                   <div key={`overlay-a-${i}`} style={{ position: 'relative' }}>
                     {renderRegisteredComponent(comp, `overlay-a-${i}`)}
@@ -413,7 +495,7 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
               }}
             >
               {componentsB.map((comp, i) => {
-                const isHighlighted = highlightIndexB.get(i) === highlightedEventId && highlightedEventId !== null;
+                const isHighlighted = highlightIndexB.get(i) === highlightedGroupKey && highlightedGroupKey !== null;
                 return (
                   <div key={`overlay-b-${i}`} style={{ position: 'relative' }}>
                     {renderRegisteredComponent(comp, `overlay-b-${i}`)}
@@ -438,8 +520,8 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
       {summaryLines !== null && summaryLines.length > 0 ? (
         <SemanticSummaryPane
           lines={summaryLines}
-          highlightedEventId={highlightedEventId}
-          onLineClick={handleLineClick}
+          highlightedGroupKey={highlightedGroupKey}
+          onGroupClick={handleGroupClick}
         />
       ) : (
         <NoSummaryPane />

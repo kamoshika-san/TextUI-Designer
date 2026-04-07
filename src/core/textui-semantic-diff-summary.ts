@@ -59,6 +59,8 @@ export interface SemanticSummaryLine {
   componentIndexA?: number;
   /** Index into dslB.page.components for component-level events. Undefined for page/property events. */
   componentIndexB?: number;
+  /** True for component-level events (add/remove/update the component itself), false/undefined for property events. */
+  isComponentEvent?: boolean;
 }
 
 export interface SemanticSummaryResult {
@@ -564,7 +566,15 @@ function buildLine(
     if (split && split.componentPath === '/page') {
       return buildPageLine(event, previousDsl, nextDsl, severity);
     }
-    return buildPropertyLine(event, previousDsl, nextDsl, severity);
+    const line = buildPropertyLine(event, previousDsl, nextDsl, severity);
+    // Attach component indices so property lines can be grouped with their parent component
+    const splitA = event.trace.previousSourceRef?.entityPath
+      ? splitPropertyPath(event.trace.previousSourceRef.entityPath) : null;
+    const splitB = event.trace.nextSourceRef?.entityPath
+      ? splitPropertyPath(event.trace.nextSourceRef.entityPath) : null;
+    if (splitA) { line.componentIndexA = extractComponentIndex(splitA.componentPath); }
+    if (splitB) { line.componentIndexB = extractComponentIndex(splitB.componentPath); }
+    return line;
   }
 
   // entityKind === 'component'
@@ -572,6 +582,7 @@ function buildLine(
   const line = buildComponentLine(event, dsl, severity);
   line.componentIndexA = extractComponentIndex(event.trace.previousSourceRef?.entityPath);
   line.componentIndexB = extractComponentIndex(event.trace.nextSourceRef?.entityPath);
+  line.isComponentEvent = true;
   return line;
 }
 
