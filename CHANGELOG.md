@@ -4,6 +4,24 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.7.5] - 2026-04-08
+
+### Added
+- **Overlay Diff: コンポーネント別アコーディオン**: 変更サマリーをコンポーネント単位のアコーディオンに整理。折りたたみ/展開が可能で、プロパティ変更を子行として表示。
+- **Overlay Diff: 並び替え詳細行**: コンポーネントの位置が変わった場合に「並び替え: N番目 → M番目」を子行として自動表示（Password Input・Date of Birth・Primary Button 等）。
+- **Overlay Diff: キャンバスハイライト**: アコーディオンのヘッダーをクリックすると対応するキャンバスコンポーネントが青いグローで光る。キーボードの ↑↓ でハイライト移動。
+- **Overlay Diff: キーボード操作**: ←→ キーで透過スライダーを4段階で操作、↑↓ キーで変更サマリーのハイライトを移動。
+
+### Changed
+- **Overlay Diff: 透過スライダー**: 連続値から 0/33/67/100 の4ステップに変更し操作感を改善。
+
+### Fixed
+- **Overlay Diff: ウィンドウ移動後に Loading... で止まる**: パネルタブを新規ウィンドウへドラッグすると webview が再ロードされ `webview-ready` が再送されるが、`hasSentInit` フラグにより再初期化がブロックされていた問題を修正。
+- **Overlay Diff: groupKey 衝突**: 追加コンポーネント(Phone Number)と既存コンポーネント(Password)が同じ componentIndex を持つ場合にアコーディオンが誤ってマージされていた問題を修正。eventId をグループキーに使用するよう変更。
+- **Overlay Diff: プロパティ専用コンポーネントが「ページ」グループに入る**: コンポーネントレベルのイベントが抑制されている場合にプロパティ行が誤って「ページ」グループへ分類されていた問題を修正。プレースホルダーグループを動的生成するよう変更。
+- **Overlay Diff: 正規化インデックスずれによる誤ハイライト**: `stage1-sort-children-by-type-index` が diff 正規化時にコンポーネントをアルファベット順に並び替えるため、元の DSL インデックスとズレてキャンバスの誤要素がハイライトされていた問題を修正。このルールを Overlay Diff 計算から除外。
+- **Overlay Diff: DatePicker の位置変更が未検出・ハイライト不動作**: `required` プロパティが ver1 に存在しないため diff イベントに `previousSourceRef=null` となり `componentIndexA` が未設定になる問題を修正。`SemanticSummaryResult` に `componentPairings` を追加し、プレースホルダーグループ生成時に欠落インデックスを補完。
+
 ## [0.7.4] - 2026-04-05
 
 ### Added
