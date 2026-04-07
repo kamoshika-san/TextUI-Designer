@@ -45,34 +45,47 @@ interface ComponentGroup {
 const GROUP_ORDER: Record<string, number> = { '+': 0, '~': 1, '-': 2, '?': 3 };
 
 function groupSummaryLines(lines: SemanticSummaryLine[]): ComponentGroup[] {
-  const map = new Map<string, ComponentGroup>();
+  // Pass 1: create one group per component-level event, keyed by eventId (unique)
+  const groups: ComponentGroup[] = [];
+  const groupByA = new Map<number, ComponentGroup>(); // normalized-A index → group
+  const groupByB = new Map<number, ComponentGroup>(); // normalized-B index → group
 
   for (const line of lines) {
-    const idx = line.componentIndexA ?? line.componentIndexB;
-    const key = idx !== undefined ? `comp-${idx}` : 'page';
-
-    if (!map.has(key)) {
-      map.set(key, {
-        groupKey: key,
-        componentIndexA: line.componentIndexA,
-        componentIndexB: line.componentIndexB,
-        label: line.displayName ?? line.componentType ?? (idx !== undefined ? 'コンポーネント' : 'ページ'),
-        prefix: line.prefix,
-        lines: [],
-      });
-    }
-
-    const group = map.get(key)!;
-    if (line.isComponentEvent) {
-      group.label = line.displayName ?? line.componentType ?? group.label;
-      group.prefix = line.prefix;
-    }
-    if (line.componentIndexA !== undefined && group.componentIndexA === undefined) { group.componentIndexA = line.componentIndexA; }
-    if (line.componentIndexB !== undefined && group.componentIndexB === undefined) { group.componentIndexB = line.componentIndexB; }
-    group.lines.push(line);
+    if (!line.isComponentEvent) { continue; }
+    const group: ComponentGroup = {
+      groupKey: line.eventId,
+      componentIndexA: line.componentIndexA,
+      componentIndexB: line.componentIndexB,
+      label: line.displayName ?? line.componentType ?? 'コンポーネント',
+      prefix: line.prefix,
+      lines: [line],
+    };
+    groups.push(group);
+    if (line.componentIndexA !== undefined) { groupByA.set(line.componentIndexA, group); }
+    if (line.componentIndexB !== undefined) { groupByB.set(line.componentIndexB, group); }
   }
 
-  return [...map.values()].sort((a, b) => {
+  // Pass 2: attach property/page lines to their parent component group
+  const pageGroup: ComponentGroup = { groupKey: 'page', label: 'ページ', prefix: '~', lines: [] };
+  let hasPageLines = false;
+
+  for (const line of lines) {
+    if (line.isComponentEvent) { continue; }
+    // Match by A-index first (most specific), then B-index
+    const group = (line.componentIndexA !== undefined ? groupByA.get(line.componentIndexA) : undefined)
+               ?? (line.componentIndexB !== undefined ? groupByB.get(line.componentIndexB) : undefined);
+    if (group) {
+      group.lines.push(line);
+    } else {
+      pageGroup.lines.push(line);
+      hasPageLines = true;
+    }
+  }
+
+  if (hasPageLines) { groups.push(pageGroup); }
+
+  // Sort by A-index (existing components), then B-only (added), page group last
+  return groups.sort((a, b) => {
     const ai = a.componentIndexA ?? a.componentIndexB ?? Infinity;
     const bi = b.componentIndexA ?? b.componentIndexB ?? Infinity;
     if (ai !== bi) { return ai - bi; }
