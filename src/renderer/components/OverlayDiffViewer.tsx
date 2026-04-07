@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { renderRegisteredComponent } from '../component-map';
 import type { OverlayDiffState } from '../../domain/diff/overlay-diff-types';
-import type { SemanticSummaryLine, SemanticChangePrefix } from '../../core/textui-semantic-diff-summary';
+import type { SemanticSummaryLine, SemanticChangePrefix, ComponentIndexPair } from '../../core/textui-semantic-diff-summary';
 
 // Browser-compatible basename function
 function basename(filePath: string): string {
@@ -44,7 +44,7 @@ interface ComponentGroup {
 
 const GROUP_ORDER: Record<string, number> = { '+': 0, '~': 1, '-': 2, '?': 3 };
 
-function groupSummaryLines(lines: SemanticSummaryLine[]): ComponentGroup[] {
+function groupSummaryLines(lines: SemanticSummaryLine[], pairings: ComponentIndexPair[] = []): ComponentGroup[] {
   // Pass 1: create one group per component-level event, keyed by eventId (unique)
   const groups: ComponentGroup[] = [];
   const groupByA = new Map<number, ComponentGroup>(); // normalized-A index → group
@@ -104,6 +104,29 @@ function groupSummaryLines(lines: SemanticSummaryLine[]): ComponentGroup[] {
   }
 
   if (hasPageLines) { groups.push(pageGroup); }
+
+  // Backfill missing A/B indices on groups using component-level pairing info.
+  // This covers cases where a property event only has a B-index because the
+  // property was newly added (previousSourceRef is null), yet the component
+  // itself was paired (e.g. DatePicker A=5 ↔ B=6, required added).
+  if (pairings.length > 0) {
+    const pairByB = new Map<number, number>();
+    const pairByA = new Map<number, number>();
+    for (const p of pairings) {
+      if (p.indexB !== undefined && p.indexA !== undefined) { pairByB.set(p.indexB, p.indexA); }
+      if (p.indexA !== undefined && p.indexB !== undefined) { pairByA.set(p.indexA, p.indexB); }
+    }
+    for (const g of groups) {
+      if (g.componentIndexA === undefined && g.componentIndexB !== undefined) {
+        const inferredA = pairByB.get(g.componentIndexB);
+        if (inferredA !== undefined) { g.componentIndexA = inferredA; }
+      }
+      if (g.componentIndexB === undefined && g.componentIndexA !== undefined) {
+        const inferredB = pairByA.get(g.componentIndexA);
+        if (inferredB !== undefined) { g.componentIndexB = inferredB; }
+      }
+    }
+  }
 
   // Sort by A-index (existing components), then B-only (added), page group last
   return groups.sort((a, b) => {
@@ -239,14 +262,16 @@ function AccordionItem({
 
 function SemanticSummaryPane({
   lines,
+  pairings,
   highlightedGroupKey,
   onGroupClick,
 }: {
   lines: SemanticSummaryLine[];
+  pairings: ComponentIndexPair[];
   highlightedGroupKey: string | null;
   onGroupClick: (groupKey: string) => void;
 }) {
-  const groups = groupSummaryLines(lines);
+  const groups = groupSummaryLines(lines, pairings);
 
   const addCount    = lines.filter(l => l.prefix === '+').length;
   const updateCount = lines.filter(l => l.prefix === '~').length;
@@ -371,9 +396,10 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
   const maxCount = Math.max(componentsA.length, componentsB.length);
 
   const summaryLines = state.semanticSummary?.lines ?? null;
+  const summaryPairings = state.semanticSummary?.componentPairings ?? [];
 
   // Build groups and index → groupKey maps for canvas highlight
-  const groups = summaryLines ? groupSummaryLines(summaryLines) : [];
+  const groups = summaryLines ? groupSummaryLines(summaryLines, summaryPairings) : [];
   const highlightIndexA = new Map<number, string>();
   const highlightIndexB = new Map<number, string>();
   for (const g of groups) {
@@ -570,6 +596,7 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
       {summaryLines !== null && summaryLines.length > 0 ? (
         <SemanticSummaryPane
           lines={summaryLines}
+          pairings={summaryPairings}
           highlightedGroupKey={highlightedGroupKey}
           onGroupClick={handleGroupClick}
         />

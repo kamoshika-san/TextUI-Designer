@@ -63,9 +63,20 @@ export interface SemanticSummaryLine {
   isComponentEvent?: boolean;
 }
 
+export interface ComponentIndexPair {
+  indexA?: number;
+  indexB?: number;
+}
+
 export interface SemanticSummaryResult {
   kind: 'semantic-summary-result/v0';
   lines: SemanticSummaryLine[];
+  /**
+   * Pairing info for all component-level events (including suppressed ones).
+   * Used by the viewer to backfill A/B indices on placeholder groups where
+   * only one side is present (e.g. a newly-added property on a moved component).
+   */
+  componentPairings: ComponentIndexPair[];
   metadata: {
     totalLines: number;
     additions: number;
@@ -616,6 +627,16 @@ export function buildSemanticSummary(
       return buildLine(event, previousDsl, nextDsl, severity);
     });
 
+  // Collect pairing info from ALL component-level events (including suppressed) so
+  // the viewer can backfill A-index on placeholder groups whose property events only
+  // have a B-index (e.g. a freshly-added property on a moved component).
+  const componentPairings: ComponentIndexPair[] = compareResult.events
+    .filter(event => event.entityKind === 'component')
+    .map(event => ({
+      indexA: extractComponentIndex(event.trace.previousSourceRef?.entityPath),
+      indexB: extractComponentIndex(event.trace.nextSourceRef?.entityPath),
+    }));
+
   const additions = lines.filter(l => l.prefix === '+').length;
   const removals = lines.filter(l => l.prefix === '-').length;
   const ambiguous = lines.filter(l => l.prefix === '?').length;
@@ -624,6 +645,7 @@ export function buildSemanticSummary(
   return {
     kind: 'semantic-summary-result/v0',
     lines,
+    componentPairings,
     metadata: {
       totalLines: lines.length,
       additions,
