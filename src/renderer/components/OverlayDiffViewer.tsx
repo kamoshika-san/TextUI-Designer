@@ -65,15 +65,36 @@ function groupSummaryLines(lines: SemanticSummaryLine[]): ComponentGroup[] {
     if (line.componentIndexB !== undefined) { groupByB.set(line.componentIndexB, group); }
   }
 
-  // Pass 2: attach property/page lines to their parent component group
+  // Pass 2: attach property/page lines to their parent component group.
+  // If no component-level event exists (suppressed by summary engine), create a
+  // placeholder group so property lines are not incorrectly merged into ページ.
   const pageGroup: ComponentGroup = { groupKey: 'page', label: 'ページ', prefix: '~', lines: [] };
   let hasPageLines = false;
 
   for (const line of lines) {
     if (line.isComponentEvent) { continue; }
     // Match by A-index first (most specific), then B-index
-    const group = (line.componentIndexA !== undefined ? groupByA.get(line.componentIndexA) : undefined)
-               ?? (line.componentIndexB !== undefined ? groupByB.get(line.componentIndexB) : undefined);
+    let group = (line.componentIndexA !== undefined ? groupByA.get(line.componentIndexA) : undefined)
+             ?? (line.componentIndexB !== undefined ? groupByB.get(line.componentIndexB) : undefined);
+
+    // No component-level group found, but line belongs to a component (has an index).
+    // This happens when the component-level update event was suppressed in favour of
+    // more-specific property lines. Create a placeholder group on the fly.
+    if (!group && (line.componentIndexA !== undefined || line.componentIndexB !== undefined)) {
+      const placeholderKey = `prop-a${line.componentIndexA ?? ''}-b${line.componentIndexB ?? ''}`;
+      group = {
+        groupKey: placeholderKey,
+        componentIndexA: line.componentIndexA,
+        componentIndexB: line.componentIndexB,
+        label: line.displayName ?? line.componentType ?? 'コンポーネント',
+        prefix: line.prefix,
+        lines: [],
+      };
+      groups.push(group);
+      if (line.componentIndexA !== undefined) { groupByA.set(line.componentIndexA, group); }
+      if (line.componentIndexB !== undefined) { groupByB.set(line.componentIndexB, group); }
+    }
+
     if (group) {
       group.lines.push(line);
     } else {
