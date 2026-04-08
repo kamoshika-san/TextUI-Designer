@@ -166,4 +166,125 @@ describe('semantic diff extractor and structure changes', () => {
     assert.strictEqual(ambiguousRemovals[0].ambiguityReason, 'multiple-candidates');
     assert.strictEqual(ambiguousAdditions[0].ambiguityReason, 'multiple-candidates');
   });
+
+  it('maps prop and event updates into semantic changes with reviewer-readable detail', () => {
+    const previous = semanticDiff.buildSemanticDiffIR({
+      page: {
+        id: 'checkout-page',
+        title: 'Checkout',
+        layout: 'vertical',
+        components: [
+          {
+            Button: {
+              id: 'submit-order',
+              label: 'Submit',
+              events: {
+                onClick: "navigate('/home')"
+              }
+            }
+          },
+          {
+            Link: {
+              id: 'help-link',
+              label: 'Help',
+              href: '/support'
+            }
+          }
+        ]
+      }
+    });
+
+    const next = semanticDiff.buildSemanticDiffIR({
+      page: {
+        id: 'checkout-page',
+        title: 'Checkout',
+        layout: 'vertical',
+        components: [
+          {
+            Button: {
+              id: 'submit-order',
+              label: 'Submit Order',
+              events: {
+                onClick: "navigate('/dashboard')"
+              }
+            }
+          },
+          {
+            Link: {
+              id: 'help-link',
+              label: 'Help',
+              href: '/docs'
+            }
+          }
+        ]
+      }
+    });
+
+    const changes = semanticDiff.computeSemanticPropAndEventChanges(previous, next);
+    const labelChange = changes.find(change => change.type === 'UpdateProps' && change.propKey === 'label');
+    const hrefChange = changes.find(change => change.type === 'UpdateProps' && change.propKey === 'href');
+    const eventChange = changes.find(change => change.type === 'UpdateEvent' && change.eventKey === 'onClick');
+
+    assert.strictEqual(changes.length, 3);
+    assert.ok(labelChange);
+    assert.strictEqual(labelChange.layer, 'visual');
+    assert.strictEqual(labelChange.humanReadable.impact, 'low');
+    assert.ok(labelChange.humanReadable.description.includes('Submit'));
+    assert.ok(hrefChange);
+    assert.strictEqual(hrefChange.humanReadable.impact, 'high');
+    assert.ok(hrefChange.humanReadable.description.includes('/docs'));
+    assert.ok(eventChange);
+    assert.strictEqual(eventChange.layer, 'behavior');
+    assert.strictEqual(eventChange.humanReadable.impact, 'high');
+    assert.ok(eventChange.humanReadable.description.includes('/dashboard'));
+  });
+
+  it('builds a deterministic SemanticDiff with summary counts and grouped layers', () => {
+    const previous = semanticDiff.buildSemanticDiffIR({
+      page: {
+        id: 'settings-page',
+        title: 'Settings',
+        layout: 'vertical',
+        components: [
+          { Text: { id: 'hero-title', value: 'Settings' } },
+          { Button: { id: 'save-button', label: 'Save', events: { onClick: "navigate('/home')" } } }
+        ]
+      }
+    });
+
+    const next = semanticDiff.buildSemanticDiffIR({
+      page: {
+        id: 'settings-page',
+        title: 'Settings',
+        layout: 'vertical',
+        components: [
+          {
+            Container: {
+              id: 'hero-shell',
+              components: [{ Text: { id: 'hero-title', value: 'Preferences' } }]
+            }
+          },
+          { Button: { id: 'save-button', label: 'Save', events: { onClick: "navigate('/dashboard')" } } }
+        ]
+      }
+    });
+
+    const result = semanticDiff.buildSemanticDiff(previous, next);
+    const groupedTypes = result.grouped.map(group => group.type);
+    const structureGroup = result.grouped.find(group => group.type === 'structure');
+    const behaviorGroup = result.grouped.find(group => group.type === 'behavior');
+    const visualGroup = result.grouped.find(group => group.type === 'visual');
+
+    assert.deepStrictEqual(groupedTypes, ['structure', 'behavior', 'visual', 'data']);
+    assert.deepStrictEqual(result.summary, {
+      added: 1,
+      removed: 0,
+      modified: 2,
+      moved: 1
+    });
+    assert.strictEqual(structureGroup.changes.some(change => change.type === 'AddComponent'), true);
+    assert.strictEqual(structureGroup.changes.some(change => change.type === 'MoveComponent'), true);
+    assert.strictEqual(behaviorGroup.changes.some(change => change.type === 'UpdateEvent'), true);
+    assert.strictEqual(visualGroup.changes.some(change => change.type === 'UpdateProps'), true);
+  });
 });
