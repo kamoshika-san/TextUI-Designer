@@ -303,6 +303,10 @@ page:
     const output = execFileSync('node', [cliPath, '--help'], { encoding: 'utf8' });
     assert.match(output, /--provider-module <path>/);
     assert.match(output, /--theme <path>/);
+    assert.match(output, /Guide: docs\/cli-user-guide\.md/);
+    assert.match(output, /Validate: textui validate --file <path>/);
+    assert.match(output, /Plan: textui plan --file <path>/);
+    assert.match(output, /Apply: textui apply --file <path> --state \.textui\/state\.json --auto-approve/);
     assert.match(output, /Compare: textui compare --base <ref> --head <ref> --file <path>/);
   });
 

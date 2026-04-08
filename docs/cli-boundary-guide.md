@@ -34,3 +34,4 @@ npx textui capture --file sample/01-basic/sample.tui.yml --output generated/prev
 - CLI オプション追加時に `--json` など既存契約を壊していないか
 - 出力 provider の追加/変更時に互換ポリシー（`docs/api-compat-policy.md`）を満たしているか
 - サンプル/回帰手順（`docs/MANUAL_REGRESSION_TEST.md`）に必要な追記があるか
+CLI の使い始めは [docs/cli-user-guide.md](cli-user-guide.md) を先に見てください。このページは境界や運用寄りの補足をまとめるためのものです。
