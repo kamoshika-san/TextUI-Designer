@@ -1,4 +1,13 @@
 import * as vscode from 'vscode';
+import { Logger } from './logger';
+
+const logger = new Logger('ErrorHandler');
+
+type ErrorLogPayload = {
+  context: string;
+  errorType?: string;
+  detail?: string;
+};
 
 /**
  * エラーハンドリングユーティリティ
@@ -10,7 +19,10 @@ export class ErrorHandler {
   static showError(message: string, error?: unknown): void {
     const errorMessage = error ? `${message}: ${this.formatError(error)}` : message;
     vscode.window.showErrorMessage(errorMessage);
-    console.error(errorMessage, error);
+    logger.error('Handled error', this.buildErrorPayload(message, error));
+    if (error instanceof Error && error.stack) {
+      logger.error('Handled error stack:', error.stack);
+    }
   }
 
   /**
@@ -18,7 +30,7 @@ export class ErrorHandler {
    */
   static showWarning(message: string): void {
     vscode.window.showWarningMessage(message);
-    console.warn(message);
+    logger.warn(message);
   }
 
   /**
@@ -26,7 +38,7 @@ export class ErrorHandler {
    */
   static showInfo(message: string): void {
     vscode.window.showInformationMessage(message);
-    console.log(message);
+    logger.info(message);
   }
 
   /**
@@ -71,4 +83,23 @@ export class ErrorHandler {
     }
     return String(error);
   }
-} 
+
+  private static buildErrorPayload(message: string, error?: unknown): ErrorLogPayload {
+    if (error instanceof Error) {
+      return {
+        context: message,
+        errorType: error.name,
+        detail: error.message
+      };
+    }
+
+    if (error === undefined) {
+      return { context: message };
+    }
+
+    return {
+      context: message,
+      detail: this.formatError(error)
+    };
+  }
+}

@@ -1,148 +1,133 @@
-/**
- * ErrorHandlerの基本テスト
- */
-
 const assert = require('assert');
 const path = require('path');
 
+describe('ErrorHandler', () => {
+  const errorHandlerPath = path.resolve(__dirname, '../../out/utils/error-handler.js');
+  const loggerPath = path.resolve(__dirname, '../../out/utils/logger.js');
+  const vscode = global.vscode;
 
-describe('ErrorHandler', function() {
   let ErrorHandler;
-  let originalConsoleError;
-  let originalConsoleWarn;
-  let originalConsoleLog;
-  let consoleOutput;
+  let Logger;
+  let originalLoggerWrite;
+  let loggerWrites;
+  let shownErrors;
+  let shownWarnings;
+  let shownInfos;
+  let originalShowErrorMessage;
+  let originalShowWarningMessage;
+  let originalShowInformationMessage;
 
-  beforeEach(function() {
-    // モックをクリーンアップ（ファクトリをグローバルに再設定）
-    global.cleanupMocks();
-    
-    if (!global.ErrorHandlerFactory || typeof global.ErrorHandlerFactory.createForTest !== 'function') {
-      throw new Error('Global ErrorHandlerFactory or createForTest method is not available');
-    }
-    
-    // テスト用のErrorHandlerを作成
-    ErrorHandler = global.ErrorHandlerFactory.createForTest(global.vscode);
-    
-    // コンソール出力をキャプチャ
-    consoleOutput = [];
-    originalConsoleError = console.error;
-    originalConsoleWarn = console.warn;
-    originalConsoleLog = console.log;
-    
-    console.error = (...args) => {
-      consoleOutput.push({ type: 'error', args });
+  beforeEach(() => {
+    delete require.cache[errorHandlerPath];
+    delete require.cache[loggerPath];
+
+    ({ Logger } = require(loggerPath));
+    loggerWrites = [];
+    shownErrors = [];
+    shownWarnings = [];
+    shownInfos = [];
+
+    originalLoggerWrite = Logger.prototype.write;
+    Logger.prototype.write = function(level, message, ...args) {
+      loggerWrites.push({ scope: this.scope, level, message, args });
     };
-    console.warn = (...args) => {
-      consoleOutput.push({ type: 'warn', args });
+
+    originalShowErrorMessage = vscode.window.showErrorMessage;
+    originalShowWarningMessage = vscode.window.showWarningMessage;
+    originalShowInformationMessage = vscode.window.showInformationMessage;
+    vscode.window.showErrorMessage = async (message) => {
+      shownErrors.push(message);
+      return undefined;
     };
-    console.log = (...args) => {
-      consoleOutput.push({ type: 'log', args });
+    vscode.window.showWarningMessage = async (message) => {
+      shownWarnings.push(message);
+      return undefined;
     };
+    vscode.window.showInformationMessage = async (message) => {
+      shownInfos.push(message);
+      return undefined;
+    };
+
+    ({ ErrorHandler } = require(errorHandlerPath));
   });
 
-  afterEach(function() {
-    // コンソール出力を復元
-    console.error = originalConsoleError;
-    console.warn = originalConsoleWarn;
-    console.log = originalConsoleLog;
-    consoleOutput = [];
-    
-    // テスト後のクリーンアップ
-    global.cleanupMocks();
+  afterEach(() => {
+    Logger.prototype.write = originalLoggerWrite;
+
+    vscode.window.showErrorMessage = originalShowErrorMessage;
+    vscode.window.showWarningMessage = originalShowWarningMessage;
+    vscode.window.showInformationMessage = originalShowInformationMessage;
+
+    delete require.cache[errorHandlerPath];
+    delete require.cache[loggerPath];
   });
 
-  it('エラー発生時にコールバックが呼ばれる', async function() {
-    let callbackCalled = false;
-    const errorMessage = 'Test error occurred';
-    
-    const result = await ErrorHandler.executeSafely(
-      async () => {
-        throw new Error('Test error');
-      },
-      errorMessage,
-      () => { callbackCalled = true; }
+  it('showError keeps the user-facing message compact and logs structured context', () => {
+    const err = new Error('boom');
+    err.name = 'ValidationError';
+    err.stack = 'ValidationError: boom\n    at test';
+
+    ErrorHandler.showError('Operation failed', err);
+
+    assert.deepStrictEqual(shownErrors, ['Operation failed: boom']);
+    assert.strictEqual(loggerWrites.length, 2);
+    assert.strictEqual(loggerWrites[0].scope, 'ErrorHandler');
+    assert.strictEqual(loggerWrites[0].level, 'error');
+    assert.strictEqual(loggerWrites[0].message, 'Handled error');
+    assert.deepStrictEqual(loggerWrites[0].args[0], {
+      context: 'Operation failed',
+      errorType: 'ValidationError',
+      detail: 'boom'
+    });
+    assert.strictEqual(loggerWrites[1].message, 'Handled error stack:');
+    assert.strictEqual(loggerWrites[1].args[0], 'ValidationError: boom\n    at test');
+  });
+
+  it('executeSafely returns undefined and preserves context for handled async failures', async () => {
+    const err = new Error('async boom');
+    err.stack = 'Error: async boom\n    at async test';
+
+    const result = await ErrorHandler.executeSafely(async () => {
+      throw err;
+    }, 'Loading failed');
+
+    assert.strictEqual(result, undefined);
+    assert.deepStrictEqual(shownErrors, ['Loading failed: async boom']);
+    assert.deepStrictEqual(loggerWrites[0].args[0], {
+      context: 'Loading failed',
+      errorType: 'Error',
+      detail: 'async boom'
+    });
+    assert.strictEqual(loggerWrites[1].args[0], 'Error: async boom\n    at async test');
+  });
+
+  it('executeSafelySync preserves non-Error detail without widening the API', () => {
+    const result = ErrorHandler.executeSafelySync(() => {
+      throw 'sync boom';
+    }, 'Sync failed');
+
+    assert.strictEqual(result, undefined);
+    assert.deepStrictEqual(shownErrors, ['Sync failed: sync boom']);
+    assert.deepStrictEqual(loggerWrites[0].args[0], {
+      context: 'Sync failed',
+      detail: 'sync boom'
+    });
+    assert.strictEqual(loggerWrites.length, 1);
+  });
+
+  it('routes warning and info messages through the structured logger foundation', () => {
+    ErrorHandler.showWarning('Heads up');
+    ErrorHandler.showInfo('FYI');
+
+    assert.deepStrictEqual(shownWarnings, ['Heads up']);
+    assert.deepStrictEqual(shownInfos, ['FYI']);
+    assert.strictEqual(loggerWrites.length, 2);
+    assert.deepStrictEqual(
+      loggerWrites.map((entry) => ({ scope: entry.scope, level: entry.level, message: entry.message })),
+      [
+        { scope: 'ErrorHandler', level: 'warn', message: 'Heads up' },
+        { scope: 'ErrorHandler', level: 'info', message: 'FYI' }
+      ]
     );
-    
-    // エラーが発生した場合、nullが返される
-    assert.strictEqual(result, null);
-    
-    // コールバックが呼ばれている
-    assert.strictEqual(callbackCalled, true);
-    
-    // エラーが記録されている
-    const errors = ErrorHandler.getErrors();
-    assert.ok(errors.length > 0, 'エラーが記録されている');
-    assert.ok(errors.some(error => error.context === errorMessage), 'エラーコンテキストが正しい');
   });
-
-  it('エラー内容がログに出力される', function() {
-    const errorMessage = 'Operation failed';
-    
-    ErrorHandler.showError(errorMessage);
-    
-    // エラーが記録されている
-    const errors = ErrorHandler.getErrors();
-    assert.ok(errors.length > 0, 'エラーが記録されている');
-    
-    // エラーメッセージが正しい
-    const errorEntry = errors.find(error => error.context === 'showError');
-    assert.ok(errorEntry, 'showErrorのエラーエントリが存在する');
-    assert.strictEqual(errorEntry.message, errorMessage, 'エラーメッセージが正しい');
-  });
-
-  it('同期版でもエラー処理が動作する', function() {
-    const result = ErrorHandler.executeSafelySync(
-      () => {
-        throw new Error('Sync test error');
-      },
-      'Sync operation failed'
-    );
-    
-    // エラーが発生した場合、nullが返される
-    assert.strictEqual(result, null);
-    
-    // エラーが記録されている
-    const errors = ErrorHandler.getErrors();
-    assert.ok(errors.length > 0, 'エラーが記録されている');
-    assert.ok(errors.some(error => error.context === 'Sync operation failed'), 'エラーコンテキストが正しい');
-  });
-
-  it('正常な処理ではエラーが発生しない', async function() {
-    const expectedResult = 'success';
-    
-    const result = await ErrorHandler.executeSafely(
-      async () => expectedResult,
-      'This should not appear'
-    );
-    
-    // 正常な処理では結果が返される
-    assert.strictEqual(result, expectedResult);
-    
-    // エラーは記録されない
-    const errors = ErrorHandler.getErrors();
-    assert.strictEqual(errors.length, 0, 'エラーは記録されない');
-  });
-
-  it('警告メッセージが正しく処理される', function() {
-    const warningMessage = 'This is a warning';
-    
-    ErrorHandler.showWarning(warningMessage);
-    
-    // 警告が記録されている
-    const errors = ErrorHandler.getErrors();
-    const warningEntry = errors.find(error => error.level === 'warning');
-    assert.ok(warningEntry, '警告エントリが存在する');
-    assert.strictEqual(warningEntry.message, warningMessage, '警告メッセージが正しい');
-  });
-
-  it('ログ情報が正しく処理される', function() {
-    const infoMessage = 'This is info';
-    
-    ErrorHandler.logInfo(infoMessage, 'test context');
-    
-    // 情報ログは通常のエラー配列には含まれない（別途処理される）
-    // ここではメソッドが正常に実行されることを確認
-    assert.ok(true, 'logInfoメソッドが正常に実行される');
-  });
-}); 
+});
