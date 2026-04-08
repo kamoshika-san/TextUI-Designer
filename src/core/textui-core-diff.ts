@@ -1084,12 +1084,147 @@ function toRenderTargetRef(ref: DiffEntityRef | undefined): DiffRenderTargetRef 
   };
 }
 
+function getValueAtDslPath(root: unknown, path: string): unknown {
+  if (path === '/page') {
+    return isRecord(root) ? root.page : undefined;
+  }
+
+  const segments = path.split('/').filter(Boolean);
+  let current: unknown = root;
+
+  for (const segment of segments) {
+    if (Array.isArray(current)) {
+      const index = Number(segment);
+      current = Number.isInteger(index) ? current[index] : undefined;
+      continue;
+    }
+
+    const componentNode = toComponentNode(current);
+    if (componentNode) {
+      if (segment === 'props') {
+        current = componentNode;
+        continue;
+      }
+
+      if (segment in componentNode) {
+        current = componentNode[segment];
+        continue;
+      }
+    }
+
+    if (!isRecord(current)) {
+      return undefined;
+    }
+
+    current = current[segment];
+  }
+
+  return current;
+}
+
+function toChildAnchor(item: unknown, index: number): string {
+  const node = toComponentNode(item);
+  if (!node) {
+    return `unknown:${index}`;
+  }
+
+  const explicitId = normalizeIdentityValue(node.id);
+  if (explicitId) {
+    return `${node.__kind}:${explicitId}`;
+  }
+
+  for (const key of FALLBACK_IDENTITY_KEYS) {
+    const fallback = normalizeIdentityValue(node[key]);
+    if (fallback) {
+      return `${node.__kind}:${key}:${fallback}`;
+    }
+  }
+
+  return `${node.__kind}:index:${index}`;
+}
+
+function buildBoundaryComparable(value: unknown): unknown {
+  if (!isRecord(value)) {
+    if (Array.isArray(value)) {
+      return value.map((item, index) => {
+        const node = toComponentNode(item);
+        return node ? toChildAnchor(item, index) : buildBoundaryComparable(item);
+      });
+    }
+    return value;
+  }
+
+  const componentNode = toComponentNode(value);
+  if (componentNode) {
+    const ownEntries = Object.entries(componentNode)
+      .filter(([key]) => key !== '__kind' && !CHILD_COLLECTION_KEYS.includes(key as typeof CHILD_COLLECTION_KEYS[number]))
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, nested]) => [key, buildBoundaryComparable(nested)] as const);
+
+    const childCollections = CHILD_COLLECTION_KEYS
+      .filter(key => Array.isArray(componentNode[key]))
+      .map(key => [
+        key,
+        (componentNode[key] as unknown[]).map((item, index) => toChildAnchor(item, index))
+      ] as const);
+
+    return {
+      __kind: componentNode.__kind,
+      own: Object.fromEntries(ownEntries),
+      childCollections: Object.fromEntries(childCollections)
+    };
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, nested]) => [key, buildBoundaryComparable(nested)] as const)
+  );
+}
+
+function stableStringifyBoundary(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(item => stableStringifyBoundary(item)).join(',')}]`;
+  }
+
+  if (isRecord(value)) {
+    return `{${Object.entries(value)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, nested]) => `${JSON.stringify(key)}:${stableStringifyBoundary(nested)}`)
+      .join(',')}}`;
+  }
+
+  return JSON.stringify(value);
+}
+
+function boundaryChangedForEntity(entity: DiffEntityResult, result: DiffCompareResult): boolean {
+  if (entity.entityKind === 'page') {
+    return true;
+  }
+
+  const previousPath = entity.previous?.path;
+  const nextPath = entity.next?.path;
+  if (!previousPath && !nextPath) {
+    return false;
+  }
+  if (!previousPath || !nextPath) {
+    return true;
+  }
+
+  const previousValue = getValueAtDslPath(result.input.previous.normalizedDsl, previousPath);
+  const nextValue = getValueAtDslPath(result.input.next.normalizedDsl, nextPath);
+
+  return stableStringifyBoundary(buildBoundaryComparable(previousValue))
+    !== stableStringifyBoundary(buildBoundaryComparable(nextValue));
+}
+
 function collectRenderTargets(
   entity: DiffEntityResult,
+  result: DiffCompareResult,
   eventKindById: Map<string, DiffEventKind>,
   targets: DiffRenderTarget[]
 ): void {
-  if (entity.entityKind === 'page' || entity.entityKind === 'component') {
+  if ((entity.entityKind === 'page' || entity.entityKind === 'component') && boundaryChangedForEntity(entity, result)) {
     const primaryEventKind = entity.metadata.eventIds.length > 0
       ? eventKindById.get(entity.metadata.eventIds[0])
       : undefined;
@@ -1111,7 +1246,7 @@ function collectRenderTargets(
   }
 
   for (const child of entity.children) {
-    collectRenderTargets(child, eventKindById, targets);
+    collectRenderTargets(child, result, eventKindById, targets);
   }
 }
 
@@ -1120,7 +1255,7 @@ export function buildRenderTargetsFromDiffResult(result: DiffCompareResult): Dif
   const targets: DiffRenderTarget[] = [];
 
   for (const entity of result.entityResults) {
-    collectRenderTargets(entity, eventKindById, targets);
+    collectRenderTargets(entity, result, eventKindById, targets);
   }
 
   return targets;
