@@ -28,15 +28,32 @@ function parseExtraTrustedPaths(envValue: string | undefined): string[] {
 }
 
 export function resolveBrowserPath(overridePath?: string): string {
-  const trustedBrowserPaths = discoverTrustedBrowserPaths();
   const extraPaths = parseExtraTrustedPaths(process.env.TEXTUI_CAPTURE_EXTRA_TRUSTED_PATHS);
+
+  if (overridePath) {
+    const preferredTrustedPathSet = new Set(extraPaths);
+    const preferredResolved = tryResolveBrowserOverride(overridePath, preferredTrustedPathSet, '--browser');
+    if (preferredResolved) {
+      return preferredResolved;
+    }
+  }
+
+  const envPath = process.env.TEXTUI_CAPTURE_BROWSER_PATH;
+  if (envPath && !overridePath) {
+    const preferredTrustedPathSet = new Set(extraPaths);
+    const preferredResolved = tryResolveBrowserOverride(envPath, preferredTrustedPathSet, 'TEXTUI_CAPTURE_BROWSER_PATH');
+    if (preferredResolved) {
+      return preferredResolved;
+    }
+  }
+
+  const trustedBrowserPaths = discoverTrustedBrowserPaths();
   const trustedPathSet = new Set([...trustedBrowserPaths, ...extraPaths]);
 
   if (overridePath) {
     return resolveAndValidateBrowserOverride(overridePath, trustedPathSet, '--browser');
   }
 
-  const envPath = process.env.TEXTUI_CAPTURE_BROWSER_PATH;
   if (envPath) {
     return resolveAndValidateBrowserOverride(envPath, trustedPathSet, 'TEXTUI_CAPTURE_BROWSER_PATH');
   }
@@ -48,6 +65,18 @@ export function resolveBrowserPath(overridePath?: string): string {
   throw new Error(
     'headless browser not found. set --browser or TEXTUI_CAPTURE_BROWSER_PATH (supported: chrome/chromium/edge)'
   );
+}
+
+function tryResolveBrowserOverride(
+  overrideValue: string,
+  trustedPathSet: Set<string>,
+  sourceLabel: '--browser' | 'TEXTUI_CAPTURE_BROWSER_PATH'
+): string | null {
+  try {
+    return resolveAndValidateBrowserOverride(overrideValue, trustedPathSet, sourceLabel);
+  } catch {
+    return null;
+  }
 }
 
 function getPlatformBrowserCandidates(): string[] {
