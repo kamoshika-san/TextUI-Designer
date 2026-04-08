@@ -16,6 +16,7 @@ import {
   createNormalizedDiffDocument,
   type DiffRenderTarget
 } from '../core/textui-core-diff';
+import { Logger } from '../utils/logger';
 
 /**
  * ユーザー向けの export 結果を組み立てる **本流**（ファイル読込・形式に応じた `Exporter`・`CacheManager`）と、
@@ -32,6 +33,9 @@ export class ExportManager {
   private readonly maxConcurrentOperations: number;
   private readonly optimizingExecutor: OptimizingExportExecutor;
   private readonly exportSnapshots = new Map<string, TextUIDSL>();
+  private readonly logger = new Logger('ExportManager');
+  /** Last reason incremental route was downgraded to full rerender. Exposed for future observability. */
+  lastIncrementalDowngradeReason: string | null = null;
 
   constructor() {
     populateBuiltInExporters(this.exporters);
@@ -121,19 +125,35 @@ export class ExportManager {
       return undefined;
     }
 
-    const previous = createNormalizedDiffDocument(previousDsl, {
-      side: 'previous',
-      sourcePath
-    });
-    const next = createNormalizedDiffDocument(dsl, {
-      side: 'next',
-      sourcePath
-    });
-    const renderTargets = buildRenderTargetsFromDiffResult(createDiffResultSkeleton(previous, next));
+    let renderTargets: DiffRenderTarget[];
+    try {
+      const previous = createNormalizedDiffDocument(previousDsl, { side: 'previous', sourcePath });
+      const next = createNormalizedDiffDocument(dsl, { side: 'next', sourcePath });
+      renderTargets = buildRenderTargetsFromDiffResult(createDiffResultSkeleton(previous, next));
+    } catch (error) {
+      const reason = `diff-computation-error: ${error instanceof Error ? error.message : String(error)}`;
+      this.lastIncrementalDowngradeReason = reason;
+      this.logger.warn(`Incremental route downgraded to full rerender — ${reason}`);
+      return undefined;
+    }
 
-    return renderTargets.length > 0 && renderTargets.every(target => target.resolution === 'resolved')
-      ? renderTargets
-      : undefined;
+    if (renderTargets.length === 0) {
+      const reason = 'empty-render-targets';
+      this.lastIncrementalDowngradeReason = reason;
+      this.logger.warn(`Incremental route downgraded to full rerender — ${reason}`);
+      return undefined;
+    }
+
+    const unresolved = renderTargets.filter(t => t.resolution !== 'resolved');
+    if (unresolved.length > 0) {
+      const reason = `unresolved-targets: ${unresolved.length}/${renderTargets.length}`;
+      this.lastIncrementalDowngradeReason = reason;
+      this.logger.warn(`Incremental route downgraded to full rerender — ${reason}`);
+      return undefined;
+    }
+
+    this.lastIncrementalDowngradeReason = null;
+    return renderTargets;
   }
 
   /**
