@@ -5,6 +5,11 @@ const path = require('path');
 
 describe('ExportManager incremental diff route flag', () => {
   let ExportManager;
+  const clearMonitor = manager => {
+    if (manager.performanceMonitor && typeof manager.performanceMonitor.clear === 'function') {
+      manager.performanceMonitor.clear();
+    }
+  };
 
   const writeDsl = (filePath, title) => {
     fs.writeFileSync(filePath, [
@@ -57,6 +62,7 @@ describe('ExportManager incremental diff route flag', () => {
 
   it('routes through exportWithDiffUpdate when the flag is ON and a previous snapshot exists', async () => {
     const manager = new ExportManager();
+    clearMonitor(manager);
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-export-'));
     const filePath = path.join(tempDir, 'sample.tui.yml');
     let optimizedCalls = 0;
@@ -90,6 +96,13 @@ describe('ExportManager incremental diff route flag', () => {
       assert.strictEqual(diffCalls, 1);
       assert.ok(lastTargets.some(target => target.scope === 'page'));
       assert.ok(lastTargets.some(target => target.entityKey === 'component:Text:headline'));
+      const stats = manager.getPerformanceStats().incrementalRouteMetrics;
+      assert.strictEqual(stats.diffRoute.totalSamples, 1);
+      assert.strictEqual(stats.diffRoute.successCount, 1);
+      assert.strictEqual(stats.diffRoute.fallbackCount, 0);
+      assert.strictEqual(stats.fullRender.totalSamples, 1);
+      assert.strictEqual(stats.fullRender.directCount, 1);
+      assert.strictEqual(stats.fullRender.fallbackCount, 0);
     } finally {
       manager.dispose();
       fs.rmSync(tempDir, { recursive: true, force: true });
@@ -132,6 +145,7 @@ describe('ExportManager incremental diff route flag', () => {
 
   it('auto-downgrades to the legacy full render when exportWithDiffUpdate throws', async () => {
     const manager = new ExportManager();
+    clearMonitor(manager);
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-export-'));
     const filePath = path.join(tempDir, 'sample.tui.yml');
     let optimizedCalls = 0;
@@ -158,6 +172,14 @@ describe('ExportManager incremental diff route flag', () => {
       assert.strictEqual(optimizedCalls, 2);
       assert.strictEqual(diffCalls, 1);
       assert.match(manager.lastIncrementalDowngradeReason || '', /incremental-route-error:/);
+      const stats = manager.getPerformanceStats().incrementalRouteMetrics;
+      assert.strictEqual(stats.diffRoute.totalSamples, 1);
+      assert.strictEqual(stats.diffRoute.fallbackCount, 1);
+      assert.strictEqual(stats.diffRoute.executionFailureCount, 1);
+      assert.strictEqual(stats.diffRoute.failureRate, 1);
+      assert.strictEqual(stats.fullRender.totalSamples, 2);
+      assert.strictEqual(stats.fullRender.fallbackCount, 1);
+      assert.strictEqual(stats.fallbackReasons['incremental-route-error: incremental apply mismatch'], 1);
     } finally {
       manager.dispose();
       fs.rmSync(tempDir, { recursive: true, force: true });

@@ -90,18 +90,30 @@ export class ExportManager {
           ...options,
           sourcePath: options.sourcePath ?? filePath
         };
+        this.lastIncrementalDowngradeReason = null;
 
         let result: string;
-        const incrementalTargets = this.buildIncrementalRenderTargets(dsl, normalizedOptions);
-        if (incrementalTargets) {
-          const incrementalResult = await this.tryIncrementalExport(dsl, normalizedOptions, incrementalTargets);
-          if (incrementalResult !== undefined) {
-            result = incrementalResult;
+        if (this.shouldAttemptIncrementalRoute(normalizedOptions)) {
+          const incrementalDecisionStart = performance.now();
+          const incrementalTargets = this.buildIncrementalRenderTargets(dsl, normalizedOptions);
+          if (incrementalTargets) {
+            const incrementalResult = await this.tryIncrementalExport(
+              dsl,
+              normalizedOptions,
+              incrementalTargets,
+              incrementalDecisionStart
+            );
+            if (incrementalResult !== undefined) {
+              result = incrementalResult;
+            } else {
+              result = await this.runMeasuredFullRender(dsl, normalizedOptions, 'fallback');
+            }
           } else {
-            result = await this.optimizingExecutor.runOptimizedExport(dsl, normalizedOptions);
+            this.recordIncrementalFallbackSample(incrementalDecisionStart, 'preflight');
+            result = await this.runMeasuredFullRender(dsl, normalizedOptions, 'fallback');
           }
         } else {
-          result = await this.optimizingExecutor.runOptimizedExport(dsl, normalizedOptions);
+          result = await this.runMeasuredFullRender(dsl, normalizedOptions, 'direct');
         }
 
         if (normalizedOptions.sourcePath) {
@@ -125,7 +137,8 @@ export class ExportManager {
   private async tryIncrementalExport(
     dsl: TextUIDSL,
     options: ExportOptions,
-    incrementalTargets: DiffRenderTarget[]
+    incrementalTargets: DiffRenderTarget[],
+    startedAt: number
   ): Promise<string | undefined> {
     try {
       const incrementalResult = await this.exportWithDiffUpdate(dsl, {
@@ -136,18 +149,65 @@ export class ExportManager {
       if (!this.isValidIncrementalResult(incrementalResult)) {
         const reason = 'invalid-incremental-result';
         this.lastIncrementalDowngradeReason = reason;
+        this.recordIncrementalFallbackSample(startedAt, 'invalid-result');
         this.logger.warn(`Incremental route downgraded to full rerender - ${reason}`);
         return undefined;
       }
 
       this.lastIncrementalDowngradeReason = null;
+      this.performanceMonitor.recordIncrementalRouteSample(
+        'incremental-diff',
+        performance.now() - startedAt,
+        { outcome: 'success' }
+      );
       return incrementalResult.result;
     } catch (error) {
       const reason = `incremental-route-error: ${error instanceof Error ? error.message : String(error)}`;
       this.lastIncrementalDowngradeReason = reason;
+      this.recordIncrementalFallbackSample(startedAt, 'execution-error');
       this.logger.warn(`Incremental route downgraded to full rerender - ${reason}`);
       return undefined;
     }
+  }
+
+  private shouldAttemptIncrementalRoute(options: ExportOptions): boolean {
+    return options.enableIncrementalDiffRoute === true
+      && !!options.sourcePath
+      && this.exportSnapshots.has(options.sourcePath);
+  }
+
+  private async runMeasuredFullRender(
+    dsl: TextUIDSL,
+    options: ExportOptions,
+    trigger: 'direct' | 'fallback'
+  ): Promise<string> {
+    const startedAt = performance.now();
+    const result = await this.optimizingExecutor.runOptimizedExport(dsl, options);
+    this.performanceMonitor.recordIncrementalRouteSample(
+      'full-render',
+      performance.now() - startedAt,
+      {
+        trigger,
+        outcome: 'success',
+        fallbackReason: trigger === 'fallback' ? this.lastIncrementalDowngradeReason : undefined
+      }
+    );
+    return result;
+  }
+
+  private recordIncrementalFallbackSample(
+    startedAt: number,
+    failureKind: 'preflight' | 'execution-error' | 'invalid-result'
+  ): void {
+    this.performanceMonitor.recordIncrementalRouteSample(
+      'incremental-diff',
+      performance.now() - startedAt,
+      {
+        outcome: 'fallback',
+        failureKind,
+        fallbackReason: this.lastIncrementalDowngradeReason
+      }
+    );
   }
 
   private buildIncrementalRenderTargets(
@@ -240,9 +300,11 @@ export class ExportManager {
       memoryUsage: number;
       totalOperations: number;
     };
+    incrementalRouteMetrics: ReturnType<PerformanceMonitor['getIncrementalRouteMetrics']>;
   } {
     const cacheStats = this.cacheManager.getStats();
     const exportMetrics = this.performanceMonitor.getMetrics();
+    const incrementalRouteMetrics = this.performanceMonitor.getIncrementalRouteMetrics();
 
     const lastDiff = this.diffManager.getLastDiffResult();
     const diffStats = lastDiff
@@ -252,7 +314,8 @@ export class ExportManager {
     return {
       cacheStats,
       diffStats,
-      exportMetrics
+      exportMetrics,
+      incrementalRouteMetrics
     };
   }
 

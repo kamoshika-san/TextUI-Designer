@@ -17,6 +17,42 @@ export interface MonitorEvent {
   metadata?: Record<string, unknown>;
 }
 
+export type IncrementalRouteKind = 'incremental-diff' | 'full-render';
+export type IncrementalRouteTrigger = 'direct' | 'fallback';
+export type IncrementalRouteOutcome = 'success' | 'fallback';
+export type IncrementalRouteFailureKind = 'preflight' | 'execution-error' | 'invalid-result';
+
+export interface IncrementalRouteMetrics {
+  diffRoute: {
+    totalSamples: number;
+    successCount: number;
+    fallbackCount: number;
+    executionFailureCount: number;
+    preflightBypassCount: number;
+    medianMs: number;
+    p95Ms: number;
+    fallbackRate: number;
+    failureRate: number;
+  };
+  fullRender: {
+    totalSamples: number;
+    directCount: number;
+    fallbackCount: number;
+    medianMs: number;
+    p95Ms: number;
+  };
+  fallbackReasons: Record<string, number>;
+}
+
+interface IncrementalRouteSample {
+  routeKind: IncrementalRouteKind;
+  trigger: IncrementalRouteTrigger;
+  outcome: IncrementalRouteOutcome;
+  failureKind?: IncrementalRouteFailureKind;
+  fallbackReason?: string;
+  duration: number;
+}
+
 /**
  * パフォーマンス監視と最適化を管理するクラス
  */
@@ -120,6 +156,26 @@ export class PerformanceMonitor {
     });
   }
 
+  recordIncrementalRouteSample(
+    routeKind: IncrementalRouteKind,
+    duration: number,
+    metadata: {
+      trigger?: IncrementalRouteTrigger;
+      outcome: IncrementalRouteOutcome;
+      failureKind?: IncrementalRouteFailureKind;
+      fallbackReason?: string | null;
+    }
+  ): void {
+    this.recordEvent('export', duration, {
+      sampleKind: 'incremental-route',
+      routeKind,
+      trigger: metadata.trigger ?? 'direct',
+      outcome: metadata.outcome,
+      failureKind: metadata.failureKind,
+      fallbackReason: metadata.fallbackReason ?? undefined
+    });
+  }
+
   /**
    * エクスポート時間を測定
    */
@@ -199,6 +255,51 @@ export class PerformanceMonitor {
    */
   getMetrics(): MonitorMetrics {
     return { ...this.metrics };
+  }
+
+  getIncrementalRouteMetrics(): IncrementalRouteMetrics {
+    const routeSamples = this.events
+      .filter(event => event.type === 'export')
+      .map(event => this.toIncrementalRouteSample(event))
+      .filter((sample): sample is IncrementalRouteSample => sample !== undefined);
+
+    const diffSamples = routeSamples.filter(sample => sample.routeKind === 'incremental-diff');
+    const fullSamples = routeSamples.filter(sample => sample.routeKind === 'full-render');
+    const fallbackReasons = diffSamples.reduce<Record<string, number>>((acc, sample) => {
+      if (!sample.fallbackReason) {
+        return acc;
+      }
+      acc[sample.fallbackReason] = (acc[sample.fallbackReason] || 0) + 1;
+      return acc;
+    }, {});
+
+    const diffFallbackCount = diffSamples.filter(sample => sample.outcome === 'fallback').length;
+    const diffExecutionFailureCount = diffSamples.filter(
+      sample => sample.failureKind === 'execution-error' || sample.failureKind === 'invalid-result'
+    ).length;
+    const fullFallbackCount = fullSamples.filter(sample => sample.trigger === 'fallback').length;
+
+    return {
+      diffRoute: {
+        totalSamples: diffSamples.length,
+        successCount: diffSamples.filter(sample => sample.outcome === 'success').length,
+        fallbackCount: diffFallbackCount,
+        executionFailureCount: diffExecutionFailureCount,
+        preflightBypassCount: diffSamples.filter(sample => sample.failureKind === 'preflight').length,
+        medianMs: this.calculatePercentile(diffSamples.map(sample => sample.duration), 50),
+        p95Ms: this.calculatePercentile(diffSamples.map(sample => sample.duration), 95),
+        fallbackRate: diffSamples.length > 0 ? diffFallbackCount / diffSamples.length : 0,
+        failureRate: diffSamples.length > 0 ? diffExecutionFailureCount / diffSamples.length : 0
+      },
+      fullRender: {
+        totalSamples: fullSamples.length,
+        directCount: fullSamples.filter(sample => sample.trigger === 'direct').length,
+        fallbackCount: fullFallbackCount,
+        medianMs: this.calculatePercentile(fullSamples.map(sample => sample.duration), 50),
+        p95Ms: this.calculatePercentile(fullSamples.map(sample => sample.duration), 95)
+      },
+      fallbackReasons
+    };
   }
 
   /**
@@ -364,5 +465,53 @@ ${this.generateRecommendations(metrics)}
    */
   _getRecommendations(metrics?: MonitorMetrics): string {
     return this.generateRecommendations(metrics || this.metrics);
+  }
+
+  private toIncrementalRouteSample(event: MonitorEvent): IncrementalRouteSample | undefined {
+    if (event.metadata?.sampleKind !== 'incremental-route') {
+      return undefined;
+    }
+
+    const routeKind = event.metadata.routeKind;
+    const trigger = event.metadata.trigger;
+    const outcome = event.metadata.outcome;
+    const failureKind = event.metadata.failureKind;
+    const fallbackReason = event.metadata.fallbackReason;
+
+    if (
+      (routeKind !== 'incremental-diff' && routeKind !== 'full-render') ||
+      (trigger !== 'direct' && trigger !== 'fallback') ||
+      (outcome !== 'success' && outcome !== 'fallback')
+    ) {
+      return undefined;
+    }
+
+    if (
+      failureKind !== undefined &&
+      failureKind !== 'preflight' &&
+      failureKind !== 'execution-error' &&
+      failureKind !== 'invalid-result'
+    ) {
+      return undefined;
+    }
+
+    return {
+      routeKind,
+      trigger,
+      outcome,
+      failureKind,
+      fallbackReason: typeof fallbackReason === 'string' ? fallbackReason : undefined,
+      duration: event.duration
+    };
+  }
+
+  private calculatePercentile(values: number[], percentile: number): number {
+    if (values.length === 0) {
+      return 0;
+    }
+
+    const sorted = [...values].sort((a, b) => a - b);
+    const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil((percentile / 100) * sorted.length) - 1));
+    return sorted[index];
   }
 } 
