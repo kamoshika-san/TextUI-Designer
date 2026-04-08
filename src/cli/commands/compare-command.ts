@@ -1,4 +1,6 @@
-import { atomicWriteJson } from '../io';
+import * as fs from 'fs';
+import * as path from 'path';
+import { atomicWriteJson, ensureDirectoryForFile } from '../io';
 import type { ExitCode } from '../types';
 import { getArg, hasFlag, printJson } from '../command-support';
 import {
@@ -48,7 +50,9 @@ export async function handleCompareCommand(): Promise<ExitCode> {
 
   const rendered = renderSemanticDiffHumanReadable(result);
   if (outputPath) {
-    atomicWriteJson(outputPath, { rendered });
+    const resolvedOutputPath = path.resolve(outputPath);
+    ensureDirectoryForFile(resolvedOutputPath);
+    fs.writeFileSync(resolvedOutputPath, rendered, 'utf8');
     process.stdout.write(`Wrote semantic diff output: ${outputPath}\n`);
     return 0;
   }

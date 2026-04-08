@@ -434,6 +434,65 @@ page:
     assert.match(output, /Help Center|\/docs/);
   });
 
+  it('compare human-readable --output writes the same text payload to file', function () {
+    this.timeout(20000);
+    const gitRepo = path.join(tmpDir, 'git-compare-output');
+    fs.mkdirSync(gitRepo, { recursive: true });
+    execFileSync('git', ['init'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['config', 'user.name', 'Codex Test'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['config', 'user.email', 'codex@example.com'], { cwd: gitRepo, encoding: 'utf8' });
+
+    const dslPath = path.join(gitRepo, 'sample.tui.yml');
+    const outputPath = path.join(gitRepo, 'semantic-diff.txt');
+    fs.writeFileSync(dslPath, `
+page:
+  id: compare-page
+  title: "Compare"
+  layout: vertical
+  components:
+    - Link:
+        id: help
+        label: "Help"
+        href: "/support"
+`, 'utf8');
+    execFileSync('git', ['add', 'sample.tui.yml'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['commit', '-m', 'base'], { cwd: gitRepo, encoding: 'utf8' });
+    const baseRef = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: gitRepo, encoding: 'utf8' }).trim();
+
+    fs.writeFileSync(dslPath, `
+page:
+  id: compare-page
+  title: "Compare"
+  layout: vertical
+  components:
+    - Link:
+        id: help
+        label: "Help Center"
+        href: "/docs"
+`, 'utf8');
+    execFileSync('git', ['add', 'sample.tui.yml'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['commit', '-m', 'head'], { cwd: gitRepo, encoding: 'utf8' });
+    const headRef = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: gitRepo, encoding: 'utf8' }).trim();
+
+    const stdout = execFileSync('node', [
+      cliPath,
+      'compare',
+      '--base',
+      baseRef,
+      '--head',
+      headRef,
+      '--file',
+      dslPath,
+      '--output',
+      outputPath
+    ], { encoding: 'utf8', cwd: gitRepo });
+
+    assert.match(stdout, /Wrote semantic diff output:/);
+    const written = fs.readFileSync(outputPath, 'utf8');
+    assert.match(written, /Semantic Diff: sample\.tui\.yml/);
+    assert.doesNotMatch(written, /^\s*\{/);
+  });
+
   it('compare fails clearly when compared revision file uses $include', function () {
     this.timeout(20000);
     const gitRepo = path.join(tmpDir, 'git-compare-include');
