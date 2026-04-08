@@ -1,81 +1,139 @@
-// Semantic Diff Types — E-SD0 Sprint SD0-S1
-// These types form the foundational contract for all semantic diff epics (SD0–SD4).
-
-// ---------------------------------------------------------------------------
-// Layer classification for change grouping
-// ---------------------------------------------------------------------------
+// Semantic diff contract types for E-SD-01 Sprint 1.
+// This file is the code-facing foundation for the semantic diff MVP contract.
 
 export type ChangeLayer = 'structure' | 'behavior' | 'visual' | 'data';
 
-// ---------------------------------------------------------------------------
-// Atomic change types (SemanticChange union — 9 kinds)
-// ---------------------------------------------------------------------------
+export type ImpactLevel = 'low' | 'medium' | 'high';
 
-export interface AddComponent {
-  type: 'AddComponent';
+export type SemanticChangeType =
+  | 'AddComponent'
+  | 'RemoveComponent'
+  | 'MoveComponent'
+  | 'UpdateProps'
+  | 'UpdateLayout'
+  | 'UpdateStyle'
+  | 'UpdateCondition'
+  | 'UpdateEvent'
+  | 'UpdateBinding';
+
+export type SemanticMvpChangeType =
+  | 'AddComponent'
+  | 'RemoveComponent'
+  | 'MoveComponent'
+  | 'UpdateProps'
+  | 'UpdateEvent';
+
+export type DeferredSemanticChangeType =
+  | 'UpdateLayout'
+  | 'UpdateStyle'
+  | 'UpdateCondition'
+  | 'UpdateBinding';
+
+export type SemanticIdentityBasis =
+  | 'stable-id'
+  | 'slot-anchor'
+  | 'owner-path'
+  | 'event-handle'
+  | 'binding-handle'
+  | 'fallback';
+
+export type SemanticAmbiguityReason =
+  | 'missing-stable-anchor'
+  | 'multiple-candidates'
+  | 'cross-owner-reparent'
+  | 'fallback-required';
+
+export interface SemanticSourceRef {
+  documentPath?: string;
+  entityPath: string;
+  line?: number;
+  column?: number;
+}
+
+export interface SemanticChangeEvidence {
+  previous?: SemanticSourceRef;
+  next?: SemanticSourceRef;
+  relatedPaths?: string[];
+  reasonSummary?: string;
+}
+
+export interface SemanticChangeBase {
+  type: SemanticChangeType;
+  layer: ChangeLayer;
   componentId: string;
+  identityBasis: SemanticIdentityBasis;
+  ambiguityReason?: SemanticAmbiguityReason;
+  evidence?: SemanticChangeEvidence;
+  humanReadable?: HumanReadableChange;
+}
+
+export interface AddComponent extends SemanticChangeBase {
+  type: 'AddComponent';
+  layer: 'structure';
   parentId?: string;
   position?: number;
+  componentKind?: string;
 }
 
-export interface RemoveComponent {
+export interface RemoveComponent extends SemanticChangeBase {
   type: 'RemoveComponent';
-  componentId: string;
+  layer: 'structure';
   parentId?: string;
+  componentKind?: string;
 }
 
-export interface MoveComponent {
+export interface MoveComponent extends SemanticChangeBase {
   type: 'MoveComponent';
-  componentId: string;
+  layer: 'structure';
   fromParentId?: string;
   toParentId?: string;
   fromPosition?: number;
   toPosition?: number;
 }
 
-export interface UpdateProps {
+export interface UpdateProps extends SemanticChangeBase {
   type: 'UpdateProps';
-  componentId: string;
+  layer: 'behavior' | 'visual';
   propKey: string;
   before: unknown;
   after: unknown;
 }
 
-export interface UpdateLayout {
+export interface UpdateLayout extends SemanticChangeBase {
   type: 'UpdateLayout';
-  componentId: string;
+  layer: 'visual';
   propKey: string;
   before: unknown;
   after: unknown;
 }
 
-export interface UpdateStyle {
+export interface UpdateStyle extends SemanticChangeBase {
   type: 'UpdateStyle';
-  componentId: string;
+  layer: 'visual';
   propKey: string;
   before: unknown;
   after: unknown;
 }
 
-export interface UpdateCondition {
+export interface UpdateCondition extends SemanticChangeBase {
   type: 'UpdateCondition';
-  componentId: string;
+  layer: 'behavior';
   conditionKey: string;
   before: unknown;
   after: unknown;
 }
 
-export interface UpdateEvent {
+export interface UpdateEvent extends SemanticChangeBase {
   type: 'UpdateEvent';
-  componentId: string;
+  layer: 'behavior';
   eventKey: string;
   before: unknown;
   after: unknown;
 }
 
-export interface UpdateBinding {
+export interface UpdateBinding extends SemanticChangeBase {
   type: 'UpdateBinding';
-  componentId: string;
+  layer: 'data';
   bindingKey: string;
   before: unknown;
   after: unknown;
@@ -91,10 +149,6 @@ export type SemanticChange =
   | UpdateCondition
   | UpdateEvent
   | UpdateBinding;
-
-// ---------------------------------------------------------------------------
-// Output model
-// ---------------------------------------------------------------------------
 
 export interface DiffSummary {
   added: number;
@@ -114,22 +168,33 @@ export interface SemanticDiff {
   grouped: ChangeGroup[];
 }
 
-// ---------------------------------------------------------------------------
-// Human-readable description (per change)
-// ---------------------------------------------------------------------------
-
-export type ImpactLevel = 'low' | 'medium' | 'high';
-
 export interface HumanReadableChange {
   title: string;
   description: string;
   impact: ImpactLevel;
 }
 
-// ---------------------------------------------------------------------------
-// Exhaustiveness check helper (compile-time guard)
-// Ensures all SemanticChange variants are handled in switch/case.
-// ---------------------------------------------------------------------------
+export interface SemanticDiffIRNode {
+  nodeId: string;
+  componentKind: string;
+  stableId?: string;
+  ownerPath: string;
+  slotName?: string;
+  sourceRef?: SemanticSourceRef;
+  props: Record<string, unknown>;
+  layout?: Record<string, unknown>;
+  style?: Record<string, unknown>;
+  events?: Record<string, unknown>;
+  bindings?: Record<string, unknown>;
+  conditions?: Record<string, unknown>;
+  children: SemanticDiffIRNode[];
+}
+
+export interface SemanticDiffIRRoot {
+  schemaVersion: 'semantic-diff-ir/v1';
+  entryDocumentPath?: string;
+  nodes: SemanticDiffIRNode[];
+}
 
 export function assertNeverSemanticChange(change: never): never {
   throw new Error(`Unhandled SemanticChange type: ${JSON.stringify(change)}`);
