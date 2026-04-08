@@ -94,10 +94,12 @@ export class ExportManager {
         let result: string;
         const incrementalTargets = this.buildIncrementalRenderTargets(dsl, normalizedOptions);
         if (incrementalTargets) {
-          result = (await this.exportWithDiffUpdate(dsl, {
-            ...normalizedOptions,
-            incrementalRenderTargets: incrementalTargets
-          })).result;
+          const incrementalResult = await this.tryIncrementalExport(dsl, normalizedOptions, incrementalTargets);
+          if (incrementalResult !== undefined) {
+            result = incrementalResult;
+          } else {
+            result = await this.optimizingExecutor.runOptimizedExport(dsl, normalizedOptions);
+          }
         } else {
           result = await this.optimizingExecutor.runOptimizedExport(dsl, normalizedOptions);
         }
@@ -110,6 +112,42 @@ export class ExportManager {
         throw new Error(`Export failed: ${error instanceof Error ? error.message : String(error)}`);
       }
     });
+  }
+
+  private isValidIncrementalResult(result: {
+    result: string;
+    isFullUpdate: boolean;
+    changedComponents: number[];
+  }): boolean {
+    return typeof result.result === 'string' && result.result.length > 0 && Array.isArray(result.changedComponents);
+  }
+
+  private async tryIncrementalExport(
+    dsl: TextUIDSL,
+    options: ExportOptions,
+    incrementalTargets: DiffRenderTarget[]
+  ): Promise<string | undefined> {
+    try {
+      const incrementalResult = await this.exportWithDiffUpdate(dsl, {
+        ...options,
+        incrementalRenderTargets: incrementalTargets
+      });
+
+      if (!this.isValidIncrementalResult(incrementalResult)) {
+        const reason = 'invalid-incremental-result';
+        this.lastIncrementalDowngradeReason = reason;
+        this.logger.warn(`Incremental route downgraded to full rerender - ${reason}`);
+        return undefined;
+      }
+
+      this.lastIncrementalDowngradeReason = null;
+      return incrementalResult.result;
+    } catch (error) {
+      const reason = `incremental-route-error: ${error instanceof Error ? error.message : String(error)}`;
+      this.lastIncrementalDowngradeReason = reason;
+      this.logger.warn(`Incremental route downgraded to full rerender - ${reason}`);
+      return undefined;
+    }
   }
 
   private buildIncrementalRenderTargets(

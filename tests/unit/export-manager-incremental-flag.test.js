@@ -129,4 +129,70 @@ describe('ExportManager incremental diff route flag', () => {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
   });
+
+  it('auto-downgrades to the legacy full render when exportWithDiffUpdate throws', async () => {
+    const manager = new ExportManager();
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-export-'));
+    const filePath = path.join(tempDir, 'sample.tui.yml');
+    let optimizedCalls = 0;
+    let diffCalls = 0;
+
+    writeDsl(filePath, 'First');
+
+    manager.optimizingExecutor.runOptimizedExport = async dsl => {
+      optimizedCalls += 1;
+      return `optimized:${dsl.page.title}`;
+    };
+    manager.exportWithDiffUpdate = async () => {
+      diffCalls += 1;
+      throw new Error('incremental apply mismatch');
+    };
+
+    try {
+      const first = await manager.exportFromFile(filePath, { format: 'html', enableIncrementalDiffRoute: true });
+      writeDsl(filePath, 'Second');
+      const second = await manager.exportFromFile(filePath, { format: 'html', enableIncrementalDiffRoute: true });
+
+      assert.strictEqual(first, 'optimized:First');
+      assert.strictEqual(second, 'optimized:Second');
+      assert.strictEqual(optimizedCalls, 2);
+      assert.strictEqual(diffCalls, 1);
+      assert.match(manager.lastIncrementalDowngradeReason || '', /incremental-route-error:/);
+    } finally {
+      manager.dispose();
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('auto-downgrades to the legacy full render when exportWithDiffUpdate returns an invalid payload', async () => {
+    const manager = new ExportManager();
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-export-'));
+    const filePath = path.join(tempDir, 'sample.tui.yml');
+    let optimizedCalls = 0;
+
+    writeDsl(filePath, 'First');
+
+    manager.optimizingExecutor.runOptimizedExport = async dsl => {
+      optimizedCalls += 1;
+      return `optimized:${dsl.page.title}`;
+    };
+    manager.exportWithDiffUpdate = async () => ({
+      result: '',
+      isFullUpdate: false,
+      changedComponents: []
+    });
+
+    try {
+      await manager.exportFromFile(filePath, { format: 'html', enableIncrementalDiffRoute: true });
+      writeDsl(filePath, 'Second');
+      const second = await manager.exportFromFile(filePath, { format: 'html', enableIncrementalDiffRoute: true });
+
+      assert.strictEqual(second, 'optimized:Second');
+      assert.strictEqual(optimizedCalls, 2);
+      assert.match(manager.lastIncrementalDowngradeReason || '', /invalid-incremental-result/);
+    } finally {
+      manager.dispose();
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
 });
