@@ -174,26 +174,43 @@ export interface HumanReadableChange {
   impact: ImpactLevel;
 }
 
+export type SemanticValueExplicitness = 'explicit' | 'absent' | 'derived-default';
+
+export interface SemanticDiffIRValue {
+  value: unknown;
+  explicitness: SemanticValueExplicitness;
+  sourceRef?: SemanticSourceRef;
+}
+
+export interface SemanticDiffIRScreen {
+  screenKey: string;
+  name?: string;
+  route?: string;
+  sourceRef?: SemanticSourceRef;
+  rootNode: SemanticDiffIRNode;
+}
+
 export interface SemanticDiffIRNode {
   nodeId: string;
   componentKind: string;
   stableId?: string;
+  screenKey: string;
   ownerPath: string;
   slotName?: string;
   sourceRef?: SemanticSourceRef;
-  props: Record<string, unknown>;
-  layout?: Record<string, unknown>;
-  style?: Record<string, unknown>;
-  events?: Record<string, unknown>;
-  bindings?: Record<string, unknown>;
-  conditions?: Record<string, unknown>;
+  props: Record<string, SemanticDiffIRValue>;
+  layout?: Record<string, SemanticDiffIRValue>;
+  style?: Record<string, SemanticDiffIRValue>;
+  events?: Record<string, SemanticDiffIRValue>;
+  bindings?: Record<string, SemanticDiffIRValue>;
+  conditions?: Record<string, SemanticDiffIRValue>;
   children: SemanticDiffIRNode[];
 }
 
 export interface SemanticDiffIRRoot {
   schemaVersion: 'semantic-diff-ir/v1';
   entryDocumentPath?: string;
-  nodes: SemanticDiffIRNode[];
+  screens: SemanticDiffIRScreen[];
 }
 
 export function assertNeverSemanticChange(change: never): never {

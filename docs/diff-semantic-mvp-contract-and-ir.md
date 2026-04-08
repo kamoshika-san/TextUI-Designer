@@ -123,6 +123,8 @@ The contract fixes:
 - `DiffSummary`
 - `ChangeGroup`
 - `HumanReadableChange`
+- `SemanticDiffIRValue`
+- `SemanticDiffIRScreen`
 - `SemanticDiffIRNode`
 - `SemanticDiffIRRoot`
 
@@ -172,11 +174,29 @@ Example:
 
 ## Diff IR Shape
 
-`SemanticDiffIRRoot` and `SemanticDiffIRNode` are the minimum comparison surface.
+`SemanticDiffIRRoot`, `SemanticDiffIRScreen`, and `SemanticDiffIRNode` are the
+minimum comparison surface.
+
+The IR root must preserve screen/page scope explicitly.
+
+Required root fields:
+
+- `schemaVersion`
+- `entryDocumentPath` when one document is the primary compare target
+- `screens`
+
+Each screen must preserve:
+
+- `screenKey`
+- `name` as display metadata when present
+- `route` when available
+- `sourceRef`
+- `rootNode`
 
 Each IR node must preserve:
 
 - stable authored anchor when present (`stableId`)
+- owning screen scope (`screenKey`)
 - owner scope (`ownerPath`)
 - semantic slot when present (`slotName`)
 - source evidence (`sourceRef`)
@@ -194,6 +214,34 @@ Rules:
 - extraction preserves authored evidence; it does not hide normalization
 - normalization may canonicalize equivalent forms, but it must preserve the fields semantic diff depends on
 - semantic diff compares IR nodes, not raw DSL fragments
+- Sprint 2 extraction must not invent screen identity outside this contract
+
+## Explicitness Contract For Comparable Values
+
+Comparable surfaces must not be plain untyped value bags.
+
+Use `SemanticDiffIRValue` for each comparable entry:
+
+```ts
+interface SemanticDiffIRValue {
+  value: unknown;
+  explicitness: 'explicit' | 'absent' | 'derived-default';
+  sourceRef?: SemanticSourceRef;
+}
+```
+
+Purpose:
+
+- preserve the authored explicit-versus-absent boundary required by normalization
+- allow later canonicalization to materialize documented defaults without erasing origin
+- keep value-level traceability available without reconstructing raw DSL
+
+Rules:
+
+- extraction must emit `explicit` for authored values
+- extraction must use `absent` only when the slot exists in the comparison surface but no authored value exists
+- normalization may use `derived-default` only after a documented default rule materializes a value
+- later semantic layers must not guess explicitness from the final value alone
 
 ## Identity Policy For Semantic Diff
 
@@ -285,6 +333,8 @@ Sprint 1 establishes these contract decisions:
 - layer names are fixed to `structure / behavior / visual / data`
 - semantic changes carry `identityBasis` and optional `evidence`
 - the IR root schema version is fixed to `semantic-diff-ir/v1`
+- the IR root preserves screen/page scope through `screens[]`
+- comparable value surfaces preserve explicitness through `SemanticDiffIRValue`
 
 Future phases may extend the contract, but they must not fork these names or
 redefine their meaning.
