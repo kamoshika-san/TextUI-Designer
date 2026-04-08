@@ -303,6 +303,10 @@
         "title": "TextUI: Export to Code"
       },
       {
+        "command": "textui-designer.export-preview",
+        "title": "TextUI: Export Preview (Dry Run)"
+      },
+      {
         "command": "textui-designer.showJumpToDslHelp",
         "title": "TextUI: Preview to DSL Jump (How to Use)"
       },
