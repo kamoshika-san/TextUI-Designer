@@ -4,6 +4,9 @@
 export type ChangeLayer = 'structure' | 'behavior' | 'visual' | 'data';
 
 export type ImpactLevel = 'low' | 'medium' | 'high';
+export type SemanticConfidenceBand = 'high' | 'medium' | 'low';
+export type SemanticConfidenceTier = 'accept' | 'review' | 'reject';
+export type SemanticConfidenceRecommendedAction = 'promote' | 'canary' | 'hold';
 
 export type SemanticChangeType =
   | 'AddComponent'
@@ -81,6 +84,7 @@ export interface SemanticChangeBase {
   ambiguityReason?: SemanticAmbiguityReason;
   evidence?: SemanticChangeEvidence;
   humanReadable?: HumanReadableChange;
+  confidence?: SemanticConfidenceAssessment;
 }
 
 export interface AddComponent extends SemanticChangeBase {
@@ -178,10 +182,24 @@ export interface ChangeGroup {
   changes: SemanticChange[];
 }
 
+export interface SemanticConfidenceAssessment {
+  score: number;
+  band: SemanticConfidenceBand;
+  tier: SemanticConfidenceTier;
+  reasonSummary: string;
+}
+
+export interface SemanticDiffConfidenceSummary extends SemanticConfidenceAssessment {
+  ambiguousChanges: number;
+  lowConfidenceChanges: number;
+  recommendedAction: SemanticConfidenceRecommendedAction;
+}
+
 export interface SemanticDiff {
   summary: DiffSummary;
   changes: SemanticChange[];
   grouped: ChangeGroup[];
+  confidence: SemanticDiffConfidenceSummary;
 }
 
 export interface HumanReadableChange {

@@ -379,6 +379,9 @@ page:
       modified: 1,
       moved: 0
     });
+    assert.ok(parsed.diff.confidence);
+    assert.ok(['high', 'medium', 'low'].includes(parsed.diff.confidence.band));
+    assert.ok(['promote', 'canary', 'hold'].includes(parsed.diff.confidence.recommendedAction));
     const eventChange = parsed.diff.changes.find(change => change.type === 'UpdateEvent');
     assert.ok(eventChange);
     assert.strictEqual(
@@ -440,6 +443,7 @@ page:
     assert.match(output, /Semantic Diff: sample\.tui\.yml/);
     assert.match(output, /Compare: .* -> .*/);
     assert.match(output, /Summary: \+0 \/ -0 \/ ~2 \/ moved 0/);
+    assert.match(output, /Confidence: /);
     assert.match(output, /BEHAVIOR:|VISUAL:/);
     assert.match(output, /Help Center|\/docs/);
     assert.match(output, /Evidence:/);
@@ -502,6 +506,7 @@ page:
     assert.match(stdout, /Wrote semantic diff output:/);
     const written = fs.readFileSync(outputPath, 'utf8');
     assert.match(written, /Semantic Diff: sample\.tui\.yml/);
+    assert.match(written, /Confidence: /);
     assert.doesNotMatch(written, /^\s*\{/);
   });
 

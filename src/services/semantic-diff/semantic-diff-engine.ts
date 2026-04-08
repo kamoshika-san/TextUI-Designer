@@ -3,10 +3,13 @@ import type {
   ChangeLayer,
   DiffSummary,
   HumanReadableChange,
+  SemanticConfidenceAssessment,
+  SemanticConfidenceBand,
   SemanticChange,
   SemanticChangeEvidence,
   SemanticEvidenceNavigationTarget,
   SemanticDiff,
+  SemanticDiffConfidenceSummary,
   SemanticDiffIRNode,
   SemanticDiffIRRoot,
   SemanticDiffIRValue,
@@ -35,6 +38,35 @@ const PRESENTATION_PROP_KEYS = new Set([
 ]);
 
 const HIGH_IMPACT_PROP_KEYS = new Set(['href', 'target']);
+
+function clampScore(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+function roundScore(value: number): number {
+  return Math.round(clampScore(value) * 100) / 100;
+}
+
+function bandForScore(score: number): SemanticConfidenceBand {
+  if (score >= 0.7) {
+    return 'high';
+  }
+  if (score >= 0.4) {
+    return 'medium';
+  }
+  return 'low';
+}
+
+function confidenceAssessment(score: number, reasonSummary: string): SemanticConfidenceAssessment {
+  const rounded = roundScore(score);
+  const band = bandForScore(rounded);
+  return {
+    score: rounded,
+    band,
+    tier: band === 'high' ? 'accept' : band === 'medium' ? 'review' : 'reject',
+    reasonSummary
+  };
+}
 
 function flattenNodes(root: SemanticDiffIRRoot): Map<string, SemanticDiffIRNode> {
   const nodes = new Map<string, SemanticDiffIRNode>();
@@ -283,6 +315,80 @@ function buildGroupedChanges(changes: SemanticChange[]): ChangeGroup[] {
   }));
 }
 
+function scoreIdentityBasis(identityBasis: SemanticChange['identityBasis']): number {
+  switch (identityBasis) {
+    case 'stable-id':
+      return 0.95;
+    case 'slot-anchor':
+      return 0.85;
+    case 'owner-path':
+      return 0.72;
+    case 'event-handle':
+    case 'binding-handle':
+      return 0.8;
+    case 'fallback':
+      return 0.45;
+    default:
+      return 0.5;
+  }
+}
+
+function buildChangeConfidence(change: SemanticChange): SemanticConfidenceAssessment {
+  if (change.ambiguityReason) {
+    return confidenceAssessment(0.25, `Ambiguous match path: ${change.ambiguityReason}.`);
+  }
+
+  let score = scoreIdentityBasis(change.identityBasis);
+  const reasons = [`Identity basis: ${change.identityBasis}.`];
+
+  if (!change.evidence?.navigation?.primary) {
+    score -= 0.1;
+    reasons.push('Primary evidence navigation is missing.');
+  }
+
+  if (change.type === 'MoveComponent' && change.identityBasis !== 'stable-id') {
+    score -= 0.12;
+    reasons.push('Move confidence is reduced without stable-id continuity.');
+  }
+
+  if ((change.type === 'UpdateEvent' || change.type === 'UpdateProps')
+    && change.humanReadable?.impact === 'high'
+    && change.identityBasis !== 'stable-id') {
+    score -= 0.08;
+    reasons.push('High-impact change without stable-id continuity.');
+  }
+
+  return confidenceAssessment(score, reasons.join(' '));
+}
+
+function buildDiffConfidence(changes: SemanticChange[]): SemanticDiffConfidenceSummary {
+  if (changes.length === 0) {
+    return {
+      ...confidenceAssessment(1, 'No semantic changes detected.'),
+      ambiguousChanges: 0,
+      lowConfidenceChanges: 0,
+      recommendedAction: 'promote'
+    };
+  }
+
+  const ambiguousChanges = changes.filter(change => Boolean(change.ambiguityReason)).length;
+  const lowConfidenceChanges = changes.filter(change => change.confidence?.tier === 'reject').length;
+  const averageScore = changes.reduce((sum, change) => sum + (change.confidence?.score ?? 0), 0) / changes.length;
+  const adjustedScore = averageScore - (ambiguousChanges * 0.1) - (lowConfidenceChanges * 0.05);
+  const base = confidenceAssessment(adjustedScore, [
+    `${changes.length} semantic change(s) evaluated.`,
+    `${ambiguousChanges} ambiguous change(s).`,
+    `${lowConfidenceChanges} low-confidence change(s).`
+  ].join(' '));
+
+  return {
+    ...base,
+    ambiguousChanges,
+    lowConfidenceChanges,
+    recommendedAction: base.tier === 'accept' ? 'promote' : base.tier === 'review' ? 'canary' : 'hold'
+  };
+}
+
 function buildNavigationTarget(
   side: 'previous' | 'next',
   sourceRef: SemanticChangeEvidence['previous']
@@ -305,8 +411,12 @@ function buildNavigationTarget(
 
 function withEvidenceNavigation(change: SemanticChange): SemanticChange {
   const evidence = change.evidence;
+  const confidence = buildChangeConfidence(change);
   if (!evidence) {
-    return change;
+    return {
+      ...change,
+      confidence
+    };
   }
 
   const previous = buildNavigationTarget('previous', evidence.previous);
@@ -317,6 +427,7 @@ function withEvidenceNavigation(change: SemanticChange): SemanticChange {
 
   return {
     ...change,
+    confidence,
     evidence: {
       ...evidence,
       navigation: {
@@ -349,6 +460,7 @@ export function buildSemanticDiff(previous: SemanticDiffIRRoot, next: SemanticDi
   return {
     summary: buildSummary(changes),
     changes,
-    grouped: buildGroupedChanges(changes)
+    grouped: buildGroupedChanges(changes),
+    confidence: buildDiffConfidence(changes)
   };
 }

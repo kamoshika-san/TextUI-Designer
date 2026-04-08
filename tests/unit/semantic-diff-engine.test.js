@@ -282,12 +282,16 @@ describe('semantic diff extractor and structure changes', () => {
       modified: 2,
       moved: 1
     });
+    assert.strictEqual(typeof result.confidence.score, 'number');
+    assert.ok(['high', 'medium', 'low'].includes(result.confidence.band));
+    assert.ok(['promote', 'canary', 'hold'].includes(result.confidence.recommendedAction));
     assert.strictEqual(structureGroup.changes.some(change => change.type === 'AddComponent'), true);
     assert.strictEqual(structureGroup.changes.some(change => change.type === 'MoveComponent'), true);
     assert.strictEqual(behaviorGroup.changes.some(change => change.type === 'UpdateEvent'), true);
     assert.strictEqual(visualGroup.changes.some(change => change.type === 'UpdateProps'), true);
     assert.ok(structureGroup.changes.every(change => change.evidence.navigation));
     assert.ok(behaviorGroup.changes.every(change => change.evidence.navigation.primary));
+    assert.ok(result.changes.every(change => change.confidence));
   });
 
   it('emits semantic changes when a stable node gains a prop or event', () => {
@@ -392,5 +396,38 @@ describe('semantic diff extractor and structure changes', () => {
       labelChange.evidence.navigation.primary.location,
       'head:checkout.tui.yml#/page/components/0/label'
     );
+  });
+
+  it('downgrades confidence when the diff relies on ambiguous fallback matching', () => {
+    const previous = semanticDiff.buildSemanticDiffIR({
+      page: {
+        id: 'ambiguous-page',
+        title: 'Ambiguous',
+        layout: 'vertical',
+        components: [
+          { Text: { id: 'dup', value: 'First' } },
+          { Text: { id: 'dup', value: 'Second' } }
+        ]
+      }
+    });
+
+    const next = semanticDiff.buildSemanticDiffIR({
+      page: {
+        id: 'ambiguous-page',
+        title: 'Ambiguous',
+        layout: 'vertical',
+        components: [
+          { Container: { id: 'holder', components: [{ Text: { id: 'dup', value: 'First' } }] } }
+        ]
+      }
+    });
+
+    const result = semanticDiff.buildSemanticDiff(previous, next);
+
+    assert.strictEqual(result.confidence.band, 'low');
+    assert.strictEqual(result.confidence.tier, 'reject');
+    assert.strictEqual(result.confidence.recommendedAction, 'hold');
+    assert.ok(result.confidence.ambiguousChanges >= 1);
+    assert.ok(result.changes.some(change => change.confidence.tier === 'reject'));
   });
 });

@@ -41,7 +41,10 @@ The route must continue to prefer safety over exposure:
 
 ## Route signals to observe
 
-Rollout decisions should use `getPerformanceStats().incrementalRouteMetrics`.
+Rollout decisions should use both:
+
+- `getPerformanceStats().incrementalRouteMetrics`
+- semantic compare confidence from `textui compare` / `SemanticDiff.confidence`
 
 The minimum signals are:
 
@@ -54,6 +57,24 @@ The minimum signals are:
 | `diffRoute.preflightBypassCount` | count of preflight downgrades before diff execution | distinguish input/readiness limits from runtime failures |
 | `fullRender.directCount` / `fallbackCount` | direct full-render samples vs fallback full renders | confirm whether widening exposure is actually shifting traffic |
 | `fallbackReasons` | grouped downgrade reasons | identify dominant rollback cause quickly |
+
+## Semantic diff confidence signals
+
+When rollout decisions depend on whether a diff result is trustworthy enough to
+widen exposure, use the semantic diff confidence summary as the reviewer-facing
+signal:
+
+| Signal | Meaning | Use |
+|---|---|---|
+| `diff.confidence.band` | overall confidence band (`high` / `medium` / `low`) | decide whether the current result supports promotion, canary-only use, or hold |
+| `diff.confidence.recommendedAction` | rollout-oriented recommendation (`promote` / `canary` / `hold`) | keep rollout language consistent with implementation output |
+| `diff.confidence.ambiguousChanges` | count of ambiguity-marked changes | detect whether the route still depends on fallback-heavy matching |
+| `diff.confidence.lowConfidenceChanges` | count of reject-tier changes | distinguish one weak edge from a generally trustworthy diff |
+
+The confidence summary is not a replacement for runtime route metrics. It is
+the companion signal that answers "should we trust what this diff says?" while
+the incremental route metrics answer "did the route behave well enough to keep
+exposing it?".
 
 ## Stage overview
 
@@ -80,6 +101,7 @@ must not yet be treated as a generally recommended default.
 - benchmark scenarios complete without unexpected downgrade
 - `fallbackReasons` are explainable when they appear
 - `failureRate` is effectively zero on the maintained benchmark slice
+- semantic compare results on representative edits produce `diff.confidence.recommendedAction !== "hold"`
 
 ### Promotion criteria to `canary`
 
@@ -89,6 +111,7 @@ Promote only when all of the following are true:
 - `diffRoute.failureRate` is `0` on the accepted benchmark slice
 - downgrade cases are either expected preflight bypasses or clearly understood bugs
 - `diffRoute.medianMs` is not materially worse than `fullRender.medianMs` on representative edits
+- semantic compare on representative edits is mostly `high` confidence, with no unexplained ambiguity clusters
 
 ### Rollback triggers inside `local-only`
 
@@ -125,6 +148,7 @@ Promote only when all of the following are true:
 - `diffRoute.p95Ms` is meaningfully better than `fullRender.p95Ms` on representative large-document edits
 - dominant `fallbackReasons` are understood and acceptable as conservative safety behavior
 - rollback remains a simple gate disablement, not a code hotfix dependency
+- semantic compare confidence is consistently `high` or `medium` with `recommendedAction !== "hold"` on the maintained canary slice
 
 ### Rollback triggers inside `canary`
 
@@ -134,6 +158,7 @@ Roll back to `local-only` if any of the following occurs:
 - `fallbackRate` climbs enough that the route stops delivering practical benefit
 - `p95` improvement disappears on representative large-document edits
 - fallback reasons shift from conservative preflight causes to runtime correctness causes
+- semantic compare starts returning repeated `hold` recommendations on representative canary edits
 
 ## Stage 3: `default-on`
 
@@ -160,6 +185,7 @@ Operators should keep watching:
 - `diffRoute.fallbackRate` for erosion of practical exposure
 - `fallbackReasons` for newly dominant downgrade causes
 - `diffRoute.p95Ms` versus `fullRender.p95Ms` for ROI drift
+- semantic compare confidence for representative edits, especially whether ambiguous or reject-tier changes are becoming common
 
 ### Rollback triggers from `default-on`
 
@@ -169,6 +195,7 @@ Roll back to `canary` or `local-only` if:
 - fallback reasons indicate a new runtime mismatch class
 - observed latency improvement is no longer material on representative large DSL edits
 - maintainers cannot explain whether the route is helping or merely falling back silently
+- semantic compare confidence repeatedly drops to `hold` for edits the route is expected to handle confidently
 
 ## Promotion checklist
 
@@ -178,5 +205,6 @@ Before promoting to the next stage, confirm:
 2. failures and fallbacks are separated, not collapsed into one number
 3. latency comparison is based on representative edits, not only synthetic no-op runs
 4. rollback is still a simple exposure change using the existing gate
+5. semantic compare confidence on representative edits does not recommend `hold`
 
 If any answer is unclear, promotion should stop there.

@@ -117,6 +117,7 @@ function renderHumanReadableChange(change: SemanticDiff['changes'][number]): str
   const title = change.humanReadable?.title ?? `${change.type} ${change.componentId}`;
   const description = change.humanReadable?.description ?? '';
   const impact = change.humanReadable?.impact ?? 'low';
+  const confidence = change.confidence ? `${change.confidence.band}:${change.confidence.score.toFixed(2)}` : 'unknown';
   const ambiguity = change.ambiguityReason ? ` [${change.ambiguityReason}]` : '';
   const evidence = change.evidence?.navigation;
   let evidenceLine = '';
@@ -127,7 +128,7 @@ function renderHumanReadableChange(change: SemanticDiff['changes'][number]): str
     evidenceLine = `\n  Evidence: ${evidence.primary.location}`;
   }
 
-  return `- ${title} (${impact})${ambiguity}${description ? `\n  ${description}` : ''}${evidenceLine}`;
+  return `- ${title} (${impact}, confidence ${confidence})${ambiguity}${description ? `\n  ${description}` : ''}${evidenceLine}`;
 }
 
 export function renderSemanticDiffHumanReadable(result: SemanticDiffCompareResult): string {
@@ -136,6 +137,9 @@ export function renderSemanticDiffHumanReadable(result: SemanticDiffCompareResul
   lines.push(`Compare: ${result.metadata.baseRef} -> ${result.metadata.headRef}`);
   lines.push(
     `Summary: +${result.diff.summary.added} / -${result.diff.summary.removed} / ~${result.diff.summary.modified} / moved ${result.diff.summary.moved}`
+  );
+  lines.push(
+    `Confidence: ${result.diff.confidence.band} (${result.diff.confidence.score.toFixed(2)}) -> ${result.diff.confidence.recommendedAction}`
   );
 
   result.diff.grouped.forEach(group => {
