@@ -100,6 +100,32 @@ export const TOOLS: ToolDefinition[] = [
     }
   },
   {
+    name: 'list_providers',
+    description: '利用可能なエクスポートprovider一覧を構造化データで返します。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        providerModulePath: {
+          type: 'string',
+          description: '外部providerモジュールを含めたい場合のパス'
+        }
+      }
+    }
+  },
+  {
+    name: 'inspect_state',
+    description: 'TextUI stateファイルを読み取り、現在の同期状態を構造化データで返します。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        statePath: {
+          type: 'string',
+          description: '対象stateファイルのパス。省略時は既定のstateパス'
+        }
+      }
+    }
+  },
+  {
     name: 'run_cli',
     description: 'TextUI CLIコマンドをMCP経由で実行します（validate/plan/apply/export/capture/import/state/providers/version対応）。',
     inputSchema: {

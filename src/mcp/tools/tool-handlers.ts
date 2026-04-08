@@ -81,7 +81,31 @@ export function createToolHandlers(context: ToolHandlerContext): ToolHandlers {
       jsonPointer: getObjectValue(args, 'jsonPointer')
     }),
     list_components: async () => engine.listComponents(),
+    list_providers: async () => runCli({
+      args: [
+        'providers',
+        '--json',
+        ...appendOptionalPair('--provider-module', getObjectValue(args, 'providerModulePath'))
+      ],
+      parseJson: true
+    }),
+    inspect_state: async () => runCli({
+      args: [
+        'state',
+        'show',
+        '--json',
+        ...appendOptionalPair('--state', getObjectValue(args, 'statePath'))
+      ],
+      parseJson: true
+    }),
     run_cli: async () => runCli(args),
     capture_preview: async () => capturePreview(args)
   };
+}
+
+function appendOptionalPair(flag: string, value: string | undefined): string[] {
+  if (!value) {
+    return [];
+  }
+  return [flag, value];
 }

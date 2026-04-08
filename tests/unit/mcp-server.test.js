@@ -34,6 +34,8 @@ describe('TextUiMcpServer', () => {
     const toolNames = toolsList.result.tools.map(tool => tool.name);
     assert.ok(toolNames.includes('generate_ui'));
     assert.ok(toolNames.includes('validate_ui'));
+    assert.ok(toolNames.includes('list_providers'));
+    assert.ok(toolNames.includes('inspect_state'));
     assert.ok(toolNames.includes('run_cli'));
   });
 
@@ -323,4 +325,56 @@ theme:
     assert.match(response.error.message, /Method not found: unknown\/method/);
   });
 
+  it('tools/call list_providers は provider一覧を構造化データで返す', async () => {
+    const server = new TextUiMcpServer();
+    const response = await server.handleMessage({
+      jsonrpc: '2.0',
+      id: 63,
+      method: 'tools/call',
+      params: {
+        name: 'list_providers',
+        arguments: {}
+      }
+    });
+
+    assert.ok(response.result);
+    assert.strictEqual(response.result.structuredContent.exitCode, 0);
+    assert.ok(response.result.structuredContent.parsedJson);
+    assert.ok(Array.isArray(response.result.structuredContent.parsedJson.providers));
+    assert.ok(response.result.structuredContent.parsedJson.providers.some(provider => provider.name === 'html'));
+  });
+
+  it('tools/call inspect_state は state show --json を構造化データで返す', async () => {
+    const server = new TextUiMcpServer();
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-mcp-state-test-'));
+    const statePath = path.join(tmpDir, 'sample.state.json');
+    fs.writeFileSync(statePath, JSON.stringify({
+      dsl: { entry: '/tmp/sample.tui.yml' },
+      resources: [
+        { id: 'hero', kind: 'component', fingerprint: 'abc123' }
+      ]
+    }, null, 2), 'utf8');
+
+    try {
+      const response = await server.handleMessage({
+        jsonrpc: '2.0',
+        id: 64,
+        method: 'tools/call',
+        params: {
+          name: 'inspect_state',
+          arguments: {
+            statePath
+          }
+        }
+      });
+
+      assert.ok(response.result);
+      assert.strictEqual(response.result.structuredContent.exitCode, 0);
+      assert.ok(response.result.structuredContent.parsedJson);
+      assert.strictEqual(response.result.structuredContent.parsedJson.resources.length, 1);
+      assert.strictEqual(response.result.structuredContent.parsedJson.resources[0].id, 'hero');
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
 });
