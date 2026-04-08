@@ -40,6 +40,26 @@ describe('SvelteExporter', () => {
     assert.match(output, /Events: Future events should stay dispatcher-based so the static markup contract remains intact\./);
   });
 
+  it('emits framework-aware bindings for the supported form control slice', async () => {
+    const dsl = loadSample('sample/01-basic/sample.tui.yml');
+
+    const output = await exporter.export(dsl, { format: 'svelte' });
+
+    assert.match(output, /let name = "";/);
+    assert.match(output, /let birthday = "";/);
+    assert.match(output, /let email = "";/);
+    assert.match(output, /let country = "";/);
+    assert.match(output, /let plan = "";/);
+    assert.match(output, /let agree = false;/);
+    assert.match(output, /<input[^>]*name="name"[^>]*bind:value=\{name\}/);
+    assert.match(output, /<input[^>]*type="date"[^>]*bind:value=\{birthday\}/);
+    assert.match(output, /<input[^>]*name="birthday"[^>]*bind:value=\{birthday\}/);
+    assert.match(output, /<input[^>]*name="email"[^>]*bind:value=\{email\}/);
+    assert.match(output, /<select[^>]*name="country"[^>]*bind:value=\{country\}/);
+    assert.match(output, /<input[^>]*type="radio"[^>]*name="plan"[^>]*bind:group=\{plan\}/);
+    assert.match(output, /<input[^>]*type="checkbox"[^>]*name="agree"[^>]*bind:checked=\{agree\}/);
+  });
+
   it('keeps primary-lane visible semantics and semantic class hooks for the representative sample', async () => {
     const { dsl, html } = await exportPrimaryHtmlSample('sample/01-basic/sample.tui.yml');
 

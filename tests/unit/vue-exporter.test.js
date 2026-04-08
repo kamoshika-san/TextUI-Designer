@@ -40,6 +40,27 @@ describe('VueExporter', () => {
     assert.match(output, /Events: Future events should land here through `defineEmits` without changing template structure by default\./);
   });
 
+  it('emits framework-aware bindings for the supported form control slice', async () => {
+    const dsl = loadSample('sample/01-basic/sample.tui.yml');
+
+    const output = await exporter.export(dsl, { format: 'vue' });
+
+    assert.match(output, /import \{ ref \} from 'vue';/);
+    assert.match(output, /const name = ref\(""\);/);
+    assert.match(output, /const birthday = ref\(""\);/);
+    assert.match(output, /const email = ref\(""\);/);
+    assert.match(output, /const country = ref\(""\);/);
+    assert.match(output, /const plan = ref\(""\);/);
+    assert.match(output, /const agree = ref\(false\);/);
+    assert.match(output, /<input[^>]*name="name"[^>]*v-model="name"/);
+    assert.match(output, /<input[^>]*type="date"[^>]*v-model="birthday"/);
+    assert.match(output, /<input[^>]*name="birthday"[^>]*v-model="birthday"/);
+    assert.match(output, /<input[^>]*name="email"[^>]*v-model="email"/);
+    assert.match(output, /<select[^>]*name="country"[^>]*v-model="country"/);
+    assert.match(output, /<input[^>]*type="radio"[^>]*name="plan"[^>]*v-model="plan"/);
+    assert.match(output, /<input[^>]*type="checkbox"[^>]*name="agree"[^>]*v-model="agree"/);
+  });
+
   it('keeps primary-lane visible semantics and semantic class hooks for the representative sample', async () => {
     const { dsl, html } = await exportPrimaryHtmlSample('sample/01-basic/sample.tui.yml');
 
