@@ -1,0 +1,10 @@
+page:
+  id: action-page
+  title: Actions
+  components:
+    - Button:
+        id: secondary-action
+        label: Cancel
+    - Button:
+        id: primary-action
+        label: Save

@@ -1,0 +1,13 @@
+page:
+  id: settings-page
+  title: Settings
+  components:
+    - Button:
+        id: save-button
+        label: Save
+        props:
+          size: md
+          variant: primary
+        events:
+          onClick: saveSettings
+          onFocus: showHint

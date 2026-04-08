@@ -1,0 +1,11 @@
+page:
+  id: dashboard-page
+  title: Dashboard
+  components:
+    - Container:
+        id: hero
+        padding: 8
+        components:
+          - Text:
+              id: hero-title
+              content: Welcome

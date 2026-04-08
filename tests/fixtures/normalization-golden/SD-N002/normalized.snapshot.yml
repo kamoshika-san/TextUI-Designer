@@ -1,0 +1,11 @@
+page:
+  id: profile-page
+  title: Profile
+  components:
+    - Input:
+        id: email-input
+        label: Email
+        required: false
+        __normalized:
+          required:
+            explicitness: absent-or-explicit-default

@@ -1,0 +1,8 @@
+page:
+  id: profile-page
+  title: Profile
+  components:
+    - Input:
+        id: email-input
+        label: Email
+        required: false

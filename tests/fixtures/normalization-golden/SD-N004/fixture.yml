@@ -1,0 +1,36 @@
+fixtureId: SD-N004
+kind: normalization-golden
+caseRef:
+  goldenCaseId: NG-001
+  ruleFamily: canonical-order-boundary
+  stage: stage-1
+  sourceDoc: docs/diff-semantic-normalization-mvp-rules.md
+summary: Reviewer-visible action order must remain different and must not normalize away
+assertionMode: non-equivalent
+inputs:
+  - id: authored-a
+    role: primary
+    dslPath: tests/fixtures/normalization-golden/SD-N004/authored-a.tui.yml
+  - id: authored-b
+    role: negative-control
+    dslPath: tests/fixtures/normalization-golden/SD-N004/authored-b.tui.yml
+expectation:
+  mustDifferFrom:
+    - authored-a
+    - authored-b
+  differenceReason: reviewer-visible-action-order-must-survive
+metadataAssertions:
+  - id: meta-sd-n004
+    sourceRef: not-applicable
+    explicitness: not-applicable
+    ownership: preserve
+    canonicalizationMarkers:
+      required:
+        - preserve-authored-order
+      forbidden:
+        - canonical-order
+guardrails:
+  mustNotNormalize:
+    - reviewer-visible-child-order
+notes:
+  - Negative control for action ordering that may later produce real structural meaning
