@@ -82,8 +82,9 @@ export function loadStatePayload(inputArg?: string): unknown {
 }
 
 export function printHelp(): void {
-  process.stdout.write('Usage: textui <validate|plan|apply|export|capture|import|state|providers|version> ...\n');
+  process.stdout.write('Usage: textui <validate|plan|apply|export|capture|compare|import|state|providers|version> ...\n');
   process.stdout.write('Options: --provider <name> --provider-module <path> --theme <path> --file <path> --dir <path> --json --token-on-error <error|warn|ignore>\n');
   process.stdout.write('Capture: textui capture --file <path> [--output <png>] [--theme <path>] [--use-webview-theme] [--extension-path <dir>] [--width <px>] [--height <px>] [--scale <n>] [--wait-ms <ms>] [--browser <path|name>] [--allow-no-sandbox] [--json]\n');
+  process.stdout.write('Compare: textui compare --base <ref> --head <ref> --file <path> [--mode <human-readable|machine-readable>] [--output <file>] [--json]\n');
   process.stdout.write('Import: textui import openapi --input <openapi.(yml|yaml|json)> [--operation <operationId>] [--all] [--output <file>|--output-dir <dir>] [--json]\n');
 }

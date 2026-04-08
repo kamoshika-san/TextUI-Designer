@@ -303,6 +303,187 @@ page:
     const output = execFileSync('node', [cliPath, '--help'], { encoding: 'utf8' });
     assert.match(output, /--provider-module <path>/);
     assert.match(output, /--theme <path>/);
+    assert.match(output, /Compare: textui compare --base <ref> --head <ref> --file <path>/);
+  });
+
+  it('compare --mode machine-readable emits semantic diff JSON from two git revisions', function () {
+    this.timeout(20000);
+    const gitRepo = path.join(tmpDir, 'git-compare-repo');
+    fs.mkdirSync(gitRepo, { recursive: true });
+    execFileSync('git', ['init'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['config', 'user.name', 'Codex Test'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['config', 'user.email', 'codex@example.com'], { cwd: gitRepo, encoding: 'utf8' });
+
+    const dslPath = path.join(gitRepo, 'sample.tui.yml');
+    fs.writeFileSync(dslPath, `
+page:
+  id: compare-page
+  title: "Compare"
+  layout: vertical
+  components:
+    - Button:
+        id: save
+        label: "Save"
+        events:
+          onClick: "navigate('/home')"
+`, 'utf8');
+    execFileSync('git', ['add', 'sample.tui.yml'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['commit', '-m', 'base'], { cwd: gitRepo, encoding: 'utf8' });
+    const baseRef = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: gitRepo, encoding: 'utf8' }).trim();
+
+    fs.writeFileSync(dslPath, `
+page:
+  id: compare-page
+  title: "Compare"
+  layout: vertical
+  components:
+    - Button:
+        id: save
+        label: "Save"
+        events:
+          onClick: "navigate('/dashboard')"
+    - Link:
+        id: help
+        label: "Help"
+        href: "/docs"
+`, 'utf8');
+    execFileSync('git', ['add', 'sample.tui.yml'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['commit', '-m', 'head'], { cwd: gitRepo, encoding: 'utf8' });
+    const headRef = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: gitRepo, encoding: 'utf8' }).trim();
+
+    const output = execFileSync('node', [
+      cliPath,
+      'compare',
+      '--base',
+      baseRef,
+      '--head',
+      headRef,
+      '--file',
+      dslPath,
+      '--mode',
+      'machine-readable'
+    ], { encoding: 'utf8', cwd: gitRepo });
+
+    const parsed = JSON.parse(output);
+    assert.strictEqual(parsed.kind, 'semantic-diff-result/v1');
+    assert.strictEqual(parsed.metadata.relativeFilePath, 'sample.tui.yml');
+    assert.strictEqual(parsed.metadata.baseRef, baseRef);
+    assert.strictEqual(parsed.metadata.headRef, headRef);
+    assert.deepStrictEqual(parsed.diff.summary, {
+      added: 1,
+      removed: 0,
+      modified: 1,
+      moved: 0
+    });
+  });
+
+  it('compare human-readable output emphasizes summary and grouped changes', function () {
+    this.timeout(20000);
+    const gitRepo = path.join(tmpDir, 'git-compare-human');
+    fs.mkdirSync(gitRepo, { recursive: true });
+    execFileSync('git', ['init'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['config', 'user.name', 'Codex Test'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['config', 'user.email', 'codex@example.com'], { cwd: gitRepo, encoding: 'utf8' });
+
+    const dslPath = path.join(gitRepo, 'sample.tui.yml');
+    fs.writeFileSync(dslPath, `
+page:
+  id: compare-page
+  title: "Compare"
+  layout: vertical
+  components:
+    - Link:
+        id: help
+        label: "Help"
+        href: "/support"
+`, 'utf8');
+    execFileSync('git', ['add', 'sample.tui.yml'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['commit', '-m', 'base'], { cwd: gitRepo, encoding: 'utf8' });
+    const baseRef = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: gitRepo, encoding: 'utf8' }).trim();
+
+    fs.writeFileSync(dslPath, `
+page:
+  id: compare-page
+  title: "Compare"
+  layout: vertical
+  components:
+    - Link:
+        id: help
+        label: "Help Center"
+        href: "/docs"
+`, 'utf8');
+    execFileSync('git', ['add', 'sample.tui.yml'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['commit', '-m', 'head'], { cwd: gitRepo, encoding: 'utf8' });
+    const headRef = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: gitRepo, encoding: 'utf8' }).trim();
+
+    const output = execFileSync('node', [
+      cliPath,
+      'compare',
+      '--base',
+      baseRef,
+      '--head',
+      headRef,
+      '--file',
+      dslPath
+    ], { encoding: 'utf8', cwd: gitRepo });
+
+    assert.match(output, /Semantic Diff: sample\.tui\.yml/);
+    assert.match(output, /Compare: .* -> .*/);
+    assert.match(output, /Summary: \+0 \/ -0 \/ ~2 \/ moved 0/);
+    assert.match(output, /BEHAVIOR:|VISUAL:/);
+    assert.match(output, /Help Center|\/docs/);
+  });
+
+  it('compare fails clearly when compared revision file uses $include', function () {
+    this.timeout(20000);
+    const gitRepo = path.join(tmpDir, 'git-compare-include');
+    fs.mkdirSync(gitRepo, { recursive: true });
+    execFileSync('git', ['init'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['config', 'user.name', 'Codex Test'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['config', 'user.email', 'codex@example.com'], { cwd: gitRepo, encoding: 'utf8' });
+
+    const dslPath = path.join(gitRepo, 'sample.tui.yml');
+    fs.writeFileSync(dslPath, `
+page:
+  id: compare-page
+  title: "Compare"
+  layout: vertical
+  components:
+    - Text:
+        id: body
+        value: "Base"
+`, 'utf8');
+    execFileSync('git', ['add', 'sample.tui.yml'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['commit', '-m', 'base'], { cwd: gitRepo, encoding: 'utf8' });
+    const baseRef = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: gitRepo, encoding: 'utf8' }).trim();
+
+    fs.writeFileSync(dslPath, `
+page:
+  id: compare-page
+  title: "Compare"
+  layout: vertical
+  components:
+    - $include:
+        template: "./partial.yml"
+`, 'utf8');
+    execFileSync('git', ['add', 'sample.tui.yml'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['commit', '-m', 'head'], { cwd: gitRepo, encoding: 'utf8' });
+    const headRef = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: gitRepo, encoding: 'utf8' }).trim();
+
+    const result = spawnSync('node', [
+      cliPath,
+      'compare',
+      '--base',
+      baseRef,
+      '--head',
+      headRef,
+      '--file',
+      dslPath
+    ], { encoding: 'utf8', cwd: gitRepo });
+
+    assert.strictEqual(result.status, 1);
+    assert.match(result.stderr, /\$include/);
+    assert.match(result.stderr, /unsupported/);
   });
 
   it('export returns exit code 1 with supported provider hint when provider is unknown', () => {

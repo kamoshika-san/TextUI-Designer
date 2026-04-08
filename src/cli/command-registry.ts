@@ -40,6 +40,10 @@ export function getCommandRegistry(): Record<string, CommandHandler> {
       const { handleExportCommand } = await import('./commands/export-command');
       return handleExportCommand(getArg('--file'));
     },
+    compare: async () => {
+      const { handleCompareCommand } = await import('./commands/compare-command');
+      return handleCompareCommand();
+    },
     plan: async () => {
       const { handlePlanCommand } = await import('./commands/plan-command');
       return handlePlanCommand(fileAndDir());
