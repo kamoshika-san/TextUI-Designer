@@ -86,7 +86,7 @@
 - ユーザー操作に相当する呼び出しのシミュレーション
 - （スクリプト名は historical に `test:e2e` のまま）
 
-**実 VS Code 上での検証**が必要な場合は、`@vscode/test-electron` 等の別ライン（`vscode-test` スクリプト）を検討してください（本リポジトリのデフォルト品質ゲートは上記 Mocha ラインが正）。
+**実 VS Code 上での検証**が必要な場合は、`npm run test:vscode-smoke` を使います。これは `@vscode/test-electron` ベースの narrow smoke で、デフォルトの Mocha ラインを置き換えるものではありません。
 
 **手動の最小スモーク**（活性化 → プレビュー → HTML エクスポート）は、拡張リポジトリの [`docs/real-vscode-smoke.md`](../docs/real-vscode-smoke.md) を正とする。
 

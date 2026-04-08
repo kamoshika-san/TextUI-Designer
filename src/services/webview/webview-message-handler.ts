@@ -9,6 +9,7 @@ import { ThemeSwitchService } from './theme-switch-service';
 import { VSCodeWindowAdapter } from './vscode-window-adapter';
 import { YamlPointerResolver } from './yaml-pointer-resolver';
 import { withPreviewPipelineTrace } from './preview-pipeline-observability';
+import { WebViewPanelMessenger } from './webview-panel-messenger';
 
 type MessageType = 'export' | 'export-preview' | 'jump-to-dsl' | 'webview-ready' | 'theme-switch' | 'get-themes';
 type MessageHandler = (message: WebViewMessage) => Promise<void>;
@@ -31,6 +32,7 @@ export class WebViewMessageHandler {
   private readonly yamlPointerResolver: YamlPointerResolver;
   private readonly themeSwitchService: ThemeSwitchService;
   private readonly windowAdapter: VSCodeWindowAdapter;
+  private readonly panelMessenger: WebViewPanelMessenger;
   private readonly messageHandlers: Record<MessageType, MessageHandler>;
   private readonly logger = new Logger('WebViewMessageHandler');
 
@@ -49,6 +51,7 @@ export class WebViewMessageHandler {
     this.yamlPointerResolver = new YamlPointerResolver();
     this.themeSwitchService = dependencies.themeSwitchService ?? new ThemeSwitchService();
     this.windowAdapter = dependencies.windowAdapter ?? new VSCodeWindowAdapter();
+    this.panelMessenger = new WebViewPanelMessenger(this.lifecycleManager);
     this.messageHandlers = {
       'export': async () => this.handleExportMessage(),
       'export-preview': async () => this.handleExportPreviewMessage(),
@@ -220,56 +223,25 @@ export class WebViewMessageHandler {
   }
 
   applyThemeVariables(css: string): void {
-    const panel = this.lifecycleManager.getPanel();
-    if (!panel) {
-      return;
-    }
-
-    panel.webview.postMessage({
-      type: 'theme-variables',
-      css
-    });
+    this.panelMessenger.postThemeVariables(css);
   }
 
   notifyThemeChange(theme: 'light' | 'dark'): void {
-    const panel = this.lifecycleManager.getPanel();
-    if (!panel) {
-      return;
-    }
-
-    panel.webview.postMessage({
-      type: 'theme-change',
-      theme: theme
-    });
+    this.panelMessenger.postThemeChange(theme);
   }
 
   sendUpdatingSignal(): void {
-    const panel = this.lifecycleManager.getPanel();
-    if (!panel) {
-      return;
-    }
-
-    panel.webview.postMessage({
-      type: 'preview-updating'
-    });
+    this.panelMessenger.postPreviewUpdating();
   }
 
   sendPreviewSettings(): void {
-    const panel = this.lifecycleManager.getPanel();
-    if (!panel) {
-      return;
-    }
-
     const webviewSettings = ConfigManager.getWebViewSettings();
-    panel.webview.postMessage({
-      type: 'preview-settings',
-      settings: {
-        preview: {
-          showUpdateIndicator: Boolean(webviewSettings.preview?.showUpdateIndicator)
-        },
-        jumpToDsl: {
-          showHoverIndicator: Boolean(webviewSettings.jumpToDsl?.showHoverIndicator)
-        }
+    this.panelMessenger.postPreviewSettings({
+      preview: {
+        showUpdateIndicator: Boolean(webviewSettings.preview?.showUpdateIndicator)
+      },
+      jumpToDsl: {
+        showHoverIndicator: Boolean(webviewSettings.jumpToDsl?.showHoverIndicator)
       }
     });
   }
@@ -282,10 +254,7 @@ export class WebViewMessageHandler {
 
     try {
       const themes = await this.themeDiscoveryService.detectAvailableThemes(this.themeManager);
-      panel.webview.postMessage({
-        type: 'available-themes',
-        themes: themes
-      });
+      this.panelMessenger.postAvailableThemes(themes);
     } catch (error) {
       this.logger.error('テーマ一覧取得エラー:', error);
     }

@@ -51,6 +51,13 @@
 - **現状の CI デフォルト**は `npm test` / `npm run test:all` の **モックベース**ライン。実機スモークは **本手順の手動実行**で補う。
 - 将来 **Extension Host 上の自動化**を足す場合は、`@vscode/test-electron` 等の別ラインとして追加する想定（[`tests/README.md`](../tests/README.md) の「実 VS Code 上での検証」節）。本チケットでは **手順の文書化とチーム合意可能な合否基準**までをスコープとする。
 
+## 自動化レーン
+
+- narrow real-host smoke は `npm run test:vscode-smoke` を正とする。
+- CI では Linux headless host 上で `xvfb-run -a npm run test:vscode-smoke` を実行する。
+- Windows ローカルでは `@vscode/test-electron` の引数解釈差異で不安定な場合があるため、手元再現は WSL / Linux 環境を推奨する。
+- 目的は exhaustive UI automation ではなく、実 Extension Host での activation と preview open が壊れていないことの確認に留める。
+
 ## 関連ドキュメント
 
 - [`MANUAL_REGRESSION_TEST.md`](./MANUAL_REGRESSION_TEST.md) — プレビュー起点エクスポートの手動回帰

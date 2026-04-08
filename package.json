@@ -471,6 +471,7 @@
     "test:mcp": "mocha --no-config --require ./tests/setup.js --timeout 20000 --exit tests/unit/mcp-params.test.js tests/unit/mcp-request-handlers.test.js tests/unit/mcp-server.test.js tests/unit/mcp-bootstrap-service.test.js",
     "test:integration": "mocha --no-config --require ./tests/setup.js --timeout 20000 --exit ./tests/integration/command-manager.test.js ./tests/integration/theme-switching.test.js",
     "test:e2e": "mocha --no-config --require ./tests/setup.js --timeout 20000 --exit ./tests/e2e/export-from-preview-e2e.test.js",
+    "test:vscode-smoke": "node ./tests/vscode-smoke/runTest.js",
     "test:quick": "npm run pretest:local && npm run test:unit",
     "test:all": "npm run pretest:local && npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:regression",
     "test:all:ci:base": "npm run pretest:ci && npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:regression",
