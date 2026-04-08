@@ -3,7 +3,6 @@ import type {
   ChangeLayer,
   DiffSummary,
   HumanReadableChange,
-  ImpactLevel,
   SemanticChange,
   SemanticDiff,
   SemanticDiffIRNode,
@@ -98,6 +97,10 @@ function parseNavigationTarget(value: unknown): string | null {
 }
 
 function formatValue(value: unknown): string {
+  if (value === undefined) {
+    return '(none)';
+  }
+
   if (typeof value === 'string') {
     return value;
   }
@@ -168,9 +171,16 @@ function compareSurface(
       const beforeValue = previousSurface[key];
       const afterValue = nextSurface[key];
 
-      if (!beforeValue || !afterValue || valuesEqual(beforeValue, afterValue)) {
+      if (!beforeValue && !afterValue) {
         return;
       }
+
+      if (valuesEqual(beforeValue, afterValue)) {
+        return;
+      }
+
+      const beforeComparable = beforeValue?.value;
+      const afterComparable = afterValue?.value;
 
       if (surfaceName === 'events') {
         changes.push({
@@ -179,13 +189,13 @@ function compareSurface(
           componentId: match.next.nodeId,
           identityBasis: match.next.stableId ? 'stable-id' : 'owner-path',
           evidence: {
-            previous: beforeValue.sourceRef ?? match.previous.sourceRef,
-            next: afterValue.sourceRef ?? match.next.sourceRef
+            previous: beforeValue?.sourceRef ?? match.previous.sourceRef,
+            next: afterValue?.sourceRef ?? match.next.sourceRef
           },
-          humanReadable: buildEventHumanReadable(match.next, key, beforeValue.value, afterValue.value),
+          humanReadable: buildEventHumanReadable(match.next, key, beforeComparable, afterComparable),
           eventKey: key,
-          before: beforeValue.value,
-          after: afterValue.value
+          before: beforeComparable,
+          after: afterComparable
         });
         return;
       }
@@ -196,13 +206,13 @@ function compareSurface(
         componentId: match.next.nodeId,
         identityBasis: match.next.stableId ? 'stable-id' : 'owner-path',
         evidence: {
-          previous: beforeValue.sourceRef ?? match.previous.sourceRef,
-          next: afterValue.sourceRef ?? match.next.sourceRef
+          previous: beforeValue?.sourceRef ?? match.previous.sourceRef,
+          next: afterValue?.sourceRef ?? match.next.sourceRef
         },
-        humanReadable: buildPropHumanReadable(match.next, key, beforeValue.value, afterValue.value),
+        humanReadable: buildPropHumanReadable(match.next, key, beforeComparable, afterComparable),
         propKey: key,
-        before: beforeValue.value,
-        after: afterValue.value
+        before: beforeComparable,
+        after: afterComparable
       });
     });
   });

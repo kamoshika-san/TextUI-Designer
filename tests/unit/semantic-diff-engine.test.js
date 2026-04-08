@@ -287,4 +287,44 @@ describe('semantic diff extractor and structure changes', () => {
     assert.strictEqual(behaviorGroup.changes.some(change => change.type === 'UpdateEvent'), true);
     assert.strictEqual(visualGroup.changes.some(change => change.type === 'UpdateProps'), true);
   });
+
+  it('emits semantic changes when a stable node gains a prop or event', () => {
+    const previous = semanticDiff.buildSemanticDiffIR({
+      page: {
+        id: 'profile-page',
+        title: 'Profile',
+        layout: 'vertical',
+        components: [
+          { Button: { id: 'save-button', label: 'Save' } },
+          { Link: { id: 'help-link', label: 'Help' } }
+        ]
+      }
+    });
+
+    const next = semanticDiff.buildSemanticDiffIR({
+      page: {
+        id: 'profile-page',
+        title: 'Profile',
+        layout: 'vertical',
+        components: [
+          { Button: { id: 'save-button', label: 'Save', events: { onClick: "navigate('/dashboard')" } } },
+          { Link: { id: 'help-link', label: 'Help', href: '/docs' } }
+        ]
+      }
+    });
+
+    const changes = semanticDiff.computeSemanticPropAndEventChanges(previous, next);
+    const addedEvent = changes.find(change => change.type === 'UpdateEvent' && change.eventKey === 'onClick');
+    const addedHref = changes.find(change => change.type === 'UpdateProps' && change.propKey === 'href');
+
+    assert.strictEqual(changes.length, 2);
+    assert.ok(addedEvent);
+    assert.strictEqual(addedEvent.before, undefined);
+    assert.strictEqual(addedEvent.after, "navigate('/dashboard')");
+    assert.ok(addedEvent.humanReadable.description.includes('/dashboard'));
+    assert.ok(addedHref);
+    assert.strictEqual(addedHref.before, undefined);
+    assert.strictEqual(addedHref.after, '/docs');
+    assert.ok(addedHref.humanReadable.description.includes('/docs'));
+  });
 });
