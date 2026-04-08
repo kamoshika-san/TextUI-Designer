@@ -39,6 +39,7 @@ export type CommandFeatureBindings = Pick<
   | 'capturePreviewImage'
   | 'openDevTools'
   | 'executeExport'
+  | 'executeExportPreview'
   | 'createTemplate'
   | 'insertTemplate'
   | 'openSettings'
@@ -55,7 +56,7 @@ export function createPreviewExportFeatureRegistry(
   deps: PreviewExportFeatureRegistryDependencies
 ): Pick<
   CommandFeatureBindings,
-  'openPreviewWithCheck' | 'capturePreviewImage' | 'openDevTools' | 'executeExport' | 'openOverlayDiff'
+  'openPreviewWithCheck' | 'capturePreviewImage' | 'openDevTools' | 'executeExport' | 'executeExportPreview' | 'openOverlayDiff'
 > {
   return {
     openPreviewWithCheck: () => executeOpenPreviewCommand(deps.webViewManager, deps.logger),
@@ -68,6 +69,7 @@ export function createPreviewExportFeatureRegistry(
       }),
     openDevTools: () => deps.webViewManager.openDevTools(),
     executeExport: (filePath?: string) => executeExportCommand(deps.exportService, filePath),
+    executeExportPreview: (lastTuiFile?: string) => deps.exportService.executeExportPreview(lastTuiFile),
     openOverlayDiff: () => executeOpenOverlayDiffCommand(deps.context, deps.logger)
   };
 }

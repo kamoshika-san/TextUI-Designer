@@ -69,6 +69,12 @@ const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
       deps.executeExport(typeof filePath === 'string' ? filePath : undefined)
   },
   {
+    command: 'textui-designer.export-preview',
+    title: 'TextUI: Export Preview (Dry Run)',
+    callback: deps => (filePath?: unknown) =>
+      deps.executeExportPreview(typeof filePath === 'string' ? filePath : undefined)
+  },
+  {
     command: 'textui-designer.showJumpToDslHelp',
     title: 'TextUI: Preview to DSL Jump (How to Use)',
     callback: deps => () => deps.showJumpToDslHelp()

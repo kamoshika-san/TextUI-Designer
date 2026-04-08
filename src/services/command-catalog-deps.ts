@@ -17,6 +17,7 @@ export interface CommandCatalogDependencies {
   capturePreviewImage: () => Promise<void>;
   openDevTools: () => void;
   executeExport: (filePath?: string) => Promise<void>;
+  executeExportPreview: (lastTuiFile?: string) => Promise<void>;
   createTemplate: () => Promise<void>;
   insertTemplate: () => Promise<void>;
   openSettings: () => Promise<void>;

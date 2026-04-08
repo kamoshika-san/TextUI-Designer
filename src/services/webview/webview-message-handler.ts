@@ -149,7 +149,6 @@ export class WebViewMessageHandler {
 
   /**
    * エクスポートプレビューメッセージを処理
-   * previewCode の完全統合は後続チケットで対応する。
    */
   private async handleExportPreviewMessage(): Promise<void> {
     this.logger.debug('エクスポートプレビューメッセージを受信');
@@ -160,15 +159,7 @@ export class WebViewMessageHandler {
       return;
     }
 
-    const choice = await vscode.window.showInformationMessage(
-      `エクスポートプレビュー: ${lastTuiFile}`,
-      'Export',
-      'Cancel'
-    );
-
-    if (choice === 'Export') {
-      await vscode.commands.executeCommand('textui-designer.export', lastTuiFile);
-    }
+    await vscode.commands.executeCommand('textui-designer.export-preview', lastTuiFile);
   }
 
   /**
