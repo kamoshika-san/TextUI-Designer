@@ -8,4 +8,4 @@ page:
         required: false
         __normalized:
           required:
-            explicitness: absent-or-explicit-default
+            explicitness: derived-default

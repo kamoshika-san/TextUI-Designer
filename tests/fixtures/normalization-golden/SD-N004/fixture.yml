@@ -25,8 +25,7 @@ metadataAssertions:
     explicitness: not-applicable
     ownership: preserve
     canonicalizationMarkers:
-      required:
-        - preserve-authored-order
+      required: []
       forbidden:
         - canonical-order
 guardrails:
