@@ -236,7 +236,7 @@
         },
         "textui-designer.performance.enableMemoryTracking": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "TextUI Designer専用のメモリ追跡を有効化"
         },
         "textui-designer.performance.memoryMeasurementInterval": {

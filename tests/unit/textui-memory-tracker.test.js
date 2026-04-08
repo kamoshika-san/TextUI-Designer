@@ -22,6 +22,19 @@ describe('TextUIMemoryTracker', function() {
     ConfigManager.getPerformanceSettings = originalGetPerformanceSettings;
   });
 
+  it('does not track memory when explicitly disabled in settings', async function() {
+    ConfigManager.getPerformanceSettings = () => ({ enableMemoryTracking: false });
+
+    const tracker = TextUIMemoryTracker.getInstance();
+    tracker.trackWebviewObject({}, ONE_MB);
+
+    await tracker._measureMemoryForTest();
+
+    const metrics = tracker.getMetrics();
+    assert.strictEqual(metrics.webviewMemory, 0);
+    assert.strictEqual(metrics.totalTrackedMemory, 0);
+  });
+
   it('同一オブジェクトの再追跡で重複集計しない', async function() {
     const tracker = TextUIMemoryTracker.getInstance();
     const obj = {};

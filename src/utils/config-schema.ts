@@ -70,7 +70,7 @@ export const SETTINGS_DEFAULTS: SettingsDefaults = {
   'performance.enablePerformanceLogs': true,
   'performance.minUpdateInterval': 100,
   'performance.maxConcurrentOperations': 2,
-  'performance.enableMemoryTracking': false,
+  'performance.enableMemoryTracking': true,
   'performance.memoryMeasurementInterval': 5000,
   'performance.memoryCleanupInterval': 30000,
   'mcp.autoConfigure': true,

@@ -328,7 +328,7 @@ jobs:
     permissions:
       contents: read
     runs-on: ubuntu-latest
-    needs: [react-ssot-check, mcp-tests, test-all-ci, test, lint]
+    needs: [code-metrics, react-ssot-check, mcp-tests, test-all-ci, test, lint]
     
     steps:
     - name: Checkout code
@@ -364,7 +364,7 @@ jobs:
     permissions:
       contents: read
     runs-on: ubuntu-latest
-    needs: [react-ssot-check, mcp-tests, test-all-ci, test]
+    needs: [code-metrics, react-ssot-check, mcp-tests, test-all-ci, test]
     
     steps:
     - name: Checkout code
