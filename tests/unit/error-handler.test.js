@@ -4,10 +4,10 @@ const path = require('path');
 describe('ErrorHandler', () => {
   const errorHandlerPath = path.resolve(__dirname, '../../out/utils/error-handler.js');
   const loggerPath = path.resolve(__dirname, '../../out/utils/logger.js');
-  const vscode = global.vscode;
 
   let ErrorHandler;
   let Logger;
+  let vscode;
   let originalLoggerWrite;
   let loggerWrites;
   let shownErrors;
@@ -21,6 +21,7 @@ describe('ErrorHandler', () => {
     delete require.cache[errorHandlerPath];
     delete require.cache[loggerPath];
 
+    vscode = require('vscode');
     ({ Logger } = require(loggerPath));
     loggerWrites = [];
     shownErrors = [];
@@ -54,9 +55,11 @@ describe('ErrorHandler', () => {
   afterEach(() => {
     Logger.prototype.write = originalLoggerWrite;
 
-    vscode.window.showErrorMessage = originalShowErrorMessage;
-    vscode.window.showWarningMessage = originalShowWarningMessage;
-    vscode.window.showInformationMessage = originalShowInformationMessage;
+    if (vscode?.window) {
+      vscode.window.showErrorMessage = originalShowErrorMessage;
+      vscode.window.showWarningMessage = originalShowWarningMessage;
+      vscode.window.showInformationMessage = originalShowInformationMessage;
+    }
 
     delete require.cache[errorHandlerPath];
     delete require.cache[loggerPath];

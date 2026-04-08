@@ -1,9 +1,14 @@
 const { strict: assert } = require('assert');
 const sinon = require('sinon');
+const path = require('path');
+
+const errorHandlerPath = path.resolve(__dirname, '../../out/utils/error-handler.js');
+const previewFailurePolicyPath = path.resolve(__dirname, '../../out/services/webview/preview-failure-policy.js');
 
 describe('preview pipeline ports (T-106)', () => {
   afterEach(() => {
     sinon.restore();
+    delete require.cache[previewFailurePolicyPath];
   });
 
   it('lookupPreviewCacheData: forceUpdate なら常に null', () => {
@@ -45,9 +50,10 @@ describe('preview pipeline ports (T-106)', () => {
   });
 
   it('applyPreviewFailurePolicy: 未知エラーで ErrorHandler.showError', () => {
-    const eh = require('../../out/utils/error-handler');
+    delete require.cache[previewFailurePolicyPath];
+    const eh = require(errorHandlerPath);
     const showStub = sinon.stub(eh.ErrorHandler, 'showError');
-    const { applyPreviewFailurePolicy } = require('../../out/services/webview/preview-failure-policy');
+    const { applyPreviewFailurePolicy } = require(previewFailurePolicyPath);
     const errorHandler = {
       sendParseError: sinon.stub(),
       sendSchemaError: sinon.stub(),
