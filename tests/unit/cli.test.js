@@ -375,6 +375,12 @@ page:
       modified: 1,
       moved: 0
     });
+    const eventChange = parsed.diff.changes.find(change => change.type === 'UpdateEvent');
+    assert.ok(eventChange);
+    assert.strictEqual(
+      eventChange.evidence.navigation.primary.location,
+      `${parsed.metadata.headRef}:${parsed.metadata.relativeFilePath}#/page/components/0/events/onClick`
+    );
   });
 
   it('compare human-readable output emphasizes summary and grouped changes', function () {
@@ -432,6 +438,8 @@ page:
     assert.match(output, /Summary: \+0 \/ -0 \/ ~2 \/ moved 0/);
     assert.match(output, /BEHAVIOR:|VISUAL:/);
     assert.match(output, /Help Center|\/docs/);
+    assert.match(output, /Evidence:/);
+    assert.match(output, /#\/page\/components\/0\/href/);
   });
 
   it('compare human-readable --output writes the same text payload to file', function () {

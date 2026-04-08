@@ -50,11 +50,27 @@ export interface SemanticSourceRef {
   column?: number;
 }
 
+export type SemanticEvidenceSide = 'previous' | 'next';
+
+export interface SemanticEvidenceNavigationTarget {
+  side: SemanticEvidenceSide;
+  documentPath?: string;
+  entityPath: string;
+  location: string;
+}
+
+export interface SemanticChangeNavigation {
+  primary?: SemanticEvidenceNavigationTarget;
+  previous?: SemanticEvidenceNavigationTarget;
+  next?: SemanticEvidenceNavigationTarget;
+}
+
 export interface SemanticChangeEvidence {
   previous?: SemanticSourceRef;
   next?: SemanticSourceRef;
   relatedPaths?: string[];
   reasonSummary?: string;
+  navigation?: SemanticChangeNavigation;
 }
 
 export interface SemanticChangeBase {

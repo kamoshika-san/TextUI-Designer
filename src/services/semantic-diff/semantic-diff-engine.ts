@@ -4,6 +4,8 @@ import type {
   DiffSummary,
   HumanReadableChange,
   SemanticChange,
+  SemanticChangeEvidence,
+  SemanticEvidenceNavigationTarget,
   SemanticDiff,
   SemanticDiffIRNode,
   SemanticDiffIRRoot,
@@ -281,6 +283,51 @@ function buildGroupedChanges(changes: SemanticChange[]): ChangeGroup[] {
   }));
 }
 
+function buildNavigationTarget(
+  side: 'previous' | 'next',
+  sourceRef: SemanticChangeEvidence['previous']
+): SemanticEvidenceNavigationTarget | undefined {
+  if (!sourceRef?.entityPath) {
+    return undefined;
+  }
+
+  const location = sourceRef.documentPath
+    ? `${sourceRef.documentPath}#${sourceRef.entityPath}`
+    : sourceRef.entityPath;
+
+  return {
+    side,
+    documentPath: sourceRef.documentPath,
+    entityPath: sourceRef.entityPath,
+    location
+  };
+}
+
+function withEvidenceNavigation(change: SemanticChange): SemanticChange {
+  const evidence = change.evidence;
+  if (!evidence) {
+    return change;
+  }
+
+  const previous = buildNavigationTarget('previous', evidence.previous);
+  const next = buildNavigationTarget('next', evidence.next);
+  const primary = change.type === 'RemoveComponent'
+    ? previous ?? next
+    : next ?? previous;
+
+  return {
+    ...change,
+    evidence: {
+      ...evidence,
+      navigation: {
+        primary,
+        previous,
+        next
+      }
+    }
+  };
+}
+
 export function computeSemanticPropAndEventChanges(
   previous: SemanticDiffIRRoot,
   next: SemanticDiffIRRoot
@@ -295,7 +342,9 @@ export function computeSemanticPropAndEventChanges(
 export function buildSemanticDiff(previous: SemanticDiffIRRoot, next: SemanticDiffIRRoot): SemanticDiff {
   const structureChanges = computeStructureSemanticChanges(previous, next);
   const semanticUpdates = computeSemanticPropAndEventChanges(previous, next);
-  const changes = [...structureChanges, ...semanticUpdates].sort(compareSemanticChanges);
+  const changes = [...structureChanges, ...semanticUpdates]
+    .sort(compareSemanticChanges)
+    .map(withEvidenceNavigation);
 
   return {
     summary: buildSummary(changes),

@@ -286,6 +286,8 @@ describe('semantic diff extractor and structure changes', () => {
     assert.strictEqual(structureGroup.changes.some(change => change.type === 'MoveComponent'), true);
     assert.strictEqual(behaviorGroup.changes.some(change => change.type === 'UpdateEvent'), true);
     assert.strictEqual(visualGroup.changes.some(change => change.type === 'UpdateProps'), true);
+    assert.ok(structureGroup.changes.every(change => change.evidence.navigation));
+    assert.ok(behaviorGroup.changes.every(change => change.evidence.navigation.primary));
   });
 
   it('emits semantic changes when a stable node gains a prop or event', () => {
@@ -326,5 +328,69 @@ describe('semantic diff extractor and structure changes', () => {
     assert.strictEqual(addedHref.before, undefined);
     assert.strictEqual(addedHref.after, '/docs');
     assert.ok(addedHref.humanReadable.description.includes('/docs'));
+  });
+
+  it('derives reviewer navigation hooks from semantic change evidence', () => {
+    const previous = semanticDiff.buildSemanticDiffIR({
+      page: {
+        id: 'checkout-page',
+        title: 'Checkout',
+        layout: 'vertical',
+        components: [
+          {
+            Button: {
+              id: 'submit-order',
+              label: 'Submit',
+              events: {
+                onClick: "navigate('/home')"
+              }
+            }
+          }
+        ]
+      }
+    }, { documentPath: 'base:checkout.tui.yml' });
+
+    const next = semanticDiff.buildSemanticDiffIR({
+      page: {
+        id: 'checkout-page',
+        title: 'Checkout',
+        layout: 'vertical',
+        components: [
+          {
+            Button: {
+              id: 'submit-order',
+              label: 'Submit Order',
+              events: {
+                onClick: "navigate('/dashboard')"
+              }
+            }
+          }
+        ]
+      }
+    }, { documentPath: 'head:checkout.tui.yml' });
+
+    const result = semanticDiff.buildSemanticDiff(previous, next);
+    const eventChange = result.changes.find(change => change.type === 'UpdateEvent');
+    const labelChange = result.changes.find(change => change.type === 'UpdateProps');
+
+    assert.ok(eventChange);
+    assert.strictEqual(
+      eventChange.evidence.navigation.previous.location,
+      "base:checkout.tui.yml#/page/components/0/events/onClick"
+    );
+    assert.strictEqual(
+      eventChange.evidence.navigation.next.location,
+      "head:checkout.tui.yml#/page/components/0/events/onClick"
+    );
+    assert.strictEqual(
+      eventChange.evidence.navigation.primary.location,
+      "head:checkout.tui.yml#/page/components/0/events/onClick"
+    );
+
+    assert.ok(labelChange);
+    assert.strictEqual(
+      labelChange.evidence.navigation.primary.location,
+      'head:checkout.tui.yml#/page/components/0/label'
+    );
   });
 });

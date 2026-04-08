@@ -118,7 +118,16 @@ function renderHumanReadableChange(change: SemanticDiff['changes'][number]): str
   const description = change.humanReadable?.description ?? '';
   const impact = change.humanReadable?.impact ?? 'low';
   const ambiguity = change.ambiguityReason ? ` [${change.ambiguityReason}]` : '';
-  return `- ${title} (${impact})${ambiguity}${description ? `\n  ${description}` : ''}`;
+  const evidence = change.evidence?.navigation;
+  let evidenceLine = '';
+
+  if (evidence?.previous && evidence?.next) {
+    evidenceLine = `\n  Evidence: ${evidence.previous.location} -> ${evidence.next.location}`;
+  } else if (evidence?.primary) {
+    evidenceLine = `\n  Evidence: ${evidence.primary.location}`;
+  }
+
+  return `- ${title} (${impact})${ambiguity}${description ? `\n  ${description}` : ''}${evidenceLine}`;
 }
 
 export function renderSemanticDiffHumanReadable(result: SemanticDiffCompareResult): string {
