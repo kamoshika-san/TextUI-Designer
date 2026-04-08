@@ -8,3 +8,4 @@ export * from './export';
 export * from './template';
 export * from './webview';
 export * from './utility';
+export * from './semantic-diff';
