@@ -1,8 +1,24 @@
 const assert = require('assert');
+const { Logger } = require('../../out/utils/logger');
 
 const { DiagnosticScheduler } = require('../../out/services/diagnostics/diagnostic-scheduler');
 
 describe('DiagnosticScheduler', () => {
+  let originalLoggerError;
+  let loggedMessages;
+
+  beforeEach(() => {
+    loggedMessages = [];
+    originalLoggerError = Logger.prototype.error;
+    Logger.prototype.error = function(message, ...args) {
+      loggedMessages.push([message, ...args].map(value => String(value)).join(' '));
+    };
+  });
+
+  afterEach(() => {
+    Logger.prototype.error = originalLoggerError;
+  });
+
   it('only runs the latest scheduled task', async () => {
     const scheduler = new DiagnosticScheduler();
     const executed = [];
@@ -33,5 +49,19 @@ describe('DiagnosticScheduler', () => {
     await new Promise(resolve => setTimeout(resolve, 80));
 
     assert.strictEqual(executed, false);
+  });
+
+  it('logs scheduled task failures with structured error output', async () => {
+    const scheduler = new DiagnosticScheduler();
+
+    scheduler.schedule(async () => {
+      throw new Error('scheduled boom');
+    }, 10);
+
+    await new Promise(resolve => setTimeout(resolve, 80));
+
+    assert.ok(loggedMessages.some(line => line.includes('Scheduled diagnostic task failed:')));
+    assert.ok(loggedMessages.some(line => line.includes('scheduled boom')));
+    scheduler.clear();
   });
 });

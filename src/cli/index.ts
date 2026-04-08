@@ -2,6 +2,9 @@
 import type { ExitCode } from './types';
 import { printHelp } from './command-support';
 import { getCommandRegistry } from './command-registry';
+import { installUnhandledRejectionLogger } from '../utils/runtime-error-observability';
+
+installUnhandledRejectionLogger('CLI');
 
 async function run(): Promise<ExitCode> {
   const command = process.argv[2];

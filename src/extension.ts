@@ -1,9 +1,11 @@
 import * as vscode from 'vscode';
 import { ExtensionLifecycleManager } from './services/extension-lifecycle-manager';
 import { Logger } from './utils/logger';
+import { installUnhandledRejectionLogger } from './utils/runtime-error-observability';
 
 let lifecycleManager: ExtensionLifecycleManager | undefined;
 const logger = new Logger('Extension');
+installUnhandledRejectionLogger('Extension');
 
 export async function activate(context: vscode.ExtensionContext) {
   logger.info('アクティベーション開始');

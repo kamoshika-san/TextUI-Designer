@@ -1,3 +1,5 @@
+import { Logger } from '../../utils/logger';
+
 /** 診断デバウンス用スケジューラ（テストでモック差し替え可能） */
 export interface IDiagnosticScheduler {
   schedule(task: () => Promise<void>, delayMs: number): void;
@@ -6,6 +8,7 @@ export interface IDiagnosticScheduler {
 
 export class DiagnosticScheduler implements IDiagnosticScheduler {
   private timeout: NodeJS.Timeout | null = null;
+  private readonly logger = new Logger('DiagnosticScheduler');
 
   schedule(task: () => Promise<void>, delayMs: number): void {
     if (this.timeout) {
@@ -16,7 +19,10 @@ export class DiagnosticScheduler implements IDiagnosticScheduler {
       try {
         await task();
       } catch (error) {
-        console.error('[DiagnosticManager] 診断処理でエラーが発生しました:', error);
+        this.logger.error('Scheduled diagnostic task failed:', error);
+        if (error instanceof Error && error.stack) {
+          this.logger.error('Scheduled diagnostic task stack:', error.stack);
+        }
       }
     }, delayMs);
   }
