@@ -55,6 +55,17 @@ function classifyLane(relPath) {
     if (relPath.startsWith("src/domain/") || relPath.startsWith("src/components/definitions/")) {
         return "shared-domain";
     }
+    if (
+        relPath === "src/cli/commands/flow-command.ts"
+        || relPath === "src/core/diff-normalization/flow-normalizer.ts"
+        || relPath === "src/domain/dsl-types/navigation.ts"
+        || relPath === "src/exporters/flow-export-route-utils.ts"
+        || relPath.startsWith("src/exporters/flow-")
+        || relPath.startsWith("src/services/semantic-diff/flow-")
+        || relPath === "src/shared/navigation-flow-validator.ts"
+    ) {
+        return "navigation-lane";
+    }
     if (relPath.startsWith("src/renderer/")) {
         return "webview-runtime";
     }
@@ -117,8 +128,26 @@ for (const absPath of files) {
             continue;
         }
 
+        if (lane === "navigation-lane" && specifier === "vscode") {
+            violations.push({
+                file: relPath,
+                edge: specifier,
+                reason: "Navigation lane representative modules must stay VS Code agnostic.",
+            });
+            continue;
+        }
+
         const resolvedRelative = resolveRelativeImport(absPath, specifier);
         if (!resolvedRelative) {
+            continue;
+        }
+
+        if (lane === "navigation-lane" && resolvedRelative.startsWith("src/renderer/")) {
+            violations.push({
+                file: relPath,
+                edge: `${specifier} -> ${resolvedRelative}`,
+                reason: "Navigation lane representative modules must not depend on WebView renderer internals.",
+            });
             continue;
         }
 

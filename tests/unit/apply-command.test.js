@@ -69,6 +69,7 @@ describe('handleApplyCommand', () => {
       '../exporter-runner': {
         isSupportedProvider: async () => options.isSupportedProvider !== undefined ? options.isSupportedProvider : true,
         getSupportedProviderNames: async () => supportedProviders,
+        getSuggestedProviderNames: async () => supportedProviders,
         getProviderExtension: async () => providerExtension,
         getProviderVersion: async () => providerVersion
       },
