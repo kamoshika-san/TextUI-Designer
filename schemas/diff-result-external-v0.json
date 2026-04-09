@@ -80,7 +80,7 @@
         },
         "entityKind": {
           "type": "string",
-          "enum": ["page", "component", "property"],
+          "enum": ["page", "component", "property", "flow", "transition"],
           "description": "Type of entity affected."
         },
         "pairingReason": {

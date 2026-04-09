@@ -91,6 +91,18 @@ describe('validateDiffResultExternal (T-20260401-002)', () => {
       assert.strictEqual(result.ok, true);
     });
 
+    it('accepts flow and transition entity kinds', () => {
+      const payload = makeValidPayload({
+        events: [
+          makeEvent({ entityKind: 'flow' }),
+          makeEvent({ entityKind: 'transition' })
+        ],
+        metadata: { eventCount: 2, previousSource: { pageId: 'p1' }, nextSource: { pageId: 'p2' } }
+      });
+      const result = validateDiffResultExternal(payload);
+      assert.strictEqual(result.ok, true);
+    });
+
     it('accepts producer without optional producedAt', () => {
       const payload = makeValidPayload();
       delete payload.producer.producedAt;

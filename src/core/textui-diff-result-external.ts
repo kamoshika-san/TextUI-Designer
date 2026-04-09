@@ -29,7 +29,7 @@ export type DiffExternalEventKind =
   | 'rename'
   | 'remove+add';
 
-export type DiffExternalEntityKind = 'page' | 'component' | 'property';
+export type DiffExternalEntityKind = 'page' | 'component' | 'property' | 'flow' | 'transition';
 
 /**
  * How the previous and next entities were matched.

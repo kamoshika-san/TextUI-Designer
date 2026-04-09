@@ -1,4 +1,4 @@
-import type { TextUIDSL } from '../domain/dsl-types';
+import type { NavigationFlowDSL, ScreenRef, TextUIDSL, TransitionDef } from '../domain/dsl-types';
 import {
   type HeuristicPolicy,
   DEFAULT_HEURISTIC_POLICY,
@@ -6,7 +6,7 @@ import {
 } from './diff/heuristic-policy';
 
 export type DiffCompareSide = 'previous' | 'next';
-export type DiffEntityKind = 'page' | 'component' | 'property';
+export type DiffEntityKind = 'page' | 'component' | 'property' | 'flow' | 'transition';
 export type DiffEntityStatus = 'pending';
 export type DiffEventKind = 'add' | 'remove' | 'update' | 'reorder' | 'move' | 'rename' | 'remove+add';
 export type DiffIdentitySource = 'explicit-id' | 'fallback-key' | 'structural-path' | 'none';
@@ -46,6 +46,84 @@ export interface DiffCompareDocument {
     sourceRefPolicy: 'preserved';
     explicitnessPolicy: 'preserved';
     ownershipPolicy: 'preserved';
+  };
+}
+
+export interface FlowDiffScreenRef {
+  id: string;
+  page: string;
+  title?: string;
+  path: string;
+}
+
+export interface FlowDiffTransitionRef {
+  key: string;
+  from: string;
+  to: string;
+  trigger: string;
+  label?: string;
+  condition?: string;
+  params?: string[];
+  path: string;
+}
+
+export interface FlowDiffCompareDocument {
+  side: DiffCompareSide;
+  normalizedDsl: NavigationFlowDSL;
+  flow: {
+    id: string;
+    title: string;
+    entry: string;
+    screenCount: number;
+    transitionCount: number;
+  };
+  screens: FlowDiffScreenRef[];
+  transitions: FlowDiffTransitionRef[];
+  metadata: {
+    sourcePath?: string;
+    normalizationState: 'normalized-flow';
+    sourceRefPolicy: 'preserved';
+    explicitnessPolicy: 'preserved';
+    ownershipPolicy: 'preserved';
+  };
+}
+
+export type FlowDiffEvent =
+  | {
+      kind: 'add';
+      entity: 'screen';
+      def: FlowDiffScreenRef;
+    }
+  | {
+      kind: 'remove';
+      entity: 'screen';
+      def: FlowDiffScreenRef;
+    }
+  | {
+      kind: 'add';
+      entity: 'transition';
+      def: FlowDiffTransitionRef;
+    }
+  | {
+      kind: 'remove';
+      entity: 'transition';
+      def: FlowDiffTransitionRef;
+    }
+  | {
+      kind: 'update';
+      entity: 'flow';
+      field: 'id' | 'title' | 'entry';
+      prev: string;
+      next: string;
+    };
+
+export interface FlowDiffNormalizationResult {
+  previous: FlowDiffCompareDocument;
+  next: FlowDiffCompareDocument;
+  events: FlowDiffEvent[];
+  metadata: {
+    compareStage: 'd1-flow-normalizer';
+    eventCount: number;
   };
 }
 
@@ -1285,6 +1363,57 @@ export function createNormalizedDiffDocument(
       ownershipPolicy: 'preserved'
     }
   };
+}
+
+export function createNormalizedFlowDiffDocument(
+  normalizedDsl: NavigationFlowDSL,
+  options: {
+    side: DiffCompareSide;
+    sourcePath?: string;
+  }
+): FlowDiffCompareDocument {
+  return {
+    side: options.side,
+    normalizedDsl,
+    flow: {
+      id: normalizedDsl.flow.id,
+      title: normalizedDsl.flow.title,
+      entry: normalizedDsl.flow.entry,
+      screenCount: normalizedDsl.flow.screens.length,
+      transitionCount: normalizedDsl.flow.transitions.length
+    },
+    screens: normalizedDsl.flow.screens.map((screen, index) => ({
+      id: screen.id,
+      page: screen.page,
+      title: screen.title,
+      path: `/flow/screens/${index}`
+    })),
+    transitions: normalizedDsl.flow.transitions.map((transition, index) => ({
+      key: createFlowTransitionKey(transition),
+      from: transition.from,
+      to: transition.to,
+      trigger: transition.trigger,
+      label: transition.label,
+      condition: transition.condition,
+      params: transition.params,
+      path: `/flow/transitions/${index}`
+    })),
+    metadata: {
+      sourcePath: options.sourcePath,
+      normalizationState: 'normalized-flow',
+      sourceRefPolicy: 'preserved',
+      explicitnessPolicy: 'preserved',
+      ownershipPolicy: 'preserved'
+    }
+  };
+}
+
+export function createFlowTransitionKey(transition: Pick<TransitionDef, 'from' | 'to' | 'trigger'>): string {
+  return `${transition.from}::${transition.trigger}::${transition.to}`;
+}
+
+export function createFlowScreenKey(screen: Pick<ScreenRef, 'id'>): string {
+  return screen.id;
 }
 
 export function createDiffResultSkeleton(

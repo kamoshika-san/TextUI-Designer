@@ -197,6 +197,15 @@ describe('buildDiffResultExternal (T-20260401-001)', () => {
       const result = buildDiffResultExternal(input, DEFAULT_OPTS);
       assert.strictEqual(result.events[0].fallbackMarker, 'remove-add-fallback');
     });
+
+    it('preserves flow and transition entity kinds for external consumers', () => {
+      const input = makeInput([
+        makeEvent('e1', 'update', 'flow'),
+        makeEvent('e2', 'add', 'transition')
+      ]);
+      const result = buildDiffResultExternal(input, DEFAULT_OPTS);
+      assert.deepStrictEqual(result.events.map(event => event.entityKind), ['flow', 'transition']);
+    });
   });
 
   describe('previousPath / nextPath', () => {
