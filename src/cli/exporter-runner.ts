@@ -1,7 +1,7 @@
 import type { NavigationFlowDSL, TextUIDSL } from '../domain/dsl-types';
 import * as path from 'path';
 import * as fs from 'fs';
-import { getProvider, listProviders, type CliProviderDefinition } from './provider-registry';
+import { getProvider, listListedProviders, listProviders, type CliProviderDefinition } from './provider-registry';
 
 export type CliProvider = string;
 
@@ -102,6 +102,20 @@ export async function getSupportedProviderNames(options: ProviderLookupOptions =
 
   const externalProvider = await loadExternalProvider(options.providerModulePath);
   return Array.from(new Set([...builtins, externalProvider.name])).sort((a, b) => a.localeCompare(b));
+}
+
+export async function getListedProviderNames(): Promise<string[]> {
+  return listListedProviders().map(providerDefinition => providerDefinition.name);
+}
+
+export async function getSuggestedProviderNames(options: ProviderLookupOptions = {}): Promise<string[]> {
+  const listed = await getListedProviderNames();
+  if (!options.providerModulePath) {
+    return listed;
+  }
+
+  const externalProvider = await loadExternalProvider(options.providerModulePath);
+  return Array.from(new Set([...listed, externalProvider.name])).sort((a, b) => a.localeCompare(b));
 }
 
 export async function runExport(

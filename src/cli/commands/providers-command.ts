@@ -1,7 +1,7 @@
 import {
   getProviderExtension,
+  getListedProviderNames,
   getProviderVersion,
-  getSupportedProviderNames,
   loadExternalProvider
 } from '../exporter-runner';
 import type { ExitCode } from '../types';
@@ -9,7 +9,7 @@ import { getArg, hasFlag, printJson } from '../command-support';
 
 export async function handleProvidersCommand(): Promise<ExitCode> {
   const providerModulePath = getArg('--provider-module');
-  const builtinNames = await getSupportedProviderNames();
+  const builtinNames = await getListedProviderNames();
   const providers = await Promise.all(
     builtinNames.map(async name => ({
       name,

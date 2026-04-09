@@ -6,6 +6,7 @@ import { validateDsl } from '../validator';
 import {
   getProviderExtension,
   getProviderVersion,
+  getSuggestedProviderNames,
   getSupportedProviderNames,
   isSupportedProvider,
   type CliProvider
@@ -34,7 +35,7 @@ export async function handleApplyCommand(args: FileTargetArgs): Promise<ExitCode
 
   if (!await isSupportedProvider(provider, { providerModulePath })) {
     process.stderr.write(`unsupported provider: ${provider}\n`);
-    const supportedProviders = await getSupportedProviderNames({ providerModulePath });
+    const supportedProviders = await getSuggestedProviderNames({ providerModulePath });
     process.stderr.write(`supported providers: ${supportedProviders.join(', ')}\n`);
     return 1;
   }

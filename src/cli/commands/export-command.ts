@@ -5,6 +5,7 @@ import { ensureDirectoryForFile, loadDslFromFile, resolveDslFile } from '../io';
 import { validateDsl } from '../validator';
 import {
   getProviderExtension,
+  getSuggestedProviderNames,
   getSupportedProviderNames,
   isSupportedProvider,
   type CliProvider
@@ -30,7 +31,7 @@ export async function handleExportCommand(fileArg: string | undefined): Promise<
   const loaded = loadDslFromFile(filePath);
   if (!await isSupportedProvider(provider, { providerModulePath })) {
     process.stderr.write(`unsupported provider: ${provider}\n`);
-    const supportedProviders = await getSupportedProviderNames({ providerModulePath });
+    const supportedProviders = await getSuggestedProviderNames({ providerModulePath });
     process.stderr.write(`supported providers: ${supportedProviders.join(', ')}\n`);
     return 1;
   }

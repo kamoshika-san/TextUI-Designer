@@ -9,6 +9,7 @@ export interface CliProviderDefinition {
   name: string;
   extension: string;
   version: string;
+  listed?: boolean;
   render: (dsl: TextUIDSL | NavigationFlowDSL, options?: CliRenderOptions) => Promise<string>;
 }
 
@@ -40,6 +41,7 @@ const BUILTIN_PROVIDERS: CliProviderDefinition[] = [
     name: 'react-flow',
     extension: '.tsx',
     version: '1.0.0',
+    listed: false,
     render: async (dsl: TextUIDSL | NavigationFlowDSL) => {
       const { FlowReactExporter } = await import('../exporters/flow-react-exporter');
       return new FlowReactExporter().export(dsl as NavigationFlowDSL, { format: 'react-flow' });
@@ -49,6 +51,7 @@ const BUILTIN_PROVIDERS: CliProviderDefinition[] = [
     name: 'vue-flow',
     extension: '.ts',
     version: '1.0.0',
+    listed: false,
     render: async (dsl: TextUIDSL | NavigationFlowDSL) => {
       const { FlowVueExporter } = await import('../exporters/flow-vue-exporter');
       return new FlowVueExporter().export(dsl as NavigationFlowDSL, { format: 'vue-flow' });
@@ -58,6 +61,7 @@ const BUILTIN_PROVIDERS: CliProviderDefinition[] = [
     name: 'svelte-flow',
     extension: '.svelte',
     version: '1.0.0',
+    listed: false,
     render: async (dsl: TextUIDSL | NavigationFlowDSL) => {
       const { FlowSvelteExporter } = await import('../exporters/flow-svelte-exporter');
       return new FlowSvelteExporter().export(dsl as NavigationFlowDSL, { format: 'svelte-flow' });
@@ -67,6 +71,7 @@ const BUILTIN_PROVIDERS: CliProviderDefinition[] = [
     name: 'html-flow',
     extension: '.html',
     version: '1.0.0',
+    listed: false,
     render: async (dsl: TextUIDSL | NavigationFlowDSL) => {
       const { FlowHtmlExporter } = await import('../exporters/flow-html-exporter');
       return new FlowHtmlExporter().export(dsl as NavigationFlowDSL, { format: 'html-flow' });
@@ -105,6 +110,10 @@ const providerRegistry = new Map(BUILTIN_PROVIDERS.map(provider => [provider.nam
 
 export function listProviders(): CliProviderDefinition[] {
   return Array.from(providerRegistry.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function listListedProviders(): CliProviderDefinition[] {
+  return listProviders().filter(provider => provider.listed !== false);
 }
 
 export function getProvider(name: string): CliProviderDefinition | null {

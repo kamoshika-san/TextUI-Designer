@@ -23,6 +23,10 @@ function isSupportedDslFile(filePath: string | undefined): filePath is string {
   return Boolean(filePath && (isUiDslFile(filePath) || isNavigationFlowFile(filePath)));
 }
 
+function isCrossPlatformAbsolutePath(filePath: string): boolean {
+  return path.isAbsolute(filePath) || /^[A-Za-z]:[\\/]/.test(filePath);
+}
+
 function resolveAnchorFile(options: ResolveNavigationJumpTargetOptions): string | undefined {
   if (isSupportedDslFile(options.activeEditorFile)) {
     return options.activeEditorFile;
@@ -47,7 +51,7 @@ export function resolveNavigationJumpTargetFile(
     return anchorFile;
   }
 
-  if (path.isAbsolute(options.requestedTargetFilePath)) {
+  if (isCrossPlatformAbsolutePath(options.requestedTargetFilePath)) {
     return options.requestedTargetFilePath;
   }
 
