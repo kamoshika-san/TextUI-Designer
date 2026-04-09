@@ -32,7 +32,7 @@ export function buildExplainErrorResponseDomain(request: ExplainErrorRequest): {
   }));
 
   if (suggestions.length === 0) {
-    return { summary: 'No errors.', suggestions: [] };
+    return { summary: 'エラーはありません。', suggestions: [] };
   }
 
   const first = suggestions[0];
