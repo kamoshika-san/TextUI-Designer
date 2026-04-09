@@ -10,6 +10,7 @@ const path = require('path');
 
 const repoRoot = path.resolve(__dirname, '..');
 const schemaPath = path.join(repoRoot, 'schemas', 'schema.json');
+const navigationSchemaPath = path.join(repoRoot, 'schemas', 'navigation-schema.json');
 const templateSchemaPath = path.join(repoRoot, 'schemas', 'template-schema.json');
 
 function normalizeForCompare(s) {
@@ -38,8 +39,12 @@ function main() {
   if (!fs.existsSync(schemaPath)) {
     throw new Error(`schema.json が見つかりません: ${schemaPath}`);
   }
+  if (!fs.existsSync(navigationSchemaPath)) {
+    throw new Error(`navigation-schema.json が見つかりません: ${navigationSchemaPath}`);
+  }
 
   const schema = readJson(schemaPath);
+  const navigationSchema = readJson(navigationSchemaPath);
   applyExpectedComponentOneOf(schema);
 
   validateSchemaConsistency(schema);
@@ -52,12 +57,12 @@ function main() {
   };
 
   const wroteSchema = writeJsonIfChanged(schemaPath, schema);
+  const wroteNavigation = writeJsonIfChanged(navigationSchemaPath, navigationSchema);
   const wroteTemplate = writeJsonIfChanged(templateSchemaPath, templateSchema);
 
   console.log(
-    `[generate-schemas-from-definitions] schema.json=${wroteSchema ? 'updated' : 'unchanged'}, template-schema.json=${wroteTemplate ? 'updated' : 'unchanged'}`
+    `[generate-schemas-from-definitions] schema.json=${wroteSchema ? 'updated' : 'unchanged'}, navigation-schema.json=${wroteNavigation ? 'updated' : 'unchanged'}, template-schema.json=${wroteTemplate ? 'updated' : 'unchanged'}`
   );
 }
 
 main();
-

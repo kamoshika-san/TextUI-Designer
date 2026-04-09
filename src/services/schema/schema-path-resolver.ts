@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 
 export interface SchemaPaths {
   schemaPath: string;
+  navigationSchemaPath: string;
   templateSchemaPath: string;
   themeSchemaPath: string;
   searchedPaths: string[];
@@ -22,6 +23,7 @@ export function resolveSchemaPaths(context: vscode.ExtensionContext): SchemaPath
   const baseDir = path.dirname(foundSchemaPath);
   return {
     schemaPath: foundSchemaPath,
+    navigationSchemaPath: path.join(baseDir, 'navigation-schema.json'),
     templateSchemaPath: path.join(baseDir, 'template-schema.json'),
     themeSchemaPath: path.join(baseDir, 'theme-schema.json'),
     searchedPaths: possiblePaths

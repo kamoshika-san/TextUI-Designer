@@ -20,6 +20,12 @@ describe('DocumentKindResolver', () => {
     assert.strictEqual(getDocumentKind('/x/foo_theme.yaml'), 'theme');
   });
 
+  it('navigation flow 拡張子は navigation', () => {
+    assert.strictEqual(getDocumentKind('C:/proj/flow.tui.flow.yml'), 'navigation');
+    assert.strictEqual(getDocumentKind('/home/u/flow.tui.flow.yaml'), 'navigation');
+    assert.strictEqual(getDocumentKind('/tmp/flow.tui.flow.json'), 'navigation');
+  });
+
   it('対象外拡張子は unsupported', () => {
     assert.strictEqual(getDocumentKind('C:/x/readme.txt'), 'unsupported');
     assert.strictEqual(getDocumentKind('/a/b/c.md'), 'unsupported');
@@ -29,6 +35,7 @@ describe('DocumentKindResolver', () => {
     assert.strictEqual(getValidationSchemaKind('a.tui.yml'), 'main');
     assert.strictEqual(getValidationSchemaKind('t.template.yml'), 'template');
     assert.strictEqual(getValidationSchemaKind('z-theme.yml'), 'theme');
+    assert.strictEqual(getValidationSchemaKind('flow.tui.flow.yml'), 'navigation');
     assert.strictEqual(getValidationSchemaKind('nope.txt'), 'main');
   });
 });

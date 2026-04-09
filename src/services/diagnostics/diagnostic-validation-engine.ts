@@ -2,7 +2,7 @@ import Ajv, { type ErrorObject } from 'ajv';
 import { parseYamlTextAsync } from '../../dsl/yaml-parse-async';
 import type { ISchemaManager, SchemaDefinition } from '../../types';
 
-export type ValidationSchemaKind = 'main' | 'template' | 'theme';
+export type ValidationSchemaKind = 'main' | 'template' | 'theme' | 'navigation';
 
 export type DiagnosticValidationResult = {
   schema: SchemaDefinition | null;
@@ -21,12 +21,14 @@ export class DiagnosticValidationEngine implements IDiagnosticValidationEngine {
   private schemaCaches: Record<ValidationSchemaKind, SchemaDefinition | null> = {
     main: null,
     template: null,
-    theme: null
+    theme: null,
+    navigation: null
   };
   private lastSchemaLoads: Record<ValidationSchemaKind, number> = {
     main: 0,
     template: 0,
-    theme: 0
+    theme: 0,
+    navigation: 0
   };
 
   constructor(
@@ -62,12 +64,14 @@ export class DiagnosticValidationEngine implements IDiagnosticValidationEngine {
     this.schemaCaches = {
       main: null,
       template: null,
-      theme: null
+      theme: null,
+      navigation: null
     };
     this.lastSchemaLoads = {
       main: 0,
       template: 0,
-      theme: 0
+      theme: 0,
+      navigation: 0
     };
     this.ajvInstance = null;
   }
@@ -104,6 +108,11 @@ export class DiagnosticValidationEngine implements IDiagnosticValidationEngine {
       case 'theme':
         if (typeof this.schemaManager.loadThemeSchema === 'function') {
           return await this.schemaManager.loadThemeSchema();
+        }
+        return await this.schemaManager.loadSchema();
+      case 'navigation':
+        if (typeof this.schemaManager.loadNavigationSchema === 'function') {
+          return await this.schemaManager.loadNavigationSchema();
         }
         return await this.schemaManager.loadSchema();
       case 'main':

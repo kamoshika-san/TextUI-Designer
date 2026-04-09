@@ -2,7 +2,7 @@ import { ConfigManager } from '../utils/config-manager';
 import type { ValidationSchemaKind } from './diagnostics/diagnostic-validation-engine';
 
 /** TextUI が扱うドキュメント種別（ファイル名規約に基づく）。 */
-export type DocumentKind = 'main' | 'template' | 'theme' | 'unsupported';
+export type DocumentKind = 'main' | 'template' | 'theme' | 'navigation' | 'unsupported';
 
 const TEMPLATE_PATTERN = /\.template\.(ya?ml|json)$/i;
 
@@ -35,6 +35,9 @@ export function getDocumentKind(fileName: string): DocumentKind {
   }
   if (isThemePath(lower)) {
     return 'theme';
+  }
+  if (ConfigManager.isNavigationFlowFile(lower)) {
+    return 'navigation';
   }
   if (ConfigManager.isSupportedFile(lower)) {
     return 'main';

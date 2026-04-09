@@ -422,6 +422,10 @@
         "*.tui.yml",
         "*.tui.yaml"
       ],
+      "./schemas/navigation-schema.json": [
+        "*.tui.flow.yml",
+        "*.tui.flow.yaml"
+      ],
       "./schemas/template-schema.json": [
         "*.template.yml",
         "*.template.yaml"
@@ -434,7 +438,13 @@
         "textui-theme.yml",
         "textui-theme.yaml"
       ]
-    }
+    },
+    "jsonValidation": [
+      {
+        "fileMatch": "*.tui.flow.json",
+        "url": "./schemas/navigation-schema.json"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile && npm run package && npm run build-webview",

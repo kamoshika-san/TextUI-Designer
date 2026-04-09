@@ -28,6 +28,7 @@ export class SchemaManager implements ISchemaManager {
   private readonly logger = new Logger('SchemaManager');
   private context: vscode.ExtensionContext;
   private schemaPath: string;
+  private navigationSchemaPath: string;
   private templateSchemaPath: string;
   private themeSchemaPath: string;
   private readonly cacheStore: SchemaCacheStore;
@@ -44,10 +45,12 @@ export class SchemaManager implements ISchemaManager {
 
     const resolvedSchemaPaths = (seams?.resolveSchemaPaths ?? resolveSchemaPaths)(context);
     this.schemaPath = resolvedSchemaPaths.schemaPath;
+    this.navigationSchemaPath = resolvedSchemaPaths.navigationSchemaPath;
     this.templateSchemaPath = resolvedSchemaPaths.templateSchemaPath;
     this.themeSchemaPath = resolvedSchemaPaths.themeSchemaPath;
     const pathGetters = {
       main: () => this.schemaPath,
+      navigation: () => this.navigationSchemaPath,
       template: () => this.templateSchemaPath,
       theme: () => this.themeSchemaPath
     };
@@ -90,6 +93,7 @@ export class SchemaManager implements ISchemaManager {
         this.seams?.workspace?.registerTextUiSchemasInWorkspace ?? registerTextUiSchemasInWorkspace;
       await registerFn(
         this.schemaPath,
+        this.navigationSchemaPath,
         this.templateSchemaPath,
         this.themeSchemaPath,
         (message, ...args) => this.debug(message, ...args)
@@ -112,6 +116,10 @@ export class SchemaManager implements ISchemaManager {
     return this.themeSchemaPath;
   }
 
+  getNavigationSchemaPath(): string {
+    return this.navigationSchemaPath;
+  }
+
   async loadSchema(): Promise<SchemaDefinition> {
     const schema = this.cacheStore.load('main', this.cacheTTL, (message, ...args) => this.debug(message, ...args));
     validateSchemaConsistency(schema);
@@ -124,6 +132,10 @@ export class SchemaManager implements ISchemaManager {
 
   async loadThemeSchema(): Promise<SchemaDefinition> {
     return this.cacheStore.load('theme', this.cacheTTL, (message, ...args) => this.debug(message, ...args));
+  }
+
+  async loadNavigationSchema(): Promise<SchemaDefinition> {
+    return this.cacheStore.load('navigation', this.cacheTTL, (message, ...args) => this.debug(message, ...args));
   }
 
   async cleanup(): Promise<void> {

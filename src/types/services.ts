@@ -10,6 +10,7 @@ export interface ISchemaManager {
   loadSchema(): Promise<SchemaDefinition>;
   loadTemplateSchema(): Promise<SchemaDefinition>;
   loadThemeSchema(): Promise<SchemaDefinition>;
+  loadNavigationSchema?(): Promise<SchemaDefinition>;
   validateSchema(data: unknown, schema: SchemaDefinition): SchemaValidationResult;
   registerSchema(filePattern: string, schemaPath: string): Promise<void>;
   unregisterSchema(filePattern: string): Promise<void>;

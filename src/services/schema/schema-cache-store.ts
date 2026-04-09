@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import type { SchemaDefinition } from '../../types';
 
-export type SchemaKind = 'main' | 'template' | 'theme';
+export type SchemaKind = 'main' | 'navigation' | 'template' | 'theme';
 
 interface SchemaSlot {
   getPath: () => string;
@@ -15,7 +15,7 @@ interface SchemaSlot {
 export class SchemaCacheStore {
   private readonly slots: Record<SchemaKind, SchemaSlot>;
 
-  constructor(paths: { main: () => string; template: () => string; theme: () => string }) {
+  constructor(paths: { main: () => string; navigation: () => string; template: () => string; theme: () => string }) {
     this.slots = {
       main: {
         getPath: paths.main,
@@ -24,6 +24,14 @@ export class SchemaCacheStore {
         cacheHitLog: '[SchemaManager] キャッシュされたスキーマを使用',
         cacheSetLog: '[SchemaManager] スキーマをキャッシュに保存',
         readErrorPrefix: 'スキーマファイルの読み込みに失敗しました'
+      },
+      navigation: {
+        getPath: paths.navigation,
+        cache: null,
+        lastLoad: 0,
+        cacheHitLog: '[SchemaManager] キャッシュされた navigation スキーマを使用',
+        cacheSetLog: '[SchemaManager] navigation スキーマをキャッシュに保存',
+        readErrorPrefix: 'navigation スキーマファイルの読み込みに失敗しました'
       },
       template: {
         getPath: paths.template,
@@ -74,6 +82,7 @@ export class SchemaCacheStore {
   getDebugSnapshot(): Record<SchemaKind, { cached: boolean; lastLoad: number }> {
     return {
       main: { cached: this.slots.main.cache !== null, lastLoad: this.slots.main.lastLoad },
+      navigation: { cached: this.slots.navigation.cache !== null, lastLoad: this.slots.navigation.lastLoad },
       template: { cached: this.slots.template.cache !== null, lastLoad: this.slots.template.lastLoad },
       theme: { cached: this.slots.theme.cache !== null, lastLoad: this.slots.theme.lastLoad }
     };

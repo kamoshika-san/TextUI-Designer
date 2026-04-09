@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as path from 'path';
 import { Logger } from '../../utils/logger';
 import {
   buildTextUiJsonSchemas,
@@ -15,6 +16,7 @@ export type SchemaWorkspaceDebug = (message: string, ...args: unknown[]) => void
 
 async function registerYamlSchemas(
   schemaUri: string,
+  navigationSchemaUri: string,
   templateSchemaUri: string,
   themeSchemaUri: string,
   debug?: SchemaWorkspaceDebug
@@ -23,7 +25,7 @@ async function registerYamlSchemas(
     const yamlConfig = vscode.workspace.getConfiguration('yaml');
     const currentSchemas = (yamlConfig.get('schemas') as Record<string, string[]>) || {};
     const filteredSchemas = filterTextUiYamlSchemas(currentSchemas);
-    const newSchemas = buildTextUiYamlSchemas(filteredSchemas, schemaUri, templateSchemaUri, themeSchemaUri);
+    const newSchemas = buildTextUiYamlSchemas(filteredSchemas, schemaUri, navigationSchemaUri, templateSchemaUri, themeSchemaUri);
     await yamlConfig.update('schemas', newSchemas, vscode.ConfigurationTarget.Global);
     debug?.('[SchemaManager] YAMLスキーマ登録成功');
   } catch (error) {
@@ -33,6 +35,7 @@ async function registerYamlSchemas(
 
 async function registerJsonSchemas(
   schemaPath: string,
+  navigationSchemaPath: string,
   templateSchemaPath: string,
   themeSchemaPath: string,
   debug?: SchemaWorkspaceDebug
@@ -42,9 +45,16 @@ async function registerJsonSchemas(
     const currentSchemas = (jsonConfig.get('schemas') as JsonSchemaAssociation[] | undefined) || [];
     const filteredSchemas = filterTextUiJsonSchemas(currentSchemas);
     const schemaContent = JSON.parse(fs.readFileSync(schemaPath, 'utf-8'));
+    const navigationSchemaContent = JSON.parse(fs.readFileSync(navigationSchemaPath, 'utf-8'));
     const templateSchemaContent = JSON.parse(fs.readFileSync(templateSchemaPath, 'utf-8'));
     const themeSchemaContent = JSON.parse(fs.readFileSync(themeSchemaPath, 'utf-8'));
-    const newSchemas = buildTextUiJsonSchemas(filteredSchemas, schemaContent, templateSchemaContent, themeSchemaContent);
+    const newSchemas = buildTextUiJsonSchemas(
+      filteredSchemas,
+      schemaContent,
+      navigationSchemaContent,
+      templateSchemaContent,
+      themeSchemaContent
+    );
     await jsonConfig.update('schemas', newSchemas, vscode.ConfigurationTarget.Global);
     debug?.('[SchemaManager] JSONスキーマ登録成功');
   } catch (error) {
@@ -58,17 +68,22 @@ async function registerJsonSchemas(
  */
 export async function registerTextUiSchemasInWorkspace(
   schemaPath: string,
+  navigationSchemaPath: string,
   templateSchemaPath: string,
   themeSchemaPath: string,
   debug?: SchemaWorkspaceDebug
 ): Promise<void> {
   const schemaUri = vscode.Uri.file(schemaPath).toString();
+  const resolvedNavigationSchemaPath = fs.existsSync(navigationSchemaPath)
+    ? navigationSchemaPath
+    : path.join(path.dirname(schemaPath), 'navigation-schema.json');
+  const navigationSchemaUri = vscode.Uri.file(resolvedNavigationSchemaPath).toString();
   const templateSchemaUri = vscode.Uri.file(templateSchemaPath).toString();
   const themeSchemaUri = vscode.Uri.file(themeSchemaPath).toString();
   debug?.('[SchemaManager] スキーマ登録を開始');
 
-  await registerYamlSchemas(schemaUri, templateSchemaUri, themeSchemaUri, debug);
-  await registerJsonSchemas(schemaPath, templateSchemaPath, themeSchemaPath, debug);
+  await registerYamlSchemas(schemaUri, navigationSchemaUri, templateSchemaUri, themeSchemaUri, debug);
+  await registerJsonSchemas(schemaPath, resolvedNavigationSchemaPath, templateSchemaPath, themeSchemaPath, debug);
 
   debug?.('[SchemaManager] スキーマ登録完了');
 }

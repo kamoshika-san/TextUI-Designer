@@ -79,6 +79,13 @@ export class ConfigManager {
     );
   }
 
+  static isNavigationFlowFile(fileName: string): boolean {
+    const normalizedFileName = fileName.toLowerCase();
+    return normalizedFileName.endsWith('.tui.flow.yml')
+      || normalizedFileName.endsWith('.tui.flow.yaml')
+      || normalizedFileName.endsWith('.tui.flow.json');
+  }
+
   /**
    * 自動プレビューが有効かチェック
    */

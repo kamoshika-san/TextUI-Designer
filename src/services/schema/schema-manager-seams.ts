@@ -10,6 +10,7 @@ import type { SchemaWorkspaceDebug } from './schema-workspace-registrar';
 export interface SchemaWorkspaceSeams {
   registerTextUiSchemasInWorkspace?: (
     schemaPath: string,
+    navigationSchemaPath: string,
     templateSchemaPath: string,
     themeSchemaPath: string,
     debug?: SchemaWorkspaceDebug
@@ -25,6 +26,7 @@ export interface SchemaManagerSeams {
   resolveSchemaPaths?: (context: vscode.ExtensionContext) => SchemaPaths;
   createCacheStore?: (paths: {
     main: () => string;
+    navigation: () => string;
     template: () => string;
     theme: () => string;
   }) => SchemaCacheStore;

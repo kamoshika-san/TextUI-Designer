@@ -5,6 +5,7 @@ const path = require('path');
 
 const repoRoot = path.resolve(__dirname, '..');
 const schemaPath = path.join(repoRoot, 'schemas', 'schema.json');
+const navigationSchemaPath = path.join(repoRoot, 'schemas', 'navigation-schema.json');
 const templateSchemaPath = path.join(repoRoot, 'schemas', 'template-schema.json');
 
 function normalizeForCompare(s) {
@@ -58,6 +59,7 @@ function main() {
   ));
 
   const currentSchema = readJson(schemaPath);
+  readJson(navigationSchemaPath);
   const currentTemplateSchema = readJson(templateSchemaPath);
 
   const expectedSchema = JSON.parse(JSON.stringify(currentSchema));
@@ -69,7 +71,7 @@ function main() {
   assertSameJson('schema.json', currentSchema, expectedSchema, schemaPath);
   assertSameJson('template-schema.json', currentTemplateSchema, expectedTemplateSchema, templateSchemaPath);
 
-  console.log('[check-generated-schema-chain] PASS schema.json and template-schema.json match compile-time expectations');
+  console.log('[check-generated-schema-chain] PASS schema.json, navigation-schema.json, and template-schema.json match compile-time expectations');
 }
 
 main();

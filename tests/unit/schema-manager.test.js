@@ -16,6 +16,7 @@ class TestExtensionContext {
 
 // テスト用の最小限schema.json
 const testSchemaPath = path.join(__dirname, 'schemas', 'schema.json');
+const testNavigationSchemaPath = path.join(__dirname, 'schemas', 'navigation-schema.json');
 const testTemplateSchemaPath = path.join(__dirname, 'schemas', 'template-schema.json');
 const testThemeSchemaPath = path.join(__dirname, 'schemas', 'theme-schema.json');
 const componentNames = ['Text', 'Input', 'Button', 'Checkbox', 'Radio', 'Select', 'DatePicker', 'Divider', 'Spacer', 'Alert', 'Container', 'Form', 'Accordion', 'Tabs', 'TreeView', 'Table', 'Link', 'Breadcrumb', 'Badge', 'Progress', 'Image', 'Icon', 'Modal'];
@@ -37,6 +38,13 @@ const testThemeSchemaContent = {
     tokens: { type: 'object' }
   }
 };
+const testNavigationSchemaContent = {
+  $id: 'test-navigation-schema',
+  type: 'object',
+  properties: {
+    flow: { type: 'object' }
+  }
+};
 
 // テスト用SchemaManager（本番実装をrequireしてもOK）
 const { SchemaManager } = require('../../out/services/schema-manager.js');
@@ -50,6 +58,7 @@ describe('SchemaManager', () => {
     // テスト用schema.jsonを作成
     fs.mkdirSync(path.dirname(testSchemaPath), { recursive: true });
     fs.writeFileSync(testSchemaPath, JSON.stringify(testSchemaContent, null, 2), 'utf-8');
+    fs.writeFileSync(testNavigationSchemaPath, JSON.stringify(testNavigationSchemaContent, null, 2), 'utf-8');
     fs.writeFileSync(testThemeSchemaPath, JSON.stringify(testThemeSchemaContent, null, 2), 'utf-8');
     // template-schema.jsonはテストで自動生成される
   });
@@ -57,6 +66,7 @@ describe('SchemaManager', () => {
   after(() => {
     // テスト用ファイル削除
     if (fs.existsSync(testSchemaPath)) fs.unlinkSync(testSchemaPath);
+    if (fs.existsSync(testNavigationSchemaPath)) fs.unlinkSync(testNavigationSchemaPath);
     if (fs.existsSync(testTemplateSchemaPath)) fs.unlinkSync(testTemplateSchemaPath);
     if (fs.existsSync(testThemeSchemaPath)) fs.unlinkSync(testThemeSchemaPath);
     if (fs.existsSync(path.dirname(testSchemaPath))) fs.rmdirSync(path.dirname(testSchemaPath));
@@ -85,6 +95,7 @@ describe('SchemaManager', () => {
     schemaManager = new SchemaManager(mockContext);
     // テスト用パスを強制上書き
     schemaManager.schemaPath = testSchemaPath;
+    schemaManager.navigationSchemaPath = testNavigationSchemaPath;
     schemaManager.templateSchemaPath = testTemplateSchemaPath;
     schemaManager.themeSchemaPath = testThemeSchemaPath;
   });
@@ -131,6 +142,12 @@ describe('SchemaManager', () => {
     expect(themeSchema.properties).to.have.property('tokens');
   });
 
+  it('loadNavigationSchema()で navigation スキーマを読み込める', async () => {
+    const navigationSchema = await schemaManager.loadNavigationSchema();
+    expect(navigationSchema).to.have.property('properties');
+    expect(navigationSchema.properties).to.have.property('flow');
+  });
+
   it('createTemplateSchema()でテンプレートスキーマが生成される', async () => {
     if (fs.existsSync(testTemplateSchemaPath)) fs.unlinkSync(testTemplateSchemaPath);
     await schemaManager.createTemplateSchema();
@@ -160,6 +177,7 @@ describe('SchemaManager', () => {
   it('パス解決ロジックが正しく動作する', () => {
     const manager = new SchemaManager(mockContext);
     expect(manager.getSchemaPath()).to.include('schema.json');
+    expect(manager.getNavigationSchemaPath()).to.include('navigation-schema.json');
     expect(manager.getTemplateSchemaPath()).to.include('template-schema.json');
     expect(manager.getThemeSchemaPath()).to.include('theme-schema.json');
   });
@@ -168,6 +186,7 @@ describe('SchemaManager', () => {
     const seams = {
       resolveSchemaPaths: () => ({
         schemaPath: testSchemaPath,
+        navigationSchemaPath: testNavigationSchemaPath,
         templateSchemaPath: testTemplateSchemaPath,
         themeSchemaPath: testThemeSchemaPath,
         searchedPaths: []
@@ -175,6 +194,7 @@ describe('SchemaManager', () => {
     };
     const manager = new SchemaManager(mockContext, seams);
     expect(manager.getSchemaPath()).to.equal(testSchemaPath);
+    expect(manager.getNavigationSchemaPath()).to.equal(testNavigationSchemaPath);
     expect(manager.getTemplateSchemaPath()).to.equal(testTemplateSchemaPath);
     expect(manager.getThemeSchemaPath()).to.equal(testThemeSchemaPath);
   });

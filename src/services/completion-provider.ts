@@ -12,6 +12,12 @@ import { DescriptorCompletionEngine } from './schema-completion-engine';
  * JSON Schema（`SchemaManager`）は補完経路では読み込まない（診断・バリデーション・スキーマ登録は別系統）。
  */
 export class TextUICompletionProvider implements vscode.CompletionItemProvider {
+  private static readonly NAVIGATION_FLOW_PROPERTIES = ['id', 'title', 'entry', 'screens', 'transitions'];
+  private static readonly NAVIGATION_SCREEN_PROPERTIES = ['id', 'page', 'title'];
+  private static readonly NAVIGATION_TRANSITION_PROPERTIES = ['from', 'to', 'trigger', 'label', 'condition', 'params'];
+  private static readonly COMPLETION_ITEM_KIND_FALLBACK: Record<string, number> = {
+    Class: 7, Property: 9, Value: 12, Module: 8, Field: 4
+  };
   private completionCacheService: CompletionCache;
   private contextAnalyzer: CompletionContextAnalyzer;
   /** 実装は descriptor / カタログ駆動（JSON Schema は未使用）。 */
@@ -37,7 +43,9 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
   }
 
   private shouldProvideCompletions(document: vscode.TextDocument, isTemplate: boolean): boolean {
-    return ConfigManager.isSupportedFile(document.fileName) || isTemplate;
+    return ConfigManager.isSupportedFile(document.fileName)
+      || ConfigManager.isNavigationFlowFile(document.fileName)
+      || isTemplate;
   }
 
   private getCachedCompletionItems(cacheKey: string, now: number): vscode.CompletionItem[] | undefined {
@@ -114,13 +122,16 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
       }
 
       await this.parseYamlForSyntaxValidation(requestContext.text);
-      const analysisContext = this.analyzeContext(requestContext.linePrefix, position);
-      const items = this.generateCompletionItemsFromDescriptors(analysisContext);
+      const items = ConfigManager.isNavigationFlowFile(document.fileName)
+        ? this.generateNavigationFlowCompletionItems(requestContext.text, position)
+        : this.generateCompletionItemsFromDescriptors(this.analyzeContext(requestContext.linePrefix, position));
 
       this.setCachedCompletionItems(requestContext.cacheKey, items, now);
       return items;
     } catch (error) {
-      return this.getBasicCompletions();
+      return ConfigManager.isNavigationFlowFile(document.fileName)
+        ? this.getNavigationFlowBasicCompletions()
+        : this.getBasicCompletions();
     }
   }
 
@@ -219,6 +230,235 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
    */
   private getBasicCompletions(): vscode.CompletionItem[] {
     return this.descriptorEngine.getBasicCompletions();
+  }
+
+  private generateNavigationFlowCompletionItems(text: string, position: vscode.Position): vscode.CompletionItem[] {
+    const context = this.getNavigationFlowContext(text, position);
+    const screenIds = this.collectNavigationScreenIds(text);
+
+    if (context.type === 'property-value' && (context.propertyName === 'entry' || context.propertyName === 'from' || context.propertyName === 'to')) {
+      return screenIds.map(id => this.createNavigationValueCompletion(id, 'Existing screen id'));
+    }
+
+    if (context.type === 'root-level') {
+      return this.getNavigationFlowRootCompletions(context.existingProperties);
+    }
+
+    if (context.type === 'flow-properties') {
+      return this.getNavigationPropertyCompletions(TextUICompletionProvider.NAVIGATION_FLOW_PROPERTIES, context.existingProperties);
+    }
+
+    if (context.type === 'screen-properties') {
+      return this.getNavigationPropertyCompletions(TextUICompletionProvider.NAVIGATION_SCREEN_PROPERTIES, context.existingProperties);
+    }
+
+    if (context.type === 'transition-properties') {
+      return this.getNavigationPropertyCompletions(TextUICompletionProvider.NAVIGATION_TRANSITION_PROPERTIES, context.existingProperties);
+    }
+
+    return this.getNavigationFlowBasicCompletions();
+  }
+
+  private getNavigationFlowBasicCompletions(): vscode.CompletionItem[] {
+    return [
+      ...this.getNavigationFlowRootCompletions(new Set()),
+      ...this.getNavigationPropertyCompletions(TextUICompletionProvider.NAVIGATION_FLOW_PROPERTIES, new Set())
+    ];
+  }
+
+  private getNavigationFlowRootCompletions(existingProperties: Set<string>): vscode.CompletionItem[] {
+    if (existingProperties.has('flow')) {
+      return [];
+    }
+
+    const item = this.createCompletionItem('flow', 'Module');
+    item.detail = 'Navigation flow root';
+    item.insertText = 'flow:\n  id: \n  title: \n  entry: \n  screens:\n    - id: \n      page: \n  transitions:\n    - from: \n      to: \n      trigger: \n';
+    item.sortText = '0flow';
+    return [item];
+  }
+
+  private getNavigationPropertyCompletions(properties: string[], existingProperties: Set<string>): vscode.CompletionItem[] {
+    return properties
+      .filter(property => !existingProperties.has(property))
+      .map(property => {
+        const item = this.createCompletionItem(property, 'Property');
+        item.detail = `Navigation flow ${property}`;
+        item.insertText = property === 'params' ? 'params:\n        - ' : `${property}: `;
+        item.sortText = `0${property}`;
+        return item;
+      });
+  }
+
+  private createNavigationValueCompletion(value: string, detail: string): vscode.CompletionItem {
+    const item = this.createCompletionItem(value, 'Value');
+    item.detail = detail;
+    item.insertText = value;
+    item.sortText = `0${value}`;
+    return item;
+  }
+
+  private collectNavigationScreenIds(text: string): string[] {
+    const ids = new Set<string>();
+    const lines = text.split(/\r?\n/);
+    let inScreens = false;
+    let itemIndent = -1;
+
+    for (const line of lines) {
+      const indent = this.getIndentLevel(line);
+      const trimmed = line.trim();
+
+      if (indent <= 2 && /^screens:\s*$/.test(trimmed)) {
+        inScreens = true;
+        itemIndent = -1;
+        continue;
+      }
+
+      if (indent <= 2 && /^transitions:\s*$/.test(trimmed)) {
+        inScreens = false;
+      }
+
+      if (!inScreens) {
+        continue;
+      }
+
+      const itemMatch = line.match(/^(\s*)-\s*id:\s*(.+?)\s*$/);
+      if (itemMatch) {
+        itemIndent = itemMatch[1].length;
+        ids.add(itemMatch[2].trim().replace(/^["']|["']$/g, ''));
+        continue;
+      }
+
+      const nestedMatch = itemIndent >= 0 && indent > itemIndent
+        ? line.match(/^\s*id:\s*(.+?)\s*$/)
+        : null;
+      if (nestedMatch) {
+        ids.add(nestedMatch[1].trim().replace(/^["']|["']$/g, ''));
+      }
+    }
+
+    return Array.from(ids);
+  }
+
+  private getNavigationFlowContext(
+    text: string,
+    position: vscode.Position
+  ): {
+    type: 'root-level' | 'flow-properties' | 'screen-properties' | 'transition-properties' | 'property-value';
+    propertyName?: string;
+    existingProperties: Set<string>;
+  } {
+    const lines = text.split(/\r?\n/);
+    const currentLine = (lines[position.line] ?? '').slice(0, position.character);
+    const currentIndent = this.getIndentLevel(currentLine);
+    const propertyMatch = currentLine.match(/^\s*(?:-\s*)?(\w+):\s*(.*)$/);
+    const parentSection = this.findNavigationParentSection(lines, position.line);
+
+    if (propertyMatch) {
+      return {
+        type: 'property-value',
+        propertyName: propertyMatch[1],
+        existingProperties: this.collectNavigationExistingProperties(lines, position.line, currentIndent, parentSection)
+      };
+    }
+
+    if (currentIndent === 0) {
+      return {
+        type: 'root-level',
+        existingProperties: this.collectNavigationExistingProperties(lines, position.line, currentIndent, parentSection)
+      };
+    }
+
+    if (parentSection === 'screens') {
+      return {
+        type: 'screen-properties',
+        existingProperties: this.collectNavigationExistingProperties(lines, position.line, currentIndent, parentSection)
+      };
+    }
+
+    if (parentSection === 'transitions') {
+      return {
+        type: 'transition-properties',
+        existingProperties: this.collectNavigationExistingProperties(lines, position.line, currentIndent, parentSection)
+      };
+    }
+
+    return {
+      type: 'flow-properties',
+      existingProperties: this.collectNavigationExistingProperties(lines, position.line, currentIndent, parentSection)
+    };
+  }
+
+  private findNavigationParentSection(lines: string[], currentIndex: number): 'screens' | 'transitions' | 'flow' | undefined {
+    for (let i = currentIndex; i >= 0; i--) {
+      const line = lines[i];
+      const trimmed = line.trim();
+      const indent = this.getIndentLevel(line);
+
+      if (indent === 2 && trimmed === 'screens:') {
+        return 'screens';
+      }
+      if (indent === 2 && trimmed === 'transitions:') {
+        return 'transitions';
+      }
+      if (indent === 0 && trimmed === 'flow:') {
+        return 'flow';
+      }
+    }
+    return undefined;
+  }
+
+  private collectNavigationExistingProperties(
+    lines: string[],
+    currentIndex: number,
+    currentIndent: number,
+    parentSection?: 'screens' | 'transitions' | 'flow'
+  ): Set<string> {
+    const existingProperties = new Set<string>();
+    let currentBlockIndent = -1;
+
+    for (let i = 0; i < currentIndex; i++) {
+      const line = lines[i];
+      const match = line.match(/^(\s*)(?:-\s*)?(\w+):/);
+      if (!match) {
+        continue;
+      }
+
+      const indent = match[1].length;
+      const key = match[2];
+
+      if (parentSection === 'flow' && indent === 2) {
+        existingProperties.add(key);
+      }
+
+      if ((parentSection === 'screens' || parentSection === 'transitions') && indent >= 4) {
+        if (/^\s*-\s*/.test(line)) {
+          currentBlockIndent = indent;
+          existingProperties.clear();
+        }
+        if (currentBlockIndent >= 0 && indent >= currentBlockIndent) {
+          existingProperties.add(key);
+        }
+      }
+
+      if (currentIndent === 0 && indent === 0) {
+        existingProperties.add(key);
+      }
+    }
+
+    return existingProperties;
+  }
+
+  private createCompletionItem(label: string, kind: 'Class' | 'Property' | 'Value' | 'Module' | 'Field'): vscode.CompletionItem {
+    const completionCtor = (vscode as { CompletionItem?: unknown }).CompletionItem;
+    const completionItemKind = (vscode as unknown as { CompletionItemKind?: Record<string, number> }).CompletionItemKind;
+    const resolvedKind = completionItemKind && typeof completionItemKind[kind] === 'number'
+      ? completionItemKind[kind]
+      : TextUICompletionProvider.COMPLETION_ITEM_KIND_FALLBACK[kind];
+    if (typeof completionCtor === 'function') {
+      return new vscode.CompletionItem(label, resolvedKind as vscode.CompletionItemKind);
+    }
+    return { label, kind: resolvedKind, detail: '', insertText: '', sortText: '' } as unknown as vscode.CompletionItem;
   }
 
   /**
