@@ -74,6 +74,9 @@ export class ConfigManager {
    */
   static isSupportedFile(fileName: string): boolean {
     const normalizedFileName = fileName.toLowerCase();
+    if (this.isNavigationFlowFile(normalizedFileName)) {
+      return true;
+    }
     return this.getSupportedFileExtensions().some(ext =>
       normalizedFileName.endsWith(ext.toLowerCase())
     );

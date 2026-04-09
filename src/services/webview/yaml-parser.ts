@@ -11,6 +11,7 @@ import { Logger } from '../../utils/logger';
 
 export interface YamlSchemaLoader {
   loadSchema(): Promise<SchemaDefinition>;
+  loadNavigationSchema?(): Promise<SchemaDefinition>;
 }
 
 export interface ParsedYamlResult {
@@ -111,7 +112,7 @@ export class YamlParser {
    */
   private async validateYamlSchema(yaml: unknown, _yamlContent: string, fileName: string): Promise<void> {
     try {
-      const validationErrors = await this.schemaValidator.validate(yaml);
+      const validationErrors = await this.schemaValidator.validate(yaml, fileName);
       if (validationErrors && validationErrors.length > 0) {
         this.logger.warn('スキーマバリデーションエラー:', validationErrors);
         throw this.createSchemaError(validationErrors, _yamlContent, fileName);

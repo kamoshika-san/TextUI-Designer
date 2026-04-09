@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { ConfigManager } from '../../utils/config-manager';
 import type { IWebViewManager } from '../../types';
 
 type LoggerLike = {
@@ -10,16 +11,21 @@ export async function executeOpenPreviewCommand(
   webViewManager: IWebViewManager,
   logger: LoggerLike
 ): Promise<void> {
-  logger.debug('openPreviewWithCheck が呼び出されました');
+  logger.debug('openPreviewWithCheck called');
+
   try {
-    logger.debug('WebViewManager.openPreview を呼び出します');
-    // ユーザーが明示的にコマンドを実行した場合は、Auto Preview設定に関係なくプレビューを開く
+    const activeFilePath = vscode.window.activeTextEditor?.document.fileName;
+    if (activeFilePath && ConfigManager.isSupportedFile(activeFilePath)) {
+      webViewManager.setLastTuiFile(activeFilePath);
+      logger.debug(`preview target set from active editor: ${activeFilePath}`);
+    }
+
+    logger.debug('Opening preview panel');
     await webViewManager.openPreview();
-    logger.debug('WebViewManager.openPreview が完了しました');
+    logger.debug('Preview panel opened');
   } catch (error) {
-    logger.error('プレビュー表示エラー:', error);
+    logger.error('Failed to open preview:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     vscode.window.showErrorMessage(`プレビューの表示に失敗しました: ${errorMessage}`);
   }
 }
-
