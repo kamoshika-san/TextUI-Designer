@@ -32,10 +32,11 @@ function isCrossPlatformAbsolutePath(filePath: string): boolean {
 }
 
 function resolveCrossPlatformRelativePath(anchorFile: string, relativePath: string): string {
-  const anchorDir = path.dirname(anchorFile);
-  if (isWindowsAbsolutePath(anchorDir)) {
+  if (isWindowsAbsolutePath(anchorFile)) {
+    const anchorDir = path.win32.dirname(anchorFile);
     return path.win32.normalize(path.win32.resolve(anchorDir, relativePath));
   }
+  const anchorDir = path.dirname(anchorFile);
   return path.resolve(anchorDir, relativePath);
 }
 
