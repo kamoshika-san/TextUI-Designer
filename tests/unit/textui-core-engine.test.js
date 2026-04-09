@@ -240,6 +240,51 @@ page:
     assert.strictEqual(result.result, undefined);
   });
 
+  it('compareFlow returns normalized flow diff output and semantic summary', () => {
+    const engine = new TextUICoreEngine();
+    const result = engine.compareFlow({
+      previousDsl: {
+        flow: {
+          id: 'checkout',
+          title: 'Checkout Flow',
+          entry: 'cart',
+          screens: [
+            { id: 'cart', page: './screens/cart.tui.yml', title: 'Cart' },
+            { id: 'shipping', page: './screens/shipping.tui.yml', title: 'Shipping' }
+          ],
+          transitions: [
+            { from: 'cart', to: 'shipping', trigger: 'next', label: 'Continue' }
+          ]
+        }
+      },
+      nextDsl: {
+        flow: {
+          id: 'checkout',
+          title: 'Checkout Flow v2',
+          entry: 'shipping',
+          screens: [
+            { id: 'shipping', page: './screens/shipping.tui.yml', title: 'Shipping' },
+            { id: 'confirm', page: './screens/confirm.tui.yml', title: 'Confirm' }
+          ],
+          transitions: [
+            { from: 'shipping', to: 'confirm', trigger: 'next', label: 'Review' }
+          ]
+        }
+      }
+    });
+
+    assert.strictEqual(result.ok, true);
+    assert.deepStrictEqual(result.diagnostics, []);
+    assert.ok(result.previous);
+    assert.ok(result.next);
+    assert.ok(result.result);
+    assert.ok(result.semantic);
+    assert.strictEqual(result.result.metadata.compareStage, 'd1-flow-normalizer');
+    assert.strictEqual(result.semantic.summary.added, 2);
+    assert.strictEqual(result.semantic.summary.removed, 2);
+    assert.strictEqual(result.semantic.summary.changed, 2);
+  });
+
   it('listComponents はButton/Image定義を含む', async () => {
     const engine = new TextUICoreEngine();
     const result = await engine.listComponents();

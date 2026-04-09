@@ -1,13 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { NavigationFlowDSL } from '../../domain/dsl-types';
+import type { FlowSemanticDiffResult } from '../../services/semantic-diff';
+import { createFlowDiagramDiffState } from '../../services/semantic-diff';
 import { FlowDiagram } from './FlowDiagram';
 
 interface FlowPreviewPanelProps {
   flowDsl: NavigationFlowDSL;
   onJumpToDsl: (dslPath: string, componentName: string, targetFilePath?: string) => void;
+  diffResult?: FlowSemanticDiffResult;
 }
 
-export const FlowPreviewPanel: React.FC<FlowPreviewPanelProps> = ({ flowDsl, onJumpToDsl }) => {
+export const FlowPreviewPanel: React.FC<FlowPreviewPanelProps> = ({ flowDsl, onJumpToDsl, diffResult }) => {
   const initialScreenId = flowDsl.flow.entry || flowDsl.flow.screens[0]?.id || '';
   const [selectedScreenId, setSelectedScreenId] = useState(initialScreenId);
 
@@ -25,6 +28,10 @@ export const FlowPreviewPanel: React.FC<FlowPreviewPanelProps> = ({ flowDsl, onJ
   const outgoingTransitions = selectedScreen
     ? flowDsl.flow.transitions.filter(transition => transition.from === selectedScreen.id)
     : [];
+  const diagramDiffState = useMemo(
+    () => diffResult ? createFlowDiagramDiffState(diffResult) : undefined,
+    [diffResult]
+  );
 
   return (
     <section className="textui-flow-preview">
@@ -37,7 +44,15 @@ export const FlowPreviewPanel: React.FC<FlowPreviewPanelProps> = ({ flowDsl, onJ
             <span>Entry: {flowDsl.flow.entry}</span>
             <span>Screens: {flowDsl.flow.screens.length}</span>
             <span>Transitions: {flowDsl.flow.transitions.length}</span>
+            {diagramDiffState?.flowChanged ? <span>Flow Diff: CHANGED</span> : null}
           </div>
+          {diffResult ? (
+            <div className="textui-flow-preview-diff-summary">
+              <span>ADDED: {diffResult.summary.added}</span>
+              <span>REMOVED: {diffResult.summary.removed}</span>
+              <span>CHANGED: {diffResult.summary.changed}</span>
+            </div>
+          ) : null}
         </div>
       </header>
       {selectedScreen ? (
@@ -76,6 +91,8 @@ export const FlowPreviewPanel: React.FC<FlowPreviewPanelProps> = ({ flowDsl, onJ
           }
         }}
         onJumpToPageDsl={(pagePath) => onJumpToDsl('/page', 'ScreenPage', pagePath)}
+        screenStates={diagramDiffState?.screenStates}
+        transitionStates={diagramDiffState?.transitionStates}
       />
     </section>
   );

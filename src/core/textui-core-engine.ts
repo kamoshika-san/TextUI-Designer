@@ -2,15 +2,19 @@ import type { ValidationIssue } from '../cli/types';
 import type { NavigationFlowDSL, TextUIDSL } from '../domain/dsl-types';
 import type { HeuristicPolicy } from './diff/heuristic-policy';
 import { normalize } from './diff-normalization/normalize';
+import { normalizeFlowDiff } from './diff-normalization/flow-normalizer';
 import { toDiagnosticEntry } from './diff-normalization/degrade-policy';
 import type { NormalizationDiagnosticEntry } from './diff-normalization/degrade-policy';
 import { getTextUiComponentCatalog, type TextUIComponentCatalogEntry } from './component-catalog';
 import { TextUiCoreComponentBuilder, getComponentSpecHandlerFlagsForTesting, getComponentSpecTypesForTesting } from './textui-core-component-builder';
 import {
   createDiffResultSkeleton,
+  createNormalizedFlowDiffDocument,
   createNormalizedDiffDocument,
   type DiffCompareDocument,
-  type DiffCompareResult
+  type DiffCompareResult,
+  type FlowDiffCompareDocument,
+  type FlowDiffNormalizationResult
 } from './textui-core-diff';
 import { buildGenerateUiDsl, buildExplainErrorResponseDomain, normalizeDslDomain } from './textui-core-engine-domain';
 import {
@@ -20,6 +24,7 @@ import {
   validateNormalizedDslIo
 } from './textui-core-engine-io';
 import { stringifyUiYaml, toCoreValidationResponse } from './textui-core-engine-format';
+import { buildFlowSemanticDiff, type FlowSemanticDiffResult } from '../services/semantic-diff';
 
 export interface ComponentBlueprint {
   type: string;
@@ -94,6 +99,22 @@ export interface CompareUiResponse {
   previous?: DiffCompareDocument;
   next?: DiffCompareDocument;
   result?: DiffCompareResult;
+}
+
+export interface CompareFlowRequest {
+  previousDsl: unknown;
+  nextDsl: unknown;
+  previousSourcePath?: string;
+  nextSourcePath?: string;
+}
+
+export interface CompareFlowResponse {
+  ok: boolean;
+  diagnostics: CoreDiagnostic[];
+  previous?: FlowDiffCompareDocument;
+  next?: FlowDiffCompareDocument;
+  result?: FlowDiffNormalizationResult;
+  semantic?: FlowSemanticDiffResult;
 }
 
 export interface PreviewSchemaRequest {
@@ -253,6 +274,56 @@ export class TextUICoreEngine {
       previous,
       next,
       result: createDiffResultSkeleton(previous, next, request.heuristicPolicy)
+    };
+  }
+
+  compareFlow(request: CompareFlowRequest): CompareFlowResponse {
+    const previousValidation = this.validateFlow({
+      dsl: request.previousDsl,
+      sourcePath: request.previousSourcePath
+    });
+    const nextValidation = this.validateFlow({
+      dsl: request.nextDsl,
+      sourcePath: request.nextSourcePath
+    });
+
+    const diagnostics: CoreDiagnostic[] = [];
+    if (!previousValidation.valid) {
+      diagnostics.push(...this.annotateCompareDiagnostics('previous', previousValidation.diagnostics));
+    }
+    if (!nextValidation.valid) {
+      diagnostics.push(...this.annotateCompareDiagnostics('next', nextValidation.diagnostics));
+    }
+
+    if (diagnostics.length > 0 || !previousValidation.normalizedDsl || !nextValidation.normalizedDsl) {
+      return { ok: false, diagnostics };
+    }
+
+    const result = normalizeFlowDiff({
+      previousDsl: previousValidation.normalizedDsl,
+      nextDsl: nextValidation.normalizedDsl,
+      previousSourcePath: request.previousSourcePath,
+      nextSourcePath: request.nextSourcePath
+    });
+
+    return {
+      ok: true,
+      diagnostics: [],
+      previous: createNormalizedFlowDiffDocument(previousValidation.normalizedDsl, {
+        side: 'previous',
+        sourcePath: request.previousSourcePath
+      }),
+      next: createNormalizedFlowDiffDocument(nextValidation.normalizedDsl, {
+        side: 'next',
+        sourcePath: request.nextSourcePath
+      }),
+      result,
+      semantic: buildFlowSemanticDiff({
+        previousDsl: previousValidation.normalizedDsl,
+        nextDsl: nextValidation.normalizedDsl,
+        previousSourcePath: request.previousSourcePath,
+        nextSourcePath: request.nextSourcePath
+      })
     };
   }
 

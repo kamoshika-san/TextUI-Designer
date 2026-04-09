@@ -1,5 +1,7 @@
 import React from 'react';
 import type { NavigationFlowDSL } from '../../domain/dsl-types';
+import type { FlowDiffVisualStatus } from '../../services/semantic-diff';
+import { createFlowTransitionStateKey } from '../../services/semantic-diff';
 import { FlowNode } from './FlowNode';
 import { FlowEdge } from './FlowEdge';
 
@@ -9,6 +11,8 @@ interface FlowDiagramProps {
   onSelectScreen: (screenId: string) => void;
   onJumpToFlowDsl: (screenId: string) => void;
   onJumpToPageDsl: (pagePath: string) => void;
+  screenStates?: Record<string, FlowDiffVisualStatus>;
+  transitionStates?: Record<string, FlowDiffVisualStatus>;
 }
 
 export const FlowDiagram: React.FC<FlowDiagramProps> = ({
@@ -16,7 +20,9 @@ export const FlowDiagram: React.FC<FlowDiagramProps> = ({
   selectedScreenId,
   onSelectScreen,
   onJumpToFlowDsl,
-  onJumpToPageDsl
+  onJumpToPageDsl,
+  screenStates,
+  transitionStates
 }) => {
   const screenDepths = computeScreenDepths(flowDsl);
 
@@ -30,6 +36,7 @@ export const FlowDiagram: React.FC<FlowDiagramProps> = ({
             isEntry={screen.id === flowDsl.flow.entry}
             depth={screenDepths.get(screen.id) ?? 0}
             isSelected={screen.id === selectedScreenId}
+            visualStatus={screenStates?.[screen.id] ?? 'unchanged'}
             onSelect={onSelectScreen}
             onJumpToFlowDsl={onJumpToFlowDsl}
             onJumpToPageDsl={onJumpToPageDsl}
@@ -38,7 +45,11 @@ export const FlowDiagram: React.FC<FlowDiagramProps> = ({
       </div>
       <div className="textui-flow-diagram-edges">
         {flowDsl.flow.transitions.map((transition, index) => (
-          <FlowEdge key={`${transition.from}-${transition.to}-${transition.trigger}-${index}`} transition={transition} />
+          <FlowEdge
+            key={`${transition.from}-${transition.to}-${transition.trigger}-${index}`}
+            transition={transition}
+            visualStatus={transitionStates?.[createFlowTransitionStateKey(transition)] ?? 'unchanged'}
+          />
         ))}
       </div>
     </div>

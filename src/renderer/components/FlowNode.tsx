@@ -1,11 +1,13 @@
 import React from 'react';
 import type { ScreenRef } from '../../domain/dsl-types';
+import type { FlowDiffVisualStatus } from '../../services/semantic-diff';
 
 interface FlowNodeProps {
   screen: ScreenRef;
   isEntry: boolean;
   depth: number;
   isSelected: boolean;
+  visualStatus: FlowDiffVisualStatus;
   onSelect: (screenId: string) => void;
   onJumpToFlowDsl: (screenId: string) => void;
   onJumpToPageDsl: (pagePath: string) => void;
@@ -16,6 +18,7 @@ export const FlowNode: React.FC<FlowNodeProps> = ({
   isEntry,
   depth,
   isSelected,
+  visualStatus,
   onSelect,
   onJumpToFlowDsl,
   onJumpToPageDsl
@@ -23,7 +26,8 @@ export const FlowNode: React.FC<FlowNodeProps> = ({
   const className = [
     'textui-flow-node',
     isEntry ? 'is-entry' : '',
-    isSelected ? 'is-selected' : ''
+    isSelected ? 'is-selected' : '',
+    visualStatus !== 'unchanged' ? `is-${visualStatus}` : ''
   ].filter(Boolean).join(' ');
 
   return (
@@ -43,6 +47,7 @@ export const FlowNode: React.FC<FlowNodeProps> = ({
       }}
     >
       <div className="textui-flow-node-kicker">{isEntry ? 'Entry' : 'Screen'}</div>
+      {visualStatus !== 'unchanged' ? <div className="textui-flow-node-status">{visualStatus.toUpperCase()}</div> : null}
       <div className="textui-flow-node-title">{screen.title || screen.id}</div>
       <div className="textui-flow-node-meta">
         <span className="textui-flow-node-id">{screen.id}</span>
