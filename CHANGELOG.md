@@ -4,6 +4,33 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.7.6] - 2026-04-09
+
+### Added
+- **Semantic Diff エンジン基盤 (E-SD0)**: DSL の意味差分を計算するエンジンの基盤を実装。`SemanticChange` 型定義 (9バリアント)、IR 抽出、構造変化検出、マッピング、サマリー出力、信頼スコアリング、CLI エントリポイント (`textui diff-compare`) まで一式。
+- **Normalization ルール (E-SD0-S2)**: `normalizeNode()` (padding/margin/gap のショートハンド展開) と `normalizeDefaults()` (省略フィールドへのデフォルト値補完) を実装。23ケースの単体テスト付き。
+- **インクリメンタルレンダリング Sprint 1 完了 (E-IR-01)**: DiffEntityRef レンダーターゲットマッピング・feature flag ルーティング・フルレンダーフォールバックガード (ダウングレード理由を `lastIncrementalDowngradeReason` で露出) を実装。
+- **Export Preview コマンド配線 (T-U06b)**: `textui-designer.export-preview` を command-catalog に登録し、`handleExportPreviewMessage` を `executeCommand` 経由で呼ぶよう更新。`showInformationMessage` ダイアログを削除。
+- **Svelte / Vue リアクティブバインディング**: Svelte と Vue エクスポーターに reactive binding パリティを追加。
+- **MCP ツールサーフェス拡張**: MCP ツールの種類とテストレーンを拡張。
+- **CLI ユーザーオンボーディングガイド**: 初回利用者向けガイドを CLI に追加。
+- **リアル VS Code スモークレーン**: 実際の Extension Host でプレビュー起動を検証するスモークテストレーンを追加。
+
+### Fixed
+- **VS Code スモークランナー**: `module.exports = run` → `exports.run = run` へ修正。Extension Host が `runner.run` で検証するため、直接エクスポートでは `undefined` になっていた問題。
+- **ErrorHandler: エラーコンテキスト保持**: `ErrorHandler` でスタックおよびコンテキスト情報が失われる問題を修正。
+- **ErrorHandler: CI テストシーム**: CI での ErrorHandler テストが不安定だった問題を修正。
+- **CRO: 非同期失敗の可視性**: 非同期コールバック内のエラーがサイレントになっていた問題にロギングを追加。
+- **キャプチャー: ブラウザ起動の遅延**: trusted capture override でブラウザを先行起動していた問題を修正し起動を遅延させた。
+
+### Changed
+- **メトリクスゲート**: メトリクスゲートをデフォルト有効に昇格。メモリトラッキングもデフォルト ON に変更。
+- **インクリメンタルレンダリング境界ターゲット**: レンダー境界ターゲットをより厳密なスコープに絞り込み。
+- **README**: コントリビューター向けからユーザー向けプロダクトドキュメントへ全面改訂。DSL サンプル・コンポーネント一覧・テーマ・エクスポート形式・クイックスタートを先頭に配置。
+
+### Maintenance
+- `basic-ftp` を 5.2.0 → 5.2.1 にバンプ。
+
 ## [0.7.5] - 2026-04-08
 
 ### Added
