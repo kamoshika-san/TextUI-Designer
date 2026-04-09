@@ -1,0 +1,11 @@
+page:
+  id: cart-page
+  title: Cart
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: Cart
+    - Button:
+        label: Continue
+        kind: primary

@@ -2,14 +2,26 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
 import type { ValidationIssue } from '../cli/types';
-import type { TextUIDSL } from '../domain/dsl-types';
+import type { NavigationFlowDSL, TextUIDSL } from '../domain/dsl-types';
 import type { CoreDiagnostic } from './textui-core-engine';
 
-export function parseDsl(input: unknown): TextUIDSL {
+export function parseDsl(input: unknown, kind: 'ui' | 'navigation' = 'ui'): TextUIDSL | NavigationFlowDSL {
   const parsed = typeof input === 'string' ? parseText(input) : (input as Record<string, unknown>);
 
-  if (!parsed || typeof parsed !== 'object' || !('page' in parsed)) {
-    throw new Error('DSLにはpageルートが必要です');
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('DSL must be an object.');
+  }
+
+  if (kind === 'navigation') {
+    if (!('flow' in parsed)) {
+      throw new Error('Navigation flow DSL must contain a flow root.');
+    }
+
+    return parsed as unknown as NavigationFlowDSL;
+  }
+
+  if (!('page' in parsed)) {
+    throw new Error('UI DSL must contain a page root.');
   }
 
   return parsed as unknown as TextUIDSL;
@@ -18,7 +30,7 @@ export function parseDsl(input: unknown): TextUIDSL {
 function parseText(raw: string): Record<string, unknown> {
   const trimmed = raw.trim();
   if (!trimmed) {
-    throw new Error('DSL文字列が空です');
+    throw new Error('DSL text is empty.');
   }
 
   if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
@@ -38,31 +50,39 @@ export function mapDiagnostic(issue: ValidationIssue): CoreDiagnostic {
 
 export function mapHint(message: string): string {
   if (message.includes('must have required property')) {
-    return '必須プロパティを追加してください。';
+    return 'Add the missing required property.';
   }
   if (message.includes('must be')) {
-    return '型・enum制約に合わせて値を修正してください。';
+    return 'Use a value that matches the allowed enum or schema type.';
   }
-  if (message.includes('重複ID')) {
-    return 'idを一意に変更してください。';
+  if (message.includes('Duplicate component id')) {
+    return 'Use a unique id for each component.';
   }
   if (message.includes('token')) {
-    return 'token名とtheme定義の整合を確認してください。';
+    return 'Check the token name and the theme referenced by this DSL.';
   }
-  return 'schema.jsonとDSL構造を見比べて修正してください。';
+  if (message.includes('flow')) {
+    return 'Review the navigation flow entry, transitions, and referenced page files.';
+  }
+
+  return 'Check the schema and DSL structure for this document.';
 }
 
-export function resolveSchemaPath(schema: 'main' | 'template' | 'theme'): string {
+export function resolveSchemaPath(schema: 'main' | 'template' | 'theme' | 'navigation'): string {
   if (schema === 'template') {
     return path.resolve(__dirname, '../../schemas/template-schema.json');
   }
   if (schema === 'theme') {
     return path.resolve(__dirname, '../../schemas/theme-schema.json');
   }
+  if (schema === 'navigation') {
+    return path.resolve(__dirname, '../../schemas/navigation-schema.json');
+  }
+
   return path.resolve(__dirname, '../../schemas/schema.json');
 }
 
-export function previewSchemaValue(schema: 'main' | 'template' | 'theme', jsonPointer?: string): unknown {
+export function previewSchemaValue(schema: 'main' | 'template' | 'theme' | 'navigation', jsonPointer?: string): unknown {
   const schemaPath = resolveSchemaPath(schema);
   const raw = fs.readFileSync(schemaPath, 'utf8');
   const parsed = JSON.parse(raw) as Record<string, unknown>;
@@ -74,7 +94,7 @@ export function resolveJsonPointer(target: unknown, pointer: string): unknown {
     return target;
   }
   if (!pointer.startsWith('/')) {
-    throw new Error(`jsonPointerは "/" で始めてください: ${pointer}`);
+    throw new Error(`jsonPointer must start with "/": ${pointer}`);
   }
 
   const parts = pointer.slice(1).split('/').map(part => part.replace(/~1/g, '/').replace(/~0/g, '~'));
@@ -84,13 +104,13 @@ export function resolveJsonPointer(target: unknown, pointer: string): unknown {
     if (Array.isArray(current)) {
       const index = Number(part);
       if (Number.isNaN(index)) {
-        throw new Error(`配列インデックスが不正です: ${part}`);
+        throw new Error(`Array index is invalid: ${part}`);
       }
       current = current[index];
       continue;
     }
     if (!current || typeof current !== 'object') {
-      throw new Error(`jsonPointerが解決できません: ${pointer}`);
+      throw new Error(`jsonPointer could not be resolved: ${pointer}`);
     }
     current = (current as Record<string, unknown>)[part];
   }

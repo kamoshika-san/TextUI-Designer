@@ -1,0 +1,8 @@
+page:
+  id: company-profile-page
+  title: Company Profile
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: Company Profile

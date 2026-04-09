@@ -52,6 +52,15 @@ export function resolveDiagnosticLocation(error: ErrorObject): string {
   return path;
 }
 
+export function resolveRangeFromPath(
+  pointerPath: string | undefined,
+  text: string,
+  document: vscode.TextDocument
+): vscode.Range {
+  const pointerParts = (pointerPath || '').split('/').filter(Boolean);
+  return findRangeByPath(pointerParts, text, document) || new vscode.Range(0, 0, 0, 1);
+}
+
 function findRangeByPath(pathParts: string[], text: string, document: vscode.TextDocument): vscode.Range | null {
   for (let i = pathParts.length - 1; i >= 0; i -= 1) {
     const key = pathParts[i];

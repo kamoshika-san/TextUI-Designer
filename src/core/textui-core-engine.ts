@@ -1,5 +1,5 @@
 import type { ValidationIssue } from '../cli/types';
-import type { TextUIDSL } from '../domain/dsl-types';
+import type { NavigationFlowDSL, TextUIDSL } from '../domain/dsl-types';
 import type { HeuristicPolicy } from './diff/heuristic-policy';
 import { normalize } from './diff-normalization/normalize';
 import { toDiagnosticEntry } from './diff-normalization/degrade-policy';
@@ -63,6 +63,17 @@ export interface ValidateUiResponse {
   normalizedYaml?: string;
 }
 
+export interface ValidateFlowRequest {
+  dsl: unknown;
+  sourcePath?: string;
+}
+
+export interface ValidateFlowResponse {
+  valid: boolean;
+  diagnostics: CoreDiagnostic[];
+  normalizedDsl?: NavigationFlowDSL;
+}
+
 export interface ExplainErrorRequest {
   diagnostics: Array<Pick<CoreDiagnostic, 'message' | 'path' | 'level'>>;
 }
@@ -79,7 +90,6 @@ export interface CompareUiRequest {
 export interface CompareUiResponse {
   ok: boolean;
   diagnostics: CoreDiagnostic[];
-  /** Normalization warnings/errors from the normalize() step. Absent when both sides normalized cleanly. */
   normalizationDiagnostics?: NormalizationDiagnosticEntry[];
   previous?: DiffCompareDocument;
   next?: DiffCompareDocument;
@@ -87,7 +97,7 @@ export interface CompareUiResponse {
 }
 
 export interface PreviewSchemaRequest {
-  schema?: 'main' | 'template' | 'theme';
+  schema?: 'main' | 'template' | 'theme' | 'navigation';
   jsonPointer?: string;
 }
 
@@ -126,10 +136,11 @@ export class TextUICoreEngine {
 
   validateUi(request: ValidateUiRequest): ValidateUiResponse {
     try {
-      const normalizedDsl = normalizeDslDomain(request.dsl);
+      const normalizedDsl = normalizeDslDomain(request.dsl, 'ui') as TextUIDSL;
       const result = validateNormalizedDslIo(normalizedDsl, {
         sourcePath: request.sourcePath,
-        skipTokenValidation: request.skipTokenValidation ?? true
+        skipTokenValidation: request.skipTokenValidation ?? true,
+        schemaKind: 'main'
       });
 
       return toCoreValidationResponse(result, normalizedDsl);
@@ -140,9 +151,41 @@ export class TextUICoreEngine {
         diagnostics: [{
           level: 'error',
           severity: 'error',
-          message: message || 'DSLの解析に失敗しました',
+          message: message || 'Failed to parse the UI DSL.',
           path: '/',
-          hint: 'YAML/JSON形式とpage定義を確認してください。'
+          hint: 'Check the YAML or JSON syntax and the page root.'
+        }]
+      };
+    }
+  }
+
+  validateFlow(request: ValidateFlowRequest): ValidateFlowResponse {
+    try {
+      const normalizedDsl = normalizeDslDomain(request.dsl, 'navigation') as NavigationFlowDSL;
+      const result = validateNormalizedDslIo(normalizedDsl, {
+        sourcePath: request.sourcePath,
+        schemaKind: 'navigation'
+      });
+
+      return {
+        valid: result.valid,
+        diagnostics: result.issues.map(issue => ({
+          ...issue,
+          severity: issue.level === 'error' ? 'error' : 'warning',
+          hint: issue.code ? `Fix ${issue.code} in the navigation flow definition.` : 'Review the navigation flow definition.'
+        })),
+        normalizedDsl
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return {
+        valid: false,
+        diagnostics: [{
+          level: 'error',
+          severity: 'error',
+          message: message || 'Failed to parse the navigation flow.',
+          path: '/',
+          hint: 'Check the YAML or JSON syntax and the flow root.'
         }]
       };
     }
@@ -176,7 +219,6 @@ export class TextUICoreEngine {
       return { ok: false, diagnostics };
     }
 
-    // compareStage extension point: currently 'c1-skeleton'; future 'c2-normalized' migration here
     const normalizationDiagnostics: NormalizationDiagnosticEntry[] = [];
 
     const prevNormResult = normalize(previousValidation.normalizedDsl);
@@ -214,7 +256,7 @@ export class TextUICoreEngine {
     };
   }
 
-  previewSchema(request: PreviewSchemaRequest = {}): { schema: 'main' | 'template' | 'theme'; jsonPointer?: string; value: unknown } {
+  previewSchema(request: PreviewSchemaRequest = {}): { schema: 'main' | 'template' | 'theme' | 'navigation'; jsonPointer?: string; value: unknown } {
     const schema = request.schema ?? 'main';
     return {
       schema,
@@ -231,7 +273,6 @@ export class TextUICoreEngine {
   }
 
   async getSupportedProviders(): Promise<string[]> {
-    // 互換性のため public method は残しつつ、実装は I/O 層へ委譲する
     return getSupportedProvidersIo();
   }
 }

@@ -428,4 +428,30 @@ page:
     }
   });
 
+  it('validateFlow returns NAV diagnostics for invalid navigation flow DSL', () => {
+    const engine = new TextUICoreEngine();
+    const result = engine.validateFlow({
+      dsl: {
+        flow: {
+          id: 'broken',
+          title: 'Broken',
+          entry: 'missing',
+          screens: [
+            { id: 'home', page: './screens/home.tui.yml' },
+            { id: 'home', page: './screens/home-duplicate.tui.yml' }
+          ],
+          transitions: [
+            { from: 'home', to: 'missing', trigger: 'next' }
+          ]
+        }
+      },
+      sourcePath: 'C:/tmp/app.tui.flow.yml'
+    });
+
+    assert.strictEqual(result.valid, false);
+    assert.ok(result.diagnostics.some(issue => issue.code === 'NAV_001'));
+    assert.ok(result.diagnostics.some(issue => issue.code === 'NAV_002'));
+    assert.ok(result.diagnostics.some(issue => issue.code === 'NAV_003'));
+    assert.ok(result.diagnostics.some(issue => issue.code === 'NAV_006'));
+  });
 });

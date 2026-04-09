@@ -37,7 +37,8 @@ export async function handleExportCommand(fileArg: string | undefined): Promise<
   const tokenOnError = parseTokenErrorMode();
   const validation = validateDsl(loaded.dsl, {
     sourcePath: loaded.sourcePath,
-    skipTokenValidation: tokenOnError !== 'error'
+    skipTokenValidation: tokenOnError !== 'error',
+    schemaKind: loaded.kind === 'navigation-flow' ? 'navigation' : 'main'
   });
   if (!validation.valid) {
     return 2;

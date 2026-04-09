@@ -1,0 +1,63 @@
+flow:
+  id: enterprise-onboarding
+  title: Enterprise Onboarding
+  entry: welcome
+  screens:
+    - id: welcome
+      page: ./screens/welcome.tui.yml
+      title: Welcome
+    - id: company-profile
+      page: ./screens/company-profile.tui.yml
+      title: Company Profile
+    - id: admin-setup
+      page: ./screens/admin-setup.tui.yml
+      title: Admin Setup
+    - id: billing
+      page: ./screens/billing.tui.yml
+      title: Billing
+    - id: compliance
+      page: ./screens/compliance.tui.yml
+      title: Compliance
+    - id: integrations
+      page: ./screens/integrations.tui.yml
+      title: Integrations
+    - id: review
+      page: ./screens/review.tui.yml
+      title: Review
+    - id: approval
+      page: ./screens/approval.tui.yml
+      title: Approval
+    - id: provisioning
+      page: ./screens/provisioning.tui.yml
+      title: Provisioning
+    - id: launch
+      page: ./screens/launch.tui.yml
+      title: Launch
+  transitions:
+    - from: welcome
+      to: company-profile
+      trigger: start
+    - from: company-profile
+      to: admin-setup
+      trigger: next
+    - from: admin-setup
+      to: billing
+      trigger: next
+    - from: billing
+      to: compliance
+      trigger: next
+    - from: compliance
+      to: integrations
+      trigger: next
+    - from: integrations
+      to: review
+      trigger: next
+    - from: review
+      to: approval
+      trigger: submit
+    - from: approval
+      to: provisioning
+      trigger: approve
+    - from: provisioning
+      to: launch
+      trigger: complete

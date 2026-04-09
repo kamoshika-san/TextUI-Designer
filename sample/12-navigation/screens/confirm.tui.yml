@@ -1,0 +1,11 @@
+page:
+  id: confirm-page
+  title: Confirm
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: Confirm
+    - Alert:
+        variant: info
+        message: Review the order before submitting.

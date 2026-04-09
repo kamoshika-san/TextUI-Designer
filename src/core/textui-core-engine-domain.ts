@@ -1,14 +1,7 @@
-import type { TextUIDSL } from '../domain/dsl-types';
+import type { NavigationFlowDSL, TextUIDSL } from '../domain/dsl-types';
 import { toPageId, parseDsl, mapHint } from './textui-core-helpers';
 import type { GenerateUiRequest, ExplainErrorRequest } from './textui-core-engine';
 import { TextUiCoreComponentBuilder } from './textui-core-component-builder';
-
-/**
- * Domain 層:
- * - generate_ui 用の DSL 構築（page/components 組み立て）
- * - DSL 正規化（parseDsl）
- * - explain_error のレスポンス組み立て（mapHint）
- */
 
 export function buildGenerateUiDsl(
   request: GenerateUiRequest,
@@ -24,8 +17,8 @@ export function buildGenerateUiDsl(
   };
 }
 
-export function normalizeDslDomain(inputDsl: unknown): TextUIDSL {
-  return parseDsl(inputDsl);
+export function normalizeDslDomain(inputDsl: unknown, kind: 'ui' | 'navigation' = 'ui'): TextUIDSL | NavigationFlowDSL {
+  return parseDsl(inputDsl, kind);
 }
 
 export function buildExplainErrorResponseDomain(request: ExplainErrorRequest): {
@@ -39,10 +32,9 @@ export function buildExplainErrorResponseDomain(request: ExplainErrorRequest): {
   }));
 
   if (suggestions.length === 0) {
-    return { summary: 'エラーはありません。', suggestions: [] };
+    return { summary: 'No errors.', suggestions: [] };
   }
 
   const first = suggestions[0];
-  return { summary: `主な原因: ${first.path} ${first.message}`, suggestions };
+  return { summary: `Primary issue: ${first.path} ${first.message}`, suggestions };
 }
-

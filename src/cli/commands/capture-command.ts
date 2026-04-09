@@ -30,7 +30,8 @@ export async function handleCaptureCommand(args: FileTargetArgs): Promise<ExitCo
   const loaded = loadDslFromFile(filePath);
   const validation = validateDsl(loaded.dsl, {
     sourcePath: loaded.sourcePath,
-    skipTokenValidation: true
+    skipTokenValidation: true,
+    schemaKind: loaded.kind === 'navigation-flow' ? 'navigation' : 'main'
   });
   if (!validation.valid) {
     if (hasFlag('--json')) {

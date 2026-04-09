@@ -1,0 +1,8 @@
+page:
+  id: provisioning-page
+  title: Provisioning
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: Provisioning

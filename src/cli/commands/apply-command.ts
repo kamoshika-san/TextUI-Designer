@@ -61,7 +61,8 @@ export async function handleApplyCommand(args: FileTargetArgs): Promise<ExitCode
   const loaded = loadDslFromFile(filePath);
   const validation = validateDsl(loaded.dsl, {
     sourcePath: loaded.sourcePath,
-    skipTokenValidation: tokenOnError !== 'error'
+    skipTokenValidation: tokenOnError !== 'error',
+    schemaKind: loaded.kind === 'navigation-flow' ? 'navigation' : 'main'
   });
   if (!validation.valid) {
     return 2;

@@ -1,4 +1,6 @@
 import type { ValidationResult, ValidationIssue } from './types';
+import { isNavigationFlowDSL } from '../domain/dsl-types';
+import { validateNavigationFlow } from '../shared/navigation-flow-validator';
 import { collectComponentEntries, type ComponentEntry } from './validator/component-walker';
 import { validateSchema } from './validator/schema-validator';
 import { loadThemeTokens } from './validator/theme-token-loader';
@@ -16,11 +18,12 @@ interface ComponentSemanticScan {
 
 export function validateDsl(
   dsl: unknown,
-  options: { sourcePath?: string; skipTokenValidation?: boolean } = {}
+  options: { sourcePath?: string; skipTokenValidation?: boolean; schemaKind?: 'main' | 'navigation' } = {}
 ): ValidationResult {
+  const schemaKind = options.schemaKind ?? (isNavigationFlowDSL(dsl) ? 'navigation' : 'main');
   const issues = [
-    ...validateSchema(dsl),
-    ...validateSemanticRules(dsl, options.sourcePath, options.skipTokenValidation ?? false)
+    ...validateSchema(dsl, schemaKind),
+    ...validateSemanticRules(dsl, sourcePathFromOptions(options), options.skipTokenValidation ?? false, schemaKind)
   ];
 
   return {
@@ -29,9 +32,18 @@ export function validateDsl(
   };
 }
 
-function validateSemanticRules(dsl: unknown, sourcePath?: string, skipTokenValidation: boolean = false): ValidationIssue[] {
+function validateSemanticRules(
+  dsl: unknown,
+  sourcePath?: string,
+  skipTokenValidation: boolean = false,
+  schemaKind: 'main' | 'navigation' = 'main'
+): ValidationIssue[] {
   if (!dsl || typeof dsl !== 'object') {
-    return [{ level: 'error', message: 'DSLがオブジェクトではありません', path: '/' }];
+    return [{ level: 'error', message: 'DSL must be an object.', path: '/' }];
+  }
+
+  if (schemaKind === 'navigation') {
+    return validateNavigationFlow(dsl, { sourcePath });
   }
 
   const components = collectComponentEntries(dsl);
@@ -58,7 +70,7 @@ function scanComponentSemanticRules(components: ComponentEntry[]): ComponentSema
       if (seenIds.has(id)) {
         issues.push({
           level: 'error',
-          message: `重複ID: ${id}`,
+          message: `Duplicate component id: ${id}`,
           path: `${component.path}/id`
         });
       }
@@ -77,7 +89,7 @@ function scanComponentSemanticRules(components: ComponentEntry[]): ComponentSema
     if (typeof tokenValue !== 'string') {
       issues.push({
         level: 'error',
-        message: 'token は文字列で指定してください',
+        message: 'token must be a string value',
         path: `${component.path}/token`
       });
       return;
@@ -93,7 +105,7 @@ function validateTokenRules(tokenUsages: TokenUsage[], sourcePath?: string): Val
   if (!sourcePath) {
     return [{
       level: 'error',
-      message: 'token検証にはDSLファイルパスが必要です',
+      message: 'token validation requires a DSL source path',
       path: '/'
     }];
   }
@@ -107,4 +119,8 @@ function validateTokenRules(tokenUsages: TokenUsage[], sourcePath?: string): Val
     ...themeLoad.issues,
     ...validateTokenReferences(themeLoad.tokens, tokenUsages)
   ];
+}
+
+function sourcePathFromOptions(options: { sourcePath?: string }): string | undefined {
+  return options.sourcePath;
 }

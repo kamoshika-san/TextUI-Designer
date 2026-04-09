@@ -1,0 +1,8 @@
+page:
+  id: admin-setup-page
+  title: Admin Setup
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: Admin Setup

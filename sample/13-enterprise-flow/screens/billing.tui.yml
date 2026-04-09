@@ -1,0 +1,8 @@
+page:
+  id: billing-page
+  title: Billing
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: Billing

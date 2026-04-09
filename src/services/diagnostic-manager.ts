@@ -15,6 +15,7 @@ import {
 } from './diagnostics/diagnostic-validation-engine';
 import { getValidationSchemaKind } from './document-kind-resolver';
 import { Logger } from '../utils/logger';
+import { FlowDiagnosticsManager } from './diagnostics/flow-diagnostics-manager';
 
 /**
  * DiagnosticManager へ注入可能な依存（ユニットテストのモック差し替え用）
@@ -44,6 +45,7 @@ export class DiagnosticManager {
   private cacheStore: DiagnosticCacheStore;
   private scheduler: IDiagnosticScheduler;
   private validationEngine: IDiagnosticValidationEngine;
+  private readonly flowDiagnosticsManager = new FlowDiagnosticsManager();
 
   constructor(schemaManager: ISchemaManager, deps?: DiagnosticManagerDeps) {
     this.diagnosticCollection =
@@ -111,6 +113,10 @@ export class DiagnosticManager {
       diagnostics.push(diag);
     } else if (result.errors && result.schema) {
       diagnostics = this.createDiagnosticsFromErrors(result.errors, text, document, result.schema);
+    }
+
+    if (schemaKind === 'navigation' && !result.errorMessage) {
+      diagnostics = diagnostics.concat(this.flowDiagnosticsManager.createDiagnostics(document, text));
     }
 
     const cacheEntry = {

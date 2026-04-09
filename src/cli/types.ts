@@ -36,6 +36,7 @@ export interface ValidationIssue {
   message: string;
   path?: string;
   file?: string;
+  code?: string;
 }
 
 export interface ValidationResult {
@@ -88,4 +89,5 @@ export interface LoadedDsl {
   dsl: TextUIDSL;
   sourcePath: string;
   raw: string;
+  kind?: 'ui' | 'navigation-flow';
 }

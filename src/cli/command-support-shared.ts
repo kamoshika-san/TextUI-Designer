@@ -27,7 +27,8 @@ export function validateAcrossFiles(filePaths: string[], skipTokenValidation: bo
       const loaded = loadDslFromFile(filePath);
       const result = validateDsl(loaded.dsl, {
         sourcePath: loaded.sourcePath,
-        skipTokenValidation
+        skipTokenValidation,
+        schemaKind: loaded.kind === 'navigation-flow' ? 'navigation' : 'main'
       });
       const issues = result.issues.map(issue => ({ ...issue, file: loaded.sourcePath }));
       return {

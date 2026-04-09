@@ -1,0 +1,8 @@
+page:
+  id: integrations-page
+  title: Integrations
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: Integrations

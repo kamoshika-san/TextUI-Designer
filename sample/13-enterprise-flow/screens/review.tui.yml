@@ -1,0 +1,8 @@
+page:
+  id: review-page
+  title: Review
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: Review

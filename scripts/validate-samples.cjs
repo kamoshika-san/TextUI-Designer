@@ -9,13 +9,13 @@ const os = require('os');
 const { spawnSync } = require('child_process');
 
 const repoRoot = path.resolve(__dirname, '..');
-const sampleRoot = path.join(repoRoot, 'sample');
 const cliPath = path.join(repoRoot, 'out/cli/index.js');
+const { validateNavigationFlow } = require(path.join(repoRoot, 'out/shared/navigation-flow-validator.js'));
 
 const expectedFailureCases = [
   {
     file: 'sample/04-include-cyclic/cycle-test.tui.yml',
-    reason: '循環参照の検証用サンプルのため、読み込み失敗が期待値'
+    reason: 'cyclic include sample is intentionally invalid until include-cycle validation is redesigned'
   }
 ];
 
@@ -24,6 +24,9 @@ function loadJson(filePath) {
 }
 
 function resolveSchemaForFile(relativePath) {
+  if (relativePath.endsWith('.tui.flow.yml') || relativePath.endsWith('.tui.flow.yaml')) {
+    return 'navigation-schema.json';
+  }
   if (relativePath.endsWith('.template.yml') || relativePath.endsWith('.template.yaml')) {
     return 'schema.json';
   }
@@ -38,7 +41,6 @@ function resolveSchemaForFile(relativePath) {
 
 function normalizeDocumentForSchema(relativePath, parsed) {
   if (relativePath.endsWith('.template.yml') || relativePath.endsWith('.template.yaml')) {
-    // テンプレートは components 配列としてメインスキーマで検証する
     return { components: parsed };
   }
 
@@ -49,7 +51,7 @@ function parseYamlFile(filePath, options = {}) {
   const { resolveIncludes: shouldResolveIncludes = true, includeStack = new Set() } = options;
   const normalizedPath = path.resolve(filePath);
   if (shouldResolveIncludes && includeStack.has(normalizedPath)) {
-    throw new Error(`循環参照を検出しました: ${[...includeStack, normalizedPath].join(' -> ')}`);
+    throw new Error(`cyclic include detected: ${[...includeStack, normalizedPath].join(' -> ')}`);
   }
 
   if (shouldResolveIncludes) {
@@ -157,7 +159,7 @@ function validateAllSamples() {
   }).sort();
 
   if (sampleFiles.length === 0) {
-    throw new Error('sample配下にYAMLファイルが見つかりませんでした。');
+    throw new Error('No YAML sample files were found under sample/.');
   }
 
   const failures = [];
@@ -176,9 +178,6 @@ function validateAllSamples() {
       if (!validate) {
         let schema = loadJson(path.join(repoRoot, 'schemas', schemaName));
         if (schemaName === 'template-schema.json') {
-          // テンプレートは「配列（components断片）」として記述されるが、
-          // 許容コンポーネント集合は本体DSLと同一にしたい。
-          // そこで `schema.json` の definitions を流用した配列スキーマを組み立てる。
           const full = loadJson(path.join(repoRoot, 'schemas', 'schema.json'));
           schema = {
             $schema: full.$schema,
@@ -203,32 +202,41 @@ function validateAllSamples() {
       const valid = validate(normalized);
       if (!valid) {
         const details = (validate.errors || []).map(error => `${error.instancePath || '/'} ${error.message || ''}`.trim());
-        throw new Error(`スキーマ違反: ${details.join(' | ')}`);
+        throw new Error(`schema validation failed: ${details.join(' | ')}`);
+      }
+
+      if (schemaName === 'navigation-schema.json') {
+        const semanticIssues = validateNavigationFlow(parsed, { sourcePath: path.join(repoRoot, relativePath) });
+        const semanticErrors = semanticIssues.filter(issue => issue.level === 'error');
+        if (semanticErrors.length > 0) {
+          const details = semanticErrors.map(issue => `${issue.code || 'NAV'} ${issue.path || '/'} ${issue.message}`);
+          throw new Error(`navigation validation failed: ${details.join(' | ')}`);
+        }
       }
 
       if (expectedFailures.has(normalizedRelativePath)) {
-        throw new Error('失敗を期待するサンプルが成功しました。');
+        throw new Error('expected failure sample validated successfully');
       }
 
-      console.log(`✅ validated: ${relativePath}`);
+      console.log(`validated: ${relativePath}`);
     } catch (error) {
       const expected = expectedFailureCases.find(entry => entry.file === normalizedRelativePath);
       if (expected) {
-        console.log(`✅ expected failure: ${relativePath} (${expected.reason})`);
+        console.log(`expected failure: ${relativePath} (${expected.reason})`);
         continue;
       }
 
-      failures.push(`❌ ${relativePath}: ${error instanceof Error ? error.message : String(error)}`);
+      failures.push(`- ${relativePath}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   const uncoveredExpected = expectedFailureCases.filter(entry => !sampleFiles.map(normalizeRelative).includes(entry.file));
   for (const missing of uncoveredExpected) {
-    failures.push(`❌ expected failure case not found: ${missing.file}`);
+    failures.push(`- expected failure case not found: ${missing.file}`);
   }
 
   if (failures.length > 0) {
-    throw new Error(`サンプル検証に失敗しました:\n${failures.join('\n')}`);
+    throw new Error(`sample validation failed:\n${failures.join('\n')}`);
   }
 }
 
@@ -248,10 +256,10 @@ async function validateRepresentativeExports() {
     const html = await new HtmlExporter().export(dsl, { format: 'html' });
 
     if (typeof html !== 'string' || !html.includes('<!DOCTYPE html>') || !html.includes('<body')) {
-      throw new Error(`エクスポート結果が不正です: ${sampleFile}`);
+      throw new Error(`export verification failed: ${sampleFile}`);
     }
 
-    console.log(`✅ export verified: ${sampleFile}`);
+    console.log(`export verified: ${sampleFile}`);
   }
 }
 
@@ -304,7 +312,7 @@ async function validateRepresentativeCliExports() {
         throw new Error('Svelte exporter output is invalid');
       }
 
-      console.log(`✅ cli export verified: ${provider.name}`);
+      console.log(`cli export verified: ${provider.name}`);
     });
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
@@ -315,7 +323,7 @@ async function main() {
   validateAllSamples();
   await validateRepresentativeExports();
   await validateRepresentativeCliExports();
-  console.log('🎉 sample quality gate passed.');
+  console.log('sample quality gate passed.');
 }
 
 main().catch(error => {

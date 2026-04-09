@@ -1,0 +1,8 @@
+page:
+  id: approval-page
+  title: Approval
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: Approval

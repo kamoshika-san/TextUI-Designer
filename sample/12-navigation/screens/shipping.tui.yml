@@ -1,0 +1,12 @@
+page:
+  id: shipping-page
+  title: Shipping
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: Shipping
+    - Input:
+        label: Address
+        name: address
+        type: text

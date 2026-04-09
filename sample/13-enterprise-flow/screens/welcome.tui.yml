@@ -1,0 +1,8 @@
+page:
+  id: welcome-page
+  title: Welcome
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: Welcome
