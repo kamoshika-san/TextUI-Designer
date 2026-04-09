@@ -9,20 +9,22 @@ describe('navigation-jump-command', () => {
   });
 
   it('resolves a relative page path from the current flow document', () => {
+    const flowFile = path.win32.join('C:\\workspace', 'app.tui.flow.yml');
     const resolved = resolveNavigationJumpTargetFile({
       requestedTargetFilePath: './screens/home.tui.yml',
-      activeEditorFile: path.join('C:\\workspace', 'app.tui.flow.yml'),
-      lastPreviewFile: path.join('C:\\workspace', 'app.tui.flow.yml')
+      activeEditorFile: flowFile,
+      lastPreviewFile: flowFile
     });
 
-    assert.strictEqual(resolved, path.join('C:\\workspace', 'screens', 'home.tui.yml'));
+    assert.strictEqual(resolved, path.win32.join('C:\\workspace', 'screens', 'home.tui.yml'));
   });
 
   it('falls back to the last preview file when no explicit target is provided', () => {
+    const flowFile = path.win32.join('C:\\workspace', 'app.tui.flow.yml');
     const resolved = resolveNavigationJumpTargetFile({
-      lastPreviewFile: path.join('C:\\workspace', 'app.tui.flow.yml')
+      lastPreviewFile: flowFile
     });
 
-    assert.strictEqual(resolved, path.join('C:\\workspace', 'app.tui.flow.yml'));
+    assert.strictEqual(resolved, flowFile);
   });
 });
