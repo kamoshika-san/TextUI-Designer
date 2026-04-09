@@ -1,5 +1,5 @@
 import { useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
-import type { TextUIDSL } from '../domain/dsl-types';
+import type { NavigationFlowDSL, TextUIDSL } from '../domain/dsl-types';
 import type { VisualDiffResult } from '../domain/diff/visual-diff-model';
 import type { ConflictViewResult } from '../domain/diff/conflict-webview-model';
 import type { OverlayDiffState } from '../domain/diff/overlay-diff-types';
@@ -48,7 +48,7 @@ function applyThemeVariables(css: unknown): void {
 
 interface UseWebviewMessagesOptions {
   postReady: () => void;
-  applyDslUpdate: (dsl: TextUIDSL) => void;
+  applyDslUpdate: (dsl: TextUIDSL | NavigationFlowDSL) => void;
   setError: (value: ErrorInfo | string | null) => void;
   setUpdateStatus: Dispatch<SetStateAction<PreviewUpdateStatus>>;
   setLastCompletedAt: (value: number | null) => void;
@@ -112,12 +112,12 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
 
       switch (message.type) {
         case 'json':
-          applyDslUpdate(message.json as TextUIDSL);
+          applyDslUpdate(message.json as TextUIDSL | NavigationFlowDSL);
           previewUpdateFeedbackRef.current?.handlePreviewComplete();
           setError(null);
           break;
         case 'update':
-          applyDslUpdate(message.data as TextUIDSL);
+          applyDslUpdate(message.data as TextUIDSL | NavigationFlowDSL);
           previewUpdateFeedbackRef.current?.handlePreviewComplete();
           setError(null);
           break;

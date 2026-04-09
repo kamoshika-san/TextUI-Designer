@@ -3,8 +3,10 @@ import { createRoot } from 'react-dom/client';
 import { ThemeToggle } from './components/ThemeToggle';
 import { CustomThemeSelector } from './components/CustomThemeSelector';
 import { OverlayDiffViewer } from './components/OverlayDiffViewer';
+import { FlowPreviewPanel } from './components/FlowPreviewPanel';
 import { renderRegisteredComponent, registerBuiltInComponents } from './component-map';
-import type { TextUIDSL, ComponentDef } from '../domain/dsl-types';
+import type { NavigationFlowDSL, TextUIDSL, ComponentDef } from '../domain/dsl-types';
+import { isNavigationFlowDSL } from '../domain/dsl-types';
 import type { VisualDiffResult } from '../domain/diff/visual-diff-model';
 import type { ConflictViewResult } from '../domain/diff/conflict-webview-model';
 import type { OverlayDiffState } from '../domain/diff/overlay-diff-types';
@@ -24,14 +26,19 @@ import {
 } from './jump-to-dsl-onboarding';
 
 const vscodeApi = getVSCodeApi();
+type PreviewDocument = TextUIDSL | NavigationFlowDSL;
 
 const isDevelopmentMode = Boolean(
   (typeof globalThis !== 'undefined' && (globalThis as { __TUI_DEV_MODE__?: boolean }).__TUI_DEV_MODE__) ||
   window.location.search.includes('textui-dev=true')
 );
 
+function isTextUiDsl(value: PreviewDocument | null): value is TextUIDSL {
+  return Boolean(value && typeof value === 'object' && 'page' in value);
+}
+
 const App: React.FC = () => {
-  const [json, setJson] = useState<TextUIDSL | null>(null);
+  const [json, setJson] = useState<PreviewDocument | null>(null);
   const [error, setError] = useState<ErrorInfo | string | null>(null);
   const [updateStatus, setUpdateStatus] = useState<PreviewUpdateStatus>('idle');
   const [lastCompletedAt, setLastCompletedAt] = useState<number | null>(null);
@@ -93,9 +100,8 @@ const App: React.FC = () => {
     return () => window.clearTimeout(timeout);
   }, [updateStatus]);
 
-  const applyDslUpdate = useCallback((incomingDsl: TextUIDSL) => {
+  const applyDslUpdate = useCallback((incomingDsl: PreviewDocument) => {
     const startedAt = performance.now();
-    // 計測: 受信DSLのhash計算時間（T-20260317-006）
     const incomingHash = hashString(JSON.stringify(incomingDsl));
     const incomingHashMs = isDevelopmentMode ? performance.now() - startedAt : 0;
 
@@ -103,17 +109,16 @@ const App: React.FC = () => {
       if (!previousJson) {
         if (isDevelopmentMode) {
           const elapsed = performance.now() - startedAt;
-          console.debug('[React][diff-render] 初回描画を適用しました', {
+          console.debug('[React][diff-render] first render applied', {
             elapsedMs: Number(elapsed.toFixed(2)),
             incomingHashMs: Number(incomingHashMs.toFixed(2)),
-            changedCount: incomingDsl.page?.components?.length || 0,
+            changedCount: isNavigationFlowDSL(incomingDsl) ? incomingDsl.flow.screens.length : incomingDsl.page?.components?.length || 0,
             skipped: false
           });
         }
         return incomingDsl;
       }
 
-      // 計測: 前回JSONのhash計算時間（T-20260317-006）
       const tPrevStart = isDevelopmentMode ? performance.now() : 0;
       const previousHash = hashString(JSON.stringify(previousJson));
       const previousHashMs = isDevelopmentMode ? performance.now() - tPrevStart : 0;
@@ -121,7 +126,7 @@ const App: React.FC = () => {
       if (previousHash === incomingHash) {
         if (isDevelopmentMode) {
           const elapsed = performance.now() - startedAt;
-          console.debug('[React][diff-render] 変更がないため再描画をスキップしました', {
+          console.debug('[React][diff-render] identical payload skipped', {
             elapsedMs: Number(elapsed.toFixed(2)),
             incomingHashMs: Number(incomingHashMs.toFixed(2)),
             previousHashMs: Number(previousHashMs.toFixed(2)),
@@ -132,7 +137,10 @@ const App: React.FC = () => {
         return previousJson;
       }
 
-      // 計測: mergeDslWithPrevious の所要時間（T-20260317-006）
+      if (isNavigationFlowDSL(previousJson) || isNavigationFlowDSL(incomingDsl)) {
+        return incomingDsl;
+      }
+
       const tMergeStart = isDevelopmentMode ? performance.now() : 0;
       const mergedDsl = mergeDslWithPrevious(previousJson, incomingDsl);
       const mergeMs = isDevelopmentMode ? performance.now() - tMergeStart : 0;
@@ -144,7 +152,7 @@ const App: React.FC = () => {
 
       if (isDevelopmentMode) {
         const elapsed = performance.now() - startedAt;
-        console.debug('[React][diff-render] 差分描画を適用しました', {
+        console.debug('[React][diff-render] component diff applied', {
           elapsedMs: Number(elapsed.toFixed(2)),
           incomingHashMs: Number(incomingHashMs.toFixed(2)),
           previousHashMs: Number(previousHashMs.toFixed(2)),
@@ -160,7 +168,7 @@ const App: React.FC = () => {
 
   const postReady = useCallback(() => {
     if (vscodeApi?.postMessage) {
-      console.log('[React] WebView準備完了メッセージを送信');
+      console.log('[React] posting webview-ready');
       vscodeApi.postMessage({ type: 'webview-ready' });
     }
   }, []);
@@ -181,7 +189,6 @@ const App: React.FC = () => {
 
   const handleExport = () => {
     if (vscodeApi?.postMessage) {
-      console.log('[React] エクスポートボタンがクリックされました');
       vscodeApi.postMessage({ type: 'export' });
     }
   };
@@ -207,7 +214,6 @@ const App: React.FC = () => {
   };
 
   if (overlayDiffState) {
-    console.log('[WebView] Rendering OverlayDiffViewer with state:', overlayDiffState);
     return <OverlayDiffViewer state={overlayDiffState} />;
   }
 
@@ -219,8 +225,45 @@ const App: React.FC = () => {
     );
   }
   if (!json) {
-    // First-load error — no previous preview to show behind it
     return <ErrorPanel error={error!} />;
+  }
+
+  if (isNavigationFlowDSL(json)) {
+    return (
+      <div
+        className={showJumpToDslHoverIndicator ? 'textui-preview-root' : 'textui-preview-root textui-preview-root-hide-jump-hover'}
+        style={{ padding: 24, position: 'relative' }}
+      >
+        <ThemeToggle />
+        <CustomThemeSelector />
+        <ExportButton onExport={handleExport} />
+        {showUpdateIndicator ? (
+          <UpdateIndicator
+            status={updateStatus}
+            lastCompletedAt={lastCompletedAt}
+            showRelativeTimestamp={isDevelopmentMode}
+          />
+        ) : null}
+        <FlowPreviewPanel flowDsl={json} />
+        {error ? (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+            background: 'rgba(20, 5, 5, 0.96)',
+            borderBottom: '1px solid rgba(239, 68, 68, 0.5)',
+          }}>
+            <ErrorPanel error={error} />
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (!isTextUiDsl(json)) {
+    return <ErrorPanel error="Unsupported preview payload." />;
   }
 
   const components: ComponentDef[] = json.page?.components || [];
@@ -281,7 +324,7 @@ const App: React.FC = () => {
                 checked={dismissJumpToDslForever}
                 onChange={(event) => setDismissJumpToDslForever(event.target.checked)}
               />
-              今後表示しない / Don&apos;t show again
+              以後は表示しない / Don&apos;t show again
             </label>
             <button
               type="button"
@@ -350,7 +393,7 @@ const App: React.FC = () => {
       >
         <div style={{ fontSize: '0.8rem', lineHeight: 1.45 }}>
           <strong style={{ fontWeight: 700 }}>Jump to DSL</strong>
-          <span style={{ opacity: 0.9 }}>  Ctrl+Shift+Click / Ctrl+Shift+クリック</span>
+          <span style={{ opacity: 0.9 }}>  Ctrl+Shift+Click</span>
         </div>
         <div style={{ fontSize: '0.76rem', opacity: 0.78, lineHeight: 1.4 }}>
           Preview component to source navigation stays available after the first-run tip.
