@@ -5,6 +5,10 @@ export interface ResolveNavigationJumpTargetOptions {
   lastPreviewFile?: string;
 }
 
+function isWindowsAbsolutePath(filePath: string): boolean {
+  return /^[A-Za-z]:[\\/]/.test(filePath);
+}
+
 function isUiDslFile(filePath: string): boolean {
   const lower = filePath.toLowerCase();
   return lower.endsWith('.tui.yml') || lower.endsWith('.tui.yaml');
@@ -24,7 +28,15 @@ function isSupportedDslFile(filePath: string | undefined): filePath is string {
 }
 
 function isCrossPlatformAbsolutePath(filePath: string): boolean {
-  return path.isAbsolute(filePath) || /^[A-Za-z]:[\\/]/.test(filePath);
+  return path.isAbsolute(filePath) || isWindowsAbsolutePath(filePath);
+}
+
+function resolveCrossPlatformRelativePath(anchorFile: string, relativePath: string): string {
+  const anchorDir = path.dirname(anchorFile);
+  if (isWindowsAbsolutePath(anchorDir)) {
+    return path.win32.normalize(path.win32.resolve(anchorDir, relativePath));
+  }
+  return path.resolve(anchorDir, relativePath);
 }
 
 function resolveAnchorFile(options: ResolveNavigationJumpTargetOptions): string | undefined {
@@ -55,5 +67,5 @@ export function resolveNavigationJumpTargetFile(
     return options.requestedTargetFilePath;
   }
 
-  return path.resolve(path.dirname(anchorFile), options.requestedTargetFilePath);
+  return resolveCrossPlatformRelativePath(anchorFile, options.requestedTargetFilePath);
 }

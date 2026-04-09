@@ -4,6 +4,10 @@ import type { NavigationFlowDSL } from '../../domain/dsl-types';
 
 type NavigationFlowLoader = (filePath: string) => { dsl: NavigationFlowDSL };
 
+function isWindowsAbsolutePath(filePath: string): boolean {
+  return /^[A-Za-z]:[\\/]/.test(filePath);
+}
+
 function isUiDslFile(filePath: string): boolean {
   const lower = filePath.toLowerCase();
   return lower.endsWith('.tui.yml') || lower.endsWith('.tui.yaml');
@@ -19,7 +23,18 @@ function isNavigationFlowFile(filePath: string): boolean {
 }
 
 function normalizePath(filePath: string): string {
-  return path.normalize(filePath).toLowerCase();
+  if (isWindowsAbsolutePath(filePath)) {
+    return path.win32.normalize(filePath).replace(/[\\/]+/g, '/').toLowerCase();
+  }
+  return path.normalize(filePath).replace(/[\\/]+/g, '/').toLowerCase();
+}
+
+function resolveCrossPlatformRelativePath(anchorFile: string, relativePath: string): string {
+  const anchorDir = path.dirname(anchorFile);
+  if (isWindowsAbsolutePath(anchorDir)) {
+    return path.win32.normalize(path.win32.resolve(anchorDir, relativePath));
+  }
+  return path.resolve(anchorDir, relativePath);
 }
 
 function matchesPath(left: string, right: string): boolean {
@@ -32,7 +47,7 @@ function resolveRelatedPageFiles(
 ): string[] {
   try {
     const { dsl } = loader(flowFilePath);
-    return dsl.flow.screens.map(screen => path.resolve(path.dirname(flowFilePath), screen.page));
+    return dsl.flow.screens.map(screen => resolveCrossPlatformRelativePath(flowFilePath, screen.page));
   } catch {
     return [];
   }
