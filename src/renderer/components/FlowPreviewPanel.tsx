@@ -77,13 +77,6 @@ export const FlowPreviewPanel: React.FC<FlowPreviewPanelProps> = ({ flowDsl, onJ
             flowDsl={flowDsl}
             selectedScreenId={selectedScreenId}
             onSelectScreen={setSelectedScreenId}
-            onJumpToFlowDsl={(screenId) => {
-              const screenIndex = flowDsl.flow.screens.findIndex(screen => screen.id === screenId);
-              if (screenIndex >= 0) {
-                onJumpToDsl(`/flow/screens/${screenIndex}`, 'FlowScreen');
-              }
-            }}
-            onJumpToPageDsl={(pagePath) => onJumpToDsl('/page', 'ScreenPage', pagePath)}
             screenStates={diagramDiffState?.screenStates}
             transitionStates={diagramDiffState?.transitionStates}
           />

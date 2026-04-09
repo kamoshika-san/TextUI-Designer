@@ -9,8 +9,6 @@ interface FlowDiagramProps {
   flowDsl: NavigationFlowDSL;
   selectedScreenId: string;
   onSelectScreen: (screenId: string) => void;
-  onJumpToFlowDsl: (screenId: string) => void;
-  onJumpToPageDsl: (pagePath: string) => void;
   screenStates?: Record<string, FlowDiffVisualStatus>;
   transitionStates?: Record<string, FlowDiffVisualStatus>;
 }
