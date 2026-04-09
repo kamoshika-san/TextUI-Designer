@@ -5,35 +5,31 @@ import type { FlowDiffVisualStatus } from '../../services/semantic-diff';
 interface FlowNodeProps {
   screen: ScreenRef;
   isEntry: boolean;
-  depth: number;
   isSelected: boolean;
+  isOnSelectedPath: boolean;
   visualStatus: FlowDiffVisualStatus;
   onSelect: (screenId: string) => void;
-  onJumpToFlowDsl: (screenId: string) => void;
-  onJumpToPageDsl: (pagePath: string) => void;
 }
 
 export const FlowNode: React.FC<FlowNodeProps> = ({
   screen,
   isEntry,
-  depth,
   isSelected,
+  isOnSelectedPath,
   visualStatus,
-  onSelect,
-  onJumpToFlowDsl,
-  onJumpToPageDsl
+  onSelect
 }) => {
   const className = [
     'textui-flow-node',
     isEntry ? 'is-entry' : '',
     isSelected ? 'is-selected' : '',
+    isOnSelectedPath && !isSelected ? 'is-on-path' : '',
     visualStatus !== 'unchanged' ? `is-${visualStatus}` : ''
   ].filter(Boolean).join(' ');
 
   return (
     <div
       className={className}
-      style={{ ['--textui-flow-depth' as string]: depth } as React.CSSProperties}
       data-screen-id={screen.id}
       role="button"
       tabIndex={0}
@@ -46,35 +42,14 @@ export const FlowNode: React.FC<FlowNodeProps> = ({
         }
       }}
     >
-      <div className="textui-flow-node-kicker">{isEntry ? 'Entry' : 'Screen'}</div>
-      {visualStatus !== 'unchanged' ? <div className="textui-flow-node-status">{visualStatus.toUpperCase()}</div> : null}
+      <div className="textui-flow-node-badges">
+        {isEntry ? <span className="textui-flow-node-badge is-entry-badge">Entry</span> : null}
+        {visualStatus !== 'unchanged' ? (
+          <span className={`textui-flow-node-badge is-diff-badge is-${visualStatus}`}>{visualStatus.toUpperCase()}</span>
+        ) : null}
+      </div>
       <div className="textui-flow-node-title">{screen.title || screen.id}</div>
-      <div className="textui-flow-node-meta">
-        <span className="textui-flow-node-id">{screen.id}</span>
-        <span className="textui-flow-node-page">{screen.page}</span>
-      </div>
-      <div className="textui-flow-node-actions">
-        <button
-          type="button"
-          className="textui-flow-node-action"
-          onClick={(event) => {
-            event.stopPropagation();
-            onJumpToFlowDsl(screen.id);
-          }}
-        >
-          Jump to flow DSL
-        </button>
-        <button
-          type="button"
-          className="textui-flow-node-action"
-          onClick={(event) => {
-            event.stopPropagation();
-            onJumpToPageDsl(screen.page);
-          }}
-        >
-          Open page DSL
-        </button>
-      </div>
+      <div className="textui-flow-node-id">{screen.id}</div>
     </div>
   );
 };

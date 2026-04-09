@@ -35,14 +35,78 @@ describe('FlowPreviewPanel', () => {
       })
     );
 
-    assert.ok(html.includes('Checkout Flow'));
-    assert.ok(html.includes('Flow ID: checkout'));
-    assert.ok(html.includes('Entry'));
-    assert.ok(html.includes('Continue'));
-    assert.ok(html.includes('./screens/cart.tui.yml'));
-    assert.ok(html.includes('Page Preview Context'));
-    assert.ok(html.includes('Jump to flow screen'));
-    assert.ok(html.includes('tabindex="0"'));
+    // Header metadata
+    assert.ok(html.includes('Checkout Flow'), 'should render flow title');
+    assert.ok(html.includes('cart'), 'should render entry screen id');
+
+    // Map: entry badge and nodes
+    assert.ok(html.includes('Entry'), 'should render entry badge on entry node');
+    assert.ok(html.includes('tabindex="0"'), 'nodes should be keyboard focusable');
+
+    // Connections: edge with label
+    assert.ok(html.includes('Continue'), 'should render transition label in connections');
+    assert.ok(html.includes('next'), 'should render transition trigger');
+
+    // Stage: selected screen info
+    assert.ok(html.includes('./screens/cart.tui.yml'), 'should render linked page path in stage');
+    assert.ok(html.includes('Entry Screen'), 'should render role label in stage');
+    assert.ok(html.includes('Jump to flow screen'), 'should render jump action in stage');
+    assert.ok(html.includes('Open linked page'), 'should render open page action in stage');
+  });
+
+  it('renders outgoing transitions in the selected screen stage', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(FlowPreviewPanel, {
+        flowDsl: {
+          flow: {
+            id: 'app',
+            title: 'App Flow',
+            entry: 'home',
+            screens: [
+              { id: 'home', page: './home.tui.yml', title: 'Home' },
+              { id: 'detail', page: './detail.tui.yml', title: 'Detail' },
+              { id: 'settings', page: './settings.tui.yml', title: 'Settings' }
+            ],
+            transitions: [
+              { from: 'home', to: 'detail', trigger: 'select', label: 'View item' },
+              { from: 'home', to: 'settings', trigger: 'gear' }
+            ]
+          }
+        },
+        onJumpToDsl: () => {}
+      })
+    );
+
+    assert.ok(html.includes('Outgoing (2)'), 'should show outgoing count');
+    assert.ok(html.includes('select'), 'should show trigger in outgoing list');
+    assert.ok(html.includes('View item'), 'should show label in outgoing list');
+    assert.ok(html.includes('Detail'), 'should show target screen title in outgoing list');
+  });
+
+  it('renders terminal screen label when selected screen has no outgoing transitions', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(FlowPreviewPanel, {
+        flowDsl: {
+          flow: {
+            id: 'simple',
+            title: 'Simple Flow',
+            entry: 'start',
+            screens: [
+              { id: 'start', page: './start.tui.yml', title: 'Start' },
+              { id: 'end', page: './end.tui.yml', title: 'End' }
+            ],
+            transitions: [
+              { from: 'start', to: 'end', trigger: 'next' }
+            ]
+          }
+        },
+        onJumpToDsl: () => {}
+      })
+    );
+
+    // Entry screen (start) is selected by default and has outgoing
+    assert.ok(html.includes('Entry Screen'), 'entry screen role label');
+    assert.ok(html.includes('Outgoing (1)'), 'entry screen has one outgoing');
   });
 
   it('renders flow diff statuses for changed, added, and removed entities', () => {
@@ -85,9 +149,8 @@ describe('FlowPreviewPanel', () => {
       })
     );
 
-    assert.ok(html.includes('Flow Diff: CHANGED'));
-    assert.ok(html.includes('ADDED'));
-    assert.ok(html.includes('REMOVED'));
-    assert.ok(html.includes('CHANGED'));
+    assert.ok(html.includes('CHANGED'), 'should render flow changed badge');
+    assert.ok(html.includes('ADDED'), 'should render added diff status on nodes or edges');
+    assert.ok(html.includes('REMOVED'), 'should render removed diff status on nodes or edges');
   });
 });

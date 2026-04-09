@@ -12,6 +12,8 @@ import type { ConflictViewResult } from '../domain/diff/conflict-webview-model';
 import type { OverlayDiffState } from '../domain/diff/overlay-diff-types';
 import { getVSCodeApi } from './vscode-api';
 import { createComponentKeys, hashString, mergeDslWithPrevious } from './preview-diff';
+import { buildFlowSemanticDiff } from '../services/semantic-diff';
+import type { FlowSemanticDiffResult } from '../services/semantic-diff';
 import type { ErrorInfo } from './error-guidance';
 import { ErrorPanel } from './components/ErrorPanel';
 import { ExportButton } from './components/ExportButton';
@@ -52,6 +54,7 @@ const App: React.FC = () => {
   );
   const [dismissJumpToDslForever, setDismissJumpToDslForever] = useState(false);
   const [overlayDiffState, setOverlayDiffState] = useState<OverlayDiffState | null>(null);
+  const [flowDiffResult, setFlowDiffResult] = useState<FlowSemanticDiffResult | null>(null);
   const prevComponentsKeysRef = useRef<{ components: ComponentDef[]; keys: string[] } | null>(null);
 
   useEffect(() => {
@@ -138,6 +141,9 @@ const App: React.FC = () => {
       }
 
       if (isNavigationFlowDSL(previousJson) || isNavigationFlowDSL(incomingDsl)) {
+        if (isNavigationFlowDSL(previousJson) && isNavigationFlowDSL(incomingDsl)) {
+          setFlowDiffResult(buildFlowSemanticDiff({ previousDsl: previousJson, nextDsl: incomingDsl }));
+        }
         return incomingDsl;
       }
 
@@ -245,7 +251,7 @@ const App: React.FC = () => {
             showRelativeTimestamp={isDevelopmentMode}
           />
         ) : null}
-        <FlowPreviewPanel flowDsl={json} onJumpToDsl={handleJumpToDsl} />
+        <FlowPreviewPanel flowDsl={json} onJumpToDsl={handleJumpToDsl} diffResult={flowDiffResult ?? undefined} />
         {error ? (
           <div style={{
             position: 'fixed',
