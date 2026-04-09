@@ -92,6 +92,43 @@ export const TOOLS: ToolDefinition[] = [
     }
   },
   {
+    name: 'validate_flow',
+    description: 'Navigation flow DSL file を検証し、diagnostics を返します。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        filePath: { type: 'string', description: '.tui.flow.yml / .tui.flow.yaml file path' }
+      },
+      required: ['filePath']
+    }
+  },
+  {
+    name: 'compare_flow',
+    description: 'Navigation flow DSL file を git base/head 間で比較し、machine-readable な flow diff を返します。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        filePath: { type: 'string' },
+        baseRef: { type: 'string' },
+        headRef: { type: 'string' }
+      },
+      required: ['filePath', 'baseRef', 'headRef']
+    }
+  },
+  {
+    name: 'export_flow',
+    description: 'Navigation flow DSL file を flow exporter で出力します。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        filePath: { type: 'string' },
+        format: { type: 'string', description: 'react-router/react-flow/vue-flow/svelte-flow/html-flow など' },
+        outputPath: { type: 'string' }
+      },
+      required: ['filePath']
+    }
+  },
+  {
     name: 'list_components',
     description: '利用可能なTextUIコンポーネント一覧を返します。',
     inputSchema: {

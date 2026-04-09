@@ -283,6 +283,114 @@ page:
     assert.strictEqual(external.source, 'external');
   });
 
+  it('flow validate --json validates a navigation flow file', () => {
+    const flowFile = path.join(repoRoot, 'sample/12-navigation/app.tui.flow.yml');
+    const output = execFileSync('node', [cliPath, 'flow', 'validate', '--file', flowFile, '--json'], { encoding: 'utf8' });
+    const parsed = JSON.parse(output);
+    assert.strictEqual(parsed.valid, true);
+    assert.ok(Array.isArray(parsed.issues));
+  });
+
+  it('flow export writes a flow exporter artifact', () => {
+    const flowFile = path.join(repoRoot, 'sample/12-navigation/app.tui.flow.yml');
+    const outputPath = path.join(tmpDir, 'nav-flow.tsx');
+    const output = execFileSync('node', [
+      cliPath,
+      'flow',
+      'export',
+      '--file',
+      flowFile,
+      '--format',
+      'react-router',
+      '--output',
+      outputPath,
+      '--json'
+    ], { encoding: 'utf8' });
+
+    const parsed = JSON.parse(output);
+    assert.ok(fs.existsSync(outputPath));
+    assert.strictEqual(parsed.output, outputPath);
+    assert.strictEqual(parsed.provider, 'react-flow');
+  });
+
+  it('flow compare --json emits machine-readable flow diff from git revisions', function () {
+    this.timeout(20000);
+    const gitRepo = path.join(tmpDir, 'git-flow-compare-repo');
+    fs.mkdirSync(gitRepo, { recursive: true });
+    execFileSync('git', ['init'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['config', 'user.name', 'Codex Test'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['config', 'user.email', 'codex@example.com'], { cwd: gitRepo, encoding: 'utf8' });
+
+    const flowPath = path.join(gitRepo, 'app.tui.flow.yml');
+    fs.mkdirSync(path.join(gitRepo, 'screens'), { recursive: true });
+    fs.writeFileSync(path.join(gitRepo, 'screens', 'cart.tui.yml'), 'page:\n  id: cart\n  title: Cart\n  layout: vertical\n  components: []\n', 'utf8');
+    fs.writeFileSync(path.join(gitRepo, 'screens', 'shipping.tui.yml'), 'page:\n  id: shipping\n  title: Shipping\n  layout: vertical\n  components: []\n', 'utf8');
+    fs.writeFileSync(path.join(gitRepo, 'screens', 'confirm.tui.yml'), 'page:\n  id: confirm\n  title: Confirm\n  layout: vertical\n  components: []\n', 'utf8');
+    fs.writeFileSync(flowPath, `
+flow:
+  id: checkout
+  title: "Checkout Flow"
+  entry: cart
+  screens:
+    - id: cart
+      page: ./screens/cart.tui.yml
+      title: Cart
+    - id: shipping
+      page: ./screens/shipping.tui.yml
+      title: Shipping
+  transitions:
+    - from: cart
+      to: shipping
+      trigger: next
+      label: Continue
+`, 'utf8');
+    execFileSync('git', ['add', 'app.tui.flow.yml'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['commit', '-m', 'base'], { cwd: gitRepo, encoding: 'utf8' });
+    const baseRef = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: gitRepo, encoding: 'utf8' }).trim();
+
+    fs.writeFileSync(flowPath, `
+flow:
+  id: checkout
+  title: "Checkout Flow v2"
+  entry: shipping
+  screens:
+    - id: shipping
+      page: ./screens/shipping.tui.yml
+      title: Shipping
+    - id: confirm
+      page: ./screens/confirm.tui.yml
+      title: Confirm
+  transitions:
+    - from: shipping
+      to: confirm
+      trigger: next
+      label: Review
+`, 'utf8');
+    execFileSync('git', ['add', 'app.tui.flow.yml'], { cwd: gitRepo, encoding: 'utf8' });
+    execFileSync('git', ['commit', '-m', 'head'], { cwd: gitRepo, encoding: 'utf8' });
+    const headRef = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: gitRepo, encoding: 'utf8' }).trim();
+
+    const output = execFileSync('node', [
+      cliPath,
+      'flow',
+      'compare',
+      '--base',
+      baseRef,
+      '--head',
+      headRef,
+      '--file',
+      flowPath,
+      '--json'
+    ], { encoding: 'utf8', cwd: gitRepo });
+
+    const parsed = JSON.parse(output);
+    assert.strictEqual(parsed.kind, 'flow-semantic-diff-result/v1');
+    assert.strictEqual(parsed.metadata.baseRef, baseRef);
+    assert.strictEqual(parsed.metadata.headRef, headRef);
+    assert.strictEqual(parsed.result.ok, true);
+    assert.ok(parsed.result.semantic.summary.changed >= 1);
+  });
+
   it('providers plain output keeps 3-column compatibility even with --provider-module', () => {
     const output = execFileSync('node', [
       cliPath,

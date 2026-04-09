@@ -23,6 +23,7 @@ const CLI_SUPPORTED_ROOT_COMMANDS = new Set([
   'plan',
   'apply',
   'export',
+  'flow',
   'capture',
   'import',
   'state',

@@ -58,6 +58,47 @@ export function createToolHandlers(context: ToolHandlerContext): ToolHandlers {
         skipTokenValidation: getObjectBoolean(args, 'skipTokenValidation')
       });
     },
+    validate_flow: async () => {
+      const filePath = getObjectValue(args, 'filePath');
+      if (!filePath) {
+        throw new Error('validate_flow requires filePath');
+      }
+      return runCli({
+        args: ['flow', 'validate', '--file', filePath, '--json'],
+        parseJson: true
+      });
+    },
+    compare_flow: async () => {
+      const filePath = getObjectValue(args, 'filePath');
+      const baseRef = getObjectValue(args, 'baseRef');
+      const headRef = getObjectValue(args, 'headRef');
+      if (!filePath || !baseRef || !headRef) {
+        throw new Error('compare_flow requires filePath, baseRef, and headRef');
+      }
+      return runCli({
+        args: ['flow', 'compare', '--base', baseRef, '--head', headRef, '--file', filePath, '--json'],
+        parseJson: true
+      });
+    },
+    export_flow: async () => {
+      const filePath = getObjectValue(args, 'filePath');
+      if (!filePath) {
+        throw new Error('export_flow requires filePath');
+      }
+      const format = getObjectValue(args, 'format');
+      const outputPath = getObjectValue(args, 'outputPath');
+      return runCli({
+        args: [
+          'flow',
+          'export',
+          '--file', filePath,
+          ...appendOptionalPair('--format', format),
+          ...appendOptionalPair('--output', outputPath),
+          '--json'
+        ],
+        parseJson: true
+      });
+    },
     explain_error: async () => {
       const diagnostics = getObjectUnknown(args, 'diagnostics');
       if (!Array.isArray(diagnostics)) {
