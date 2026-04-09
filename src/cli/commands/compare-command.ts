@@ -7,7 +7,7 @@ import {
   renderSemanticDiffHumanReadable,
   runSemanticDiffCompare,
   type SemanticDiffOutputMode
-} from '../../services/semantic-diff';
+} from '../../services/semantic-diff/git-semantic-diff';
 
 function parseMode(): SemanticDiffOutputMode {
   const rawMode = (getArg('--mode') ?? 'human-readable').toLowerCase();
