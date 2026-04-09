@@ -46,6 +46,33 @@ const BUILTIN_PROVIDERS: CliProviderDefinition[] = [
     }
   },
   {
+    name: 'vue-flow',
+    extension: '.ts',
+    version: '1.0.0',
+    render: async (dsl: TextUIDSL | NavigationFlowDSL) => {
+      const { FlowVueExporter } = await import('../exporters/flow-vue-exporter');
+      return new FlowVueExporter().export(dsl as NavigationFlowDSL, { format: 'vue-flow' });
+    }
+  },
+  {
+    name: 'svelte-flow',
+    extension: '.svelte',
+    version: '1.0.0',
+    render: async (dsl: TextUIDSL | NavigationFlowDSL) => {
+      const { FlowSvelteExporter } = await import('../exporters/flow-svelte-exporter');
+      return new FlowSvelteExporter().export(dsl as NavigationFlowDSL, { format: 'svelte-flow' });
+    }
+  },
+  {
+    name: 'html-flow',
+    extension: '.html',
+    version: '1.0.0',
+    render: async (dsl: TextUIDSL | NavigationFlowDSL) => {
+      const { FlowHtmlExporter } = await import('../exporters/flow-html-exporter');
+      return new FlowHtmlExporter().export(dsl as NavigationFlowDSL, { format: 'html-flow' });
+    }
+  },
+  {
     name: 'pug',
     extension: '.pug',
     version: '1.0.0',
