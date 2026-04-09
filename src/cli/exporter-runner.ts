@@ -1,4 +1,4 @@
-import type { TextUIDSL } from '../domain/dsl-types';
+import type { NavigationFlowDSL, TextUIDSL } from '../domain/dsl-types';
 import * as path from 'path';
 import * as fs from 'fs';
 import { getProvider, listProviders, type CliProviderDefinition } from './provider-registry';
@@ -105,7 +105,7 @@ export async function getSupportedProviderNames(options: ProviderLookupOptions =
 }
 
 export async function runExport(
-  dsl: TextUIDSL,
+  dsl: TextUIDSL | NavigationFlowDSL,
   provider: CliProvider,
   options: RunExportOptions = {}
 ): Promise<string> {

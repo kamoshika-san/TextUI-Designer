@@ -1,4 +1,5 @@
-import type { TextUIDSL } from '../domain/dsl-types';
+import type { NavigationFlowDSL, TextUIDSL } from '../domain/dsl-types';
+import { isNavigationFlowDSL } from '../domain/dsl-types';
 import { loadDslWithIncludesFromPath } from '../dsl/load-dsl-with-includes';
 import { CacheManager } from '../utils/cache-manager';
 import { DiffManager } from './metrics/diff-manager';
@@ -93,7 +94,7 @@ export class ExportManager {
         this.lastIncrementalDowngradeReason = null;
 
         let result: string;
-        if (this.shouldAttemptIncrementalRoute(normalizedOptions)) {
+        if (!isNavigationFlowDSL(dsl) && this.shouldAttemptIncrementalRoute(normalizedOptions)) {
           const incrementalDecisionStart = performance.now();
           const incrementalTargets = this.buildIncrementalRenderTargets(dsl, normalizedOptions);
           if (incrementalTargets) {
@@ -116,7 +117,7 @@ export class ExportManager {
           result = await this.runMeasuredFullRender(dsl, normalizedOptions, 'direct');
         }
 
-        if (normalizedOptions.sourcePath) {
+        if (normalizedOptions.sourcePath && !isNavigationFlowDSL(dsl)) {
           this.exportSnapshots.set(normalizedOptions.sourcePath, dsl);
         }
         return result;
@@ -177,12 +178,14 @@ export class ExportManager {
   }
 
   private async runMeasuredFullRender(
-    dsl: TextUIDSL,
+    dsl: TextUIDSL | NavigationFlowDSL,
     options: ExportOptions,
     trigger: 'direct' | 'fallback'
   ): Promise<string> {
     const startedAt = performance.now();
-    const result = await this.optimizingExecutor.runOptimizedExport(dsl, options);
+    const result = isNavigationFlowDSL(dsl)
+      ? await this.runNavigationExporter(dsl, options)
+      : await this.optimizingExecutor.runOptimizedExport(dsl, options);
     this.performanceMonitor.recordIncrementalRouteSample(
       'full-render',
       performance.now() - startedAt,
@@ -193,6 +196,14 @@ export class ExportManager {
       }
     );
     return result;
+  }
+
+  private async runNavigationExporter(dsl: NavigationFlowDSL, options: ExportOptions): Promise<string> {
+    const exporter = this.exporters.get(options.format);
+    if (!exporter) {
+      throw new Error(`Unsupported export format: ${options.format}`);
+    }
+    return exporter.export(dsl, options);
   }
 
   private recordIncrementalFallbackSample(

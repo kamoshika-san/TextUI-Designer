@@ -1,4 +1,4 @@
-import type { TextUIDSL } from '../domain/dsl-types';
+import type { NavigationFlowDSL, TextUIDSL } from '../domain/dsl-types';
 import type { DiffRenderTarget } from '../core/textui-core-diff';
 
 export interface ExportOptions {
@@ -27,6 +27,6 @@ export interface ExportOptions {
 }
 
 export interface Exporter {
-  export(dsl: TextUIDSL, options: ExportOptions): Promise<string>;
+  export(dsl: TextUIDSL | NavigationFlowDSL, options: ExportOptions): Promise<string>;
   getFileExtension(): string;
 }

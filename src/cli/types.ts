@@ -1,4 +1,4 @@
-import type { TextUIDSL } from '../domain/dsl-types';
+import type { NavigationFlowDSL, TextUIDSL } from '../domain/dsl-types';
 
 export type ExitCode = 0 | 1 | 2 | 3 | 4;
 
@@ -86,7 +86,7 @@ export interface PlanSummary {
 }
 
 export interface LoadedDsl {
-  dsl: TextUIDSL;
+  dsl: TextUIDSL | NavigationFlowDSL;
   sourcePath: string;
   raw: string;
   kind?: 'ui' | 'navigation-flow';

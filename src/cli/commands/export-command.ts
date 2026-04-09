@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { isNavigationFlowDSL } from '../../domain/dsl-types';
 import { ensureDirectoryForFile, loadDslFromFile, resolveDslFile } from '../io';
 import { validateDsl } from '../validator';
 import {
@@ -44,11 +45,13 @@ export async function handleExportCommand(fileArg: string | undefined): Promise<
     return 2;
   }
 
-  const tokenResolution = resolveDslTokens({
-    dsl: loaded.dsl,
-    sourcePath: loaded.sourcePath,
-    onError: tokenOnError
-  });
+  const tokenResolution = isNavigationFlowDSL(loaded.dsl)
+    ? { dsl: loaded.dsl, issues: [] }
+    : resolveDslTokens({
+        dsl: loaded.dsl,
+        sourcePath: loaded.sourcePath,
+        onError: tokenOnError
+      });
   if (tokenOnError === 'warn' && tokenResolution.issues.length > 0) {
     emitTokenWarnings(tokenResolution.issues);
   }

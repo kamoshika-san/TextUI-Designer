@@ -57,7 +57,7 @@ export async function handleCaptureCommand(args: FileTargetArgs): Promise<ExitCo
   const allowNoSandbox = hasFlag('--allow-no-sandbox');
   ensureDirectoryForFile(output);
 
-  const result = await capturePreviewImageFromDsl(loaded.dsl, withExplicitFallbackHtmlExport({
+  const result = await capturePreviewImageFromDsl(loaded.dsl as import('../../domain/dsl-types').TextUIDSL, withExplicitFallbackHtmlExport({
     outputPath: output,
     themePath,
     useWebViewTheme,

@@ -83,7 +83,7 @@ export async function applyForFile(params: ApplyForFileParams): Promise<ApplyFor
   }
 
   const tokenResolution = resolveDslTokens({
-    dsl: params.loaded.dsl,
+    dsl: params.loaded.dsl as import('../domain/dsl-types').TextUIDSL,
     sourcePath: params.loaded.sourcePath,
     onError: params.tokenOnError
   });
