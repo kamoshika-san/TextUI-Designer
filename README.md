@@ -1,190 +1,182 @@
 # TextUI Designer
 
-TextUI Designer is a VS Code extension for designing UI with a YAML / JSON DSL.
+**Design UI screens in YAML. Preview them live. Export to HTML, React, Svelte, or Vue — without writing layout code.**
 
-This page is the entry point for contributors. Use it to get from local setup to the main development flow quickly, then move to the deeper docs linked below.
+TextUI Designer is a VS Code extension that turns a simple YAML description into a live UI preview and production-ready frontend code. Describe your screen, see it instantly, and ship the markup.
 
-## Start Here
+![TextUI Designer icon](icon.png)
 
-1. Follow the canonical [Setup](docs/SETUP.md) page
-2. Install dependencies: `npm install`
-3. Build the extension output: `npm run compile`
-4. Build the WebView assets: `npm run build-webview`
-5. Run the unit lane: `npm test`
-5. Open the subsystem guide that matches your change area
+---
 
-If you only need the local packaging / install flow for the extension, use [Local Installer](docs/LOCAL_INSTALLER.md).
+## What it does
 
-## Common Commands
-
-| Command | Use |
-|---|---|
-| `npm run compile` | TypeScript compile plus schema generation checks |
-| `npm run build-webview` | Build the React + Vite WebView assets |
-| `npm run lint` | Run ESLint with zero warnings allowed |
-| `npm test` | Compile, lint, and run the unit test suite |
-| `npm run test:all:ci` | Run the full CI-equivalent verification lane |
-| `npm run react-ssot-check` | Focused React Preview / Export parity and theme contract checks |
-| `npm run check:dsl-types-ssot` | Guard against `renderer/types` import regressions |
-| `npm run metrics:collect` | Collect release-gate metrics |
-| `npm run metrics:check:ssot` | Enforce `renderer/types imports = 0` |
-| `npm run check:import-graph` | Check representative cross-lane import boundaries |
-| `npm run package:vsix` | Build a local `.vsix` package |
-
-## Main Developer Path
-
-### Setup and local install
-
-- [Setup](docs/SETUP.md): canonical local environment bootstrap and daily command entry point
-- [Local Installer](docs/LOCAL_INSTALLER.md): local `.vsix` build and installation flow
-- [Settings](docs/SETTINGS.md): extension settings and configuration surface
-- [Contributing](CONTRIBUTING.md): branch strategy, PR flow, and review expectations
-
-### Testing and CI
-
-- [Testing](docs/TESTING.md): canonical test lane guide and command entrypoints
-- [FAQ](docs/FAQ.md): short answers for recurring build, dependency, lint, and test-lane questions
-- [Test Matrix](docs/test-matrix.md): detailed lane semantics and CI interpretation
-- [CI Quality Gate](docs/ci-quality-gate.md): current CI entrypoints and required checks
-- [Green Main Gate](docs/quality-gate-green-main.md): green-main expectations for push / PR flow
-- [Real VS Code Smoke](docs/real-vscode-smoke.md): manual smoke checks that are not part of the default automated lane
-
-### Runtime boundaries
-
-- [Extension Boundary Guide](docs/extension-boundary-guide.md)
-- [CLI Boundary Guide](docs/cli-boundary-guide.md)
-- [MCP Boundary Guide](docs/mcp-boundary-guide.md)
-- [Exporter Boundary Guide](docs/exporter-boundary-guide.md)
-
-### Architecture and specification
-
-- [Spec Authoring Guide](docs/spec-authoring-guide.md)
-- [Glossary](docs/GLOSSARY.md)
-- [Theme Implementation](docs/THEME_IMPLEMENTATION.md)
-- [Schema Pipeline From Spec](docs/schema-pipeline-from-spec.md)
-- [ADR directory](docs/adr)
-
-### Operations and maintenance
-
-- [Maintainer Guide](docs/MAINTAINER_GUIDE.md)
-- [Documentation Owner And Review Cadence](docs/documentation-owner-and-review-cadence.md)
-- [Documentation Governance KPI Dashboard](docs/documentation-governance-kpi-dashboard.md)
-- [CSS SSoT Metrics Definition](docs/css-ssot-metrics-definition.md)
-- [SSoT Monthly Review](docs/ssot-monthly-review.md)
-- [SSoT Violation Playbook](docs/ssot-violation-playbook.md)
-
-## Built-In Component Work
-
-If your change touches built-in components, start with:
-
-- [Adding Built-In Component](docs/adding-built-in-component.md)
-- [Component Add Contract](docs/component-add-contract.md)
-- [Component Registration Touchpoints](docs/component-registration-touchpoints.md)
-
-This area is still being consolidated. Follow the linked leaf guides rather than adding new duplicated procedure text here.
-
-## Product Overview
-
-Core product capabilities:
-
-- author UI in `*.tui.yml` / `*.tui.yaml`
-- preview in a React WebView with `TextUI: Open Preview`
-- export to code with `TextUI: Export to Code`
-- capture preview images
-- validate DSL with schema + diagnostics
-- theme the preview / export path with `textui-theme.yml`
-
-Supported built-in components currently include:
-
-- `Text`
-- `Alert`
-- `Divider`
-- `Link`
-- `Breadcrumb`
-- `Badge`
-- `Icon`
-- `Image`
-- `Progress`
-- `Input`
-- `Checkbox`
-- `Radio`
-- `Select`
-- `DatePicker`
-- `Button`
-- `Container`
-- `Form`
-- `Accordion`
-- `Tabs`
-- `TreeView`
-- `Table`
-- `Spacer`
-
-## Example DSL
+Write a `.tui.yml` file describing your page and components. The extension renders a live preview in a side panel and can export the design to multiple frontend formats with one command.
 
 ```yaml
 page:
-  id: welcome
-  title: "TextUI Sample"
+  id: sign-up
+  title: "Sign Up"
   layout: vertical
   components:
     - Text:
         variant: h1
-        value: "Hello from TextUI"
+        value: "Create your account"
     - Input:
         label: "Email address"
         name: email
         type: email
         required: true
+    - Input:
+        label: "Password"
+        name: password
+        type: password
+        required: true
     - Button:
         kind: primary
-        label: "Submit"
+        label: "Sign Up"
         submit: true
 ```
 
-More examples live under [`sample/`](sample).
+Open `TextUI: Open Preview` → see it rendered. Run `TextUI: Export to Code` → get HTML, Svelte, or Vue output ready to drop into your project.
 
-## Exporter Quick Check
+---
 
-You can verify the compiled HTML exporter without launching VS Code:
+## Key features
 
-```js
-const { HtmlExporter } = require('./out/exporters/html-exporter');
-const yaml = require('yaml');
-const fs = require('fs');
+- **Live preview** — React-powered WebView refreshes as you type
+- **Multi-format export** — generates HTML, Svelte, and Vue output from the same DSL
+- **20+ built-in components** — buttons, inputs, forms, tables, modals, tabs, and more
+- **Theme support** — define a `textui-theme.yml` to apply consistent colors and spacing across preview and export
+- **Component includes** — split large screens into reusable `.tui.yml` fragments with `$include`
+- **DSL validation** — schema-backed diagnostics catch typos and missing required fields inline
+- **Export dry-run** — preview the generated code before writing files with `TextUI: Export Preview`
+- **Jump-to-DSL** — Ctrl+Shift+Click any component in the preview to jump to its source YAML
 
-const dsl = yaml.parse(fs.readFileSync('./sample/01-basic/sample.tui.yml', 'utf8'));
-new HtmlExporter().export(dsl, { format: 'html' }).then(html => console.log(html));
+---
+
+## Getting started
+
+### Install
+
+Search for **TextUI Designer** in the VS Code Extensions panel, or install from the `.vsix` file:
+
+```
+Extensions panel → ••• → Install from VSIX → select the file
 ```
 
-Generated framework files are also available for Svelte and Vue in the current exporter wave:
+### Create your first screen
 
-- `.svelte` output uses a stable `<script lang="ts">`, `<main class="textui-generated">`, and `<style>` layout.
-- `.vue` output uses a stable `<template>`, `<script setup lang="ts">`, and `<style scoped>` layout.
-- both formats preserve the same representative text content and semantic class hooks as the primary HTML lane where intended.
-- both formats keep Tailwind-oriented classes in the generated markup. Enable Tailwind in the consuming app when you want those classes to take effect.
-- current “production-ready” scope means stable generated file shape, compatibility coverage against the primary HTML lane, and release-gate validation. It does not yet mean full framework-specific reactive bindings.
+1. Create a file ending in `.tui.yml` (e.g. `dashboard.tui.yml`)
+2. Add the minimal page structure:
 
-You can sanity-check the compiled framework exporters without launching VS Code:
-
-```js
-const { SvelteExporter } = require('./out/exporters/svelte-exporter');
-const { VueExporter } = require('./out/exporters/vue-exporter');
-const yaml = require('yaml');
-const fs = require('fs');
-
-const dsl = yaml.parse(fs.readFileSync('./sample/01-basic/sample.tui.yml', 'utf8'));
-new SvelteExporter().export(dsl, { format: 'svelte' }).then(code => console.log(code));
-new VueExporter().export(dsl, { format: 'vue' }).then(code => console.log(code));
+```yaml
+page:
+  id: my-screen
+  title: "My Screen"
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: "Hello, TextUI"
+    - Button:
+        kind: primary
+        label: "Get started"
 ```
 
-## What This Page Does Not Cover
+3. Run **TextUI: Open Preview** from the Command Palette (`Ctrl+Shift+P`)
+4. Edit the file — the preview updates live
 
-- full contributor workflow policy
-- branch strategy and PR expectations
-- detailed setup procedure beyond the setup landing page
-- archive policy for historical docs
+### Export to code
 
-Those belong to dedicated pages rather than this entry page.
+Run **TextUI: Export to Code** to generate frontend code. The default format is HTML; change the target in extension settings:
+
+| Setting | Values |
+|---|---|
+| `textui-designer.export.format` | `html` (default), `svelte`, `vue` |
+
+---
+
+## Component library
+
+All components use the same YAML syntax: the component name as the key, properties as children.
+
+| Category | Components |
+|---|---|
+| Text & media | `Text`, `Link`, `Image`, `Icon`, `Badge`, `Progress` |
+| Navigation | `Breadcrumb`, `Tabs`, `TreeView` |
+| Input & form | `Input`, `Checkbox`, `Radio`, `Select`, `DatePicker`, `Form`, `Button` |
+| Layout | `Container`, `Divider`, `Spacer` |
+| Feedback | `Alert`, `Accordion`, `Modal`, `Table` |
+
+Full component reference and property lists: [`sample/`](sample)
+
+---
+
+## Theme support
+
+Create a `textui-theme.yml` next to your DSL files to apply a consistent visual style:
+
+```yaml
+colors:
+  primary: "#2563eb"
+  background: "#ffffff"
+  surface: "#f1f5f9"
+  text: "#1e293b"
+```
+
+The preview and all export targets use the same theme values.
+
+---
+
+## Export formats
+
+| Format | File | Notes |
+|---|---|---|
+| HTML | `.html` | Self-contained, Tailwind-class markup |
+| Svelte | `.svelte` | `<script lang="ts">` + `<style>` layout |
+| Vue | `.vue` | `<script setup lang="ts">` + `<style scoped>` layout |
+
+---
+
+## More examples
+
+The [`sample/`](sample) directory contains working screens showing all components, theme inheritance, modal dialogs, enterprise layouts, and more.
+
+---
+
+## For contributors
+
+The sections below are for developers working on the extension itself.
+
+### Quick setup
+
+```bash
+npm install
+npm run compile
+npm run build-webview
+npm test
+```
+
+Full setup guide: [docs/SETUP.md](docs/SETUP.md)
+
+### Common commands
+
+| Command | Use |
+|---|---|
+| `npm run compile` | TypeScript compile + schema checks |
+| `npm run build-webview` | Build React + Vite WebView assets |
+| `npm run lint` | ESLint (zero warnings) |
+| `npm test` | Compile, lint, unit tests |
+| `npm run test:all:ci` | Full CI-equivalent lane |
+| `npm run package:vsix` | Build local `.vsix` |
+
+### Contributor docs
+
+- [Setup](docs/SETUP.md) · [Testing](docs/TESTING.md) · [Contributing](CONTRIBUTING.md) · [FAQ](docs/FAQ.md)
+- [Extension Boundary Guide](docs/extension-boundary-guide.md) · [Exporter Boundary Guide](docs/exporter-boundary-guide.md)
+- [Adding Built-In Component](docs/adding-built-in-component.md) · [Glossary](docs/GLOSSARY.md)
+
+---
 
 ## License
 
