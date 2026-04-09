@@ -1,0 +1,601 @@
+/* ============================================================
+   FlowPreview — Navigation Flow DSL preview styles
+   ============================================================
+   Design: B-plan — CSS card-based layout with depth columns.
+   Conventions: follows existing textui-* naming, uses the same
+   CSS custom-property palette (--color-*, --spacing-*, etc.).
+   ============================================================ */
+
+/* ── Section root ─────────────────────────────────────────── */
+.textui-flow-preview {
+  font-family: var(--typography-fontFamily, system-ui, -apple-system, sans-serif);
+  color: var(--color-text-primary, #f9fafb);
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+.textui-flow-preview-header {
+  margin-bottom: var(--spacing-lg, 1.5rem);
+}
+
+.textui-flow-preview-eyebrow {
+  font-size: var(--typography-fontSize-xs, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-primary, #60a5fa);
+  margin-bottom: 0.25rem;
+}
+
+.textui-flow-preview-title {
+  font-size: var(--typography-fontSize-2xl, 1.5rem);
+  font-weight: 700;
+  color: var(--color-text-primary, #f9fafb);
+  margin: 0 0 0.5rem;
+  line-height: 1.3;
+}
+
+.light .textui-flow-preview-title {
+  color: var(--color-text-dark, #111827);
+}
+
+/* ── Stats row ────────────────────────────────────────────── */
+.textui-flow-preview-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: var(--typography-fontSize-sm, 0.875rem);
+}
+
+.textui-flow-preview-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--color-text-secondary, #d1d5db);
+}
+
+.light .textui-flow-preview-stat {
+  color: var(--color-text-dark, #4b5563);
+}
+
+.textui-flow-preview-stat-value {
+  font-weight: 700;
+  color: var(--color-text-primary, #f3f4f6);
+}
+
+.light .textui-flow-preview-stat-value {
+  color: var(--color-text-dark, #111827);
+}
+
+.textui-flow-preview-stat-label {
+  font-weight: 400;
+  opacity: 0.78;
+}
+
+/* ── Diff badge / summary ─────────────────────────────────── */
+.textui-flow-preview-diff-badge {
+  display: inline-block;
+  padding: 0.15em 0.55em;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: rgba(251, 191, 36, 0.16);
+  color: #fbbf24;
+}
+
+.textui-flow-preview-diff-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: var(--typography-fontSize-xs, 0.75rem);
+  font-weight: 600;
+}
+
+.textui-flow-preview-diff-summary .is-added {
+  color: #4ade80;
+}
+
+.textui-flow-preview-diff-summary .is-removed {
+  color: #f87171;
+}
+
+.textui-flow-preview-diff-summary .is-changed {
+  color: #fbbf24;
+}
+
+/* ── Body: diagram + stage ────────────────────────────────── */
+.textui-flow-preview-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg, 1.5rem);
+}
+
+.textui-flow-preview-map-area {
+  min-width: 0;
+}
+
+/* ── FlowDiagram ──────────────────────────────────────────── */
+.textui-flow-diagram {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md, 1rem);
+}
+
+.textui-flow-diagram-map {
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.textui-flow-diagram-columns {
+  display: flex;
+  gap: 0.75rem;
+  min-width: min-content;
+}
+
+.textui-flow-diagram-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 8.5rem;
+  flex: 0 0 auto;
+}
+
+/* ── FlowNode (screen card) ───────────────────────────────── */
+.textui-flow-node {
+  position: relative;
+  padding: 0.75rem 0.875rem;
+  border-radius: var(--borderRadius-lg, 0.75rem);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(30, 41, 59, 0.6);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.1s ease;
+}
+
+.light .textui-flow-node {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(203, 213, 225, 0.6);
+}
+
+.textui-flow-node:hover {
+  border-color: rgba(96, 165, 250, 0.45);
+  background: rgba(30, 58, 95, 0.7);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.light .textui-flow-node:hover {
+  border-color: rgba(59, 130, 246, 0.45);
+  background: rgba(239, 246, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.textui-flow-node:focus-visible {
+  outline: 2px solid var(--color-primary, #60a5fa);
+  outline-offset: 2px;
+}
+
+/* Entry screen: accent left border */
+.textui-flow-node.is-entry {
+  border-left: 3px solid var(--color-primary, #60a5fa);
+}
+
+/* Selected screen */
+.textui-flow-node.is-selected {
+  border-color: var(--color-primary, #60a5fa);
+  background: rgba(59, 130, 246, 0.12);
+  box-shadow:
+    0 0 0 1px rgba(96, 165, 250, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.light .textui-flow-node.is-selected {
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(59, 130, 246, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* On path (ancestor of selected) */
+.textui-flow-node.is-on-path {
+  background: rgba(59, 130, 246, 0.06);
+  border-color: rgba(96, 165, 250, 0.28);
+}
+
+.light .textui-flow-node.is-on-path {
+  background: rgba(59, 130, 246, 0.04);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+/* Diff states */
+.textui-flow-node.is-added {
+  border-color: rgba(74, 222, 128, 0.5);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.textui-flow-node.is-removed {
+  border-color: rgba(248, 113, 113, 0.5);
+  background: rgba(239, 68, 68, 0.08);
+  opacity: 0.7;
+}
+
+.textui-flow-node.is-changed {
+  border-color: rgba(251, 191, 36, 0.5);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+/* Node internals */
+.textui-flow-node-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.35rem;
+}
+
+.textui-flow-node-badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+
+.textui-flow-node-badge.is-entry-badge {
+  background: rgba(96, 165, 250, 0.18);
+  color: #93c5fd;
+}
+
+.light .textui-flow-node-badge.is-entry-badge {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+}
+
+.textui-flow-node-badge.is-diff-badge.is-added {
+  background: rgba(74, 222, 128, 0.18);
+  color: #4ade80;
+}
+
+.textui-flow-node-badge.is-diff-badge.is-removed {
+  background: rgba(248, 113, 113, 0.18);
+  color: #f87171;
+}
+
+.textui-flow-node-badge.is-diff-badge.is-changed {
+  background: rgba(251, 191, 36, 0.18);
+  color: #fbbf24;
+}
+
+.textui-flow-node-title {
+  font-size: var(--typography-fontSize-sm, 0.875rem);
+  font-weight: 600;
+  color: var(--color-text-primary, #f3f4f6);
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.light .textui-flow-node-title {
+  color: var(--color-text-dark, #111827);
+}
+
+.textui-flow-node-id {
+  font-size: var(--typography-fontSize-xs, 0.75rem);
+  color: var(--color-text-muted, #9ca3af);
+  margin-top: 0.15rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* ── FlowEdge (transition row) ────────────────────────────── */
+.textui-flow-diagram-connections {
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  padding-top: var(--spacing-md, 1rem);
+}
+
+.light .textui-flow-diagram-connections {
+  border-top-color: rgba(203, 213, 225, 0.4);
+}
+
+.textui-flow-diagram-connections-heading {
+  font-size: var(--typography-fontSize-xs, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted, #9ca3af);
+  margin-bottom: 0.5rem;
+}
+
+.textui-flow-edge {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--borderRadius-lg, 0.5rem);
+  font-size: var(--typography-fontSize-sm, 0.875rem);
+  transition: background-color 0.12s ease;
+}
+
+.textui-flow-edge + .textui-flow-edge {
+  margin-top: 0.2rem;
+}
+
+.textui-flow-edge:hover {
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.light .textui-flow-edge:hover {
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.textui-flow-edge.is-on-path {
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.light .textui-flow-edge.is-on-path {
+  background: rgba(59, 130, 246, 0.04);
+}
+
+/* Diff states for edges */
+.textui-flow-edge.is-added {
+  background: rgba(34, 197, 94, 0.06);
+}
+
+.textui-flow-edge.is-removed {
+  background: rgba(239, 68, 68, 0.06);
+  opacity: 0.7;
+}
+
+.textui-flow-edge.is-changed {
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.textui-flow-edge-from,
+.textui-flow-edge-to {
+  font-weight: 600;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.light .textui-flow-edge-from,
+.light .textui-flow-edge-to {
+  color: var(--color-text-dark, #1f2937);
+}
+
+.textui-flow-edge-arrow {
+  color: var(--color-text-muted, #6b7280);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.textui-flow-edge-trigger {
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--borderRadius-lg, 0.375rem);
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--color-text-secondary, #cbd5e1);
+  font-size: var(--typography-fontSize-xs, 0.75rem);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 500;
+}
+
+.light .textui-flow-edge-trigger {
+  background: rgba(100, 116, 139, 0.1);
+  color: var(--color-text-dark, #475569);
+}
+
+.textui-flow-edge-label {
+  color: var(--color-text-muted, #9ca3af);
+  font-size: var(--typography-fontSize-xs, 0.75rem);
+  font-style: italic;
+}
+
+.textui-flow-edge-status {
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.textui-flow-edge-status.is-added {
+  background: rgba(74, 222, 128, 0.18);
+  color: #4ade80;
+}
+
+.textui-flow-edge-status.is-removed {
+  background: rgba(248, 113, 113, 0.18);
+  color: #f87171;
+}
+
+.textui-flow-edge-status.is-changed {
+  background: rgba(251, 191, 36, 0.18);
+  color: #fbbf24;
+}
+
+/* ── Stage (selected-screen detail panel) ─────────────────── */
+.textui-flow-preview-stage {
+  padding: var(--spacing-md, 1rem) var(--spacing-lg, 1.25rem);
+  border-radius: var(--borderRadius-lg, 0.75rem);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(8px);
+}
+
+.light .textui-flow-preview-stage {
+  background: rgba(248, 250, 252, 0.8);
+  border-color: rgba(203, 213, 225, 0.5);
+  backdrop-filter: none;
+}
+
+.textui-flow-stage-role {
+  font-size: var(--typography-fontSize-xs, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-primary, #60a5fa);
+  margin-bottom: 0.2rem;
+}
+
+.textui-flow-stage-title {
+  font-size: var(--typography-fontSize-xl, 1.25rem);
+  font-weight: 700;
+  color: var(--color-text-primary, #f9fafb);
+  margin: 0 0 0.15rem;
+  line-height: 1.3;
+}
+
+.light .textui-flow-stage-title {
+  color: var(--color-text-dark, #111827);
+}
+
+.textui-flow-stage-id {
+  font-size: var(--typography-fontSize-xs, 0.75rem);
+  color: var(--color-text-muted, #9ca3af);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  margin-bottom: 0.75rem;
+}
+
+/* Linked page */
+.textui-flow-stage-linked-page {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--borderRadius-lg, 0.5rem);
+  background: rgba(148, 163, 184, 0.08);
+  font-size: var(--typography-fontSize-xs, 0.75rem);
+  color: var(--color-text-secondary, #cbd5e1);
+  margin-bottom: 0.85rem;
+}
+
+.light .textui-flow-stage-linked-page {
+  background: rgba(100, 116, 139, 0.06);
+  color: var(--color-text-dark, #475569);
+}
+
+.textui-flow-stage-linked-page-icon {
+  font-size: 0.875rem;
+  color: var(--color-primary, #60a5fa);
+  flex-shrink: 0;
+}
+
+.textui-flow-stage-linked-page-path {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  word-break: break-all;
+}
+
+/* Transitions list inside stage */
+.textui-flow-stage-transitions {
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.light .textui-flow-stage-transitions {
+  border-top-color: rgba(203, 213, 225, 0.3);
+}
+
+.textui-flow-stage-transitions-heading {
+  font-size: var(--typography-fontSize-xs, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted, #9ca3af);
+  margin-bottom: 0.4rem;
+}
+
+.textui-flow-stage-transition-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.3rem 0;
+  font-size: var(--typography-fontSize-sm, 0.875rem);
+}
+
+.textui-flow-stage-trigger {
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--borderRadius-lg, 0.375rem);
+  background: rgba(96, 165, 250, 0.12);
+  color: #93c5fd;
+  font-size: var(--typography-fontSize-xs, 0.75rem);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600;
+}
+
+.light .textui-flow-stage-trigger {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+}
+
+.textui-flow-stage-transition-arrow {
+  color: var(--color-text-muted, #6b7280);
+  font-size: 0.75rem;
+}
+
+.textui-flow-stage-target {
+  font-weight: 600;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.light .textui-flow-stage-target {
+  color: var(--color-text-dark, #1f2937);
+}
+
+.textui-flow-stage-label {
+  font-size: var(--typography-fontSize-xs, 0.75rem);
+  color: var(--color-text-muted, #9ca3af);
+  font-style: italic;
+}
+
+/* Action buttons */
+.textui-flow-stage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.textui-flow-stage-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--borderRadius-lg, 0.5rem);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  background: rgba(59, 130, 246, 0.08);
+  color: #93c5fd;
+  font-size: var(--typography-fontSize-xs, 0.75rem);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.14s ease,
+    border-color 0.14s ease;
+}
+
+.textui-flow-stage-action:hover {
+  background: rgba(59, 130, 246, 0.16);
+  border-color: rgba(96, 165, 250, 0.5);
+}
+
+.textui-flow-stage-action:focus-visible {
+  outline: 2px solid var(--color-primary, #60a5fa);
+  outline-offset: 2px;
+}
+
+.light .textui-flow-stage-action {
+  border-color: rgba(59, 130, 246, 0.3);
+  background: rgba(59, 130, 246, 0.06);
+  color: #2563eb;
+}
+
+.light .textui-flow-stage-action:hover {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.45);
+}
