@@ -4,6 +4,7 @@
  */
 
 export * from './text-navigation-media';
+export * from './navigation';
 export * from './button';
 export * from './form';
 export * from './layout-compound';

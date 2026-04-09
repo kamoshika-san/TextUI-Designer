@@ -1,4 +1,6 @@
 const assert = require('assert');
+const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 describe('loadDslWithIncludes（CLI/Capture 経路の $include 展開）', () => {
@@ -33,5 +35,35 @@ describe('loadDslWithIncludes（CLI/Capture 経路の $include 展開）', () =>
     const flat = JSON.stringify(components);
     assert.ok(flat.includes('ようこそ'), 'header.template の params 展開');
     assert.ok(flat.includes('お問い合わせ'), 'form-section の params 展開');
+  });
+
+  it('.tui.flow.yml を navigation-flow として認識する', () => {
+    delete require.cache[loadModulePath];
+    const { loadDslWithIncludesFromPath } = require(loadModulePath);
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-flow-'));
+
+    try {
+      const entry = path.join(tmpDir, 'sample.tui.flow.yml');
+      fs.writeFileSync(entry, [
+        'flow:',
+        '  id: checkout',
+        '  title: Checkout Flow',
+        '  entry: cart',
+        '  screens:',
+        '    - id: cart',
+        '      page: cart-page',
+        '  transitions:',
+        '    - from: cart',
+        '      to: confirm',
+        '      trigger: next'
+      ].join('\n'));
+
+      const { dsl, sourcePath, kind } = loadDslWithIncludesFromPath(entry);
+      assert.strictEqual(sourcePath, entry);
+      assert.strictEqual(kind, 'navigation-flow');
+      assert.strictEqual(dsl.flow.id, 'checkout');
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
   });
 });

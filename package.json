@@ -379,6 +379,15 @@
         "title": "TextUI: メモリ追跡を有効化"
       }
     ],
+    "languages": [
+      {
+        "id": "yaml",
+        "extensions": [
+          ".tui.flow.yml",
+          ".tui.flow.yaml"
+        ]
+      }
+    ],
     "menus": {
       "editor/title": [
         {
