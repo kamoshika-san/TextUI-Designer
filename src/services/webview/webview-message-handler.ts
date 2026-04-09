@@ -1,3 +1,4 @@
+import * as path from 'path';
 import * as vscode from 'vscode';
 import { WebViewLifecycleManager } from './webview-lifecycle-manager';
 import { WebViewUpdateManager } from './webview-update-manager';
@@ -10,6 +11,7 @@ import { VSCodeWindowAdapter } from './vscode-window-adapter';
 import { YamlPointerResolver } from './yaml-pointer-resolver';
 import { withPreviewPipelineTrace } from './preview-pipeline-observability';
 import { WebViewPanelMessenger } from './webview-panel-messenger';
+import { resolveNavigationJumpTargetFile } from '../commands/navigation-jump-command';
 
 type MessageType = 'export' | 'export-preview' | 'jump-to-dsl' | 'webview-ready' | 'theme-switch' | 'get-themes';
 type MessageHandler = (message: WebViewMessage) => Promise<void>;
@@ -100,15 +102,16 @@ export class WebViewMessageHandler {
   private async handleJumpToDslMessage(message: Record<string, unknown>): Promise<void> {
     const dslPath = typeof message.dslPath === 'string' ? message.dslPath : '';
     const componentName = typeof message.componentName === 'string' ? message.componentName : 'component';
+    const targetFilePath = typeof message.targetFilePath === 'string' ? message.targetFilePath : undefined;
 
     if (!dslPath) {
       console.warn('[WebViewMessageHandler] jump-to-dsl に dslPath がありません');
       return;
     }
 
-    const targetFile = this.resolveActiveTuiPath();
+    const targetFile = this.resolveJumpTargetFile(targetFilePath);
     if (!targetFile) {
-      this.windowAdapter.showWarningMessage('ジャンプ先のDSLファイルが見つかりません。*.tui.yml を開いてください。');
+      this.windowAdapter.showWarningMessage('ジャンプ先のDSLファイルが見つかりません。対応する .tui.yml / .tui.flow.yml を開いてください。');
       return;
     }
 
@@ -272,6 +275,16 @@ export class WebViewMessageHandler {
     }
 
     return undefined;
+  }
+
+  private resolveJumpTargetFile(requestedTargetFilePath?: string): string | undefined {
+    const resolvedPath = resolveNavigationJumpTargetFile({
+      requestedTargetFilePath,
+      activeEditorFile: vscode.window.activeTextEditor?.document.fileName,
+      lastPreviewFile: this.updateManager.getLastTuiFile()
+    });
+
+    return resolvedPath ? path.normalize(resolvedPath) : undefined;
   }
 
   /**

@@ -20,6 +20,7 @@ import {
   shouldThrottleByChangeCount,
   shouldThrottleByMinInterval
 } from './file-watcher-timing';
+import { shouldRefreshPreviewForDocumentChange } from './navigation-flow-preview-refresh';
 
 export interface FileWatcherDeps {
   logger: Logger;
@@ -231,6 +232,10 @@ export class DocumentChangeSubscription {
 
     this.previewTimeout = setTimeout(async () => {
       try {
+        const lastPreviewFile = services.webViewManager.getLastTuiFile();
+        if (!shouldRefreshPreviewForDocumentChange(lastPreviewFile, event.document.fileName)) {
+          return;
+        }
         this.deps.memoryMonitor.checkMemoryUsageRealTime();
         services.webViewManager.sendUpdatingSignal();
         await services.webViewManager.updatePreview();

@@ -193,7 +193,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleJumpToDsl = (dslPath: string, componentName: string) => {
+  const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?: string) => {
     const runtimeApi = getVSCodeApi();
     if (!runtimeApi?.postMessage) {
       return;
@@ -201,7 +201,8 @@ const App: React.FC = () => {
     runtimeApi.postMessage({
       type: 'jump-to-dsl',
       dslPath,
-      componentName
+      componentName,
+      targetFilePath
     });
   };
 
@@ -244,7 +245,7 @@ const App: React.FC = () => {
             showRelativeTimestamp={isDevelopmentMode}
           />
         ) : null}
-        <FlowPreviewPanel flowDsl={json} />
+        <FlowPreviewPanel flowDsl={json} onJumpToDsl={handleJumpToDsl} />
         {error ? (
           <div style={{
             position: 'fixed',

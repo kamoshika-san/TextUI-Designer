@@ -28,7 +28,8 @@ describe('FlowPreviewPanel', () => {
               { from: 'cart', to: 'confirm', trigger: 'next', label: 'Continue' }
             ]
           }
-        }
+        },
+        onJumpToDsl: () => {}
       })
     );
 
@@ -37,5 +38,8 @@ describe('FlowPreviewPanel', () => {
     assert.ok(html.includes('Entry'));
     assert.ok(html.includes('Continue'));
     assert.ok(html.includes('./screens/cart.tui.yml'));
+    assert.ok(html.includes('Page Preview Context'));
+    assert.ok(html.includes('Jump to flow screen'));
+    assert.ok(html.includes('tabindex="0"'));
   });
 });

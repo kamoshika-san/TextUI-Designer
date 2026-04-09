@@ -5,9 +5,19 @@ import { FlowEdge } from './FlowEdge';
 
 interface FlowDiagramProps {
   flowDsl: NavigationFlowDSL;
+  selectedScreenId: string;
+  onSelectScreen: (screenId: string) => void;
+  onJumpToFlowDsl: (screenId: string) => void;
+  onJumpToPageDsl: (pagePath: string) => void;
 }
 
-export const FlowDiagram: React.FC<FlowDiagramProps> = ({ flowDsl }) => {
+export const FlowDiagram: React.FC<FlowDiagramProps> = ({
+  flowDsl,
+  selectedScreenId,
+  onSelectScreen,
+  onJumpToFlowDsl,
+  onJumpToPageDsl
+}) => {
   const screenDepths = computeScreenDepths(flowDsl);
 
   return (
@@ -19,6 +29,10 @@ export const FlowDiagram: React.FC<FlowDiagramProps> = ({ flowDsl }) => {
             screen={screen}
             isEntry={screen.id === flowDsl.flow.entry}
             depth={screenDepths.get(screen.id) ?? 0}
+            isSelected={screen.id === selectedScreenId}
+            onSelect={onSelectScreen}
+            onJumpToFlowDsl={onJumpToFlowDsl}
+            onJumpToPageDsl={onJumpToPageDsl}
           />
         ))}
       </div>
