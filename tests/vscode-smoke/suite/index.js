@@ -25,4 +25,4 @@ async function run() {
   });
 }
 
-module.exports = run;
+exports.run = run;
