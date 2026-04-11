@@ -1,8 +1,8 @@
-# Release Notes v0.10.0
+# Release Notes v0.8.0
 
 ## Summary
 
-v0.10.0 promotes Navigation v2 from an implementation detail to a rollout-ready workflow for graph-first `.tui.flow.yml` authoring.
+v0.8.0 promotes Navigation v2 from an implementation detail to a rollout-ready workflow for graph-first `.tui.flow.yml` authoring.
 
 This release adds:
 

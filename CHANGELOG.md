@@ -4,7 +4,7 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [0.10.0] - 2026-04-11
+## [0.8.0] - 2026-04-11
 
 ### Added
 - **Navigation v2 rollout lane**: Graph-first `.tui.flow.yml` support now includes CLI route analysis, terminal-aware validation, stable transition identity, migration guidance, and representative rollout samples.
