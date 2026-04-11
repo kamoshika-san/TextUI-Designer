@@ -96,6 +96,17 @@ export function validateNavigationFlow(
   const graph = buildNavigationGraph(dsl);
   const loopPolicy = dsl.flow.policy?.loops ?? 'deny';
 
+  for (const [transitionId, edges] of graph.duplicateEdgeIds.entries()) {
+    for (const edge of edges) {
+      issues.push({
+        level: 'error',
+        code: NAV_ERROR_CODES.DUPLICATE_TRANSITION_ID,
+        message: `Duplicate transition id: ${transitionId}`,
+        path: `/flow/transitions/${edge.index}/id`
+      });
+    }
+  }
+
   if (loopPolicy !== 'allow') {
     for (const cycle of findNavigationCycles(graph)) {
       issues.push({

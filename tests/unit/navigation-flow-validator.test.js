@@ -144,4 +144,39 @@ describe('navigation-flow-validator', () => {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
   });
+
+  it('reports duplicate transition identities', () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-nav-duplicate-transition-'));
+
+    try {
+      fs.mkdirSync(path.join(tempDir, 'screens'));
+      fs.writeFileSync(path.join(tempDir, 'screens', 'start.tui.yml'), 'page:\n  id: start\n  title: Start\n  layout: vertical\n  components: []\n');
+      fs.writeFileSync(path.join(tempDir, 'screens', 'a.tui.yml'), 'page:\n  id: a\n  title: A\n  layout: vertical\n  components: []\n');
+      fs.writeFileSync(path.join(tempDir, 'screens', 'b.tui.yml'), 'page:\n  id: b\n  title: B\n  layout: vertical\n  components: []\n');
+
+      const issues = validateNavigationFlow({
+        flow: {
+          id: 'duplicate-transition',
+          version: '2',
+          title: 'Duplicate Transition',
+          entry: 'start',
+          screens: [
+            { id: 'start', page: './screens/start.tui.yml' },
+            { id: 'a', page: './screens/a.tui.yml' },
+            { id: 'b', page: './screens/b.tui.yml' }
+          ],
+          transitions: [
+            { id: 'dup', from: 'start', to: 'a', trigger: 'go-a' },
+            { id: 'dup', from: 'start', to: 'b', trigger: 'go-b' }
+          ]
+        }
+      }, { sourcePath: path.join(tempDir, 'duplicate.tui.flow.yml') });
+
+      const duplicateIssues = issues.filter(issue => issue.code === NAV_ERROR_CODES.DUPLICATE_TRANSITION_ID);
+      assert.strictEqual(duplicateIssues.length, 2);
+      assert.ok(duplicateIssues.every(issue => issue.level === 'error'));
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
 });

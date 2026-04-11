@@ -23,6 +23,7 @@ export interface NavigationGraph {
   dsl: NavigationFlowDSL;
   screenById: Map<string, ScreenRef>;
   edgeById: Map<string, NavigationGraphEdge>;
+  duplicateEdgeIds: Map<string, NavigationGraphEdge[]>;
   adjacency: Map<string, NavigationGraphEdge[]>;
   reverseAdjacency: Map<string, NavigationGraphEdge[]>;
   terminalScreenIds: Set<string>;
@@ -33,6 +34,7 @@ export function buildNavigationGraph(dsl: NavigationFlowDSL): NavigationGraph {
   const adjacency = new Map<string, NavigationGraphEdge[]>();
   const reverseAdjacency = new Map<string, NavigationGraphEdge[]>();
   const edgeById = new Map<string, NavigationGraphEdge>();
+  const duplicateEdgeIds = new Map<string, NavigationGraphEdge[]>();
   const terminalScreenIds = new Set<string>();
 
   for (const screen of dsl.flow.screens) {
@@ -58,7 +60,15 @@ export function buildNavigationGraph(dsl: NavigationFlowDSL): NavigationGraph {
       transition
     };
 
-    edgeById.set(id, edge);
+    const existing = edgeById.get(id);
+    if (!existing) {
+      edgeById.set(id, edge);
+    } else {
+      const duplicates = duplicateEdgeIds.get(id) ?? [existing];
+      duplicates.push(edge);
+      duplicateEdgeIds.set(id, duplicates);
+      edgeById.delete(id);
+    }
 
     if (screenById.has(transition.from) && screenById.has(transition.to)) {
       adjacency.get(transition.from)?.push(edge);
@@ -70,6 +80,7 @@ export function buildNavigationGraph(dsl: NavigationFlowDSL): NavigationGraph {
     dsl,
     screenById,
     edgeById,
+    duplicateEdgeIds,
     adjacency,
     reverseAdjacency,
     terminalScreenIds

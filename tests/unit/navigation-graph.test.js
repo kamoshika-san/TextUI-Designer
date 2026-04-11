@@ -114,4 +114,34 @@ describe('navigation-graph', () => {
     const cycles = findNavigationCycles(graph);
     assert.deepStrictEqual(cycles, [['review', 'rework', 'review']]);
   });
+
+  it('detects duplicate transition identities without silently overwriting lookup state', () => {
+    const graph = buildNavigationGraph({
+      flow: {
+        id: 'collision',
+        version: '2',
+        title: 'Collision',
+        entry: 'start',
+        screens: [
+          { id: 'start', page: './start.tui.yml' },
+          { id: 'a', page: './a.tui.yml' },
+          { id: 'b', page: './b.tui.yml' }
+        ],
+        transitions: [
+          { id: 'dup', from: 'start', to: 'a', trigger: 'go-a' },
+          { id: 'dup', from: 'start', to: 'b', trigger: 'go-b' }
+        ]
+      }
+    });
+
+    assert.strictEqual(graph.edgeById.has('dup'), false);
+    assert.deepStrictEqual(
+      (graph.duplicateEdgeIds.get('dup') ?? []).map(edge => edge.to).sort(),
+      ['a', 'b']
+    );
+    assert.deepStrictEqual(
+      (graph.adjacency.get('start') ?? []).map(edge => edge.id),
+      ['dup', 'dup']
+    );
+  });
 });
