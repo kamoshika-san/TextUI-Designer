@@ -22,6 +22,12 @@ export type NavigationTransitionKind =
 
 export type NavigationLoopPolicy = 'deny' | 'warn' | 'allow';
 
+const NAVIGATION_FLOW_VERSIONS: readonly NavigationFlowVersion[] = ['1', '2'];
+const NAVIGATION_SCREEN_KINDS: readonly NavigationScreenKind[] = ['screen', 'decision', 'review', 'terminal'];
+const NAVIGATION_TERMINAL_KINDS: readonly NavigationTerminalKind[] = ['success', 'failure', 'cancel', 'handoff'];
+const NAVIGATION_TRANSITION_KINDS: readonly NavigationTransitionKind[] = ['forward', 'branch', 'backtrack', 'retry', 'loop', 'escalation'];
+const NAVIGATION_LOOP_POLICIES: readonly NavigationLoopPolicy[] = ['deny', 'warn', 'allow'];
+
 export interface NavigationTerminalDef {
   kind: NavigationTerminalKind;
   label?: string;
@@ -82,6 +88,14 @@ function isOptionalString(value: unknown): value is string | undefined {
   return value === undefined || typeof value === 'string';
 }
 
+function isOneOf<T extends string>(value: unknown, allowed: readonly T[]): value is T {
+  return typeof value === 'string' && allowed.includes(value as T);
+}
+
+function isOptionalOneOf<T extends string>(value: unknown, allowed: readonly T[]): value is T | undefined {
+  return value === undefined || isOneOf(value, allowed);
+}
+
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(item => typeof item === 'string');
 }
@@ -96,7 +110,7 @@ function isNavigationTerminalDef(value: unknown): value is NavigationTerminalDef
   }
 
   return (
-    typeof value.kind === 'string' &&
+    isOneOf(value.kind, NAVIGATION_TERMINAL_KINDS) &&
     isOptionalString(value.label) &&
     isOptionalString(value.outcome)
   );
@@ -119,7 +133,7 @@ function isNavigationPolicyDef(value: unknown): value is NavigationPolicyDef {
   }
 
   return (
-    isOptionalString(value.loops) &&
+    isOptionalOneOf(value.loops, NAVIGATION_LOOP_POLICIES) &&
     isOptionalBoolean(value.terminalScreensRequired)
   );
 }
@@ -133,7 +147,7 @@ function isScreenRef(value: unknown): value is ScreenRef {
     typeof value.id === 'string' &&
     typeof value.page === 'string' &&
     isOptionalString(value.title) &&
-    isOptionalString(value.kind) &&
+    isOptionalOneOf(value.kind, NAVIGATION_SCREEN_KINDS) &&
     (value.tags === undefined || isStringArray(value.tags)) &&
     (value.terminal === undefined || isNavigationTerminalDef(value.terminal))
   );
@@ -152,7 +166,7 @@ function isTransitionDef(value: unknown): value is TransitionDef {
     isOptionalString(value.label) &&
     isOptionalString(value.condition) &&
     (value.params === undefined || isStringArray(value.params)) &&
-    isOptionalString(value.kind) &&
+    isOptionalOneOf(value.kind, NAVIGATION_TRANSITION_KINDS) &&
     (value.tags === undefined || isStringArray(value.tags)) &&
     (value.guard === undefined || isNavigationGuardDef(value.guard))
   );
@@ -168,7 +182,7 @@ export function isNavigationFlowDSL(val: unknown): val is NavigationFlowDSL {
     typeof flow.id === 'string' &&
     typeof flow.title === 'string' &&
     typeof flow.entry === 'string' &&
-    isOptionalString(flow.version) &&
+    isOptionalOneOf(flow.version, NAVIGATION_FLOW_VERSIONS) &&
     (flow.policy === undefined || isNavigationPolicyDef(flow.policy)) &&
     Array.isArray(flow.screens) &&
     flow.screens.every(isScreenRef) &&
