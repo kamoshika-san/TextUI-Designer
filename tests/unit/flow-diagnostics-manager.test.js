@@ -20,11 +20,11 @@ function createDocument(fileName, text) {
 
 describe('FlowDiagnosticsManager', () => {
   let FlowDiagnosticsManager;
-  let vscode;
+  let DiagnosticSeverity;
 
   before(() => {
     ({ FlowDiagnosticsManager } = require('../../out/services/diagnostics/flow-diagnostics-manager'));
-    vscode = require('vscode');
+    ({ DiagnosticSeverity } = require('../mocks/vscode-mock'));
   });
 
   it('creates VS Code diagnostics for semantic flow issues', () => {
@@ -154,11 +154,11 @@ describe('FlowDiagnosticsManager', () => {
 
       const cycleWarning = loopDiagnostics.find(diag => String(diag.code) === 'NAV_004');
       assert.ok(cycleWarning);
-      assert.strictEqual(cycleWarning.severity, vscode.DiagnosticSeverity.Warning);
+      assert.strictEqual(cycleWarning.severity, DiagnosticSeverity.Warning);
 
       const terminalError = terminalDiagnostics.find(diag => String(diag.code) === 'NAV_008');
       assert.ok(terminalError);
-      assert.strictEqual(terminalError.severity, vscode.DiagnosticSeverity.Error);
+      assert.strictEqual(terminalError.severity, DiagnosticSeverity.Error);
     } finally {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }

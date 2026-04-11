@@ -153,4 +153,137 @@ describe('navigation DSL types', () => {
       assert.strictEqual(isNavigationFlowDSL(dsl), false);
     });
   });
+
+  it('accepts minimal optional metadata shapes for guard, policy, terminal, screen, and transition helpers', () => {
+    const dsl = {
+      flow: {
+        id: 'optional-shapes',
+        version: '2',
+        title: 'Optional Shapes',
+        entry: 'start',
+        policy: {},
+        screens: [
+          { id: 'start', page: 'start-page', tags: [] },
+          {
+            id: 'done',
+            page: 'done-page',
+            kind: 'terminal',
+            terminal: { kind: 'success' }
+          }
+        ],
+        transitions: [
+          {
+            id: 't-start-done',
+            from: 'start',
+            to: 'done',
+            trigger: 'finish',
+            params: [],
+            tags: [],
+            guard: {}
+          }
+        ]
+      }
+    };
+
+    assert.strictEqual(isNavigationFlowDSL(dsl), true);
+  });
+
+  it('rejects invalid nested metadata helper shapes', () => {
+    const invalidCases = [
+      {
+        flow: {
+          id: 'bad-terminal-label',
+          version: '2',
+          title: 'Bad Terminal Label',
+          entry: 'done',
+          screens: [{
+            id: 'done',
+            page: 'done-page',
+            kind: 'terminal',
+            terminal: { kind: 'success', label: 42 }
+          }],
+          transitions: []
+        }
+      },
+      {
+        flow: {
+          id: 'bad-guard-expression',
+          version: '2',
+          title: 'Bad Guard Expression',
+          entry: 'start',
+          screens: [
+            { id: 'start', page: 'start-page' },
+            { id: 'done', page: 'done-page' }
+          ],
+          transitions: [{
+            from: 'start',
+            to: 'done',
+            trigger: 'next',
+            guard: { expression: ['not-a-string'] }
+          }]
+        }
+      },
+      {
+        flow: {
+          id: 'bad-guard-params',
+          version: '2',
+          title: 'Bad Guard Params',
+          entry: 'start',
+          screens: [
+            { id: 'start', page: 'start-page' },
+            { id: 'done', page: 'done-page' }
+          ],
+          transitions: [{
+            from: 'start',
+            to: 'done',
+            trigger: 'next',
+            guard: { params: ['ok', 1] }
+          }]
+        }
+      },
+      {
+        flow: {
+          id: 'bad-policy-boolean',
+          version: '2',
+          title: 'Bad Policy Boolean',
+          entry: 'start',
+          policy: { terminalScreensRequired: 'yes' },
+          screens: [{ id: 'start', page: 'start-page' }],
+          transitions: []
+        }
+      },
+      {
+        flow: {
+          id: 'bad-screen-tags',
+          version: '2',
+          title: 'Bad Screen Tags',
+          entry: 'start',
+          screens: [{ id: 'start', page: 'start-page', tags: ['ok', 1] }],
+          transitions: []
+        }
+      },
+      {
+        flow: {
+          id: 'bad-transition-tags',
+          version: '2',
+          title: 'Bad Transition Tags',
+          entry: 'start',
+          screens: [
+            { id: 'start', page: 'start-page' },
+            { id: 'done', page: 'done-page' }
+          ],
+          transitions: [{
+            from: 'start',
+            to: 'done',
+            trigger: 'next',
+            tags: ['ok', 1]
+          }]
+        }
+      }
+    ];
+
+    invalidCases.forEach(dsl => {
+      assert.strictEqual(isNavigationFlowDSL(dsl), false);
+    });
+  });
 });

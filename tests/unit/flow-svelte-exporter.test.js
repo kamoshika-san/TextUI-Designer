@@ -20,4 +20,18 @@ describe('FlowSvelteExporter', () => {
     assert.ok(code.includes('// route: src/routes/+page.svelte'));
     assert.ok(code.includes('// route: src/routes/screens/shipping/+page.svelte'));
   });
+
+  it('throws when export is called with a non-navigation DSL shape', async () => {
+    const exporter = new FlowSvelteExporter();
+
+    await assert.rejects(
+      exporter.export({ page: { id: 'not-a-flow' } }, { format: 'svelte-flow' }),
+      /FlowSvelteExporter requires a navigation flow DSL/
+    );
+  });
+
+  it('returns the expected file extension', () => {
+    const exporter = new FlowSvelteExporter();
+    assert.strictEqual(exporter.getFileExtension(), '.svelte');
+  });
 });
