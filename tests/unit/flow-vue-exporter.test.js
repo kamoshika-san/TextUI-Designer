@@ -25,4 +25,18 @@ describe('FlowVueExporter', () => {
     assert.ok(code.includes('Outgoing Transitions: t-cart-shipping'));
     assert.ok(code.includes('Terminal Kind: success'));
   });
+
+  it('throws when export is called with a non-navigation DSL shape', async () => {
+    const exporter = new FlowVueExporter();
+
+    await assert.rejects(
+      exporter.export({ page: { id: 'not-a-flow' } }, { format: 'vue-flow' }),
+      /FlowVueExporter requires a navigation flow DSL/
+    );
+  });
+
+  it('returns the expected file extension', () => {
+    const exporter = new FlowVueExporter();
+    assert.strictEqual(exporter.getFileExtension(), '.ts');
+  });
 });

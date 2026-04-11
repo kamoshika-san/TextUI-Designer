@@ -26,4 +26,18 @@ describe('FlowHtmlExporter', () => {
     assert.ok(code.includes('Outgoing Transitions: t-cart-shipping'));
     assert.ok(code.includes('Terminal Kind: success'));
   });
+
+  it('throws when export is called with a non-navigation DSL shape', async () => {
+    const exporter = new FlowHtmlExporter();
+
+    await assert.rejects(
+      exporter.export({ page: { id: 'not-a-flow' } }, { format: 'html-flow' }),
+      /FlowHtmlExporter requires a navigation flow DSL/
+    );
+  });
+
+  it('returns the expected file extension', () => {
+    const exporter = new FlowHtmlExporter();
+    assert.strictEqual(exporter.getFileExtension(), '.html');
+  });
 });
