@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://example.com/textui/v0/navigation-schema.json",
-  "title": "TextUI Designer Navigation Flow DSL v0",
-  "description": "Phase 1 navigation flow authoring schema for .tui.flow.* documents.",
+  "$id": "https://example.com/textui/v1/navigation-schema.json",
+  "title": "TextUI Designer Navigation Flow DSL v1",
+  "description": "Graph-first navigation flow authoring schema for .tui.flow.* documents.",
   "type": "object",
   "required": [
     "flow"
@@ -22,6 +22,13 @@
           "type": "string",
           "minLength": 1
         },
+        "version": {
+          "type": "string",
+          "enum": [
+            "1",
+            "2"
+          ]
+        },
         "title": {
           "type": "string",
           "minLength": 1
@@ -29,6 +36,23 @@
         "entry": {
           "type": "string",
           "minLength": 1
+        },
+        "policy": {
+          "type": "object",
+          "properties": {
+            "loops": {
+              "type": "string",
+              "enum": [
+                "deny",
+                "warn",
+                "allow"
+              ]
+            },
+            "terminalScreensRequired": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
         },
         "screens": {
           "type": "array",
@@ -50,6 +74,45 @@
               },
               "title": {
                 "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "screen",
+                  "decision",
+                  "review",
+                  "terminal"
+                ]
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "terminal": {
+                "type": "object",
+                "required": [
+                  "kind"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "success",
+                      "failure",
+                      "cancel",
+                      "handoff"
+                    ]
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "outcome": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
               }
             },
             "additionalProperties": false
@@ -65,6 +128,10 @@
               "trigger"
             ],
             "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
               "from": {
                 "type": "string",
                 "minLength": 1
@@ -88,6 +155,38 @@
                 "items": {
                   "type": "string"
                 }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "forward",
+                  "branch",
+                  "backtrack",
+                  "retry",
+                  "loop",
+                  "escalation"
+                ]
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "guard": {
+                "type": "object",
+                "properties": {
+                  "expression": {
+                    "type": "string"
+                  },
+                  "params": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": false
               }
             },
             "additionalProperties": false
