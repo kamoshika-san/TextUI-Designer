@@ -456,6 +456,7 @@
     "build-webview": "node ./scripts/generate-renderer-index-css.cjs && vite build",
     "dev-webview": "node ./scripts/generate-renderer-index-css.cjs && vite",
     "validate:samples": "node ./scripts/validate-samples.cjs",
+    "validate:samples:navigation": "npm run compile && node ./scripts/validate-samples.cjs",
     "validate:samples:fresh": "npm run compile && npm run validate:samples",
     "validate:samples:compiled": "npm run validate:samples",
     "check:schema-generation": "node ./scripts/check-generated-schema-chain.cjs",

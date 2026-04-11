@@ -4,6 +4,20 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.10.0] - 2026-04-11
+
+### Added
+- **Navigation v2 rollout lane**: Graph-first `.tui.flow.yml` support now includes CLI route analysis, terminal-aware validation, stable transition identity, migration guidance, and representative rollout samples.
+- **Navigation v2 documentation**: Added `docs/navigation-v2-guide.md`, `docs/navigation-v2-migration.md`, and `docs/RELEASE_NOTES_v0.10.0.md` to clarify adoption, compatibility, and migration-required cases.
+
+### Changed
+- **Sample validation gate**: `scripts/validate-samples.cjs` now validates representative navigation flows directly, including `flow validate`, `flow analyze`, and terminal-aware `flow route` coverage for the v2 enterprise sample.
+- **Navigation sample guidance**: `sample/README.md`, `sample/12-navigation/README.md`, and `sample/13-enterprise-flow/README.md` now distinguish the baseline v1 sample from the representative Navigation v2 sample.
+
+### Compatibility
+- Existing v1-style navigation documents remain valid.
+- Navigation v2 migration becomes effectively required when flows depend on explicit loop policy, stable transition identity, or terminal-aware routing.
+
 ## [0.7.6] - 2026-04-09
 
 ### Added

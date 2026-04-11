@@ -319,10 +319,83 @@ async function validateRepresentativeCliExports() {
   }
 }
 
+function validateRepresentativeNavigationCliFlows() {
+  const navigationSamples = [
+    {
+      file: path.join(repoRoot, 'sample/12-navigation/app.tui.flow.yml'),
+      expectedTerminalKind: undefined
+    },
+    {
+      file: path.join(repoRoot, 'sample/13-enterprise-flow/app.tui.flow.yml'),
+      expectedTerminalKind: 'success'
+    }
+  ];
+
+  for (const sample of navigationSamples) {
+    const validateResult = runCli([
+      'flow',
+      'validate',
+      '--file', sample.file,
+      '--json'
+    ]);
+
+    if (validateResult.status !== 0) {
+      throw new Error(`flow validate failed: ${sample.file}\n${validateResult.stderr || validateResult.stdout}`);
+    }
+
+    const validateParsed = JSON.parse(validateResult.stdout || '{}');
+    if (validateParsed.valid !== true) {
+      throw new Error(`flow validate reported invalid result: ${sample.file}`);
+    }
+
+    console.log(`navigation flow validated: ${path.relative(repoRoot, sample.file)}`);
+
+    if (!sample.expectedTerminalKind) {
+      continue;
+    }
+
+    const analyzeResult = runCli([
+      'flow',
+      'analyze',
+      '--file', sample.file,
+      '--json'
+    ]);
+    if (analyzeResult.status !== 0) {
+      throw new Error(`flow analyze failed: ${sample.file}\n${analyzeResult.stderr || analyzeResult.stdout}`);
+    }
+
+    const analyzeParsed = JSON.parse(analyzeResult.stdout || '{}');
+    const hasExpectedTerminal = Array.isArray(analyzeParsed.terminals)
+      && analyzeParsed.terminals.some(terminal => terminal.terminal?.kind === sample.expectedTerminalKind);
+    if (!hasExpectedTerminal) {
+      throw new Error(`flow analyze missing ${sample.expectedTerminalKind} terminal: ${sample.file}`);
+    }
+
+    const routeResult = runCli([
+      'flow',
+      'route',
+      '--file', sample.file,
+      '--to-terminal-kind', sample.expectedTerminalKind,
+      '--json'
+    ]);
+    if (routeResult.status !== 0) {
+      throw new Error(`flow route failed: ${sample.file}\n${routeResult.stderr || routeResult.stdout}`);
+    }
+
+    const routeParsed = JSON.parse(routeResult.stdout || '{}');
+    if (!routeParsed.route || !Array.isArray(routeParsed.route.screenIds) || routeParsed.route.screenIds.length === 0) {
+      throw new Error(`flow route returned no screen path: ${sample.file}`);
+    }
+
+    console.log(`navigation flow routed: ${path.relative(repoRoot, sample.file)}`);
+  }
+}
+
 async function main() {
   validateAllSamples();
   await validateRepresentativeExports();
   await validateRepresentativeCliExports();
+  validateRepresentativeNavigationCliFlows();
   console.log('sample quality gate passed.');
 }
 
