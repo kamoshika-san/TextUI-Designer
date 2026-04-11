@@ -91,4 +91,57 @@ describe('navigation-flow-validator', () => {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
   });
+
+  it('uses flow.policy.loops to downgrade or suppress cycle diagnostics', () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-nav-policy-'));
+
+    try {
+      fs.mkdirSync(path.join(tempDir, 'screens'));
+      fs.writeFileSync(path.join(tempDir, 'screens', 'start.tui.yml'), 'page:\n  id: start\n  title: Start\n  layout: vertical\n  components: []\n');
+      fs.writeFileSync(path.join(tempDir, 'screens', 'review.tui.yml'), 'page:\n  id: review\n  title: Review\n  layout: vertical\n  components: []\n');
+
+      const warnIssues = validateNavigationFlow({
+        flow: {
+          id: 'policy-warn',
+          version: '2',
+          title: 'Policy Warn',
+          entry: 'start',
+          policy: { loops: 'warn' },
+          screens: [
+            { id: 'start', page: './screens/start.tui.yml' },
+            { id: 'review', page: './screens/review.tui.yml', kind: 'review' }
+          ],
+          transitions: [
+            { id: 't1', from: 'start', to: 'review', trigger: 'next' },
+            { id: 't2', from: 'review', to: 'start', trigger: 'back', kind: 'loop' }
+          ]
+        }
+      }, { sourcePath: path.join(tempDir, 'warn.tui.flow.yml') });
+
+      const allowIssues = validateNavigationFlow({
+        flow: {
+          id: 'policy-allow',
+          version: '2',
+          title: 'Policy Allow',
+          entry: 'start',
+          policy: { loops: 'allow' },
+          screens: [
+            { id: 'start', page: './screens/start.tui.yml' },
+            { id: 'review', page: './screens/review.tui.yml', kind: 'review' }
+          ],
+          transitions: [
+            { id: 't1', from: 'start', to: 'review', trigger: 'next' },
+            { id: 't2', from: 'review', to: 'start', trigger: 'back', kind: 'loop' }
+          ]
+        }
+      }, { sourcePath: path.join(tempDir, 'allow.tui.flow.yml') });
+
+      const warnCycle = warnIssues.find(issue => issue.code === NAV_ERROR_CODES.CYCLE_DETECTED);
+      assert.ok(warnCycle);
+      assert.strictEqual(warnCycle.level, 'warning');
+      assert.ok(!allowIssues.some(issue => issue.code === NAV_ERROR_CODES.CYCLE_DETECTED));
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
 });

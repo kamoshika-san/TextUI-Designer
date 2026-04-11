@@ -1,63 +1,238 @@
 flow:
   id: enterprise-onboarding
-  title: Enterprise Onboarding
+  version: "2"
+  title: Enterprise Onboarding Decision Flow
   entry: welcome
+  policy:
+    loops: allow
+    terminalScreensRequired: true
   screens:
     - id: welcome
       page: ./screens/welcome.tui.yml
       title: Welcome
+      kind: screen
+      tags:
+        - entry
     - id: company-profile
       page: ./screens/company-profile.tui.yml
       title: Company Profile
+      kind: screen
     - id: admin-setup
       page: ./screens/admin-setup.tui.yml
       title: Admin Setup
+      kind: screen
     - id: billing
       page: ./screens/billing.tui.yml
       title: Billing
+      kind: screen
     - id: compliance
       page: ./screens/compliance.tui.yml
       title: Compliance
+      kind: decision
     - id: integrations
       page: ./screens/integrations.tui.yml
       title: Integrations
+      kind: decision
     - id: review
       page: ./screens/review.tui.yml
       title: Review
+      kind: review
     - id: approval
       page: ./screens/approval.tui.yml
       title: Approval
+      kind: decision
     - id: provisioning
       page: ./screens/provisioning.tui.yml
       title: Provisioning
+      kind: screen
     - id: launch
       page: ./screens/launch.tui.yml
       title: Launch
+      kind: terminal
+      terminal:
+        kind: success
+        label: Customer live
+        outcome: onboarding-complete
   transitions:
-    - from: welcome
+    - id: t-welcome-company-profile
+      from: welcome
       to: company-profile
       trigger: start
-    - from: company-profile
+      label: Begin onboarding
+      kind: forward
+    - id: t-company-profile-admin-setup
+      from: company-profile
       to: admin-setup
       trigger: next
-    - from: admin-setup
-      to: billing
-      trigger: next
-    - from: billing
+      label: Continue with standard setup
+      condition: company-profile-complete
+      kind: forward
+    - id: t-company-profile-compliance
+      from: company-profile
       to: compliance
       trigger: next
-    - from: compliance
+      label: Route to regulated onboarding
+      condition: regulated-industry
+      kind: branch
+    - id: t-company-profile-welcome
+      from: company-profile
+      to: welcome
+      trigger: restart
+      label: Start over
+      kind: backtrack
+    - id: t-admin-setup-billing
+      from: admin-setup
+      to: billing
+      trigger: next
+      label: Configure billing
+      kind: forward
+    - id: t-admin-setup-integrations
+      from: admin-setup
       to: integrations
       trigger: next
-    - from: integrations
+      label: Use contract billing and skip ahead
+      condition: contract-billing
+      kind: branch
+    - id: t-admin-setup-company-profile
+      from: admin-setup
+      to: company-profile
+      trigger: back
+      label: Update company information
+      kind: backtrack
+    - id: t-billing-compliance
+      from: billing
+      to: compliance
+      trigger: next
+      label: Review compliance
+      kind: forward
+    - id: t-billing-review
+      from: billing
       to: review
       trigger: next
-    - from: review
+      label: Skip compliance for low-risk renewal
+      condition: low-risk-renewal
+      kind: branch
+    - id: t-billing-admin-setup
+      from: billing
+      to: admin-setup
+      trigger: back
+      label: Reconfigure admins
+      kind: backtrack
+    - id: t-compliance-integrations
+      from: compliance
+      to: integrations
+      trigger: next
+      label: Security requirements satisfied
+      condition: compliance-approved
+      kind: forward
+    - id: t-compliance-company-profile
+      from: compliance
+      to: company-profile
+      trigger: revise-company
+      label: Correct legal entity details
+      condition: entity-mismatch
+      kind: backtrack
+    - id: t-compliance-billing
+      from: compliance
+      to: billing
+      trigger: revise-billing
+      label: Fix tax or invoicing data
+      condition: billing-information-missing
+      kind: backtrack
+    - id: t-integrations-review
+      from: integrations
+      to: review
+      trigger: next
+      label: Review onboarding plan
+      kind: forward
+    - id: t-integrations-admin-setup
+      from: integrations
+      to: admin-setup
+      trigger: back
+      label: Change SSO or admin ownership
+      condition: identity-provider-changed
+      kind: backtrack
+    - id: t-integrations-compliance
+      from: integrations
+      to: compliance
+      trigger: security-review
+      label: Return to security review
+      condition: security-questionnaire-required
+      kind: loop
+    - id: t-review-approval
+      from: review
       to: approval
       trigger: submit
-    - from: approval
+      label: Submit for approval
+      kind: forward
+    - id: t-review-company-profile
+      from: review
+      to: company-profile
+      trigger: edit-company
+      label: Edit company profile
+      kind: backtrack
+    - id: t-review-billing
+      from: review
+      to: billing
+      trigger: edit-billing
+      label: Edit billing
+      kind: backtrack
+    - id: t-review-integrations
+      from: review
+      to: integrations
+      trigger: edit-integrations
+      label: Edit integrations
+      kind: backtrack
+    - id: t-approval-provisioning
+      from: approval
       to: provisioning
       trigger: approve
-    - from: provisioning
+      label: Approve rollout
+      kind: forward
+    - id: t-approval-review
+      from: approval
+      to: review
+      trigger: request-changes
+      label: Send back for corrections
+      kind: retry
+    - id: t-approval-compliance
+      from: approval
+      to: compliance
+      trigger: escalate-security
+      label: Escalate security exception
+      condition: security-exception
+      kind: escalation
+    - id: t-provisioning-launch
+      from: provisioning
       to: launch
       trigger: complete
+      label: Go live
+      kind: forward
+    - id: t-provisioning-integrations
+      from: provisioning
+      to: integrations
+      trigger: reconfigure
+      label: Reconfigure failed integrations
+      condition: integration-check-failed
+      kind: retry
+    - id: t-provisioning-admin-setup
+      from: provisioning
+      to: admin-setup
+      trigger: retry-access
+      label: Re-issue admin access
+      condition: admin-invite-expired
+      kind: retry
+    - id: t-launch-review
+      from: launch
+      to: review
+      trigger: reopen
+      label: Reopen after audit finding
+      condition: post-launch-audit
+      kind: loop
+    - id: t-launch-provisioning
+      from: launch
+      to: provisioning
+      trigger: rollback
+      label: Roll back and reprovision
+      condition: smoke-test-failed
+      kind: loop
