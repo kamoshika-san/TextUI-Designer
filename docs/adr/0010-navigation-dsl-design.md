@@ -3,6 +3,7 @@
 ## Status
 
 Accepted - 2026-04-09
+Phase 1 baseline only as of 2026-04-11. See ADR 0011 for the graph-first v2 expansion.
 
 ## Context
 
@@ -60,9 +61,11 @@ This keeps navigation flow types inside the same shared-domain boundary as the e
 - Downstream schema, diagnostics, and preview tickets can build on one agreed document contract instead of inferring shape from ad hoc samples.
 - Existing `TextUIDSL` consumers remain unchanged for current UI DSL flows.
 - Flow files become editor-recognizable now, while schema and validation remain intentionally deferred to later sprints.
+- New graph-query semantics such as terminal metadata, stable edge identity, and loop policy are intentionally out of scope for this ADR and move to ADR 0011.
 
 ## References
 
 - [ADR 0003](./0003-dsl-types-canonical-source.md)
+- [ADR 0011](./0011-navigation-v2-graph-model.md)
 - `src/domain/dsl-types/navigation.ts`
 - `src/dsl/load-dsl-with-includes.ts`
