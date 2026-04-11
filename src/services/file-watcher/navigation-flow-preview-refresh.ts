@@ -10,7 +10,7 @@ function isWindowsAbsolutePath(filePath: string): boolean {
 
 function isUiDslFile(filePath: string): boolean {
   const lower = filePath.toLowerCase();
-  return lower.endsWith('.tui.yml') || lower.endsWith('.tui.yaml');
+  return lower.endsWith('.tui.yml') || lower.endsWith('.tui.yaml') || lower.endsWith('.tui.json');
 }
 
 function isNavigationFlowFile(filePath: string): boolean {

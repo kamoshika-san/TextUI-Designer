@@ -20,6 +20,8 @@ export class FlowDiagnosticsManager {
         issue.level === 'error' ? vscode.DiagnosticSeverity.Error : vscode.DiagnosticSeverity.Warning
       );
 
+      diagnostic.source = 'textui.navigation-flow';
+
       if (issue.code) {
         diagnostic.code = issue.code;
       }

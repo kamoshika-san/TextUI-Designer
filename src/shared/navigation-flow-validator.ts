@@ -132,5 +132,14 @@ export function validateNavigationFlow(
     });
   }
 
+  if (dsl.flow.policy?.terminalScreensRequired && graph.terminalScreenIds.size === 0) {
+    issues.push({
+      level: 'error',
+      code: NAV_ERROR_CODES.TERMINAL_SCREEN_REQUIRED,
+      message: 'At least one terminal screen is required when flow.policy.terminalScreensRequired is enabled',
+      path: '/flow/screens'
+    });
+  }
+
   return issues;
 }

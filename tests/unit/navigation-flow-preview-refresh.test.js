@@ -44,4 +44,22 @@ describe('navigation-flow-preview-refresh', () => {
 
     assert.strictEqual(shouldRefresh, false);
   });
+
+  it('refreshes flow preview when a referenced .tui.json page file changes', () => {
+    const shouldRefresh = shouldRefreshPreviewForDocumentChange(
+      path.join('C:\\workspace', 'app.tui.flow.yml'),
+      path.join('C:\\workspace', 'screens', 'review.tui.json'),
+      () => ({
+        dsl: {
+          flow: {
+            screens: [
+              { id: 'review', page: './screens/review.tui.json' }
+            ]
+          }
+        }
+      })
+    );
+
+    assert.strictEqual(shouldRefresh, true);
+  });
 });
