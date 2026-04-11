@@ -3,6 +3,11 @@ import * as path from 'path';
 import { isNavigationFlowDSL } from '../domain/dsl-types';
 import type { ValidationIssue } from '../cli/types';
 import { NAV_ERROR_CODES } from './nav-error-codes';
+import {
+  buildNavigationGraph,
+  collectReachableScreenIds,
+  findNavigationCycles
+} from './navigation-graph';
 
 export function validateNavigationFlow(
   dsl: unknown,
@@ -88,15 +93,9 @@ export function validateNavigationFlow(
     }
   });
 
-  const adjacency = new Map<string, string[]>();
-  screens.forEach(screen => adjacency.set(screen.id, []));
-  transitions.forEach(transition => {
-    if (screenIds.has(transition.from) && screenIds.has(transition.to)) {
-      adjacency.get(transition.from)?.push(transition.to);
-    }
-  });
+  const graph = buildNavigationGraph(dsl);
 
-  for (const cycle of findCycles(adjacency)) {
+  for (const cycle of findNavigationCycles(graph)) {
     issues.push({
       level: 'error',
       code: NAV_ERROR_CODES.CYCLE_DETECTED,
@@ -106,7 +105,7 @@ export function validateNavigationFlow(
   }
 
   if (screenIds.has(dsl.flow.entry)) {
-    const reachable = collectReachable(adjacency, dsl.flow.entry);
+    const reachable = collectReachableScreenIds(graph, dsl.flow.entry);
     screens.forEach((screen, index) => {
       if (!reachable.has(screen.id)) {
         issues.push({
@@ -120,80 +119,4 @@ export function validateNavigationFlow(
   }
 
   return issues;
-}
-
-function collectReachable(adjacency: Map<string, string[]>, entry: string): Set<string> {
-  const visited = new Set<string>();
-  const queue = [entry];
-
-  while (queue.length > 0) {
-    const current = queue.shift();
-    if (!current || visited.has(current)) {
-      continue;
-    }
-
-    visited.add(current);
-    for (const next of adjacency.get(current) ?? []) {
-      if (!visited.has(next)) {
-        queue.push(next);
-      }
-    }
-  }
-
-  return visited;
-}
-
-function findCycles(adjacency: Map<string, string[]>): string[][] {
-  const visited = new Set<string>();
-  const visiting = new Set<string>();
-  const stack: string[] = [];
-  const cycles: string[][] = [];
-  const seen = new Set<string>();
-
-  const visit = (node: string): void => {
-    visiting.add(node);
-    visited.add(node);
-    stack.push(node);
-
-    for (const next of adjacency.get(node) ?? []) {
-      if (!visited.has(next)) {
-        visit(next);
-        continue;
-      }
-
-      if (!visiting.has(next)) {
-        continue;
-      }
-
-      const start = stack.indexOf(next);
-      if (start === -1) {
-        continue;
-      }
-
-      const cycle = [...stack.slice(start), next];
-      const key = normalizeCycle(cycle);
-      if (!seen.has(key)) {
-        seen.add(key);
-        cycles.push(cycle);
-      }
-    }
-
-    stack.pop();
-    visiting.delete(node);
-  };
-
-  for (const node of adjacency.keys()) {
-    if (!visited.has(node)) {
-      visit(node);
-    }
-  }
-
-  return cycles;
-}
-
-function normalizeCycle(cycle: string[]): string {
-  const loop = cycle.slice(0, -1);
-  const rotations = loop.map((_, index) => [...loop.slice(index), ...loop.slice(0, index)].join('->'));
-  rotations.sort();
-  return rotations[0] ?? cycle.join('->');
 }
