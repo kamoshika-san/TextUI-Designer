@@ -8,10 +8,21 @@ interface FlowPreviewPanelProps {
   flowDsl: NavigationFlowDSL;
   onJumpToDsl: (dslPath: string, componentName: string, targetFilePath?: string) => void;
   diffResult?: FlowSemanticDiffResult;
+  initialSelectedScreenId?: string;
 }
 
-export const FlowPreviewPanel: React.FC<FlowPreviewPanelProps> = ({ flowDsl, onJumpToDsl, diffResult }) => {
-  const initialScreenId = flowDsl.flow.entry || flowDsl.flow.screens[0]?.id || '';
+export const FlowPreviewPanel: React.FC<FlowPreviewPanelProps> = ({
+  flowDsl,
+  onJumpToDsl,
+  diffResult,
+  initialSelectedScreenId
+}) => {
+  const initialScreenId = (
+    initialSelectedScreenId &&
+    flowDsl.flow.screens.some(screen => screen.id === initialSelectedScreenId)
+  )
+    ? initialSelectedScreenId
+    : flowDsl.flow.entry || flowDsl.flow.screens[0]?.id || '';
   const [selectedScreenId, setSelectedScreenId] = useState(initialScreenId);
 
   useEffect(() => {

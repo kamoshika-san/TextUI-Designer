@@ -22,6 +22,8 @@ export const FlowDiagram: React.FC<FlowDiagramProps> = ({
 }) => {
   const screenDepths = computeScreenDepths(flowDsl);
   const selectedPath = computeSelectedPath(selectedScreenId, flowDsl);
+  const visibleTransitions = computeVisibleTransitions(selectedScreenId, flowDsl, selectedPath);
+  const isFilteredConnections = selectedScreenId !== '' && selectedScreenId !== flowDsl.flow.entry;
 
   const maxDepth = Math.max(0, ...Array.from(screenDepths.values()));
   const columns: ScreenRef[][] = Array.from({ length: maxDepth + 1 }, () => []);
@@ -53,10 +55,12 @@ export const FlowDiagram: React.FC<FlowDiagramProps> = ({
           ))}
         </div>
       </div>
-      {flowDsl.flow.transitions.length > 0 ? (
+      {visibleTransitions.length > 0 ? (
         <div className="textui-flow-diagram-connections">
-          <div className="textui-flow-diagram-connections-heading">Connections</div>
-          {flowDsl.flow.transitions.map((transition, index) => (
+          <div className="textui-flow-diagram-connections-heading">
+            {isFilteredConnections ? `Connections on route (${visibleTransitions.length})` : 'Connections'}
+          </div>
+          {visibleTransitions.map((transition, index) => (
             <FlowEdge
               key={`${transition.from}-${transition.to}-${transition.trigger}-${index}`}
               transition={transition}
@@ -106,6 +110,20 @@ function computeScreenDepths(flowDsl: NavigationFlowDSL): Map<string, number> {
   });
 
   return depths;
+}
+
+function computeVisibleTransitions(
+  selectedScreenId: string,
+  flowDsl: NavigationFlowDSL,
+  selectedPath: Set<string>
+) {
+  if (!selectedScreenId || selectedScreenId === flowDsl.flow.entry) {
+    return flowDsl.flow.transitions;
+  }
+
+  return flowDsl.flow.transitions.filter(transition => (
+    selectedPath.has(transition.from) && selectedPath.has(transition.to)
+  ));
 }
 
 function computeSelectedPath(selectedScreenId: string, flowDsl: NavigationFlowDSL): Set<string> {

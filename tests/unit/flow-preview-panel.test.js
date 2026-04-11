@@ -83,6 +83,67 @@ describe('FlowPreviewPanel', () => {
     assert.ok(html.includes('Detail'), 'should show target screen title in outgoing list');
   });
 
+  it('keeps default connections overview when entry screen is selected', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(FlowPreviewPanel, {
+        flowDsl: {
+          flow: {
+            id: 'entry-default',
+            title: 'Entry Default',
+            entry: 'home',
+            screens: [
+              { id: 'home', page: './home.tui.yml', title: 'Home' },
+              { id: 'detail', page: './detail.tui.yml', title: 'Detail' },
+              { id: 'settings', page: './settings.tui.yml', title: 'Settings' }
+            ],
+            transitions: [
+              { from: 'home', to: 'detail', trigger: 'select', label: 'Open detail' },
+              { from: 'home', to: 'settings', trigger: 'gear', label: 'Open settings' }
+            ]
+          }
+        },
+        onJumpToDsl: () => {}
+      })
+    );
+
+    assert.ok(html.includes('Connections'), 'should render default connections heading');
+    assert.ok(html.includes('Open detail'), 'should include first transition in default overview');
+    assert.ok(html.includes('Open settings'), 'should include second transition in default overview');
+    assert.ok(!html.includes('Connections on route'), 'should not switch into filtered route mode for entry');
+  });
+
+  it('filters connections to the selected route for non-entry screens', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(FlowPreviewPanel, {
+        flowDsl: {
+          flow: {
+            id: 'route-filter',
+            title: 'Route Filter',
+            entry: 'home',
+            screens: [
+              { id: 'home', page: './home.tui.yml', title: 'Home' },
+              { id: 'detail', page: './detail.tui.yml', title: 'Detail' },
+              { id: 'confirm', page: './confirm.tui.yml', title: 'Confirm' },
+              { id: 'settings', page: './settings.tui.yml', title: 'Settings' }
+            ],
+            transitions: [
+              { from: 'home', to: 'detail', trigger: 'select', label: 'Open detail' },
+              { from: 'detail', to: 'confirm', trigger: 'continue', label: 'Continue checkout' },
+              { from: 'home', to: 'settings', trigger: 'gear', label: 'Open settings' }
+            ]
+          }
+        },
+        initialSelectedScreenId: 'confirm',
+        onJumpToDsl: () => {}
+      })
+    );
+
+    assert.ok(html.includes('Connections on route (2)'), 'should show filtered route heading with count');
+    assert.ok(html.includes('Open detail'), 'should include transition on selected route');
+    assert.ok(html.includes('Continue checkout'), 'should include downstream route transition');
+    assert.ok(!html.includes('Open settings'), 'should omit transitions outside the selected route');
+  });
+
   it('renders terminal screen label when selected screen has no outgoing transitions', () => {
     const html = renderToStaticMarkup(
       React.createElement(FlowPreviewPanel, {
