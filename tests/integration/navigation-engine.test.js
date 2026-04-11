@@ -86,4 +86,59 @@ describe('navigation engine integration', () => {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   });
+
+  it('compareFlow preserves stable transition ids and v2 terminal metadata in semantic results', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-nav-compare-v2-'));
+    const screensDir = path.join(tmpDir, 'screens');
+    fs.mkdirSync(screensDir, { recursive: true });
+    fs.writeFileSync(path.join(screensDir, 'review.tui.yml'), 'page:\n  id: review\n  title: Review\n  layout: vertical\n  components: []\n', 'utf8');
+    fs.writeFileSync(path.join(screensDir, 'approval.tui.yml'), 'page:\n  id: approval\n  title: Approval\n  layout: vertical\n  components: []\n', 'utf8');
+
+    try {
+      const engine = new TextUICoreEngine();
+      const result = engine.compareFlow({
+        previousDsl: {
+          flow: {
+            id: 'approval-flow',
+            version: '2',
+            title: 'Approval Flow',
+            entry: 'review',
+            policy: { loops: 'warn', terminalScreensRequired: true },
+            screens: [
+              { id: 'review', page: './screens/review.tui.yml', title: 'Review', kind: 'review' },
+              { id: 'approval', page: './screens/approval.tui.yml', title: 'Approval', kind: 'terminal', terminal: { kind: 'success', outcome: 'approved' } }
+            ],
+            transitions: [
+              { id: 't-review-approval', from: 'review', to: 'approval', trigger: 'submit', kind: 'forward' }
+            ]
+          }
+        },
+        nextDsl: {
+          flow: {
+            id: 'approval-flow',
+            version: '2',
+            title: 'Approval Flow',
+            entry: 'review',
+            policy: { loops: 'allow', terminalScreensRequired: true },
+            screens: [
+              { id: 'review', page: './screens/review.tui.yml', title: 'Review', kind: 'review' },
+              { id: 'approval', page: './screens/approval.tui.yml', title: 'Approval', kind: 'terminal', terminal: { kind: 'failure', outcome: 'manual-review' } }
+            ],
+            transitions: [
+              { id: 't-review-approval', from: 'review', to: 'approval', trigger: 'approve', kind: 'escalation', guard: { expression: 'risk.accepted' } }
+            ]
+          }
+        },
+        previousSourcePath: path.join(tmpDir, 'app-prev.tui.flow.yml'),
+        nextSourcePath: path.join(tmpDir, 'app-next.tui.flow.yml')
+      });
+
+      assert.strictEqual(result.ok, true);
+      assert.ok(result.result.events.some(event => event.entity === 'transition' && event.kind === 'update' && event.def.key === 't-review-approval'));
+      assert.ok(result.semantic.findings.some(finding => finding.target.entity === 'screen' && finding.target.key === 'approval'));
+      assert.strictEqual(result.semantic.findings.some(finding => finding.target.entity === 'flow' && finding.target.key === 'loopPolicy'), true);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
 });

@@ -19,6 +19,20 @@ export function scoreFlowDiffEvent(event: FlowDiffEvent): FlowDiffConfidenceScor
         reason: `${event.entity} ${event.kind} is directly observable from normalized inventory`
       };
     case 'update':
+      if (event.entity === 'screen') {
+        return {
+          score: event.field === 'terminal' ? 0.94 : 0.9,
+          band: 'high',
+          reason: `screen ${event.field} change is deterministic from normalized flow metadata`
+        };
+      }
+      if (event.entity === 'transition') {
+        return {
+          score: event.field === 'guard' ? 0.9 : 0.94,
+          band: 'high',
+          reason: `transition ${event.field} change is deterministic from normalized flow metadata`
+        };
+      }
       return {
         score: event.field === 'entry' ? 0.93 : 0.88,
         band: 'high',

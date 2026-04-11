@@ -1,4 +1,14 @@
-import type { NavigationFlowDSL, ScreenRef, TextUIDSL, TransitionDef } from '../domain/dsl-types';
+import type {
+  NavigationFlowDSL,
+  NavigationGuardDef,
+  NavigationLoopPolicy,
+  NavigationScreenKind,
+  NavigationTerminalDef,
+  NavigationTransitionKind,
+  ScreenRef,
+  TextUIDSL,
+  TransitionDef
+} from '../domain/dsl-types';
 import {
   type HeuristicPolicy,
   DEFAULT_HEURISTIC_POLICY,
@@ -53,17 +63,24 @@ export interface FlowDiffScreenRef {
   id: string;
   page: string;
   title?: string;
+  kind?: NavigationScreenKind;
+  tags?: string[];
+  terminal?: NavigationTerminalDef;
   path: string;
 }
 
 export interface FlowDiffTransitionRef {
   key: string;
+  id?: string;
   from: string;
   to: string;
   trigger: string;
   label?: string;
   condition?: string;
   params?: string[];
+  kind?: NavigationTransitionKind;
+  tags?: string[];
+  guard?: NavigationGuardDef;
   path: string;
 }
 
@@ -74,6 +91,9 @@ export interface FlowDiffCompareDocument {
     id: string;
     title: string;
     entry: string;
+    version: string;
+    loopPolicy: NavigationLoopPolicy;
+    terminalScreensRequired: boolean;
     screenCount: number;
     transitionCount: number;
   };
@@ -112,9 +132,25 @@ export type FlowDiffEvent =
   | {
       kind: 'update';
       entity: 'flow';
-      field: 'id' | 'title' | 'entry';
-      prev: string;
-      next: string;
+      field: 'id' | 'title' | 'entry' | 'version' | 'loopPolicy' | 'terminalScreensRequired';
+      prev: string | boolean;
+      next: string | boolean;
+    }
+  | {
+      kind: 'update';
+      entity: 'screen';
+      field: 'page' | 'title' | 'kind' | 'tags' | 'terminal';
+      def: FlowDiffScreenRef;
+      prev: string | string[] | NavigationTerminalDef | undefined;
+      next: string | string[] | NavigationTerminalDef | undefined;
+    }
+  | {
+      kind: 'update';
+      entity: 'transition';
+      field: 'from' | 'to' | 'trigger' | 'label' | 'condition' | 'params' | 'kind' | 'tags' | 'guard';
+      def: FlowDiffTransitionRef;
+      prev: string | string[] | NavigationGuardDef | undefined;
+      next: string | string[] | NavigationGuardDef | undefined;
     };
 
 export interface FlowDiffNormalizationResult {
@@ -1379,6 +1415,9 @@ export function createNormalizedFlowDiffDocument(
       id: normalizedDsl.flow.id,
       title: normalizedDsl.flow.title,
       entry: normalizedDsl.flow.entry,
+      version: normalizedDsl.flow.version ?? '1',
+      loopPolicy: normalizedDsl.flow.policy?.loops ?? 'deny',
+      terminalScreensRequired: normalizedDsl.flow.policy?.terminalScreensRequired ?? false,
       screenCount: normalizedDsl.flow.screens.length,
       transitionCount: normalizedDsl.flow.transitions.length
     },
@@ -1386,16 +1425,23 @@ export function createNormalizedFlowDiffDocument(
       id: screen.id,
       page: screen.page,
       title: screen.title,
+      kind: screen.kind,
+      tags: screen.tags,
+      terminal: screen.terminal,
       path: `/flow/screens/${index}`
     })),
     transitions: normalizedDsl.flow.transitions.map((transition, index) => ({
       key: createFlowTransitionKey(transition),
+      id: transition.id,
       from: transition.from,
       to: transition.to,
       trigger: transition.trigger,
       label: transition.label,
       condition: transition.condition,
       params: transition.params,
+      kind: transition.kind,
+      tags: transition.tags,
+      guard: transition.guard,
       path: `/flow/transitions/${index}`
     })),
     metadata: {
@@ -1408,8 +1454,8 @@ export function createNormalizedFlowDiffDocument(
   };
 }
 
-export function createFlowTransitionKey(transition: Pick<TransitionDef, 'from' | 'to' | 'trigger'>): string {
-  return `${transition.from}::${transition.trigger}::${transition.to}`;
+export function createFlowTransitionKey(transition: Pick<TransitionDef, 'id' | 'from' | 'to' | 'trigger'>): string {
+  return transition.id ?? `${transition.from}::${transition.trigger}::${transition.to}`;
 }
 
 export function createFlowScreenKey(screen: Pick<ScreenRef, 'id'>): string {

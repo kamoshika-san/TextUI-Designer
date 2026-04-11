@@ -1,11 +1,17 @@
 import * as path from 'path';
-import type { NavigationFlowDSL } from '../domain/dsl-types';
+import type { NavigationFlowDSL, NavigationScreenKind, NavigationTerminalKind } from '../domain/dsl-types';
+import { createNavigationTransitionId } from '../shared/navigation-graph';
 
 export interface FlowRouteDefinition {
   path: string;
   componentName: string;
   title: string;
   screenId: string;
+  screenKind?: NavigationScreenKind;
+  tags?: string[];
+  terminalKind?: NavigationTerminalKind;
+  terminalOutcome?: string;
+  outgoingTransitionIds: string[];
 }
 
 function toPascalCase(value: string): string {
@@ -42,6 +48,13 @@ export function buildFlowRoutes(dsl: NavigationFlowDSL): FlowRouteDefinition[] {
     path: deriveFlowRoutePath(screen.id, screen.page, screen.id === dsl.flow.entry),
     componentName: `${toPascalCase(screen.id)}Page`,
     title: screen.title || screen.id,
-    screenId: screen.id
+    screenId: screen.id,
+    screenKind: screen.kind,
+    tags: screen.tags,
+    terminalKind: screen.terminal?.kind,
+    terminalOutcome: screen.terminal?.outcome,
+    outgoingTransitionIds: dsl.flow.transitions
+      .filter(transition => transition.from === screen.id)
+      .map(transition => transition.id ?? createNavigationTransitionId(transition))
   }));
 }

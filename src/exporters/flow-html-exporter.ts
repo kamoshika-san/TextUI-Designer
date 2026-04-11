@@ -5,10 +5,14 @@ import { buildFlowRoutes } from './flow-export-route-utils';
 
 function buildPageSections(routes: ReturnType<typeof buildFlowRoutes>): string {
   return routes.map(route => `<!-- page: ${route.path === '/' ? '/index.html' : `${route.path}/index.html`} -->
-<section data-route="${route.path}">
+<section data-route="${route.path}" data-screen-id="${route.screenId}" data-screen-kind="${route.screenKind ?? 'screen'}"${route.terminalKind ? ` data-terminal-kind="${route.terminalKind}"` : ''}>
   <h1>${route.title}</h1>
   <p>Screen ID: ${route.screenId}</p>
   <p>Route: ${route.path}</p>
+  <p>Screen Kind: ${route.screenKind ?? 'screen'}</p>
+  <p>Outgoing Transitions: ${route.outgoingTransitionIds.join(', ') || 'none'}</p>${route.terminalKind ? `
+  <p>Terminal Kind: ${route.terminalKind}</p>` : ''}${route.terminalOutcome ? `
+  <p>Terminal Outcome: ${route.terminalOutcome}</p>` : ''}
 </section>`).join('\n\n');
 }
 

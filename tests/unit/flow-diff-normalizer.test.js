@@ -37,6 +37,7 @@ describe('FlowDiffNormalizer', () => {
 
     assert.strictEqual(result.previous.metadata.normalizationState, 'normalized-flow');
     assert.strictEqual(result.previous.flow.screenCount, 2);
+    assert.strictEqual(result.previous.flow.version, '1');
     assert.strictEqual(result.previous.screens[0].path, '/flow/screens/0');
     assert.strictEqual(result.previous.transitions[0].key, 'cart::next::shipping');
     assert.strictEqual(result.metadata.eventCount, 0);
@@ -67,6 +68,46 @@ describe('FlowDiffNormalizer', () => {
         'add:screen:confirm',
         'remove:transition:cart::next::shipping',
         'add:transition:shipping::next::confirm'
+      ]
+    );
+  });
+
+  it('uses stable transition ids and captures v2 metadata updates', () => {
+    const result = normalizeFlowDiff({
+      previousDsl: makeFlow({
+        version: '2',
+        policy: { loops: 'warn', terminalScreensRequired: true },
+        screens: [
+          { id: 'cart', page: './screens/cart.tui.yml', title: 'Cart', kind: 'review' },
+          { id: 'shipping', page: './screens/shipping.tui.yml', title: 'Shipping', kind: 'terminal', terminal: { kind: 'success', outcome: 'ready' } }
+        ],
+        transitions: [
+          { id: 't-cart-shipping', from: 'cart', to: 'shipping', trigger: 'next', label: 'Continue', kind: 'forward' }
+        ]
+      }),
+      nextDsl: makeFlow({
+        version: '2',
+        policy: { loops: 'allow', terminalScreensRequired: true },
+        screens: [
+          { id: 'cart', page: './screens/cart.tui.yml', title: 'Cart', kind: 'review' },
+          { id: 'shipping', page: './screens/shipping.tui.yml', title: 'Shipping', kind: 'terminal', terminal: { kind: 'failure', outcome: 'manual-review' } }
+        ],
+        transitions: [
+          { id: 't-cart-shipping', from: 'cart', to: 'shipping', trigger: 'approve', label: 'Approve', kind: 'escalation', guard: { expression: 'risk.accepted' } }
+        ]
+      })
+    });
+
+    assert.strictEqual(result.previous.transitions[0].key, 't-cart-shipping');
+    assert.deepStrictEqual(
+      result.events.map(event => `${event.kind}:${event.entity}:${event.entity === 'flow' ? event.field : event.def.id ?? event.def.key}${event.kind === 'update' && event.entity !== 'flow' ? `:${event.field}` : ''}`),
+      [
+        'update:flow:loopPolicy',
+        'update:screen:shipping:terminal',
+        'update:transition:t-cart-shipping:trigger',
+        'update:transition:t-cart-shipping:label',
+        'update:transition:t-cart-shipping:kind',
+        'update:transition:t-cart-shipping:guard'
       ]
     );
   });

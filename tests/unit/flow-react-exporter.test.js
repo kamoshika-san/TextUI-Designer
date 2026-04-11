@@ -7,24 +7,27 @@ describe('FlowReactExporter', () => {
     const code = await exporter.export({
       flow: {
         id: 'checkout-flow',
+        version: '2',
         title: 'Checkout Flow',
         entry: 'cart',
         screens: [
           { id: 'cart', page: './screens/cart.tui.yml', title: 'Cart' },
-          { id: 'shipping', page: './screens/shipping.tui.yml', title: 'Shipping' }
+          { id: 'shipping', page: './screens/shipping.tui.yml', title: 'Shipping', kind: 'terminal', terminal: { kind: 'success', outcome: 'approved' } }
         ],
         transitions: [
-          { from: 'cart', to: 'shipping', trigger: 'next' }
+          { id: 't-cart-shipping', from: 'cart', to: 'shipping', trigger: 'next', kind: 'forward' }
         ]
       }
     }, { format: 'react-flow' });
 
     assert.ok(code.includes('// generated: router.tsx'));
     assert.ok(code.includes('createBrowserRouter'));
-    assert.ok(code.includes("{ path: '/', element: <CartPage /> }"));
-    assert.ok(code.includes("{ path: '/screens/shipping', element: <ShippingPage /> }"));
+    assert.ok(code.includes("{ path: '/', element: <CartPage />, handle: { screenId: 'cart', kind: 'screen', terminalKind: undefined } }"));
+    assert.ok(code.includes("handle: { screenId: 'shipping', kind: 'terminal', terminalKind: 'success' }"));
     assert.ok(code.includes('// generated: App.tsx'));
     assert.ok(code.includes('export function CartPage()'));
+    assert.ok(code.includes('Outgoing Transitions: t-cart-shipping'));
+    assert.ok(code.includes("version: '2'"));
   });
 
   it('preserves parameterized route segments derived from page file names', async () => {
@@ -44,6 +47,6 @@ describe('FlowReactExporter', () => {
       }
     }, { format: 'react-flow' });
 
-    assert.ok(code.includes("{ path: '/screens/order/:order_id', element: <OrderDetailPage /> }"));
+    assert.ok(code.includes("{ path: '/screens/order/:order_id', element: <OrderDetailPage />, handle: { screenId: 'order-detail', kind: 'screen', terminalKind: undefined } }"));
   });
 });

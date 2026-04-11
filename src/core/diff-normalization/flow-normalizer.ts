@@ -15,9 +15,53 @@ function sortStrings(values: string[]): string[] {
   return [...values].sort((a, b) => a.localeCompare(b));
 }
 
+function areStringArraysEqual(left?: string[], right?: string[]): boolean {
+  if (left === right) {
+    return true;
+  }
+  if (!left || !right || left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((value, index) => value === right[index]);
+}
+
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(item => stableStringify(item)).join(',')}]`;
+  }
+  if (!value || typeof value !== 'object') {
+    return JSON.stringify(value);
+  }
+
+  return `{${Object.entries(value)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, nested]) => `${JSON.stringify(key)}:${stableStringify(nested)}`)
+    .join(',')}}`;
+}
+
+function isEqualValue(left: unknown, right: unknown): boolean {
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return Array.isArray(left) && Array.isArray(right) && areStringArraysEqual(left, right);
+  }
+
+  if (left && right && typeof left === 'object' && typeof right === 'object') {
+    return stableStringify(left) === stableStringify(right);
+  }
+
+  return left === right;
+}
+
 function collectFlowUpdateEvents(previous: FlowDiffCompareDocument, next: FlowDiffCompareDocument): FlowDiffEvent[] {
   const events: FlowDiffEvent[] = [];
-  const comparableFields: Array<'id' | 'title' | 'entry'> = ['id', 'title', 'entry'];
+  const comparableFields: Array<'id' | 'title' | 'entry' | 'version' | 'loopPolicy' | 'terminalScreensRequired'> = [
+    'id',
+    'title',
+    'entry',
+    'version',
+    'loopPolicy',
+    'terminalScreensRequired'
+  ];
 
   for (const field of comparableFields) {
     const previousValue = previous.flow[field];
@@ -58,6 +102,24 @@ function collectScreenEvents(previous: FlowDiffCompareDocument, next: FlowDiffCo
         entity: 'screen',
         def: nextById.get(key)!
       });
+      continue;
+    }
+
+    const previousScreen = previousById.get(key)!;
+    const nextScreen = nextById.get(key)!;
+    const comparableFields: Array<'page' | 'title' | 'kind' | 'tags' | 'terminal'> = ['page', 'title', 'kind', 'tags', 'terminal'];
+
+    for (const field of comparableFields) {
+      if (!isEqualValue(previousScreen[field], nextScreen[field])) {
+        events.push({
+          kind: 'update',
+          entity: 'screen',
+          field,
+          def: nextScreen,
+          prev: previousScreen[field],
+          next: nextScreen[field]
+        });
+      }
     }
   }
 
@@ -86,6 +148,34 @@ function collectTransitionEvents(previous: FlowDiffCompareDocument, next: FlowDi
         entity: 'transition',
         def: nextByKey.get(key)!
       });
+      continue;
+    }
+
+    const previousTransition = previousByKey.get(key)!;
+    const nextTransition = nextByKey.get(key)!;
+    const comparableFields: Array<'from' | 'to' | 'trigger' | 'label' | 'condition' | 'params' | 'kind' | 'tags' | 'guard'> = [
+      'from',
+      'to',
+      'trigger',
+      'label',
+      'condition',
+      'params',
+      'kind',
+      'tags',
+      'guard'
+    ];
+
+    for (const field of comparableFields) {
+      if (!isEqualValue(previousTransition[field], nextTransition[field])) {
+        events.push({
+          kind: 'update',
+          entity: 'transition',
+          field,
+          def: nextTransition,
+          prev: previousTransition[field],
+          next: nextTransition[field]
+        });
+      }
     }
   }
 

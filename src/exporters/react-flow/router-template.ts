@@ -1,15 +1,9 @@
 import type { NavigationFlowDSL } from '../../domain/dsl-types';
-
-export interface FlowRouteDefinition {
-  path: string;
-  componentName: string;
-  title: string;
-  screenId: string;
-}
+import type { FlowRouteDefinition } from '../flow-export-route-utils';
 
 function buildRouteLines(routes: FlowRouteDefinition[]): string {
   return routes.map(route =>
-    `  { path: '${route.path}', element: <${route.componentName} /> }`
+    `  { path: '${route.path}', element: <${route.componentName} />, handle: { screenId: '${route.screenId}', kind: '${route.screenKind ?? 'screen'}', terminalKind: ${route.terminalKind ? `'${route.terminalKind}'` : 'undefined'} } }`
   ).join(',\n');
 }
 

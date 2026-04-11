@@ -52,4 +52,46 @@ describe('FlowSemanticDiffEngine', () => {
     assert.strictEqual(diagramState.transitionStates['cart::next::shipping'], 'removed');
     assert.strictEqual(diagramState.transitionStates['shipping::next::confirm'], 'added');
   });
+
+  it('tracks changed transitions by stable id and captures terminal metadata changes', () => {
+    const result = buildFlowSemanticDiff({
+      previousDsl: {
+        flow: {
+          id: 'checkout',
+          version: '2',
+          title: 'Checkout Flow',
+          entry: 'review',
+          policy: { loops: 'warn', terminalScreensRequired: true },
+          screens: [
+            { id: 'review', page: './screens/review.tui.yml', title: 'Review', kind: 'review' },
+            { id: 'approval', page: './screens/approval.tui.yml', title: 'Approval', kind: 'terminal', terminal: { kind: 'success', outcome: 'approved' } }
+          ],
+          transitions: [
+            { id: 't-review-approval', from: 'review', to: 'approval', trigger: 'submit', label: 'Submit', kind: 'forward' }
+          ]
+        }
+      },
+      nextDsl: {
+        flow: {
+          id: 'checkout',
+          version: '2',
+          title: 'Checkout Flow',
+          entry: 'review',
+          policy: { loops: 'allow', terminalScreensRequired: true },
+          screens: [
+            { id: 'review', page: './screens/review.tui.yml', title: 'Review', kind: 'review' },
+            { id: 'approval', page: './screens/approval.tui.yml', title: 'Approval', kind: 'terminal', terminal: { kind: 'failure', outcome: 'manual-review' } }
+          ],
+          transitions: [
+            { id: 't-review-approval', from: 'review', to: 'approval', trigger: 'approve', label: 'Approve', kind: 'escalation', guard: { expression: 'risk.accepted' } }
+          ]
+        }
+      }
+    });
+
+    const diagramState = createFlowDiagramDiffState(result);
+    assert.strictEqual(diagramState.screenStates.approval, 'changed');
+    assert.strictEqual(diagramState.transitionStates['t-review-approval'], 'changed');
+    assert.ok(result.findings.some(finding => finding.target.entity === 'flow' && finding.target.key === 'loopPolicy'));
+  });
 });
