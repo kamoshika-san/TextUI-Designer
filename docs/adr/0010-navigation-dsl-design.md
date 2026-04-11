@@ -5,6 +5,14 @@
 Accepted - 2026-04-09
 Phase 1 baseline only as of 2026-04-11. See ADR 0011 for the graph-first v2 expansion.
 
+This ADR remains the canonical baseline for `.tui.flow.yml` authoring.
+Current operational guidance lives in:
+
+- [Navigation v2 Guide](../navigation-v2-guide.md)
+- [Navigation v2 Migration Guide](../navigation-v2-migration.md)
+- [CLI Boundary Guide](../cli-boundary-guide.md)
+- [MCP Boundary Guide](../mcp-boundary-guide.md)
+
 ## Context
 
 - Epic `E-Nav-A` introduces a new `.tui.flow.yml` document family for navigation-flow authoring.
@@ -62,6 +70,7 @@ This keeps navigation flow types inside the same shared-domain boundary as the e
 - Existing `TextUIDSL` consumers remain unchanged for current UI DSL flows.
 - Flow files become editor-recognizable now, while schema and validation remain intentionally deferred to later sprints.
 - New graph-query semantics such as terminal metadata, stable edge identity, and loop policy are intentionally out of scope for this ADR and move to ADR 0011.
+- Teams should treat this ADR as the minimum valid shape and ADR 0011 plus the v2 guides as the graph-aware operational shape.
 
 ## References
 

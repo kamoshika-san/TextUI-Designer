@@ -1,32 +1,62 @@
-# MCP境界ガイド
+# MCP Boundary Guide
 
-このガイドは、MCP サーバーとしての TextUI Designer の責務を把握するための入口です。
+This guide defines the supported TextUI Designer boundary exposed through the MCP server.
 
-## この境界の責務
+## What The MCP Layer Owns
 
-- JSON-RPC ベースの入出力とツール実行の仲介
-- MCP ツールのパラメータ検証とハンドラ分離
-- CLI 実行やプレビューキャプチャー機能を MCP 経由で提供
+- JSON-RPC entrypoints for TextUI Designer capabilities
+- parameter validation and handler routing
+- tool-facing access to preview, CLI-adjacent, and flow analysis surfaces
+- parity with the shared contracts already used by CLI and core services
 
-## 最初に見るファイル
+## Primary Files
 
 1. `src/mcp/server.ts`
-   - サーバー本体、dispatch、tool/resource 実行
+   - server bootstrap and dispatch for tools/resources
 2. `src/mcp/request-handlers.ts`
-   - `initialize`、resource/prompt ハンドラ
+   - initialize flow and handler wiring
 3. `src/mcp/params.ts`
-   - パラメータ抽出と共通バリデーション
+   - parameter parsing and shared validation
 4. `src/mcp/registry.ts`
-   - resource/prompt の静的 registry
+   - resource and prompt registry
 
-## 関連ドキュメント
+## Related Documents
 
-- MCP統合ガイド: `docs/mcp-integration.md`
-- Provider契約: `docs/PROVIDER_CONTRACT.md`
-- 運用安定契約: `docs/api-compat-policy.md`
+- MCP integration guide: `docs/mcp-integration.md`
+- provider contract: `docs/PROVIDER_CONTRACT.md`
+- API compatibility policy: `docs/api-compat-policy.md`
 
-## 変更時のチェックポイント
+## Navigation Flow Surface
 
-- server 層と handler 層で責務が混在していないか
-- パラメータ仕様変更時に CLI と MCP の振る舞い差分が過大になっていないか
-- 破壊的変更を伴う場合、移行手順と互換方針が明示されているか
+Navigation-specific MCP behavior should stay aligned with the CLI flow lane and the shared navigation DSL contract.
+
+Current flow-oriented tools:
+
+- `validate_flow`
+- `analyze_flow`
+- `route_flow`
+
+`route_flow` must receive exactly one navigation target:
+
+- `toScreenId`, or
+- `toTerminalKind`
+
+Use the navigation MCP lane when the caller needs:
+
+- graph-aware validation
+- analysis of adjacency, terminals, or reachability
+- route search from `entry` to a screen or terminal kind
+
+## Boundary Checkpoints
+
+- server and handler responsibilities should remain clearly separated
+- parameter validation should keep CLI and MCP semantics aligned
+- externally visible behavior should remain explicit and reviewable
+
+## Navigation Boundary Rules
+
+- MCP handlers should not define a second navigation schema that differs from `.tui.flow.yml`.
+- Parameter validation should reject ambiguous route queries rather than guessing between screen-target and terminal-target modes.
+- CLI and MCP docs should describe the same graph-aware semantics for loops, terminal metadata, and stable transition identity.
+
+For the authoring contract, pair this guide with [Navigation v2 Guide](./navigation-v2-guide.md) and [Navigation v2 Migration Guide](./navigation-v2-migration.md).

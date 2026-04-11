@@ -4,6 +4,12 @@ This guide explains when an existing `.tui.flow.yml` file can stay on the Phase 
 
 For the contract background, read [ADR 0010](./adr/0010-navigation-dsl-design.md) first and [ADR 0011](./adr/0011-navigation-v2-graph-model.md) second.
 
+Use this guide together with:
+
+- [Navigation v2 Guide](./navigation-v2-guide.md) for the target state
+- [CLI Boundary Guide](./cli-boundary-guide.md) when migration changes CLI workflows
+- [MCP Boundary Guide](./mcp-boundary-guide.md) when migration changes MCP usage
+
 ## Quick Decision
 
 Treat a flow as one of these cases.
@@ -196,6 +202,15 @@ Use this order for low-risk migration:
 
 This sequence keeps the migration additive and reviewable.
 
+## Boundary Reminder
+
+This migration guide covers document shape and workflow semantics only.
+It does not decide:
+
+- release version numbers
+- VSIX packaging or tagging
+- non-doc runtime refactors outside the flow lane
+
 ## Sample-Based Migration Reference
 
 Use these repository examples:
@@ -214,4 +229,3 @@ During migration review, confirm:
 - loops are explicitly allowed or warned when intentional
 - transition ids are stable and non-duplicated
 - docs, sample intent, and validator behavior all describe the same workflow
-

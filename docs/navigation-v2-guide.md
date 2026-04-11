@@ -12,6 +12,12 @@ At runtime, the extension treats that document as a directed graph. Shared helpe
 
 For the contract history, start with [ADR 0010](./adr/0010-navigation-dsl-design.md) for the Phase 1 baseline and [ADR 0011](./adr/0011-navigation-v2-graph-model.md) for the graph-first expansion.
 
+Current repository guidance is split by concern:
+
+- authoring and migration: this guide plus [Navigation v2 Migration Guide](./navigation-v2-migration.md)
+- CLI usage boundary: [CLI Boundary Guide](./cli-boundary-guide.md)
+- MCP usage boundary: [MCP Boundary Guide](./mcp-boundary-guide.md)
+
 ## When To Use v2
 
 Choose v2 when one or more of these are true:
@@ -124,6 +130,9 @@ Do not convert `screens` or `transitions` into ad hoc maps. The current contract
 
 The graph-first contract is available through the flow tooling surface.
 
+These commands and tools are the current supported navigation-specific surface.
+Release/version decisions live outside this guide; use it as the operational contract for the shipped flow lane.
+
 ### CLI
 
 Validate a flow:
@@ -174,6 +183,8 @@ Use these repository samples as references:
 - [`sample/12-navigation`](../sample/12-navigation/README.md): v1-style baseline for simple validation and diagnostics
 - [`sample/13-enterprise-flow`](../sample/13-enterprise-flow/README.md): representative v2 flow with branch, backtrack, retry, escalation, loop, and terminal semantics
 
+If repository docs disagree, prefer `13-enterprise-flow` for graph-aware behavior and `12-navigation` for the minimal baseline.
+
 ## Checklist
 
 Before calling a flow "Navigation v2 ready", confirm:
@@ -184,4 +195,3 @@ Before calling a flow "Navigation v2 ready", confirm:
 - `policy.loops` matches intended business behavior
 - at least one terminal screen exists when `terminalScreensRequired` is enabled
 - the flow passes `flow validate`
-
