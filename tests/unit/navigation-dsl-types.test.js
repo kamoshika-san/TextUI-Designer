@@ -80,4 +80,77 @@ describe('navigation DSL types', () => {
 
     assert.strictEqual(isNavigationFlowDSL(dsl), true);
   });
+
+  it('rejects invalid enum metadata in the v2 graph-first shape', () => {
+    const invalidCases = [
+      {
+        flow: {
+          id: 'bad-version',
+          version: 'banana',
+          title: 'Bad Version',
+          entry: 'welcome',
+          screens: [{ id: 'welcome', page: 'welcome-page' }],
+          transitions: []
+        }
+      },
+      {
+        flow: {
+          id: 'bad-policy',
+          version: '2',
+          title: 'Bad Policy',
+          entry: 'welcome',
+          policy: { loops: 'banana' },
+          screens: [{ id: 'welcome', page: 'welcome-page' }],
+          transitions: []
+        }
+      },
+      {
+        flow: {
+          id: 'bad-screen-kind',
+          version: '2',
+          title: 'Bad Screen Kind',
+          entry: 'welcome',
+          screens: [{ id: 'welcome', page: 'welcome-page', kind: 'banana' }],
+          transitions: []
+        }
+      },
+      {
+        flow: {
+          id: 'bad-terminal-kind',
+          version: '2',
+          title: 'Bad Terminal Kind',
+          entry: 'done',
+          screens: [{
+            id: 'done',
+            page: 'done-page',
+            kind: 'terminal',
+            terminal: { kind: 'banana' }
+          }],
+          transitions: []
+        }
+      },
+      {
+        flow: {
+          id: 'bad-transition-kind',
+          version: '2',
+          title: 'Bad Transition Kind',
+          entry: 'welcome',
+          screens: [
+            { id: 'welcome', page: 'welcome-page' },
+            { id: 'done', page: 'done-page' }
+          ],
+          transitions: [{
+            from: 'welcome',
+            to: 'done',
+            trigger: 'next',
+            kind: 'banana'
+          }]
+        }
+      }
+    ];
+
+    invalidCases.forEach(dsl => {
+      assert.strictEqual(isNavigationFlowDSL(dsl), false);
+    });
+  });
 });
