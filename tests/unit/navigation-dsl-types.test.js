@@ -35,4 +35,49 @@ describe('navigation DSL types', () => {
 
     assert.strictEqual(isNavigationFlowDSL(invalid), false);
   });
+
+  it('accepts the v2 graph-first navigation shape with policy, terminal, and guard metadata', () => {
+    const dsl = {
+      flow: {
+        id: 'enterprise-v2',
+        version: '2',
+        title: 'Enterprise v2',
+        entry: 'welcome',
+        policy: {
+          loops: 'warn',
+          terminalScreensRequired: true
+        },
+        screens: [
+          { id: 'welcome', page: 'welcome-page', kind: 'screen', tags: ['entry'] },
+          { id: 'review', page: 'review-page', kind: 'review' },
+          {
+            id: 'launched',
+            page: 'launch-page',
+            kind: 'terminal',
+            terminal: { kind: 'success', label: 'Customer live' }
+          }
+        ],
+        transitions: [
+          {
+            id: 't-welcome-review',
+            from: 'welcome',
+            to: 'review',
+            trigger: 'submit',
+            kind: 'forward',
+            guard: { expression: 'profileComplete', params: ['tenantId'] }
+          },
+          {
+            id: 't-review-launched',
+            from: 'review',
+            to: 'launched',
+            trigger: 'approve',
+            kind: 'branch',
+            tags: ['terminal-path']
+          }
+        ]
+      }
+    };
+
+    assert.strictEqual(isNavigationFlowDSL(dsl), true);
+  });
 });

@@ -94,14 +94,17 @@ export function validateNavigationFlow(
   });
 
   const graph = buildNavigationGraph(dsl);
+  const loopPolicy = dsl.flow.policy?.loops ?? 'deny';
 
-  for (const cycle of findNavigationCycles(graph)) {
-    issues.push({
-      level: 'error',
-      code: NAV_ERROR_CODES.CYCLE_DETECTED,
-      message: `Circular navigation path detected: ${cycle.join(' -> ')}`,
-      path: '/flow/transitions'
-    });
+  if (loopPolicy !== 'allow') {
+    for (const cycle of findNavigationCycles(graph)) {
+      issues.push({
+        level: loopPolicy === 'warn' ? 'warning' : 'error',
+        code: NAV_ERROR_CODES.CYCLE_DETECTED,
+        message: `Circular navigation path detected: ${cycle.join(' -> ')}`,
+        path: '/flow/transitions'
+      });
+    }
   }
 
   if (screenIds.has(dsl.flow.entry)) {
