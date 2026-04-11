@@ -116,6 +116,33 @@ export const TOOLS: ToolDefinition[] = [
     }
   },
   {
+    name: 'analyze_flow',
+    description: 'Navigation flow DSL file を graph-aware に解析し、terminal / reachability 情報を返します。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        filePath: { type: 'string' },
+        entryId: { type: 'string' },
+        screenId: { type: 'string' }
+      },
+      required: ['filePath']
+    }
+  },
+  {
+    name: 'route_flow',
+    description: 'Navigation flow DSL file から entry-to-screen または entry-to-terminal route を返します。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        filePath: { type: 'string' },
+        entryId: { type: 'string' },
+        toScreenId: { type: 'string' },
+        toTerminalKind: { type: 'string', enum: ['success', 'failure', 'cancel', 'handoff'] }
+      },
+      required: ['filePath']
+    }
+  },
+  {
     name: 'export_flow',
     description: 'Navigation flow DSL file を flow exporter で出力します。',
     inputSchema: {

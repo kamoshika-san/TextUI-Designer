@@ -49,6 +49,46 @@ describe('flow CLI commands', () => {
     assert.match(artifact, /Checkout Flow/);
   });
 
+  it('flow analyze --json returns graph-aware reachability and terminal data', () => {
+    const flowFile = path.join(repoRoot, 'sample/13-enterprise-flow/app.tui.flow.yml');
+    const result = harness.runCli([
+      'flow',
+      'analyze',
+      '--file', flowFile,
+      '--entry', 'welcome',
+      '--screen', 'launch',
+      '--json'
+    ]);
+
+    assert.strictEqual(result.status, 0, result.stderr || result.stdout);
+    const parsed = JSON.parse(result.stdout);
+    assert.strictEqual(parsed.kind, 'flow-analysis-result/v1');
+    assert.strictEqual(parsed.flow.version, '2');
+    assert.ok(parsed.terminals.some(terminal => terminal.id === 'launch'));
+    assert.ok(parsed.query.reachableFromEntry.includes('launch'));
+    assert.ok(parsed.query.reverseReachableToScreen.includes('welcome'));
+  });
+
+  it('flow route --json returns the shortest route to a terminal kind', () => {
+    const flowFile = path.join(repoRoot, 'sample/13-enterprise-flow/app.tui.flow.yml');
+    const result = harness.runCli([
+      'flow',
+      'route',
+      '--file', flowFile,
+      '--entry', 'welcome',
+      '--to-terminal-kind', 'success',
+      '--json'
+    ]);
+
+    assert.strictEqual(result.status, 0, result.stderr || result.stdout);
+    const parsed = JSON.parse(result.stdout);
+    assert.strictEqual(parsed.kind, 'flow-route-result/v1');
+    assert.strictEqual(parsed.found, true);
+    assert.ok(Array.isArray(parsed.route.screenIds));
+    assert.strictEqual(parsed.route.screenIds[0], 'welcome');
+    assert.strictEqual(parsed.route.screenIds.at(-1), 'launch');
+  });
+
   it('flow compare --json emits machine-readable output from git revisions', function () {
     this.timeout(20000);
     const gitRepo = path.join(tmpDir, 'git-flow-compare-repo');

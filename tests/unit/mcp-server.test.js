@@ -37,6 +37,8 @@ describe('TextUiMcpServer', () => {
     assert.ok(toolNames.includes('validate_ui'));
     assert.ok(toolNames.includes('validate_flow'));
     assert.ok(toolNames.includes('compare_flow'));
+    assert.ok(toolNames.includes('analyze_flow'));
+    assert.ok(toolNames.includes('route_flow'));
     assert.ok(toolNames.includes('export_flow'));
     assert.ok(toolNames.includes('list_providers'));
     assert.ok(toolNames.includes('inspect_state'));
@@ -244,6 +246,49 @@ theme:
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
+  });
+
+  it('tools/call analyze_flow returns machine-readable graph analysis', async () => {
+    const server = new TextUiMcpServer();
+    const response = await server.handleMessage({
+      jsonrpc: '2.0',
+      id: 671,
+      method: 'tools/call',
+      params: {
+        name: 'analyze_flow',
+        arguments: {
+          filePath: 'sample/13-enterprise-flow/app.tui.flow.yml',
+          entryId: 'welcome',
+          screenId: 'launch'
+        }
+      }
+    });
+
+    assert.ok(response.result);
+    assert.strictEqual(response.result.structuredContent.exitCode, 0);
+    assert.strictEqual(response.result.structuredContent.parsedJson.kind, 'flow-analysis-result/v1');
+    assert.ok(response.result.structuredContent.parsedJson.terminals.some(terminal => terminal.id === 'launch'));
+  });
+
+  it('tools/call route_flow returns a route to the success terminal', async () => {
+    const server = new TextUiMcpServer();
+    const response = await server.handleMessage({
+      jsonrpc: '2.0',
+      id: 672,
+      method: 'tools/call',
+      params: {
+        name: 'route_flow',
+        arguments: {
+          filePath: 'sample/13-enterprise-flow/app.tui.flow.yml',
+          toTerminalKind: 'success'
+        }
+      }
+    });
+
+    assert.ok(response.result);
+    assert.strictEqual(response.result.structuredContent.exitCode, 0);
+    assert.strictEqual(response.result.structuredContent.parsedJson.kind, 'flow-route-result/v1');
+    assert.strictEqual(response.result.structuredContent.parsedJson.route.screenIds[0], 'welcome');
   });
 
   it('tools/call compare_flow returns machine-readable flow diff', async function () {

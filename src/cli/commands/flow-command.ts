@@ -2,13 +2,20 @@ import { execFileSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
-import type { NavigationFlowDSL } from '../../domain/dsl-types';
+import type { NavigationFlowDSL, NavigationTerminalKind } from '../../domain/dsl-types';
 import { isNavigationFlowDSL } from '../../domain/dsl-types';
 import { TextUICoreEngine } from '../../core/textui-core-engine';
 import { getArg, hasFlag, printJson } from '../command-support';
 import { ensureDirectoryForFile, loadDslFromFile, resolveDslFile } from '../io';
 import type { ExitCode } from '../types';
 import { getProviderExtension } from '../exporter-runner';
+import {
+  buildNavigationGraph,
+  collectReachableScreenIds,
+  collectReverseReachableScreenIds,
+  findShortestNavigationRoute,
+  getTerminalScreenIds
+} from '../../shared/navigation-graph';
 
 function getFlowSubcommand(): string | undefined {
   return process.argv[3]?.toLowerCase();
@@ -106,6 +113,95 @@ async function handleFlowValidateCommand(): Promise<ExitCode> {
   }
 
   return result.valid ? 0 : 2;
+}
+
+async function handleFlowAnalyzeCommand(): Promise<ExitCode> {
+  const fileArg = requireFlowFileArg();
+  if (!fileArg) {
+    throw new Error('flow analyze requires --file <path> or a positional file path');
+  }
+
+  const loaded = loadNavigationFlowFromPath(fileArg);
+  const graph = buildNavigationGraph(loaded.dsl);
+  const entryId = getArg('--entry') ?? loaded.dsl.flow.entry;
+  const screenId = getArg('--screen') ?? loaded.dsl.flow.entry;
+
+  const payload = {
+    kind: 'flow-analysis-result/v1',
+    filePath: loaded.sourcePath,
+    flow: {
+      id: loaded.dsl.flow.id,
+      version: loaded.dsl.flow.version ?? '1',
+      title: loaded.dsl.flow.title,
+      entry: loaded.dsl.flow.entry,
+      policy: loaded.dsl.flow.policy ?? {},
+      screenCount: loaded.dsl.flow.screens.length,
+      transitionCount: loaded.dsl.flow.transitions.length
+    },
+    terminals: getTerminalScreenIds(graph).map(id => ({
+      id,
+      terminal: graph.screenById.get(id)?.terminal ?? null
+    })),
+    query: {
+      entryId,
+      screenId,
+      reachableFromEntry: [...collectReachableScreenIds(graph, entryId)],
+      reverseReachableToScreen: [...collectReverseReachableScreenIds(graph, screenId)]
+    }
+  };
+
+  if (hasFlag('--json')) {
+    printJson(payload);
+  } else {
+    process.stdout.write(`Flow Analyze: ${loaded.sourcePath}\n`);
+    process.stdout.write(`Entry: ${payload.flow.entry}\n`);
+    process.stdout.write(`Reachable: ${payload.query.reachableFromEntry.join(', ')}\n`);
+  }
+
+  return 0;
+}
+
+async function handleFlowRouteCommand(): Promise<ExitCode> {
+  const fileArg = requireFlowFileArg();
+  if (!fileArg) {
+    throw new Error('flow route requires --file <path> or a positional file path');
+  }
+
+  const loaded = loadNavigationFlowFromPath(fileArg);
+  const graph = buildNavigationGraph(loaded.dsl);
+  const entryId = getArg('--entry') ?? loaded.dsl.flow.entry;
+  const toScreenId = getArg('--to-screen');
+  const toTerminalKind = getArg('--to-terminal-kind') as NavigationTerminalKind | undefined;
+
+  if (!toScreenId && !toTerminalKind) {
+    throw new Error('flow route requires --to-screen <id> or --to-terminal-kind <kind>');
+  }
+
+  const route = findShortestNavigationRoute(graph, {
+    entryId,
+    toScreenId,
+    toTerminalKind
+  });
+
+  const payload = {
+    kind: 'flow-route-result/v1',
+    filePath: loaded.sourcePath,
+    entryId,
+    toScreenId: toScreenId ?? null,
+    toTerminalKind: toTerminalKind ?? null,
+    found: route !== null,
+    route
+  };
+
+  if (hasFlag('--json')) {
+    printJson(payload);
+  } else if (route) {
+    process.stdout.write(`Route: ${route.screenIds.join(' -> ')}\n`);
+  } else {
+    process.stderr.write('route not found\n');
+  }
+
+  return route ? 0 : 2;
 }
 
 async function handleFlowCompareCommand(): Promise<ExitCode> {
@@ -241,9 +337,13 @@ export async function handleFlowCommand(): Promise<ExitCode> {
       return handleFlowValidateCommand();
     case 'compare':
       return handleFlowCompareCommand();
+    case 'analyze':
+      return handleFlowAnalyzeCommand();
+    case 'route':
+      return handleFlowRouteCommand();
     case 'export':
       return handleFlowExportCommand();
     default:
-      throw new Error('flow requires one of: validate | compare | export');
+      throw new Error('flow requires one of: validate | compare | analyze | route | export');
   }
 }

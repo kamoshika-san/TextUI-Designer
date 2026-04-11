@@ -80,6 +80,46 @@ export function createToolHandlers(context: ToolHandlerContext): ToolHandlers {
         parseJson: true
       });
     },
+    analyze_flow: async () => {
+      const filePath = getObjectValue(args, 'filePath');
+      if (!filePath) {
+        throw new Error('analyze_flow requires filePath');
+      }
+      return runCli({
+        args: [
+          'flow',
+          'analyze',
+          '--file', filePath,
+          ...appendOptionalPair('--entry', getObjectValue(args, 'entryId')),
+          ...appendOptionalPair('--screen', getObjectValue(args, 'screenId')),
+          '--json'
+        ],
+        parseJson: true
+      });
+    },
+    route_flow: async () => {
+      const filePath = getObjectValue(args, 'filePath');
+      if (!filePath) {
+        throw new Error('route_flow requires filePath');
+      }
+      const toScreenId = getObjectValue(args, 'toScreenId');
+      const toTerminalKind = getObjectValue(args, 'toTerminalKind');
+      if (!toScreenId && !toTerminalKind) {
+        throw new Error('route_flow requires toScreenId or toTerminalKind');
+      }
+      return runCli({
+        args: [
+          'flow',
+          'route',
+          '--file', filePath,
+          ...appendOptionalPair('--entry', getObjectValue(args, 'entryId')),
+          ...appendOptionalPair('--to-screen', toScreenId),
+          ...appendOptionalPair('--to-terminal-kind', toTerminalKind),
+          '--json'
+        ],
+        parseJson: true
+      });
+    },
     export_flow: async () => {
       const filePath = getObjectValue(args, 'filePath');
       if (!filePath) {
