@@ -1,43 +1,58 @@
-# TextUI Designer - サンプルファイル集
+# TextUI Designer Samples
 
-サンプルは**使い方別**にフォルダ分けしています。目的に合ったフォルダを開いてください。
+Samples are the fastest way to learn the DSL and to validate rollout assumptions before touching production-like files.
 
-## フォルダ一覧
+Each sample directory contains its own `README.md`. Start with the sample that matches the question you are trying to answer.
 
-| フォルダ | 用途 | 最初に開くファイル |
-|----------|------|---------------------|
-| **[01-basic](01-basic/)** | 基本コンポーネントの使い方 | `sample.tui.yml` |
-| **[02-theme](02-theme/)** | テーマ（textui-theme.yml）の使い方 | `theme-demo.tui.yml` |
-| **[03-include](03-include/)** | テンプレート分割（$include） | `include-sample.tui.yml` |
-| **[04-include-cyclic](04-include-cyclic/)** | 循環参照の検証（エラー確認用） | `cycle-test.tui.yml` |
-| **[05-theme-inheritance](05-theme-inheritance/)** | テーマ継承（extends）の使い方 | `inheritance-demo.tui.yml` |
-| **[06-token](06-token/)** | `token` 属性とテーマトークン解決 | `token-demo.tui.yml` |
-| **[09-new-built-in-stub](09-new-built-in-stub/)** | **新規ビルトイン追加用**の最小 DSL スタブ（コピー起点） | `new-built-in-stub.tui.yml` |
-| **[10-diff-preview](10-diff-preview/)** | ビジュアルDiffプレビュー機能のデモンストレーション | `ver1.tui.yml` |
+## Recommended Starting Points
 
-各フォルダ内の `README.md` に、ファイルの説明と使い方が書いてあります。
+| Sample | Use it for | Primary file |
+|---|---|---|
+| [01-basic](01-basic/) | Smallest page DSL preview and export smoke path | `sample.tui.yml` |
+| [02-theme](02-theme/) | Theme authoring and token application | `theme-demo.tui.yml` |
+| [03-include](03-include/) | `$include` and template composition | `include-sample.tui.yml` |
+| [05-theme-inheritance](05-theme-inheritance/) | Theme inheritance | `inheritance-demo.tui.yml` |
+| [06-token](06-token/) | Token reference usage | `token-demo.tui.yml` |
+| [12-navigation](12-navigation/) | Baseline Phase 1 navigation flow | `app.tui.flow.yml` |
+| [13-enterprise-flow](13-enterprise-flow/) | Representative Navigation v2 graph-first flow | `app.tui.flow.yml` |
 
-## クイックスタート
+## Navigation Sample Roles
 
-1. **まずは基本から**: `01-basic/sample.tui.yml` を開く → コマンドパレットで「TextUI: Open Preview」
-2. **テーマを試す**: `02-theme/README.md` の手順で `textui-theme.yml` をプロジェクトルートにコピー → `02-theme/theme-demo.tui.yml` でプレビュー
-3. **$include を試す**: `03-include/include-sample.tui.yml` を開いてプレビュー（ネストしたテンプレートと params の動作確認）
-4. **テーマ継承を試す**: `05-theme-inheritance/README.md` の手順でテーマ一式をコピー → `inheritance-demo.tui.yml` で継承結果を確認
-5. **token解決を試す**: `06-token/README.md` の手順でテーマをコピー → `token-demo.tui.yml` で token 適用を確認
-6. **Diffプレビューを試す**: `10-diff-preview/ver1.tui.yml` と `ver2.tui.yml` を開いてDiffプレビュー機能で比較（変更前後のフォーム比較）
+The repository now uses two navigation samples on purpose.
 
-## 参考
+### `12-navigation`
 
-- **メインドキュメント**: [../README.md](../README.md) - TextUI Designer の全体説明
-- **スキーマ**: `../schemas/` - DSL の型定義
-- **テーマ詳細**: 従来のテーマカスタマイズガイドは [01-basic](01-basic/) および [02-theme](02-theme/) の README と、リポジトリ内の `docs/` を参照
+Use [`12-navigation`](12-navigation/README.md) when you need:
 
+- the smallest valid navigation flow
+- baseline validation and export checks
+- a v1-style comparison point before graph-first metadata is added
 
-## サンプル追加フロー（品質ゲート対応）
+### `13-enterprise-flow`
 
-1. `sample/` 配下にサンプル (`*.tui.yml` / `*.template.yml` / `*theme.yml`) を追加する。
-2. `sample/README.md` または対象ディレクトリの README に目的・使い方を追記する。
-3. ローカルで `npm run validate:samples` を実行し、構文検証と代表エクスポート検証が通ることを確認する。
-4. 意図的に失敗するサンプル（例: 循環参照テスト）を追加する場合は `scripts/validate-samples.cjs` の `expectedFailureCases` に登録する。
+Use [`13-enterprise-flow`](13-enterprise-flow/README.md) when you need:
 
-このフローにより、CI 上でも「動く見本」が継続的に検証されます。
+- Navigation v2 migration examples
+- branch / retry / loop / terminal semantics
+- graph-aware CLI and MCP checks
+- exporter and semantic diff regression coverage
+
+As a rule of thumb:
+
+- migration or rollout discussion: start with `13-enterprise-flow`
+- baseline or compatibility smoke check: start with `12-navigation`
+
+## Validation Flow
+
+When you add or change a sample:
+
+1. Validate the changed sample files.
+2. Update the sample-local `README.md` when the sample's purpose changes.
+3. Update this index if the recommended starting points or navigation sample roles change.
+4. Re-run the sample validation lane and any related regression checks.
+
+## Notes
+
+- Generated artifacts do not belong in `sample/`.
+- Intentionally failing samples should be called out explicitly in the owning README and validation expectations.
+- For Navigation v2 authoring guidance, continue with [`../docs/navigation-v2-guide.md`](../docs/navigation-v2-guide.md).
