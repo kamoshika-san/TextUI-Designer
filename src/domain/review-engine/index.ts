@@ -34,3 +34,9 @@ export type { Cluster } from './change-clusterer';
 export { clusterChanges } from './change-clusterer';
 
 export { getChangeSeverity, calculatePriority, scoreClusters } from './priority-scorer';
+
+export type { ImpactScoreWeights } from './impact-scorer';
+export { calculateImpactScore, buildImpactScoreMap } from './impact-scorer';
+
+export type { ReviewSetItem, ReviewSet, BuildReviewSetOptions } from './review-set-builder';
+export { buildReviewSet, formatReviewSetJson, formatReviewSetMarkdown } from './review-set-builder';
