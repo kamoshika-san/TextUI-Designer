@@ -22,3 +22,9 @@ export { semanticDiffToDiffIR } from './adapters/semantic-diff-adapter';
 export type { DecisionKind, Decision, DecisionStore } from './decision';
 export { requiresRationale, validateDecision, InMemoryDecisionStore } from './decision';
 export { DecisionJsonStore } from './decision-store';
+
+export type { ClassType } from './change-classifier';
+export { classifySemanticChangeType, classifyChange, classifyChanges } from './change-classifier';
+
+export type { DependencyEdgeKind, DependencyNode, DependencyEdge, GraphMeta, DependencyGraph } from './dependency-graph';
+export { buildDependencyGraph } from './dependency-graph';
