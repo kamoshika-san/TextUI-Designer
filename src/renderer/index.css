@@ -1387,6 +1387,19 @@ body.light {
   min-width: 0;
 }
 
+/* ── Detail row: two-column layout (connections left, stage right) ── */
+.textui-flow-preview-detail-row {
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-lg, 1.5rem);
+  align-items: flex-start;
+}
+
+.textui-flow-preview-connections-col {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 /* ── FlowDiagram ──────────────────────────────────────────── */
 .textui-flow-diagram {
   display: flex;
@@ -1691,6 +1704,8 @@ body.light {
 
 /* ── Stage (selected-screen detail panel) ─────────────────── */
 .textui-flow-preview-stage {
+  flex: 0 0 auto;
+  width: 18rem;
   padding: var(--spacing-md, 1rem) var(--spacing-lg, 1.25rem);
   border-radius: var(--borderRadius-lg, 0.75rem);
   border: 1px solid rgba(148, 163, 184, 0.15);
