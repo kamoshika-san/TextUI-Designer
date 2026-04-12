@@ -6,6 +6,7 @@
  */
 
 import type { SemanticChange, SemanticDiff, DiffSummary } from '../../types/semantic-diff';
+import type { Decision } from './decision';
 
 // ── Change ────────────────────────────────────────────────────────────────────
 
@@ -36,18 +37,6 @@ export interface ChangeMetadata {
   nodeId?: string;
   /** E-RE3-S3: Priority Scoring が付与する優先度スコア */
   priorityScore?: number;
-}
-
-// ── Decision (E-RE1 が埋める) ─────────────────────────────────────────────────
-
-/** レビュアーが各変更に対して下す意思決定 */
-export interface Decision {
-  changeId: ChangeId;
-  decision: 'accept' | 'reject' | 'defer' | 'ignore';
-  /** reject / defer 時は必須 */
-  rationale?: string;
-  author: string;
-  timestamp: number;
 }
 
 // ── Impact (E-RE2 が埋める) ───────────────────────────────────────────────────

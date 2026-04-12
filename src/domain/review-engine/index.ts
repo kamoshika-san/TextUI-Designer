@@ -9,7 +9,6 @@ export type {
   ChangeId,
   Change,
   ChangeMetadata,
-  Decision,
   Impact,
   Cluster,
   DiffIR
@@ -19,3 +18,7 @@ export type { PipelineStage, PipelineResult } from './review-pipeline';
 export { ReviewPipeline } from './review-pipeline';
 
 export { semanticDiffToDiffIR } from './adapters/semantic-diff-adapter';
+
+export type { DecisionKind, Decision, DecisionStore } from './decision';
+export { requiresRationale, validateDecision, InMemoryDecisionStore } from './decision';
+export { DecisionJsonStore } from './decision-store';
