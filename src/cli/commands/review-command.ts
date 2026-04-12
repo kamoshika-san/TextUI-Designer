@@ -13,6 +13,7 @@
 import type { ExitCode } from '../types';
 import { getArg, hasFlag, printJson } from '../command-support';
 import { runSemanticDiffCompare, renderSemanticDiffHumanReadable } from '../../services/semantic-diff/git-semantic-diff';
+import { toExternalDiffResult } from '../../services/semantic-diff/diff-result-external-adapter';
 import { semanticDiffToDiffIR, DecisionJsonStore } from '../../domain/review-engine';
 import type { VcsConnector } from '../../integrations/vcs-connector';
 import { NullConnector } from '../../integrations/null-connector';
@@ -50,12 +51,14 @@ function requireArg(flag: string): string {
  * textui review
  * 必須: --base <ref> --head <ref> --file <path>
  * オプション: --format json|markdown（デフォルト: json）
+ *            --include-decisions: decisions フィールドを DiffResultExternal に含める
  */
 export async function handleReviewCommand(): Promise<ExitCode> {
   const format = parseFormat();
   const baseRef = requireArg('--base');
   const headRef = requireArg('--head');
   const filePath = requireArg('--file');
+  const includeDecisions = hasFlag('--include-decisions');
 
   const compareResult = runSemanticDiffCompare({ baseRef, headRef, filePath });
 
@@ -65,8 +68,17 @@ export async function handleReviewCommand(): Promise<ExitCode> {
     return 0;
   }
 
-  const diffIR = semanticDiffToDiffIR(compareResult.diff);
-  printJson(diffIR);
+  // JSON: DiffResultExternal スキーマで出力
+  let decisions;
+  if (includeDecisions) {
+    const repoRoot = process.cwd();
+    const store = new DecisionJsonStore(repoRoot, filePath);
+    await store.load();
+    decisions = store.list();
+  }
+
+  const external = toExternalDiffResult(compareResult, decisions);
+  printJson(external);
   return 0;
 }
 
@@ -88,8 +100,8 @@ export async function handleReviewImpactCommand(): Promise<ExitCode> {
     return 0;
   }
 
-  const diffIR = semanticDiffToDiffIR(compareResult.diff);
-  printJson({ ...diffIR, _note: 'impact analysis not yet implemented (E-RE2)' });
+  const external = toExternalDiffResult(compareResult);
+  printJson(external);
   return 0;
 }
 
