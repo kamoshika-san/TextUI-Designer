@@ -5,6 +5,8 @@ import type { SemanticSummaryLine, SemanticChangePrefix, ComponentIndexPair } fr
 import { DecisionButtons } from './DecisionButtons';
 import { ImpactBadge } from './ImpactBadge';
 import type { ImpactBadgeProps } from './ImpactBadge';
+import { ReviewSetPanel } from './ReviewSetPanel';
+import type { ReviewSet } from '../../domain/review-engine/review-set-builder';
 import type { DecisionKind } from '../../domain/review-engine/decision';
 import { InMemoryDecisionStore } from '../../domain/review-engine/decision';
 
@@ -296,11 +298,13 @@ function SemanticSummaryPane({
   pairings,
   highlightedGroupKey,
   onGroupClick,
+  reviewSet,
 }: {
   lines: SemanticSummaryLine[];
   pairings: ComponentIndexPair[];
   highlightedGroupKey: string | null;
   onGroupClick: (groupKey: string) => void;
+  reviewSet?: ReviewSet;
 }) {
   const groups = groupSummaryLines(lines, pairings);
 
@@ -385,6 +389,9 @@ function SemanticSummaryPane({
           />
         ))}
       </ul>
+
+      {/* ReviewSet パネル（提供された場合のみ表示） */}
+      {reviewSet && <ReviewSetPanel reviewSet={reviewSet} />}
     </div>
   );
 }
@@ -649,6 +656,7 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
           pairings={summaryPairings}
           highlightedGroupKey={highlightedGroupKey}
           onGroupClick={handleGroupClick}
+          reviewSet={undefined}
         />
       ) : (
         <NoSummaryPane />
