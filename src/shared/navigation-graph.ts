@@ -19,6 +19,13 @@ export interface NavigationRouteResult {
   transitionIds: string[];
 }
 
+export interface NavigationRouteChain {
+  screenIds: string[];
+  transitionIds: string[];
+  triggers: string[];
+  length: number;
+}
+
 export interface NavigationGraph {
   dsl: NavigationFlowDSL;
   screenById: Map<string, ScreenRef>;
@@ -260,4 +267,89 @@ function normalizeCycle(cycle: string[]): string {
   const rotations = loop.map((_, index) => [...loop.slice(index), ...loop.slice(0, index)].join('->'));
   rotations.sort();
   return rotations[0] ?? cycle.join('->');
+}
+
+export const MAX_NAVIGATION_ROUTES = 5;
+
+export function findAllNavigationRoutes(
+  graph: NavigationGraph,
+  options: {
+    toScreenId: string;
+    entryId?: string;
+    maxRoutes?: number;
+  }
+): NavigationRouteChain[] {
+  const entryId = options.entryId ?? graph.dsl.flow.entry;
+  const maxRoutes = options.maxRoutes ?? MAX_NAVIGATION_ROUTES;
+  const { toScreenId } = options;
+
+  if (!graph.screenById.has(entryId) || !graph.screenById.has(toScreenId)) {
+    return [];
+  }
+
+  // Entry is the target — single trivial route
+  if (entryId === toScreenId) {
+    return [{
+      screenIds: [entryId],
+      transitionIds: [],
+      triggers: [],
+      length: 0
+    }];
+  }
+
+  const results: NavigationRouteChain[] = [];
+
+  // DFS with per-path visited set to enumerate all loop-free paths
+  const dfs = (
+    currentId: string,
+    pathScreenIds: string[],
+    pathTransitionIds: string[],
+    pathTriggers: string[],
+    visitedOnPath: Set<string>
+  ): void => {
+    if (results.length >= maxRoutes) {
+      return;
+    }
+
+    if (currentId === toScreenId) {
+      results.push({
+        screenIds: [...pathScreenIds],
+        transitionIds: [...pathTransitionIds],
+        triggers: [...pathTriggers],
+        length: pathScreenIds.length - 1
+      });
+      return;
+    }
+
+    for (const edge of graph.adjacency.get(currentId) ?? []) {
+      if (visitedOnPath.has(edge.to)) {
+        // Skip — would create a loop in this path
+        continue;
+      }
+
+      visitedOnPath.add(edge.to);
+      pathScreenIds.push(edge.to);
+      pathTransitionIds.push(edge.id);
+      pathTriggers.push(edge.trigger);
+
+      dfs(edge.to, pathScreenIds, pathTransitionIds, pathTriggers, visitedOnPath);
+
+      pathScreenIds.pop();
+      pathTransitionIds.pop();
+      pathTriggers.pop();
+      visitedOnPath.delete(edge.to);
+
+      if (results.length >= maxRoutes) {
+        return;
+      }
+    }
+  };
+
+  const initialVisited = new Set<string>([entryId]);
+  dfs(entryId, [entryId], [], [], initialVisited);
+
+  // Sort by path length (shortest first)
+  results.sort((a, b) => a.length - b.length);
+
+  return results;
 }

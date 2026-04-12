@@ -145,3 +145,153 @@ describe('navigation-graph', () => {
     );
   });
 });
+
+describe('findAllNavigationRoutes', () => {
+  let buildNavigationGraph;
+  let findAllNavigationRoutes;
+
+  before(() => {
+    ({ buildNavigationGraph, findAllNavigationRoutes } = require('../../out/shared/navigation-graph'));
+  });
+
+  it('returns a single route for a simple linear flow', () => {
+    const graph = buildNavigationGraph({
+      flow: {
+        id: 'linear',
+        title: 'Linear',
+        entry: 'a',
+        screens: [
+          { id: 'a', page: './a.tui.yml' },
+          { id: 'b', page: './b.tui.yml' },
+          { id: 'c', page: './c.tui.yml' }
+        ],
+        transitions: [
+          { from: 'a', to: 'b', trigger: 'next' },
+          { from: 'b', to: 'c', trigger: 'next' }
+        ]
+      }
+    });
+
+    const routes = findAllNavigationRoutes(graph, { toScreenId: 'c' });
+    assert.strictEqual(routes.length, 1);
+    assert.deepStrictEqual(routes[0].screenIds, ['a', 'b', 'c']);
+    assert.deepStrictEqual(routes[0].triggers, ['next', 'next']);
+    assert.strictEqual(routes[0].length, 2);
+  });
+
+  it('returns multiple routes for a branching flow, sorted by length', () => {
+    // a -> b -> d (short)
+    // a -> c -> d (short, same length)
+    const graph = buildNavigationGraph({
+      flow: {
+        id: 'branch',
+        title: 'Branch',
+        entry: 'a',
+        screens: [
+          { id: 'a', page: './a.tui.yml' },
+          { id: 'b', page: './b.tui.yml' },
+          { id: 'c', page: './c.tui.yml' },
+          { id: 'd', page: './d.tui.yml' }
+        ],
+        transitions: [
+          { from: 'a', to: 'b', trigger: 'go-b' },
+          { from: 'a', to: 'c', trigger: 'go-c' },
+          { from: 'b', to: 'd', trigger: 'finish' },
+          { from: 'c', to: 'd', trigger: 'finish' }
+        ]
+      }
+    });
+
+    const routes = findAllNavigationRoutes(graph, { toScreenId: 'd' });
+    assert.strictEqual(routes.length, 2);
+    // Both routes have length 2
+    assert.ok(routes.every(r => r.length === 2));
+    const allScreenPaths = routes.map(r => r.screenIds.join('->'));
+    assert.ok(allScreenPaths.includes('a->b->d'));
+    assert.ok(allScreenPaths.includes('a->c->d'));
+  });
+
+  it('excludes loop-back paths (loop-free only)', () => {
+    // a -> b -> c -> b (loop) -> c is excluded
+    // Only valid loop-free path: a -> b -> c
+    const graph = buildNavigationGraph({
+      flow: {
+        id: 'loop',
+        title: 'Loop',
+        entry: 'a',
+        screens: [
+          { id: 'a', page: './a.tui.yml' },
+          { id: 'b', page: './b.tui.yml' },
+          { id: 'c', page: './c.tui.yml' }
+        ],
+        transitions: [
+          { from: 'a', to: 'b', trigger: 'next' },
+          { from: 'b', to: 'c', trigger: 'next' },
+          { from: 'c', to: 'b', trigger: 'back' }  // loop back
+        ]
+      }
+    });
+
+    const routes = findAllNavigationRoutes(graph, { toScreenId: 'c' });
+    assert.strictEqual(routes.length, 1);
+    assert.deepStrictEqual(routes[0].screenIds, ['a', 'b', 'c']);
+  });
+
+  it('returns empty array when target is unreachable', () => {
+    const graph = buildNavigationGraph({
+      flow: {
+        id: 'unreachable',
+        title: 'Unreachable',
+        entry: 'a',
+        screens: [
+          { id: 'a', page: './a.tui.yml' },
+          { id: 'b', page: './b.tui.yml' },
+          { id: 'orphan', page: './orphan.tui.yml' }
+        ],
+        transitions: [
+          { from: 'a', to: 'b', trigger: 'next' }
+        ]
+      }
+    });
+
+    const routes = findAllNavigationRoutes(graph, { toScreenId: 'orphan' });
+    assert.deepStrictEqual(routes, []);
+  });
+
+  it('respects maxRoutes limit', () => {
+    // a -> b1 -> c, a -> b2 -> c, a -> b3 -> c, a -> b4 -> c, a -> b5 -> c, a -> b6 -> c
+    const screens = [
+      { id: 'a', page: './a.tui.yml' },
+      { id: 'c', page: './c.tui.yml' },
+      ...Array.from({ length: 6 }, (_, i) => ({ id: `b${i + 1}`, page: `./b${i + 1}.tui.yml` }))
+    ];
+    const transitions = Array.from({ length: 6 }, (_, i) => ([
+      { from: 'a', to: `b${i + 1}`, trigger: `go-b${i + 1}` },
+      { from: `b${i + 1}`, to: 'c', trigger: 'finish' }
+    ])).flat();
+
+    const graph = buildNavigationGraph({
+      flow: { id: 'many', title: 'Many', entry: 'a', screens, transitions }
+    });
+
+    const routes = findAllNavigationRoutes(graph, { toScreenId: 'c', maxRoutes: 3 });
+    assert.strictEqual(routes.length, 3);
+  });
+
+  it('returns trivial route when entry equals target', () => {
+    const graph = buildNavigationGraph({
+      flow: {
+        id: 'self',
+        title: 'Self',
+        entry: 'a',
+        screens: [{ id: 'a', page: './a.tui.yml' }],
+        transitions: []
+      }
+    });
+
+    const routes = findAllNavigationRoutes(graph, { toScreenId: 'a' });
+    assert.strictEqual(routes.length, 1);
+    assert.deepStrictEqual(routes[0].screenIds, ['a']);
+    assert.strictEqual(routes[0].length, 0);
+  });
+});

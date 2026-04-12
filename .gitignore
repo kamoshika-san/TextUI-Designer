@@ -20,6 +20,7 @@ icon.svg
 .codex/
 .cursor/
 .vscode/mcp.json
+.kiro/
 
 # コードメトリクス（CI / ローカルで生成）
 metrics/
