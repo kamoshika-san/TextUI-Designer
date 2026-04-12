@@ -27,10 +27,16 @@ export const FlowPreviewPanel: React.FC<FlowPreviewPanelProps> = ({
     ? initialSelectedScreenId
     : flowDsl.flow.entry || flowDsl.flow.screens[0]?.id || '';
   const [selectedScreenId, setSelectedScreenId] = useState(initialScreenId);
+  const [routePage, setRoutePage] = useState(0);
 
   useEffect(() => {
     setSelectedScreenId(initialScreenId);
   }, [initialScreenId]);
+
+  // Reset page when selected screen changes
+  useEffect(() => {
+    setRoutePage(0);
+  }, [selectedScreenId]);
 
   const selectedScreen = useMemo(
     () => flowDsl.flow.screens.find(screen => screen.id === selectedScreenId) ?? flowDsl.flow.screens[0],
@@ -65,7 +71,7 @@ export const FlowPreviewPanel: React.FC<FlowPreviewPanelProps> = ({
     [selectedScreenId, flowDsl, selectedPath]
   );
 
-  // Route chains for non-entry screens
+  // Route chains for non-entry screens (paginated)
   const routeChains = useMemo(() => {
     if (!isFilteredConnections || !selectedScreenId) {
       return null;
@@ -73,9 +79,9 @@ export const FlowPreviewPanel: React.FC<FlowPreviewPanelProps> = ({
     const graph = buildNavigationGraph(flowDsl);
     return findAllNavigationRoutes(graph, {
       toScreenId: selectedScreenId,
-      maxRoutes: MAX_NAVIGATION_ROUTES
-    });
-  }, [flowDsl, selectedScreenId, isFilteredConnections]);
+      maxRoutes: (routePage + 1) * MAX_NAVIGATION_ROUTES
+    }).slice(routePage * MAX_NAVIGATION_ROUTES);
+  }, [flowDsl, selectedScreenId, isFilteredConnections, routePage]);
 
   const totalRouteCount = useMemo(() => {
     if (!isFilteredConnections || !selectedScreenId) {
@@ -84,9 +90,11 @@ export const FlowPreviewPanel: React.FC<FlowPreviewPanelProps> = ({
     const graph = buildNavigationGraph(flowDsl);
     return findAllNavigationRoutes(graph, {
       toScreenId: selectedScreenId,
-      maxRoutes: MAX_NAVIGATION_ROUTES + 100
+      maxRoutes: MAX_NAVIGATION_ROUTES * 200
     }).length;
   }, [flowDsl, selectedScreenId, isFilteredConnections]);
+
+  const totalPages = Math.ceil(totalRouteCount / MAX_NAVIGATION_ROUTES);
 
   return (
     <section className="textui-flow-preview">
@@ -138,12 +146,15 @@ export const FlowPreviewPanel: React.FC<FlowPreviewPanelProps> = ({
             {isFilteredConnections && routeChains !== null ? (
               <div className="textui-flow-diagram-connections">
                 <div className="textui-flow-diagram-connections-heading">
-                  {`Routes to here (${Math.min(routeChains.length, MAX_NAVIGATION_ROUTES)} of ${totalRouteCount})`}
+                  {`Routes to here (${totalRouteCount})`}
                 </div>
                 <FlowRouteChain
                   routes={routeChains}
                   screenTitleMap={screenTitleMap}
                   totalRouteCount={totalRouteCount}
+                  currentPage={routePage}
+                  totalPages={totalPages}
+                  onPageChange={setRoutePage}
                 />
               </div>
             ) : visibleTransitions.length > 0 ? (

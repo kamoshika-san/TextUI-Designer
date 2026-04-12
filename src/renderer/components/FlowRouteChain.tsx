@@ -6,15 +6,19 @@ interface FlowRouteChainProps {
   routes: NavigationRouteChain[];
   screenTitleMap: Map<string, string>;
   totalRouteCount: number;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }
 
 export const FlowRouteChain: React.FC<FlowRouteChainProps> = ({
   routes,
   screenTitleMap,
-  totalRouteCount
+  totalRouteCount,
+  currentPage,
+  totalPages,
+  onPageChange
 }) => {
-  const hiddenCount = totalRouteCount - routes.length;
-
   if (routes.length === 0) {
     return (
       <div className="textui-flow-route-chain-empty">
@@ -23,12 +27,14 @@ export const FlowRouteChain: React.FC<FlowRouteChainProps> = ({
     );
   }
 
+  const pageOffset = currentPage * MAX_NAVIGATION_ROUTES;
+
   return (
     <div className="textui-flow-route-chains">
       {routes.map((route, routeIndex) => (
         <div key={routeIndex} className="textui-flow-route-chain">
           <div className="textui-flow-route-chain-heading">
-            {`Route ${routeIndex + 1}`}
+            {`Route ${pageOffset + routeIndex + 1}`}
             <span className="textui-flow-route-chain-steps">
               {`(${route.length} step${route.length !== 1 ? 's' : ''})`}
             </span>
@@ -59,9 +65,32 @@ export const FlowRouteChain: React.FC<FlowRouteChainProps> = ({
           ) : null}
         </div>
       ))}
-      {hiddenCount > 0 ? (
-        <div className="textui-flow-route-chain-overflow">
-          {`+${hiddenCount} more route${hiddenCount !== 1 ? 's' : ''}`}
+      {totalPages > 1 ? (
+        <div className="textui-flow-route-chain-pagination">
+          <button
+            type="button"
+            className="textui-flow-route-chain-page-btn"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 0}
+            aria-label="Previous page"
+          >
+            ‹ Prev
+          </button>
+          <span className="textui-flow-route-chain-page-info">
+            {`${currentPage + 1} / ${totalPages}`}
+            <span className="textui-flow-route-chain-page-total">
+              {` (${totalRouteCount} routes)`}
+            </span>
+          </span>
+          <button
+            type="button"
+            className="textui-flow-route-chain-page-btn"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage >= totalPages - 1}
+            aria-label="Next page"
+          >
+            Next ›
+          </button>
         </div>
       ) : null}
     </div>
