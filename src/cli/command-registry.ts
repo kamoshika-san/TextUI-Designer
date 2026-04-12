@@ -71,6 +71,10 @@ export function getCommandRegistry(): Record<string, CommandHandler> {
     'review:check': async () => {
       const { handleReviewCheckCommand } = await import('./commands/review-command');
       return handleReviewCheckCommand();
+    },
+    lint: async () => {
+      const { handleLintCommand } = await import('./commands/lint-command');
+      return handleLintCommand();
     }
   };
 }

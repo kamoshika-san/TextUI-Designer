@@ -11,3 +11,5 @@ export type {
 } from './text-ui-rule';
 
 export { a11yButtonLabel } from './rules/a11y-button-label';
+export { runRules } from './rule-runner';
+export type { RunRulesOptions } from './rule-runner';

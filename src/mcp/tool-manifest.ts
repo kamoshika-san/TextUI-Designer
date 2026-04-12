@@ -217,6 +217,29 @@ export const TOOLS: ToolDefinition[] = [
     }
   },
   {
+    name: 'suggest_fix',
+    description: 'Finding を受け取り、fixHint と人間可読な修正提案を返します。read-only。DSL を変更しません。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        finding: {
+          type: 'object',
+          description: 'TextUI Rule の Finding オブジェクト',
+          properties: {
+            ruleId:      { type: 'string' },
+            severity:    { type: 'string', enum: ['error', 'warning', 'info'] },
+            message:     { type: 'string' },
+            entityPath:  { type: 'string' },
+            fixHint:     { type: 'string' },
+            tags:        { type: 'array', items: { type: 'string' } }
+          },
+          required: ['ruleId', 'severity', 'message', 'entityPath']
+        }
+      },
+      required: ['finding']
+    }
+  },
+  {
     name: 'diff_ui',
     description: 'DSL ファイルを git base/head 間で意味差分比較し、DiffResultExternal（schemaVersion: diff-result-external/v1）を返します。read-only。',
     inputSchema: {

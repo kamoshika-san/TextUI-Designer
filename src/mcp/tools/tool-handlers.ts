@@ -181,6 +181,24 @@ export function createToolHandlers(context: ToolHandlerContext): ToolHandlers {
     }),
     run_cli: async () => runCli(args),
     capture_preview: async () => capturePreview(args),
+    suggest_fix: async () => {
+      const finding = getObjectUnknown(args, 'finding');
+      if (!finding || typeof finding !== 'object') {
+        throw new Error('suggest_fix requires finding object');
+      }
+      const f = finding as Record<string, unknown>;
+      const fixHint = typeof f['fixHint'] === 'string' ? f['fixHint'] : null;
+      const suggestion = fixHint
+        ? `At \`${f['entityPath']}\`: ${fixHint}`
+        : 'No fix hint available for this rule.';
+      return {
+        ruleId:     f['ruleId'] ?? '',
+        entityPath: f['entityPath'] ?? '',
+        severity:   f['severity'] ?? 'info',
+        fixHint:    fixHint ?? null,
+        suggestion,
+      };
+    },
     diff_ui: async () => {
       const filePath = getObjectValue(args, 'filePath');
       const baseRef  = getObjectValue(args, 'baseRef');
