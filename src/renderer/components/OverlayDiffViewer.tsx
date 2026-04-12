@@ -5,8 +5,6 @@ import type { SemanticSummaryLine, SemanticChangePrefix, ComponentIndexPair } fr
 import { DecisionButtons } from './DecisionButtons';
 import { ImpactBadge } from './ImpactBadge';
 import type { ImpactBadgeProps } from './ImpactBadge';
-import { ReviewSetPanel } from './ReviewSetPanel';
-import type { ReviewSet } from '../../domain/review-engine/review-set-builder';
 import type { DecisionKind } from '../../domain/review-engine/decision';
 import { InMemoryDecisionStore } from '../../domain/review-engine/decision';
 
@@ -166,17 +164,11 @@ function AccordionItem({
   group,
   isHighlighted,
   onToggleHighlight,
-  currentDecision,
-  onDecide,
-  keyboardActive,
   impact,
 }: {
   group: ComponentGroup;
   isHighlighted: boolean;
   onToggleHighlight: () => void;
-  currentDecision?: DecisionKind;
-  onDecide: (changeId: string, kind: DecisionKind, rationale?: string) => void;
-  keyboardActive: boolean;
   impact?: ImpactBadgeProps;
 }) {
   const [isOpen, setIsOpen] = useState(true);
@@ -230,17 +222,6 @@ function AccordionItem({
             navigation={impact.navigation}
           />
         )}
-      </div>
-
-      {/* Decision buttons */}
-      <div style={{ padding: '4px 12px 6px 30px' }}>
-        <DecisionButtons
-          changeId={group.groupKey}
-          author="reviewer"
-          currentDecision={currentDecision}
-          onDecide={onDecide}
-          keyboardActive={keyboardActive}
-        />
       </div>
 
       {/* Property child lines */}
@@ -298,30 +279,13 @@ function SemanticSummaryPane({
   pairings,
   highlightedGroupKey,
   onGroupClick,
-  reviewSet,
 }: {
   lines: SemanticSummaryLine[];
   pairings: ComponentIndexPair[];
   highlightedGroupKey: string | null;
   onGroupClick: (groupKey: string) => void;
-  reviewSet?: ReviewSet;
 }) {
   const groups = groupSummaryLines(lines, pairings);
-
-  // Decision state: InMemoryDecisionStore + re-render trigger
-  const [decisionStore] = useState(() => new InMemoryDecisionStore());
-  const [, setDecisionVersion] = useState(0);
-
-  const handleDecide = (changeId: string, kind: DecisionKind, rationale?: string) => {
-    decisionStore.set({
-      changeId,
-      decision: kind,
-      rationale,
-      author: 'reviewer',
-      timestamp: Date.now(),
-    });
-    setDecisionVersion(v => v + 1);
-  };
 
   const addCount    = lines.filter(l => l.prefix === '+').length;
   const updateCount = lines.filter(l => l.prefix === '~').length;
@@ -333,14 +297,8 @@ function SemanticSummaryPane({
       style={{
         display: 'flex',
         flexDirection: 'column',
-        width: 280,
-        minWidth: 240,
-        maxWidth: 320,
-        flexShrink: 0,
-        background: 'rgba(15, 23, 42, 0.55)',
-        borderLeft: '1px solid rgba(148,163,184,0.15)',
-        height: '100%',
         overflow: 'hidden',
+        flex: 1,
       }}
     >
       {/* Pane header */}
@@ -382,16 +340,133 @@ function SemanticSummaryPane({
             group={group}
             isHighlighted={highlightedGroupKey === group.groupKey}
             onToggleHighlight={() => onGroupClick(group.groupKey)}
-            currentDecision={decisionStore.get(group.groupKey)?.decision}
-            onDecide={handleDecide}
-            keyboardActive={highlightedGroupKey === group.groupKey}
             impact={undefined}
           />
         ))}
       </ul>
+    </div>
+  );
+}
 
-      {/* ReviewSet パネル（提供された場合のみ表示） */}
-      {reviewSet && <ReviewSetPanel reviewSet={reviewSet} />}
+// -- Review pane (Decision UI + ReviewSetPanel) ------------------------------
+
+function ReviewPane({ groups }: { groups: ComponentGroup[] }) {
+  const [decisionStore] = useState(() => new InMemoryDecisionStore());
+  const [, setDecisionVersion] = useState(0);
+  const [focusedGroupKey, setFocusedGroupKey] = useState<string | null>(null);
+
+  const handleDecide = (changeId: string, kind: DecisionKind, rationale?: string) => {
+    decisionStore.set({
+      changeId,
+      decision: kind,
+      rationale,
+      author: 'reviewer',
+      timestamp: Date.now(),
+    });
+    setDecisionVersion(v => v + 1);
+  };
+
+  const decidedCount = groups.filter(g => decisionStore.get(g.groupKey)).length;
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        flexShrink: 0,
+        borderTop: '2px solid rgba(148,163,184,0.20)',
+        background: 'rgba(15, 23, 42, 0.65)',
+        maxHeight: '45%',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          padding: '8px 12px',
+          borderBottom: '1px solid rgba(148,163,184,0.12)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexShrink: 0,
+          background: 'rgba(15, 23, 42, 0.7)',
+        }}
+      >
+        <span style={{ fontWeight: 700, fontSize: '0.80rem', color: '#dbeafe' }}>
+          レビュー
+        </span>
+        <span style={{ fontSize: '0.70rem', color: '#64748b' }}>
+          {decidedCount} / {groups.length} 決定済み
+        </span>
+      </div>
+
+      {/* Decision list */}
+      <ul style={{ margin: 0, padding: 0, listStyle: 'none', overflowY: 'auto', flex: 1 }}>
+        {groups.length === 0 ? (
+          <li style={{ padding: '16px 12px', color: 'rgba(148,163,184,0.5)', fontSize: '0.75rem', textAlign: 'center' }}>
+            変更なし
+          </li>
+        ) : (
+          groups.map(group => {
+            const decision = decisionStore.get(group.groupKey);
+            const isFocused = focusedGroupKey === group.groupKey;
+            return (
+              <li
+                key={group.groupKey}
+                style={{
+                  borderBottom: '1px solid rgba(148,163,184,0.07)',
+                  padding: '6px 12px',
+                  background: isFocused ? 'rgba(96,165,250,0.07)' : undefined,
+                  cursor: 'pointer',
+                }}
+                onClick={() => setFocusedGroupKey(k => k === group.groupKey ? null : group.groupKey)}
+              >
+                {/* 行ヘッダー: prefix + label + 決定済みバッジ */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: decision || isFocused ? 4 : 0 }}>
+                  <span style={{ color: PREFIX_COLOR[group.prefix] ?? '#e2e8f0', fontWeight: 700, fontSize: '0.75rem', flexShrink: 0 }}>
+                    {group.prefix}
+                  </span>
+                  <span style={{ fontSize: '0.78rem', color: '#e2e8f0', flex: 1, wordBreak: 'break-word' }}>
+                    {group.label}
+                  </span>
+                  {decision && (
+                    <span style={{
+                      fontSize: '0.68rem',
+                      padding: '1px 6px',
+                      borderRadius: 8,
+                      background: decision.decision === 'accept' ? 'rgba(22,163,74,0.25)'
+                        : decision.decision === 'reject'  ? 'rgba(220,38,38,0.25)'
+                        : decision.decision === 'defer'   ? 'rgba(217,119,6,0.25)'
+                        : 'rgba(107,114,128,0.25)',
+                      color: decision.decision === 'accept' ? '#4ade80'
+                        : decision.decision === 'reject'  ? '#f87171'
+                        : decision.decision === 'defer'   ? '#fbbf24'
+                        : '#9ca3af',
+                      fontWeight: 600,
+                      flexShrink: 0,
+                    }}>
+                      {decision.decision}
+                    </span>
+                  )}
+                </div>
+
+                {/* Decision ボタン（フォーカス中のみ表示） */}
+                {isFocused && (
+                  <div style={{ paddingLeft: 16 }}>
+                    <DecisionButtons
+                      changeId={group.groupKey}
+                      author="reviewer"
+                      currentDecision={decision?.decision}
+                      onDecide={handleDecide}
+                      keyboardActive={isFocused}
+                    />
+                  </div>
+                )}
+              </li>
+            );
+          })
+        )}
+      </ul>
     </div>
   );
 }
@@ -649,18 +724,33 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
         </div>
       </div>
 
-      {/* ── 右ペイン: 変更サマリー ── */}
-      {summaryLines !== null && summaryLines.length > 0 ? (
-        <SemanticSummaryPane
-          lines={summaryLines}
-          pairings={summaryPairings}
-          highlightedGroupKey={highlightedGroupKey}
-          onGroupClick={handleGroupClick}
-          reviewSet={undefined}
-        />
-      ) : (
-        <NoSummaryPane />
-      )}
+      {/* ── 右ペイン: 変更サマリー（上）+ レビュー（下） ── */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          width: 280,
+          minWidth: 240,
+          maxWidth: 320,
+          flexShrink: 0,
+          background: 'rgba(15, 23, 42, 0.55)',
+          borderLeft: '1px solid rgba(148,163,184,0.15)',
+          height: '100%',
+          overflow: 'hidden',
+        }}
+      >
+        {summaryLines !== null && summaryLines.length > 0 ? (
+          <SemanticSummaryPane
+            lines={summaryLines}
+            pairings={summaryPairings}
+            highlightedGroupKey={highlightedGroupKey}
+            onGroupClick={handleGroupClick}
+          />
+        ) : (
+          <NoSummaryPane />
+        )}
+        <ReviewPane groups={summaryLines ? groupSummaryLines(summaryLines, summaryPairings) : []} />
+      </div>
     </div>
   );
 };
