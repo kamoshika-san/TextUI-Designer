@@ -5,6 +5,7 @@ import type { SemanticSummaryLine, SemanticChangePrefix, ComponentIndexPair } fr
 import { DecisionButtons } from './DecisionButtons';
 import { ImpactBadge } from './ImpactBadge';
 import type { ImpactBadgeProps } from './ImpactBadge';
+import { DecisionHistory } from './DecisionHistory';
 import type { DecisionKind } from '../../domain/review-engine/decision';
 import { InMemoryDecisionStore } from '../../domain/review-engine/decision';
 
@@ -354,6 +355,7 @@ function ReviewPane({ groups }: { groups: ComponentGroup[] }) {
   const [decisionStore] = useState(() => new InMemoryDecisionStore());
   const [, setDecisionVersion] = useState(0);
   const [focusedGroupKey, setFocusedGroupKey] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'review' | 'history'>('review');
 
   const handleDecide = (changeId: string, kind: DecisionKind, rationale?: string) => {
     decisionStore.set({
@@ -367,6 +369,18 @@ function ReviewPane({ groups }: { groups: ComponentGroup[] }) {
   };
 
   const decidedCount = groups.filter(g => decisionStore.get(g.groupKey)).length;
+  const allDecisions = decisionStore.list();
+
+  const tabStyle = (tab: 'review' | 'history'): React.CSSProperties => ({
+    padding: '4px 10px',
+    fontSize: '0.74rem',
+    fontWeight: activeTab === tab ? 700 : 400,
+    color: activeTab === tab ? '#dbeafe' : '#64748b',
+    background: 'none',
+    border: 'none',
+    borderBottom: activeTab === tab ? '2px solid #60a5fa' : '2px solid transparent',
+    cursor: 'pointer',
+  });
 
   return (
     <div
@@ -380,10 +394,10 @@ function ReviewPane({ groups }: { groups: ComponentGroup[] }) {
         overflow: 'hidden',
       }}
     >
-      {/* Header */}
+      {/* Header with tabs */}
       <div
         style={{
-          padding: '8px 12px',
+          padding: '0 12px',
           borderBottom: '1px solid rgba(148,163,184,0.12)',
           display: 'flex',
           alignItems: 'center',
@@ -392,16 +406,26 @@ function ReviewPane({ groups }: { groups: ComponentGroup[] }) {
           background: 'rgba(15, 23, 42, 0.7)',
         }}
       >
-        <span style={{ fontWeight: 700, fontSize: '0.80rem', color: '#dbeafe' }}>
-          レビュー
-        </span>
-        <span style={{ fontSize: '0.70rem', color: '#64748b' }}>
-          {decidedCount} / {groups.length} 決定済み
-        </span>
+        <div style={{ display: 'flex', gap: 0 }}>
+          <button style={tabStyle('review')} onClick={() => setActiveTab('review')}>
+            レビュー
+          </button>
+          <button style={tabStyle('history')} onClick={() => setActiveTab('history')}>
+            履歴 {allDecisions.length > 0 && `(${allDecisions.length})`}
+          </button>
+        </div>
+        {activeTab === 'review' && (
+          <span style={{ fontSize: '0.70rem', color: '#64748b' }}>
+            {decidedCount} / {groups.length} 決定済み
+          </span>
+        )}
       </div>
 
-      {/* Decision list */}
-      <ul style={{ margin: 0, padding: 0, listStyle: 'none', overflowY: 'auto', flex: 1 }}>
+      {/* Tab content */}
+      {activeTab === 'history' ? (
+        <DecisionHistory decisions={allDecisions} />
+      ) : (
+        <ul style={{ margin: 0, padding: 0, listStyle: 'none', overflowY: 'auto', flex: 1 }}>
         {groups.length === 0 ? (
           <li style={{ padding: '16px 12px', color: 'rgba(148,163,184,0.5)', fontSize: '0.75rem', textAlign: 'center' }}>
             変更なし
@@ -467,6 +491,7 @@ function ReviewPane({ groups }: { groups: ComponentGroup[] }) {
           })
         )}
       </ul>
+      )}
     </div>
   );
 }
