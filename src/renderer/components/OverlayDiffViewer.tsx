@@ -3,6 +3,8 @@ import { renderRegisteredComponent } from '../component-map';
 import type { OverlayDiffState } from '../../domain/diff/overlay-diff-types';
 import type { SemanticSummaryLine, SemanticChangePrefix, ComponentIndexPair } from '../../core/textui-semantic-diff-summary';
 import { DecisionButtons } from './DecisionButtons';
+import { ImpactBadge } from './ImpactBadge';
+import type { ImpactBadgeProps } from './ImpactBadge';
 import type { DecisionKind } from '../../domain/review-engine/decision';
 import { InMemoryDecisionStore } from '../../domain/review-engine/decision';
 
@@ -165,6 +167,7 @@ function AccordionItem({
   currentDecision,
   onDecide,
   keyboardActive,
+  impact,
 }: {
   group: ComponentGroup;
   isHighlighted: boolean;
@@ -172,6 +175,7 @@ function AccordionItem({
   currentDecision?: DecisionKind;
   onDecide: (changeId: string, kind: DecisionKind, rationale?: string) => void;
   keyboardActive: boolean;
+  impact?: ImpactBadgeProps;
 }) {
   const [isOpen, setIsOpen] = useState(true);
   const childLines = group.lines.filter(l => !l.isComponentEvent);
@@ -217,6 +221,13 @@ function AccordionItem({
         <span style={{ fontSize: '0.80rem', fontWeight: 600, color: '#e2e8f0', flex: 1, wordBreak: 'break-word' }}>
           {group.label}
         </span>
+        {impact && (
+          <ImpactBadge
+            direct={impact.direct}
+            indirect={impact.indirect}
+            navigation={impact.navigation}
+          />
+        )}
       </div>
 
       {/* Decision buttons */}
@@ -370,6 +381,7 @@ function SemanticSummaryPane({
             currentDecision={decisionStore.get(group.groupKey)?.decision}
             onDecide={handleDecide}
             keyboardActive={highlightedGroupKey === group.groupKey}
+            impact={undefined}
           />
         ))}
       </ul>
