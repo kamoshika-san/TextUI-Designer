@@ -1,6 +1,7 @@
 # TextUI Review - CI integration
 
 As of April 13, 2026, the `textui review*` CLI surface has been removed.
+This file remains only to prevent stale references from older planning docs.
 
 ## Removed commands
 
