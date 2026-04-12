@@ -1,7 +1,3 @@
-/**
- * DiffResultExternal アダプターテスト
- */
-
 const assert = require('assert');
 
 describe('diff-result-external: toExternalDiffResult', () => {
@@ -67,7 +63,7 @@ describe('diff-result-external: toExternalDiffResult', () => {
       layer: 'visual',
       componentId: 'btn-submit',
       identityBasis: 'stable-id',
-      humanReadable: { title: 'Label changed', description: 'Submit → Submit Order', impact: 'low' },
+      humanReadable: { title: 'Label changed', description: 'Submit -> Submit Order', impact: 'low' },
     }];
     const result = adapter.toExternalDiffResult(makeCompareResult(changes));
     assert.strictEqual(result.changes.length, 1);
@@ -77,25 +73,6 @@ describe('diff-result-external: toExternalDiffResult', () => {
     assert.strictEqual(result.changes[0].layer, 'visual');
     assert.strictEqual(result.changes[0].impact, 'low');
     assert.strictEqual(result.changes[0].humanReadable.title, 'Label changed');
-  });
-
-  it('omits decisions field when not provided', () => {
-    const result = adapter.toExternalDiffResult(makeCompareResult());
-    assert.strictEqual(result.decisions, undefined);
-  });
-
-  it('includes decisions field when provided', () => {
-    const decisions = [{
-      changeId: 'change-0',
-      decision: 'accept',
-      author: 'alice',
-      timestamp: 1000,
-    }];
-    const result = adapter.toExternalDiffResult(makeCompareResult(), decisions);
-    assert.ok(Array.isArray(result.decisions));
-    assert.strictEqual(result.decisions.length, 1);
-    assert.strictEqual(result.decisions[0].changeId, 'change-0');
-    assert.strictEqual(result.decisions[0].decision, 'accept');
   });
 
   it('falls back to low confidence for unknown band', () => {

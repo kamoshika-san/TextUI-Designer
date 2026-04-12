@@ -1,25 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { renderRegisteredComponent } from '../component-map';
 import type { OverlayDiffState } from '../../domain/diff/overlay-diff-types';
-import type { SemanticSummaryLine, SemanticChangePrefix, ComponentIndexPair } from '../../core/textui-semantic-diff-summary';
-import { DecisionButtons } from './DecisionButtons';
-import { ImpactBadge } from './ImpactBadge';
-import type { ImpactBadgeProps } from './ImpactBadge';
-import { DecisionHistory } from './DecisionHistory';
-import type { DecisionKind } from '../../domain/review-engine/decision';
-import { InMemoryDecisionStore } from '../../domain/review-engine/decision';
+import type {
+  ComponentIndexPair,
+  SemanticChangePrefix,
+  SemanticSummaryLine
+} from '../../core/textui-semantic-diff-summary';
 
-// Browser-compatible basename function
 function basename(filePath: string): string {
   return filePath.split(/[/\\]/).pop() || filePath;
 }
 
-// -- Design tokens ------------------------------------------------------------
-
 const COLOR: Record<string, string> = {
-  add:       '#4ade80',
-  update:    '#60a5fa',
-  remove:    '#f87171',
+  add: '#4ade80',
+  update: '#60a5fa',
+  remove: '#f87171',
   ambiguous: '#fbbf24',
 };
 
@@ -37,8 +32,6 @@ const PREFIX_LABEL: Record<string, string> = {
   '?': '要確認',
 };
 
-// -- Right pane: semantic summary --------------------------------------------
-
 interface ComponentGroup {
   groupKey: string;
   componentIndexA?: number;
@@ -51,13 +44,14 @@ interface ComponentGroup {
 const GROUP_ORDER: Record<string, number> = { '+': 0, '~': 1, '-': 2, '?': 3 };
 
 function groupSummaryLines(lines: SemanticSummaryLine[], pairings: ComponentIndexPair[] = []): ComponentGroup[] {
-  // Pass 1: create one group per component-level event, keyed by eventId (unique)
   const groups: ComponentGroup[] = [];
-  const groupByA = new Map<number, ComponentGroup>(); // normalized-A index → group
-  const groupByB = new Map<number, ComponentGroup>(); // normalized-B index → group
+  const groupByA = new Map<number, ComponentGroup>();
+  const groupByB = new Map<number, ComponentGroup>();
 
   for (const line of lines) {
-    if (!line.isComponentEvent) { continue; }
+    if (!line.isComponentEvent) {
+      continue;
+    }
     const group: ComponentGroup = {
       groupKey: line.eventId,
       componentIndexA: line.componentIndexA,
@@ -67,25 +61,24 @@ function groupSummaryLines(lines: SemanticSummaryLine[], pairings: ComponentInde
       lines: [line],
     };
     groups.push(group);
-    if (line.componentIndexA !== undefined) { groupByA.set(line.componentIndexA, group); }
-    if (line.componentIndexB !== undefined) { groupByB.set(line.componentIndexB, group); }
+    if (line.componentIndexA !== undefined) {
+      groupByA.set(line.componentIndexA, group);
+    }
+    if (line.componentIndexB !== undefined) {
+      groupByB.set(line.componentIndexB, group);
+    }
   }
 
-  // Pass 2: attach property/page lines to their parent component group.
-  // If no component-level event exists (suppressed by summary engine), create a
-  // placeholder group so property lines are not incorrectly merged into ページ.
   const pageGroup: ComponentGroup = { groupKey: 'page', label: 'ページ', prefix: '~', lines: [] };
   let hasPageLines = false;
 
   for (const line of lines) {
-    if (line.isComponentEvent) { continue; }
-    // Match by A-index first (most specific), then B-index
+    if (line.isComponentEvent) {
+      continue;
+    }
     let group = (line.componentIndexA !== undefined ? groupByA.get(line.componentIndexA) : undefined)
-             ?? (line.componentIndexB !== undefined ? groupByB.get(line.componentIndexB) : undefined);
+      ?? (line.componentIndexB !== undefined ? groupByB.get(line.componentIndexB) : undefined);
 
-    // No component-level group found, but line belongs to a component (has an index).
-    // This happens when the component-level update event was suppressed in favour of
-    // more-specific property lines. Create a placeholder group on the fly.
     if (!group && (line.componentIndexA !== undefined || line.componentIndexB !== undefined)) {
       const placeholderKey = `prop-a${line.componentIndexA ?? ''}-b${line.componentIndexB ?? ''}`;
       group = {
@@ -97,8 +90,12 @@ function groupSummaryLines(lines: SemanticSummaryLine[], pairings: ComponentInde
         lines: [],
       };
       groups.push(group);
-      if (line.componentIndexA !== undefined) { groupByA.set(line.componentIndexA, group); }
-      if (line.componentIndexB !== undefined) { groupByB.set(line.componentIndexB, group); }
+      if (line.componentIndexA !== undefined) {
+        groupByA.set(line.componentIndexA, group);
+      }
+      if (line.componentIndexB !== undefined) {
+        groupByB.set(line.componentIndexB, group);
+      }
     }
 
     if (group) {
@@ -109,53 +106,51 @@ function groupSummaryLines(lines: SemanticSummaryLine[], pairings: ComponentInde
     }
   }
 
-  if (hasPageLines) { groups.push(pageGroup); }
+  if (hasPageLines) {
+    groups.push(pageGroup);
+  }
 
-  // Backfill missing A/B indices on groups using component-level pairing info.
-  // This covers cases where a property event only has a B-index because the
-  // property was newly added (previousSourceRef is null), yet the component
-  // itself was paired (e.g. DatePicker A=5 ↔ B=6, required added).
   if (pairings.length > 0) {
     const pairByB = new Map<number, number>();
     const pairByA = new Map<number, number>();
-    for (const p of pairings) {
-      if (p.indexB !== undefined && p.indexA !== undefined) { pairByB.set(p.indexB, p.indexA); }
-      if (p.indexA !== undefined && p.indexB !== undefined) { pairByA.set(p.indexA, p.indexB); }
-    }
-    for (const g of groups) {
-      if (g.componentIndexA === undefined && g.componentIndexB !== undefined) {
-        const inferredA = pairByB.get(g.componentIndexB);
-        if (inferredA !== undefined) { g.componentIndexA = inferredA; }
+    for (const pairing of pairings) {
+      if (pairing.indexA !== undefined && pairing.indexB !== undefined) {
+        pairByA.set(pairing.indexA, pairing.indexB);
+        pairByB.set(pairing.indexB, pairing.indexA);
       }
-      if (g.componentIndexB === undefined && g.componentIndexA !== undefined) {
-        const inferredB = pairByA.get(g.componentIndexA);
-        if (inferredB !== undefined) { g.componentIndexB = inferredB; }
+    }
+    for (const group of groups) {
+      if (group.componentIndexA === undefined && group.componentIndexB !== undefined) {
+        const inferredA = pairByB.get(group.componentIndexB);
+        if (inferredA !== undefined) {
+          group.componentIndexA = inferredA;
+        }
+      }
+      if (group.componentIndexB === undefined && group.componentIndexA !== undefined) {
+        const inferredB = pairByA.get(group.componentIndexA);
+        if (inferredB !== undefined) {
+          group.componentIndexB = inferredB;
+        }
       }
     }
   }
 
-  // Sort by A-index (existing components), then B-only (added), page group last
   return groups.sort((a, b) => {
     const ai = a.componentIndexA ?? a.componentIndexB ?? Infinity;
     const bi = b.componentIndexA ?? b.componentIndexB ?? Infinity;
-    if (ai !== bi) { return ai - bi; }
+    if (ai !== bi) {
+      return ai - bi;
+    }
     return (GROUP_ORDER[a.prefix] ?? 9) - (GROUP_ORDER[b.prefix] ?? 9);
   });
 }
 
 function SummaryBadge({ count, color, symbol }: { count: number; color: string; symbol: string }) {
-  if (count === 0) { return null; }
+  if (count === 0) {
+    return null;
+  }
   return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 2,
-        fontSize: '0.72rem',
-        fontWeight: 700,
-        color,
-      }}
-    >
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: '0.72rem', fontWeight: 700, color }}>
       {symbol}{count}
     </span>
   );
@@ -165,15 +160,13 @@ function AccordionItem({
   group,
   isHighlighted,
   onToggleHighlight,
-  impact,
 }: {
   group: ComponentGroup;
   isHighlighted: boolean;
   onToggleHighlight: () => void;
-  impact?: ImpactBadgeProps;
 }) {
   const [isOpen, setIsOpen] = useState(true);
-  const childLines = group.lines.filter(l => !l.isComponentEvent);
+  const childLines = group.lines.filter(line => !line.isComponentEvent);
   const hasPositionChange =
     group.componentIndexA !== undefined &&
     group.componentIndexB !== undefined &&
@@ -182,9 +175,13 @@ function AccordionItem({
 
   return (
     <li style={{ borderBottom: '1px solid rgba(148,163,184,0.10)' }}>
-      {/* Accordion header */}
       <div
-        onClick={() => { onToggleHighlight(); if (hasChildren) { setIsOpen(o => !o); } }}
+        onClick={() => {
+          onToggleHighlight();
+          if (hasChildren) {
+            setIsOpen(open => !open);
+          }
+        }}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -216,26 +213,25 @@ function AccordionItem({
         <span style={{ fontSize: '0.80rem', fontWeight: 600, color: '#e2e8f0', flex: 1, wordBreak: 'break-word' }}>
           {group.label}
         </span>
-        {impact && (
-          <ImpactBadge
-            direct={impact.direct}
-            indirect={impact.indirect}
-            navigation={impact.navigation}
-          />
-        )}
       </div>
 
-      {/* Property child lines */}
       {isOpen && hasChildren && (
         <ul style={{ margin: 0, padding: 0, listStyle: 'none', background: 'rgba(0,0,0,0.18)' }}>
           {hasPositionChange && (
-            <li key="__reorder__" style={{
-              display: 'flex', alignItems: 'flex-start', gap: 6,
-              padding: '4px 12px 4px 30px',
-              borderBottom: '1px solid rgba(148,163,184,0.05)',
-              fontFamily: 'var(--vscode-editor-font-family, monospace)',
-              fontSize: '0.74rem', lineHeight: 1.4, color: '#94a3b8',
-            }}>
+            <li
+              key="__reorder__"
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 6,
+                padding: '4px 12px 4px 30px',
+                borderBottom: '1px solid rgba(148,163,184,0.05)',
+                fontFamily: 'var(--vscode-editor-font-family, monospace)',
+                fontSize: '0.74rem',
+                lineHeight: 1.4,
+                color: '#94a3b8',
+              }}
+            >
               <span style={{ color: PREFIX_COLOR['~'], fontWeight: 700, flexShrink: 0, width: 10, textAlign: 'center' }}>~</span>
               <span>並び替え: {group.componentIndexA! + 1}番目 → {group.componentIndexB! + 1}番目</span>
             </li>
@@ -287,22 +283,13 @@ function SemanticSummaryPane({
   onGroupClick: (groupKey: string) => void;
 }) {
   const groups = groupSummaryLines(lines, pairings);
-
-  const addCount    = lines.filter(l => l.prefix === '+').length;
-  const updateCount = lines.filter(l => l.prefix === '~').length;
-  const removeCount = lines.filter(l => l.prefix === '-').length;
-  const ambigCount  = lines.filter(l => l.prefix === '?').length;
+  const addCount = lines.filter(line => line.prefix === '+').length;
+  const updateCount = lines.filter(line => line.prefix === '~').length;
+  const removeCount = lines.filter(line => line.prefix === '-').length;
+  const ambigCount = lines.filter(line => line.prefix === '?').length;
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        flex: 1,
-      }}
-    >
-      {/* Pane header */}
+    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
       <div
         style={{
           padding: '10px 12px',
@@ -314,189 +301,28 @@ function SemanticSummaryPane({
           background: 'rgba(15, 23, 42, 0.6)',
         }}
       >
-        <span style={{ fontWeight: 700, fontSize: '0.80rem', color: '#dbeafe' }}>
-          変更サマリー
-        </span>
+        <span style={{ fontWeight: 700, fontSize: '0.80rem', color: '#dbeafe' }}>変更サマリー</span>
         <span style={{ display: 'flex', gap: 8 }}>
-          <SummaryBadge count={addCount}    color={COLOR.add}       symbol="+" />
-          <SummaryBadge count={updateCount} color={COLOR.update}    symbol="~" />
-          <SummaryBadge count={removeCount} color={COLOR.remove}    symbol="-" />
-          <SummaryBadge count={ambigCount}  color={COLOR.ambiguous} symbol="?" />
+          <SummaryBadge count={addCount} color={COLOR.add} symbol="+" />
+          <SummaryBadge count={updateCount} color={COLOR.update} symbol="~" />
+          <SummaryBadge count={removeCount} color={COLOR.remove} symbol="-" />
+          <SummaryBadge count={ambigCount} color={COLOR.ambiguous} symbol="?" />
         </span>
       </div>
 
-      {/* Accordion list */}
-      <ul
-        style={{
-          margin: 0,
-          padding: 0,
-          listStyle: 'none',
-          overflowY: 'auto',
-          flex: 1,
-        }}
-      >
+      <ul style={{ margin: 0, padding: 0, listStyle: 'none', overflowY: 'auto', flex: 1 }}>
         {groups.map(group => (
           <AccordionItem
             key={group.groupKey}
             group={group}
             isHighlighted={highlightedGroupKey === group.groupKey}
             onToggleHighlight={() => onGroupClick(group.groupKey)}
-            impact={undefined}
           />
         ))}
       </ul>
     </div>
   );
 }
-
-// -- Review pane (Decision UI + ReviewSetPanel) ------------------------------
-
-function ReviewPane({ groups }: { groups: ComponentGroup[] }) {
-  const [decisionStore] = useState(() => new InMemoryDecisionStore());
-  const [, setDecisionVersion] = useState(0);
-  const [focusedGroupKey, setFocusedGroupKey] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'review' | 'history'>('review');
-
-  const handleDecide = (changeId: string, kind: DecisionKind, rationale?: string) => {
-    decisionStore.set({
-      changeId,
-      decision: kind,
-      rationale,
-      author: 'reviewer',
-      timestamp: Date.now(),
-    });
-    setDecisionVersion(v => v + 1);
-  };
-
-  const decidedCount = groups.filter(g => decisionStore.get(g.groupKey)).length;
-  const allDecisions = decisionStore.list();
-
-  const tabStyle = (tab: 'review' | 'history'): React.CSSProperties => ({
-    padding: '4px 10px',
-    fontSize: '0.74rem',
-    fontWeight: activeTab === tab ? 700 : 400,
-    color: activeTab === tab ? '#dbeafe' : '#64748b',
-    background: 'none',
-    border: 'none',
-    borderBottom: activeTab === tab ? '2px solid #60a5fa' : '2px solid transparent',
-    cursor: 'pointer',
-  });
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        flexShrink: 0,
-        borderTop: '2px solid rgba(148,163,184,0.20)',
-        background: 'rgba(15, 23, 42, 0.65)',
-        maxHeight: '45%',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Header with tabs */}
-      <div
-        style={{
-          padding: '0 12px',
-          borderBottom: '1px solid rgba(148,163,184,0.12)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexShrink: 0,
-          background: 'rgba(15, 23, 42, 0.7)',
-        }}
-      >
-        <div style={{ display: 'flex', gap: 0 }}>
-          <button style={tabStyle('review')} onClick={() => setActiveTab('review')}>
-            レビュー
-          </button>
-          <button style={tabStyle('history')} onClick={() => setActiveTab('history')}>
-            履歴 {allDecisions.length > 0 && `(${allDecisions.length})`}
-          </button>
-        </div>
-        {activeTab === 'review' && (
-          <span style={{ fontSize: '0.70rem', color: '#64748b' }}>
-            {decidedCount} / {groups.length} 決定済み
-          </span>
-        )}
-      </div>
-
-      {/* Tab content */}
-      {activeTab === 'history' ? (
-        <DecisionHistory decisions={allDecisions} />
-      ) : (
-        <ul style={{ margin: 0, padding: 0, listStyle: 'none', overflowY: 'auto', flex: 1 }}>
-        {groups.length === 0 ? (
-          <li style={{ padding: '16px 12px', color: 'rgba(148,163,184,0.5)', fontSize: '0.75rem', textAlign: 'center' }}>
-            変更なし
-          </li>
-        ) : (
-          groups.map(group => {
-            const decision = decisionStore.get(group.groupKey);
-            const isFocused = focusedGroupKey === group.groupKey;
-            return (
-              <li
-                key={group.groupKey}
-                style={{
-                  borderBottom: '1px solid rgba(148,163,184,0.07)',
-                  padding: '6px 12px',
-                  background: isFocused ? 'rgba(96,165,250,0.07)' : undefined,
-                  cursor: 'pointer',
-                }}
-                onClick={() => setFocusedGroupKey(k => k === group.groupKey ? null : group.groupKey)}
-              >
-                {/* 行ヘッダー: prefix + label + 決定済みバッジ */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: decision || isFocused ? 4 : 0 }}>
-                  <span style={{ color: PREFIX_COLOR[group.prefix] ?? '#e2e8f0', fontWeight: 700, fontSize: '0.75rem', flexShrink: 0 }}>
-                    {group.prefix}
-                  </span>
-                  <span style={{ fontSize: '0.78rem', color: '#e2e8f0', flex: 1, wordBreak: 'break-word' }}>
-                    {group.label}
-                  </span>
-                  {decision && (
-                    <span style={{
-                      fontSize: '0.68rem',
-                      padding: '1px 6px',
-                      borderRadius: 8,
-                      background: decision.decision === 'accept' ? 'rgba(22,163,74,0.25)'
-                        : decision.decision === 'reject'  ? 'rgba(220,38,38,0.25)'
-                        : decision.decision === 'defer'   ? 'rgba(217,119,6,0.25)'
-                        : 'rgba(107,114,128,0.25)',
-                      color: decision.decision === 'accept' ? '#4ade80'
-                        : decision.decision === 'reject'  ? '#f87171'
-                        : decision.decision === 'defer'   ? '#fbbf24'
-                        : '#9ca3af',
-                      fontWeight: 600,
-                      flexShrink: 0,
-                    }}>
-                      {decision.decision}
-                    </span>
-                  )}
-                </div>
-
-                {/* Decision ボタン（フォーカス中のみ表示） */}
-                {isFocused && (
-                  <div style={{ paddingLeft: 16 }}>
-                    <DecisionButtons
-                      changeId={group.groupKey}
-                      author="reviewer"
-                      currentDecision={decision?.decision}
-                      onDecide={handleDecide}
-                      keyboardActive={isFocused}
-                    />
-                  </div>
-                )}
-              </li>
-            );
-          })
-        )}
-      </ul>
-      )}
-    </div>
-  );
-}
-
-// -- Empty state for right pane (no summary available) -----------------------
 
 function NoSummaryPane() {
   return (
@@ -516,96 +342,80 @@ function NoSummaryPane() {
         padding: '0 16px',
       }}
     >
-      変更サマリーを<br />生成できませんでした
+      変更サマリーを
+      <br />
+      生成できませんでした
     </div>
   );
 }
-
-// -- Main component ----------------------------------------------------------
 
 interface OverlayDiffViewerProps {
   state: OverlayDiffState;
 }
 
-/**
- * Overlay Diff Viewer コンポーネント。
- *
- * 左ペイン: 透過スライダーによるオーバーレイ比較
- * 右ペイン: D4 セマンティック変更サマリー（+/~/−/? の1行リスト）
- *
- * 右ペインはセマンティック要約が存在しない場合もプレースホルダーを表示する。
- */
 const STEPS = [0, 33, 67, 100] as const;
 
 export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) => {
   const [stepIndex, setStepIndex] = useState(1);
-  const slider = STEPS[stepIndex];
   const [highlightedGroupKey, setHighlightedGroupKey] = useState<string | null>(null);
+  const slider = STEPS[stepIndex];
 
   const opacityA = 1 - slider / 100;
   const opacityB = slider / 100;
-
   const labelA = basename(state.fileNameA);
   const labelB = basename(state.fileNameB);
-
   const componentsA = state.dslA.page?.components ?? [];
   const componentsB = state.dslB.page?.components ?? [];
   const maxCount = Math.max(componentsA.length, componentsB.length);
-
   const summaryLines = state.semanticSummary?.lines ?? null;
   const summaryPairings = state.semanticSummary?.componentPairings ?? [];
-
-  // Build groups and index → groupKey maps for canvas highlight
   const groups = summaryLines ? groupSummaryLines(summaryLines, summaryPairings) : [];
+
   const highlightIndexA = new Map<number, string>();
   const highlightIndexB = new Map<number, string>();
-  for (const g of groups) {
-    if (g.componentIndexA !== undefined) { highlightIndexA.set(g.componentIndexA, g.groupKey); }
-    if (g.componentIndexB !== undefined) { highlightIndexB.set(g.componentIndexB, g.groupKey); }
+  for (const group of groups) {
+    if (group.componentIndexA !== undefined) {
+      highlightIndexA.set(group.componentIndexA, group.groupKey);
+    }
+    if (group.componentIndexB !== undefined) {
+      highlightIndexB.set(group.componentIndexB, group.groupKey);
+    }
   }
 
-  const handleGroupClick = (groupKey: string) => {
-    setHighlightedGroupKey(prev => (prev === groupKey ? null : groupKey));
-  };
-
-  const sortedGroupKeys = groups.map(g => g.groupKey);
+  const sortedGroupKeys = groups.map(group => group.groupKey);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).tagName === 'INPUT') { return; }
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        setStepIndex(prev => Math.max(0, prev - 1));
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        setStepIndex(prev => Math.min(3, prev + 1));
-      } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        if (sortedGroupKeys.length === 0) { return; }
-        e.preventDefault();
-        const idx = sortedGroupKeys.indexOf(highlightedGroupKey ?? '');
-        if (e.key === 'ArrowDown') {
-          setHighlightedGroupKey(sortedGroupKeys[(idx + 1) % sortedGroupKeys.length]);
+    const handler = (event: KeyboardEvent) => {
+      if ((event.target as HTMLElement).tagName === 'INPUT') {
+        return;
+      }
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        setStepIndex(index => Math.max(0, index - 1));
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        setStepIndex(index => Math.min(3, index + 1));
+      } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        if (sortedGroupKeys.length === 0) {
+          return;
+        }
+        event.preventDefault();
+        const currentIndex = sortedGroupKeys.indexOf(highlightedGroupKey ?? '');
+        if (event.key === 'ArrowDown') {
+          setHighlightedGroupKey(sortedGroupKeys[(currentIndex + 1) % sortedGroupKeys.length]);
         } else {
-          setHighlightedGroupKey(sortedGroupKeys[(idx - 1 + sortedGroupKeys.length) % sortedGroupKeys.length]);
+          setHighlightedGroupKey(sortedGroupKeys[(currentIndex - 1 + sortedGroupKeys.length) % sortedGroupKeys.length]);
         }
       }
     };
+
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [sortedGroupKeys, highlightedGroupKey]);
+  }, [highlightedGroupKey, sortedGroupKeys]);
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        height: '100vh',
-        overflow: 'hidden',
-        fontFamily: 'sans-serif',
-      }}
-    >
-      {/* ── 左ペイン: Overlay Diff ── */}
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: 'sans-serif' }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* Header: ファイル名 + スライダー */}
         <div
           style={{
             display: 'flex',
@@ -631,32 +441,19 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
             Before: {labelA}
           </span>
 
-          <div
-            style={{
-              flex: 1,
-              minWidth: 120,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 2,
-            }}
-          >
+          <div style={{ flex: 1, minWidth: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
             <input
               type="range"
               min={0}
               max={3}
               step={1}
               value={stepIndex}
-              onChange={e => setStepIndex(Number(e.target.value))}
+              onChange={event => setStepIndex(Number(event.target.value))}
               style={{ width: '100%', cursor: 'pointer' }}
-              aria-label="透過度スライダー（Before ↔ After）"
+              aria-label="透過度スライダー（Before と After の切替）"
             />
             <span style={{ fontSize: '0.72rem', opacity: 0.7 }}>
-              {slider === 0
-                ? 'Before のみ'
-                : slider === 100
-                ? 'After のみ'
-                : `After ${slider}%`}
+              {slider === 0 ? 'Before のみ' : slider === 100 ? 'After のみ' : `After ${slider}%`}
             </span>
           </div>
 
@@ -674,17 +471,8 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
           </span>
         </div>
 
-        {/* Overlay canvas */}
-        <div
-          style={{
-            flex: 1,
-            overflow: 'auto',
-            padding: 16,
-            position: 'relative',
-          }}
-        >
+        <div style={{ flex: 1, overflow: 'auto', padding: 16, position: 'relative' }}>
           <div style={{ position: 'relative', minHeight: maxCount > 0 ? maxCount * 60 : 200 }}>
-            {/* Layer A: Before */}
             <div
               style={{
                 position: 'absolute',
@@ -696,26 +484,29 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
                 pointerEvents: slider >= 100 ? 'none' : 'auto',
               }}
             >
-              {componentsA.map((comp, i) => {
-                const isHighlighted = highlightIndexA.get(i) === highlightedGroupKey && highlightedGroupKey !== null;
+              {componentsA.map((component, index) => {
+                const isHighlighted =
+                  highlightIndexA.get(index) === highlightedGroupKey && highlightedGroupKey !== null;
                 return (
-                  <div key={`overlay-a-${i}`} style={{ position: 'relative' }}>
-                    {renderRegisteredComponent(comp, `overlay-a-${i}`)}
+                  <div key={`overlay-a-${index}`} style={{ position: 'relative' }}>
+                    {renderRegisteredComponent(component, `overlay-a-${index}`)}
                     {isHighlighted && (
-                      <div style={{
-                        position: 'absolute', inset: 0,
-                        border: '2px solid #60a5fa',
-                        boxShadow: '0 0 8px 2px rgba(96,165,250,0.5)',
-                        pointerEvents: 'none',
-                        borderRadius: 2,
-                      }} />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          border: '2px solid #60a5fa',
+                          boxShadow: '0 0 8px 2px rgba(96,165,250,0.5)',
+                          pointerEvents: 'none',
+                          borderRadius: 2,
+                        }}
+                      />
                     )}
                   </div>
                 );
               })}
             </div>
 
-            {/* Layer B: After */}
             <div
               style={{
                 position: 'absolute',
@@ -727,19 +518,23 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
                 pointerEvents: 'none',
               }}
             >
-              {componentsB.map((comp, i) => {
-                const isHighlighted = highlightIndexB.get(i) === highlightedGroupKey && highlightedGroupKey !== null;
+              {componentsB.map((component, index) => {
+                const isHighlighted =
+                  highlightIndexB.get(index) === highlightedGroupKey && highlightedGroupKey !== null;
                 return (
-                  <div key={`overlay-b-${i}`} style={{ position: 'relative' }}>
-                    {renderRegisteredComponent(comp, `overlay-b-${i}`)}
+                  <div key={`overlay-b-${index}`} style={{ position: 'relative' }}>
+                    {renderRegisteredComponent(component, `overlay-b-${index}`)}
                     {isHighlighted && (
-                      <div style={{
-                        position: 'absolute', inset: 0,
-                        border: '2px solid #60a5fa',
-                        boxShadow: '0 0 8px 2px rgba(96,165,250,0.5)',
-                        pointerEvents: 'none',
-                        borderRadius: 2,
-                      }} />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          border: '2px solid #60a5fa',
+                          boxShadow: '0 0 8px 2px rgba(96,165,250,0.5)',
+                          pointerEvents: 'none',
+                          borderRadius: 2,
+                        }}
+                      />
                     )}
                   </div>
                 );
@@ -749,7 +544,6 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
         </div>
       </div>
 
-      {/* ── 右ペイン: 変更サマリー（上）+ レビュー（下） ── */}
       <div
         style={{
           display: 'flex',
@@ -769,12 +563,11 @@ export const OverlayDiffViewer: React.FC<OverlayDiffViewerProps> = ({ state }) =
             lines={summaryLines}
             pairings={summaryPairings}
             highlightedGroupKey={highlightedGroupKey}
-            onGroupClick={handleGroupClick}
+            onGroupClick={groupKey => setHighlightedGroupKey(current => (current === groupKey ? null : groupKey))}
           />
         ) : (
           <NoSummaryPane />
         )}
-        <ReviewPane groups={summaryLines ? groupSummaryLines(summaryLines, summaryPairings) : []} />
       </div>
     </div>
   );
