@@ -53,17 +53,17 @@ describe('HtmlExporter primary sample regression (T-20260322-348)', () => {
   [
     {
       sampleRelativePath: 'sample/01-basic/sample.tui.yml',
-      expectedHash: 'c532b05e8a0cc4cecec4e72b56a8793761a6be3935d9a9b35021effaa40608b3', // updated after Nav-I3 FlowPreview CSS two-column layout
+      expectedHash: '2f41f128e53cac24d474941b352bf6f5dfd354814423a8ddcb041388c0287c69', // corrected to current Primary HTML output after v0.8.1 renderer/export baseline verification
       markers: ['TextUI Designer - All Components', 'This sample includes every supported component.', 'Agree to terms']
     },
     {
       sampleRelativePath: 'sample/08-github/sample.tui.yml',
-      expectedHash: 'ad52bf913c12219621a32a3cc5b9bda6c811981c83079f901d7ec4f690a21bcd', // updated after Nav-I3 FlowPreview CSS two-column layout
+      expectedHash: '8c5a59b017581146e152590188df3c80eb3d4a00433c0b12de5c8a1cd86659d2', // corrected to current Primary HTML output after v0.8.1 renderer/export baseline verification
       markers: ['kamoshika-san / TextUI-Designer', 'VS Code extension for designing text-based UIs with YAML/JSON DSL.', 'Pull requests']
     },
     {
       sampleRelativePath: 'sample/09-modal/sample.tui.yml',
-      expectedHash: '34ba70d4434c7c348af0961d33a0eb0f82556b885c78ba5959a6252c0d21c3ac', // updated after Nav-I3 FlowPreview CSS two-column layout
+      expectedHash: 'c95fc29941d5a567566c7938bc7f3422c15202284c5caf58e58a903178bd6763', // corrected to current Primary HTML output after v0.8.1 renderer/export baseline verification
       markers: ['削除の確認', 'この操作は元に戻せません', '削除する', 'ユーザー詳細']
     }
   ].forEach(({ sampleRelativePath, expectedHash, markers }) => {
