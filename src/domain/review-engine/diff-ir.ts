@@ -7,6 +7,7 @@
 
 import type { SemanticChange, SemanticDiff, DiffSummary } from '../../types/semantic-diff';
 import type { Decision } from './decision';
+import type { Impact } from './impact-propagator';
 
 // ── Change ────────────────────────────────────────────────────────────────────
 
@@ -37,21 +38,6 @@ export interface ChangeMetadata {
   nodeId?: string;
   /** E-RE3-S3: Priority Scoring が付与する優先度スコア */
   priorityScore?: number;
-}
-
-// ── Impact (E-RE2 が埋める) ───────────────────────────────────────────────────
-
-/** 変更の影響範囲（BFS/DFS で算出） */
-export interface Impact {
-  changeId: ChangeId;
-  /** 直接影響するノード ID 一覧 */
-  direct: string[];
-  /** 間接影響するノード ID 一覧 */
-  indirect: string[];
-  /** 影響する navigation flow 一覧 */
-  navigation: string[];
-  /** 0〜100 の重要度スコア（E-RE2-S4 が算出） */
-  score?: number;
 }
 
 // ── Cluster (E-RE3 が埋める) ──────────────────────────────────────────────────

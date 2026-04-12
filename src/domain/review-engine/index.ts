@@ -9,7 +9,6 @@ export type {
   ChangeId,
   Change,
   ChangeMetadata,
-  Impact,
   Cluster,
   DiffIR
 } from './diff-ir';
@@ -28,3 +27,6 @@ export { classifySemanticChangeType, classifyChange, classifyChanges } from './c
 
 export type { DependencyEdgeKind, DependencyNode, DependencyEdge, GraphMeta, DependencyGraph } from './dependency-graph';
 export { buildDependencyGraph } from './dependency-graph';
+
+export type { Impact, PropagateImpactOptions } from './impact-propagator';
+export { mapChangesToNodes, propagateImpact, propagateAllImpacts } from './impact-propagator';
