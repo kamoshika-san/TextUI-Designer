@@ -14,3 +14,6 @@ export type {
 } from './text-ui-provider';
 
 export { HtmlProviderAdapter } from './html-provider-adapter';
+export { ReactProviderAdapter } from './react-provider-adapter';
+export { VueProviderAdapter } from './vue-provider-adapter';
+export { SvelteProviderAdapter } from './svelte-provider-adapter';
