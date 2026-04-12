@@ -1,8 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { NavigationFlowDSL } from '../../domain/dsl-types';
 import type { FlowSemanticDiffResult } from '../../services/semantic-diff';
-import { createFlowDiagramDiffState } from '../../services/semantic-diff';
-import { FlowDiagram } from './FlowDiagram';
+import { createFlowDiagramDiffState, createFlowTransitionStateKey } from '../../services/semantic-diff';
+import { buildNavigationGraph, findAllNavigationRoutes, MAX_NAVIGATION_ROUTES } from '../../shared/navigation-graph';
+import { FlowDiagram, computeSelectedPath, computeVisibleTransitions } from './FlowDiagram';
+import { FlowEdge } from './FlowEdge';
+import { FlowRouteChain } from './FlowRouteChain';
 
 interface FlowPreviewPanelProps {
   flowDsl: NavigationFlowDSL;
@@ -50,6 +53,40 @@ export const FlowPreviewPanel: React.FC<FlowPreviewPanelProps> = ({
   );
 
   const isEntryScreen = selectedScreen?.id === flowDsl.flow.entry;
+  const isFilteredConnections = selectedScreenId !== '' && selectedScreenId !== flowDsl.flow.entry;
+
+  const selectedPath = useMemo(
+    () => computeSelectedPath(selectedScreenId, flowDsl),
+    [selectedScreenId, flowDsl]
+  );
+
+  const visibleTransitions = useMemo(
+    () => computeVisibleTransitions(selectedScreenId, flowDsl, selectedPath),
+    [selectedScreenId, flowDsl, selectedPath]
+  );
+
+  // Route chains for non-entry screens
+  const routeChains = useMemo(() => {
+    if (!isFilteredConnections || !selectedScreenId) {
+      return null;
+    }
+    const graph = buildNavigationGraph(flowDsl);
+    return findAllNavigationRoutes(graph, {
+      toScreenId: selectedScreenId,
+      maxRoutes: MAX_NAVIGATION_ROUTES
+    });
+  }, [flowDsl, selectedScreenId, isFilteredConnections]);
+
+  const totalRouteCount = useMemo(() => {
+    if (!isFilteredConnections || !selectedScreenId) {
+      return 0;
+    }
+    const graph = buildNavigationGraph(flowDsl);
+    return findAllNavigationRoutes(graph, {
+      toScreenId: selectedScreenId,
+      maxRoutes: MAX_NAVIGATION_ROUTES + 100
+    }).length;
+  }, [flowDsl, selectedScreenId, isFilteredConnections]);
 
   return (
     <section className="textui-flow-preview">
@@ -83,69 +120,106 @@ export const FlowPreviewPanel: React.FC<FlowPreviewPanelProps> = ({
       </header>
 
       <div className="textui-flow-preview-body">
+        {/* Top: full-width screen map */}
         <div className="textui-flow-preview-map-area">
           <FlowDiagram
             flowDsl={flowDsl}
             selectedScreenId={selectedScreenId}
             onSelectScreen={setSelectedScreenId}
+            selectedPath={selectedPath}
             screenStates={diagramDiffState?.screenStates}
-            transitionStates={diagramDiffState?.transitionStates}
           />
         </div>
 
-        {selectedScreen ? (
-          <aside className="textui-flow-preview-stage" aria-label="Selected screen stage">
-            <div className="textui-flow-stage-role">
-              {isEntryScreen ? 'Entry Screen' : 'Screen'}
-            </div>
-            <h2 className="textui-flow-stage-title">{selectedScreen.title || selectedScreen.id}</h2>
-            {selectedScreen.title ? (
-              <div className="textui-flow-stage-id">{selectedScreen.id}</div>
-            ) : null}
-
-            <div className="textui-flow-stage-linked-page">
-              <span className="textui-flow-stage-linked-page-icon" aria-hidden="true">⬡</span>
-              <span className="textui-flow-stage-linked-page-path">{selectedScreen.page}</span>
-            </div>
-
-            {outgoingTransitions.length > 0 ? (
-              <div className="textui-flow-stage-transitions">
-                <div className="textui-flow-stage-transitions-heading">
-                  Outgoing ({outgoingTransitions.length})
+        {/* Bottom: two-column row — left: connections/routes, right: screen detail */}
+        <div className="textui-flow-preview-detail-row">
+          {/* Left column: Connections / Routes to here */}
+          <div className="textui-flow-preview-connections-col">
+            {isFilteredConnections && routeChains !== null ? (
+              <div className="textui-flow-diagram-connections">
+                <div className="textui-flow-diagram-connections-heading">
+                  {`Routes to here (${Math.min(routeChains.length, MAX_NAVIGATION_ROUTES)} of ${totalRouteCount})`}
                 </div>
-                {outgoingTransitions.map((t, i) => (
-                  <div key={`${t.to}-${t.trigger}-${i}`} className="textui-flow-stage-transition-row">
-                    <span className="textui-flow-stage-trigger">{t.trigger}</span>
-                    <span className="textui-flow-stage-transition-arrow" aria-hidden="true">→</span>
-                    <span className="textui-flow-stage-target">{screenTitleMap.get(t.to) ?? t.to}</span>
-                    {t.label ? <span className="textui-flow-stage-label">{t.label}</span> : null}
-                  </div>
+                <FlowRouteChain
+                  routes={routeChains}
+                  screenTitleMap={screenTitleMap}
+                  totalRouteCount={totalRouteCount}
+                />
+              </div>
+            ) : visibleTransitions.length > 0 ? (
+              <div className="textui-flow-diagram-connections">
+                <div className="textui-flow-diagram-connections-heading">
+                  Connections
+                </div>
+                {visibleTransitions.map((transition, index) => (
+                  <FlowEdge
+                    key={`${transition.from}-${transition.to}-${transition.trigger}-${index}`}
+                    transition={transition}
+                    fromTitle={screenTitleMap.get(transition.from) ?? transition.from}
+                    toTitle={screenTitleMap.get(transition.to) ?? transition.to}
+                    isOnSelectedPath={selectedPath.has(transition.from) && selectedPath.has(transition.to)}
+                    visualStatus={diagramDiffState?.transitionStates?.[createFlowTransitionStateKey(transition)] ?? 'unchanged'}
+                  />
                 ))}
               </div>
-            ) : (
-              <div className="textui-flow-stage-transitions">
-                <div className="textui-flow-stage-transitions-heading">Terminal screen</div>
-              </div>
-            )}
+            ) : null}
+          </div>
 
-            <div className="textui-flow-stage-actions">
-              <button
-                type="button"
-                className="textui-flow-stage-action"
-                onClick={() => onJumpToDsl(`/flow/screens/${selectedScreenIndex}`, 'FlowScreen')}
-              >
-                Jump to flow screen
-              </button>
-              <button
-                type="button"
-                className="textui-flow-stage-action"
-                onClick={() => onJumpToDsl('/page', 'ScreenPage', selectedScreen.page)}
-              >
-                Open linked page
-              </button>
-            </div>
-          </aside>
-        ) : null}
+          {/* Right column: Screen detail */}
+          {selectedScreen ? (
+            <aside className="textui-flow-preview-stage" aria-label="Selected screen stage">
+              <div className="textui-flow-stage-role">
+                {isEntryScreen ? 'Entry Screen' : 'Screen'}
+              </div>
+              <h2 className="textui-flow-stage-title">{selectedScreen.title || selectedScreen.id}</h2>
+              {selectedScreen.title ? (
+                <div className="textui-flow-stage-id">{selectedScreen.id}</div>
+              ) : null}
+
+              <div className="textui-flow-stage-linked-page">
+                <span className="textui-flow-stage-linked-page-icon" aria-hidden="true">⬡</span>
+                <span className="textui-flow-stage-linked-page-path">{selectedScreen.page}</span>
+              </div>
+
+              {outgoingTransitions.length > 0 ? (
+                <div className="textui-flow-stage-transitions">
+                  <div className="textui-flow-stage-transitions-heading">
+                    Outgoing ({outgoingTransitions.length})
+                  </div>
+                  {outgoingTransitions.map((t, i) => (
+                    <div key={`${t.to}-${t.trigger}-${i}`} className="textui-flow-stage-transition-row">
+                      <span className="textui-flow-stage-trigger">{t.trigger}</span>
+                      <span className="textui-flow-stage-transition-arrow" aria-hidden="true">→</span>
+                      <span className="textui-flow-stage-target">{screenTitleMap.get(t.to) ?? t.to}</span>
+                      {t.label ? <span className="textui-flow-stage-label">{t.label}</span> : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="textui-flow-stage-transitions">
+                  <div className="textui-flow-stage-transitions-heading">Terminal screen</div>
+                </div>
+              )}
+
+              <div className="textui-flow-stage-actions">
+                <button
+                  type="button"
+                  className="textui-flow-stage-action"
+                  onClick={() => onJumpToDsl(`/flow/screens/${selectedScreenIndex}`, 'FlowScreen')}
+                >
+                  Jump to flow screen
+                </button>
+                <button
+                  type="button"
+                  className="textui-flow-stage-action"
+                  onClick={() => onJumpToDsl('/page', 'ScreenPage', selectedScreen.page)}
+                >
+                  Open linked page
+                </button>
+              </div>
+            </aside>
+          ) : null}
+        </div>
       </div>
     </section>
   );

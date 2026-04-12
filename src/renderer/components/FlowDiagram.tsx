@@ -1,31 +1,24 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import type { NavigationFlowDSL, ScreenRef } from '../../domain/dsl-types';
 import type { FlowDiffVisualStatus } from '../../services/semantic-diff';
-import { createFlowTransitionStateKey } from '../../services/semantic-diff';
-import { buildNavigationGraph, findAllNavigationRoutes, MAX_NAVIGATION_ROUTES } from '../../shared/navigation-graph';
 import { FlowNode } from './FlowNode';
-import { FlowEdge } from './FlowEdge';
-import { FlowRouteChain } from './FlowRouteChain';
 
 interface FlowDiagramProps {
   flowDsl: NavigationFlowDSL;
   selectedScreenId: string;
   onSelectScreen: (screenId: string) => void;
+  selectedPath: Set<string>;
   screenStates?: Record<string, FlowDiffVisualStatus>;
-  transitionStates?: Record<string, FlowDiffVisualStatus>;
 }
 
 export const FlowDiagram: React.FC<FlowDiagramProps> = ({
   flowDsl,
   selectedScreenId,
   onSelectScreen,
-  screenStates,
-  transitionStates
+  selectedPath,
+  screenStates
 }) => {
   const screenDepths = computeScreenDepths(flowDsl);
-  const selectedPath = computeSelectedPath(selectedScreenId, flowDsl);
-  const visibleTransitions = computeVisibleTransitions(selectedScreenId, flowDsl, selectedPath);
-  const isFilteredConnections = selectedScreenId !== '' && selectedScreenId !== flowDsl.flow.entry;
 
   const maxDepth = Math.max(0, ...Array.from(screenDepths.values()));
   const columns: ScreenRef[][] = Array.from({ length: maxDepth + 1 }, () => []);
@@ -33,32 +26,6 @@ export const FlowDiagram: React.FC<FlowDiagramProps> = ({
     const depth = screenDepths.get(screen.id) ?? 0;
     columns[depth].push(screen);
   });
-
-  const screenTitleMap = new Map(flowDsl.flow.screens.map(s => [s.id, s.title || s.id]));
-
-  // Compute all routes from entry to selected screen (only when non-entry screen is selected)
-  const routeChains = useMemo(() => {
-    if (!isFilteredConnections || !selectedScreenId) {
-      return null;
-    }
-    const graph = buildNavigationGraph(flowDsl);
-    return findAllNavigationRoutes(graph, {
-      toScreenId: selectedScreenId,
-      maxRoutes: MAX_NAVIGATION_ROUTES
-    });
-  }, [flowDsl, selectedScreenId, isFilteredConnections]);
-
-  // Total route count for overflow display (same call with higher limit to get true count)
-  const totalRouteCount = useMemo(() => {
-    if (!isFilteredConnections || !selectedScreenId) {
-      return 0;
-    }
-    const graph = buildNavigationGraph(flowDsl);
-    return findAllNavigationRoutes(graph, {
-      toScreenId: selectedScreenId,
-      maxRoutes: MAX_NAVIGATION_ROUTES + 100
-    }).length;
-  }, [flowDsl, selectedScreenId, isFilteredConnections]);
 
   return (
     <div className="textui-flow-diagram">
@@ -81,34 +48,6 @@ export const FlowDiagram: React.FC<FlowDiagramProps> = ({
           ))}
         </div>
       </div>
-      {isFilteredConnections && routeChains !== null ? (
-        <div className="textui-flow-diagram-connections">
-          <div className="textui-flow-diagram-connections-heading">
-            {`Routes to here (${Math.min(routeChains.length, MAX_NAVIGATION_ROUTES)} of ${totalRouteCount})`}
-          </div>
-          <FlowRouteChain
-            routes={routeChains}
-            screenTitleMap={screenTitleMap}
-            totalRouteCount={totalRouteCount}
-          />
-        </div>
-      ) : visibleTransitions.length > 0 ? (
-        <div className="textui-flow-diagram-connections">
-          <div className="textui-flow-diagram-connections-heading">
-            Connections
-          </div>
-          {visibleTransitions.map((transition, index) => (
-            <FlowEdge
-              key={`${transition.from}-${transition.to}-${transition.trigger}-${index}`}
-              transition={transition}
-              fromTitle={screenTitleMap.get(transition.from) ?? transition.from}
-              toTitle={screenTitleMap.get(transition.to) ?? transition.to}
-              isOnSelectedPath={selectedPath.has(transition.from) && selectedPath.has(transition.to)}
-              visualStatus={transitionStates?.[createFlowTransitionStateKey(transition)] ?? 'unchanged'}
-            />
-          ))}
-        </div>
-      ) : null}
     </div>
   );
 };
@@ -149,21 +88,7 @@ function computeScreenDepths(flowDsl: NavigationFlowDSL): Map<string, number> {
   return depths;
 }
 
-function computeVisibleTransitions(
-  selectedScreenId: string,
-  flowDsl: NavigationFlowDSL,
-  selectedPath: Set<string>
-) {
-  if (!selectedScreenId || selectedScreenId === flowDsl.flow.entry) {
-    return flowDsl.flow.transitions;
-  }
-
-  return flowDsl.flow.transitions.filter(transition => (
-    selectedPath.has(transition.from) && selectedPath.has(transition.to)
-  ));
-}
-
-function computeSelectedPath(selectedScreenId: string, flowDsl: NavigationFlowDSL): Set<string> {
+export function computeSelectedPath(selectedScreenId: string, flowDsl: NavigationFlowDSL): Set<string> {
   if (!selectedScreenId || selectedScreenId === flowDsl.flow.entry) {
     return new Set([flowDsl.flow.entry]);
   }
@@ -174,7 +99,6 @@ function computeSelectedPath(selectedScreenId: string, flowDsl: NavigationFlowDS
     adjacency.get(transition.from)?.push(transition.to);
   });
 
-  // BFS to find shortest path from entry to selectedScreenId
   const parent = new Map<string, string | null>();
   parent.set(flowDsl.flow.entry, null);
   const queue = [flowDsl.flow.entry];
@@ -202,4 +126,18 @@ function computeSelectedPath(selectedScreenId: string, flowDsl: NavigationFlowDS
     cursor = parent.get(cursor);
   }
   return path;
+}
+
+export function computeVisibleTransitions(
+  selectedScreenId: string,
+  flowDsl: NavigationFlowDSL,
+  selectedPath: Set<string>
+) {
+  if (!selectedScreenId || selectedScreenId === flowDsl.flow.entry) {
+    return flowDsl.flow.transitions;
+  }
+
+  return flowDsl.flow.transitions.filter(transition => (
+    selectedPath.has(transition.from) && selectedPath.has(transition.to)
+  ));
 }
