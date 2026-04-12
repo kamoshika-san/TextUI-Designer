@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { renderRegisteredComponent } from '../component-map';
 import type { OverlayDiffState } from '../../domain/diff/overlay-diff-types';
 import type { SemanticSummaryLine, SemanticChangePrefix, ComponentIndexPair } from '../../core/textui-semantic-diff-summary';
+import { DecisionButtons } from './DecisionButtons';
+import type { DecisionKind } from '../../domain/review-engine/decision';
+import { InMemoryDecisionStore } from '../../domain/review-engine/decision';
 
 // Browser-compatible basename function
 function basename(filePath: string): string {
@@ -159,10 +162,16 @@ function AccordionItem({
   group,
   isHighlighted,
   onToggleHighlight,
+  currentDecision,
+  onDecide,
+  keyboardActive,
 }: {
   group: ComponentGroup;
   isHighlighted: boolean;
   onToggleHighlight: () => void;
+  currentDecision?: DecisionKind;
+  onDecide: (changeId: string, kind: DecisionKind, rationale?: string) => void;
+  keyboardActive: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(true);
   const childLines = group.lines.filter(l => !l.isComponentEvent);
@@ -208,6 +217,17 @@ function AccordionItem({
         <span style={{ fontSize: '0.80rem', fontWeight: 600, color: '#e2e8f0', flex: 1, wordBreak: 'break-word' }}>
           {group.label}
         </span>
+      </div>
+
+      {/* Decision buttons */}
+      <div style={{ padding: '4px 12px 6px 30px' }}>
+        <DecisionButtons
+          changeId={group.groupKey}
+          author="reviewer"
+          currentDecision={currentDecision}
+          onDecide={onDecide}
+          keyboardActive={keyboardActive}
+        />
       </div>
 
       {/* Property child lines */}
@@ -273,6 +293,21 @@ function SemanticSummaryPane({
 }) {
   const groups = groupSummaryLines(lines, pairings);
 
+  // Decision state: InMemoryDecisionStore + re-render trigger
+  const [decisionStore] = useState(() => new InMemoryDecisionStore());
+  const [, setDecisionVersion] = useState(0);
+
+  const handleDecide = (changeId: string, kind: DecisionKind, rationale?: string) => {
+    decisionStore.set({
+      changeId,
+      decision: kind,
+      rationale,
+      author: 'reviewer',
+      timestamp: Date.now(),
+    });
+    setDecisionVersion(v => v + 1);
+  };
+
   const addCount    = lines.filter(l => l.prefix === '+').length;
   const updateCount = lines.filter(l => l.prefix === '~').length;
   const removeCount = lines.filter(l => l.prefix === '-').length;
@@ -332,6 +367,9 @@ function SemanticSummaryPane({
             group={group}
             isHighlighted={highlightedGroupKey === group.groupKey}
             onToggleHighlight={() => onGroupClick(group.groupKey)}
+            currentDecision={decisionStore.get(group.groupKey)?.decision}
+            onDecide={handleDecide}
+            keyboardActive={highlightedGroupKey === group.groupKey}
           />
         ))}
       </ul>
