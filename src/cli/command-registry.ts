@@ -55,6 +55,22 @@ export function getCommandRegistry(): Record<string, CommandHandler> {
     apply: async () => {
       const { handleApplyCommand } = await import('./commands/apply-command');
       return handleApplyCommand(fileAndDir());
+    },
+    review: async () => {
+      const { handleReviewCommand } = await import('./commands/review-command');
+      return handleReviewCommand();
+    },
+    'review:impact': async () => {
+      const { handleReviewImpactCommand } = await import('./commands/review-command');
+      return handleReviewImpactCommand();
+    },
+    'review:decide': async () => {
+      const { handleReviewDecideCommand } = await import('./commands/review-command');
+      return handleReviewDecideCommand();
+    },
+    'review:check': async () => {
+      const { handleReviewCheckCommand } = await import('./commands/review-command');
+      return handleReviewCheckCommand();
     }
   };
 }
