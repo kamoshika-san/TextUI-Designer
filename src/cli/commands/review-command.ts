@@ -1,16 +1,16 @@
 /**
- * Review Engine CLI コマンド群（T-RE0-007〜009）
+ * Review Engine CLI コマンド群（T-RE0-007〜009 / T-RE1-015〜016）
  *
  * textui review          — DiffIR JSON を標準出力に返す
  * textui review:impact   — Impact フィールドを含む DiffIR を出力（E-RE2 実装後に充実）
  * textui review:decide   — Decision 入力を受け付ける（E-RE1 実装後に充実）
- * textui review:check    — 未決定 Diff を検出する（E-RE1-S5 実装後に充実）
+ * textui review:check    — 未決定 Diff を検出する Decision Gate
  */
 
 import type { ExitCode } from '../types';
 import { getArg, hasFlag, printJson } from '../command-support';
 import { runSemanticDiffCompare } from '../../services/semantic-diff/git-semantic-diff';
-import { semanticDiffToDiffIR } from '../../domain/review-engine';
+import { semanticDiffToDiffIR, DecisionJsonStore } from '../../domain/review-engine';
 
 function requireArg(flag: string): string {
   const value = getArg(flag);
@@ -66,16 +66,63 @@ export async function handleReviewDecideCommand(): Promise<ExitCode> {
 }
 
 /**
- * textui review:check [--fail-on-undecided]
- * 現時点では未実装のスタブ。E-RE1-S5 完了後に Decision Gate を実装する。
+ * textui review:check [--fail-on-undecided] --base <ref> --head <ref> --file <path>
+ * T-RE1-015 / T-RE1-016
+ *
+ * 1. --base / --head / --file から DiffIR を生成して changeId 一覧を取得
+ * 2. .textui/decisions/<key>.json をロードして Decision 済み changeId を確認
+ * 3. 未決定 changeId を stdout に出力
+ * 4. --fail-on-undecided 指定時: 未決定あり → exit 1、なし → exit 0
+ *    未指定時: 常に exit 0（レポートのみ）
  */
 export async function handleReviewCheckCommand(): Promise<ExitCode> {
   const failOnUndecided = hasFlag('--fail-on-undecided');
+  const filePath = getArg('--file');
 
-  process.stdout.write(
-    'review:check is not yet implemented. Requires E-RE1-S5 (Decision Gate).\n'
-  );
+  if (!filePath) {
+    process.stderr.write('review:check requires --file <path>\n');
+    return 1;
+  }
 
-  // --fail-on-undecided が指定されている場合は非ゼロ終了（スタブ段階では常に未決定扱い）
-  return failOnUndecided ? 1 : 0;
+  // DiffIR を生成して changeId 一覧を取得
+  const baseRef = getArg('--base') ?? 'HEAD~1';
+  const headRef = getArg('--head') ?? 'HEAD';
+
+  let changeIds: string[];
+  try {
+    const compareResult = runSemanticDiffCompare({ baseRef, headRef, filePath });
+    const diffIR = semanticDiffToDiffIR(compareResult.diff);
+    changeIds = diffIR.changes.map(c => c.changeId);
+  } catch {
+    // git diff が失敗した場合（ファイルが存在しない等）は空として扱う
+    changeIds = [];
+  }
+
+  // DecisionJsonStore をロードして決定済み changeId を確認
+  const repoRoot = process.cwd();
+  const store = new DecisionJsonStore(repoRoot, filePath);
+  await store.load();
+
+  const undecided = changeIds.filter(id => !store.get(id));
+  const decided   = changeIds.filter(id =>  store.get(id));
+
+  // レポート出力
+  process.stdout.write(`review:check ${filePath}\n`);
+  process.stdout.write(`  total:     ${changeIds.length}\n`);
+  process.stdout.write(`  decided:   ${decided.length}\n`);
+  process.stdout.write(`  undecided: ${undecided.length}\n`);
+
+  if (undecided.length > 0) {
+    process.stdout.write('  undecided changeIds:\n');
+    for (const id of undecided) {
+      process.stdout.write(`    - ${id}\n`);
+    }
+  }
+
+  if (failOnUndecided && undecided.length > 0) {
+    process.stderr.write(`\nFAIL: ${undecided.length} undecided change(s). Use textui review:decide to resolve.\n`);
+    return 1;
+  }
+
+  return 0;
 }
