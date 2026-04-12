@@ -217,6 +217,48 @@ export const TOOLS: ToolDefinition[] = [
     }
   },
   {
+    name: 'diff_ui',
+    description: 'DSL ファイルを git base/head 間で意味差分比較し、DiffResultExternal（schemaVersion: diff-result-external/v1）を返します。read-only。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        filePath: { type: 'string', description: '比較対象の .tui.yml ファイルパス' },
+        baseRef:  { type: 'string', description: 'base git ref（例: HEAD~1, main）' },
+        headRef:  { type: 'string', description: 'head git ref（例: HEAD）' }
+      },
+      required: ['filePath', 'baseRef', 'headRef']
+    }
+  },
+  {
+    name: 'explain_change',
+    description: 'DiffResultExternal の change エントリを受け取り、人間可読な説明（title / description / impact）を返します。read-only。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        change: {
+          type: 'object',
+          description: 'DiffResultExternal.changes[] の 1 エントリ',
+          properties: {
+            changeId:    { type: 'string' },
+            type:        { type: 'string' },
+            componentId: { type: 'string' },
+            layer:       { type: 'string' },
+            impact:      { type: 'string' },
+            humanReadable: {
+              type: 'object',
+              properties: {
+                title:       { type: 'string' },
+                description: { type: 'string' }
+              }
+            }
+          },
+          required: ['changeId', 'type', 'componentId']
+        }
+      },
+      required: ['change']
+    }
+  },
+  {
     name: 'capture_preview',
     description: 'DSLファイルからプレビュー画像(PNG)を生成します。',
     inputSchema: {

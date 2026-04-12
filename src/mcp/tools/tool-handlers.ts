@@ -180,7 +180,39 @@ export function createToolHandlers(context: ToolHandlerContext): ToolHandlers {
       parseJson: true
     }),
     run_cli: async () => runCli(args),
-    capture_preview: async () => capturePreview(args)
+    capture_preview: async () => capturePreview(args),
+    diff_ui: async () => {
+      const filePath = getObjectValue(args, 'filePath');
+      const baseRef  = getObjectValue(args, 'baseRef');
+      const headRef  = getObjectValue(args, 'headRef');
+      if (!filePath || !baseRef || !headRef) {
+        throw new Error('diff_ui requires filePath, baseRef, and headRef');
+      }
+      return runCli({
+        args: ['review', '--base', baseRef, '--head', headRef, '--file', filePath, '--format', 'json'],
+        parseJson: true
+      });
+    },
+    explain_change: async () => {
+      const change = getObjectUnknown(args, 'change');
+      if (!change || typeof change !== 'object') {
+        throw new Error('explain_change requires change object');
+      }
+      const c = change as Record<string, unknown>;
+      const humanReadable = c['humanReadable'] as Record<string, unknown> | undefined;
+      return {
+        changeId:    c['changeId'] ?? '',
+        type:        c['type'] ?? '',
+        componentId: c['componentId'] ?? '',
+        layer:       c['layer'] ?? '',
+        impact:      c['impact'] ?? 'low',
+        explanation: {
+          title:       humanReadable?.['title'] ?? `${c['type']} on ${c['componentId']}`,
+          description: humanReadable?.['description'] ?? '',
+          impact:      c['impact'] ?? 'low',
+        }
+      };
+    }
   };
 }
 
