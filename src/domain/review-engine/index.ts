@@ -9,7 +9,6 @@ export type {
   ChangeId,
   Change,
   ChangeMetadata,
-  Cluster,
   DiffIR
 } from './diff-ir';
 
@@ -30,3 +29,8 @@ export { buildDependencyGraph } from './dependency-graph';
 
 export type { Impact, PropagateImpactOptions } from './impact-propagator';
 export { mapChangesToNodes, propagateImpact, propagateAllImpacts } from './impact-propagator';
+
+export type { Cluster } from './change-clusterer';
+export { clusterChanges } from './change-clusterer';
+
+export { getChangeSeverity, calculatePriority, scoreClusters } from './priority-scorer';

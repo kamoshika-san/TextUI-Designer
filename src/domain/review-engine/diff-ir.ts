@@ -8,6 +8,7 @@
 import type { SemanticChange, SemanticDiff, DiffSummary } from '../../types/semantic-diff';
 import type { Decision } from './decision';
 import type { Impact } from './impact-propagator';
+import type { Cluster } from './change-clusterer';
 
 // ── Change ────────────────────────────────────────────────────────────────────
 
@@ -37,19 +38,6 @@ export interface ChangeMetadata {
   /** E-RE2-S2: Impact マッピングが付与するノード ID */
   nodeId?: string;
   /** E-RE3-S3: Priority Scoring が付与する優先度スコア */
-  priorityScore?: number;
-}
-
-// ── Cluster (E-RE3 が埋める) ──────────────────────────────────────────────────
-
-/** 類似変更のグループ */
-export interface Cluster {
-  clusterId: string;
-  /** クラスタの表示ラベル */
-  label: string;
-  /** このクラスタに含まれる changeId 一覧 */
-  changeIds: ChangeId[];
-  /** E-RE3-S3 が算出する優先度スコア */
   priorityScore?: number;
 }
 
