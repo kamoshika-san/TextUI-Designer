@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { NavigationFlowDSL, ScreenRef } from '../../domain/dsl-types';
 import type { FlowDiffVisualStatus } from '../../services/semantic-diff';
 import { createFlowTransitionStateKey } from '../../services/semantic-diff';
+import { buildNavigationGraph, findAllNavigationRoutes, MAX_NAVIGATION_ROUTES } from '../../shared/navigation-graph';
 import { FlowNode } from './FlowNode';
 import { FlowEdge } from './FlowEdge';
+import { FlowRouteChain } from './FlowRouteChain';
 
 interface FlowDiagramProps {
   flowDsl: NavigationFlowDSL;
@@ -34,6 +36,30 @@ export const FlowDiagram: React.FC<FlowDiagramProps> = ({
 
   const screenTitleMap = new Map(flowDsl.flow.screens.map(s => [s.id, s.title || s.id]));
 
+  // Compute all routes from entry to selected screen (only when non-entry screen is selected)
+  const routeChains = useMemo(() => {
+    if (!isFilteredConnections || !selectedScreenId) {
+      return null;
+    }
+    const graph = buildNavigationGraph(flowDsl);
+    return findAllNavigationRoutes(graph, {
+      toScreenId: selectedScreenId,
+      maxRoutes: MAX_NAVIGATION_ROUTES
+    });
+  }, [flowDsl, selectedScreenId, isFilteredConnections]);
+
+  // Total route count for overflow display (same call with higher limit to get true count)
+  const totalRouteCount = useMemo(() => {
+    if (!isFilteredConnections || !selectedScreenId) {
+      return 0;
+    }
+    const graph = buildNavigationGraph(flowDsl);
+    return findAllNavigationRoutes(graph, {
+      toScreenId: selectedScreenId,
+      maxRoutes: MAX_NAVIGATION_ROUTES + 100
+    }).length;
+  }, [flowDsl, selectedScreenId, isFilteredConnections]);
+
   return (
     <div className="textui-flow-diagram">
       <div className="textui-flow-diagram-map">
@@ -55,10 +81,21 @@ export const FlowDiagram: React.FC<FlowDiagramProps> = ({
           ))}
         </div>
       </div>
-      {visibleTransitions.length > 0 ? (
+      {isFilteredConnections && routeChains !== null ? (
         <div className="textui-flow-diagram-connections">
           <div className="textui-flow-diagram-connections-heading">
-            {isFilteredConnections ? `Connections on route (${visibleTransitions.length})` : 'Connections'}
+            {`Routes to here (${Math.min(routeChains.length, MAX_NAVIGATION_ROUTES)} of ${totalRouteCount})`}
+          </div>
+          <FlowRouteChain
+            routes={routeChains}
+            screenTitleMap={screenTitleMap}
+            totalRouteCount={totalRouteCount}
+          />
+        </div>
+      ) : visibleTransitions.length > 0 ? (
+        <div className="textui-flow-diagram-connections">
+          <div className="textui-flow-diagram-connections-heading">
+            Connections
           </div>
           {visibleTransitions.map((transition, index) => (
             <FlowEdge

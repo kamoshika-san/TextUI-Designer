@@ -599,3 +599,106 @@
   background: rgba(59, 130, 246, 0.12);
   border-color: rgba(59, 130, 246, 0.45);
 }
+
+/* ── FlowRouteChain ────────────────────────────────────────── */
+.textui-flow-route-chains {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.textui-flow-route-chain {
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--borderRadius-lg, 0.5rem);
+  background: rgba(148, 163, 184, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.light .textui-flow-route-chain {
+  background: rgba(148, 163, 184, 0.04);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+.textui-flow-route-chain-heading {
+  font-size: var(--typography-fontSize-xs, 0.75rem);
+  font-weight: 600;
+  color: var(--color-text-secondary, #cbd5e1);
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.light .textui-flow-route-chain-heading {
+  color: var(--color-text-dark, #475569);
+}
+
+.textui-flow-route-chain-steps {
+  font-weight: 400;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+.textui-flow-route-chain-path {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  font-size: var(--typography-fontSize-sm, 0.875rem);
+  margin-bottom: 0.3rem;
+}
+
+.textui-flow-route-chain-screen {
+  font-weight: 600;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.light .textui-flow-route-chain-screen {
+  color: var(--color-text-dark, #1f2937);
+}
+
+.textui-flow-route-chain-arrow {
+  color: var(--color-text-muted, #6b7280);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.textui-flow-route-chain-triggers {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+}
+
+.textui-flow-route-chain-trigger {
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--borderRadius-lg, 0.375rem);
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--color-text-secondary, #cbd5e1);
+  font-size: var(--typography-fontSize-xs, 0.75rem);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 500;
+}
+
+.light .textui-flow-route-chain-trigger {
+  background: rgba(100, 116, 139, 0.1);
+  color: var(--color-text-dark, #475569);
+}
+
+.textui-flow-route-chain-trigger-sep {
+  color: var(--color-text-muted, #9ca3af);
+  font-size: 0.75rem;
+}
+
+.textui-flow-route-chain-overflow {
+  font-size: var(--typography-fontSize-xs, 0.75rem);
+  color: var(--color-text-muted, #9ca3af);
+  padding: 0.2rem 0.4rem;
+  font-style: italic;
+}
+
+.textui-flow-route-chain-empty {
+  font-size: var(--typography-fontSize-sm, 0.875rem);
+  color: var(--color-text-muted, #9ca3af);
+  padding: 0.4rem 0.6rem;
+  font-style: italic;
+}

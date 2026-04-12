@@ -112,7 +112,7 @@ describe('FlowPreviewPanel', () => {
     assert.ok(!html.includes('Connections on route'), 'should not switch into filtered route mode for entry');
   });
 
-  it('filters connections to the selected route for non-entry screens', () => {
+  it('shows route chain display for non-entry screens', () => {
     const html = renderToStaticMarkup(
       React.createElement(FlowPreviewPanel, {
         flowDsl: {
@@ -138,10 +138,18 @@ describe('FlowPreviewPanel', () => {
       })
     );
 
-    assert.ok(html.includes('Connections on route (2)'), 'should show filtered route heading with count');
-    assert.ok(html.includes('Open detail'), 'should include transition on selected route');
-    assert.ok(html.includes('Continue checkout'), 'should include downstream route transition');
-    assert.ok(!html.includes('Open settings'), 'should omit transitions outside the selected route');
+    // Route chain heading should appear
+    assert.ok(html.includes('Routes to here'), 'should show route chain heading');
+    // Route 1 should show the path Home → Detail → Confirm
+    assert.ok(html.includes('Route 1'), 'should show route 1 label');
+    assert.ok(html.includes('Home'), 'should include Home in route chain');
+    assert.ok(html.includes('Detail'), 'should include Detail in route chain');
+    assert.ok(html.includes('Confirm'), 'should include Confirm in route chain');
+    // Triggers should appear
+    assert.ok(html.includes('select'), 'should show select trigger');
+    assert.ok(html.includes('continue'), 'should show continue trigger');
+    // Settings path should not appear as a route to confirm
+    assert.ok(!html.includes('Open settings'), 'should not show settings transition label');
   });
 
   it('renders terminal screen label when selected screen has no outgoing transitions', () => {
