@@ -4,6 +4,19 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.8.1] - 2026-04-12
+
+### Added
+- **Navigation flow preview: Routes to here**: When a non-entry screen is selected, the preview panel now shows all loop-free paths from the entry screen to the selected screen, grouped by route pattern. Each route displays the full screen chain and trigger sequence.
+- **Navigation flow preview: Route pagination**: Routes to here section now supports pagination (5 routes per page) with Prev/Next controls, allowing all routes to be browsed when more than 5 exist.
+- **Navigation graph: `findAllNavigationRoutes`**: New shared utility that enumerates all loop-free paths from entry to a target screen, sorted by length, with a configurable `maxRoutes` limit.
+
+### Changed
+- **Navigation flow preview layout**: The preview panel below the screen map is now a two-column layout — Routes to here on the left, selected screen detail on the right — improving readability when many routes are present.
+
+### Fixed
+- **HTML export regression hashes**: Updated expected hashes in `html-exporter-primary-sample-regression.test.js` to reflect the new FlowPreview CSS additions.
+
 ## [0.8.0] - 2026-04-11
 
 ### Added
