@@ -138,6 +138,37 @@ The preview and all export targets use the same theme values.
 
 ---
 
+## Navigation flow
+
+TextUI Designer supports multi-screen navigation flows defined in a `.tui.flow.yml` file alongside your screen files.
+
+```yaml
+# myapp.tui.flow.yml
+flow:
+  entry: sign-in
+  screens:
+    - id: sign-in
+      file: sign-in.tui.yml
+      transitions:
+        - trigger: "Submit"
+          target: dashboard
+        - trigger: "Forgot password"
+          target: reset-password
+    - id: dashboard
+      file: dashboard.tui.yml
+    - id: reset-password
+      file: reset-password.tui.yml
+```
+
+Open **TextUI: Open Flow Preview** to see the screen map. Selecting any screen in the map shows:
+
+- **Routes to here** — all loop-free paths from the entry screen to the selected screen, with full trigger chains. Paginated when more than 5 routes exist.
+- **Screen detail** — the rendered preview of the selected screen on the right.
+
+Click **Open linked page** on any transition target to jump directly into that screen's preview. A **Back to flow** button appears at the top of the preview, returning you to the flow map.
+
+---
+
 ## More examples
 
 The [`sample/`](sample) directory contains working screens showing all components, theme inheritance, modal dialogs, enterprise layouts, and more.

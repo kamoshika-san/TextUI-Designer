@@ -4,6 +4,18 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.8.2] - 2026-04-14
+
+### Added
+- **Navigation flow: Back-to-flow button**: After navigating to a linked page via "Open linked page" in the flow preview, a **Back to flow** button now appears in the screen preview panel, returning the view to the flow map immediately.
+
+### Fixed
+- **Navigation flow: returnPath resolution**: The return path is now captured via `resolveActiveTuiPath` instead of relying on the active editor state, ensuring the correct flow file is targeted after navigation.
+- **Navigation flow: stale-DSL race condition**: Removed the `returnPath` auto-clear `useEffect` that caused the back-to-flow target to be wiped when the DSL refreshed, leading to silent navigation failures.
+- **Navigation flow: return path timing + Ajv schema error**: `set-return-path` is now sent before `resolvePosition`, eliminating a window where the path could be read as unset; also fixed an Ajv schema re-registration error that surfaced when switching between DSL files.
+
+---
+
 ## [0.8.1] - 2026-04-12
 
 ### Added
