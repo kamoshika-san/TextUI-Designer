@@ -1,6 +1,7 @@
 import * as YAML from 'yaml';
 import type { ComponentBlueprint, TextUICoreEngine } from '../../core/textui-core-engine';
 import { generateFlowDsl, type GenerateFlowScreenInput, type GenerateFlowTransitionInput } from './generate-flow-dsl';
+import { scaffoldApp, type ScaffoldScreenInput, type ScaffoldTransitionInput } from './scaffold-app';
 
 function isComponentBlueprintArray(value: unknown): value is ComponentBlueprint[] {
   return Array.isArray(value) && value.every(
@@ -293,6 +294,36 @@ export function createToolHandlers(context: ToolHandlerContext): ToolHandlers {
           diagnostics: [{ level: 'error', severity: 'error', message: `YAML parse error: ${msg}`, path: '/' }]
         };
       }
+    },
+    scaffold_app: async () => {
+      const title = getObjectValue(args, 'title');
+      if (!title) throw new Error('scaffold_app requires title');
+      const rawScreens = getObjectArray(args, 'screens');
+      if (!rawScreens || rawScreens.length === 0) throw new Error('scaffold_app requires screens');
+      const screens: ScaffoldScreenInput[] = rawScreens.map(s => {
+        const item = s as Record<string, unknown>;
+        if (typeof item['id'] !== 'string' || typeof item['title'] !== 'string') {
+          throw new Error('each screen must have id and title');
+        }
+        return { id: item['id'], title: item['title'] };
+      });
+      const rawTransitions = getObjectArray(args, 'transitions');
+      const transitions: ScaffoldTransitionInput[] = rawTransitions
+        ? rawTransitions.map(t => {
+            const item = t as Record<string, unknown>;
+            return {
+              from: String(item['from'] ?? ''),
+              trigger: String(item['trigger'] ?? ''),
+              to: String(item['to'] ?? '')
+            };
+          })
+        : [];
+      return scaffoldApp({
+        title,
+        outputDir: getObjectValue(args, 'outputDir'),
+        screens,
+        transitions
+      }, engine);
     }
   };
 }

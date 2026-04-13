@@ -364,5 +364,42 @@ export const TOOLS: ToolDefinition[] = [
       },
       required: ['title', 'screens']
     }
+  },
+  {
+    name: 'scaffold_app',
+    description: '複数画面の DSL ファイル群とナビゲーションフロー YAML を一括生成します。generate_ui × N + generate_flow の合成。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'アプリ/フロータイトル' },
+        outputDir: { type: 'string', description: '出力先ディレクトリパス（省略時は "."）' },
+        screens: {
+          type: 'array',
+          description: '画面定義リスト',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              title: { type: 'string' },
+              components: { type: 'array' }
+            },
+            required: ['id', 'title']
+          }
+        },
+        transitions: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              from: { type: 'string' },
+              trigger: { type: 'string' },
+              to: { type: 'string' }
+            },
+            required: ['from', 'trigger', 'to']
+          }
+        }
+      },
+      required: ['title', 'screens']
+    }
   }
 ];
