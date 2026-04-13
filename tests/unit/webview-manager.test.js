@@ -495,6 +495,65 @@ describe('WebViewManager 単体テスト', () => {
         }
       }
     });
+
+    it('jump-to-dsl は activeTextEditor がなくても lastTuiFile から returnPath を送る', async () => {
+      const flowFilePath = path.join(path.dirname(testFilePath), 'jump-flow.tui.flow.yml');
+      const createPositionAt = (content) => (offset) => {
+        const safeOffset = Math.max(0, Math.min(offset, content.length));
+        const sliced = content.slice(0, safeOffset);
+        const lines = sliced.split('\n');
+        return {
+          line: lines.length - 1,
+          character: (lines[lines.length - 1] || '').length
+        };
+      };
+      const yamlContent = `page:
+  id: jump-test
+  components:
+    - Text:
+        value: "繧ｿ繧､繝医Ν"
+`;
+      const doc = {
+        fileName: testFilePath,
+        getText: () => yamlContent,
+        positionAt: createPositionAt(yamlContent)
+      };
+      const postedMessages = [];
+
+      webviewManager._testHelpers.extendedVscode.workspace.openTextDocument = async () => doc;
+      webviewManager._testHelpers.extendedVscode.window.showTextDocument = async (document) => ({
+        document,
+        selection: null,
+        revealRange: () => {}
+      });
+      webviewManager._testHelpers.extendedVscode.window.activeTextEditor = null;
+      if (vscode && vscode.window) {
+        vscode.window.activeTextEditor = null;
+      }
+
+      webviewManager.setLastTuiFile(flowFilePath);
+      await webviewManager.openPreview();
+      const panel = webviewManager.getPanel();
+      assert.ok(panel && typeof panel._messageHandler === 'function', 'WebView message handler should be registered');
+
+      panel.webview.postMessage = async (message) => {
+        postedMessages.push(message);
+        return true;
+      };
+
+      await panel._messageHandler({
+        type: 'jump-to-dsl',
+        dslPath: '/page/components/0',
+        componentName: 'Text',
+        targetFilePath: testFilePath
+      });
+
+      assert.deepStrictEqual(
+        postedMessages.find(message => message.type === 'set-return-path'),
+        { type: 'set-return-path', returnPath: flowFilePath },
+        'WebView フォーカス中でも lastTuiFile を returnPath として返す'
+      );
+    });
   });
 
   describe('memory pressure handling', () => {

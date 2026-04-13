@@ -110,8 +110,9 @@ export class WebViewMessageHandler {
       return;
     }
 
-    // Capture current file before opening new document (active editor will change after showTextDocument)
-    const returnPath = targetFilePath ? vscode.window.activeTextEditor?.document.fileName : undefined;
+    // Capture current preview file before opening the new document.
+    // When the WebView owns focus, activeTextEditor can be undefined, so fall back to the last previewed TUI file.
+    const returnPath = targetFilePath ? this.resolveActiveTuiPath() : undefined;
 
     const targetFile = this.resolveJumpTargetFile(targetFilePath);
     if (!targetFile) {
