@@ -104,12 +104,6 @@ const App: React.FC = () => {
     return () => window.clearTimeout(timeout);
   }, [updateStatus]);
 
-  useEffect(() => {
-    if (isNavigationFlowDSL(json)) {
-      setReturnPath(null);
-    }
-  }, [json]);
-
   const applyDslUpdate = useCallback((incomingDsl: PreviewDocument) => {
     const startedAt = performance.now();
     const incomingHash = hashString(JSON.stringify(incomingDsl));
