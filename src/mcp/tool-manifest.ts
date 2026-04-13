@@ -326,5 +326,43 @@ export const TOOLS: ToolDefinition[] = [
       },
       required: ['dslFile']
     }
+  },
+  {
+    name: 'generate_flow',
+    description: 'screen IDs と transition hints から .tui.flow.yml DSL を scaffold します。generate_ui と対称形。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'フロータイトル' },
+        flowId: { type: 'string', description: 'フロー ID（省略時はタイトルから自動生成）' },
+        entry: { type: 'string', description: 'エントリスクリーン ID（省略時は screens[0].id）' },
+        screens: {
+          type: 'array',
+          description: 'スクリーン定義',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              file: { type: 'string', description: '対応する .tui.yml ファイルパス（省略時は {id}.tui.yml）' }
+            },
+            required: ['id']
+          }
+        },
+        transitions: {
+          type: 'array',
+          description: '画面遷移定義',
+          items: {
+            type: 'object',
+            properties: {
+              from: { type: 'string' },
+              trigger: { type: 'string' },
+              to: { type: 'string' }
+            },
+            required: ['from', 'trigger', 'to']
+          }
+        }
+      },
+      required: ['title', 'screens']
+    }
   }
 ];

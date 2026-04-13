@@ -230,6 +230,10 @@ export function createToolHandlers(context: ToolHandlerContext): ToolHandlers {
           impact:      c['impact'] ?? 'low',
         }
       };
+    },
+    generate_flow: async () => {
+      // Stub — logic implemented in E-GF-S2
+      return { error: 'not implemented' };
     }
   };
 }
