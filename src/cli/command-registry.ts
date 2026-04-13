@@ -59,6 +59,10 @@ export function getCommandRegistry(): Record<string, CommandHandler> {
     lint: async () => {
       const { handleLintCommand } = await import('./commands/lint-command');
       return handleLintCommand();
+    },
+    scaffold: async () => {
+      const { handleScaffoldCommand } = await import('./commands/scaffold-command');
+      return handleScaffoldCommand();
     }
   };
 }
