@@ -169,6 +169,57 @@ Click **Open linked page** on any transition target to jump directly into that s
 
 ---
 
+## MCP Server
+
+TextUI Designer ships a built-in **MCP (Model Context Protocol) server** that exposes the full DSL toolchain to AI assistants. Any MCP-compatible client (Claude, Cursor, Copilot Chat, etc.) can call these tools to generate, validate, and scaffold TextUI DSL files without manual YAML editing.
+
+### Connecting
+
+Add the following to your MCP client configuration:
+
+```json
+{
+  "mcpServers": {
+    "textui": {
+      "command": "node",
+      "args": ["<path-to-extension>/dist/mcp/server.js"]
+    }
+  }
+}
+```
+
+Or use the VS Code command **TextUI: Start MCP Server** to launch it automatically.
+
+### Key tools
+
+| Tool | What it does |
+|---|---|
+| `generate_ui` | Generates a `.tui.yml` screen DSL from a component blueprint |
+| `generate_flow` | Scaffolds a `.tui.flow.yml` navigation flow from screen IDs and transition hints |
+| `scaffold_app` | Generates all screen DSL files + a navigation flow YAML in one call |
+| `validate_ui` | Validates a DSL string or file and returns structured diagnostics |
+| `validate_flow` | Validates a `.tui.flow.yml` file |
+| `capture_preview` | Renders a DSL file to a PNG screenshot |
+| `explain_error` | Translates validation diagnostics into human-readable fix suggestions |
+| `preview_schema` | Returns the JSON Schema for any DSL type (`main`, `navigation`, `theme`, `template`) |
+
+### AI-assisted DSL generation workflow
+
+A typical session with an AI assistant looks like:
+
+1. **Describe your app** — tell the AI the screens and transitions you need
+2. **`scaffold_app`** — AI calls this once to generate all screen DSL files and the navigation flow YAML
+3. **`validate_ui` / `validate_flow`** — AI validates each generated file and calls `explain_error` on any findings
+4. **`capture_preview`** — AI renders a PNG so you can review the layout visually
+5. **Iterate** — AI edits the DSL in response to your feedback, re-validates, and re-renders
+
+Example prompt:
+> "Create a 3-screen app: Login → Dashboard → Settings. Generate the DSL files and navigation flow, validate them, and show me a preview of the Dashboard screen."
+
+The AI will call `scaffold_app` → `validate_flow` → `capture_preview` in sequence, returning the files and a screenshot.
+
+---
+
 ## More examples
 
 The [`sample/`](sample) directory contains working screens showing all components, theme inheritance, modal dialogs, enterprise layouts, and more.

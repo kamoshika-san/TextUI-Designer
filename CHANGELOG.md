@@ -4,6 +4,17 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.8.3] - 2026-04-14
+
+### Added
+- **MCP Server: `generate_flow`** — AI assistants can now scaffold a complete `.tui.flow.yml` navigation flow from screen IDs and transition descriptions in a single tool call. The generated DSL is automatically validated and diagnostics are returned inline.
+- **MCP Server: `scaffold_app`** — generates all screen DSL files and the navigation flow YAML in one call, enabling AI-assisted "describe your app → get all files" workflows.
+- **CLI: `textui scaffold`** — new subcommand that writes screen DSL files and a navigation flow YAML to disk. Usage: `textui scaffold --screens "login,dashboard,settings" --output-dir ./screens --title "My App"`.
+- **`validate_ui`: file path mode** — pass `filePath` instead of `dsl` to validate a `.tui.yml` file directly by path.
+- **`validate`: `--watch` mode** — `textui validate --watch --file <path>` re-runs validation on every file change and streams results as NDJSON when combined with `--json`.
+
+---
+
 ## [0.8.2] - 2026-04-14
 
 ### Added
