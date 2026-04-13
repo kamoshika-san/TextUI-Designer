@@ -158,7 +158,7 @@ export function createToolHandlers(context: ToolHandlerContext): ToolHandlers {
       });
     },
     preview_schema: async () => engine.previewSchema({
-      schema: getObjectValue(args, 'schema') as 'main' | 'template' | 'theme' | undefined,
+      schema: getObjectValue(args, 'schema') as 'main' | 'template' | 'theme' | 'navigation' | undefined,
       jsonPointer: getObjectValue(args, 'jsonPointer')
     }),
     list_components: async () => engine.listComponents(),

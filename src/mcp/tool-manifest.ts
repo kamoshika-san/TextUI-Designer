@@ -79,13 +79,13 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: 'preview_schema',
-    description: 'TextUIスキーマを返します。jsonPointerで部分取得できます。',
+    description: 'TextUIスキーマを返します。jsonPointerで部分取得できます。schema: "navigation" で .tui.flow.yml の JSON Schema を取得できます。',
     inputSchema: {
       type: 'object',
       properties: {
         schema: {
           type: 'string',
-          enum: ['main', 'template', 'theme']
+          enum: ['main', 'template', 'theme', 'navigation']
         },
         jsonPointer: { type: 'string' }
       }
