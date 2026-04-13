@@ -1,4 +1,5 @@
 import type { ComponentBlueprint, TextUICoreEngine } from '../../core/textui-core-engine';
+import { generateFlowDsl, type GenerateFlowScreenInput, type GenerateFlowTransitionInput } from './generate-flow-dsl';
 
 function isComponentBlueprintArray(value: unknown): value is ComponentBlueprint[] {
   return Array.isArray(value) && value.every(
@@ -232,8 +233,33 @@ export function createToolHandlers(context: ToolHandlerContext): ToolHandlers {
       };
     },
     generate_flow: async () => {
-      // Stub — logic implemented in E-GF-S2
-      return { error: 'not implemented' };
+      const title = getObjectValue(args, 'title');
+      if (!title) throw new Error('generate_flow requires title');
+      const rawScreens = getObjectArray(args, 'screens');
+      if (!rawScreens || rawScreens.length === 0) throw new Error('generate_flow requires screens');
+      const screens: GenerateFlowScreenInput[] = rawScreens.map(s => {
+        const item = s as Record<string, unknown>;
+        if (typeof item['id'] !== 'string') throw new Error('each screen must have an id');
+        return { id: item['id'], file: typeof item['file'] === 'string' ? item['file'] : undefined };
+      });
+      const rawTransitions = getObjectArray(args, 'transitions');
+      const transitions: GenerateFlowTransitionInput[] = rawTransitions
+        ? rawTransitions.map(t => {
+            const item = t as Record<string, unknown>;
+            return {
+              from: String(item['from'] ?? ''),
+              trigger: String(item['trigger'] ?? ''),
+              to: String(item['to'] ?? '')
+            };
+          })
+        : [];
+      return generateFlowDsl({
+        title,
+        flowId: getObjectValue(args, 'flowId'),
+        entry: getObjectValue(args, 'entry'),
+        screens,
+        transitions
+      });
     }
   };
 }
