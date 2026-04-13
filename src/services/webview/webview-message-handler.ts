@@ -122,6 +122,13 @@ export class WebViewMessageHandler {
     try {
       const document = await vscode.workspace.openTextDocument(targetFile);
       const editor = await vscode.window.showTextDocument(document, vscode.ViewColumn.One);
+
+      // Send return path immediately after the file opens, before position resolution,
+      // so the Back button appears even if cursor positioning fails or races with file-watcher DSL updates
+      if (returnPath) {
+        this.panelMessenger.postSetReturnPath(returnPath);
+      }
+
       const position = this.yamlPointerResolver.resolvePosition(document, dslPath);
 
       if (!position) {
@@ -131,10 +138,6 @@ export class WebViewMessageHandler {
 
       this.applyEditorSelection(editor, position);
       this.logger.debug(`${componentName} を DSL にジャンプ: ${dslPath}`);
-
-      if (returnPath) {
-        this.panelMessenger.postSetReturnPath(returnPath);
-      }
     } catch (error) {
       this.logger.error('jump-to-dsl エラー:', error);
       this.windowAdapter.showErrorMessage(`DSLジャンプに失敗しました: ${error}`);

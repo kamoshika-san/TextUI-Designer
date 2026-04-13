@@ -28,6 +28,16 @@ export class YamlSchemaValidator {
   }
 
   private getOrCreateValidator(schema: SchemaDefinition): ValidateFunction {
+    // If the schema has a $id, reuse an already-registered validator to avoid
+    // "schema with key or id already exists" errors when switching DSL types
+    const schemaId = (schema as { $id?: string }).$id;
+    if (schemaId) {
+      const existing = this.ajv.getSchema(schemaId);
+      if (existing) {
+        return existing;
+      }
+    }
+
     const fingerprint = JSON.stringify(schema);
     if (!this.validatorCache || this.schemaFingerprint !== fingerprint) {
       this.validatorCache = this.ajv.compile(schema);
