@@ -63,7 +63,7 @@ export function createToolHandlers(context: ToolHandlerContext): ToolHandlers {
         const resolved = path.resolve(filePath);
         dsl = fs.readFileSync(resolved, 'utf8');
       } else {
-        if (rawDsl === undefined) throw new Error('validate_ui requires dsl or filePath');
+        if (rawDsl === undefined) { throw new Error('validate_ui requires dsl or filePath'); }
         dsl = rawDsl as string | Record<string, unknown>;
       }
       return engine.validateUi({
@@ -247,12 +247,12 @@ export function createToolHandlers(context: ToolHandlerContext): ToolHandlers {
     },
     generate_flow: async () => {
       const title = getObjectValue(args, 'title');
-      if (!title) throw new Error('generate_flow requires title');
+      if (!title) { throw new Error('generate_flow requires title'); }
       const rawScreens = getObjectArray(args, 'screens');
-      if (!rawScreens || rawScreens.length === 0) throw new Error('generate_flow requires screens');
+      if (!rawScreens || rawScreens.length === 0) { throw new Error('generate_flow requires screens'); }
       const screens: GenerateFlowScreenInput[] = rawScreens.map(s => {
         const item = s as Record<string, unknown>;
-        if (typeof item['id'] !== 'string') throw new Error('each screen must have an id');
+        if (typeof item['id'] !== 'string') { throw new Error('each screen must have an id'); }
         return { id: item['id'], file: typeof item['file'] === 'string' ? item['file'] : undefined };
       });
       const rawTransitions = getObjectArray(args, 'transitions');
@@ -297,9 +297,9 @@ export function createToolHandlers(context: ToolHandlerContext): ToolHandlers {
     },
     scaffold_app: async () => {
       const title = getObjectValue(args, 'title');
-      if (!title) throw new Error('scaffold_app requires title');
+      if (!title) { throw new Error('scaffold_app requires title'); }
       const rawScreens = getObjectArray(args, 'screens');
-      if (!rawScreens || rawScreens.length === 0) throw new Error('scaffold_app requires screens');
+      if (!rawScreens || rawScreens.length === 0) { throw new Error('scaffold_app requires screens'); }
       const screens: ScaffoldScreenInput[] = rawScreens.map(s => {
         const item = s as Record<string, unknown>;
         if (typeof item['id'] !== 'string' || typeof item['title'] !== 'string') {
