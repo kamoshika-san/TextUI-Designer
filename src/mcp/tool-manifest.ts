@@ -39,7 +39,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: 'validate_ui',
-    description: 'YAML/JSON DSLを検証し、診断と修正ヒントを返します。',
+    description: 'YAML/JSON DSLを検証し、診断と修正ヒントを返します。dsl または filePath のどちらか一方を指定してください。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -49,10 +49,10 @@ export const TOOLS: ToolDefinition[] = [
             { type: 'object' }
           ]
         },
+        filePath: { type: 'string', description: '.tui.yml ファイルパス（dsl の代わりに指定可）' },
         sourcePath: { type: 'string' },
         skipTokenValidation: { type: 'boolean' }
-      },
-      required: ['dsl']
+      }
     }
   },
   {

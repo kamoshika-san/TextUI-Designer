@@ -1,3 +1,4 @@
+import * as YAML from 'yaml';
 import type { ComponentBlueprint, TextUICoreEngine } from '../../core/textui-core-engine';
 import { generateFlowDsl, type GenerateFlowScreenInput, type GenerateFlowTransitionInput } from './generate-flow-dsl';
 
@@ -50,12 +51,23 @@ export function createToolHandlers(context: ToolHandlerContext): ToolHandlers {
     }),
     validate_ui: async () => {
       const rawDsl = getObjectUnknown(args, 'dsl');
-      if (rawDsl === undefined) {
-        throw new Error('validate_ui requires dsl');
+      const filePath = getObjectValue(args, 'filePath');
+      if (rawDsl !== undefined && filePath !== undefined) {
+        throw new Error('validate_ui: specify either dsl or filePath, not both');
+      }
+      let dsl: string | Record<string, unknown>;
+      if (filePath !== undefined) {
+        const fs = await import('fs');
+        const path = await import('path');
+        const resolved = path.resolve(filePath);
+        dsl = fs.readFileSync(resolved, 'utf8');
+      } else {
+        if (rawDsl === undefined) throw new Error('validate_ui requires dsl or filePath');
+        dsl = rawDsl as string | Record<string, unknown>;
       }
       return engine.validateUi({
-        dsl: rawDsl as string | Record<string, unknown>,
-        sourcePath: getObjectValue(args, 'sourcePath'),
+        dsl,
+        sourcePath: getObjectValue(args, 'sourcePath') ?? filePath,
         skipTokenValidation: getObjectBoolean(args, 'skipTokenValidation')
       });
     },
@@ -253,13 +265,34 @@ export function createToolHandlers(context: ToolHandlerContext): ToolHandlers {
             };
           })
         : [];
-      return generateFlowDsl({
+      const generated = generateFlowDsl({
         title,
         flowId: getObjectValue(args, 'flowId'),
         entry: getObjectValue(args, 'entry'),
         screens,
         transitions
       });
+      // validate_flow integration (E-GF-S3)
+      try {
+        const parsed = YAML.parse(generated.yaml);
+        const validation = engine.validateFlow({ dsl: parsed });
+        return {
+          yaml: generated.yaml,
+          flowId: generated.flowId,
+          entry: generated.entry,
+          valid: validation.valid,
+          diagnostics: validation.diagnostics
+        };
+      } catch (parseErr) {
+        const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+        return {
+          yaml: generated.yaml,
+          flowId: generated.flowId,
+          entry: generated.entry,
+          valid: false,
+          diagnostics: [{ level: 'error', severity: 'error', message: `YAML parse error: ${msg}`, path: '/' }]
+        };
+      }
     }
   };
 }
