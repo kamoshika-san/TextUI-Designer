@@ -13,7 +13,7 @@ import { withPreviewPipelineTrace } from './preview-pipeline-observability';
 import { WebViewPanelMessenger } from './webview-panel-messenger';
 import { resolveNavigationJumpTargetFile } from '../commands/navigation-jump-command';
 
-type MessageType = 'export' | 'export-preview' | 'jump-to-dsl' | 'webview-ready' | 'theme-switch' | 'get-themes';
+type MessageType = 'export' | 'export-preview' | 'jump-to-dsl' | 'webview-ready' | 'theme-switch' | 'get-themes' | 'navigate-back';
 type MessageHandler = (message: WebViewMessage) => Promise<void>;
 
 interface WebViewMessageHandlerDependencies {
@@ -58,6 +58,7 @@ export class WebViewMessageHandler {
       'export': async () => this.handleExportMessage(),
       'export-preview': async () => this.handleExportPreviewMessage(),
       'jump-to-dsl': async (message) => this.handleJumpToDslMessage(message),
+      'navigate-back': async (message) => this.handleNavigateBack(message),
       'webview-ready': async () => this.handleWebViewReady(),
       'theme-switch': async (message) => this.handleThemeSwitchMessage(message),
       'get-themes': async () => this.handleGetThemes()
@@ -109,6 +110,9 @@ export class WebViewMessageHandler {
       return;
     }
 
+    // Capture current file before opening new document (active editor will change after showTextDocument)
+    const returnPath = targetFilePath ? vscode.window.activeTextEditor?.document.fileName : undefined;
+
     const targetFile = this.resolveJumpTargetFile(targetFilePath);
     if (!targetFile) {
       this.windowAdapter.showWarningMessage('ジャンプ先のDSLファイルが見つかりません。対応する .tui.yml / .tui.flow.yml を開いてください。');
@@ -127,9 +131,30 @@ export class WebViewMessageHandler {
 
       this.applyEditorSelection(editor, position);
       this.logger.debug(`${componentName} を DSL にジャンプ: ${dslPath}`);
+
+      if (returnPath) {
+        this.panelMessenger.postSetReturnPath(returnPath);
+      }
     } catch (error) {
       this.logger.error('jump-to-dsl エラー:', error);
       this.windowAdapter.showErrorMessage(`DSLジャンプに失敗しました: ${error}`);
+    }
+  }
+
+  private async handleNavigateBack(message: Record<string, unknown>): Promise<void> {
+    const returnPath = typeof message.returnPath === 'string' ? message.returnPath : '';
+    if (!returnPath) {
+      this.logger.warn('[WebViewMessageHandler] navigate-back に returnPath がありません');
+      return;
+    }
+
+    try {
+      const document = await vscode.workspace.openTextDocument(returnPath);
+      await vscode.window.showTextDocument(document, vscode.ViewColumn.One);
+      this.logger.debug(`navigate-back: ${returnPath}`);
+    } catch (error) {
+      this.logger.error('navigate-back エラー:', error);
+      this.windowAdapter.showErrorMessage(`ナビゲーションに失敗しました: ${error}`);
     }
   }
 

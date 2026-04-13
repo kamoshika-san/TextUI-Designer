@@ -40,6 +40,13 @@ export class WebViewPanelMessenger {
     });
   }
 
+  postSetReturnPath(returnPath: string): void {
+    this.postMessage({
+      type: 'set-return-path',
+      returnPath
+    });
+  }
+
   private postMessage(message: unknown): void {
     const panel = this.lifecycleManager.getPanel();
     if (!panel) {

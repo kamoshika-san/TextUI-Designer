@@ -58,6 +58,7 @@ interface UseWebviewMessagesOptions {
   onConflictUpdate?: (conflict: ConflictViewResult) => void;
   onHighlightComponent?: (index: number | null) => void;
   onOverlayDiffInit?: (state: OverlayDiffState) => void;
+  onSetReturnPath?: (returnPath: string) => void;
 }
 
 export function readPreviewSettings(
@@ -85,7 +86,8 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
     onDiffUpdate,
     onConflictUpdate,
     onHighlightComponent,
-    onOverlayDiffInit
+    onOverlayDiffInit,
+    onSetReturnPath
   } = options;
   const previewUpdateFeedbackRef = useRef<ReturnType<typeof createPreviewUpdateFeedbackController> | null>(null);
   const hasPostedReadyRef = useRef(false);
@@ -166,6 +168,9 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
         case 'highlight-component':
           onHighlightComponent?.(message.index as number | null);
           break;
+        case 'set-return-path':
+          onSetReturnPath?.(message.returnPath as string);
+          break;
         case 'overlay-diff-init': {
           console.log('[useWebviewMessages] Received overlay-diff-init:', message);
           const overlayState: import('../domain/diff/overlay-diff-types').OverlayDiffState = {
@@ -193,5 +198,5 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
       previewUpdateFeedbackRef.current = null;
       window.removeEventListener('message', onMessage);
     };
-  }, [postReady, applyDslUpdate, setError, setUpdateStatus, setLastCompletedAt, setShowUpdateIndicator, setShowJumpToDslHoverIndicator, onDiffUpdate, onConflictUpdate, onHighlightComponent, onOverlayDiffInit]);
+  }, [postReady, applyDslUpdate, setError, setUpdateStatus, setLastCompletedAt, setShowUpdateIndicator, setShowJumpToDslHoverIndicator, onDiffUpdate, onConflictUpdate, onHighlightComponent, onOverlayDiffInit, onSetReturnPath]);
 }

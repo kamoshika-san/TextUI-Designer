@@ -55,6 +55,7 @@ const App: React.FC = () => {
   const [dismissJumpToDslForever, setDismissJumpToDslForever] = useState(false);
   const [overlayDiffState, setOverlayDiffState] = useState<OverlayDiffState | null>(null);
   const [flowDiffResult, setFlowDiffResult] = useState<FlowSemanticDiffResult | null>(null);
+  const [returnPath, setReturnPath] = useState<string | null>(null);
   const prevComponentsKeysRef = useRef<{ components: ComponentDef[]; keys: string[] } | null>(null);
 
   useEffect(() => {
@@ -102,6 +103,12 @@ const App: React.FC = () => {
     }, 1200);
     return () => window.clearTimeout(timeout);
   }, [updateStatus]);
+
+  useEffect(() => {
+    if (isNavigationFlowDSL(json)) {
+      setReturnPath(null);
+    }
+  }, [json]);
 
   const applyDslUpdate = useCallback((incomingDsl: PreviewDocument) => {
     const startedAt = performance.now();
@@ -190,7 +197,8 @@ const App: React.FC = () => {
     onDiffUpdate: setDiffResult,
     onConflictUpdate: setConflictResult,
     onHighlightComponent: setHighlightedIndex,
-    onOverlayDiffInit: setOverlayDiffState
+    onOverlayDiffInit: setOverlayDiffState,
+    onSetReturnPath: setReturnPath
   });
 
   const handleExport = () => {
@@ -210,6 +218,15 @@ const App: React.FC = () => {
       componentName,
       targetFilePath
     });
+  };
+
+  const handleNavigateBack = () => {
+    const runtimeApi = getVSCodeApi();
+    if (!runtimeApi?.postMessage || !returnPath) {
+      return;
+    }
+    runtimeApi.postMessage({ type: 'navigate-back', returnPath });
+    setReturnPath(null);
   };
 
   const handleDismissJumpToDslOnboarding = () => {
@@ -355,6 +372,27 @@ const App: React.FC = () => {
       <ThemeToggle />
       <CustomThemeSelector />
       <ExportButton onExport={handleExport} />
+      {returnPath ? (
+        <button
+          type="button"
+          onClick={handleNavigateBack}
+          style={{
+            position: 'fixed',
+            top: 8,
+            left: 8,
+            zIndex: 1000,
+            padding: '4px 10px',
+            background: 'var(--vscode-button-secondaryBackground, rgba(60,60,60,0.85))',
+            color: 'var(--vscode-button-secondaryForeground, #ccc)',
+            border: '1px solid var(--vscode-button-border, rgba(120,120,120,0.4))',
+            borderRadius: 4,
+            cursor: 'pointer',
+            fontSize: '0.8rem'
+          }}
+        >
+          ← Back to flow
+        </button>
+      ) : null}
       {showUpdateIndicator ? (
         <UpdateIndicator
           status={updateStatus}
