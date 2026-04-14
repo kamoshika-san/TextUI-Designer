@@ -4,6 +4,15 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.8.4] - 2026-04-14
+
+### Fixed
+- **Export button: flow formats removed** — `react-flow`, `vue-flow`, `svelte-flow`, and `html-flow` no longer appear in the VS Code Export quick-pick menu. These formats remain available via `textui flow export` CLI and the `export_flow` MCP tool.
+- **Capture command: rejects flow files** — Running "Capture Preview" from the command palette while a `.tui.flow.yml` is active now shows a descriptive warning instead of silently producing a blank image.
+- **Capture: button variant styles in fallback path** — Buttons now render with correct variant colors (primary, secondary, danger, ghost) when the WebView CSS bundle is unavailable during CLI/MCP screen capture.
+
+---
+
 ## [0.8.3] - 2026-04-14
 
 ### Added
