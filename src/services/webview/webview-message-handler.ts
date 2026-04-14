@@ -12,6 +12,8 @@ import { YamlPointerResolver } from './yaml-pointer-resolver';
 import { withPreviewPipelineTrace } from './preview-pipeline-observability';
 import { WebViewPanelMessenger } from './webview-panel-messenger';
 import { resolveNavigationJumpTargetFile } from '../commands/navigation-jump-command';
+import { isNavigationFlowDSL } from '../../domain/dsl-types';
+import { parseYamlTextAsync } from '../../dsl/yaml-parse-async';
 
 type MessageType = 'export' | 'export-preview' | 'jump-to-dsl' | 'webview-ready' | 'theme-switch' | 'get-themes' | 'navigate-back' | 'back-to-flow' | 'preview-navigate';
 type MessageHandler = (message: WebViewMessage) => Promise<void>;
@@ -63,7 +65,7 @@ export class WebViewMessageHandler {
       'theme-switch': async (message) => this.handleThemeSwitchMessage(message),
       'get-themes': async () => this.handleGetThemes(),
       'back-to-flow': async () => this.handleBackToFlow(),
-      'preview-navigate': async (message) => this.handlePreviewNavigateLog(message)
+      'preview-navigate': async (message) => this.handlePreviewNavigate(message)
     };
   }
 
@@ -271,11 +273,49 @@ export class WebViewMessageHandler {
   }
 
   /**
-   * preview-navigate メッセージのログ記録（E-NI-S6、デバッグ用）
+   * preview-navigate メッセージを処理（E-NI-S11）
+   * trigger から遷移先画面ファイルを解決して webview に送信する
    */
-  private async handlePreviewNavigateLog(message: Record<string, unknown>): Promise<void> {
-    const trigger = typeof message.trigger === 'string' ? message.trigger : '(unknown)';
-    this.logger.debug(`preview-navigate: trigger=${trigger}`);
+  private async handlePreviewNavigate(message: Record<string, unknown>): Promise<void> {
+    const trigger = typeof message.trigger === 'string' ? message.trigger : '';
+    if (!trigger) {
+      this.logger.warn('preview-navigate: trigger がありません');
+      return;
+    }
+
+    const flowFilePath = this.updateManager.getLastTuiFile();
+    if (!flowFilePath) {
+      this.logger.warn('preview-navigate: フローファイルが見つかりません');
+      return;
+    }
+
+    try {
+      const rawBytes = await vscode.workspace.fs.readFile(vscode.Uri.file(flowFilePath));
+      const parsed = await parseYamlTextAsync(Buffer.from(rawBytes).toString('utf-8'));
+
+      if (!isNavigationFlowDSL(parsed)) {
+        this.logger.warn('preview-navigate: 現在のファイルはフロー DSL ではありません');
+        return;
+      }
+
+      const matched = parsed.flow.transitions.find(t => t.trigger === trigger);
+      if (!matched) {
+        this.logger.warn(`preview-navigate: trigger="${trigger}" に一致する遷移が見つかりません`);
+        return;
+      }
+
+      const screen = parsed.flow.screens.find(s => s.id === matched.to);
+      if (!screen?.page) {
+        this.logger.warn(`preview-navigate: screen "${matched.to}" のページファイルが未定義です`);
+        return;
+      }
+
+      const targetFilePath = path.resolve(path.dirname(flowFilePath), screen.page);
+      this.logger.debug(`preview-navigate: trigger="${trigger}" → ${targetFilePath}`);
+      this.updateManager.setLastTuiFile(targetFilePath, true);
+    } catch (error) {
+      this.logger.warn(`preview-navigate エラー: ${error}`);
+    }
   }
 
   applyThemeVariables(css: string): void {
