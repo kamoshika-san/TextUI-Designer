@@ -46,7 +46,7 @@ export interface NavigationPolicyDef {
 
 export interface ScreenRef {
   id: string;
-  page: string;
+  page?: string;
   title?: string;
   kind?: NavigationScreenKind;
   tags?: string[];
@@ -143,9 +143,13 @@ function isScreenRef(value: unknown): value is ScreenRef {
     return false;
   }
 
+  // Terminal screens don't require a page
+  const hasPage = typeof value.page === 'string';
+  const hasTerminal = value.terminal !== undefined && isNavigationTerminalDef(value.terminal);
+
   return (
     typeof value.id === 'string' &&
-    typeof value.page === 'string' &&
+    (hasPage || hasTerminal) &&
     isOptionalString(value.title) &&
     isOptionalOneOf(value.kind, NAVIGATION_SCREEN_KINDS) &&
     (value.tags === undefined || isStringArray(value.tags)) &&

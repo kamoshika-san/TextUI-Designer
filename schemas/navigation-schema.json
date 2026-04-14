@@ -60,8 +60,7 @@
           "items": {
             "type": "object",
             "required": [
-              "id",
-              "page"
+              "id"
             ],
             "properties": {
               "id": {

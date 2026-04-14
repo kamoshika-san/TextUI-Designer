@@ -49,7 +49,7 @@ export function validateNavigationFlow(
     screenIds.add(screen.id);
     screenIndexById.set(screen.id, index);
 
-    if (!options.sourcePath) {
+    if (!options.sourcePath || !screen.page) {
       return;
     }
 

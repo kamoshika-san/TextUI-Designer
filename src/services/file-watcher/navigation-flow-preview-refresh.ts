@@ -47,7 +47,9 @@ function resolveRelatedPageFiles(
 ): string[] {
   try {
     const { dsl } = loader(flowFilePath);
-    return dsl.flow.screens.map(screen => resolveCrossPlatformRelativePath(flowFilePath, screen.page));
+    return dsl.flow.screens
+      .filter(screen => screen.page)
+      .map(screen => resolveCrossPlatformRelativePath(flowFilePath, screen.page!));
   } catch {
     return [];
   }

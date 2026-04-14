@@ -44,15 +44,17 @@ export function deriveFlowRoutePath(screenId: string, pagePath: string, isEntry:
 }
 
 export function buildFlowRoutes(dsl: NavigationFlowDSL): FlowRouteDefinition[] {
-  return dsl.flow.screens.map(screen => ({
-    path: deriveFlowRoutePath(screen.id, screen.page, screen.id === dsl.flow.entry),
-    componentName: `${toPascalCase(screen.id)}Page`,
-    title: screen.title || screen.id,
-    screenId: screen.id,
-    screenKind: screen.kind,
-    tags: screen.tags,
-    terminalKind: screen.terminal?.kind,
-    terminalOutcome: screen.terminal?.outcome,
+  return dsl.flow.screens
+    .filter(screen => screen.page) // Only include screens with pages
+    .map(screen => ({
+      path: deriveFlowRoutePath(screen.id, screen.page!, screen.id === dsl.flow.entry),
+      componentName: `${toPascalCase(screen.id)}Page`,
+      title: screen.title || screen.id,
+      screenId: screen.id,
+      screenKind: screen.kind,
+      tags: screen.tags,
+      terminalKind: screen.terminal?.kind,
+      terminalOutcome: screen.terminal?.outcome,
     outgoingTransitionIds: dsl.flow.transitions
       .filter(transition => transition.from === screen.id)
       .map(transition => transition.id ?? createNavigationTransitionId(transition))

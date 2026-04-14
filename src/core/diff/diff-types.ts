@@ -54,7 +54,7 @@ export interface DiffCompareDocument {
 
 export interface FlowDiffScreenRef {
   id: string;
-  page: string;
+  page?: string;
   title?: string;
   kind?: NavigationScreenKind;
   tags?: string[];
