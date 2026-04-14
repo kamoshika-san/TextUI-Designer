@@ -4,6 +4,8 @@ import { ThemeToggle } from './components/ThemeToggle';
 import { CustomThemeSelector } from './components/CustomThemeSelector';
 import { OverlayDiffViewer } from './components/OverlayDiffViewer';
 import { FlowPreviewPanel } from './components/FlowPreviewPanel';
+import { PreviewNavBar } from './components/PreviewNavBar';
+import type { NavHistoryEntry } from './components/PreviewNavBar';
 import { renderRegisteredComponent, registerBuiltInComponents } from './component-map';
 import type { NavigationFlowDSL, TextUIDSL, ComponentDef } from '../domain/dsl-types';
 import { isNavigationFlowDSL } from '../domain/dsl-types';
@@ -56,6 +58,8 @@ const App: React.FC = () => {
   const [overlayDiffState, setOverlayDiffState] = useState<OverlayDiffState | null>(null);
   const [flowDiffResult, setFlowDiffResult] = useState<FlowSemanticDiffResult | null>(null);
   const [returnPath, setReturnPath] = useState<string | null>(null);
+  const [previewCurrentScreenId, setPreviewCurrentScreenId] = useState<string | null>(null);
+  const [navHistory, setNavHistory] = useState<NavHistoryEntry[]>([]);
   const prevComponentsKeysRef = useRef<{ components: ComponentDef[]; keys: string[] } | null>(null);
 
   useEffect(() => {
@@ -223,6 +227,71 @@ const App: React.FC = () => {
     setReturnPath(null);
   };
 
+  // PreviewNavBar: 1ステップ前に戻る（E-NI-S5）
+  const handlePreviewNavBack = () => {
+    if (navHistory.length === 0) { return; }
+    const prev = navHistory[navHistory.length - 1];
+    setNavHistory(h => h.slice(0, -1));
+    setPreviewCurrentScreenId(prev.screenId);
+    // 前の画面 DSL を復元
+    const screenDslMap = (window as unknown as Record<string, unknown>).__textui_screen_dsl_map__ as Record<string, TextUIDSL> | undefined;
+    if (screenDslMap && screenDslMap[prev.screenId]) {
+      setJson(screenDslMap[prev.screenId]);
+    }
+  };
+
+  // PreviewNavBar: フローに戻る（E-NI-S5）
+  const handleBackToFlow = () => {
+    const runtimeApi = getVSCodeApi();
+    if (runtimeApi?.postMessage) {
+      runtimeApi.postMessage({ type: 'back-to-flow' });
+    }
+    setNavHistory([]);
+  };
+
+  // preview-navigate メッセージを受信して遷移先ページを解決する（E-NI-S4）
+  useEffect(() => {
+    const handlePreviewNavigate = (event: MessageEvent) => {
+      if (!event.data || event.data.type !== 'preview-navigate') { return; }
+      const trigger = event.data.trigger as string;
+      if (!trigger) { return; }
+
+      setJson(currentJson => {
+        if (!currentJson || isNavigationFlowDSL(currentJson)) { return currentJson; }
+        const currentScreenId = currentJson.page?.id ?? null;
+        setPreviewCurrentScreenId(currentScreenId);
+
+        // ロード済みフロー DSL を window から取得（FlowPreviewPanel が設定する想定）
+        const flowDslRaw = (window as unknown as Record<string, unknown>).__textui_flow_dsl__;
+        if (!flowDslRaw || !isNavigationFlowDSL(flowDslRaw as TextUIDSL)) { return currentJson; }
+        const flowDsl = flowDslRaw as NavigationFlowDSL;
+
+        // from 一致優先で遷移先を解決
+        const transitions = flowDsl.flow?.transitions ?? [];
+        const matched = transitions.find(t => t.trigger === trigger && t.from === currentScreenId)
+          ?? transitions.find(t => t.trigger === trigger);
+        if (!matched) { return currentJson; }
+
+        // 遷移先画面の DSL を window から取得（Extension が設定する想定）
+        const screenDslMap = (window as unknown as Record<string, unknown>).__textui_screen_dsl_map__ as Record<string, TextUIDSL> | undefined;
+        if (!screenDslMap) { return currentJson; }
+        const nextDsl = screenDslMap[matched.to];
+        if (!nextDsl) { return currentJson; }
+
+        // history に現在の画面を push
+        setNavHistory(prev => [...prev, {
+          screenId: currentScreenId ?? '',
+          pageTitle: currentJson.page?.title,
+        }]);
+
+        return nextDsl;
+      });
+    };
+
+    window.addEventListener('message', handlePreviewNavigate);
+    return () => window.removeEventListener('message', handlePreviewNavigate);
+  }, []);
+
   const handleDismissJumpToDslOnboarding = () => {
     persistJumpToDslOnboardingDismissed(
       typeof window !== 'undefined' ? window.localStorage : undefined,
@@ -297,6 +366,12 @@ const App: React.FC = () => {
       className={showJumpToDslHoverIndicator ? 'textui-preview-root' : 'textui-preview-root textui-preview-root-hide-jump-hover'}
       style={{ padding: 24, position: 'relative' }}
     >
+      {/* PreviewNavBar: 画面遷移履歴がある場合のみ表示（E-NI-S5） */}
+      <PreviewNavBar
+        history={navHistory}
+        onBack={handlePreviewNavBack}
+        onBackToFlow={handleBackToFlow}
+      />
       {showJumpToDslOnboarding ? (
         <div
           style={{

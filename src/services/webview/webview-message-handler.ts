@@ -13,7 +13,7 @@ import { withPreviewPipelineTrace } from './preview-pipeline-observability';
 import { WebViewPanelMessenger } from './webview-panel-messenger';
 import { resolveNavigationJumpTargetFile } from '../commands/navigation-jump-command';
 
-type MessageType = 'export' | 'export-preview' | 'jump-to-dsl' | 'webview-ready' | 'theme-switch' | 'get-themes' | 'navigate-back';
+type MessageType = 'export' | 'export-preview' | 'jump-to-dsl' | 'webview-ready' | 'theme-switch' | 'get-themes' | 'navigate-back' | 'back-to-flow' | 'preview-navigate';
 type MessageHandler = (message: WebViewMessage) => Promise<void>;
 
 interface WebViewMessageHandlerDependencies {
@@ -61,7 +61,9 @@ export class WebViewMessageHandler {
       'navigate-back': async (message) => this.handleNavigateBack(message),
       'webview-ready': async () => this.handleWebViewReady(),
       'theme-switch': async (message) => this.handleThemeSwitchMessage(message),
-      'get-themes': async () => this.handleGetThemes()
+      'get-themes': async () => this.handleGetThemes(),
+      'back-to-flow': async () => this.handleBackToFlow(),
+      'preview-navigate': async (message) => this.handlePreviewNavigateLog(message)
     };
   }
 
@@ -252,6 +254,28 @@ export class WebViewMessageHandler {
   private async handleGetThemes(): Promise<void> {
     this.logger.debug('テーマ一覧リクエストを受信');
     await this.sendAvailableThemes();
+  }
+
+  /**
+   * back-to-flow メッセージを処理（E-NI-S6）
+   * FlowPreviewPanel を前面に出す
+   */
+  private async handleBackToFlow(): Promise<void> {
+    this.logger.debug('back-to-flow メッセージを受信');
+    try {
+      await vscode.commands.executeCommand('textui-designer.openFlowPreview');
+    } catch {
+      // コマンドが存在しない場合は静かに無視
+      this.logger.debug('back-to-flow: openFlowPreview コマンドが見つかりません');
+    }
+  }
+
+  /**
+   * preview-navigate メッセージのログ記録（E-NI-S6、デバッグ用）
+   */
+  private async handlePreviewNavigateLog(message: Record<string, unknown>): Promise<void> {
+    const trigger = typeof message.trigger === 'string' ? message.trigger : '(unknown)';
+    this.logger.debug(`preview-navigate: trigger=${trigger}`);
   }
 
   applyThemeVariables(css: string): void {
