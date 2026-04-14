@@ -12,6 +12,10 @@ flow:
     - id: confirm
       page: ./screens/confirm.tui.yml
       title: Confirm
+    - id: done
+      title: Order Complete
+      terminal:
+        kind: success
   transitions:
     - from: cart
       to: shipping
@@ -21,3 +25,7 @@ flow:
       to: confirm
       trigger: next
       label: Review Order
+    - from: confirm
+      to: done
+      trigger: submit
+      label: Place Order

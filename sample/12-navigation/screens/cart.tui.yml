@@ -9,3 +9,5 @@ page:
     - Button:
         label: Continue
         kind: primary
+        action:
+          trigger: next

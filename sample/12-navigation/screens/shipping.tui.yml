@@ -10,3 +10,8 @@ page:
         label: Address
         name: address
         type: text
+    - Button:
+        label: Review Order
+        kind: primary
+        action:
+          trigger: next

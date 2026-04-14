@@ -9,3 +9,8 @@ page:
     - Alert:
         variant: info
         message: Review the order before submitting.
+    - Button:
+        label: Place Order
+        kind: primary
+        action:
+          trigger: submit
