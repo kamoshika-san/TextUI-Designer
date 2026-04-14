@@ -18,12 +18,12 @@ export type CapturePreviewDependencies = {
 
 export function resolveCaptureTargetFile(webViewManager: IWebViewManager): string | undefined {
   const activeFile = vscode.window.activeTextEditor?.document.fileName;
-  if (activeFile && ConfigManager.isSupportedFile(activeFile)) {
+  if (activeFile && ConfigManager.isSupportedFile(activeFile) && !ConfigManager.isNavigationFlowFile(activeFile)) {
     return activeFile;
   }
 
   const lastFile = webViewManager.getLastTuiFile();
-  if (lastFile && ConfigManager.isSupportedFile(lastFile)) {
+  if (lastFile && ConfigManager.isSupportedFile(lastFile) && !ConfigManager.isNavigationFlowFile(lastFile)) {
     return lastFile;
   }
 
@@ -33,6 +33,12 @@ export function resolveCaptureTargetFile(webViewManager: IWebViewManager): strin
 export async function executeCapturePreviewCommand(
   deps: CapturePreviewDependencies
 ): Promise<void> {
+  const activeFile = vscode.window.activeTextEditor?.document.fileName;
+  if (activeFile && ConfigManager.isNavigationFlowFile(activeFile)) {
+    vscode.window.showWarningMessage('フローファイル (.tui.flow.yml) はキャプチャ対象外です。画面ファイル (.tui.yml) を開いてから実行してください。');
+    return;
+  }
+
   const targetFile = resolveCaptureTargetFile(deps.webViewManager);
   if (!targetFile) {
     vscode.window.showWarningMessage('キャプチャ対象の .tui.yml ファイルが見つかりません。');
