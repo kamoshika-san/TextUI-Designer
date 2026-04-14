@@ -24,7 +24,7 @@ export class ExportApplicationService {
     }
 
     const settings = ConfigManager.getExportSettings();
-    const formats = [...this.exportManager.getSupportedFormats()].sort((a, b) => {
+    const formats = [...this.exportManager.getSupportedFormats()].filter(f => !f.endsWith('-flow')).sort((a, b) => {
       if (a === settings.defaultFormat) {
         return -1;
       }
@@ -50,7 +50,7 @@ export class ExportApplicationService {
     }
 
     const settings = ConfigManager.getExportSettings();
-    const formats = [...this.exportManager.getSupportedFormats()].sort((a, b) => {
+    const formats = [...this.exportManager.getSupportedFormats()].filter(f => !f.endsWith('-flow')).sort((a, b) => {
       if (a === settings.defaultFormat) {
         return -1;
       }
