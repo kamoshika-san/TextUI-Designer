@@ -4,6 +4,17 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.9.0] - 2026-04-14
+
+### Added
+- **Navigation Integration (E-NI)**: Button components with `action.trigger` now fire `preview-navigate` events in the WebView preview, enabling interactive screen-to-screen navigation directly in the preview panel.
+- **PreviewNavBar**: After navigating via a trigger button, a navigation bar appears at the top of the preview showing the previous screen name and a "Back to flow" button.
+- **FlowPreviewPanel: inline page preview**: Selecting a screen in the flow diagram now shows a collapsible inline preview section with the linked page file path.
+- **Language service: `action.trigger` completion**: Typing `action: { trigger: "` in a `.tui.yml` file now suggests trigger names from the workspace's flow definition files.
+- **`action.trigger` DSL type**: `ButtonComponent` now includes an optional `action: { trigger: string }` field for declarative navigation.
+
+---
+
 ## [0.8.4] - 2026-04-14
 
 ### Fixed

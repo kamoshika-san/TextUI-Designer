@@ -7,6 +7,56 @@ import { FlowDiagram, computeSelectedPath, computeVisibleTransitions } from './F
 import { FlowEdge } from './FlowEdge';
 import { FlowRouteChain } from './FlowRouteChain';
 
+/**
+ * InlinePagePreview — FlowPreviewPanel 内のインラインページプレビュー（E-NI-S7）
+ * 折りたたみ可能。pageFile のパスを表示し、将来的に DSL レンダリングを追加できる拡張ポイント。
+ */
+const InlinePagePreview: React.FC<{ pageFile?: string }> = ({ pageFile }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  if (!pageFile) { return null; }
+
+  return (
+    <div style={{ marginTop: 12 }}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(o => !o)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          background: 'none',
+          border: 'none',
+          color: 'var(--vscode-foreground, #ccc)',
+          cursor: 'pointer',
+          fontSize: '0.78rem',
+          padding: '2px 0',
+        }}
+      >
+        <span>{isOpen ? '▾' : '▸'}</span>
+        <span>ページプレビュー</span>
+      </button>
+      {isOpen && (
+        <div
+          style={{
+            marginTop: 6,
+            padding: '8px 10px',
+            background: 'rgba(0,0,0,0.18)',
+            borderRadius: 4,
+            fontSize: '0.74rem',
+            color: 'var(--vscode-foreground, #aaa)',
+          }}
+        >
+          <div style={{ marginBottom: 4, opacity: 0.7 }}>Linked page:</div>
+          <code style={{ wordBreak: 'break-all' }}>{pageFile}</code>
+          <div style={{ marginTop: 8, opacity: 0.6, fontSize: '0.70rem' }}>
+            「Open linked page」でページを開いてプレビューできます。
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 interface FlowPreviewPanelProps {
   flowDsl: NavigationFlowDSL;
   onJumpToDsl: (dslPath: string, componentName: string, targetFilePath?: string) => void;
@@ -228,6 +278,9 @@ export const FlowPreviewPanel: React.FC<FlowPreviewPanelProps> = ({
                   Open linked page
                 </button>
               </div>
+
+              {/* インラインプレビューエリア（E-NI-S7） */}
+              <InlinePagePreview pageFile={selectedScreen.page} />
             </aside>
           ) : null}
         </div>
