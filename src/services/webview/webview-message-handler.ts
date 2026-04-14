@@ -39,6 +39,7 @@ export class WebViewMessageHandler {
   private readonly panelMessenger: WebViewPanelMessenger;
   private readonly messageHandlers: Record<MessageType, MessageHandler>;
   private readonly logger = new Logger('WebViewMessageHandler');
+  private lastFlowFilePath: string | undefined;
 
   constructor(
     context: vscode.ExtensionContext,
@@ -231,6 +232,26 @@ export class WebViewMessageHandler {
 
     await this.sendAvailableThemes();
     await this.returnFocusToEditor();
+    await this.cacheFlowFilePath();
+  }
+
+  /**
+   * フローファイルパスをキャッシュする（E-NI-S11 fix）
+   * webview-ready 時に現在のファイルが NavigationFlowDSL であればキャッシュに保存する
+   */
+  private async cacheFlowFilePath(): Promise<void> {
+    const filePath = this.updateManager.getLastTuiFile();
+    if (!filePath) { return; }
+    try {
+      const rawBytes = await vscode.workspace.fs.readFile(vscode.Uri.file(filePath));
+      const parsed = await parseYamlTextAsync(Buffer.from(rawBytes).toString('utf-8'));
+      if (isNavigationFlowDSL(parsed)) {
+        this.lastFlowFilePath = filePath;
+        this.logger.debug(`cacheFlowFilePath: lastFlowFilePath = ${filePath}`);
+      }
+    } catch {
+      // キャッシュ失敗は無視（preview-navigate が warn を出す）
+    }
   }
 
   private async handleThemeSwitchMessage(message: WebViewMessage): Promise<void> {
@@ -283,9 +304,9 @@ export class WebViewMessageHandler {
       return;
     }
 
-    const flowFilePath = this.updateManager.getLastTuiFile();
+    const flowFilePath = this.lastFlowFilePath;
     if (!flowFilePath) {
-      this.logger.warn('preview-navigate: フローファイルが見つかりません');
+      this.logger.warn('preview-navigate: フローファイルが見つかりません（webview-ready 前か非フローファイル）');
       return;
     }
 
