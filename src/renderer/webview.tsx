@@ -109,6 +109,15 @@ const App: React.FC = () => {
   }, [updateStatus]);
 
   const applyDslUpdate = useCallback((incomingDsl: PreviewDocument) => {
+    // グローバルに DSL を保持して preview-navigate ハンドラから参照できるようにする（E-NI-S10）
+    if (isNavigationFlowDSL(incomingDsl)) {
+      (window as unknown as Record<string, unknown>).__textui_flow_dsl__ = incomingDsl;
+    } else if (!isNavigationFlowDSL(incomingDsl) && incomingDsl.page?.id) {
+      const screenId = incomingDsl.page.id;
+      const existing = ((window as unknown as Record<string, unknown>).__textui_screen_dsl_map__ ?? {}) as Record<string, TextUIDSL>;
+      (window as unknown as Record<string, unknown>).__textui_screen_dsl_map__ = { ...existing, [screenId]: incomingDsl };
+    }
+
     const startedAt = performance.now();
     const incomingHash = hashString(JSON.stringify(incomingDsl));
     const incomingHashMs = isDevelopmentMode ? performance.now() - startedAt : 0;

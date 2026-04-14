@@ -45,7 +45,7 @@ export const Button: React.FC<ButtonProps> = ({
   // action.trigger がある場合は postMessage でナビゲーションイベントを発火する
   const handleClick = action?.trigger
     ? () => {
-        window.parent.postMessage({ type: 'preview-navigate', trigger: action.trigger }, '*');
+        window.postMessage({ type: 'preview-navigate', trigger: action.trigger }, '*');
       }
     : onClick;
 
