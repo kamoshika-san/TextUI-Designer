@@ -86,6 +86,13 @@ export class WebViewMessageHandler {
       undefined,
       this.context.subscriptions
     );
+
+    // フローファイルが保存されたとき lastFlowFilePath キャッシュを更新する（E-NI-S12）
+    this.context.subscriptions.push(
+      vscode.workspace.onDidSaveTextDocument(async (document) => {
+        await this.cacheFlowFilePath(document.uri.fsPath);
+      })
+    );
   }
 
   /**
@@ -236,18 +243,19 @@ export class WebViewMessageHandler {
   }
 
   /**
-   * フローファイルパスをキャッシュする（E-NI-S11 fix）
-   * webview-ready 時に現在のファイルが NavigationFlowDSL であればキャッシュに保存する
+   * フローファイルパスをキャッシュする（E-NI-S11/S12）
+   * 指定 filePath が NavigationFlowDSL であれば lastFlowFilePath を更新する。
+   * filePath 省略時は getLastTuiFile() を使用（webview-ready 時のデフォルト動作）。
    */
-  private async cacheFlowFilePath(): Promise<void> {
-    const filePath = this.updateManager.getLastTuiFile();
-    if (!filePath) { return; }
+  private async cacheFlowFilePath(filePath?: string): Promise<void> {
+    const pathToCheck = filePath ?? this.updateManager.getLastTuiFile();
+    if (!pathToCheck) { return; }
     try {
-      const rawBytes = await vscode.workspace.fs.readFile(vscode.Uri.file(filePath));
+      const rawBytes = await vscode.workspace.fs.readFile(vscode.Uri.file(pathToCheck));
       const parsed = await parseYamlTextAsync(Buffer.from(rawBytes).toString('utf-8'));
       if (isNavigationFlowDSL(parsed)) {
-        this.lastFlowFilePath = filePath;
-        this.logger.debug(`cacheFlowFilePath: lastFlowFilePath = ${filePath}`);
+        this.lastFlowFilePath = pathToCheck;
+        this.logger.debug(`cacheFlowFilePath: lastFlowFilePath = ${pathToCheck}`);
       }
     } catch {
       // キャッシュ失敗は無視（preview-navigate が warn を出す）
