@@ -186,6 +186,57 @@ function getFallbackCompatibilityStyleBlock(): string {
     .textui-progress-success { background-color: #22c55e; }
     .textui-progress-warning { background-color: #f59e0b; }
     .textui-progress-error { background-color: #ef4444; }
+
+    .textui-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+      padding: 0.375rem 0.875rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      line-height: 1.25rem;
+      cursor: default;
+      border: 1px solid transparent;
+      box-sizing: border-box;
+    }
+
+    .textui-button.primary {
+      background-color: #3b82f6;
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .textui-button.secondary {
+      background-color: rgba(107, 114, 128, 0.25);
+      color: #d1d5db;
+      border-color: rgba(107, 114, 128, 0.4);
+    }
+
+    .textui-button.danger {
+      background-color: #ef4444;
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .textui-button.ghost {
+      background-color: transparent;
+      color: #d1d5db;
+      border-color: rgba(107, 114, 128, 0.3);
+    }
+
+    .textui-button.submit {
+      background-color: #3b82f6;
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .textui-button:disabled,
+    .textui-button.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
 `;
 }
 

@@ -1,0 +1,105 @@
+<!-- page: /index.html -->
+<section data-route="/" data-screen-id="welcome" data-screen-kind="screen">
+  <h1>Welcome</h1>
+  <p>Screen ID: welcome</p>
+  <p>Route: /</p>
+  <p>Screen Kind: screen</p>
+  <p>Outgoing Transitions: t-welcome-company-profile</p>
+</section>
+
+<!-- page: /screens/company-profile/index.html -->
+<section data-route="/screens/company-profile" data-screen-id="company-profile" data-screen-kind="screen">
+  <h1>Company Profile</h1>
+  <p>Screen ID: company-profile</p>
+  <p>Route: /screens/company-profile</p>
+  <p>Screen Kind: screen</p>
+  <p>Outgoing Transitions: t-company-profile-admin-setup, t-company-profile-compliance, t-company-profile-welcome</p>
+</section>
+
+<!-- page: /screens/admin-setup/index.html -->
+<section data-route="/screens/admin-setup" data-screen-id="admin-setup" data-screen-kind="screen">
+  <h1>Admin Setup</h1>
+  <p>Screen ID: admin-setup</p>
+  <p>Route: /screens/admin-setup</p>
+  <p>Screen Kind: screen</p>
+  <p>Outgoing Transitions: t-admin-setup-billing, t-admin-setup-integrations, t-admin-setup-company-profile</p>
+</section>
+
+<!-- page: /screens/billing/index.html -->
+<section data-route="/screens/billing" data-screen-id="billing" data-screen-kind="screen">
+  <h1>Billing</h1>
+  <p>Screen ID: billing</p>
+  <p>Route: /screens/billing</p>
+  <p>Screen Kind: screen</p>
+  <p>Outgoing Transitions: t-billing-compliance, t-billing-review, t-billing-admin-setup</p>
+</section>
+
+<!-- page: /screens/compliance/index.html -->
+<section data-route="/screens/compliance" data-screen-id="compliance" data-screen-kind="decision">
+  <h1>Compliance</h1>
+  <p>Screen ID: compliance</p>
+  <p>Route: /screens/compliance</p>
+  <p>Screen Kind: decision</p>
+  <p>Outgoing Transitions: t-compliance-integrations, t-compliance-company-profile, t-compliance-billing</p>
+</section>
+
+<!-- page: /screens/integrations/index.html -->
+<section data-route="/screens/integrations" data-screen-id="integrations" data-screen-kind="decision">
+  <h1>Integrations</h1>
+  <p>Screen ID: integrations</p>
+  <p>Route: /screens/integrations</p>
+  <p>Screen Kind: decision</p>
+  <p>Outgoing Transitions: t-integrations-review, t-integrations-admin-setup, t-integrations-compliance</p>
+</section>
+
+<!-- page: /screens/review/index.html -->
+<section data-route="/screens/review" data-screen-id="review" data-screen-kind="review">
+  <h1>Review</h1>
+  <p>Screen ID: review</p>
+  <p>Route: /screens/review</p>
+  <p>Screen Kind: review</p>
+  <p>Outgoing Transitions: t-review-approval, t-review-company-profile, t-review-billing, t-review-integrations</p>
+</section>
+
+<!-- page: /screens/approval/index.html -->
+<section data-route="/screens/approval" data-screen-id="approval" data-screen-kind="decision">
+  <h1>Approval</h1>
+  <p>Screen ID: approval</p>
+  <p>Route: /screens/approval</p>
+  <p>Screen Kind: decision</p>
+  <p>Outgoing Transitions: t-approval-provisioning, t-approval-review, t-approval-compliance</p>
+</section>
+
+<!-- page: /screens/provisioning/index.html -->
+<section data-route="/screens/provisioning" data-screen-id="provisioning" data-screen-kind="screen">
+  <h1>Provisioning</h1>
+  <p>Screen ID: provisioning</p>
+  <p>Route: /screens/provisioning</p>
+  <p>Screen Kind: screen</p>
+  <p>Outgoing Transitions: t-provisioning-launch, t-provisioning-integrations, t-provisioning-admin-setup</p>
+</section>
+
+<!-- page: /screens/launch/index.html -->
+<section data-route="/screens/launch" data-screen-id="launch" data-screen-kind="terminal" data-terminal-kind="success">
+  <h1>Launch</h1>
+  <p>Screen ID: launch</p>
+  <p>Route: /screens/launch</p>
+  <p>Screen Kind: terminal</p>
+  <p>Outgoing Transitions: t-launch-review, t-launch-provisioning</p>
+  <p>Terminal Kind: success</p>
+  <p>Terminal Outcome: onboarding-complete</p>
+</section>
+
+<!-- file: sitemap.xml -->
+<urlset>
+  <url><loc>/</loc></url>
+  <url><loc>/screens/company-profile</loc></url>
+  <url><loc>/screens/admin-setup</loc></url>
+  <url><loc>/screens/billing</loc></url>
+  <url><loc>/screens/compliance</loc></url>
+  <url><loc>/screens/integrations</loc></url>
+  <url><loc>/screens/review</loc></url>
+  <url><loc>/screens/approval</loc></url>
+  <url><loc>/screens/provisioning</loc></url>
+  <url><loc>/screens/launch</loc></url>
+</urlset>
