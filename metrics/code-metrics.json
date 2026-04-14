@@ -1,0 +1,244 @@
+{
+  "generatedAt": "2026-04-14T12:47:48.183Z",
+  "summary": {
+    "files": 694,
+    "totalLines": 84277,
+    "nonEmptyLines": 73771
+  },
+  "byPattern": {
+    "src/typescript": {
+      "files": 350,
+      "totalLines": 41457,
+      "nonEmptyLines": 36457
+    },
+    "src/tsx": {
+      "files": 41,
+      "totalLines": 4067,
+      "nonEmptyLines": 3707
+    },
+    "tests": {
+      "files": 282,
+      "totalLines": 35591,
+      "nonEmptyLines": 30913
+    },
+    "scripts": {
+      "files": 21,
+      "totalLines": 3162,
+      "nonEmptyLines": 2694
+    }
+  },
+  "bySegment": {
+    "src/cli": {
+      "files": 45,
+      "totalLines": 4259,
+      "nonEmptyLines": 3693
+    },
+    "src/components": {
+      "files": 11,
+      "totalLines": 1410,
+      "nonEmptyLines": 1347
+    },
+    "src/config": {
+      "files": 2,
+      "totalLines": 74,
+      "nonEmptyLines": 60
+    },
+    "src/core": {
+      "files": 39,
+      "totalLines": 7958,
+      "nonEmptyLines": 7125
+    },
+    "src/domain": {
+      "files": 12,
+      "totalLines": 939,
+      "nonEmptyLines": 799
+    },
+    "src/dsl": {
+      "files": 3,
+      "totalLines": 170,
+      "nonEmptyLines": 140
+    },
+    "src/exporters": {
+      "files": 45,
+      "totalLines": 5232,
+      "nonEmptyLines": 4558
+    },
+    "src/extension.ts": {
+      "files": 1,
+      "totalLines": 41,
+      "nonEmptyLines": 32
+    },
+    "src/integrations": {
+      "files": 10,
+      "totalLines": 415,
+      "nonEmptyLines": 343
+    },
+    "src/mcp": {
+      "files": 13,
+      "totalLines": 1777,
+      "nonEmptyLines": 1646
+    },
+    "src/registry": {
+      "files": 5,
+      "totalLines": 350,
+      "nonEmptyLines": 306
+    },
+    "src/renderer": {
+      "files": 54,
+      "totalLines": 4865,
+      "nonEmptyLines": 4416
+    },
+    "src/services": {
+      "files": 102,
+      "totalLines": 11553,
+      "nonEmptyLines": 10019
+    },
+    "src/shared": {
+      "files": 4,
+      "totalLines": 600,
+      "nonEmptyLines": 521
+    },
+    "src/theme": {
+      "files": 4,
+      "totalLines": 406,
+      "nonEmptyLines": 355
+    },
+    "src/types": {
+      "files": 13,
+      "totalLines": 591,
+      "nonEmptyLines": 509
+    },
+    "src/utils": {
+      "files": 20,
+      "totalLines": 3574,
+      "nonEmptyLines": 3171
+    },
+    "src/workflow": {
+      "files": 8,
+      "totalLines": 1310,
+      "nonEmptyLines": 1124
+    },
+    "tests": {
+      "files": 282,
+      "totalLines": 35591,
+      "nonEmptyLines": 30913
+    },
+    "scripts": {
+      "files": 21,
+      "totalLines": 3162,
+      "nonEmptyLines": 2694
+    }
+  },
+  "ssot": {
+    "threshold": 0,
+    "rendererTypesImports": 0,
+    "violatingFiles": [],
+    "cssThresholds": {
+      "todoPartialCount": 0,
+      "nonExemptInlineUtilityClassOccurrences": 6,
+      "fallbackCompatibilitySelectorCount": 31
+    },
+    "cssMetrics": {
+      "todoPartialCount": 0,
+      "nonExemptInlineUtilityClassOccurrences": 0,
+      "fallbackCompatibilitySelectorCount": 31
+    },
+    "cssViolations": {
+      "todoPartialCount": [],
+      "nonExemptInlineUtilityClassOccurrences": [],
+      "fallbackCompatibilitySelectorCount": [
+        ".textui-badge",
+        ".textui-badge-sm",
+        ".textui-badge-md",
+        ".textui-divider",
+        ".textui-divider.vertical",
+        ".textui-badge-default",
+        ".textui-badge-primary",
+        ".textui-badge-success",
+        ".textui-badge-warning",
+        ".textui-badge-error",
+        ".textui-tabs",
+        ".textui-tabs .flex",
+        ".textui-tabs .flex > button",
+        ".textui-tabs .flex > button:last-child",
+        ".textui-tabs .flex > button.textui-tab-active",
+        ".textui-progress",
+        ".textui-progress-header",
+        ".textui-progress-track",
+        ".textui-progress-fill",
+        ".textui-progress-default",
+        ".textui-progress-primary",
+        ".textui-progress-success",
+        ".textui-progress-warning",
+        ".textui-progress-error",
+        ".textui-button",
+        ".textui-button.primary",
+        ".textui-button.secondary",
+        ".textui-button.danger",
+        ".textui-button.ghost",
+        ".textui-button.submit",
+        ".textui-button:disabled,\n    .textui-button.disabled"
+      ]
+    },
+    "status": "fail"
+  },
+  "cloc": {
+    "header": {
+      "cloc_url": "github.com/AlDanial/cloc",
+      "cloc_version": "2.08",
+      "elapsed_seconds": 11.5462520122528,
+      "n_files": 765,
+      "n_lines": 90967,
+      "files_per_second": 66.2552661407517,
+      "lines_per_second": 7878.48731375917
+    },
+    "TypeScript": {
+      "nFiles": 394,
+      "blank": 5069,
+      "comment": 3747,
+      "code": 37198
+    },
+    "JavaScript": {
+      "nFiles": 302,
+      "blank": 4863,
+      "comment": 2084,
+      "code": 31405
+    },
+    "CSS": {
+      "nFiles": 28,
+      "blank": 639,
+      "comment": 129,
+      "code": 3300
+    },
+    "HTML": {
+      "nFiles": 5,
+      "blank": 67,
+      "comment": 8,
+      "code": 1260
+    },
+    "JSON": {
+      "nFiles": 21,
+      "blank": 0,
+      "comment": 0,
+      "code": 756
+    },
+    "YAML": {
+      "nFiles": 14,
+      "blank": 0,
+      "comment": 0,
+      "code": 248
+    },
+    "Markdown": {
+      "nFiles": 1,
+      "blank": 57,
+      "comment": 0,
+      "code": 137
+    },
+    "SUM": {
+      "blank": 10695,
+      "comment": 5968,
+      "code": 74304,
+      "nFiles": 765
+    }
+  }
+}
