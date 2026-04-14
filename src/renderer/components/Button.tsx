@@ -35,18 +35,26 @@ export const Button: React.FC<ButtonProps> = ({
   disabled = false,
   size = 'md',
   onClick,
+  action,
 }) => {
   const className = [
     kindClasses[kind],
     sizeClasses[size]
   ].join(' ');
 
+  // action.trigger がある場合は postMessage でナビゲーションイベントを発火する
+  const handleClick = action?.trigger
+    ? () => {
+        window.parent.postMessage({ type: 'preview-navigate', trigger: action.trigger }, '*');
+      }
+    : onClick;
+
   return (
     <button
       type={submit ? 'submit' : 'button'}
       className={className}
       disabled={disabled}
-      onClick={onClick}
+      onClick={handleClick}
     >
       {icon && iconPosition === 'left' ? <span className="textui-button-icon" aria-hidden="true">{icon}</span> : null}
       {label ? <span className="textui-button-label">{label}</span> : null}

@@ -122,9 +122,24 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
       }
 
       await this.parseYamlForSyntaxValidation(requestContext.text);
-      const items = ConfigManager.isNavigationFlowFile(document.fileName)
-        ? this.generateNavigationFlowCompletionItems(requestContext.text, position)
-        : this.generateCompletionItemsFromDescriptors(this.analyzeContext(requestContext.linePrefix, position));
+
+      let items: vscode.CompletionItem[];
+      if (ConfigManager.isNavigationFlowFile(document.fileName)) {
+        items = this.generateNavigationFlowCompletionItems(requestContext.text, position);
+      } else {
+        const analysisContext = this.analyzeContext(requestContext.linePrefix, position);
+        // action.trigger 補完: Button の trigger プロパティ値として、
+        // ワークスペース内のフローファイルから trigger 名を収集して提案する
+        if (
+          analysisContext.type === 'property-value' &&
+          analysisContext.propertyName === 'trigger' &&
+          analysisContext.componentName === 'Button'
+        ) {
+          items = await this.getActionTriggerCompletions(document);
+        } else {
+          items = this.generateCompletionItemsFromDescriptors(analysisContext);
+        }
+      }
 
       this.setCachedCompletionItems(requestContext.cacheKey, items, now);
       return items;
@@ -467,6 +482,47 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
   clearCache(): void {
     this.completionCacheService.clear();
     this.completionCache = this.completionCacheService.getCompletionCacheMap();
+  }
+
+  /**
+   * action.trigger 補完候補を生成する。
+   * ワークスペース内のフローファイル（*.tui.flow.yml）から transitions[*].trigger 値を収集して返す。
+   * フローファイルが見つからない場合は空配列を返す（静かに無視）。
+   */
+  private async getActionTriggerCompletions(_document: vscode.TextDocument): Promise<vscode.CompletionItem[]> {
+    try {
+      const workspaceFolders = (vscode as unknown as { workspace?: { workspaceFolders?: Array<{ uri: { fsPath: string } }> } }).workspace?.workspaceFolders;
+      if (!workspaceFolders || workspaceFolders.length === 0) { return []; }
+
+      const { workspace } = vscode as unknown as { workspace: { findFiles: (pattern: string) => Promise<Array<{ fsPath: string }>> } };
+      const flowFiles = await workspace.findFiles('**/*.tui.flow.yml');
+      if (!flowFiles || flowFiles.length === 0) { return []; }
+
+      const triggers = new Set<string>();
+      const fs = await import('fs');
+
+      for (const file of flowFiles) {
+        try {
+          const content = fs.readFileSync(file.fsPath, 'utf8');
+          // transitions[*].trigger を正規表現で収集
+          const matches = content.matchAll(/^\s+trigger:\s+["']?([^"'\n\r]+)["']?\s*$/gm);
+          for (const match of matches) {
+            const val = match[1].trim();
+            if (val) { triggers.add(val); }
+          }
+        } catch {
+          // ファイル読み込み失敗は無視
+        }
+      }
+
+      return Array.from(triggers).map(trigger => {
+        const item = this.createCompletionItem(trigger, 'Value');
+        item.detail = 'flow trigger';
+        return item;
+      });
+    } catch {
+      return [];
+    }
   }
 
   /**
