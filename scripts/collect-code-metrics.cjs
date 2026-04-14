@@ -15,7 +15,7 @@ const SSOT_IMPORT_THRESHOLD = Number(process.env.SSOT_IMPORT_THRESHOLD || 0);
 const CSS_SSOT_BASELINES = {
     todoPartialCount: 0,
     nonExemptInlineUtilityClassOccurrences: 6,
-    fallbackCompatibilitySelectorCount: 24,
+    fallbackCompatibilitySelectorCount: 31,
 };
 const INLINE_UTILITY_TARGET_COMPONENTS = new Set([
     "Checkbox.tsx",

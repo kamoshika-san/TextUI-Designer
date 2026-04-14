@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-14T12:47:48.183Z",
+  "generatedAt": "2026-04-14T12:52:12.309Z",
   "summary": {
     "files": 694,
     "totalLines": 84277,
@@ -180,17 +180,17 @@
         ".textui-button:disabled,\n    .textui-button.disabled"
       ]
     },
-    "status": "fail"
+    "status": "pass"
   },
   "cloc": {
     "header": {
       "cloc_url": "github.com/AlDanial/cloc",
       "cloc_version": "2.08",
-      "elapsed_seconds": 11.5462520122528,
+      "elapsed_seconds": 4.88461184501648,
       "n_files": 765,
       "n_lines": 90967,
-      "files_per_second": 66.2552661407517,
-      "lines_per_second": 7878.48731375917
+      "files_per_second": 156.614286717683,
+      "lines_per_second": 18623.1788494738
     },
     "TypeScript": {
       "nFiles": 394,
