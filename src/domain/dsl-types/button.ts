@@ -5,6 +5,10 @@
 export type ButtonKind = 'primary' | 'secondary' | 'submit';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
+export interface ButtonAction {
+  trigger: string;
+}
+
 export interface ButtonComponent {
   kind?: ButtonKind;
   label?: string;
@@ -14,4 +18,5 @@ export interface ButtonComponent {
   disabled?: boolean;
   size?: ButtonSize;
   token?: string;
+  action?: ButtonAction;
 }

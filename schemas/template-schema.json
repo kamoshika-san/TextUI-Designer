@@ -305,10 +305,24 @@
             "token": {
               "$ref": "#/definitions/tokenRef",
               "description": "Buttonに適用するデザイントークン参照。"
+            },
+            "action": {
+              "type": "object",
+              "properties": {
+                "trigger": {
+                  "type": "string",
+                  "description": "ナビゲーションフローの transition trigger 名。対応するフローファイルが開かれているときにプレビュー上でのページ遷移に使用される。"
+                }
+              },
+              "required": [
+                "trigger"
+              ],
+              "additionalProperties": false,
+              "description": "ボタン押下時のインタラクション設定。"
             }
           },
           "additionalProperties": false,
-          "description": "ボタンコンポーネント。\n利用可能な属性: kind, label, icon, iconPosition, submit"
+          "description": "ボタンコンポーネント。\n利用可能な属性: kind, label, icon, iconPosition, submit, action"
         }
       },
       "additionalProperties": false,
