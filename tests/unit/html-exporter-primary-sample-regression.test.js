@@ -53,17 +53,17 @@ describe('HtmlExporter primary sample regression (T-20260322-348)', () => {
   [
     {
       sampleRelativePath: 'sample/01-basic/sample.tui.yml',
-      expectedHash: '2f41f128e53cac24d474941b352bf6f5dfd354814423a8ddcb041388c0287c69', // corrected to current Primary HTML output after v0.8.1 renderer/export baseline verification
+      expectedHash: '0a2553136b0d1ec1c054d7c99efa8f7de13ebfd1cbbd526149dd37a1a87e479f', // updated after E-NI-S10~S14 webview.tsx changes (media/webview.js updated)
       markers: ['TextUI Designer - All Components', 'This sample includes every supported component.', 'Agree to terms']
     },
     {
       sampleRelativePath: 'sample/08-github/sample.tui.yml',
-      expectedHash: '8c5a59b017581146e152590188df3c80eb3d4a00433c0b12de5c8a1cd86659d2', // corrected to current Primary HTML output after v0.8.1 renderer/export baseline verification
+      expectedHash: 'afb5f5d2d8441b9fd2c3651a111f333da06c892d694960e222792733b881f63f', // updated after E-NI-S10~S14 webview.tsx changes (media/webview.js updated)
       markers: ['kamoshika-san / TextUI-Designer', 'VS Code extension for designing text-based UIs with YAML/JSON DSL.', 'Pull requests']
     },
     {
       sampleRelativePath: 'sample/09-modal/sample.tui.yml',
-      expectedHash: 'c95fc29941d5a567566c7938bc7f3422c15202284c5caf58e58a903178bd6763', // corrected to current Primary HTML output after v0.8.1 renderer/export baseline verification
+      expectedHash: '023ef6777129f2f5ddd03b92810ac11a146abc41bd22f2d9a3e6d54568af8ef6', // updated after E-NI-S10~S14 webview.tsx changes (media/webview.js updated)
       markers: ['削除の確認', 'この操作は元に戻せません', '削除する', 'ユーザー詳細']
     }
   ].forEach(({ sampleRelativePath, expectedHash, markers }) => {
