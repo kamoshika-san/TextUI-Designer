@@ -265,6 +265,9 @@ const App: React.FC = () => {
       const trigger = event.data.trigger as string;
       if (!trigger) { return; }
 
+      // extension host に転送する（E-NI-S14）
+      getVSCodeApi()?.postMessage({ type: 'preview-navigate', trigger });
+
       setJson(currentJson => {
         if (!currentJson || isNavigationFlowDSL(currentJson)) { return currentJson; }
         const currentScreenId = currentJson.page?.id ?? null;
