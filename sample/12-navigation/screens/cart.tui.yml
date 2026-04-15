@@ -10,4 +10,4 @@ page:
         label: Continue
         kind: primary
         action:
-          trigger: next
+          trigger: proceed-to-shipping

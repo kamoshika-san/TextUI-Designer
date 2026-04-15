@@ -19,11 +19,11 @@ flow:
   transitions:
     - from: cart
       to: shipping
-      trigger: next
+      trigger: proceed-to-shipping
       label: Continue to Shipping
     - from: shipping
       to: confirm
-      trigger: next
+      trigger: proceed-to-confirm
       label: Review Order
     - from: confirm
       to: done

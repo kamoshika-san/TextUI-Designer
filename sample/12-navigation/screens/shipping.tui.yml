@@ -14,4 +14,4 @@ page:
         label: Review Order
         kind: primary
         action:
-          trigger: next
+          trigger: proceed-to-confirm
