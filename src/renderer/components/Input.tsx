@@ -9,6 +9,8 @@ interface InputProps extends InputComponent {
   placeholder?: string;
   disabled?: boolean;
   multiline?: boolean;
+  error?: boolean;
+  helperText?: string;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -19,16 +21,20 @@ export const Input: React.FC<InputProps> = ({
   placeholder,
   disabled = false,
   multiline = false,
+  error = false,
+  helperText,
 }) => {
   const [value, setValue] = useState('');
   const inputType = multiline ? 'multiline' : type;
+  const helperId = helperText ? `${name}-helper` : undefined;
+  const inputClassName = `textui-input${error ? ' is-error' : ''}`;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (!disabled) {
       setValue(e.target.value);
     }
   };
-  
+
   if (inputType === 'multiline') {
     return (
       <div className="textui-input-wrapper">
@@ -45,9 +51,16 @@ export const Input: React.FC<InputProps> = ({
           placeholder={placeholder}
           disabled={disabled}
           onChange={handleChange}
-          className="textui-input"
+          className={inputClassName}
           rows={4}
+          aria-invalid={error || undefined}
+          aria-describedby={helperId}
         />
+        {helperText && (
+          <div id={helperId} className="textui-input-helper" style={{ color: error ? 'var(--color-error, rgb(239 68 68))' : undefined }}>
+            {helperText}
+          </div>
+        )}
       </div>
     );
   }
@@ -68,8 +81,15 @@ export const Input: React.FC<InputProps> = ({
         placeholder={placeholder}
         disabled={disabled}
         onChange={handleChange}
-        className="textui-input"
+        className={inputClassName}
+        aria-invalid={error || undefined}
+        aria-describedby={helperId}
       />
+      {helperText && (
+        <div id={helperId} className="textui-input-helper" style={{ color: error ? 'var(--color-error, rgb(239 68 68))' : undefined }}>
+          {helperText}
+        </div>
+      )}
     </div>
   );
-}; 
+};

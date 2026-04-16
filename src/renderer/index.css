@@ -438,6 +438,17 @@
   color: var(--color-text-muted, rgb(156 163 175));
 }
 
+.textui-input.is-error {
+  border-color: var(--color-error, rgb(239 68 68));
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.textui-input-helper {
+  margin-top: 4px;
+  font-size: var(--typography-fontSize-sm, 0.875rem);
+  color: var(--color-text-muted, rgb(107 114 128));
+}
+
 .textui-input:disabled {
   opacity: 0.45;
   cursor: not-allowed;
