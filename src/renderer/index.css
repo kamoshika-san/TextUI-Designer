@@ -289,6 +289,16 @@
   background-color: #ef4444;
 }
 
+@keyframes textui-progress-indeterminate {
+  0% { transform: translateX(-150%); }
+  100% { transform: translateX(350%); }
+}
+
+.textui-progress-fill.is-indeterminate {
+  width: 40%;
+  animation: textui-progress-indeterminate 1.4s ease-in-out infinite;
+}
+
 /* --- Image partial --- */
 /* Image */
 .textui-image {

@@ -21,8 +21,9 @@ export const Progress: React.FC<ProgressComponent> = ({
   variant = 'default',
   token
 }) => {
-  const normalizedValue = normalizeValue(value ?? 0);
   const hasSegments = Array.isArray(segments) && segments.length > 0;
+  const isIndeterminate = value === undefined && !hasSegments;
+  const normalizedValue = normalizeValue(value ?? 0);
   const totalValue = hasSegments
     ? segments.reduce((sum, segment) => sum + normalizeValue(segment.value), 0)
     : normalizedValue;
@@ -30,10 +31,10 @@ export const Progress: React.FC<ProgressComponent> = ({
 
   return (
     <div className="textui-progress">
-      {(label || showValue) && (
+      {(label || (showValue && !isIndeterminate)) && (
         <div className="textui-progress-header">
           {label ? <span className="textui-progress-label">{label}</span> : <span />}
-          {showValue ? <span className="textui-progress-value">{displayValue}%</span> : null}
+          {showValue && !isIndeterminate ? <span className="textui-progress-value">{displayValue}%</span> : null}
         </div>
       )}
       <div className="textui-progress-track">
@@ -52,12 +53,19 @@ export const Progress: React.FC<ProgressComponent> = ({
               />
             );
           })
-          : (
-            <div
-              className={`textui-progress-fill ${variantClasses[variant]}`}
-              style={{ width: `${normalizedValue}%`, ...tokenToPreviewInlineStyle('Progress', token) }}
-            />
-          )}
+          : isIndeterminate
+            ? (
+              <div
+                className={`textui-progress-fill ${variantClasses[variant]} is-indeterminate`}
+                style={tokenToPreviewInlineStyle('Progress', token)}
+              />
+            )
+            : (
+              <div
+                className={`textui-progress-fill ${variantClasses[variant]}`}
+                style={{ width: `${normalizedValue}%`, ...tokenToPreviewInlineStyle('Progress', token) }}
+              />
+            )}
       </div>
     </div>
   );
