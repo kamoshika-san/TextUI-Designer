@@ -55,7 +55,7 @@ describe('ExportService 単体テスト', () => {
   describe('ExportManager の基本機能', () => {
     it('getSupportedFormatsが正しく動作する', () => {
       const formats = exportService._testHelpers.mockExportManager.getSupportedFormats();
-      assert.deepStrictEqual(formats, ['html', 'react', 'pug']);
+      assert.deepStrictEqual(formats, ['html', 'react', 'svelte', 'vue', 'pug']);
     });
 
     it('getFileExtensionが正しく動作する', () => {

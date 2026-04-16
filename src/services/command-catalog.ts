@@ -46,6 +46,11 @@ const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
     callback: deps => () => deps.openPreviewWithCheck()
   },
   {
+    command: 'textui-designer.openFlowPreview',
+    title: 'TextUI: Open Flow Preview',
+    callback: deps => () => deps.openPreviewWithCheck()
+  },
+  {
     command: 'textui-designer.capturePreviewImage',
     title: 'TextUI: Capture Preview Image',
     callback: deps => () => deps.capturePreviewImage()

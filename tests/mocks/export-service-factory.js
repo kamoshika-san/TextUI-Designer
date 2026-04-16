@@ -19,9 +19,9 @@ class ExportServiceFactory {
 
     // Mock ExportManagerを作成
     const mockExportManager = {
-      getSupportedFormats: () => ['html', 'react', 'pug'],
+      getSupportedFormats: () => ['html', 'react', 'svelte', 'vue', 'pug'],
       getFileExtension: (format) => {
-        const extensions = { html: '.html', react: '.jsx', pug: '.pug' };
+        const extensions = { html: '.html', react: '.jsx', svelte: '.svelte', vue: '.vue', pug: '.pug' };
         return extensions[format] || '.txt';
       },
       exportFromFile: async (filePath, options) => {

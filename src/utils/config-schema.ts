@@ -131,7 +131,7 @@ export function buildConfigurationSchema(defaults: SettingsDefaults): Record<str
       },
       'export.defaultFormat': {
         type: 'string',
-        enum: ['html', 'react', 'pug'],
+        enum: ['html', 'react', 'svelte', 'vue', 'pug'],
         default: defaultValue('export.defaultFormat'),
         description: 'デフォルトのエクスポート形式'
       },
