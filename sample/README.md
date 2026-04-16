@@ -25,9 +25,9 @@ Use these three paths as the default onboarding contract:
 1. **Path 1: shortest**
    - Start: [`01-basic/sample.tui.yml`](01-basic/sample.tui.yml)
    - Goal: create/open DSL -> `TextUI: Open Preview` succeeds
-2. **Path 2: practical**
-   - Start: [`07-enterprise/sample.tui.yml`](07-enterprise/sample.tui.yml)
-   - Goal: preview -> `TextUI: Export to Code` succeeds with intended format
+2. **Path 2: flow preview navigation**
+   - Start: [`12-navigation/app.tui.flow.yml`](12-navigation/app.tui.flow.yml)
+   - Goal: `TextUI: Open Flow Preview` -> `Open linked page` transition works
 3. **Path 3: AI**
    - Start: [`08-github/sample.tui.yml`](08-github/sample.tui.yml) and its templates
    - Goal: MCP `scaffold_app` -> `validate_ui`/`validate_flow` -> `capture_preview`
