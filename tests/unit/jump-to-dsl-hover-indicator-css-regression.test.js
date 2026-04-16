@@ -26,10 +26,10 @@ describe('Jump-to-DSL hover indicator CSS regression (T-616 / T-617)', () => {
 
   it('keeps the main jump target and badge selectors wired to theme hooks', () => {
     [
-      '.textui-jump-target:hover,',
+      '.ctrl-key-down .textui-jump-target:hover {',
       '.textui-jump-target:focus-visible {',
       '.textui-preview-root-hide-jump-hover .textui-jump-target:hover {',
-      '.textui-jump-target:hover .textui-jump-badge,',
+      '.ctrl-key-down .textui-jump-target:hover .textui-jump-badge {',
       '.textui-jump-target:focus-visible .textui-jump-badge {',
       '.textui-preview-root-hide-jump-hover .textui-jump-target:hover .textui-jump-badge {',
       'outline: 2px solid var(--textui-jump-indicator-outline-color);',
