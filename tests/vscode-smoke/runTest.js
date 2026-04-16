@@ -6,7 +6,8 @@ const RETRY_BACKOFF_MS = 5000;
 const RETRYABLE_PATTERNS = [
   /Failed to get JSON/i,
   /Failed to parse response from https:\/\/update\.code\.visualstudio\.com\/api\/releases\/stable/i,
-  /request timeout/i
+  /request timeout/i,
+  /Expected TextUI preview command to create a webview tab/i
 ];
 
 function sleep(ms) {

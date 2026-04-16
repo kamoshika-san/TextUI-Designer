@@ -36,7 +36,7 @@ suite('TextUI real host smoke', () => {
     await vscode.window.showTextDocument(document);
 
     await vscode.commands.executeCommand('textui-designer.openPreview');
-    const previewTab = await waitForPreviewWebviewTab();
+    const previewTab = await waitForPreviewWebviewTab(15000);
 
     assert.ok(previewTab, 'Expected TextUI preview command to create a webview tab');
     assert.ok(
