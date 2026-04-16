@@ -3,6 +3,7 @@ export const CONFIGURATION_CATEGORIES = [
   'autoPreview',
   'devTools',
   'webview',
+  'preview',
   'export',
   'diagnostics',
   'schema',
