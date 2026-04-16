@@ -38,7 +38,7 @@ export const Modal: React.FC<ModalComponent> = ({ title, open = true, body, acti
                 key={i}
                 className="textui-modal-action"
                 style={actionKindStyles[action.kind ?? 'secondary']}
-                disabled
+                disabled={action.disabled ?? false}
               >
                 {action.label}
               </button>

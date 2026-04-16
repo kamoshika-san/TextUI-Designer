@@ -104,6 +104,7 @@ export type ModalActionKind = 'primary' | 'secondary' | 'danger' | 'ghost';
 export interface ModalActionItem {
   label: string;
   kind?: ModalActionKind;
+  disabled?: boolean;
 }
 
 export interface ModalComponent {
