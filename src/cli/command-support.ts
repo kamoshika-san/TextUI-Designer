@@ -82,13 +82,16 @@ export function loadStatePayload(inputArg?: string): unknown {
 }
 
 export function printHelp(): void {
-  process.stdout.write('Usage: textui <validate|plan|apply|export|capture|compare|flow|import|state|providers|version> ...\n');
+  process.stdout.write('Usage: textui <validate|plan|apply|export|capture|compare|flow|import|state|providers|lint|scaffold|version> ...\n');
   process.stdout.write('Options: --provider <name> --provider-module <path> --theme <path> --file <path> --dir <path> --json --token-on-error <error|warn|ignore>\n');
   process.stdout.write('Guide: docs/cli-user-guide.md\n');
   process.stdout.write('Workflows:\n');
   process.stdout.write('  Validate: textui validate --file <path> [--json]\n');
   process.stdout.write('  Plan: textui plan --file <path> [--state .textui/state.json] [--json]\n');
   process.stdout.write('  Apply: textui apply --file <path> --state .textui/state.json --auto-approve [--output <file>] [--provider <name>] [--json]\n');
+  process.stdout.write('  Export: textui export --file <path> [--provider <name>] [--output <file>] [--json]\n');
+  process.stdout.write('  Lint: textui lint --file <path> [--json]\n');
+  process.stdout.write('  Scaffold: textui scaffold --screens <id1,id2,...> [--title <name>] [--output-dir <dir>] [--json]\n');
   process.stdout.write('Capture: textui capture --file <path> [--output <png>] [--theme <path>] [--use-webview-theme] [--extension-path <dir>] [--width <px>] [--height <px>] [--scale <n>] [--wait-ms <ms>] [--browser <path|name>] [--allow-no-sandbox] [--json]\n');
   process.stdout.write('Compare: textui compare --base <ref> --head <ref> --file <path> [--mode <human-readable|machine-readable>] [--output <file>] [--json]\n');
   process.stdout.write('Flow: textui flow <validate|compare|export> --file <path> [--json]\n');

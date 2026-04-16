@@ -9,12 +9,28 @@ Each sample directory contains its own `README.md`. Start with the sample that m
 | Sample | Use it for | Primary file |
 |---|---|---|
 | [01-basic](01-basic/) | Smallest page DSL preview and export smoke path | `sample.tui.yml` |
+| [07-enterprise](07-enterprise/) | Internal app style dashboard + CRUD workflow baseline | `sample.tui.yml` |
+| [08-github](08-github/) | AI-first templated composition baseline (`$include`) | `sample.tui.yml` |
 | [02-theme](02-theme/) | Theme authoring and token application | `theme-demo.tui.yml` |
 | [03-include](03-include/) | `$include` and template composition | `include-sample.tui.yml` |
 | [05-theme-inheritance](05-theme-inheritance/) | Theme inheritance | `inheritance-demo.tui.yml` |
 | [06-token](06-token/) | Token reference usage | `token-demo.tui.yml` |
 | [12-navigation](12-navigation/) | Baseline Phase 1 navigation flow | `app.tui.flow.yml` |
 | [13-enterprise-flow](13-enterprise-flow/) | Representative Navigation v2 graph-first flow | `app.tui.flow.yml` |
+
+## Phase 1 Golden Paths
+
+Use these three paths as the default onboarding contract:
+
+1. **Path 1: shortest**
+   - Start: [`01-basic/sample.tui.yml`](01-basic/sample.tui.yml)
+   - Goal: create/open DSL -> `TextUI: Open Preview` succeeds
+2. **Path 2: practical**
+   - Start: [`07-enterprise/sample.tui.yml`](07-enterprise/sample.tui.yml)
+   - Goal: preview -> `TextUI: Export to Code` succeeds with intended format
+3. **Path 3: AI**
+   - Start: [`08-github/sample.tui.yml`](08-github/sample.tui.yml) and its templates
+   - Goal: MCP `scaffold_app` -> `validate_ui`/`validate_flow` -> `capture_preview`
 
 ## Navigation Sample Roles
 

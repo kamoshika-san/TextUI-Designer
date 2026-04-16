@@ -31,7 +31,7 @@ class CommandManagerFactory {
     // ExportServiceのモック
     const mockExportService = {
       executeExport: sinon.stub().resolves(),
-      getSupportedFormats: sinon.stub().returns(['html', 'react', 'pug']),
+      getSupportedFormats: sinon.stub().returns(['html', 'react', 'svelte', 'vue', 'pug']),
       dispose: sinon.stub()
     };
 

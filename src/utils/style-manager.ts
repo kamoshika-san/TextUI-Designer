@@ -1,6 +1,6 @@
 import type { TextVariant, ButtonKind } from '../domain/dsl-types';
 
-export type BuiltInExportFormat = 'html' | 'react' | 'pug';
+export type BuiltInExportFormat = 'html' | 'react' | 'pug' | 'vue' | 'svelte';
 export type ExportFormat = BuiltInExportFormat | (string & {});
 
 export interface StyleConfig {
@@ -186,6 +186,8 @@ export class StyleManager {
       case 'html':
         return this.HTML_STYLES;
       case 'react':
+      case 'vue':
+      case 'svelte':
         return this.REACT_STYLES;
       case 'pug':
         return this.PUG_STYLES;

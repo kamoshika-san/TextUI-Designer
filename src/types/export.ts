@@ -1,4 +1,4 @@
-export type BuiltInExportFormat = 'html' | 'react' | 'pug';
+export type BuiltInExportFormat = 'html' | 'react' | 'pug' | 'vue' | 'svelte';
 export type ExportFormat = BuiltInExportFormat | (string & {});
 
 export interface ExportOptions {
