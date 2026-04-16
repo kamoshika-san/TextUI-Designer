@@ -1066,7 +1066,11 @@ body.light {
   z-index: 1;
 }
 
-.textui-jump-target:hover .textui-jump-badge,
+.ctrl-key-down .textui-jump-target:hover .textui-jump-badge {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .textui-jump-target:focus-visible .textui-jump-badge {
   opacity: 1;
   transform: translateY(0);

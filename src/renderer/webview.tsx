@@ -67,6 +67,30 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Control') {
+        document.body.classList.add('ctrl-key-down');
+      }
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Control') {
+        document.body.classList.remove('ctrl-key-down');
+      }
+    };
+    const onBlur = () => {
+      document.body.classList.remove('ctrl-key-down');
+    };
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlur);
+    };
+  }, []);
+
+  useEffect(() => {
     const styleId = 'textui-shared-layout-styles';
     if (document.getElementById(styleId)) {
       return;
