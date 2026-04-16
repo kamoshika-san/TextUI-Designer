@@ -35,7 +35,7 @@ Phase 1 の目的は「初回で成功する」状態を作ること。
 ### M2: ゴールデンパス3本の固定（S）
 
 - Path 1: `.tui.yml` 作成 -> Preview
-- Path 2: テンプレ/サンプル選択 -> Preview -> Export
+- Path 2: `sample/12-navigation/app.tui.flow.yml` を開く -> Flow Preview -> Open linked page でページ遷移確認
 - Path 3: MCP `scaffold_app` -> `validate_ui|validate_flow` -> `capture_preview`
 
 完了判定:

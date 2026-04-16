@@ -4,6 +4,14 @@ All notable changes to the "textui-designer" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [Unreleased]
+
+### Changed
+- **Phase 1 onboarding alignment**: README / sample README / Phase 1 execution plan now define Golden Path 2 as flow preview navigation (`Open Flow Preview` -> `Open linked page`) instead of the preview-export practical lane.
+- **Phase 1 change log coverage**: Added explicit changelog record for the README / command / configuration / golden-path alignment work to prevent undocumented rollout drift.
+
+---
+
 ## [0.9.0] - 2026-04-14
 
 ### Added
