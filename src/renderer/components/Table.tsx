@@ -33,7 +33,17 @@ export const Table: React.FC<TableProps> = ({ columns = [], rows = [], striped =
           </tr>
         </thead>
         <tbody className="textui-table-body">
-          {rows.map((row, rowIndex) => (
+          {rows.length === 0 ? (
+            <tr className="textui-table-row">
+              <td
+                colSpan={columns.length}
+                className="textui-table-cell"
+                style={{ textAlign: 'center', opacity: 0.5, padding: '1rem 0' }}
+              >
+                データがありません
+              </td>
+            </tr>
+          ) : rows.map((row, rowIndex) => (
             <tr
               key={rowIndex}
               className={[
