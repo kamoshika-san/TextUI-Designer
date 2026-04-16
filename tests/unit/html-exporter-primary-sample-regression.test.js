@@ -53,17 +53,17 @@ describe('HtmlExporter primary sample regression (T-20260322-348)', () => {
   [
     {
       sampleRelativePath: 'sample/01-basic/sample.tui.yml',
-      expectedHash: '0a2553136b0d1ec1c054d7c99efa8f7de13ebfd1cbbd526149dd37a1a87e479f', // updated after E-NI-S10~S14 webview.tsx changes (media/webview.js updated)
+      expectedHash: '791022850075cd09e5f1c515b4413ac041f6e555ac0b3d2fe27440c268c90b71', // updated after E-NI-S16: ctrl-key-down hover gating in Globals.css (media/assets CSS rebuilt)
       markers: ['TextUI Designer - All Components', 'This sample includes every supported component.', 'Agree to terms']
     },
     {
       sampleRelativePath: 'sample/08-github/sample.tui.yml',
-      expectedHash: 'afb5f5d2d8441b9fd2c3651a111f333da06c892d694960e222792733b881f63f', // updated after E-NI-S10~S14 webview.tsx changes (media/webview.js updated)
+      expectedHash: 'c23fe1f80d6ee32b1fe2bc05985a1cc14d1c6cb43792c8d5e7e78eaad8eb1c4f', // updated after E-NI-S16: ctrl-key-down hover gating in Globals.css (media/assets CSS rebuilt)
       markers: ['kamoshika-san / TextUI-Designer', 'VS Code extension for designing text-based UIs with YAML/JSON DSL.', 'Pull requests']
     },
     {
       sampleRelativePath: 'sample/09-modal/sample.tui.yml',
-      expectedHash: '946665075438f78e0c0aac1dbcd9c6587ebfc2c03e12a67784271ea7342f9b1f', // updated after fix(Modal): removed hardcoded disabled from action buttons (commit 2abab0f)
+      expectedHash: '2ebc474e1efa750266411368b16e559c8b91b530b2095162ce18b9f69d24ca45', // updated after E-NI-S16: ctrl-key-down hover gating in Globals.css (media/assets CSS rebuilt)
       markers: ['削除の確認', 'この操作は元に戻せません', '削除する', 'ユーザー詳細']
     }
   ].forEach(({ sampleRelativePath, expectedHash, markers }) => {
