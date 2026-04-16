@@ -11,9 +11,18 @@ import { FlowRouteChain } from './FlowRouteChain';
  * InlinePagePreview — FlowPreviewPanel 内のインラインページプレビュー（E-NI-S7）
  * 折りたたみ可能。pageFile のパスを表示し、将来的に DSL レンダリングを追加できる拡張ポイント。
  */
-const InlinePagePreview: React.FC<{ pageFile?: string }> = ({ pageFile }) => {
+interface InlinePagePreviewProps {
+  pageFile?: string;
+  screenTitle?: string;
+  screenId: string;
+  outgoingCount: number;
+}
+
+const InlinePagePreview: React.FC<InlinePagePreviewProps> = ({ pageFile, screenTitle, screenId, outgoingCount }) => {
   const [isOpen, setIsOpen] = useState(false);
   if (!pageFile) { return null; }
+
+  const displayName = screenTitle || screenId;
 
   return (
     <div style={{ marginTop: 12 }}>
@@ -46,11 +55,15 @@ const InlinePagePreview: React.FC<{ pageFile?: string }> = ({ pageFile }) => {
             color: 'var(--vscode-foreground, #aaa)',
           }}
         >
+          <div style={{ marginBottom: 6, fontWeight: 600, fontSize: '0.80rem' }}>{displayName}</div>
+          {screenTitle && (
+            <div style={{ marginBottom: 4, opacity: 0.6, fontSize: '0.70rem' }}>ID: {screenId}</div>
+          )}
+          <div style={{ marginBottom: 4, opacity: 0.7 }}>
+            Outgoing transitions: <strong>{outgoingCount}</strong>
+          </div>
           <div style={{ marginBottom: 4, opacity: 0.7 }}>Linked page:</div>
           <code style={{ wordBreak: 'break-all' }}>{pageFile}</code>
-          <div style={{ marginTop: 8, opacity: 0.6, fontSize: '0.70rem' }}>
-            「Open linked page」でページを開いてプレビューできます。
-          </div>
         </div>
       )}
     </div>
@@ -280,7 +293,12 @@ export const FlowPreviewPanel: React.FC<FlowPreviewPanelProps> = ({
               </div>
 
               {/* インラインプレビューエリア（E-NI-S7） */}
-              <InlinePagePreview pageFile={selectedScreen.page} />
+              <InlinePagePreview
+                pageFile={selectedScreen.page}
+                screenTitle={selectedScreen.title}
+                screenId={selectedScreen.id}
+                outgoingCount={outgoingTransitions.length}
+              />
             </aside>
           ) : null}
         </div>
