@@ -45,6 +45,16 @@ This gives you:
 | `npm run check:import-graph` | Check representative cross-lane import boundaries |
 | `npm run package:vsix` | Build a local `.vsix` package |
 
+## CI Build vs Local Build
+
+CI does **not** run `npm run build-webview`. The WebView build artifacts in `media/` (`webview.js`, `assets/`) are committed to the repository and used as-is during CI runs and `.vsix` packaging.
+
+**When you change webview source** (anything under `webview-src/`):
+1. Run `npm run build-webview` locally
+2. Commit the updated `media/` files alongside your source change
+
+Forgetting this will cause CI and the shipped extension to run stale webview code.
+
 ## Open The Project In VS Code
 
 1. Open the repository root in VS Code.
