@@ -1,5 +1,5 @@
 page:
-  id: confirm-page
+  id: confirm
   title: Confirm
   layout: vertical
   components:

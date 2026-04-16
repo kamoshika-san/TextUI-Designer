@@ -1,5 +1,5 @@
 page:
-  id: cart-page
+  id: cart
   title: Cart
   layout: vertical
   components:
