@@ -63,7 +63,7 @@ describe('HtmlExporter primary sample regression (T-20260322-348)', () => {
     },
     {
       sampleRelativePath: 'sample/09-modal/sample.tui.yml',
-      expectedHash: '023ef6777129f2f5ddd03b92810ac11a146abc41bd22f2d9a3e6d54568af8ef6', // updated after E-NI-S10~S14 webview.tsx changes (media/webview.js updated)
+      expectedHash: '946665075438f78e0c0aac1dbcd9c6587ebfc2c03e12a67784271ea7342f9b1f', // updated after fix(Modal): removed hardcoded disabled from action buttons (commit 2abab0f)
       markers: ['削除の確認', 'この操作は元に戻せません', '削除する', 'ユーザー詳細']
     }
   ].forEach(({ sampleRelativePath, expectedHash, markers }) => {
