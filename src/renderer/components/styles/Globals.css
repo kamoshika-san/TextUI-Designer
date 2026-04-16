@@ -57,12 +57,21 @@ body.light {
   transition: outline-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease, cursor 0.16s ease;
 }
 
-.textui-jump-target:hover,
+.ctrl-key-down .textui-jump-target:hover {
+  cursor: pointer;
+}
+
 .textui-jump-target:focus-visible {
   cursor: pointer;
 }
 
-.textui-jump-target:hover,
+.ctrl-key-down .textui-jump-target:hover {
+  outline: 2px solid var(--textui-jump-indicator-outline-color);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--textui-jump-indicator-halo-color);
+  background-color: var(--textui-jump-indicator-background-color);
+}
+
 .textui-jump-target:focus-visible {
   outline: 2px solid var(--textui-jump-indicator-outline-color);
   outline-offset: 2px;
@@ -104,7 +113,7 @@ body.light {
   z-index: 1;
 }
 
-.textui-jump-target:hover .textui-jump-badge,
+.ctrl-key-down .textui-jump-target:hover .textui-jump-badge,
 .textui-jump-target:focus-visible .textui-jump-badge {
   opacity: 1;
   transform: translateY(0);

@@ -289,16 +289,6 @@
   background-color: #ef4444;
 }
 
-@keyframes textui-progress-indeterminate {
-  0% { transform: translateX(-150%); }
-  100% { transform: translateX(350%); }
-}
-
-.textui-progress-fill.is-indeterminate {
-  width: 40%;
-  animation: textui-progress-indeterminate 1.4s ease-in-out infinite;
-}
-
 /* --- Image partial --- */
 /* Image */
 .textui-image {
@@ -448,22 +438,6 @@
   color: var(--color-text-muted, rgb(156 163 175));
 }
 
-.textui-input.is-error {
-  border-color: var(--color-error, rgb(239 68 68));
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
-}
-
-.textui-input-helper {
-  margin-top: 4px;
-  font-size: var(--typography-fontSize-sm, 0.875rem);
-  color: var(--color-text-muted, rgb(107 114 128));
-}
-
-.textui-input:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
 /* --- Select partial --- */
 /* Select */
 .textui-select {
@@ -498,11 +472,6 @@
 .textui-select select:focus {
   border-color: var(--color-primary, rgb(59 130 246));
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.textui-select select:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
 }
 
 /* --- DatePicker partial --- */
@@ -949,16 +918,6 @@
   box-shadow: var(--component-button-submit-hover-boxShadow, 0 6px 8px -1px rgba(34, 197, 94, 0.3));
 }
 
-.textui-button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.textui-button:focus-visible {
-  outline: 2px solid var(--color-primary, #3B82F6);
-  outline-offset: 2px;
-}
-
 /* --- Globals partial --- */
 /* Shared global selectors (not component-specific) */
 body {
@@ -1075,11 +1034,7 @@ body.light {
   z-index: 1;
 }
 
-.ctrl-key-down .textui-jump-target:hover .textui-jump-badge {
-  opacity: 1;
-  transform: translateY(0);
-}
-
+.ctrl-key-down .textui-jump-target:hover .textui-jump-badge,
 .textui-jump-target:focus-visible .textui-jump-badge {
   opacity: 1;
   transform: translateY(0);
