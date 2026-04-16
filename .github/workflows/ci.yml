@@ -426,3 +426,5 @@ jobs:
 
     - name: Run real VS Code smoke
       run: xvfb-run -a npm run test:vscode-smoke
+      env:
+        VSCODE_SMOKE_RETRIES: '4'
