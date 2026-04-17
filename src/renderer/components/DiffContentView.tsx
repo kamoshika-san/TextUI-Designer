@@ -91,6 +91,10 @@ export function DiffToolbar({
       >
         After: {labelB}
       </span>
+
+      <span style={{ fontSize: '0.75rem', opacity: 0.55, marginLeft: 'auto', whiteSpace: 'nowrap' }}>
+        Overlay Diff &nbsp;·&nbsp; ←→ blend &nbsp;·&nbsp; ↑↓ navigate changes
+      </span>
     </div>
   );
 }
