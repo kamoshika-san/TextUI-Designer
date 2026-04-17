@@ -327,6 +327,74 @@ describe('WebViewManager 単体テスト', () => {
 
       assert.ok(openedDocs.includes(includeLeafPath), 'array-root include の最終テンプレートを開ける');
     });
+
+    it('jump-to-dsl は Tabs items 配下の $include を最終テンプレートまで解決する', async () => {
+      const baseDir = path.dirname(testFilePath);
+      const tabsHostPath = path.join(baseDir, 'tabs-host.template.yml');
+      const tabsLeafPath = path.join(baseDir, 'tabs-leaf.template.yml');
+      const rootContent = `page:
+  id: tabs-include-root
+  components:
+    - Container:
+        components:
+          - $include:
+              template: "./tabs-host.template.yml"
+`;
+      const tabsHostContent = `Container:
+  components:
+    - Tabs:
+        defaultTab: 0
+        items:
+          - label: "Tab1"
+            components:
+              - $include:
+                  template: "./tabs-leaf.template.yml"
+`;
+      const tabsLeafContent = `- Text:
+    value: "tabs-leaf"
+`;
+
+      fs.writeFileSync(testFilePath, rootContent, 'utf8');
+      fs.writeFileSync(tabsHostPath, tabsHostContent, 'utf8');
+      fs.writeFileSync(tabsLeafPath, tabsLeafContent, 'utf8');
+
+      const createDoc = (fileName, content) => ({
+        fileName,
+        getText: () => content,
+        positionAt: createPositionAt(content)
+      });
+      const docMap = new Map([
+        [testFilePath, createDoc(testFilePath, rootContent)],
+        [tabsHostPath, createDoc(tabsHostPath, tabsHostContent)],
+        [tabsLeafPath, createDoc(tabsLeafPath, tabsLeafContent)]
+      ]);
+      const openedDocs = [];
+
+      webviewManager._testHelpers.extendedVscode.workspace.openTextDocument = async (targetPath) => {
+        const doc = docMap.get(targetPath);
+        if (!doc) throw new Error(`unexpected document path: ${targetPath}`);
+        openedDocs.push(targetPath);
+        return doc;
+      };
+      webviewManager._testHelpers.extendedVscode.window.showTextDocument = async (document) => ({
+        document,
+        selection: null,
+        revealRange: () => {}
+      });
+
+      webviewManager.setLastTuiFile(testFilePath);
+      await webviewManager.openPreview();
+      const panel = webviewManager.getPanel();
+      assert.ok(panel && typeof panel._messageHandler === 'function', 'WebViewメッセージハンドラーが登録される');
+
+      await panel._messageHandler({
+        type: 'jump-to-dsl',
+        dslPath: '/page/components/0/Container/components/0/Container/components/0/Tabs/items/0/components/0',
+        componentName: 'Text'
+      });
+
+      assert.ok(openedDocs.includes(tabsLeafPath), 'Tabs items の $include 最終テンプレートを開ける');
+    });
   });
 
   describe('解析済み DSL キャッシュ（テストアダプタ）', () => {

@@ -1,0 +1,9 @@
+Container:
+  components:
+    - Tabs:
+        defaultTab: 0
+        items:
+          - label: "Tab1"
+            components:
+              - $include:
+                  template: "./tabs-leaf.template.yml"

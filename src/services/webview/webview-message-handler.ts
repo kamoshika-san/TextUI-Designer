@@ -563,8 +563,52 @@ export class WebViewMessageHandler {
     componentNode: unknown,
     suffix: string
   ): Promise<{ targetFilePath: string; dslPath: string } | undefined> {
+    if (!this.isRecord(componentNode)) {
+      return undefined;
+    }
+
+    // Handle /Tabs/items/$n/components/$m — expand $includes within tab item components
+    const tabsMatch = suffix.match(/^\/Tabs\/items\/(\d+)\/components\/(\d+)(\/.*)?$/);
+    if (tabsMatch) {
+      const tabsBody = componentNode['Tabs'];
+      if (!this.isRecord(tabsBody) || !Array.isArray(tabsBody.items)) {
+        return undefined;
+      }
+      const itemIndex = Number(tabsMatch[1]);
+      const compIndex = Number(tabsMatch[2]);
+      const rest = tabsMatch[3] ?? '';
+      const tabItem = tabsBody.items[itemIndex];
+      if (!this.isRecord(tabItem) || !Array.isArray(tabItem.components)) {
+        return undefined;
+      }
+      const includeResolver = new YamlIncludeResolver((content) => parseYamlTextAsync(content));
+      let expandedOffset = 0;
+      for (const comp of tabItem.components) {
+        if (!this.isIncludeDirective(comp)) {
+          if (expandedOffset === compIndex) return undefined;
+          expandedOffset += 1;
+          continue;
+        }
+        const includePath = path.resolve(path.dirname(currentFilePath), comp.$include.template);
+        const includeContent = await fs.readFile(includePath, 'utf-8');
+        const includeYaml = await parseYamlTextAsync(includeContent);
+        const resolved = await includeResolver.resolve(includeYaml, includePath);
+        const includeComponents = this.extractTopLevelComponents(resolved);
+        const span = includeComponents.length;
+        if (span === 0) continue;
+        if (compIndex >= expandedOffset && compIndex < expandedOffset + span) {
+          const localIndex = compIndex - expandedOffset;
+          const nestedPath = `/page/components/${localIndex}${rest}`;
+          const transitive = await this.resolveIncludeJumpTarget(includePath, nestedPath);
+          return transitive ?? { targetFilePath: includePath, dslPath: nestedPath };
+        }
+        expandedOffset += span;
+      }
+      return undefined;
+    }
+
     const match = suffix.match(/^\/([^/]+)\/components\/(\d+)(\/.*)?$/);
-    if (!match || !this.isRecord(componentNode)) {
+    if (!match) {
       return undefined;
     }
 
@@ -578,9 +622,12 @@ export class WebViewMessageHandler {
 
     const includeResolver = new YamlIncludeResolver((content) => parseYamlTextAsync(content));
     let expandedOffset = 0;
-    for (const [componentIndex, item] of body.components.entries()) {
+    for (const item of body.components) {
       if (!this.isIncludeDirective(item)) {
         if (expandedOffset === targetIndex) {
+          if (rest) {
+            return this.resolveNestedIncludeFromNode(currentFilePath, item, rest);
+          }
           return undefined;
         }
         expandedOffset += 1;
@@ -603,10 +650,6 @@ export class WebViewMessageHandler {
         return transitive ?? { targetFilePath: includePath, dslPath: nestedPath };
       }
       expandedOffset += span;
-      // keep index mapping aligned when include and non-include are mixed
-      if (componentIndex === body.components.length - 1) {
-        continue;
-      }
     }
     return undefined;
   }
@@ -651,6 +694,10 @@ export class WebViewMessageHandler {
       for (const entry of topLevelEntries) {
         if (!this.isIncludeDirective(entry.node)) {
           if (expandedOffset === targetIndex) {
+            if (suffix) {
+              const nested = await this.resolveNestedIncludeFromNode(filePath, entry.node, suffix);
+              if (nested) return nested;
+            }
             return {
               targetFilePath: filePath,
               dslPath: this.mergeRootAndSuffix(entry.path, suffix)

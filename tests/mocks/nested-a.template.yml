@@ -1,0 +1,4 @@
+- Container:
+    components:
+      - $include:
+          template: "./nested-b.template.yml"
