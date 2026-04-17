@@ -683,7 +683,7 @@ export class WebViewMessageHandler {
 
   private extractSourceTopLevelEntries(value: unknown): Array<{ node: unknown; path: string }> {
     if (Array.isArray(value)) {
-      return value.map((node, index) => ({ node, path: `/page/components/${index}` }));
+      return value.map((node, index) => ({ node, path: `/${index}` }));
     }
     if (!this.isRecord(value)) {
       return [];
