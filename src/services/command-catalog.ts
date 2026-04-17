@@ -47,6 +47,7 @@ const HIDDEN_COMMAND_PALETTE_COMMANDS = new Set([
   'textui-designer.enableMemoryTracking'
 ]);
 
+// Policy: command `title` must be English-only. Japanese belongs in `description` fields only.
 const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
   {
     command: 'textui-designer.openPreview',
@@ -101,7 +102,7 @@ const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
   },
   {
     command: 'textui-designer.openOverlayDiff',
-    title: 'TextUI: Overlay Diff (透かし比較)',
+    title: 'TextUI: Overlay Diff (Transparency Compare)',
     menus: [
       {
         location: 'editor/title',

@@ -7,42 +7,42 @@ import type { CommandCatalogEntry } from './command-catalog-deps';
 export const TEMPLATE_SETTINGS_COMMAND_ENTRIES: readonly CommandCatalogEntry[] = [
   {
     command: 'textui-designer.createTemplate',
-    title: 'TextUI: 新規テンプレート作成',
+    title: 'TextUI: Create New Template',
     callback: deps => () => deps.createTemplate()
   },
   {
     command: 'textui-designer.insertTemplate',
-    title: 'TextUI: テンプレート挿入',
+    title: 'TextUI: Insert Template',
     callback: deps => () => deps.insertTemplate()
   },
   {
     command: 'textui-designer.openSettings',
-    title: 'TextUI: 設定を開く',
+    title: 'TextUI: Open Settings',
     callback: deps => () => deps.openSettings()
   },
   {
     command: 'textui-designer.resetSettings',
-    title: 'TextUI: 設定をリセット',
+    title: 'TextUI: Reset Settings',
     callback: deps => () => deps.resetSettings()
   },
   {
     command: 'textui-designer.showSettings',
-    title: 'TextUI: 設定を表示',
+    title: 'TextUI: Show Settings',
     callback: deps => () => deps.showAutoPreviewSetting()
   },
   {
     command: 'textui-designer.checkAutoPreviewSetting',
-    title: 'TextUI: 自動プレビュー設定を確認',
+    title: 'TextUI: Check Auto Preview Setting',
     callback: deps => () => deps.checkAutoPreviewSetting()
   },
   {
     command: 'textui-designer.reinitializeSchemas',
-    title: 'TextUI: スキーマを再初期化',
+    title: 'TextUI: Reinitialize Schemas',
     callback: deps => () => deps.reinitializeSchemas()
   },
   {
     command: 'textui-designer.debugSchemas',
-    title: 'TextUI: スキーマ状態をデバッグ',
+    title: 'TextUI: Debug Schema State',
     callback: deps => () => deps.debugSchemas()
   }
 ];

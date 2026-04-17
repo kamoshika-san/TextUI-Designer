@@ -318,71 +318,71 @@
       },
       {
         "command": "textui-designer.openOverlayDiff",
-        "title": "TextUI: Overlay Diff (透かし比較)"
+        "title": "TextUI: Overlay Diff (Transparency Compare)"
       },
       {
         "command": "textui-designer.createTemplate",
-        "title": "TextUI: 新規テンプレート作成"
+        "title": "TextUI: Create New Template"
       },
       {
         "command": "textui-designer.insertTemplate",
-        "title": "TextUI: テンプレート挿入"
+        "title": "TextUI: Insert Template"
       },
       {
         "command": "textui-designer.openSettings",
-        "title": "TextUI: 設定を開く"
+        "title": "TextUI: Open Settings"
       },
       {
         "command": "textui-designer.resetSettings",
-        "title": "TextUI: 設定をリセット"
+        "title": "TextUI: Reset Settings"
       },
       {
         "command": "textui-designer.showSettings",
-        "title": "TextUI: 設定を表示"
+        "title": "TextUI: Show Settings"
       },
       {
         "command": "textui-designer.checkAutoPreviewSetting",
-        "title": "TextUI: 自動プレビュー設定を確認"
+        "title": "TextUI: Check Auto Preview Setting"
       },
       {
         "command": "textui-designer.reinitializeSchemas",
-        "title": "TextUI: スキーマを再初期化"
+        "title": "TextUI: Reinitialize Schemas"
       },
       {
         "command": "textui-designer.debugSchemas",
-        "title": "TextUI: スキーマ状態をデバッグ"
+        "title": "TextUI: Debug Schema State"
       },
       {
         "command": "textui-designer.showPerformanceReport",
-        "title": "TextUI: パフォーマンスレポートを表示"
+        "title": "TextUI: Show Performance Report"
       },
       {
         "command": "textui-designer.clearPerformanceMetrics",
-        "title": "TextUI: パフォーマンスメトリクスをクリア"
+        "title": "TextUI: Clear Performance Metrics"
       },
       {
         "command": "textui-designer.togglePerformanceMonitoring",
-        "title": "TextUI: パフォーマンス監視の切り替え"
+        "title": "TextUI: Toggle Performance Monitoring"
       },
       {
         "command": "textui-designer.enablePerformanceMonitoring",
-        "title": "TextUI: パフォーマンス監視を有効化"
+        "title": "TextUI: Enable Performance Monitoring"
       },
       {
         "command": "textui-designer.generateSampleEvents",
-        "title": "TextUI: サンプルイベントを生成"
+        "title": "TextUI: Generate Sample Events"
       },
       {
         "command": "textui-designer.showMemoryReport",
-        "title": "TextUI: メモリレポートを表示"
+        "title": "TextUI: Show Memory Report"
       },
       {
         "command": "textui-designer.toggleMemoryTracking",
-        "title": "TextUI: メモリ追跡の切り替え"
+        "title": "TextUI: Toggle Memory Tracking"
       },
       {
         "command": "textui-designer.enableMemoryTracking",
-        "title": "TextUI: メモリ追跡を有効化"
+        "title": "TextUI: Enable Memory Tracking"
       }
     ],
     "languages": [

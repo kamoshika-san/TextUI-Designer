@@ -6,42 +6,42 @@ import type { CommandCatalogEntry } from './command-catalog-deps';
 export const RUNTIME_INSPECTION_COMMAND_ENTRIES: readonly CommandCatalogEntry[] = [
   {
     command: 'textui-designer.showPerformanceReport',
-    title: 'TextUI: パフォーマンスレポートを表示',
+    title: 'TextUI: Show Performance Report',
     callback: deps => () => deps.showPerformanceReport()
   },
   {
     command: 'textui-designer.clearPerformanceMetrics',
-    title: 'TextUI: パフォーマンスメトリクスをクリア',
+    title: 'TextUI: Clear Performance Metrics',
     callback: deps => () => deps.clearPerformanceMetrics()
   },
   {
     command: 'textui-designer.togglePerformanceMonitoring',
-    title: 'TextUI: パフォーマンス監視の切り替え',
+    title: 'TextUI: Toggle Performance Monitoring',
     callback: deps => () => deps.togglePerformanceMonitoring()
   },
   {
     command: 'textui-designer.enablePerformanceMonitoring',
-    title: 'TextUI: パフォーマンス監視を有効化',
+    title: 'TextUI: Enable Performance Monitoring',
     callback: deps => () => deps.enablePerformanceMonitoring()
   },
   {
     command: 'textui-designer.generateSampleEvents',
-    title: 'TextUI: サンプルイベントを生成',
+    title: 'TextUI: Generate Sample Events',
     callback: deps => () => deps.generateSampleEvents()
   },
   {
     command: 'textui-designer.showMemoryReport',
-    title: 'TextUI: メモリレポートを表示',
+    title: 'TextUI: Show Memory Report',
     callback: deps => () => deps.showMemoryReport()
   },
   {
     command: 'textui-designer.toggleMemoryTracking',
-    title: 'TextUI: メモリ追跡の切り替え',
+    title: 'TextUI: Toggle Memory Tracking',
     callback: deps => () => deps.toggleMemoryTracking()
   },
   {
     command: 'textui-designer.enableMemoryTracking',
-    title: 'TextUI: メモリ追跡を有効化',
+    title: 'TextUI: Enable Memory Tracking',
     callback: deps => () => deps.enableMemoryTracking()
   }
 ];
