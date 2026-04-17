@@ -43,6 +43,7 @@ function main() {
     'Text.css',
     'Breadcrumb.css',
     'Link.css',
+    'UpdateIndicator.css',
     'Badge.css',
     'Unsupported.css',
     'Progress.css',

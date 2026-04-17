@@ -118,27 +118,6 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const styleId = 'textui-update-indicator-styles';
-    if (document.getElementById(styleId)) {
-      return;
-    }
-    const styleEl = document.createElement('style');
-    styleEl.id = styleId;
-    styleEl.textContent = `
-      @keyframes textui-update-indicator-spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-      }
-      @keyframes textui-update-indicator-fadeout {
-        0% { opacity: 1; transform: translateY(0); }
-        70% { opacity: 1; transform: translateY(0); }
-        100% { opacity: 0; transform: translateY(0.35rem); }
-      }
-    `;
-    document.head.appendChild(styleEl);
-  }, []);
-
-  useEffect(() => {
     if (updateStatus !== 'done') {
       return;
     }
