@@ -696,4 +696,72 @@ describe('WebViewManager 単体テスト', () => {
       assert.deepStrictEqual(updatingMessage, { type: 'preview-updating' });
     });
   });
+
+  describe('webview export source path contract', () => {
+    it('prefers message sourcePath over lastTuiFile for export', async () => {
+      const alternateFilePath = webviewManager._testHelpers.createTestFile(`page:
+  id: export-source-priority
+  components: []`);
+      const executedCommands = [];
+
+      webviewManager._testHelpers.extendedVscode.commands.executeCommand = async (...args) => {
+        executedCommands.push(args);
+      };
+      if (vscode && vscode.commands) {
+        vscode.commands.executeCommand = async (...args) => {
+          executedCommands.push(args);
+        };
+      }
+
+      try {
+        webviewManager.setLastTuiFile(testFilePath);
+        await webviewManager.openPreview();
+        const panel = webviewManager.getPanel();
+        assert.ok(panel && typeof panel._messageHandler === 'function', 'message handler should be registered');
+
+        await panel._messageHandler({
+          type: 'export',
+          sourcePath: alternateFilePath
+        });
+
+        assert.deepStrictEqual(
+          executedCommands[0],
+          ['textui-designer.export', alternateFilePath],
+          'export should use the explicit sourcePath from the webview message'
+        );
+      } finally {
+        webviewManager._testHelpers.cleanupTestFile(alternateFilePath);
+      }
+    });
+
+    it('falls back to lastTuiFile when export sourcePath is unavailable', async () => {
+      const executedCommands = [];
+      const missingFilePath = path.join(path.dirname(testFilePath), 'missing-export-target.tui.yml');
+
+      webviewManager._testHelpers.extendedVscode.commands.executeCommand = async (...args) => {
+        executedCommands.push(args);
+      };
+      if (vscode && vscode.commands) {
+        vscode.commands.executeCommand = async (...args) => {
+          executedCommands.push(args);
+        };
+      }
+
+      webviewManager.setLastTuiFile(testFilePath);
+      await webviewManager.openPreview();
+      const panel = webviewManager.getPanel();
+      assert.ok(panel && typeof panel._messageHandler === 'function', 'message handler should be registered');
+
+      await panel._messageHandler({
+        type: 'export-preview',
+        sourcePath: missingFilePath
+      });
+
+      assert.deepStrictEqual(
+        executedCommands[0],
+        ['textui-designer.export-preview', testFilePath],
+        'export preview should fall back to the tracked preview file when sourcePath is invalid'
+      );
+    });
+  });
 });

@@ -183,8 +183,7 @@ export class WebViewMessageHandler {
    */
   private async handleExportMessage(message: WebViewMessage): Promise<void> {
     this.logger.debug('エクスポートメッセージを受信');
-    const sourcePath = typeof message.sourcePath === 'string' && message.sourcePath ? message.sourcePath : undefined;
-    const targetFile = sourcePath ?? this.updateManager.getLastTuiFile();
+    const targetFile = await this.resolveExportTargetPath(message);
 
     if (targetFile) {
       this.logger.debug(`エクスポート用ファイル: ${targetFile}`);
@@ -200,8 +199,7 @@ export class WebViewMessageHandler {
    */
   private async handleExportPreviewMessage(message: WebViewMessage): Promise<void> {
     this.logger.debug('エクスポートプレビューメッセージを受信');
-    const sourcePath = typeof message.sourcePath === 'string' && message.sourcePath ? message.sourcePath : undefined;
-    const targetFile = sourcePath ?? this.updateManager.getLastTuiFile();
+    const targetFile = await this.resolveExportTargetPath(message);
 
     if (!targetFile) {
       this.windowAdapter.showWarningMessage('.tui.yml ファイルのプレビューを開いてからエクスポートしてください。');
@@ -399,6 +397,40 @@ export class WebViewMessageHandler {
     }
 
     return undefined;
+  }
+
+  private async resolveExportTargetPath(message: WebViewMessage): Promise<string | undefined> {
+    const requestedSourcePath = this.readRequestedSourcePath(message);
+    const resolvedRequested = await this.validateExportSourcePath(requestedSourcePath);
+    if (resolvedRequested) {
+      return resolvedRequested;
+    }
+
+    const lastTuiFile = this.updateManager.getLastTuiFile();
+    return lastTuiFile ? path.normalize(lastTuiFile) : undefined;
+  }
+
+  private readRequestedSourcePath(message: WebViewMessage): string | undefined {
+    if (typeof message.sourcePath !== 'string') {
+      return undefined;
+    }
+    const normalized = message.sourcePath.trim();
+    return normalized ? normalized : undefined;
+  }
+
+  private async validateExportSourcePath(sourcePath: string | undefined): Promise<string | undefined> {
+    if (!sourcePath || !ConfigManager.isSupportedFile(sourcePath)) {
+      return undefined;
+    }
+
+    const normalizedPath = path.normalize(path.resolve(sourcePath));
+    try {
+      await vscode.workspace.fs.stat(vscode.Uri.file(normalizedPath));
+      return normalizedPath;
+    } catch {
+      this.logger.warn(`export sourcePath is unavailable, falling back: ${normalizedPath}`);
+      return undefined;
+    }
   }
 
   private resolveJumpTargetFile(requestedTargetFilePath?: string): string | undefined {
