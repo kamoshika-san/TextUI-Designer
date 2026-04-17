@@ -301,16 +301,7 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
     }
   };
 
-  // PreviewNavBar: フローに戻る（E-NI-S5）
-  const handleBackToFlow = () => {
-    const runtimeApi = getVSCodeApi();
-    if (runtimeApi?.postMessage) {
-      runtimeApi.postMessage({ type: 'back-to-flow' });
-    }
-    setNavHistory([]);
-  };
-
-  // preview-navigate メッセージを受信して遷移先ページを解決する（E-NI-S4）
+// preview-navigate メッセージを受信して遷移先ページを解決する（E-NI-S4）
   useEffect(() => {
     const handlePreviewNavigate = (event: MessageEvent) => {
       if (!event.data || event.data.type !== 'preview-navigate') { return; }
@@ -521,7 +512,6 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
       <PreviewNavBar
         history={navHistory}
         onBack={handlePreviewNavBack}
-        onBackToFlow={handleBackToFlow}
       />
       {showJumpToDslOnboarding ? (
         <div
@@ -612,26 +602,43 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
           onExport={handleExport}
         />
       </div>
-      {returnPath ? (
-        <button
-          type="button"
-          onClick={handleNavigateBack}
-          style={{
-            position: 'fixed',
-            top: 8,
-            left: 8,
-            zIndex: 1000,
-            padding: '4px 10px',
-            background: 'var(--vscode-button-secondaryBackground, rgba(60,60,60,0.85))',
-            color: 'var(--vscode-button-secondaryForeground, #ccc)',
-            border: '1px solid var(--vscode-button-border, rgba(120,120,120,0.4))',
-            borderRadius: 4,
-            cursor: 'pointer',
-            fontSize: '0.8rem'
-          }}
-        >
-          ← Back to flow
-        </button>
+      {(returnPath || navHistory.length > 0) ? (
+        <div style={{ position: 'fixed', top: 8, left: 8, zIndex: 1000, display: 'flex', gap: 8 }}>
+          {returnPath ? (
+            <button
+              type="button"
+              onClick={handleNavigateBack}
+              style={{
+                padding: '4px 10px',
+                background: 'var(--vscode-button-secondaryBackground, rgba(60,60,60,0.85))',
+                color: 'var(--vscode-button-secondaryForeground, #ccc)',
+                border: '1px solid var(--vscode-button-border, rgba(120,120,120,0.4))',
+                borderRadius: 4,
+                cursor: 'pointer',
+                fontSize: '0.8rem'
+              }}
+            >
+              ← Back to flow
+            </button>
+          ) : null}
+          {navHistory.length > 0 ? (
+            <button
+              type="button"
+              onClick={handlePreviewNavBack}
+              style={{
+                padding: '4px 10px',
+                background: 'var(--vscode-button-secondaryBackground, rgba(60,60,60,0.85))',
+                color: 'var(--vscode-button-secondaryForeground, #ccc)',
+                border: '1px solid var(--vscode-button-border, rgba(120,120,120,0.4))',
+                borderRadius: 4,
+                cursor: 'pointer',
+                fontSize: '0.8rem'
+              }}
+            >
+              ← {navHistory[navHistory.length - 1].pageTitle ?? navHistory[navHistory.length - 1].screenId}
+            </button>
+          ) : null}
+        </div>
       ) : null}
       {showUpdateIndicator ? (
         <UpdateIndicator

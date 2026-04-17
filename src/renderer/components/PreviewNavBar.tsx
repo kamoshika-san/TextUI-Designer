@@ -2,7 +2,6 @@
  * PreviewNavBar — プレビュー画面遷移時のナビゲーションバー（E-NI-S5）
  *
  * - 1ステップ前のスクリーン名を「← {screenName}」形式で表示
- * - 「フローに戻る」ボタン: Extension に back-to-flow メッセージを送信
  * - history が空（初回表示）の場合は非表示
  */
 
@@ -16,10 +15,9 @@ export interface NavHistoryEntry {
 export interface PreviewNavBarProps {
   history: NavHistoryEntry[];
   onBack: () => void;
-  onBackToFlow: () => void;
 }
 
-export const PreviewNavBar: React.FC<PreviewNavBarProps> = ({ history, onBack, onBackToFlow }) => {
+export const PreviewNavBar: React.FC<PreviewNavBarProps> = ({ history, onBack }) => {
   if (history.length === 0) {
     return null;
   }
@@ -60,25 +58,6 @@ export const PreviewNavBar: React.FC<PreviewNavBarProps> = ({ history, onBack, o
         title={`前の画面: ${prevLabel}`}
       >
         ← {prevLabel}
-      </button>
-
-      <span style={{ flex: 1 }} />
-
-      {/* フローに戻るボタン */}
-      <button
-        type="button"
-        onClick={onBackToFlow}
-        style={{
-          padding: '2px 8px',
-          background: 'none',
-          border: '1px solid rgba(148,163,184,0.3)',
-          borderRadius: 4,
-          color: 'var(--vscode-foreground, #ccc)',
-          cursor: 'pointer',
-          fontSize: '0.78rem',
-        }}
-      >
-        フローに戻る
       </button>
     </div>
   );
