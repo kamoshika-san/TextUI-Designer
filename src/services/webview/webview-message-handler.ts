@@ -1,4 +1,5 @@
 import * as path from 'path';
+import * as fs from 'fs/promises';
 import * as vscode from 'vscode';
 import { WebViewLifecycleManager } from './webview-lifecycle-manager';
 import { WebViewUpdateManager } from './webview-update-manager';
@@ -14,6 +15,7 @@ import { WebViewPanelMessenger } from './webview-panel-messenger';
 import { resolveNavigationJumpTargetFile } from '../commands/navigation-jump-command';
 import { isNavigationFlowDSL } from '../../domain/dsl-types';
 import { parseYamlTextAsync } from '../../dsl/yaml-parse-async';
+import { YamlIncludeResolver } from './yaml-include-resolver';
 
 type MessageType = 'export' | 'export-preview' | 'jump-to-dsl' | 'show-jump-to-dsl-help' | 'webview-ready' | 'theme-switch' | 'get-themes' | 'navigate-back' | 'back-to-flow' | 'preview-navigate';
 type MessageHandler = (message: WebViewMessage) => Promise<void>;
@@ -135,7 +137,7 @@ export class WebViewMessageHandler {
 
     try {
       const document = await vscode.workspace.openTextDocument(targetFile);
-      const editor = await vscode.window.showTextDocument(document, vscode.ViewColumn.One);
+      let editor = await vscode.window.showTextDocument(document, vscode.ViewColumn.One);
 
       // Send return path immediately after the file opens, before position resolution,
       // so the Back button appears even if cursor positioning fails or races with file-watcher DSL updates
@@ -143,7 +145,19 @@ export class WebViewMessageHandler {
         this.panelMessenger.postSetReturnPath(returnPath);
       }
 
-      const position = this.yamlPointerResolver.resolvePosition(document, dslPath);
+      let position = this.yamlPointerResolver.resolvePosition(document, dslPath);
+      let resolvedDocument = document;
+      let resolvedDslPath = dslPath;
+
+      if (!position) {
+        const includeJump = await this.resolveIncludeJumpTarget(targetFile, dslPath);
+        if (includeJump) {
+          resolvedDocument = await vscode.workspace.openTextDocument(includeJump.targetFilePath);
+          editor = await vscode.window.showTextDocument(resolvedDocument, vscode.ViewColumn.One);
+          resolvedDslPath = includeJump.dslPath;
+          position = this.yamlPointerResolver.resolvePosition(resolvedDocument, resolvedDslPath);
+        }
+      }
 
       if (!position) {
         this.windowAdapter.showWarningMessage(`DSLパスを解決できませんでした: ${dslPath}`);
@@ -151,7 +165,7 @@ export class WebViewMessageHandler {
       }
 
       this.applyEditorSelection(editor, position);
-      this.logger.debug(`${componentName} を DSL にジャンプ: ${dslPath}`);
+      this.logger.debug(`${componentName} を DSL にジャンプ: ${resolvedDslPath}`);
     } catch (error) {
       this.logger.error('jump-to-dsl エラー:', error);
       this.windowAdapter.showErrorMessage(`DSLジャンプに失敗しました: ${error}`);
@@ -446,6 +460,86 @@ export class WebViewMessageHandler {
     });
 
     return resolvedPath ? path.normalize(resolvedPath) : undefined;
+  }
+
+  private async resolveIncludeJumpTarget(
+    baseFilePath: string,
+    dslPath: string
+  ): Promise<{ targetFilePath: string; dslPath: string } | undefined> {
+    const match = dslPath.match(/^\/page\/components\/(\d+)(\/.*)?$/);
+    if (!match) {
+      return undefined;
+    }
+
+    const targetIndex = Number(match[1]);
+    const suffix = match[2] ?? '';
+    if (!Number.isInteger(targetIndex) || targetIndex < 0) {
+      return undefined;
+    }
+
+    try {
+      const baseContent = await fs.readFile(baseFilePath, 'utf-8');
+      const baseYaml = await parseYamlTextAsync(baseContent) as Record<string, unknown>;
+      const page = this.isRecord(baseYaml.page) ? baseYaml.page : undefined;
+      const components = Array.isArray(page?.components) ? page.components : undefined;
+      if (!components) {
+        return undefined;
+      }
+
+      const includeResolver = new YamlIncludeResolver((content) => parseYamlTextAsync(content));
+      let expandedOffset = 0;
+
+      for (const item of components) {
+        if (!this.isIncludeDirective(item)) {
+          if (expandedOffset === targetIndex) {
+            return undefined;
+          }
+          expandedOffset += 1;
+          continue;
+        }
+
+        const includePath = path.resolve(path.dirname(baseFilePath), item.$include.template);
+        const includeContent = await fs.readFile(includePath, 'utf-8');
+        const includeYaml = await parseYamlTextAsync(includeContent);
+        const resolved = await includeResolver.resolve(includeYaml, includePath);
+        const includeComponents = this.extractTopLevelComponents(resolved);
+        const span = includeComponents.length;
+        if (span === 0) {
+          continue;
+        }
+
+        if (targetIndex >= expandedOffset && targetIndex < expandedOffset + span) {
+          const localIndex = targetIndex - expandedOffset;
+          return {
+            targetFilePath: includePath,
+            dslPath: `/page/components/${localIndex}${suffix}`
+          };
+        }
+        expandedOffset += span;
+      }
+    } catch (error) {
+      this.logger.debug('include jump target resolution skipped:', error);
+    }
+    return undefined;
+  }
+
+  private extractTopLevelComponents(value: unknown): unknown[] {
+    if (!this.isRecord(value)) {
+      return [];
+    }
+    const page = this.isRecord(value.page) ? value.page : undefined;
+    const components = page?.components;
+    return Array.isArray(components) ? components : [];
+  }
+
+  private isIncludeDirective(value: unknown): value is { $include: { template: string } } {
+    return this.isRecord(value)
+      && this.isRecord(value.$include)
+      && typeof value.$include.template === 'string';
+  }
+
+  private isRecord(value: unknown): value is Record<string, any> {
+    return typeof value === 'object' && value !== null;
   }
 
   /**
