@@ -6,9 +6,20 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+---
+
+## [0.9.1] - 2026-04-18
+
+### Added
+- **Jump-to-DSL for included templates**: Ctrl+Shift+Click in Preview now opens the correct source even when components come from `$include` files, including nested containers, Tabs items, transitive includes, and single-component template files.
+
 ### Changed
-- **Phase 1 onboarding alignment**: README / sample README / Phase 1 execution plan now define Golden Path 2 as flow preview navigation (`Open Flow Preview` -> `Open linked page`) instead of the preview-export practical lane.
-- **Phase 1 change log coverage**: Added explicit changelog record for the README / command / configuration / golden-path alignment work to prevent undocumented rollout drift.
+- **Flow preview navigation controls**: After opening a linked page from the flow preview, the return controls are now grouped at the top-left so it is clearer how to go back to the previous screen or return to the flow map.
+- **Preview toolbar cleanup**: The preview toolbar is simpler, with less persistent chrome and the export target moved into the footer alongside Jump-to-DSL guidance.
+- **Onboarding guidance**: README and sample guidance now point new users to Flow Preview navigation as the main multi-screen Golden Path.
+
+### Fixed
+- **Preview update indicator styling**: The update indicator styling is now shipped consistently from the generated WebView CSS, preventing missing spinner/check styles in release builds.
 
 ---
 

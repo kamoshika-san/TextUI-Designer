@@ -177,7 +177,7 @@ Open **TextUI: Open Flow Preview** to see the screen map. Selecting any screen i
 - **Routes to here** — all loop-free paths from the entry screen to the selected screen, with full trigger chains. Paginated when more than 5 routes exist.
 - **Screen detail** — the rendered preview of the selected screen on the right.
 
-Click **Open linked page** on any transition target to jump directly into that screen's preview. A **Back to flow** button appears at the top of the preview, returning you to the flow map.
+Click **Open linked page** on any transition target to jump directly into that screen's preview. Return controls then appear at the top-left of the preview so you can go back to the previous screen or return to the flow map.
 
 ---
 
