@@ -39,7 +39,7 @@ const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
     menus: [
       {
         location: 'editor/title',
-        when: 'resourceLangId == yaml',
+        when: 'resourceLangId == yaml || resourceFilename =~ /\\.tui\\./',
         group: 'navigation'
       }
     ],
@@ -66,7 +66,7 @@ const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
     menus: [
       {
         location: 'editor/title',
-        when: 'resourceLangId == yaml',
+        when: 'resourceLangId == yaml || resourceFilename =~ /\\.tui\\./',
         group: 'navigation'
       }
     ],
@@ -90,7 +90,7 @@ const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
     menus: [
       {
         location: 'editor/title',
-        when: 'resourceLangId == yaml',
+        when: 'resourceLangId == yaml || resourceFilename =~ /\\.tui\\./',
         group: 'navigation'
       }
     ],
