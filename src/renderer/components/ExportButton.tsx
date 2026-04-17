@@ -2,8 +2,6 @@ import React from 'react';
 
 interface ExportButtonProps {
   onExport: () => void;
-  sourceLabel?: string;
-  sourceTitle?: string;
 }
 
 const buttonBase: React.CSSProperties = {
@@ -32,58 +30,14 @@ const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
   e.currentTarget.style.borderColor = 'rgba(107, 114, 128, 0.5)';
 };
 
-export const ExportButton: React.FC<ExportButtonProps> = ({
-  onExport,
-  sourceLabel,
-  sourceTitle
-}) => (
-  <div
-    style={{
-      display: 'flex',
-      gap: '0.5rem',
-      alignItems: 'center',
-      flexShrink: 0
-    }}
+export const ExportButton: React.FC<ExportButtonProps> = ({ onExport }) => (
+  <button
+    onClick={onExport}
+    className="export-button"
+    style={buttonBase}
+    onMouseEnter={handleMouseEnter}
+    onMouseLeave={handleMouseLeave}
   >
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        minWidth: '12rem',
-        maxWidth: '18rem',
-        padding: '0.45rem 0.7rem',
-        borderRadius: '0.5rem',
-        border: '1px solid rgba(107, 114, 128, 0.35)',
-        background: 'rgba(17, 24, 39, 0.88)',
-        color: '#cbd5e1',
-        boxShadow: '0 10px 24px rgba(15, 23, 42, 0.18)'
-      }}
-      title={sourceTitle ?? sourceLabel}
-    >
-      <span style={{ fontSize: '0.68rem', letterSpacing: '0.04em', textTransform: 'uppercase', opacity: 0.65 }}>
-        Export Target
-      </span>
-      <span
-        style={{
-          fontSize: '0.78rem',
-          lineHeight: 1.35,
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis'
-        }}
-      >
-        {sourceLabel ?? 'Waiting for preview file'}
-      </span>
-    </div>
-<button
-      onClick={onExport}
-      className="export-button"
-      style={buttonBase}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      Export
-    </button>
-  </div>
+    Export
+  </button>
 );

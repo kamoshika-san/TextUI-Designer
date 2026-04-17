@@ -391,8 +391,6 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
           <CustomThemeSelector />
           <ExportButton
             onExport={handleExport}
-            sourceLabel={exportSourceMeta.label}
-            sourceTitle={exportSourceMeta.title}
           />
         </div>
         {showUpdateIndicator ? (
@@ -612,9 +610,6 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
         <CustomThemeSelector />
         <ExportButton
           onExport={handleExport}
-          onExportPreview={handleExportPreview}
-          sourceLabel={exportSourceMeta.label}
-          sourceTitle={exportSourceMeta.title}
         />
       </div>
       {returnPath ? (
@@ -684,6 +679,23 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
         <div style={{ fontSize: '0.8rem', lineHeight: 1.45 }}>
           <strong style={{ fontWeight: 700 }}>Jump to DSL</strong>
           <span style={{ opacity: 0.9 }}>  Ctrl+Shift+Click</span>
+        </div>
+        <div style={{ fontSize: '0.76rem', lineHeight: 1.45 }}>
+          <span style={{ opacity: 0.65, letterSpacing: '0.04em', textTransform: 'uppercase' as const, fontSize: '0.68rem' }}>Export Target</span>
+          {'  '}
+          <span
+            style={{
+              whiteSpace: 'nowrap' as const,
+              overflow: 'hidden' as const,
+              textOverflow: 'ellipsis' as const,
+              maxWidth: '18rem',
+              display: 'inline-block',
+              verticalAlign: 'bottom'
+            }}
+            title={exportSourceMeta.title ?? exportSourceMeta.label}
+          >
+            {exportSourceMeta.label ?? 'Waiting for preview file'}
+          </span>
         </div>
         <div style={{ fontSize: '0.76rem', opacity: 0.78, lineHeight: 1.4 }}>
           Preview component to source navigation stays available after the first-run tip.
