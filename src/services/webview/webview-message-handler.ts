@@ -513,6 +513,10 @@ export class WebViewMessageHandler {
 
         if (targetIndex >= expandedOffset && targetIndex < expandedOffset + span) {
           const localIndex = targetIndex - expandedOffset;
+          const transitive = await this.resolveTransitiveIncludeTarget(includePath, localIndex, suffix);
+          if (transitive) {
+            return transitive;
+          }
           const mappedPath = this.buildIncludeMappedPath({
             resolvedInclude: resolved,
             includeComponents,
@@ -551,6 +555,83 @@ export class WebViewMessageHandler {
       return [value];
     }
     return [];
+  }
+
+  private async resolveTransitiveIncludeTarget(
+    filePath: string,
+    targetIndex: number,
+    suffix: string
+  ): Promise<{ targetFilePath: string; dslPath: string } | undefined> {
+    try {
+      const raw = await fs.readFile(filePath, 'utf-8');
+      const parsed = await parseYamlTextAsync(raw);
+      const topLevelEntries = this.extractSourceTopLevelEntries(parsed);
+      if (topLevelEntries.length === 0) {
+        return undefined;
+      }
+
+      const includeResolver = new YamlIncludeResolver((content) => parseYamlTextAsync(content));
+      let expandedOffset = 0;
+
+      for (const entry of topLevelEntries) {
+        if (!this.isIncludeDirective(entry.node)) {
+          if (expandedOffset === targetIndex) {
+            return {
+              targetFilePath: filePath,
+              dslPath: this.mergeRootAndSuffix(entry.path, suffix)
+            };
+          }
+          expandedOffset += 1;
+          continue;
+        }
+
+        const includePath = path.resolve(path.dirname(filePath), entry.node.$include.template);
+        const includeContent = await fs.readFile(includePath, 'utf-8');
+        const includeYaml = await parseYamlTextAsync(includeContent);
+        const resolved = await includeResolver.resolve(includeYaml, includePath);
+        const includeComponents = this.extractTopLevelComponents(resolved);
+        const span = includeComponents.length;
+        if (span === 0) {
+          continue;
+        }
+
+        if (targetIndex >= expandedOffset && targetIndex < expandedOffset + span) {
+          return this.resolveTransitiveIncludeTarget(includePath, targetIndex - expandedOffset, suffix);
+        }
+        expandedOffset += span;
+      }
+    } catch (error) {
+      this.logger.debug('transitive include resolution skipped:', error);
+    }
+    return undefined;
+  }
+
+  private extractSourceTopLevelEntries(value: unknown): Array<{ node: unknown; path: string }> {
+    if (Array.isArray(value)) {
+      return value.map((node, index) => ({ node, path: `/${index}` }));
+    }
+    if (!this.isRecord(value)) {
+      return [];
+    }
+    const page = this.isRecord(value.page) ? value.page : undefined;
+    const components = page?.components;
+    if (Array.isArray(components)) {
+      return components.map((node, index) => ({ node, path: `/page/components/${index}` }));
+    }
+    if (Object.keys(value).length === 1) {
+      return [{ node: value, path: `/${Object.keys(value)[0]}` }];
+    }
+    return [];
+  }
+
+  private mergeRootAndSuffix(rootPath: string, suffix: string): string {
+    if (!suffix) {
+      return rootPath;
+    }
+    if (suffix.startsWith(rootPath)) {
+      return suffix;
+    }
+    return `${rootPath}${suffix}`;
   }
 
   private buildIncludeMappedPath(params: {
