@@ -2,6 +2,7 @@ import React from 'react';
 
 interface ExportButtonProps {
   onExport: () => void;
+  onExportPreview?: () => void;
 }
 
 const buttonBase: React.CSSProperties = {
@@ -30,7 +31,7 @@ const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
   e.currentTarget.style.borderColor = 'rgba(107, 114, 128, 0.5)';
 };
 
-export const ExportButton: React.FC<ExportButtonProps> = ({ onExport }) => (
+export const ExportButton: React.FC<ExportButtonProps> = ({ onExport, onExportPreview }) => (
   <div
     style={{
       position: 'fixed',
@@ -41,6 +42,18 @@ export const ExportButton: React.FC<ExportButtonProps> = ({ onExport }) => (
       zIndex: 1000
     }}
   >
+    {onExportPreview && (
+      <button
+        onClick={onExportPreview}
+        className="export-button"
+        style={{ ...buttonBase, fontSize: '0.8rem', minWidth: '5.5rem' }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        title="Export Preview (Dry Run) — shows what would be exported without writing files"
+      >
+        Dry Run
+      </button>
+    )}
     <button
       onClick={onExport}
       className="export-button"

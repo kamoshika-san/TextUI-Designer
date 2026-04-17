@@ -238,6 +238,12 @@ const App: React.FC = () => {
     }
   };
 
+  const handleExportPreview = () => {
+    if (vscodeApi?.postMessage) {
+      vscodeApi.postMessage({ type: 'export-preview' });
+    }
+  };
+
   const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?: string) => {
     const runtimeApi = getVSCodeApi();
     if (!runtimeApi?.postMessage) {
@@ -359,7 +365,7 @@ const App: React.FC = () => {
       >
         <ThemeToggle />
         <CustomThemeSelector />
-        <ExportButton onExport={handleExport} />
+        <ExportButton onExport={handleExport} onExportPreview={handleExportPreview} />
         {showUpdateIndicator ? (
           <UpdateIndicator
             status={updateStatus}
@@ -476,7 +482,7 @@ const App: React.FC = () => {
       ) : null}
       <ThemeToggle />
       <CustomThemeSelector />
-      <ExportButton onExport={handleExport} />
+      <ExportButton onExport={handleExport} onExportPreview={handleExportPreview} />
       {returnPath ? (
         <button
           type="button"
