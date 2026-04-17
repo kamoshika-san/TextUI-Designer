@@ -349,7 +349,8 @@ const App: React.FC = () => {
   if (!json && !error) {
     return (
       <div style={{ padding: 24 }}>
-        <div>Loading...</div>
+        <div style={{ fontWeight: 500, marginBottom: 4 }}>Loading preview…</div>
+        <div style={{ fontSize: '0.85rem', opacity: 0.65 }}>Reading DSL · applying theme · validating schema</div>
       </div>
     );
   }
