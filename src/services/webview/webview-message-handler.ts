@@ -527,12 +527,24 @@ export class WebViewMessageHandler {
   }
 
   private extractTopLevelComponents(value: unknown): unknown[] {
+    if (Array.isArray(value)) {
+      return value;
+    }
     if (!this.isRecord(value)) {
       return [];
     }
     const page = this.isRecord(value.page) ? value.page : undefined;
     const components = page?.components;
-    return Array.isArray(components) ? components : [];
+    if (Array.isArray(components)) {
+      return components;
+    }
+    // Some include templates are authored as a single component object
+    // (e.g. `{ Container: { ... } }`) rather than a full `page.components` document.
+    // Treat that case as a single expanded component.
+    if (Object.keys(value).length === 1) {
+      return [value];
+    }
+    return [];
   }
 
   private isIncludeDirective(value: unknown): value is { $include: { template: string } } {
