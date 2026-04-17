@@ -258,13 +258,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleExportPreview = () => {
-    if (vscodeApi?.postMessage) {
-      vscodeApi.postMessage({ type: 'export-preview', ...(exportSourcePath ? { sourcePath: exportSourcePath } : {}) });
-    }
-  };
-
-  const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?: string) => {
+const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?: string) => {
     const runtimeApi = getVSCodeApi();
     if (!runtimeApi?.postMessage) {
       return;
@@ -397,7 +391,6 @@ const App: React.FC = () => {
           <CustomThemeSelector />
           <ExportButton
             onExport={handleExport}
-            onExportPreview={handleExportPreview}
             sourceLabel={exportSourceMeta.label}
             sourceTitle={exportSourceMeta.title}
           />

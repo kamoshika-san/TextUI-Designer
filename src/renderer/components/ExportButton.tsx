@@ -2,7 +2,6 @@ import React from 'react';
 
 interface ExportButtonProps {
   onExport: () => void;
-  onExportPreview?: () => void;
   sourceLabel?: string;
   sourceTitle?: string;
 }
@@ -35,7 +34,6 @@ const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
 
 export const ExportButton: React.FC<ExportButtonProps> = ({
   onExport,
-  onExportPreview,
   sourceLabel,
   sourceTitle
 }) => (
@@ -78,19 +76,7 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
         {sourceLabel ?? 'Waiting for preview file'}
       </span>
     </div>
-    {onExportPreview && (
-      <button
-        onClick={onExportPreview}
-        className="export-button"
-        style={{ ...buttonBase, fontSize: '0.8rem', minWidth: '5.5rem' }}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        title="Export Preview (Dry Run) - shows what would be exported without writing files"
-      >
-        Dry Run
-      </button>
-    )}
-    <button
+<button
       onClick={onExport}
       className="export-button"
       style={buttonBase}
