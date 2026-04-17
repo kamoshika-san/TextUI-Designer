@@ -4,7 +4,6 @@ import { ThemeToggle } from './components/ThemeToggle';
 import { CustomThemeSelector } from './components/CustomThemeSelector';
 import { OverlayDiffViewer } from './components/OverlayDiffViewer';
 import { FlowPreviewPanel } from './components/FlowPreviewPanel';
-import { PreviewNavBar } from './components/PreviewNavBar';
 import type { NavHistoryEntry } from './components/PreviewNavBar';
 import { renderRegisteredComponent, registerBuiltInComponents } from './component-map';
 import type { NavigationFlowDSL, TextUIDSL, ComponentDef } from '../domain/dsl-types';
@@ -508,12 +507,7 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
       className={showJumpToDslHoverIndicator ? 'textui-preview-root' : 'textui-preview-root textui-preview-root-hide-jump-hover'}
       style={{ padding: 24, position: 'relative' }}
     >
-      {/* PreviewNavBar: 画面遷移履歴がある場合のみ表示（E-NI-S5） */}
-      <PreviewNavBar
-        history={navHistory}
-        onBack={handlePreviewNavBack}
-      />
-      {showJumpToDslOnboarding ? (
+{showJumpToDslOnboarding ? (
         <div
           style={{
             marginBottom: '1rem',
