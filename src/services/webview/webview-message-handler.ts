@@ -148,10 +148,29 @@ export class WebViewMessageHandler {
       let position = this.yamlPointerResolver.resolvePosition(document, dslPath);
       let resolvedDocument = document;
       let resolvedDslPath = dslPath;
+      const includeJumpCandidate = await this.resolveIncludeJumpTarget(targetFile, dslPath);
+      const shouldPreferInclude = Boolean(
+        includeJumpCandidate
+        && (includeJumpCandidate.targetFilePath !== targetFile || includeJumpCandidate.dslPath !== dslPath)
+      );
+
+      if (shouldPreferInclude && includeJumpCandidate) {
+        resolvedDocument = await vscode.workspace.openTextDocument(includeJumpCandidate.targetFilePath);
+        editor = await vscode.window.showTextDocument(resolvedDocument, vscode.ViewColumn.One);
+        resolvedDslPath = includeJumpCandidate.dslPath;
+        position = this.yamlPointerResolver.resolvePosition(resolvedDocument, resolvedDslPath);
+      }
 
       if (!position) {
-        const includeJump = await this.resolveIncludeJumpTarget(targetFile, dslPath);
-        if (includeJump) {
+        // Container 配下などの入れ子 include を追従するため、複数ホップで include 解決を試みる。
+        for (let hop = 0; hop < 5 && !position; hop++) {
+          const includeJump = await this.resolveIncludeJumpTarget(resolvedDocument.fileName, resolvedDslPath);
+          if (!includeJump) {
+            break;
+          }
+          if (includeJump.targetFilePath === resolvedDocument.fileName && includeJump.dslPath === resolvedDslPath) {
+            break;
+          }
           resolvedDocument = await vscode.workspace.openTextDocument(includeJump.targetFilePath);
           editor = await vscode.window.showTextDocument(resolvedDocument, vscode.ViewColumn.One);
           resolvedDslPath = includeJump.dslPath;
@@ -479,29 +498,32 @@ export class WebViewMessageHandler {
 
     try {
       const baseContent = await fs.readFile(baseFilePath, 'utf-8');
-      const baseYaml = await parseYamlTextAsync(baseContent) as Record<string, unknown>;
-      const page = this.isRecord(baseYaml.page) ? baseYaml.page : undefined;
-      const components = Array.isArray(page?.components) ? page.components : undefined;
-      if (!components) {
+      const baseYaml = await parseYamlTextAsync(baseContent);
+      const topLevelEntries = this.extractSourceTopLevelEntries(baseYaml);
+      if (topLevelEntries.length === 0) {
         return undefined;
       }
 
       const includeResolver = new YamlIncludeResolver((content) => parseYamlTextAsync(content));
       let expandedOffset = 0;
 
-      for (const [componentIndex, item] of components.entries()) {
-        if (!this.isIncludeDirective(item)) {
+      for (const entry of topLevelEntries) {
+        if (!this.isIncludeDirective(entry.node)) {
           if (expandedOffset === targetIndex) {
+            const nested = await this.resolveNestedIncludeFromNode(baseFilePath, entry.node, suffix);
+            if (nested) {
+              return nested;
+            }
             return {
               targetFilePath: baseFilePath,
-              dslPath: `/page/components/${componentIndex}${suffix}`
+              dslPath: this.mergeRootAndSuffix(entry.path, suffix)
             };
           }
           expandedOffset += 1;
           continue;
         }
 
-        const includePath = path.resolve(path.dirname(baseFilePath), item.$include.template);
+        const includePath = path.resolve(path.dirname(baseFilePath), entry.node.$include.template);
         const includeContent = await fs.readFile(includePath, 'utf-8');
         const includeYaml = await parseYamlTextAsync(includeContent);
         const resolved = await includeResolver.resolve(includeYaml, includePath);
@@ -532,6 +554,59 @@ export class WebViewMessageHandler {
       }
     } catch (error) {
       this.logger.debug('include jump target resolution skipped:', error);
+    }
+    return undefined;
+  }
+
+  private async resolveNestedIncludeFromNode(
+    currentFilePath: string,
+    componentNode: unknown,
+    suffix: string
+  ): Promise<{ targetFilePath: string; dslPath: string } | undefined> {
+    const match = suffix.match(/^\/([^/]+)\/components\/(\d+)(\/.*)?$/);
+    if (!match || !this.isRecord(componentNode)) {
+      return undefined;
+    }
+
+    const componentKind = match[1];
+    const targetIndex = Number(match[2]);
+    const rest = match[3] ?? '';
+    const body = componentNode[componentKind];
+    if (!this.isRecord(body) || !Array.isArray(body.components) || !Number.isInteger(targetIndex) || targetIndex < 0) {
+      return undefined;
+    }
+
+    const includeResolver = new YamlIncludeResolver((content) => parseYamlTextAsync(content));
+    let expandedOffset = 0;
+    for (const [componentIndex, item] of body.components.entries()) {
+      if (!this.isIncludeDirective(item)) {
+        if (expandedOffset === targetIndex) {
+          return undefined;
+        }
+        expandedOffset += 1;
+        continue;
+      }
+
+      const includePath = path.resolve(path.dirname(currentFilePath), item.$include.template);
+      const includeContent = await fs.readFile(includePath, 'utf-8');
+      const includeYaml = await parseYamlTextAsync(includeContent);
+      const resolved = await includeResolver.resolve(includeYaml, includePath);
+      const includeComponents = this.extractTopLevelComponents(resolved);
+      const span = includeComponents.length;
+      if (span === 0) {
+        continue;
+      }
+      if (targetIndex >= expandedOffset && targetIndex < expandedOffset + span) {
+        const localIndex = targetIndex - expandedOffset;
+        const nestedPath = `/page/components/${localIndex}${rest}`;
+        const transitive = await this.resolveIncludeJumpTarget(includePath, nestedPath);
+        return transitive ?? { targetFilePath: includePath, dslPath: nestedPath };
+      }
+      expandedOffset += span;
+      // keep index mapping aligned when include and non-include are mixed
+      if (componentIndex === body.components.length - 1) {
+        continue;
+      }
     }
     return undefined;
   }
@@ -608,7 +683,7 @@ export class WebViewMessageHandler {
 
   private extractSourceTopLevelEntries(value: unknown): Array<{ node: unknown; path: string }> {
     if (Array.isArray(value)) {
-      return value.map((node, index) => ({ node, path: `/${index}` }));
+      return value.map((node, index) => ({ node, path: `/page/components/${index}` }));
     }
     if (!this.isRecord(value)) {
       return [];

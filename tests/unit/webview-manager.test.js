@@ -201,6 +201,71 @@ describe('WebViewManager 単体テスト', () => {
         '解決できないDSLパスでは警告表示または選択未変更となる'
       );
     });
+
+    it('jump-to-dsl は root Container 配下の推移 include を最終テンプレートまで解決する', async () => {
+      const baseDir = path.dirname(testFilePath);
+      const includeAPath = path.join(baseDir, 'nested-a.template.yml');
+      const includeBPath = path.join(baseDir, 'nested-b.template.yml');
+      const rootContent = `page:
+  id: nested-include-root
+  components:
+    - Container:
+        components:
+          - $include:
+              template: "./nested-a.template.yml"
+`;
+      const includeAContent = `- Container:
+    components:
+      - $include:
+          template: "./nested-b.template.yml"
+`;
+      const includeBContent = `- Text:
+    value: "deep"
+`;
+
+      fs.writeFileSync(testFilePath, rootContent, 'utf8');
+      fs.writeFileSync(includeAPath, includeAContent, 'utf8');
+      fs.writeFileSync(includeBPath, includeBContent, 'utf8');
+
+      const createDoc = (fileName, content) => ({
+        fileName,
+        getText: () => content,
+        positionAt: createPositionAt(content)
+      });
+      const docMap = new Map([
+        [testFilePath, createDoc(testFilePath, rootContent)],
+        [includeAPath, createDoc(includeAPath, includeAContent)],
+        [includeBPath, createDoc(includeBPath, includeBContent)]
+      ]);
+      const openedDocs = [];
+
+      webviewManager._testHelpers.extendedVscode.workspace.openTextDocument = async (targetPath) => {
+        const doc = docMap.get(targetPath);
+        if (!doc) {
+          throw new Error(`unexpected document path: ${targetPath}`);
+        }
+        openedDocs.push(targetPath);
+        return doc;
+      };
+      webviewManager._testHelpers.extendedVscode.window.showTextDocument = async (document) => ({
+        document,
+        selection: null,
+        revealRange: () => {}
+      });
+
+      webviewManager.setLastTuiFile(testFilePath);
+      await webviewManager.openPreview();
+      const panel = webviewManager.getPanel();
+      assert.ok(panel && typeof panel._messageHandler === 'function', 'WebViewメッセージハンドラーが登録される');
+
+      await panel._messageHandler({
+        type: 'jump-to-dsl',
+        dslPath: '/page/components/0/Container/components/0/Container/components/0',
+        componentName: 'Text'
+      });
+
+      assert.ok(openedDocs.includes(includeBPath), '推移 include の最終テンプレートを開ける');
+    });
   });
 
   describe('解析済み DSL キャッシュ（テストアダプタ）', () => {
