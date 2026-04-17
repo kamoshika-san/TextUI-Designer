@@ -489,10 +489,13 @@ export class WebViewMessageHandler {
       const includeResolver = new YamlIncludeResolver((content) => parseYamlTextAsync(content));
       let expandedOffset = 0;
 
-      for (const item of components) {
+      for (const [componentIndex, item] of components.entries()) {
         if (!this.isIncludeDirective(item)) {
           if (expandedOffset === targetIndex) {
-            return undefined;
+            return {
+              targetFilePath: baseFilePath,
+              dslPath: `/page/components/${componentIndex}${suffix}`
+            };
           }
           expandedOffset += 1;
           continue;
