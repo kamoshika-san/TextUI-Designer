@@ -24,7 +24,7 @@ export interface MenuContribution {
   group?: string;
 }
 
-type MenuLocation = 'editor/title';
+type MenuLocation = 'editor/title' | 'commandPalette';
 
 interface CommandMenuEntry {
   location: MenuLocation;
@@ -58,6 +58,12 @@ const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
   {
     command: 'textui-designer.openDevTools',
     title: 'TextUI: Open Developer Tools',
+    menus: [
+      {
+        location: 'commandPalette',
+        when: 'false'
+      }
+    ],
     callback: deps => () => deps.openDevTools()
   },
   {
@@ -122,7 +128,8 @@ export function getPackageCommandContributions(): CommandContribution[] {
 
 export function getPackageMenuContributions(): Record<MenuLocation, MenuContribution[]> {
   const menus: Record<MenuLocation, MenuContribution[]> = {
-    'editor/title': []
+    'editor/title': [],
+    commandPalette: []
   };
 
   for (const entry of COMMAND_CATALOG) {

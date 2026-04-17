@@ -43,6 +43,12 @@ export const TEMPLATE_SETTINGS_COMMAND_ENTRIES: readonly CommandCatalogEntry[] =
   {
     command: 'textui-designer.debugSchemas',
     title: 'TextUI: スキーマ状態をデバッグ',
+    menus: [
+      {
+        location: 'commandPalette',
+        when: 'false'
+      }
+    ],
     callback: deps => () => deps.debugSchemas()
   }
 ];

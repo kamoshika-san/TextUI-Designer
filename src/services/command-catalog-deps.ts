@@ -4,7 +4,7 @@
 
 export type CommandHandler = (...args: unknown[]) => void | Promise<void>;
 
-export type MenuLocation = 'editor/title';
+export type MenuLocation = 'editor/title' | 'commandPalette';
 
 export interface CommandMenuEntry {
   location: MenuLocation;
