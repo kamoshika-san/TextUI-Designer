@@ -206,6 +206,13 @@ For local verification, you can also start it with:
 npm run mcp:serve
 ```
 
+Extension-side auto configuration policy:
+
+- `textui-designer.mcp.autoConfigure` (default: `true`) updates MCP client settings on startup.
+- `textui-designer.mcp.scope=workspace` updates workspace `.vscode/mcp.json`.
+- `textui-designer.mcp.scope=user|both` may update user MCP config and Codex `.codex/config.toml` (`mcp_servers` block).
+- Set `textui-designer.mcp.autoConfigure=false` when your organization requires manual review or managed policy for config files.
+
 ### Available Tools
 
 | Tool | What it does |

@@ -286,7 +286,7 @@ export function buildConfigurationSchema(defaults: SettingsDefaults): Record<str
       'mcp.autoConfigure': {
         type: 'boolean',
         default: defaultValue('mcp.autoConfigure'),
-        description: '拡張起動時にMCP設定(mcp.json)を自動構成する'
+        description: '拡張起動時にMCP設定を自動構成する（workspace: .vscode/mcp.json、user: ~/.config/.../mcp.json または .codex/config.toml の mcp_servers を更新）'
       },
       'mcp.scope': {
         type: 'string',
