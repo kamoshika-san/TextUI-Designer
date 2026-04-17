@@ -398,17 +398,17 @@
       "editor/title": [
         {
           "command": "textui-designer.openPreview",
-          "when": "resourceLangId == yaml",
+          "when": "resourceLangId == yaml || resourceFilename =~ /\\.tui\\./",
           "group": "navigation"
         },
         {
           "command": "textui-designer.export",
-          "when": "resourceLangId == yaml",
+          "when": "resourceLangId == yaml || resourceFilename =~ /\\.tui\\./",
           "group": "navigation"
         },
         {
           "command": "textui-designer.openOverlayDiff",
-          "when": "resourceLangId == yaml",
+          "when": "resourceLangId == yaml || resourceFilename =~ /\\.tui\\./",
           "group": "navigation"
         }
       ]
