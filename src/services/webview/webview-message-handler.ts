@@ -585,7 +585,9 @@ export class WebViewMessageHandler {
       let expandedOffset = 0;
       for (const comp of tabItem.components) {
         if (!this.isIncludeDirective(comp)) {
-          if (expandedOffset === compIndex) return undefined;
+          if (expandedOffset === compIndex) {
+            return undefined;
+          }
           expandedOffset += 1;
           continue;
         }
@@ -595,7 +597,9 @@ export class WebViewMessageHandler {
         const resolved = await includeResolver.resolve(includeYaml, includePath);
         const includeComponents = this.extractTopLevelComponents(resolved);
         const span = includeComponents.length;
-        if (span === 0) continue;
+        if (span === 0) {
+          continue;
+        }
         if (compIndex >= expandedOffset && compIndex < expandedOffset + span) {
           const localIndex = compIndex - expandedOffset;
           const nestedPath = `/page/components/${localIndex}${rest}`;
@@ -696,7 +700,9 @@ export class WebViewMessageHandler {
           if (expandedOffset === targetIndex) {
             if (suffix) {
               const nested = await this.resolveNestedIncludeFromNode(filePath, entry.node, suffix);
-              if (nested) return nested;
+              if (nested) {
+                return nested;
+              }
             }
             return {
               targetFilePath: filePath,
