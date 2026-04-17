@@ -513,9 +513,15 @@ export class WebViewMessageHandler {
 
         if (targetIndex >= expandedOffset && targetIndex < expandedOffset + span) {
           const localIndex = targetIndex - expandedOffset;
+          const mappedPath = this.buildIncludeMappedPath({
+            resolvedInclude: resolved,
+            includeComponents,
+            localIndex,
+            suffix
+          });
           return {
             targetFilePath: includePath,
-            dslPath: `/page/components/${localIndex}${suffix}`
+            dslPath: mappedPath
           };
         }
         expandedOffset += span;
@@ -545,6 +551,48 @@ export class WebViewMessageHandler {
       return [value];
     }
     return [];
+  }
+
+  private buildIncludeMappedPath(params: {
+    resolvedInclude: unknown;
+    includeComponents: unknown[];
+    localIndex: number;
+    suffix: string;
+  }): string {
+    const { resolvedInclude, includeComponents, localIndex, suffix } = params;
+
+    if (this.hasPageComponents(resolvedInclude)) {
+      return `/page/components/${localIndex}${suffix}`;
+    }
+
+    const selected = includeComponents[localIndex];
+    const componentKind = this.extractSingleComponentKind(selected);
+    if (!componentKind) {
+      return `/page/components/${localIndex}${suffix}`;
+    }
+    if (!suffix) {
+      return `/${componentKind}`;
+    }
+    if (suffix.startsWith(`/${componentKind}`)) {
+      return suffix;
+    }
+    return `/${componentKind}${suffix}`;
+  }
+
+  private hasPageComponents(value: unknown): boolean {
+    if (!this.isRecord(value)) {
+      return false;
+    }
+    const page = this.isRecord(value.page) ? value.page : undefined;
+    return Array.isArray(page?.components);
+  }
+
+  private extractSingleComponentKind(value: unknown): string | undefined {
+    if (!this.isRecord(value)) {
+      return undefined;
+    }
+    const keys = Object.keys(value);
+    return keys.length === 1 ? keys[0] : undefined;
   }
 
   private isIncludeDirective(value: unknown): value is { $include: { template: string } } {
