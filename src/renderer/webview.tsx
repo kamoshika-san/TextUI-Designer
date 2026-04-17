@@ -277,6 +277,14 @@ const App: React.FC = () => {
     });
   };
 
+  const handleOpenJumpToDslHelp = () => {
+    const runtimeApi = getVSCodeApi();
+    if (!runtimeApi?.postMessage) {
+      return;
+    }
+    runtimeApi.postMessage({ type: 'show-jump-to-dsl-help' });
+  };
+
   const handleNavigateBack = () => {
     const runtimeApi = getVSCodeApi();
     if (!runtimeApi?.postMessage || !returnPath) {
@@ -450,6 +458,22 @@ const App: React.FC = () => {
               </label>
               <button
                 type="button"
+                onClick={handleOpenJumpToDslHelp}
+                style={{
+                  border: '1px solid rgba(191, 219, 254, 0.45)',
+                  background: 'rgba(255, 255, 255, 0.12)',
+                  color: '#eff6ff',
+                  borderRadius: '9999px',
+                  padding: '0.45rem 0.85rem',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                使い方を見る / Learn more
+              </button>
+              <button
+                type="button"
                 onClick={handleDismissJumpToDslOnboarding}
                 style={{
                   border: '1px solid rgba(191, 219, 254, 0.45)',
@@ -555,6 +579,22 @@ const App: React.FC = () => {
               />
               以後は表示しない / Don&apos;t show again
             </label>
+            <button
+              type="button"
+              onClick={handleOpenJumpToDslHelp}
+              style={{
+                border: '1px solid rgba(191, 219, 254, 0.45)',
+                background: 'rgba(255, 255, 255, 0.12)',
+                color: '#eff6ff',
+                borderRadius: '9999px',
+                padding: '0.45rem 0.85rem',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              使い方を見る / Learn more
+            </button>
             <button
               type="button"
               onClick={handleDismissJumpToDslOnboarding}

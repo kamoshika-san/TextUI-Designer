@@ -15,7 +15,7 @@ import { resolveNavigationJumpTargetFile } from '../commands/navigation-jump-com
 import { isNavigationFlowDSL } from '../../domain/dsl-types';
 import { parseYamlTextAsync } from '../../dsl/yaml-parse-async';
 
-type MessageType = 'export' | 'export-preview' | 'jump-to-dsl' | 'webview-ready' | 'theme-switch' | 'get-themes' | 'navigate-back' | 'back-to-flow' | 'preview-navigate';
+type MessageType = 'export' | 'export-preview' | 'jump-to-dsl' | 'show-jump-to-dsl-help' | 'webview-ready' | 'theme-switch' | 'get-themes' | 'navigate-back' | 'back-to-flow' | 'preview-navigate';
 type MessageHandler = (message: WebViewMessage) => Promise<void>;
 
 interface WebViewMessageHandlerDependencies {
@@ -61,6 +61,7 @@ export class WebViewMessageHandler {
       'export': async (message) => this.handleExportMessage(message),
       'export-preview': async (message) => this.handleExportPreviewMessage(message),
       'jump-to-dsl': async (message) => this.handleJumpToDslMessage(message),
+      'show-jump-to-dsl-help': async () => this.handleShowJumpToDslHelpMessage(),
       'navigate-back': async (message) => this.handleNavigateBack(message),
       'webview-ready': async () => this.handleWebViewReady(),
       'theme-switch': async (message) => this.handleThemeSwitchMessage(message),
@@ -172,6 +173,10 @@ export class WebViewMessageHandler {
       this.logger.error('navigate-back エラー:', error);
       this.windowAdapter.showErrorMessage(`ナビゲーションに失敗しました: ${error}`);
     }
+  }
+
+  private async handleShowJumpToDslHelpMessage(): Promise<void> {
+    await vscode.commands.executeCommand('textui-designer.showJumpToDslHelp');
   }
 
   private isMessageType(type: string): type is MessageType {
