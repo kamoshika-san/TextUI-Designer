@@ -27,7 +27,7 @@ export class OverlayDiffLifecycleManager {
 
     this.currentPanel = vscode.window.createWebviewPanel(
       'textuiOverlayDiff',
-      'TextUI: Overlay Diff',
+      'TUI: Diff',
       vscode.ViewColumn.Two,
       {
         enableScripts: true,

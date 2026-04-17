@@ -290,7 +290,7 @@
     "commands": [
       {
         "command": "textui-designer.openPreview",
-        "title": "TextUI: Open Preview"
+        "title": "TUI: Preview"
       },
       {
         "command": "textui-designer.openFlowPreview",
@@ -318,7 +318,7 @@
       },
       {
         "command": "textui-designer.openOverlayDiff",
-        "title": "TextUI: Overlay Diff (Transparency Compare)"
+        "title": "TUI: Diff"
       },
       {
         "command": "textui-designer.createTemplate",

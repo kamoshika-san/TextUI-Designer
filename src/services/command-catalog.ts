@@ -51,7 +51,7 @@ const HIDDEN_COMMAND_PALETTE_COMMANDS = new Set([
 const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
   {
     command: 'textui-designer.openPreview',
-    title: 'TextUI: Open Preview',
+    title: 'TUI: Preview',
     menus: [
       {
         location: 'editor/title',
@@ -102,7 +102,7 @@ const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
   },
   {
     command: 'textui-designer.openOverlayDiff',
-    title: 'TextUI: Overlay Diff (Transparency Compare)',
+    title: 'TUI: Diff',
     menus: [
       {
         location: 'editor/title',
