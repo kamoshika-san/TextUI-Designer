@@ -42,7 +42,7 @@ const InlinePagePreview: React.FC<InlinePagePreviewProps> = ({ pageFile, screenT
         }}
       >
         <span>{isOpen ? '▾' : '▸'}</span>
-        <span>ページプレビュー</span>
+        <span>リンクされた画面</span>
       </button>
       {isOpen && (
         <div
