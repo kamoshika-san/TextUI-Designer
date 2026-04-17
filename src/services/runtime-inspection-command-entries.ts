@@ -1,6 +1,5 @@
 /**
- * ランタイム診断・パフォーマンス／メモリ観測コマンド（1 ドメイン）。
- * `CommandManager` は `command-catalog` 経由の登録のみ行う。
+ * Runtime inspection / performance / memory diagnostics command entries.
  */
 import type { CommandCatalogEntry } from './command-catalog-deps';
 

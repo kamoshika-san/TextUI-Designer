@@ -24,13 +24,28 @@ export interface MenuContribution {
   group?: string;
 }
 
-type MenuLocation = 'editor/title';
+type MenuLocation = 'editor/title' | 'commandPalette';
 
 interface CommandMenuEntry {
   location: MenuLocation;
   when?: string;
   group?: string;
 }
+
+const YAML_EDITOR_TITLE_WHEN = 'resourceLangId == yaml || resourceFilename =~ /\\.tui\\./';
+
+const HIDDEN_COMMAND_PALETTE_COMMANDS = new Set([
+  'textui-designer.openDevTools',
+  'textui-designer.debugSchemas',
+  'textui-designer.showPerformanceReport',
+  'textui-designer.clearPerformanceMetrics',
+  'textui-designer.togglePerformanceMonitoring',
+  'textui-designer.enablePerformanceMonitoring',
+  'textui-designer.generateSampleEvents',
+  'textui-designer.showMemoryReport',
+  'textui-designer.toggleMemoryTracking',
+  'textui-designer.enableMemoryTracking'
+]);
 
 const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
   {
@@ -39,7 +54,7 @@ const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
     menus: [
       {
         location: 'editor/title',
-        when: 'resourceLangId == yaml',
+        when: YAML_EDITOR_TITLE_WHEN,
         group: 'navigation'
       }
     ],
@@ -66,7 +81,7 @@ const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
     menus: [
       {
         location: 'editor/title',
-        when: 'resourceLangId == yaml',
+        when: YAML_EDITOR_TITLE_WHEN,
         group: 'navigation'
       }
     ],
@@ -90,7 +105,7 @@ const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
     menus: [
       {
         location: 'editor/title',
-        when: 'resourceLangId == yaml',
+        when: YAML_EDITOR_TITLE_WHEN,
         group: 'navigation'
       }
     ],
@@ -122,7 +137,8 @@ export function getPackageCommandContributions(): CommandContribution[] {
 
 export function getPackageMenuContributions(): Record<MenuLocation, MenuContribution[]> {
   const menus: Record<MenuLocation, MenuContribution[]> = {
-    'editor/title': []
+    'editor/title': [],
+    'commandPalette': []
   };
 
   for (const entry of COMMAND_CATALOG) {
@@ -137,6 +153,13 @@ export function getPackageMenuContributions(): Record<MenuLocation, MenuContribu
         menuContribution.group = menu.group;
       }
       menus[menu.location].push(menuContribution);
+    }
+
+    if (HIDDEN_COMMAND_PALETTE_COMMANDS.has(entry.command)) {
+      menus.commandPalette.push({
+        command: entry.command,
+        when: 'false'
+      });
     }
   }
 
