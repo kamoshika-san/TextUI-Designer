@@ -41,6 +41,22 @@ function isTextUiDsl(value: PreviewDocument | null): value is TextUIDSL {
   return Boolean(value && typeof value === 'object' && 'page' in value);
 }
 
+function summarizeExportSourcePath(sourcePath: string | null): { label: string; title?: string } {
+  if (!sourcePath) {
+    return { label: 'Waiting for preview file' };
+  }
+
+  const normalized = sourcePath.replace(/\\/g, '/');
+  const segments = normalized.split('/').filter(Boolean);
+  const last = segments.at(-1) ?? normalized;
+  const parent = segments.length > 1 ? segments.at(-2) : null;
+
+  return {
+    label: parent ? `${parent}/${last}` : last,
+    title: sourcePath
+  };
+}
+
 const App: React.FC = () => {
   const [json, setJson] = useState<PreviewDocument | null>(null);
   const [error, setError] = useState<ErrorInfo | string | null>(null);
@@ -60,6 +76,7 @@ const App: React.FC = () => {
   const [returnPath, setReturnPath] = useState<string | null>(null);
   const [previewCurrentScreenId, setPreviewCurrentScreenId] = useState<string | null>(null);
   const [navHistory, setNavHistory] = useState<NavHistoryEntry[]>([]);
+  const [exportSourcePath, setExportSourcePath] = useState<string | null>(null);
   const prevComponentsKeysRef = useRef<{ components: ComponentDef[]; keys: string[] } | null>(null);
 
   useEffect(() => {
@@ -229,18 +246,21 @@ const App: React.FC = () => {
     onConflictUpdate: setConflictResult,
     onHighlightComponent: setHighlightedIndex,
     onOverlayDiffInit: setOverlayDiffState,
-    onSetReturnPath: setReturnPath
+    onSetReturnPath: setReturnPath,
+    onSourcePathUpdate: setExportSourcePath
   });
+
+  const exportSourceMeta = summarizeExportSourcePath(exportSourcePath);
 
   const handleExport = () => {
     if (vscodeApi?.postMessage) {
-      vscodeApi.postMessage({ type: 'export' });
+      vscodeApi.postMessage({ type: 'export', ...(exportSourcePath ? { sourcePath: exportSourcePath } : {}) });
     }
   };
 
   const handleExportPreview = () => {
     if (vscodeApi?.postMessage) {
-      vscodeApi.postMessage({ type: 'export-preview' });
+      vscodeApi.postMessage({ type: 'export-preview', ...(exportSourcePath ? { sourcePath: exportSourcePath } : {}) });
     }
   };
 
@@ -366,7 +386,12 @@ const App: React.FC = () => {
       >
         <ThemeToggle />
         <CustomThemeSelector />
-        <ExportButton onExport={handleExport} onExportPreview={handleExportPreview} />
+        <ExportButton
+          onExport={handleExport}
+          onExportPreview={handleExportPreview}
+          sourceLabel={exportSourceMeta.label}
+          sourceTitle={exportSourceMeta.title}
+        />
         {showUpdateIndicator ? (
           <UpdateIndicator
             status={updateStatus}
@@ -483,7 +508,12 @@ const App: React.FC = () => {
       ) : null}
       <ThemeToggle />
       <CustomThemeSelector />
-      <ExportButton onExport={handleExport} onExportPreview={handleExportPreview} />
+      <ExportButton
+        onExport={handleExport}
+        onExportPreview={handleExportPreview}
+        sourceLabel={exportSourceMeta.label}
+        sourceTitle={exportSourceMeta.title}
+      />
       {returnPath ? (
         <button
           type="button"

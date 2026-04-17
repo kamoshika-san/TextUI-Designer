@@ -58,8 +58,8 @@ export class WebViewMessageHandler {
     this.windowAdapter = dependencies.windowAdapter ?? new VSCodeWindowAdapter();
     this.panelMessenger = new WebViewPanelMessenger(this.lifecycleManager);
     this.messageHandlers = {
-      'export': async () => this.handleExportMessage(),
-      'export-preview': async () => this.handleExportPreviewMessage(),
+      'export': async (message) => this.handleExportMessage(message),
+      'export-preview': async (message) => this.handleExportPreviewMessage(message),
       'jump-to-dsl': async (message) => this.handleJumpToDslMessage(message),
       'navigate-back': async (message) => this.handleNavigateBack(message),
       'webview-ready': async () => this.handleWebViewReady(),
@@ -181,32 +181,34 @@ export class WebViewMessageHandler {
   /**
    * エクスポートメッセージを処理
    */
-  private async handleExportMessage(): Promise<void> {
+  private async handleExportMessage(message: WebViewMessage): Promise<void> {
     this.logger.debug('エクスポートメッセージを受信');
-    const lastTuiFile = this.updateManager.getLastTuiFile();
+    const sourcePath = typeof message.sourcePath === 'string' && message.sourcePath ? message.sourcePath : undefined;
+    const targetFile = sourcePath ?? this.updateManager.getLastTuiFile();
 
-    if (lastTuiFile) {
-      this.logger.debug(`エクスポート用ファイル: ${lastTuiFile}`);
-      await vscode.commands.executeCommand('textui-designer.export', lastTuiFile);
+    if (targetFile) {
+      this.logger.debug(`エクスポート用ファイル: ${targetFile}`);
+      await vscode.commands.executeCommand('textui-designer.export', targetFile);
     } else {
       this.logger.debug('エクスポート用ファイルが見つかりません');
-      this.windowAdapter.showWarningMessage('エクスポートするファイルが見つかりません。先に.tui.ymlファイルを開いてください。');
+      this.windowAdapter.showWarningMessage('.tui.yml ファイルのプレビューを開いてからエクスポートしてください。');
     }
   }
 
   /**
    * エクスポートプレビューメッセージを処理
    */
-  private async handleExportPreviewMessage(): Promise<void> {
+  private async handleExportPreviewMessage(message: WebViewMessage): Promise<void> {
     this.logger.debug('エクスポートプレビューメッセージを受信');
-    const lastTuiFile = this.updateManager.getLastTuiFile();
+    const sourcePath = typeof message.sourcePath === 'string' && message.sourcePath ? message.sourcePath : undefined;
+    const targetFile = sourcePath ?? this.updateManager.getLastTuiFile();
 
-    if (!lastTuiFile) {
-      this.windowAdapter.showWarningMessage('プレビューするファイルが見つかりません。先に.tui.ymlファイルを開いてください。');
+    if (!targetFile) {
+      this.windowAdapter.showWarningMessage('.tui.yml ファイルのプレビューを開いてからエクスポートしてください。');
       return;
     }
 
-    await vscode.commands.executeCommand('textui-designer.export-preview', lastTuiFile);
+    await vscode.commands.executeCommand('textui-designer.export-preview', targetFile);
   }
 
   /**

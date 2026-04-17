@@ -59,6 +59,7 @@ interface UseWebviewMessagesOptions {
   onHighlightComponent?: (index: number | null) => void;
   onOverlayDiffInit?: (state: OverlayDiffState) => void;
   onSetReturnPath?: (returnPath: string) => void;
+  onSourcePathUpdate?: (sourcePath: string) => void;
 }
 
 export function readPreviewSettings(
@@ -87,7 +88,8 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
     onConflictUpdate,
     onHighlightComponent,
     onOverlayDiffInit,
-    onSetReturnPath
+    onSetReturnPath,
+    onSourcePathUpdate
   } = options;
   const previewUpdateFeedbackRef = useRef<ReturnType<typeof createPreviewUpdateFeedbackController> | null>(null);
   const hasPostedReadyRef = useRef(false);
@@ -115,11 +117,17 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
       switch (message.type) {
         case 'json':
           applyDslUpdate(message.json as TextUIDSL | NavigationFlowDSL);
+          if (typeof message.fileName === 'string' && message.fileName) {
+            onSourcePathUpdate?.(message.fileName);
+          }
           previewUpdateFeedbackRef.current?.handlePreviewComplete();
           setError(null);
           break;
         case 'update':
           applyDslUpdate(message.data as TextUIDSL | NavigationFlowDSL);
+          if (typeof message.fileName === 'string' && message.fileName) {
+            onSourcePathUpdate?.(message.fileName);
+          }
           previewUpdateFeedbackRef.current?.handlePreviewComplete();
           setError(null);
           break;
@@ -198,5 +206,5 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
       previewUpdateFeedbackRef.current = null;
       window.removeEventListener('message', onMessage);
     };
-  }, [postReady, applyDslUpdate, setError, setUpdateStatus, setLastCompletedAt, setShowUpdateIndicator, setShowJumpToDslHoverIndicator, onDiffUpdate, onConflictUpdate, onHighlightComponent, onOverlayDiffInit, onSetReturnPath]);
+  }, [postReady, applyDslUpdate, setError, setUpdateStatus, setLastCompletedAt, setShowUpdateIndicator, setShowJumpToDslHoverIndicator, onDiffUpdate, onConflictUpdate, onHighlightComponent, onOverlayDiffInit, onSetReturnPath, onSourcePathUpdate]);
 }
