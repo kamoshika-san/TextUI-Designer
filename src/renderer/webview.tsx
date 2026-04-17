@@ -384,14 +384,16 @@ const App: React.FC = () => {
         className={showJumpToDslHoverIndicator ? 'textui-preview-root' : 'textui-preview-root textui-preview-root-hide-jump-hover'}
         style={{ padding: 24, position: 'relative' }}
       >
-        <ThemeToggle />
-        <CustomThemeSelector />
-        <ExportButton
-          onExport={handleExport}
-          onExportPreview={handleExportPreview}
-          sourceLabel={exportSourceMeta.label}
-          sourceTitle={exportSourceMeta.title}
-        />
+        <div style={{ position: 'fixed', top: '1rem', right: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center', zIndex: 1000, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <ThemeToggle />
+          <CustomThemeSelector />
+          <ExportButton
+            onExport={handleExport}
+            onExportPreview={handleExportPreview}
+            sourceLabel={exportSourceMeta.label}
+            sourceTitle={exportSourceMeta.title}
+          />
+        </div>
         {showUpdateIndicator ? (
           <UpdateIndicator
             status={updateStatus}
@@ -506,14 +508,16 @@ const App: React.FC = () => {
           </div>
         </div>
       ) : null}
-      <ThemeToggle />
-      <CustomThemeSelector />
-      <ExportButton
-        onExport={handleExport}
-        onExportPreview={handleExportPreview}
-        sourceLabel={exportSourceMeta.label}
-        sourceTitle={exportSourceMeta.title}
-      />
+      <div style={{ position: 'fixed', top: '1rem', right: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center', zIndex: 1000, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <ThemeToggle />
+        <CustomThemeSelector />
+        <ExportButton
+          onExport={handleExport}
+          onExportPreview={handleExportPreview}
+          sourceLabel={exportSourceMeta.label}
+          sourceTitle={exportSourceMeta.title}
+        />
+      </div>
       {returnPath ? (
         <button
           type="button"

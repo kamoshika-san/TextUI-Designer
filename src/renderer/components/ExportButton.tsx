@@ -41,12 +41,10 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
 }) => (
   <div
     style={{
-      position: 'fixed',
-      top: '1rem',
-      right: '1rem',
       display: 'flex',
       gap: '0.5rem',
-      zIndex: 1000
+      alignItems: 'center',
+      flexShrink: 0
     }}
   >
     <div

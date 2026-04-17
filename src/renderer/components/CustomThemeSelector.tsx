@@ -75,16 +75,13 @@ export const CustomThemeSelector: React.FC<CustomThemeSelectorProps> = ({ classN
   }
 
   return (
-    <div className={`custom-theme-selector ${className}`}>
+    <div className={`custom-theme-selector ${className}`} style={{ position: 'relative' }}>
       {/* メインボタン */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isLoading}
         title={`現在のテーマ: ${activeTheme?.name || 'デフォルト'}`}
         style={{
-          position: 'fixed',
-          top: '1rem',
-          right: '10rem', // ExportボタンとThemeToggleボタンの間
           backgroundColor: 'rgba(75, 85, 99, 0.8)',
           color: '#d1d5db',
           border: '1px solid rgba(107, 114, 128, 0.5)',
@@ -93,13 +90,13 @@ export const CustomThemeSelector: React.FC<CustomThemeSelectorProps> = ({ classN
           fontSize: '0.875rem',
           cursor: isLoading ? 'wait' : 'pointer',
           transition: 'all 0.2s',
-          zIndex: 1000,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           height: '2.5rem',
           minWidth: '5rem',
-          opacity: isLoading ? 0.7 : 1
+          opacity: isLoading ? 0.7 : 1,
+          flexShrink: 0
         }}
         onMouseEnter={(e) => {
           if (!isLoading) {
@@ -138,9 +135,9 @@ export const CustomThemeSelector: React.FC<CustomThemeSelectorProps> = ({ classN
       {isOpen && (
         <div
           style={{
-            position: 'fixed',
-            top: '4rem',
-            right: '10rem',
+            position: 'absolute',
+            top: 'calc(100% + 4px)',
+            right: 0,
             backgroundColor: 'rgba(31, 41, 55, 0.95)',
             border: '1px solid rgba(75, 85, 99, 0.7)',
             borderRadius: '0.5rem',

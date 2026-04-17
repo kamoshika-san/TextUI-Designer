@@ -101,9 +101,6 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
       className={`theme-toggle ${className}`}
       title={`テーマ: ${getThemeLabel()} (クリックで切り替え)`}
       style={{
-        position: 'fixed',
-        top: '1rem',
-        right: '6rem', // Exportボタンとの間隔を広げる
         backgroundColor: 'rgba(75, 85, 99, 0.8)',
         color: '#d1d5db',
         border: '1px solid rgba(107, 114, 128, 0.5)',
@@ -112,13 +109,13 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
         fontSize: '0.875rem',
         cursor: 'pointer',
         transition: 'all 0.2s',
-        zIndex: 1000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        height: '2.5rem', // Exportボタンと同じ高さ
+        height: '2.5rem',
         minWidth: '3rem',
-        width: '3rem' // 幅を固定
+        width: '3rem',
+        flexShrink: 0
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.backgroundColor = 'rgba(55, 65, 81, 0.9)';
