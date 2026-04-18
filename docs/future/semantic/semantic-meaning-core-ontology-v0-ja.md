@@ -392,7 +392,7 @@ screen: expense_detail
 
 entity:
   id: expense          # 主キー（stable reference）
-  name: expense
+  name: 経費申請
   state: draft
 
 components:
@@ -620,6 +620,8 @@ SHOULD:
 }
 ```
 
+> **注**: `confidence` の値（上例: 0.92）は説明用の例示であり、本書は閾値を固定しない（`T-20260418-005`・`T-20260418-006` 参照）。
+
 ## 変更履歴
 
 - 2026-04-18: v0 初版（議論の固定化）
@@ -637,3 +639,4 @@ SHOULD:
 - 2026-04-18: `T-20260418-002` 反映 — 差異＝業務意味に効く不一致（狭義）、案A包含（観測差分 ⊇ 差異 ⊇ 意味差分）、観測と判定の分離、表層ラベル例
 - 2026-04-18: `T-20260418-005` — 未解決の `candidates` 正規化、`review_status`、diff 規則、Human-readable、ライフサイクル、v2 境界1行
 - 2026-04-18: `T-20260418-004` — 安定参照と entity 同一性規則を追加（主キー規則・rename 判定・サンプル）。サンプル DSL の `entity` に `id` フィールドを追加
+- 2026-04-18: Architect 検証による即修正 — サンプル DSL の `entity.name` を `経費申請`（日本語）に統一。JSON 例の `confidence` 数値に閾値非規定の注記を追加
