@@ -184,6 +184,7 @@
   },
   "active": "5363696dac6b4b0b",
   "lastOpenFiles": [
+    "docs/future/types/v2/dsl-structure.ts",
     "docs/future/types/v2/diff-record.ts",
     "docs/future/semantic/semantic-meaning-core-ontology-v0-ja.md",
     "docs/future/types/v2/evidence.ts",
@@ -197,7 +198,6 @@
     "docs/future/semantic/README.md",
     "docs/future/schemas/v2/evidence/union.schema.json",
     "docs/future/schemas/v2/evidence/state_machine.transition.schema.json",
-    "docs/future/schemas/v2/evidence/data_contract.field_requiredness.schema.json",
     "docs/current/README.md",
     "docs/semantic-meaning-core-ontology-v0-ja.md",
     "docs/v2-evidence-shapes-registry-ja.md",
