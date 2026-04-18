@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://textui-designer.dev/docs/future/schemas/v2/evidence/union.json",
+  "title": "v2 evidence: union of registered shapes",
+  "description": "decision_payload.evidence 用。新規 evidence_shape を追加したら oneOf に追記する。",
+  "oneOf": [
+    { "$ref": "state_machine.transition.schema.json" },
+    { "$ref": "copy_locale.message_string.schema.json" },
+    { "$ref": "data_contract.field_requiredness.schema.json" }
+  ]
+}

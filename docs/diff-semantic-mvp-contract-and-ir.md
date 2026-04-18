@@ -36,6 +36,7 @@ Read this document together with:
 - `docs/diff-summary-payload-schema.md`
 - `docs/diff-sourcref-jump-and-evidence-navigation.md`
 - `src/types/semantic-diff.ts`
+- `docs/future/semantic/semantic-meaning-core-ontology-v0-ja.md` (Japanese: business-meaning core ontology + taxonomy; not a code contract; future-track docs)
 
 Rule of thumb:
 
@@ -78,6 +79,10 @@ Layer ownership:
 - `data`: bindings and data-source changes
 
 `ChangeGroup.type` must use the same four values.
+
+Mapping note (non-normative):
+
+- For a product-language split between implementation-facing layers (`structure|behavior|visual|data`) and business-facing meaning layers (`surface|structure|semantic`), see `docs/future/semantic/semantic-meaning-core-ontology-v0-ja.md`.
 
 ## MVP Boundary
 

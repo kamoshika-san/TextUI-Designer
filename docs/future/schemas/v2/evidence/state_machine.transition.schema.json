@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://textui-designer.dev/docs/future/schemas/v2/evidence/state_machine.transition.json",
+  "title": "v2 evidence: state_machine.transition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["evidence_shape", "before", "after"],
+  "properties": {
+    "evidence_shape": {
+      "type": "string",
+      "const": "state_machine.transition"
+    },
+    "before": { "$ref": "#/$defs/transitionLeg" },
+    "after": { "$ref": "#/$defs/transitionLeg" }
+  },
+  "$defs": {
+    "transitionLeg": {
+      "type": "object",
+      "required": ["from", "to", "trigger"],
+      "properties": {
+        "from": { "type": "string", "minLength": 1 },
+        "to": { "type": "string", "minLength": 1 },
+        "trigger": { "type": "string", "minLength": 1 },
+        "guard": { "type": "string" },
+        "note": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  }
+}

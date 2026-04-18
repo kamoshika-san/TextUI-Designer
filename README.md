@@ -286,6 +286,7 @@ Detailed setup: [docs/SETUP.md](docs/SETUP.md)
 - [Setup](docs/SETUP.md) · [Testing](docs/TESTING.md) · [Contributing](CONTRIBUTING.md) · [FAQ](docs/FAQ.md)
 - [Extension Boundary Guide](docs/extension-boundary-guide.md) · [Exporter Boundary Guide](docs/exporter-boundary-guide.md)
 - [Adding Built-In Component](docs/adding-built-in-component.md) · [Glossary](docs/GLOSSARY.md)
+- [Semantic Meaning / Diff Taxonomy（日本語・将来向け）](docs/future/semantic/semantic-meaning-core-ontology-v0-ja.md) · [旧パススタブ](docs/semantic-meaning-core-ontology-v0-ja.md)
 
 ---
 
