@@ -145,6 +145,36 @@ describe('buildDiffResultExternal (T-20260401-001)', () => {
       assert.strictEqual(result.metadata.eventCount, 2);
       assert.strictEqual(result.events.length, 2);
     });
+
+    it('ignores optional internal v2 payload when projecting external contract', () => {
+      const input = makeInput([makeEvent('e1', 'update', 'component')]);
+      input.v2 = {
+        screens: [{
+          screen_id: 'screen:orders.edit',
+          diffs: [{
+            decision: {
+              diff_event: 'component_action_changed',
+              target_id: 'component:save',
+              confidence: 1,
+              review_status: 'approved'
+            },
+            explanation: {
+              evidence: []
+            }
+          }],
+          entities: []
+        }],
+        metadata: {
+          schemaVersion: 'v2-compare-logic/v0',
+          totalRecords: 1
+        }
+      };
+
+      const result = buildDiffResultExternal(input, DEFAULT_OPTS);
+      assert.ok(!('v2' in result), 'external projection must not expose internal v2 payload');
+      assert.strictEqual(result.events.length, 1);
+      assert.strictEqual(result.events[0].eventId, 'e1');
+    });
   });
 
   describe('Minimal conversion — empty events', () => {

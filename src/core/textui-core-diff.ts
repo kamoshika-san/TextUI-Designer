@@ -11,6 +11,18 @@
 
 // ---- Types ----------------------------------------------------------------
 export type {
+  V2DiffEvent,
+  V2ReviewStatus,
+  V2DiffDecision,
+  V2DiffExplanation,
+  V2DiffRecord,
+  V2ComponentDiff,
+  V2EntityDiff,
+  V2ScreenDiff,
+  DiffCompareResultV2Payload,
+} from './diff/diff-v2-types';
+
+export type {
   DiffCompareSide,
   DiffEntityKind,
   DiffEntityStatus,

@@ -7,6 +7,7 @@ import type {
   NavigationTransitionKind,
   TextUIDSL,
 } from '../../domain/dsl-types';
+import type { DiffCompareResultV2Payload } from './diff-v2-types';
 
 export type DiffCompareSide = 'previous' | 'next';
 export type DiffEntityKind = 'page' | 'component' | 'property' | 'flow' | 'transition';
@@ -217,6 +218,8 @@ export interface DiffCompareResult {
   };
   entityResults: DiffEntityResult[];
   events: DiffEvent[];
+  /** Optional semantic v2 payload produced by a future V2SemanticDiffProvider. */
+  v2?: DiffCompareResultV2Payload;
   metadata: {
     schemaVersion: 'diff-result/v0';
     compareStage: 'c1-skeleton';
@@ -248,4 +251,3 @@ export interface DiffRenderTarget {
   next?: DiffRenderTargetRef;
   resolution: DiffRenderTargetResolution;
 }
-
