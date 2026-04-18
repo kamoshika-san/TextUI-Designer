@@ -383,6 +383,46 @@ transition:
     to: submitted
 ```
 
+補足: `transitions[].id` が Transition の **安定参照キー**（同一性判定・rename 判定に使用）。DSL サンプルでは `id: t_submit_draft_to_submitted` のように付与する。
+
+## DSL 構造概念（5軸の適用スコープ）
+
+5軸（Action / State / Availability / Role / Transition）の述語・状態は、以下の **構造概念** を対象スコープとして適用する。構造概念は ontology の軸ではなく、DSL の **比較・参照の単位** として機能する。
+
+| 概念 | 役割 | 安定参照キー |
+|------|------|-------------|
+| `screen` | entity と components を束ねる比較・正規化の最上位単位 | `screen`（DSL トップキー） |
+| `entity` | 業務操作の対象となる主体。5軸はこの entity に対して評価される | `entity.id` |
+| `components` | screen 内の UI 要素集合。Action / Availability の述語が適用される単位 | `components[].id` |
+
+### screen
+
+> **screen**: entity + components + transitions を束ねた、正規化・比較の **最上位単位**。`screen` 識別子（DSL トップキー）が安定参照の起点となる。
+
+- 1 screen に複数の entity が存在する場合、entity ごとに `entity.id` で区別する
+- screen 内の stable reference（`entity.id` / `components[].id` / `transitions[].id`）は screen スコープ内で一意でなければならない
+
+### entity
+
+> **entity**: screen の主体となる業務オブジェクト（例: 申請書・注文・ユーザー）。5軸は entity の状態・操作・権限・可用性を記述するために使う。
+
+フィールド:
+
+- `id`: 安定参照キー（主キー。規則の詳細は「安定参照と entity 同一性規則」節を参照）
+- `name`: 人間可読ラベル（意味の主キーではない）
+- `state`: 業務状態（`state.entity_state` の列挙子に対応）
+
+### components
+
+> **components**: screen 内の UI 要素集合。各要素は `id`（安定参照キー）を持ち、Action / Availability の述語が適用される単位となる。
+
+フィールド（各 component）:
+
+- `id`: 安定参照キー（`components[].id` として stable reference に使用）
+- `type`: UI 要素の種別（`button` / `input` 等。v0 では閉じた列挙を定義しない）
+- `label`: 人間可読ラベル（意味の主キーではない）
+- `action` / `availability` / `guard`: 5軸の述語を適用するフィールド
+
 ## 表現（正規化 DSL の最小断片）
 
 比較可能性を上げるため、条件は正規形（predicate）へ落とすことを推奨する（**構文の正本**は上記「`canonical predicate`（v0.1）」節）。
@@ -640,3 +680,4 @@ SHOULD:
 - 2026-04-18: `T-20260418-005` — 未解決の `candidates` 正規化、`review_status`、diff 規則、Human-readable、ライフサイクル、v2 境界1行
 - 2026-04-18: `T-20260418-004` — 安定参照と entity 同一性規則を追加（主キー規則・rename 判定・サンプル）。サンプル DSL の `entity` に `id` フィールドを追加
 - 2026-04-18: Architect 検証による即修正 — サンプル DSL の `entity.name` を `経費申請`（日本語）に統一。JSON 例の `confidence` 数値に閾値非規定の注記を追加
+- 2026-04-18: `T-20260418-008` — DSL 構造概念（screen / entity / components）を「5軸の適用スコープ」として定義追加。Transition 節に `transitions[].id` の安定参照キー記述を追加
