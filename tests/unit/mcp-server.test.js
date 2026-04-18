@@ -200,6 +200,91 @@ theme:
     assert.ok(Array.isArray(response.result.structuredContent.parsedJson.providers));
   });
 
+  it('tools/call run_cli accepts workspace-root cwd when only the Windows drive-letter casing differs', async function () {
+    if (process.platform !== 'win32') {
+      this.skip();
+    }
+
+    const server = new TextUiMcpServer();
+    const cwdWithLowerDriveLetter = process.cwd().replace(/^[A-Z]:/, match => match.toLowerCase());
+    const response = await server.handleMessage({
+      jsonrpc: '2.0',
+      id: 601,
+      method: 'tools/call',
+      params: {
+        name: 'run_cli',
+        arguments: {
+          args: ['version'],
+          cwd: cwdWithLowerDriveLetter,
+          parseJson: false
+        }
+      }
+    });
+
+    assert.ok(response.result);
+    assert.strictEqual(response.result.structuredContent.exitCode, 0);
+    assert.strictEqual(response.result.structuredContent.cwd.toLowerCase(), process.cwd().toLowerCase());
+  });
+
+  it('tools/call run_cli accepts nested workspace cwd when only the Windows drive-letter casing differs', async function () {
+    if (process.platform !== 'win32') {
+      this.skip();
+    }
+
+    const server = new TextUiMcpServer();
+    const nestedDir = path.join(process.cwd(), 'generated', 'mcp-cwd-nested-test');
+    const cwdWithLowerDriveLetter = nestedDir.replace(/^[A-Z]:/, match => match.toLowerCase());
+    fs.mkdirSync(nestedDir, { recursive: true });
+
+    try {
+      const response = await server.handleMessage({
+        jsonrpc: '2.0',
+        id: 602,
+        method: 'tools/call',
+        params: {
+          name: 'run_cli',
+          arguments: {
+            args: ['version'],
+            cwd: cwdWithLowerDriveLetter,
+            parseJson: false
+          }
+        }
+      });
+
+      assert.ok(response.result);
+      assert.strictEqual(response.result.structuredContent.exitCode, 0);
+      assert.strictEqual(response.result.structuredContent.cwd.toLowerCase(), nestedDir.toLowerCase());
+    } finally {
+      fs.rmSync(nestedDir, { recursive: true, force: true });
+    }
+  });
+
+  it('tools/call run_cli still rejects cwd outside the workspace', async () => {
+    const server = new TextUiMcpServer();
+    const externalDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-mcp-outside-'));
+
+    try {
+      const response = await server.handleMessage({
+        jsonrpc: '2.0',
+        id: 603,
+        method: 'tools/call',
+        params: {
+          name: 'run_cli',
+          arguments: {
+            args: ['version'],
+            cwd: externalDir,
+            parseJson: false
+          }
+        }
+      });
+
+      assert.ok(response.error);
+      assert.match(response.error.message, /cwd must be within the project directory/);
+    } finally {
+      fs.rmSync(externalDir, { recursive: true, force: true });
+    }
+  });
+
   it('tools/call validate_flow validates a navigation flow file', async () => {
     const server = new TextUiMcpServer();
     const response = await server.handleMessage({

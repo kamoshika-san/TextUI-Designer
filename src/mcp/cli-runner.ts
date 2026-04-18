@@ -34,6 +34,19 @@ const CLI_SUPPORTED_ROOT_COMMANDS = new Set([
   '-h'
 ]);
 
+function normalizePathForContainmentCheck(targetPath: string): string {
+  const normalized = path.resolve(targetPath);
+  return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
+}
+
+function isWithinProjectDirectory(baseCwd: string, targetCwd: string): boolean {
+  const normalizedBase = normalizePathForContainmentCheck(baseCwd);
+  const normalizedTarget = normalizePathForContainmentCheck(targetCwd);
+
+  return normalizedTarget === normalizedBase
+    || normalizedTarget.startsWith(normalizedBase + path.sep);
+}
+
 export class CliRunner {
   async run(request: CliRunRequest): Promise<CliRunResponse> {
     const { args } = request;
@@ -51,7 +64,7 @@ export class CliRunner {
 
     const baseCwd = process.cwd();
     const resolvedCwd = request.cwd ? path.resolve(request.cwd) : baseCwd;
-    if (resolvedCwd !== baseCwd && !resolvedCwd.startsWith(baseCwd + path.sep)) {
+    if (!isWithinProjectDirectory(baseCwd, resolvedCwd)) {
       throw new Error(`run_cli cwd must be within the project directory: ${resolvedCwd}`);
     }
     const cwd = resolvedCwd;
