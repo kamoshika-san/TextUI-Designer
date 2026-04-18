@@ -175,6 +175,8 @@ export function runMcpServer(): void {
     process.stderr.write(`[textui-mcp] ${error instanceof Error ? error.message : String(error)}\n`);
   });
 
+  transport.on('end', () => process.exit(0));
+
   transport.start();
 }
 
