@@ -184,6 +184,8 @@
   },
   "active": "1be5af3b58a9bb9b",
   "lastOpenFiles": [
+    "docs/future/types/v2/evidence.ts",
+    "docs/future/types/v2/evidence.ts.tmp.13952.1776512735197",
     "docs/future/types/v2/canonical-predicate.ts",
     "docs/future/types/v2",
     "docs/future/types",
@@ -195,8 +197,6 @@
     "docs/future/schemas/v2/evidence/state_machine.transition.schema.json",
     "docs/future/schemas/v2/evidence/data_contract.field_requiredness.schema.json",
     "docs/future/schemas/v2/evidence/copy_locale.message_string.schema.json",
-    "docs/future/schemas/v2/evidence",
-    "docs/future/schemas/v2",
     "docs/future/semantic/semantic-meaning-core-ontology-v0-ja.md",
     "docs/current/README.md",
     "docs/semantic-meaning-core-ontology-v0-ja.md",
