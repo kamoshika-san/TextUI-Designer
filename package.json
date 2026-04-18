@@ -27,6 +27,8 @@
     "node_modules/fast-uri/**/*",
     "node_modules/json-schema-traverse/**/*",
     "node_modules/puppeteer-core/**/*",
+    "node_modules/react/**/*",
+    "node_modules/react-dom/**/*",
     "node_modules/require-from-string/**/*",
     "node_modules/yaml/**/*",
     "schemas/**/*",
