@@ -8,9 +8,8 @@ import type { NormalizationDiagnosticEntry } from './diff-normalization/degrade-
 import { getTextUiComponentCatalog, type TextUIComponentCatalogEntry } from './component-catalog';
 import { TextUiCoreComponentBuilder, getComponentSpecHandlerFlagsForTesting, getComponentSpecTypesForTesting } from './textui-core-component-builder';
 import {
-  createDiffResultSkeleton,
-  createNormalizedFlowDiffDocument,
-  createNormalizedDiffDocument,
+  type SemanticDiffProvider,
+  V1SemanticDiffProvider,
   type DiffCompareDocument,
   type DiffCompareResult,
   type FlowDiffCompareDocument,
@@ -133,6 +132,11 @@ export { getComponentSpecTypesForTesting, getComponentSpecHandlerFlagsForTesting
 
 export class TextUICoreEngine {
   private readonly componentBuilder = new TextUiCoreComponentBuilder();
+  private readonly diffProvider: SemanticDiffProvider;
+
+  constructor(diffProvider?: SemanticDiffProvider) {
+    this.diffProvider = diffProvider ?? new V1SemanticDiffProvider();
+  }
 
   private annotateCompareDiagnostics(source: 'previous' | 'next', diagnostics: CoreDiagnostic[]): CoreDiagnostic[] {
     return diagnostics.map(diagnostic => ({
@@ -258,11 +262,11 @@ export class TextUICoreEngine {
           return nextValidation.normalizedDsl!;
         })();
 
-    const previous = createNormalizedDiffDocument(prevDsl, {
+    const previous = this.diffProvider.createStructureDiffDocument(prevDsl, {
       side: 'previous',
       sourcePath: request.previousSourcePath
     });
-    const next = createNormalizedDiffDocument(nextDsl, {
+    const next = this.diffProvider.createStructureDiffDocument(nextDsl, {
       side: 'next',
       sourcePath: request.nextSourcePath
     });
@@ -273,7 +277,7 @@ export class TextUICoreEngine {
       ...(normalizationDiagnostics.length > 0 ? { normalizationDiagnostics } : {}),
       previous,
       next,
-      result: createDiffResultSkeleton(previous, next, request.heuristicPolicy)
+      result: this.diffProvider.compareStructureDiff(previous, next, request.heuristicPolicy)
     };
   }
 
@@ -309,11 +313,11 @@ export class TextUICoreEngine {
     return {
       ok: true,
       diagnostics: [],
-      previous: createNormalizedFlowDiffDocument(previousValidation.normalizedDsl, {
+      previous: this.diffProvider.createFlowDiffDocument(previousValidation.normalizedDsl, {
         side: 'previous',
         sourcePath: request.previousSourcePath
       }),
-      next: createNormalizedFlowDiffDocument(nextValidation.normalizedDsl, {
+      next: this.diffProvider.createFlowDiffDocument(nextValidation.normalizedDsl, {
         side: 'next',
         sourcePath: request.nextSourcePath
       }),
