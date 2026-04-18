@@ -24,14 +24,14 @@
 
 ## 論点A-2: screen_id が片側にのみ存在する場合のスコープ
 
-**決定: `screen_added` / `screen_removed` は compare-logic v2 の follow-up。現行の closed vocabulary には含めない。**
+**決定: `screen_added` / `screen_removed` は compare-logic v2 現フェーズの non-goal。現行の closed vocabulary には含めない。**
 
 根拠:
-- `screen_added` / `screen_removed` はページ追加/削除という最大粒度の変化であり、将来の v2 DiffEvent 拡張候補である。
+- `screen_added` / `screen_removed` はページ追加/削除という最大粒度の変化であり、現行 compare-logic v2 が扱う entity/component 起点の意味差分より一段外側の責務になる。
 - ただし現行の `docs/future/types/v2/diff-record.ts` は 12 event の closed vocabulary を前提としており、この2件はまだ含まれない。
-- compare-logic v2 の現行スコープでは screen 単体の追加/削除は follow-up チケットで扱い、A〜H の本文では entity/component 比較の記録契約に集中する。
+- compare-logic v2 の現行スコープでは screen 単体の追加/削除は扱わず、A〜H の本文では entity/component 比較の記録契約に集中する。
 
-> **注**: `screen_added` / `screen_removed` を正式に追加する場合は `docs/future/types/v2/diff-record.ts` と sort/evidence 規則の同時更新が必要。
+> **注**: 将来 `screen_added` / `screen_removed` を正式に追加する場合は、別フェーズで `docs/future/types/v2/diff-record.ts` と sort/evidence/confidence 規則を同時更新する。
 
 ---
 
@@ -44,7 +44,7 @@ import type { Screen, V2ScreenDiff, V2EntityDiff, V2ComponentDiff } from '../typ
 
 /**
  * トップレベルエントリポイント。
- * prev または next が undefined の場合は screen 単体差分の follow-up 対象として扱う。
+ * prev または next が undefined の場合は current compare-logic v2 の scope 外として扱う。
  */
 function compareScreen(
   screenId: string,
@@ -82,8 +82,8 @@ function compareComponent(
 
 ```
 compareScreen(screenId, prev, next)
-  ├─ prev == undefined → diffs: [], entities: []  // screen_added は follow-up
-  ├─ next == undefined → diffs: [], entities: []  // screen_removed は follow-up
+  ├─ prev == undefined → diffs: [], entities: []  // screen-level added は current scope 外
+  ├─ next == undefined → diffs: [], entities: []  // screen-level removed は current scope 外
   └─ 両側存在 →
        diffs: []  (screen レベルの直接 diff はなし — entity/component に委譲)
        entities: union(prev.entity.id, next.entity.id) をキーに

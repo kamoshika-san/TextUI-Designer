@@ -29,7 +29,6 @@
 | guard に `UnresolvedPredicate` が含まれる（D-3） | `-0.3` | `0.2` | guard の同値判定が不確実 |
 | entity.id 不一致 + name 一致（B-2、既に 0.5） | 追加減算なし | `0.5` | 初期値で既に反映済み |
 | entity.id 欠損の補助一致（B-4、既に 0.7） | 追加減算なし | `0.7` | 初期値で既に反映済み |
-| `screen_added` / `screen_removed`（設計A follow-up） | `1.0`（変化なし） | `1.0` | 構造的追加/削除は確実 |
 
 低下後の confidence は `max(0.0, initial - reduction)` で算出する。
 
@@ -118,6 +117,10 @@ function deriveReviewStatus(confidence: number): ReviewStatus {
 | 設計F | evidence 生成ルール |
 | 設計G | 複数 diff_event 同時発生 |
 | 設計H | V2SemanticDiffProvider 実装アーキテクチャ |
+
+---
+
+> 注: `screen_added` / `screen_removed` は current compare-logic v2 の non-goal であり、本書の confidence ルール対象外。
 
 ---
 
