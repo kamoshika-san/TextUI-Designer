@@ -135,4 +135,28 @@ theme:
     assert.strictEqual(result.dsl.page.components[0].Button.token, '#abcdef');
     assert.deepStrictEqual(result.issues, []);
   });
+
+  it('falls back to default preview theme tokens when no textui-theme exists', () => {
+    fs.rmSync(path.join(tmpDir, 'textui-theme.yml'));
+    const sourcePath = path.join(tmpDir, 'default-theme.tui.yml');
+    const dsl = {
+      page: {
+        id: 'p',
+        title: 't',
+        layout: 'vertical',
+        components: [
+          {
+            Button: {
+              label: 'ok',
+              token: 'color.primary'
+            }
+          }
+        ]
+      }
+    };
+
+    const result = resolveDslTokens({ dsl, sourcePath, onError: 'error' });
+    assert.strictEqual(result.dsl.page.components[0].Button.token, '#3B82F6');
+    assert.deepStrictEqual(result.issues, []);
+  });
 });

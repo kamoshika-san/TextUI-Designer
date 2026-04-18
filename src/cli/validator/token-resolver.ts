@@ -168,7 +168,13 @@ function parseTokenReference(value: unknown): string | null {
 }
 
 function normalizeTokenPath(tokenPath: string): string {
-  return tokenPath.startsWith('tokens.') ? tokenPath.slice('tokens.'.length) : tokenPath;
+  const withoutPrefix = tokenPath.startsWith('tokens.') ? tokenPath.slice('tokens.'.length) : tokenPath;
+
+  if (withoutPrefix === 'color' || withoutPrefix.startsWith('color.')) {
+    return `colors${withoutPrefix.slice('color'.length)}`;
+  }
+
+  return withoutPrefix;
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {

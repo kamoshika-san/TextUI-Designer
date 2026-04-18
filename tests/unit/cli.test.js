@@ -171,6 +171,25 @@ page:
     assert.strictEqual(parsed.valid, true);
   });
 
+  it('validate falls back to default preview theme tokens when no textui-theme exists', () => {
+    const tokenDslFile = path.join(tmpDir, 'token-valid-default-theme.tui.yml');
+    fs.writeFileSync(tokenDslFile, `
+page:
+  id: token-valid-default-theme
+  title: "Token Valid Default Theme"
+  layout: vertical
+  components:
+    - Button:
+        label: "送信"
+        token: color.primary
+`, 'utf8');
+
+    const result = spawnSync('node', [cliPath, 'validate', '--file', tokenDslFile, '--json'], { encoding: 'utf8' });
+    assert.strictEqual(result.status, 0);
+    const parsed = JSON.parse(result.stdout);
+    assert.strictEqual(parsed.valid, true);
+  });
+
   it('validate fails when token is undefined', () => {
     const tokenDslFile = path.join(tmpDir, 'token-undefined.tui.yml');
     const tokenThemeFile = path.join(tmpDir, 'textui-theme.yml');
@@ -1022,6 +1041,51 @@ theme:
     assert.strictEqual(parsed.themePath, path.resolve(themedFile));
   });
 
+  it('capture falls back to default preview theme tokens when no textui-theme exists', function() {
+    this.timeout(15000);
+    const themedDsl = path.join(tmpDir, 'default-theme-capture.tui.yml');
+    const themedOut = path.join(tmpDir, 'default-theme-preview.png');
+    fs.writeFileSync(themedDsl, `
+page:
+  id: default-theme-capture
+  title: "Default Theme Capture"
+  layout: vertical
+  components:
+    - Button:
+        label: "送信"
+        token: color.primary
+`, 'utf8');
+
+    const result = spawnSync('node', [
+      cliPath,
+      'capture',
+      '--file',
+      themedDsl,
+      '--output',
+      themedOut,
+      '--browser',
+      captureMockBrowser,
+      '--wait-ms',
+      '0',
+      '--json'
+    ], {
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        PATH: `${tmpDir}${path.delimiter}${process.env.PATH || ''}`,
+        TEXTUI_CAPTURE_EXTRA_TRUSTED_PATHS: path.resolve(captureMockBrowser),
+        TEXTUI_CAPTURE_DISABLE_PUPPETEER: '1',
+        TEXTUI_CAPTURE_SKIP_EXECUTABLE_CHECK: '1',
+        TEXTUI_CAPTURE_EXPECT_HTML_FRAGMENT: '#3B82F6'
+      }
+    });
+
+    assert.strictEqual(result.status, 0, result.stderr || result.stdout);
+    const parsed = JSON.parse(result.stdout);
+    assert.strictEqual(parsed.captured, true);
+    assert.ok(fs.existsSync(themedOut));
+  });
+
   it('export resolves token value into HTML output', () => {
     const tokenDslFile = path.join(tmpDir, 'token-export.tui.yml');
     const tokenThemeFile = path.join(tmpDir, 'textui-theme.yml');
@@ -1061,6 +1125,36 @@ page:
     assert.strictEqual(result.status, 0);
     const html = fs.readFileSync(tokenOutFile, 'utf8');
     assert.match(html, /#123456/);
+  });
+
+  it('export falls back to default preview theme tokens when no textui-theme exists', () => {
+    const tokenDslFile = path.join(tmpDir, 'token-export-default-theme.tui.yml');
+    const tokenOutFile = path.join(tmpDir, 'token-export-default-theme.html');
+    fs.writeFileSync(tokenDslFile, `
+page:
+  id: token-export-default-theme
+  title: "Token Export Default Theme"
+  layout: vertical
+  components:
+    - Button:
+        label: "送信"
+        token: color.primary
+`, 'utf8');
+
+    const result = spawnSync('node', [
+      cliPath,
+      'export',
+      '--file',
+      tokenDslFile,
+      '--provider',
+      'html',
+      '--output',
+      tokenOutFile
+    ], { encoding: 'utf8' });
+
+    assert.strictEqual(result.status, 0);
+    const html = fs.readFileSync(tokenOutFile, 'utf8');
+    assert.match(html, /#3B82F6/);
   });
 
   it('export with --token-on-error warn succeeds and reports token warnings', () => {

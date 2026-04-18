@@ -1,9 +1,6 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as YAML from 'yaml';
 import type { TextUIDSL } from '../domain/dsl-types';
+import { loadThemeTokensWithDefaultFallback, findNearestThemePath as findNearestThemePathInternal } from './theme-token-source';
 import { collectComponentEntries } from './component-traversal';
-import { ThemeUtils } from '../theme/theme-utils';
 
 export type TokenErrorMode = 'error' | 'warn' | 'ignore';
 
@@ -18,7 +15,6 @@ export interface ResolveDslTokensResult {
   issues: TokenResolutionIssue[];
 }
 
-
 interface TokenIndex {
   nodeMap: Map<string, unknown>;
   leafMap: Map<string, unknown>;
@@ -27,7 +23,6 @@ interface TokenIndex {
 type ResolveResult =
   | { ok: true; value: unknown }
   | { ok: false; kind: 'undefined' | 'type' | 'cycle'; cycle?: string[] };
-
 
 const TOKEN_REF_PATTERN = /^\{([A-Za-z0-9_.-]+)\}$/;
 
@@ -53,7 +48,7 @@ export function resolveDslTokens(params: {
         issues.push({
           kind: 'missing-theme',
           path: `${entry.path}/token`,
-          message: `token '${entry.props.token}' を解決できません（テーマ未検出）`
+          message: `token '${entry.props.token}' could not be resolved because theme tokens were unavailable`
         });
       }
       delete entry.props.token;
@@ -75,7 +70,7 @@ export function resolveDslTokens(params: {
       issues.push({
         kind: 'invalid-token',
         path: issuePath,
-        message: 'token は文字列で指定してください'
+        message: 'token must be a string'
       });
       delete entry.props.token;
       return;
@@ -87,19 +82,19 @@ export function resolveDslTokens(params: {
         issues.push({
           kind: 'undefined',
           path: issuePath,
-          message: `未定義のtoken参照: ${tokenPath}`
+          message: `undefined token reference: ${tokenPath}`
         });
       } else if (result.kind === 'type') {
         issues.push({
           kind: 'type',
           path: issuePath,
-          message: `token型不整合: ${tokenPath} はオブジェクトを指しており、スカラー値を期待します`
+          message: `token must resolve to a scalar value: ${tokenPath}`
         });
       } else {
         issues.push({
           kind: 'cycle',
           path: issuePath,
-          message: `token循環参照を検出しました: ${(result.cycle ?? []).join(' -> ')}`
+          message: `token reference cycle detected: ${(result.cycle ?? []).join(' -> ')}`
         });
       }
       delete entry.props.token;
@@ -110,7 +105,7 @@ export function resolveDslTokens(params: {
       issues.push({
         kind: 'invalid-value',
         path: issuePath,
-        message: `token値の型が不正です: ${tokenPath}`
+        message: `token value must be scalar: ${tokenPath}`
       });
       delete entry.props.token;
       return;
@@ -140,7 +135,7 @@ function finalizeResolution(
   }
 
   const joined = issues.map(issue => `${issue.path}: ${issue.message}`).join('\n');
-  throw new Error(`token解決に失敗しました:\n${joined}`);
+  throw new Error(`token resolution failed:\n${joined}`);
 }
 
 function isScalarTokenValue(value: unknown): value is string | number | boolean {
@@ -148,115 +143,19 @@ function isScalarTokenValue(value: unknown): value is string | number | boolean 
 }
 
 function loadThemeTokens(sourcePath: string): { tokens: Record<string, unknown> | null; issues: TokenResolutionIssue[] } {
-  const themePath = findNearestThemePath(sourcePath);
-  if (!themePath) {
-    return {
-      tokens: null,
-      issues: [{
-        kind: 'missing-theme',
-        path: '/',
-        message: 'textui-theme.yml / textui-theme.yaml が見つかりません'
-      }]
-    };
-  }
-
-  try {
-    const theme = loadThemeDefinition(themePath, []);
-    const tokens = extractTokens(theme);
-    if (!tokens) {
-      return {
-        tokens: null,
-        issues: [{
-          kind: 'theme-load',
-          path: '/',
-          message: `テーマに tokens 定義がありません: ${themePath}`
-        }]
-      };
-    }
-    return { tokens, issues: [] };
-  } catch (error) {
-    return {
-      tokens: null,
-      issues: [{
-        kind: 'theme-load',
-        path: '/',
-        message: `テーマ読み込みに失敗しました: ${error instanceof Error ? error.message : String(error)}`
-      }]
-    };
-  }
+  const loadResult = loadThemeTokensWithDefaultFallback(sourcePath);
+  return {
+    tokens: loadResult.tokens,
+    issues: loadResult.issues.map(issue => ({
+      kind: issue.kind,
+      path: '/',
+      message: issue.message
+    }))
+  };
 }
 
 export function findNearestThemePath(sourcePath: string): string | null {
-  const candidates = ['textui-theme.yml', 'textui-theme.yaml'];
-  let current = path.dirname(path.resolve(sourcePath));
-
-  while (true) {
-    for (const fileName of candidates) {
-      const candidate = path.join(current, fileName);
-      if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
-        return candidate;
-      }
-    }
-    const parent = path.dirname(current);
-    if (parent === current) {
-      return null;
-    }
-    current = parent;
-  }
-}
-
-function loadThemeDefinition(themePath: string, chain: string[]): unknown {
-  const absolutePath = path.resolve(themePath);
-  if (chain.includes(absolutePath)) {
-    throw new Error(`テーマ継承で循環参照を検出しました: ${[...chain, absolutePath].join(' -> ')}`);
-  }
-
-  const raw = fs.readFileSync(absolutePath, 'utf8');
-  const parsed = YAML.parse(raw);
-  if (!parsed || typeof parsed !== 'object') {
-    return parsed;
-  }
-
-  const root = parsed as { theme?: { extends?: unknown } };
-  const extendsPath = root.theme?.extends;
-  if (typeof extendsPath !== 'string' || !extendsPath.trim() || extendsPath.startsWith('npm:')) {
-    return parsed;
-  }
-
-  const parentPath = path.resolve(path.dirname(absolutePath), extendsPath);
-  const parent = loadThemeDefinition(parentPath, [...chain, absolutePath]);
-  return deepMerge(parent, parsed);
-}
-
-function deepMerge(base: unknown, override: unknown): unknown {
-  if (Array.isArray(base) || Array.isArray(override)) {
-    return override ?? base;
-  }
-
-  if (!isPlainObject(base) || !isPlainObject(override)) {
-    return override ?? base;
-  }
-
-  const result: Record<string, unknown> = { ...base };
-  Object.entries(override).forEach(([key, value]) => {
-    result[key] = deepMerge((base as Record<string, unknown>)[key], value);
-  });
-  return result;
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-}
-
-function extractTokens(theme: unknown): Record<string, unknown> | null {
-  if (!isPlainObject(theme) || !isPlainObject(theme.theme)) {
-    return null;
-  }
-  const tokens = (theme.theme as Record<string, unknown>).tokens;
-  if (!isPlainObject(tokens)) {
-    return null;
-  }
-  return ThemeUtils.normalizeTokenVocabulary(tokens);
+  return findNearestThemePathInternal(sourcePath);
 }
 
 function buildTokenIndex(tokens: Record<string, unknown>): TokenIndex {
@@ -332,4 +231,8 @@ function resolveTokenValue(tokenPath: string, tokenIndex: TokenIndex, stack: str
   }
 
   return resolveTokenValue(reference, tokenIndex, [...stack, normalized]);
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
