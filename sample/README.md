@@ -24,7 +24,7 @@ Use these three paths as the default onboarding contract:
 
 1. **Path 1: shortest**
    - Start: [`01-basic/sample.tui.yml`](01-basic/sample.tui.yml)
-   - Goal: create/open DSL -> `TextUI: Open Preview` succeeds
+   - Goal: create/open DSL -> `TUI: Preview` succeeds
 2. **Path 2: flow preview navigation**
    - Start: [`12-navigation/app.tui.flow.yml`](12-navigation/app.tui.flow.yml)
    - Goal: `TextUI: Open Flow Preview` -> `Open linked page` transition works

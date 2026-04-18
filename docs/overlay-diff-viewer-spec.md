@@ -167,7 +167,7 @@ npm run compile
 npm run sync:commands
 
 # 動作確認
-# 1. コマンドパレットから "TextUI: Overlay Diff (透かし比較)" を実行
+# 1. コマンドパレットから「TUI: Diff」（透かし比較 / Overlay Diff）を実行
 # 2. 2つの .tui.yml を指定してパネルが開くことを確認
 # 3. スライダーを操作して Layer A/B の透過度が変わることを確認
 # 4. 構成の異なる2ファイルで 50% 時にゴースト差分が見えることを確認

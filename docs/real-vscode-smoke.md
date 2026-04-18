@@ -27,7 +27,7 @@
 ### 2. プレビューを開く（Open Preview）
 
 1. **アクティブエディタ**で上記 `.tui.yml` を開いた状態にする。
-2. コマンドパレットで **`TextUI: Open Preview`**（command: `textui-designer.openPreview`）を実行する。  
+2. コマンドパレットで **`TUI: Preview`**（command: `textui-designer.openPreview`）を実行する。  
    - またはエディタタイトルバーのアイコンから同一コマンド（YAML 編集中のみ表示）。
 3. **期待**: プレビュー用 WebView が開き、致命的なエラーで止まらない。
 

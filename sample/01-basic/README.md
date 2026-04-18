@@ -12,4 +12,4 @@
 ## 使い方
 
 1. `sample.tui.yml` または `component-style-test.tui.yml` を VS Code で開く
-2. コマンドパレット（Ctrl+Shift+P）→「TextUI: Open Preview」でプレビューを表示
+2. コマンドパレット（Ctrl+Shift+P）→「TUI: Preview」でプレビューを表示

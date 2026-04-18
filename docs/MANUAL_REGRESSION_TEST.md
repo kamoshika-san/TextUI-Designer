@@ -21,7 +21,7 @@
 1. VS Codeを開く
 2. `manual-test.tui.yml`ファイルを開く
 3. コマンドパレット（`Ctrl+Shift+P`）を開く
-4. `TextUI: Open Preview`を実行
+4. `TUI: Preview`を実行
 5. プレビュー画面が表示されることを確認
 6. コマンドパレットを開く
 7. `TextUI: Export to Code`を実行

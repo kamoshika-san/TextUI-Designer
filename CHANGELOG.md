@@ -8,6 +8,22 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ---
 
+## [0.9.2] - 2026-04-18
+
+### Added
+- **MCP `generate_flow`: `loopPolicy` parameter** — optional `allow` / `warn` / `deny` so scaffolded `.tui.flow.yml` can include Navigation v2 `policy.loops` without hand-editing YAML afterward.
+- **MCP `validate_flow`: cycle diagnostics hint** — when validation reports `NAV_004` (cycle / bidirectional edge policy), MCP responses now include a short hint pointing to `flow.policy.loops: allow`.
+
+### Changed
+- **Editor title actions** — the YAML/DSL tab actions are now **`TUI: Preview`** and **`TUI: Diff`** (same titles appear in the Command Palette).
+
+### Fixed
+- **MCP `capture_preview` packaging** — the extension bundle now ships the runtime pieces `capture_preview` needs so capture works from the packaged VSIX, not only from a dev workspace.
+- **MCP workspace roots on Windows** — workspace folder matching tolerates drive-letter casing differences so MCP tools resolve paths reliably.
+- **CLI theme token resolution** — `textui validate` and related CLI paths fall back to preview default theme tokens when a theme omits entries, reducing spurious unknown-token noise.
+
+---
+
 ## [0.9.1] - 2026-04-18
 
 ### Added

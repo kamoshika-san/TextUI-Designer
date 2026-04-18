@@ -37,7 +37,7 @@ page:
         submit: true
 ```
 
-Open `TextUI: Open Preview` → see it rendered. Run `TextUI: Export to Code` → get HTML, React, Svelte, Vue, or Pug output ready to drop into your project.
+Open `TUI: Preview` → see it rendered. Run `TextUI: Export to Code` → get HTML, React, Svelte, Vue, or Pug output ready to drop into your project.
 
 ---
 
@@ -83,14 +83,14 @@ page:
         label: "Get started"
 ```
 
-3. Run **TextUI: Open Preview** from the Command Palette (`Ctrl+Shift+P`)
+3. Run **TUI: Preview** from the Command Palette (`Ctrl+Shift+P`)
 4. Edit the file — the preview updates live
 
 ### Phase 1 Golden Path
 
 Phase 1 defines three fixed onboarding paths as the standard check for new users.
 
-1. **Path 1 (quickest)**: Create a `.tui.yml` file → run **TextUI: Open Preview**
+1. **Path 1 (quickest)**: Create a `.tui.yml` file → run **TUI: Preview**
 2. **Path 2 (Flow)**: Open `sample/12-navigation/app.tui.flow.yml` → run **TextUI: Open Flow Preview** → use **Open linked page** on a transition target to confirm screen navigation
 3. **Path 3 (AI)**: MCP `scaffold_app` → `validate_ui`/`validate_flow` → `capture_preview`
 
@@ -218,7 +218,7 @@ Extension-side auto configuration policy:
 | Tool | What it does |
 |---|---|
 | `generate_ui` | Generates a `.tui.yml` screen DSL from a component blueprint |
-| `generate_flow` | Scaffolds a `.tui.flow.yml` navigation flow from screen IDs and transition hints |
+| `generate_flow` | Scaffolds a `.tui.flow.yml` navigation flow from screen IDs and transition hints; optional `loopPolicy` (`allow` / `warn` / `deny`) emits `policy.loops` for Navigation v2 |
 | `scaffold_app` | Generates all screen DSL files + a navigation flow YAML in one call |
 | `validate_ui` | Validates a DSL string or file and returns structured diagnostics |
 | `validate_flow` | Validates a `.tui.flow.yml` file |

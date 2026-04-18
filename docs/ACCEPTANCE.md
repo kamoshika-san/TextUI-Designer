@@ -10,7 +10,7 @@ This document maps the Phase 1 golden paths to their test coverage. Use it to ve
 
 **Steps:**
 1. Create or open any `.tui.yml` file (e.g. `sample/01-basic/sample.tui.yml`)
-2. Run **TextUI: Open Preview** from the Command Palette
+2. Run **TUI: Preview** from the Command Palette
 
 **Automated coverage:**
 
