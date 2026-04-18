@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/future/semantic/v2-compare-logic-d-five-axis-diff.md",
+                "file": "docs/future/semantic/v2-compare-logic-f-evidence-generation.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "v2-compare-logic-d-five-axis-diff"
+              "title": "v2-compare-logic-f-evidence-generation"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "docs/future/semantic/v2-compare-logic-d-five-axis-diff.md",
+                "file": "docs/future/semantic/v2-compare-logic-f-evidence-generation.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "v2-compare-logic-d-five-axis-diffへのバックリンク"
+              "title": "v2-compare-logic-f-evidence-generationへのバックリンク"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "docs/future/semantic/v2-compare-logic-d-five-axis-diff.md",
+                "file": "docs/future/semantic/v2-compare-logic-f-evidence-generation.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "v2-compare-logic-d-five-axis-diffからのアウトゴーイングリンク"
+              "title": "v2-compare-logic-f-evidence-generationからのアウトゴーイングリンク"
             }
           },
           {
@@ -156,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "docs/future/semantic/v2-compare-logic-d-five-axis-diff.md",
+                "file": "docs/future/semantic/v2-compare-logic-f-evidence-generation.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "v2-compare-logic-d-five-axis-diffのアウトライン"
+              "title": "v2-compare-logic-f-evidence-generationのアウトライン"
             }
           }
         ]
@@ -185,9 +185,11 @@
   "active": "1be5af3b58a9bb9b",
   "lastOpenFiles": [
     "docs/future/semantic/v2-compare-logic-e-confidence-scoring.md",
+    "docs/future/semantic/v2-compare-logic-f-evidence-generation.md",
+    "docs/future/semantic/v2-compare-logic-f-evidence-generation.md.tmp.13952.1776553221862",
+    "docs/future/semantic/v2-compare-logic-d-five-axis-diff.md",
     "docs/future/semantic/v2-compare-logic-e-confidence-scoring.md.tmp.13952.1776553074502",
     "docs/future/semantic/v2-compare-logic-c-component-identity.md",
-    "docs/future/semantic/v2-compare-logic-d-five-axis-diff.md",
     "docs/future/semantic/v2-compare-logic-b-entity-identity.md",
     "docs/future/semantic/v2-compare-logic-a-pipeline.md",
     "docs/future/semantic/v2-compare-logic-c-component-identity.md.tmp.13952.1776552742780",
@@ -200,7 +202,6 @@
     "tests/regression/long-text-test.tui.yml",
     "tests/regression/empty-test.tui.yml",
     "tests/regression/invalid-test.tui.yml",
-    "tests/regression/large-test.tui.yml",
     "docs/future/semantic/README.md",
     "docs/current/README.md",
     "docs/semantic-meaning-core-ontology-v0-ja.md",
