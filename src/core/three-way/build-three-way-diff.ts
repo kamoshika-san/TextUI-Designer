@@ -1,6 +1,7 @@
 import type { HeuristicPolicy } from '../diff/heuristic-policy';
 import {
-  createDiffResultSkeleton,
+  type SemanticDiffProvider,
+  V1SemanticDiffProvider,
   type DiffCompareDocument,
   type DiffEvent,
 } from '../textui-core-diff';
@@ -147,14 +148,16 @@ export function materializeMergeConflict(candidate: CandidateMergeConflict): Mer
 
 export function buildThreeWayDiffResult(
   input: ThreeWayCompareInput,
-  policy?: HeuristicPolicy
+  policy?: HeuristicPolicy,
+  provider?: SemanticDiffProvider
 ): ThreeWayDiffResult {
-  const leftDiff = createDiffResultSkeleton(
+  const effectiveProvider = provider ?? new V1SemanticDiffProvider();
+  const leftDiff = effectiveProvider.compareStructureDiff(
     retagDocument(input.base, 'previous'),
     retagDocument(input.left, 'next'),
     policy
   );
-  const rightDiff = createDiffResultSkeleton(
+  const rightDiff = effectiveProvider.compareStructureDiff(
     retagDocument(input.base, 'previous'),
     retagDocument(input.right, 'next'),
     policy

@@ -1,7 +1,8 @@
 import type { NavigationFlowDSL } from '../../domain/dsl-types';
 import {
   createFlowScreenKey,
-  createNormalizedFlowDiffDocument,
+  type SemanticDiffProvider,
+  V1SemanticDiffProvider,
   type FlowDiffCompareDocument,
   type FlowDiffEvent,
   type FlowDiffNormalizationResult
@@ -187,12 +188,14 @@ export function normalizeFlowDiff(options: {
   nextDsl: NavigationFlowDSL;
   previousSourcePath?: string;
   nextSourcePath?: string;
+  provider?: SemanticDiffProvider;
 }): FlowDiffNormalizationResult {
-  const previous = createNormalizedFlowDiffDocument(options.previousDsl, {
+  const provider = options.provider ?? new V1SemanticDiffProvider();
+  const previous = provider.createFlowDiffDocument(options.previousDsl, {
     side: 'previous',
     sourcePath: options.previousSourcePath
   });
-  const next = createNormalizedFlowDiffDocument(options.nextDsl, {
+  const next = provider.createFlowDiffDocument(options.nextDsl, {
     side: 'next',
     sourcePath: options.nextSourcePath
   });
