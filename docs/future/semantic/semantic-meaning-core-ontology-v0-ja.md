@@ -543,6 +543,34 @@ diff:
 - `layer: semantic` なら `evidence` を可能な限り添える
 - 上記の `event` / `layer` は **観測差分** のラベル。本書の **差異**・**意味差分** は正規化後の判定として別途付与する（`T-20260418-002`）
 
+### diff_event 語彙（v0 推奨セット）
+
+`diff_event` は観測差分の **機械ラベル**（一次事実）。v0 では次の推奨セットを使う（拡張可能だが、新規 event は本表に追記してから使う）。
+
+| `diff_event` | 意味 | 推奨 `layer` |
+|--------------|------|-------------|
+| **entity 系** | | |
+| `entity_added` | entity が追加された | `structure` |
+| `entity_removed` | entity が削除された | `structure` |
+| `entity_renamed` | entity の `name` が変化した（`id` は同一） | `surface` |
+| `entity_state_changed` | entity の `state`（業務状態）が変化した | `semantic` |
+| **transition 系** | | |
+| `transition_added` | Transition が追加された | `structure` |
+| `transition_removed` | Transition が削除された | `structure` |
+| `transition_edge_changed` | Transition の `from` / `to` / `trigger` が変化した | `semantic` |
+| **component 系** | | |
+| `component_added` | component が追加された | `structure` |
+| `component_removed` | component が削除された | `structure` |
+| `component_action_changed` | component の `action`（domain/type）が変化した | `semantic` |
+| `component_availability_changed` | component の `availability` が変化した | `semantic` |
+| `component_guard_changed` | component の `guard`（述語）が変化した | `semantic` |
+
+補足:
+
+- `layer: surface` は業務意味への影響が低い変化（rename 等）の観測ラベル。差異判定は正規化後に行う。
+- `layer: semantic` の `diff_event` には `evidence` を添えることを推奨（`T-20260418-007`）。
+- 上表にない `diff_event` は `layer: structure` に落としてから必要なら昇格させる（ルールと同じ）。
+
 ## 既存ドキュメントとの関係（重要）
 
 本リポジトリの Semantic Diff MVP 契約は `docs/diff-semantic-mvp-contract-and-ir.md` が正本であり、
@@ -681,3 +709,4 @@ SHOULD:
 - 2026-04-18: `T-20260418-004` — 安定参照と entity 同一性規則を追加（主キー規則・rename 判定・サンプル）。サンプル DSL の `entity` に `id` フィールドを追加
 - 2026-04-18: Architect 検証による即修正 — サンプル DSL の `entity.name` を `経費申請`（日本語）に統一。JSON 例の `confidence` 数値に閾値非規定の注記を追加
 - 2026-04-18: `T-20260418-008` — DSL 構造概念（screen / entity / components）を「5軸の適用スコープ」として定義追加。Transition 節に `transitions[].id` の安定参照キー記述を追加
+- 2026-04-18: `T-20260418-009` — `diff_event` v0 推奨語彙表を追加（entity 系4件・transition 系3件・component 系5件、`layer` 推奨付き）
