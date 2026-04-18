@@ -360,6 +360,11 @@ export const TOOLS: ToolDefinition[] = [
             },
             required: ['from', 'trigger', 'to']
           }
+        },
+        loopPolicy: {
+          type: 'string',
+          enum: ['deny', 'warn', 'allow'],
+          description: '循環遷移（双方向遷移含む）の扱い。allow: 許可、warn: 警告のみ、deny: エラー（既定）。双方向遷移を定義する場合は allow を指定してください。'
         }
       },
       required: ['title', 'screens']

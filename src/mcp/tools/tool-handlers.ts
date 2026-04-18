@@ -77,10 +77,19 @@ export function createToolHandlers(context: ToolHandlerContext): ToolHandlers {
       if (!filePath) {
         throw new Error('validate_flow requires filePath');
       }
-      return runCli({
+      const result = await runCli({
         args: ['flow', 'validate', '--file', filePath, '--json'],
         parseJson: true
       });
+      if (result && typeof result === 'object' && Array.isArray((result as Record<string, unknown>)['diagnostics'])) {
+        const diagnostics = (result as Record<string, unknown>)['diagnostics'] as Record<string, unknown>[];
+        for (const d of diagnostics) {
+          if (d['code'] === 'NAV_004') {
+            d['hint'] = '双方向・循環遷移を許可するには flow.policy.loops: allow を .tui.flow.yml に追加してください。';
+          }
+        }
+      }
+      return result;
     },
     compare_flow: async () => {
       const filePath = getObjectValue(args, 'filePath');
@@ -266,12 +275,17 @@ export function createToolHandlers(context: ToolHandlerContext): ToolHandlers {
             };
           })
         : [];
+      const rawLoopPolicy = getObjectValue(args, 'loopPolicy');
+      const loopPolicy = (rawLoopPolicy === 'allow' || rawLoopPolicy === 'warn' || rawLoopPolicy === 'deny')
+        ? rawLoopPolicy
+        : undefined;
       const generated = generateFlowDsl({
         title,
         flowId: getObjectValue(args, 'flowId'),
         entry: getObjectValue(args, 'entry'),
         screens,
-        transitions
+        transitions,
+        loopPolicy
       });
       // validate_flow integration (E-GF-S3)
       try {

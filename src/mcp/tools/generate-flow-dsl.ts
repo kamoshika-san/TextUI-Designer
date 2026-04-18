@@ -15,6 +15,7 @@ export interface GenerateFlowInput {
   entry?: string;
   screens: GenerateFlowScreenInput[];
   transitions?: GenerateFlowTransitionInput[];
+  loopPolicy?: 'deny' | 'warn' | 'allow';
 }
 
 export interface GenerateFlowResult {
@@ -28,7 +29,7 @@ function slugify(text: string): string {
 }
 
 export function generateFlowDsl(input: GenerateFlowInput): GenerateFlowResult {
-  const { title, screens, transitions = [] } = input;
+  const { title, screens, transitions = [], loopPolicy } = input;
   const flowId = input.flowId ?? slugify(title);
   const entry = input.entry ?? screens[0].id;
 
@@ -49,10 +50,15 @@ export function generateFlowDsl(input: GenerateFlowInput): GenerateFlowResult {
     ? `  transitions:\n${transitionsYaml}\n`
     : '';
 
+  const policyBlock = loopPolicy && loopPolicy !== 'deny'
+    ? `  policy:\n    loops: ${loopPolicy}\n`
+    : '';
+
   const yaml =
     `flow:\n` +
     `  id: ${flowId}\n` +
     `  title: "${title}"\n` +
+    policyBlock +
     `  entry: ${entry}\n` +
     `  screens:\n${screensYaml}\n` +
     transitionsBlock;
