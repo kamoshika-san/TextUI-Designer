@@ -1,0 +1,118 @@
+# v2 比較ロジック設計 E: confidence スコアリング
+
+設計フェーズ成果物。コード実装は含まない。
+前提: 設計A〜D 完了済み。設計B-2・D-3 で予告された confidence 規定をここで確定する。
+
+---
+
+## 論点E-1: confidence 初期値と低下条件
+
+**決定: 判定ルートに応じた初期値テーブルと、低下条件を以下の通り確定する。**
+
+### confidence 初期値テーブル
+
+| 判定ルート | 初期値 | 根拠 |
+|---|---|---|
+| entity.id 完全一致（同一 entity） | `1.0` | 決定論的同一性 |
+| entity.id 不一致 + name 一致（B-2 曖昧） | `0.5` | 曖昧な改名可能性（B-2 で確定済み） |
+| entity.id 不一致 + name 不一致（別 entity） | `1.0` | 決定論的別 entity |
+| component.id 完全一致（同一 component） | `1.0` | 決定論的同一性 |
+| component.id 不一致（removed + added） | `1.0` | 決定論的別 component（C-3）|
+| transition.id 完全一致（matched） | `1.0` | 決定論的同一性 |
+| transition.id 不一致（removed + added） | `1.0` | 決定論的別 transition |
+
+### confidence 低下条件（初期値からの減算）
+
+| 低下条件 | 減算量 | 適用後最小値 | 根拠 |
+|---|---|---|---|
+| guard に `UnresolvedPredicate` が含まれる（D-3） | `-0.3` | `0.2` | guard の同値判定が不確実 |
+| entity.id 不一致 + name 一致（B-2、既に 0.5） | 追加減算なし | `0.5` | 初期値で既に反映済み |
+| `screen_added` / `screen_removed`（設計A follow-up） | `1.0`（変化なし） | `1.0` | 構造的追加/削除は確実 |
+
+低下後の confidence は `max(0.0, initial - reduction)` で算出する。
+
+### `ambiguity_reason` 必須条件
+
+`confidence < 0.8` のとき `DecisionPayload.ambiguity_reason` を必須とする。
+フォーマット: 短文1文、原因を示す（例: "entity id mismatch with matching name — possible rename"）。
+
+---
+
+## 論点E-2: UnresolvedPredicate が guard に含まれる場合の confidence 影響
+
+**決定: guard の片側または両側に `UnresolvedPredicate` が含まれる場合、confidence を `-0.3` 減算する。**
+
+詳細ルール:
+
+```
+guard 比較時:
+  if normalizeGuard(prev.guard) contains 'unresolved'
+  OR normalizeGuard(next.guard) contains 'unresolved':
+    confidence -= 0.3
+    ambiguity_reason = "guard contains UnresolvedPredicate — structural equality is uncertain"
+    → diff_event: 'component_guard_changed' を生成（確定的な同値判定不可のため変化とみなす）
+```
+
+両側ともに `unresolved` かつ reason が同一の場合:
+- 同値と判断しない（reason が同一でも actual predicate が異なる可能性を排除できない）
+- `component_guard_changed` を生成し confidence `-0.3`
+
+根拠: `UnresolvedPredicate` はノーマライズ時に解決できなかった述語を示す。
+guard 変化を「なし」と誤判定することによる false-negative は、
+「変化あり」の false-positive より影響が大きい（意味的差分の見落としになる）。
+
+---
+
+## 論点E-3: review_status: needs_review の自動付与閾値
+
+**決定: `confidence < 0.8` を閾値として v2 で固定する。**
+
+自動付与ルール:
+
+```typescript
+function deriveReviewStatus(confidence: number): ReviewStatus {
+  if (confidence < 0.8) return 'needs_review';
+  return 'approved';  // 初期状態として 'approved' (人間が 'rejected' に変更可能)
+}
+```
+
+固定とする根拠:
+- `0.8` は B-2（0.5）と D-3（0.7 = 1.0 - 0.3）の両ケースをカバーする閾値である。
+- 閾値を open（設定可能）にすると、呼び出し元が閾値を省略した場合の挙動が不定になり、
+  V2SemanticDiffProvider の実装が複雑化する。
+- v2 の設計原則は決定論的であり、可変パラメータを最小化することと一致する。
+
+閾値変更の再検討条件: 「実運用フィードバックで false-positive/false-negative の比率が
+著しく偏った場合」に別チケットで閾値の設定可能化を検討する。
+
+---
+
+## confidence と review_status の完全マッピング
+
+| シナリオ | confidence | review_status | ambiguity_reason 必須 |
+|---|---|---|---|
+| id 完全一致、guard なし | 1.0 | approved | no |
+| id 完全一致、guard に unresolved | 0.7 | needs_review | yes |
+| entity id 不一致 + name 一致（B-2） | 0.5 | needs_review | yes |
+| entity id 不一致 + name 一致 + unresolved guard | 0.2 | needs_review | yes |
+| component id 不一致（removed/added） | 1.0 | approved | no |
+
+---
+
+## 依存関係
+
+| 前提 | 本設計が参照するもの |
+|---|---|
+| 設計B-2 | entity ambiguous ケース confidence=0.5 |
+| 設計D-3 | unresolved guard → confidence 低下予告 |
+| diff-record.ts | `DecisionPayload.confidence` / `review_status` / `ambiguity_reason` フィールド |
+
+| 次ステップ | 本設計を前提とするもの |
+|---|---|
+| 設計F | evidence 生成ルール |
+| 設計G | 複数 diff_event 同時発生 |
+| 設計H | V2SemanticDiffProvider 実装アーキテクチャ |
+
+---
+
+*作成: 2026-04-19 / チケット: v2比較ロジック設計E*
