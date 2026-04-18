@@ -59,7 +59,7 @@ AvailabilityAxis 変化 ≡ prev.availability.visibility  !== next.availability.
 ```
 1. all_of / any_of の子要素を stable sort する（各要素を JSON.stringify して辞書順ソート）
 2. not の内部は再帰的に正規化する
-3. UnresolvedPredicate は kind='unresolved' のみで比較（reason/candidates は無視）
+3. UnresolvedPredicate は `kind`, `reason`, 正規化済み `candidates` を比較に含める
 ```
 
 同値判定アルゴリズム:
@@ -78,7 +78,11 @@ function normalizeGuard(pred: CanonicalPredicate): string {
     return `not:${normalizeGuard(pred.not)}`;
   }
   if ('kind' in pred && pred.kind === 'unresolved') {
-    return 'unresolved';  // reason/candidates は同値判定に含めない
+    return JSON.stringify({
+      kind: 'unresolved',
+      reason: pred.reason,
+      candidates: [...(pred.candidates ?? [])].sort(),
+    });
   }
   // FactPredicate: fact/op/value を安定文字列化
   return JSON.stringify({ fact: (pred as any).fact, op: (pred as any).op, value: (pred as any).value });
@@ -89,8 +93,8 @@ guard 変化 ≡ normalizeGuard(prev.guard) !== normalizeGuard(next.guard)
 ```
 
 `UnresolvedPredicate` の扱い:
-- `unresolved` が片側に含まれる場合は guard 変化を **確定的に判定できない**。
-  → `component_guard_changed` を生成しつつ、confidence を低下させる（設計E で規定）。
+- 片側のみ `unresolved`、または両側にあっても `reason` / `candidates` が非同値のときは `component_guard_changed` を生成し、confidence を低下させる（設計E で規定）。
+- 両側の `unresolved` が正規化後に同値なら guard 変化なしとして扱う。
 
 `all_of` 要素順を同値とする根拠:
 - `CanonicalPredicate` の型定義では `all_of` は論理 AND であり、要素順は意味に影響しない。

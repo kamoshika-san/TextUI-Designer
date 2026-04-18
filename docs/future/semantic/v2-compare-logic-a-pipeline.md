@@ -24,18 +24,14 @@
 
 ## 論点A-2: screen_id が片側にのみ存在する場合のスコープ
 
-**決定: v2 スコープ。`screen_added` / `screen_removed` は v2 DiffEvent として扱う。**
+**決定: `screen_added` / `screen_removed` は compare-logic v2 の follow-up。現行の closed vocabulary には含めない。**
 
 根拠:
-- `screen_added` / `screen_removed` はページ追加/削除という最大粒度の意味的変化であり、
-  意味的差分として通知すべき最重要イベントである。
-- Non-goal とした場合、画面追加をレビュアーが見逃すリスクが生じる。
-- `V2ScreenDiff` の `diffs` に `decision.diff_event: 'screen_added'` / `'screen_removed'` を
-  記録することで型の拡張なしに表現できる（`V2EntityDiff` / `V2ComponentDiff` は空リスト）。
+- `screen_added` / `screen_removed` はページ追加/削除という最大粒度の変化であり、将来の v2 DiffEvent 拡張候補である。
+- ただし現行の `docs/future/types/v2/diff-record.ts` は 12 event の closed vocabulary を前提としており、この2件はまだ含まれない。
+- compare-logic v2 の現行スコープでは screen 単体の追加/削除は follow-up チケットで扱い、A〜H の本文では entity/component 比較の記録契約に集中する。
 
-> **注**: `DiffEvent` 型への `screen_added` / `screen_removed` の追加は
-> `docs/future/types/v2/diff-record.ts` の拡張チケットとして別途起票する。
-> 現行 12 事象リストにはこれら 2 事象が含まれていない。
+> **注**: `screen_added` / `screen_removed` を正式に追加する場合は `docs/future/types/v2/diff-record.ts` と sort/evidence 規則の同時更新が必要。
 
 ---
 
@@ -48,7 +44,7 @@ import type { Screen, V2ScreenDiff, V2EntityDiff, V2ComponentDiff } from '../typ
 
 /**
  * トップレベルエントリポイント。
- * prev または next が undefined の場合は screen_removed / screen_added を生成する。
+ * prev または next が undefined の場合は screen 単体差分の follow-up 対象として扱う。
  */
 function compareScreen(
   screenId: string,
@@ -86,8 +82,8 @@ function compareComponent(
 
 ```
 compareScreen(screenId, prev, next)
-  ├─ prev == undefined → diffs: [screen_added], entities: []
-  ├─ next == undefined → diffs: [screen_removed], entities: []
+  ├─ prev == undefined → diffs: [], entities: []  // screen_added は follow-up
+  ├─ next == undefined → diffs: [], entities: []  // screen_removed は follow-up
   └─ 両側存在 →
        diffs: []  (screen レベルの直接 diff はなし — entity/component に委譲)
        entities: union(prev.entity.id, next.entity.id) をキーに
@@ -103,9 +99,9 @@ compareScreen(screenId, prev, next)
                           └─ 両側存在 → 5 軸比較（設計項目 C / D）
 ```
 
-> **注**: 現行の `Screen` 型は `entity` を単数形で保持する（複数 entity は非サポート）。
-> entity の union 操作はスクリーン内 1 entity のみを想定した簡易形。
-> 1 対多マッチング（entity 分割/合算）は設計項目 B-3 で別途決定する。
+> **注**: compare-logic v2 の現行スコープでは `Screen` は `entity` を単数形で保持する。
+> ontology 側にある複数 entity の説明は将来拡張の余地であり、現行比較ロジックの対象外とする。
+> 1 対多マッチング（entity 分割/合算）は設計項目 B-3 の re-entry 条件が満たされるまで扱わない。
 
 ---
 

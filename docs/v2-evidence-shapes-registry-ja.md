@@ -2,13 +2,13 @@
 
 Updated: 2026-04-18  
 Ticket: `T-20260418-007`  
-Status: 正本（判定用 `decision_payload.evidence` の形・検証）
+Status: 正本（compare-logic v2 の `V2DiffRecord.explanation.evidence[*]` の形・検証）
 
 ## 位置づけ
 
-- **検証の正本（案C）**: 各 `evidence_shape` ごとの **JSON Schema**（`docs/future/schemas/v2/evidence/*.schema.json`）。`evidence.evidence_shape` の値で **ちょうど1つ**のスキーマにマッチさせる。
+- **検証の正本（案C）**: 各 `evidence_shape` ごとの **JSON Schema**（`docs/future/schemas/v2/evidence/*.schema.json`）。`V2DiffRecord.explanation.evidence[*].evidence_shape` の値で **ちょうど1つ**のスキーマにマッチさせる。
 - **説明の階層（案B）**: 本書の **ドメイン基底表** と **イベントオーバーレイ表**。レビュアはここから「不足キー」を追跡し、実装者は **同一内容を JSON Schema で機械検証**する。
-- 方針の入口: `docs/future/semantic/semantic-meaning-core-ontology-v0-ja.md` の「論点3」節。
+- 方針の入口: `docs/future/semantic/semantic-meaning-core-ontology-v0-ja.md` の「compare-logic v2 の現行レコード契約」節。
 
 ## `evidence_shape` 命名規約
 
@@ -24,7 +24,7 @@ Status: 正本（判定用 `decision_payload.evidence` の形・検証）
 | `copy_locale` | `copy_string_changed` | `copy_locale.message_string` | [`copy_locale.message_string.schema.json`](./future/schemas/v2/evidence/copy_locale.message_string.schema.json) |
 | `data_contract` | `field_requiredness_changed` | `data_contract.field_requiredness` | [`data_contract.field_requiredness.schema.json`](./future/schemas/v2/evidence/data_contract.field_requiredness.schema.json) |
 
-**整合ルール（MUST）**: `decision_payload` の `semantic_domain` と `event` の組が上表のいずれかであること。`evidence.evidence_shape` は、その行の **許容値と一致**すること。一致しない組・値は **検証エラー**（v2 では未登録形状を緩く通さない）。
+**整合ルール（MUST）**: `V2DiffRecord.decision.diff_event` と、そのレコードが属する `semantic_domain` の組が上表のいずれかである場合に限り、`V2DiffRecord.explanation.evidence[*].evidence_shape` はその行の **許容値と一致**すること。一致しない組・値は **検証エラー**。レジストリ未登録のイベントは `explanation.evidence: []` を取り、登録済み shape の検証対象に含めない。
 
 ## 案B: ドメイン基底（`before` / `after` 各オブジェクト）
 
@@ -196,9 +196,9 @@ OPTIONAL（スキーマで追加プロパティ許可、`required` 外）: `guar
 
 ## 検証手順（推奨）
 
-1. `decision_payload.semantic_domain` と `decision_payload.event` が **整合表**の行に存在するか確認する。
-2. `decision_payload.evidence.evidence_shape` が、その行の許容値と一致するか確認する。
-3. `evidence` オブジェクト全体を、手順2で選んだ **JSON Schema**（または `union.schema.json` の該当枝）で検証する。
+1. `V2DiffRecord.decision.diff_event` と対象レコードの `semantic_domain` が **整合表**の行に存在するか確認する。
+2. `V2DiffRecord.explanation.evidence[*].evidence_shape` が、その行の許容値と一致するか確認する。
+3. `explanation.evidence[*]` オブジェクト全体を、手順2で選んだ **JSON Schema**（または `union.schema.json` の該当枝）で検証する。
 
 ---
 

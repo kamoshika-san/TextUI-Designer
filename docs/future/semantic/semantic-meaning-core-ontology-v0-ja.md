@@ -1,8 +1,8 @@
 # Semantic Meaning / Diff Taxonomy（業務意味の最小核）v0（日本語）
 
-Updated: 2026-04-18  
+Updated: 2026-04-19  
 Owner: Maintainer  
-Status: Draft（議論の固定化。実装契約の正本ではない）
+Status: Draft（概念語彙と比較原則の正本。compare-logic v2 の record 型は `docs/future/types/v2/diff-record.ts` を参照）
 
 ## 目的（この文書が固定すること）
 
@@ -222,22 +222,23 @@ guard:
 |------|--------|
 | スキーマ境界 | **案A**（`T-003` の形を正本のまま）＋ **`candidates` は案α**（文字列配列・正規化・最大8件） |
 | diff 判定 | **片側のみ未解決＝案B**、**両側未解決＝案C**、**v2 接続＝案ⅱ** |
-| 判定ラベル語彙 | **案B**（`blocked` / `uncertain`） |
+| compare-logic v2 の review_status | `approved` / `rejected` / `needs_review` |
 | Human-readable | **案B**（禁止語＋推奨テンプレ1本） |
 | ライフサイクル | **案A**（人手確定まで据え置き） |
 
-### `review_status`（比較・下流の機械ラベル）
+### `review_status`（compare-logic v2 の機械ラベル）
 
 | 値 | 意味 |
 |----|------|
-| `blocked` | **比較不能**（未解決リーフ等により、同値判定を完結できない） |
-| `uncertain` | **比較は完結**したが、断定・過信を避ける必要がある（例: 閾値付近の confidence） |
+| `approved` | 比較結果が決定論的、または追加レビューなしで扱える |
+| `needs_review` | 比較は完結したが、補助キーや未解決述語を含むため人手確認が必要 |
+| `rejected` | 人手レビューで差し戻された結果を保持するための状態 |
 
 ### diff 判定（述語に未解決が含まれる場合）
 
-- **片側だけ**が `kind: unresolved`（他方は確定述語）のとき: 本書の **「差異」としては断定しない**。機械ラベルは原則 **`blocked`**。出力では **「要確認（差異候補）」** として扱う。
-- **両側**が未解決リーフのみ／未解決が同じスロットに対応するとき: `kind` / `reason` / `candidates`（正規化後）が **すべて同一**なら **述語として同値**。いずれかが異なれば **非同値**。
-- **v2（`T-20260418-006`）との境界（案ⅱ）**: `decision_payload` に未解決述語が含まれるレコードは、**`confidence` を低めに抑える**／**`ambiguity_reason` の条件付き必須**の対象になり得る（閾値の数値は本書では固定しない）。
+- **片側だけ**が `kind: unresolved`（他方は確定述語）のとき: compare-logic v2 では `component_guard_changed` を生成し、`review_status: needs_review` とする。
+- **両側**が未解決リーフのみ／未解決が同じスロットに対応するとき: `kind` / `reason` / `candidates`（正規化後）が **すべて同一**なら **述語として同値**。いずれかが異なれば **非同値**とし、`needs_review` を付与する。
+- **v2 との境界**: 未解決述語を含む差分レコードは `confidence` を低めに抑え、`ambiguity_reason` を条件付き必須とする。compare-logic v2 では閾値 `0.8` 未満を `needs_review` とする。
 
 ### Human-readable（注意喚起）
 
@@ -400,7 +401,7 @@ transition:
 
 > **screen**: entity + components + transitions を束ねた、正規化・比較の **最上位単位**。`screen` 識別子（DSL トップキー）が安定参照の起点となる。
 
-- 1 screen に複数の entity が存在する場合、entity ごとに `entity.id` で区別する
+- compare-logic v2 の現行スコープでは 1 screen = 1 entity とする。複数 entity は将来拡張の説明であり、現行比較ロジックでは非スコープ。
 - screen 内の stable reference（`entity.id` / `components[].id` / `transitions[].id`）は screen スコープ内で一意でなければならない
 
 ### entity
@@ -477,7 +478,7 @@ transitions:
 | 4 | `entity.id` が両版に **存在しない** | `entity.name` で照合する（補助規則） |
 
 **補助規則（`entity.id` 不在時）:**
-- `entity.name` が一致 → 同一 entity（`review_status: uncertain` を付与）
+- `entity.name` が一致 → 同一 entity（`confidence: 0.7`, `review_status: needs_review` を付与）
 - `entity.name` も不一致 → 別 entity（remove + add）
 
 **制約:**
@@ -495,7 +496,7 @@ transitions:
 **rename と差異の関係:**
 - rename 単体（`name` のみ変化、業務結果が同値）は **「差異」の成立条件を満たさない**ことが多い。
 - ただし `name` が Action / Availability 等に実質影響する場合は差異となり得る。
-- 判断できない場合は **`review_status: uncertain`** とし、差異と断定しない。
+- 判断できない場合は **`review_status: needs_review`** とし、人手確認へ回す。
 
 ### entity 主キーを含む DSL サンプル
 
@@ -607,94 +608,28 @@ diff:
 - 上記「対応関係（運用上の目安）」は **v1 系の理解補助**としてのみ扱う。
 - `v2` 判定では、互換目的のレイヤ写像を前提にしない。
 
-## v2差分記録形式の暫定合意（T-20260418-006）
+## compare-logic v2 の現行レコード契約
 
-`T-20260418-006` の合意として、v2 の差分記録は **判定用と説明用を完全分離**する。
+compare-logic v2 の **コード寄り正本**は `docs/future/types/v2/diff-record.ts` とする。本書は概念語彙・境界・運用ルールを固定し、具体的な record 形は型断片側へ委譲する。
 
-- 論点1: 必須フィールド最小集合は **案B**
-- 論点2: 判定用/説明用の境界は **案A（完全分離）**
+### 現行の責務分担
 
-### 判定用（`decision_payload`）
+- `V2DiffRecord`: `decision` と `explanation` を完全分離した compare-logic v2 の最小単位
+- `DecisionPayload`: `diff_event`, `target_id`, `confidence`, `ambiguity_reason?`, `review_status?`
+- `ExplanationPayload`: `evidence: EvidenceShape[]`, `canonical_predicate?`
+- `DiffCompareResult.v2`: `V2ScreenDiff[]` を収録する provider 返却形（詳細は設計H）
 
-MUST:
+### 運用ルール
 
-- `schema_version`
-- `diff_id`
-- `event`
-- `implementation_layer`
-- `semantic_domain`
-- `source_ref`
-- `evidence.evidence_shape`
-- `evidence.before`
-- `evidence.after`
-- `confidence`
+- compare-logic v2 の機械判定は `decision` を基準に行う
+- `explanation.evidence` は **空配列を許容**する。registry 登録済み `evidence_shape` がある場合だけ各要素を `docs/v2-evidence-shapes-registry-ja.md` と JSON Schema で検証する
+- `canonical_predicate` は evidence 未登録イベントや predicate 系差分の説明に使う
+- `confidence` は 0.0–1.0 の確信度とし、compare-logic v2 では `0.8` 未満を `needs_review` とする
 
-条件付き必須:
+### 歴史的メモ
 
-- `ambiguity_reason`（`confidence` が閾値未満、または判定が曖昧な場合）
-
-**フィールド定義:**
-
-- `confidence`（0.0–1.0）: 判定システムが持つ **比較結論の確信度**。1.0 に近いほど確信が強く、0.0 に近いほど不確実。人手評価・モデル出力いずれも同じ尺度で扱う。**閾値の数値は本書で固定しない**（`T-20260418-005` 参照）。
-- `ambiguity_reason`（短文）: 曖昧さの理由を **自由文** で記述する。`confidence` が相対的に低い場合、または `review_status: uncertain` / `blocked` の場合に必須。
-
-### 論点3（証拠正規形）の方針決定（`T-20260418-007`）
-
-`T-20260418-007` で、証拠は **C＋B のハイブリッド**とする。
-
-- **案C（判別子付きペイロード）＝検証の正本**  
-  - `evidence.evidence_shape`（グローバル一意な文字列）を MUST とし、バリデータはこれを判別子として `before` / `after` 内部の MUST を確定する。  
-  - 各 `evidence_shape` の機械可能スキーマと、許容される `(semantic_domain, event, evidence_shape)` の組の **正本**は `docs/v2-evidence-shapes-registry-ja.md` および `docs/future/schemas/v2/evidence/` を参照する（`T-20260418-007` 完了）。
-- **案B（`semantic_domain` 基底＋ `event` オーバーレイ）＝ドキュメント構造**  
-  - 人間向けの MUST 表はドメイン共通の基底にイベント固有の上乗せで記述し、行の主キーは **`semantic_domain` × `event`**、参照先は **`evidence_shape`** とする。
-
-補足: `T-20260418-006` の「論点1＝案B」（必須フィールド最小集合）とは **別議題**である。
-
-`evidence.before` / `evidence.after` **内部のキー単位の MUST / SHOULD** はレジストリの表・JSON Schema が正本である（下記 JSON は **`state_machine.transition` の代表例**）。
-
-### 説明用（`explanation_payload`）
-
-SHOULD:
-
-- `title`
-- `description`
-- `impact`（`low | medium | high`）
-
-境界ルール:
-
-- 判定ロジックは `decision_payload` のみ参照する。
-- `explanation_payload` は人間向け説明専用で、判定入力に使わない。
-
-### 最小JSON例
-
-```json
-{
-  "decision_payload": {
-    "schema_version": "v2",
-    "diff_id": "d-0001",
-    "event": "transition_edge_changed",
-    "implementation_layer": "behavior",
-    "semantic_domain": "state_machine",
-    "source_ref": {
-      "screen_id": "expense_detail",
-      "component_id": "submit_button"
-    },
-    "evidence": {
-      "evidence_shape": "state_machine.transition",
-      "before": { "from": "draft", "to": "submitted", "trigger": "workflow/submit" },
-      "after": { "from": "draft", "to": "rejected", "trigger": "workflow/reject" }
-    },
-    "confidence": 0.92
-  },
-  "explanation_payload": {
-    "title": "申請後の遷移先が変更",
-    "description": "申請操作の遷移が submitted から rejected へ変更された。",
-    "impact": "high"
-  }
-}
-```
-
-> **注**: `confidence` の値（上例: 0.92）は説明用の例示であり、本書は閾値を固定しない（`T-20260418-005`・`T-20260418-006` 参照）。
+- `T-20260418-006` で議論した `decision_payload` / `explanation_payload` 形式は compare-logic v2 の背景メモとして残すが、現行の record 形そのものの正本ではない
+- compare-logic v2 実装・レビューでは `docs/future/types/v2/diff-record.ts`、設計E/F/H、`docs/v2-evidence-shapes-registry-ja.md` を優先する
 
 ## 変更履歴
 
@@ -718,3 +653,8 @@ SHOULD:
 - 2026-04-18: `T-20260418-009` — `diff_event` v0 推奨語彙表を追加（entity 系4件・transition 系3件・component 系5件、`layer` 推奨付き）
 - 2026-04-18: `T-20260418-010` — `confidence` の意味・値域（0.0–1.0・確信度）および `ambiguity_reason` の記述形式（自由文・短文）を `decision_payload` 節に追記
 - 2026-04-18: `T-20260418-011` — 非目的節に multi-screen フロー比較が v0 スコープ外である旨を追記
+- 2026-04-19: `T-20260419-001` — compare-logic v2 の現行 record 契約を `docs/future/types/v2/diff-record.ts` 基準へ一本化し、本書は概念・運用ルールへ整理
+- 2026-04-19: `T-20260419-002` — 未解決述語の比較規則と `review_status` を `needs_review` 基準へ統一
+- 2026-04-19: `T-20260419-003` — evidence は `explanation.evidence[*]` を検証対象とし、空配列許容・registry 適用条件を明文化
+- 2026-04-19: `T-20260419-004` — layer 語彙と `entity_renamed` の観測レイヤ整理を compare-logic v2 設計と整合
+- 2026-04-19: `T-20260419-005` — compare-logic v2 の単一 entity 前提と `entity.id` 欠損時の補助照合規則を明文化

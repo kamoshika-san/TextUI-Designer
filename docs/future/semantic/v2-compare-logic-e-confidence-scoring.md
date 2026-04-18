@@ -14,6 +14,7 @@
 | 判定ルート | 初期値 | 根拠 |
 |---|---|---|
 | entity.id 完全一致（同一 entity） | `1.0` | 決定論的同一性 |
+| entity.name 補助一致（B-4） | `0.7` | 補助キーで同定したが安定参照が欠ける |
 | entity.id 不一致 + name 一致（B-2 曖昧） | `0.5` | 曖昧な改名可能性（B-2 で確定済み） |
 | entity.id 不一致 + name 不一致（別 entity） | `1.0` | 決定論的別 entity |
 | component.id 完全一致（同一 component） | `1.0` | 決定論的同一性 |
@@ -27,6 +28,7 @@
 |---|---|---|---|
 | guard に `UnresolvedPredicate` が含まれる（D-3） | `-0.3` | `0.2` | guard の同値判定が不確実 |
 | entity.id 不一致 + name 一致（B-2、既に 0.5） | 追加減算なし | `0.5` | 初期値で既に反映済み |
+| entity.id 欠損の補助一致（B-4、既に 0.7） | 追加減算なし | `0.7` | 初期値で既に反映済み |
 | `screen_added` / `screen_removed`（設計A follow-up） | `1.0`（変化なし） | `1.0` | 構造的追加/削除は確実 |
 
 低下後の confidence は `max(0.0, initial - reduction)` で算出する。
@@ -40,22 +42,25 @@
 
 ## 論点E-2: UnresolvedPredicate が guard に含まれる場合の confidence 影響
 
-**決定: guard の片側または両側に `UnresolvedPredicate` が含まれる場合、confidence を `-0.3` 減算する。**
+**決定: guard 変化として record を生成するケースで `UnresolvedPredicate` が含まれる場合、confidence を `-0.3` 減算する。**
 
 詳細ルール:
 
 ```
 guard 比較時:
-  if normalizeGuard(prev.guard) contains 'unresolved'
-  OR normalizeGuard(next.guard) contains 'unresolved':
+  if guardChanged
+  AND (
+    normalizeGuard(prev.guard) contains unresolved payload
+    OR normalizeGuard(next.guard) contains unresolved payload
+  ):
     confidence -= 0.3
     ambiguity_reason = "guard contains UnresolvedPredicate — structural equality is uncertain"
-    → diff_event: 'component_guard_changed' を生成（確定的な同値判定不可のため変化とみなす）
+    → diff_event: 'component_guard_changed'
 ```
 
-両側ともに `unresolved` かつ reason が同一の場合:
-- 同値と判断しない（reason が同一でも actual predicate が異なる可能性を排除できない）
-- `component_guard_changed` を生成し confidence `-0.3`
+両側ともに `unresolved` かつ `reason` / `candidates` が同一の場合:
+- guard 同値として扱い、`component_guard_changed` は生成しない
+- confidence 低下も行わない
 
 根拠: `UnresolvedPredicate` はノーマライズ時に解決できなかった述語を示す。
 guard 変化を「なし」と誤判定することによる false-negative は、
@@ -92,9 +97,10 @@ function deriveReviewStatus(confidence: number): ReviewStatus {
 | シナリオ | confidence | review_status | ambiguity_reason 必須 |
 |---|---|---|---|
 | id 完全一致、guard なし | 1.0 | approved | no |
-| id 完全一致、guard に unresolved | 0.7 | needs_review | yes |
+| id 完全一致、guard に unresolved 由来の差分あり | 0.7 | needs_review | yes |
+| entity.id 欠損だが name で同定 | 0.7 | needs_review | yes |
 | entity id 不一致 + name 一致（B-2） | 0.5 | needs_review | yes |
-| entity id 不一致 + name 一致 + unresolved guard | 0.2 | needs_review | yes |
+| entity id 不一致 + name 一致 + unresolved guard 差分 | 0.2 | needs_review | yes |
 | component id 不一致（removed/added） | 1.0 | approved | no |
 
 ---

@@ -36,8 +36,8 @@ class V2SemanticDiffProvider implements SemanticDiffProvider {
 - interface を拡張（`compareStructureDiffV2(): V2Result` を追加）すると、
   v1 実装（`V1SemanticDiffProvider`）が新メソッドに対応しなければならず、
   swap seam の目的（impl を差し替えるだけでよい）が崩れる。
-- v2 の `V2ScreenDiff[]`（設計A〜G で設計した型）は `DiffCompareResult` の
-  `metadata` または `events` フィールドに JSON として収録する方式で対応する。
+- v2 の `V2ScreenDiff[]` とその内部 `V2DiffRecord` 形は `docs/future/types/v2/diff-record.ts` をコード寄り正本とし、
+  `DiffCompareResult.v2` に収録する方式で対応する。
 - 将来的に v2 型を first-class にする場合は interface 拡張ではなく、
   別の `V2DiffCompareResult` 型を返す新 interface を定義し段階的に移行する。
 

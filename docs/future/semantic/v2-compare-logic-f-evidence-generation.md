@@ -7,20 +7,21 @@
 
 ## 論点F-1: evidence を添付するイベントの範囲
 
-**決定: `layer: semantic` に分類される diff_event にのみ evidence を添付する。**
+**決定: `layer: semantic` に分類され、かつ registry に登録された diff_event にのみ evidence を添付する。**
 
 layer 分類:
 
 | layer | 対象 diff_event |
 |---|---|
 | `semantic` | `entity_state_changed`, `transition_edge_changed`, `component_action_changed`, `component_availability_changed`, `component_guard_changed` |
-| `structural` | `entity_added`, `entity_removed`, `entity_renamed`, `transition_added`, `transition_removed`, `component_added`, `component_removed` |
+| `surface` | `entity_renamed` |
+| `structure` | `entity_added`, `entity_removed`, `transition_added`, `transition_removed`, `component_added`, `component_removed` |
 
-- `structural` イベントは「何が増えた/消えた」という事実のみであり、before/after の比較構造がない。
-  evidence_shape は before/after ペアを前提とするため、structural イベントへの添付は不適切。
-- `semantic` イベントは 5軸変化の詳細（before/after）を evidence として表現できる。
+- `structure` / `surface` イベントは、存在差分または表示ラベル変化の記録であり、registry にある evidence_shape の比較対象ではない。
+  evidence_shape は before/after ペアを前提とするため、これらのイベントへの添付は不適切。
+- `semantic` イベントでも registry 未登録のものは `canonical_predicate` 側で説明し、evidence は空配列にする。
 
-根拠: evidence は「なぜ変化と判断したか」の根拠であり、structural イベントは
+根拠: evidence は「なぜ変化と判断したか」の根拠であり、structure / surface イベントは
 存在/非存在という事実だけで根拠が自明。evidence を添付しても情報が増えない。
 
 ---
@@ -33,13 +34,13 @@ layer 分類:
 
 | diff_event | 適用 evidence_shape | 選択根拠 |
 |---|---|---|
-| `entity_state_changed` | `state_machine.transition` | entity の from/to state + trigger が transition の概念と一致 |
-| `transition_edge_changed` | `state_machine.transition` | transition の from/to/trigger が直接対応 |
-| `component_action_changed` | `state_machine.transition` | action の domain/type 変化は「どの操作に変化したか」= transition 相当 |
-| `component_availability_changed` | なし（空 evidence） | 3フィールドの before/after は explanation_payload に収録（F-3参照） |
-| `component_guard_changed` | なし（空 evidence） | CanonicalPredicate の変化は explanation_payload.canonical_predicate で表現 |
+| `entity_state_changed` | なし（空 evidence） | registry 未登録。state 変化は `canonical_predicate` で表現 |
+| `transition_edge_changed` | `state_machine.transition` | registry 登録済みで from/to/trigger が直接対応 |
+| `component_action_changed` | なし（空 evidence） | registry 未登録。action 変化は `canonical_predicate` で表現 |
+| `component_availability_changed` | なし（空 evidence） | 3フィールドの before/after は `explanation.canonical_predicate` に収録（F-3参照） |
+| `component_guard_changed` | なし（空 evidence） | CanonicalPredicate の変化は `explanation.canonical_predicate` で表現 |
 
-### structural イベント → evidence なし（F-1 の決定により）
+### structure / surface イベント → evidence なし（F-1 の決定により）
 
 | diff_event | evidence |
 |---|---|
@@ -50,28 +51,11 @@ layer 分類:
 ### `state_machine.transition` evidence の組み立てルール
 
 ```typescript
-// entity_state_changed の場合
-// before: 変化前の entity.state を「到達状態」として表現
-// after:  変化後の entity.state を「到達状態」として表現
-// from は遷移元状態（entity_state_changed では取得不可）→ 'n/a'
-evidence: [{
-  evidence_shape: 'state_machine.transition',
-  before: { from: 'n/a', to: prev.entity.state ?? 'unknown', trigger: 'n/a' },
-  after:  { from: 'n/a', to: next.entity.state ?? 'unknown', trigger: 'n/a' }
-}]
-
 // transition_edge_changed の場合
 evidence: [{
   evidence_shape: 'state_machine.transition',
   before: { from: prev.from, to: prev.to, trigger: `${prev.trigger.domain}.${prev.trigger.type}` },
   after:  { from: next.from, to: next.to, trigger: `${next.trigger.domain}.${next.trigger.type}` }
-}]
-
-// component_action_changed の場合
-evidence: [{
-  evidence_shape: 'state_machine.transition',
-  before: { from: 'n/a', to: 'n/a', trigger: `${prev.action.domain}.${prev.action.type}` },
-  after:  { from: 'n/a', to: 'n/a', trigger: `${next.action.domain}.${next.action.type}` }
 }]
 ```
 
@@ -85,6 +69,8 @@ evidence: [{
 **決定: evidence が生成できない場合は `evidence: []`（空配列）を使用する。null や undefined にしない。**
 
 適用ケース:
+- `entity_state_changed`: registry 未登録 → `evidence: []`
+- `component_action_changed`: registry 未登録 → `evidence: []`
 - `component_availability_changed`: evidence_shape が対応しない → `evidence: []`
 - `component_guard_changed`: canonical_predicate で表現するため evidence は `[]`
 - DSL の情報が不足（`state` が `undefined` 等）: `evidence: []` で記録し confidence を参照
@@ -120,16 +106,16 @@ const record: V2DiffRecord = {
 
 | diff_event | layer | evidence_shape | canonical_predicate |
 |---|---|---|---|
-| `entity_added` | structural | `[]` | なし |
-| `entity_removed` | structural | `[]` | なし |
-| `entity_renamed` | structural | `[]` | なし |
-| `entity_state_changed` | semantic | `state_machine.transition` | なし |
-| `transition_added` | structural | `[]` | なし |
-| `transition_removed` | structural | `[]` | なし |
+| `entity_added` | structure | `[]` | なし |
+| `entity_removed` | structure | `[]` | なし |
+| `entity_renamed` | surface | `[]` | なし |
+| `entity_state_changed` | semantic | `[]` | entity_state before/after |
+| `transition_added` | structure | `[]` | なし |
+| `transition_removed` | structure | `[]` | なし |
 | `transition_edge_changed` | semantic | `state_machine.transition` | なし |
-| `component_added` | structural | `[]` | なし |
-| `component_removed` | structural | `[]` | なし |
-| `component_action_changed` | semantic | `state_machine.transition` | なし |
+| `component_added` | structure | `[]` | なし |
+| `component_removed` | structure | `[]` | なし |
+| `component_action_changed` | semantic | `[]` | action before/after |
 | `component_availability_changed` | semantic | `[]` | availability 3フィールド |
 | `component_guard_changed` | semantic | `[]` | guard の CanonicalPredicate |
 

@@ -37,9 +37,10 @@
 sort キー（優先順）:
 
 ```
-1. layer: structural イベントを先（entity_added/removed → component_added/removed → ... ）
-2. layer: semantic イベントを後（entity_state_changed → transition_edge_changed → component_*)
-3. 同一 layer 内は diff_event の辞書順
+1. layer: `structure` イベントを先
+2. layer: `surface` イベントを次
+3. layer: `semantic` イベントを後
+4. 同一 layer 内は diff_event の辞書順
 ```
 
 具体的な全順序:
@@ -47,12 +48,13 @@ sort キー（優先順）:
 ```
 entity_added
 entity_removed
-entity_renamed
 transition_added
 transition_removed
 component_added
 component_removed
---- structural / semantic 境界 ---
+--- structure / surface 境界 ---
+entity_renamed
+--- surface / semantic 境界 ---
 entity_state_changed
 transition_edge_changed
 component_action_changed
@@ -62,7 +64,7 @@ component_guard_changed
 
 sort order を定義する根拠:
 - sort order が未定義だと実装ごとに出力が揺れ、スナップショットテストが不安定になる。
-- structural → semantic の順は「存在確認してから意味を読む」という自然な読み順に対応する。
+- `structure → surface → semantic` の順は「存在確認 → 表示差分 → 業務意味」という自然な読み順に対応する。
 - v2 のスナップショットテスト安定性と将来の CI diff 比較のために sort order は固定が必須。
 
 ---

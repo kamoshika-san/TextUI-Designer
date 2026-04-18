@@ -1,6 +1,6 @@
 /**
  * Semantic v2 diff record TypeScript types
- * Source: docs/future/semantic/semantic-meaning-core-ontology-v0-ja.md
+ * Code-facing source of truth for the current compare-logic v2 record shape.
  * Target boundary: design artifact only — do NOT import from src/
  */
 
@@ -41,6 +41,7 @@ export interface DecisionPayload {
 
 /** Explanation payload — evidence and predicates that support the decision */
 export interface ExplanationPayload {
+  /** Empty array is valid when no registered evidence_shape applies. */
   evidence: EvidenceShape[];
   canonical_predicate?: CanonicalPredicate;
 }
