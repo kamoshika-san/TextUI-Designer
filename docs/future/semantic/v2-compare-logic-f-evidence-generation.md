@@ -51,10 +51,13 @@ layer 分類:
 
 ```typescript
 // entity_state_changed の場合
+// before: 変化前の entity.state を「到達状態」として表現
+// after:  変化後の entity.state を「到達状態」として表現
+// from は遷移元状態（entity_state_changed では取得不可）→ 'n/a'
 evidence: [{
   evidence_shape: 'state_machine.transition',
-  before: { from: prev.entity.state ?? 'unknown', to: prev.entity.state ?? 'unknown', trigger: 'n/a' },
-  after:  { from: next.entity.state ?? 'unknown', to: next.entity.state ?? 'unknown', trigger: 'n/a' }
+  before: { from: 'n/a', to: prev.entity.state ?? 'unknown', trigger: 'n/a' },
+  after:  { from: 'n/a', to: next.entity.state ?? 'unknown', trigger: 'n/a' }
 }]
 
 // transition_edge_changed の場合
