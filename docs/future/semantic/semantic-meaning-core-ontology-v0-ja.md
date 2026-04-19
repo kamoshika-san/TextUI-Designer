@@ -658,3 +658,93 @@ compare-logic v2 の **コード寄り正本**は `docs/future/types/v2/diff-rec
 - 2026-04-19: `T-20260419-003` — evidence は `explanation.evidence[*]` を検証対象とし、空配列許容・registry 適用条件を明文化
 - 2026-04-19: `T-20260419-004` — layer 語彙と `entity_renamed` の観測レイヤ整理を compare-logic v2 設計と整合
 - 2026-04-19: `T-20260419-005` — compare-logic v2 の単一 entity 前提と `entity.id` 欠損時の補助照合規則を明文化
+## Action 正規化の決定論的手順
+
+compare-logic v2 の D-1 は `ActionAxis` を `domain + type` の一致比較で扱うため、比較前に **同一 DSL 入力から同一 `ActionAxis` が導かれること** を正本として固定する。ここで対象にするのは現行 DSL に実在する action 入力断片だけであり、ラベル文言だけから Action を推測してはならない。
+
+### 入力源
+
+- `Button.action.trigger`
+- `Button.submit`
+- `Button.kind`
+- `flow.transitions[].trigger`
+
+`Form.actions[]` は内部で `Button` を保持するため、Action 正規化では Button と同じ規則を適用する。
+
+### 優先順位
+
+1. `Button.action.trigger`
+2. `Button.submit === true`
+3. `Button.kind === 'submit'`
+4. 同一 screen 上で対応付け済みの `flow.transitions[].trigger`
+
+上位入力源が存在する場合、下位入力源で上書きしてはならない。これを Action 正規化の決定性ルールとする。
+
+### 候補化
+
+- `submit === true` または `kind === 'submit'` は `workflow.submit` を第一候補にする
+- `trigger` が `back` / `next` / `close` / `open` と完全一致する場合は、それぞれ `navigate.back` / `navigate.next` / `navigate.close` / `navigate.open` を単独候補にしてよい
+- `trigger` が `approve` / `reject` / `cancel` / `search` / `filter` / `sort` / `export` / `import` と完全一致する場合は、同名の `ActionType` を単独候補にしてよい
+- `trigger` が上記の固定語彙に一致しない場合は、文字列だけで `persist.*` / `workflow.*` / `mutate.*` / `system.*` へ決め打ちしない
+
+### 制約検証
+
+- `navigate.*` は、同じ `trigger` を持つ `flow.transitions[]` が存在し、screen 遷移を伴うことが確認できる場合にのみ確定してよい
+- `workflow.submit` は `submit === true` または `kind === 'submit'` がある場合にのみ確定してよい。`trigger: submit` という文字列だけでは自動確定しない
+- `workflow.approve` / `workflow.reject` / `workflow.cancel` は trigger 完全一致で確定してよいが、同一 component に `submit === true` があるなら `workflow.submit` を優先する
+- 候補が 2 件以上残る場合は tie-break を設けず、そのまま未解決へ落とす
+
+### 未解決へのフォールバック
+
+Action 正規化で 1 件に確定できない場合は推測で埋めない。compare-logic v2 では次の扱いを正本とする。
+
+- `ActionAxis` を確定せず、Action 比較は `needs_review` 前提の曖昧ケースとして保持する
+- 候補集合は辞書順で正規化して保持し、同一入力で再実行したときに同じ結果になるようにする
+- 人手判断へ渡すときは、どの入力源を使い、どこで制約検証に失敗したかを説明できる形で残す
+
+### 例
+
+```yaml
+# DSL
+Button:
+  label: Place Order
+  kind: primary
+  action:
+    trigger: submit
+
+# 正規化
+action:
+  domain: workflow
+  type: submit
+```
+
+```yaml
+# DSL
+Button:
+  label: Edit billing
+  action:
+    trigger: edit-billing
+
+# flow.transitions[]
+- trigger: edit-billing
+  kind: backtrack
+
+# 正規化
+action:
+  domain: navigate
+  type: back
+```
+
+```yaml
+# DSL
+Button:
+  label: Reconfigure failed integrations
+  action:
+    trigger: reconfigure
+
+# 正規化結果
+normalization:
+  status: unresolved
+  reason: trigger だけでは ActionType を一意に確定できない
+  candidates: [navigate.open, workflow.submit]
+```

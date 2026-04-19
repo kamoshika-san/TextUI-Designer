@@ -178,3 +178,8 @@ matched transition の変化検出:
 ---
 
 *作成: 2026-04-19 / チケット: v2比較ロジック設計D*
+## D-1 Addendum: Action 正規化前提
+
+- D-1 が比較する `prev.action` / `next.action` は、ontology 正本「Action 正規化の決定論的手順」で **比較前に確定済みの `ActionAxis`** とする
+- D-1 自体では `trigger` 文字列からの推測、複数候補間の tie-break、文言ラベルからの補完を行わない
+- `ActionAxis` を 1 件に確定できない場合は、D-1 に入る前段で未解決扱いへ落とし、compare-logic v2 では `needs_review` 前提の曖昧ケースとして保持する
