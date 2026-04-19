@@ -43,6 +43,8 @@
 
 **決定: guard 変化として record を生成するケースで `UnresolvedPredicate` が含まれる場合、confidence を `-0.3` 減算する。**
 
+**補足:** 当該 guard 比較において `UnresolvedPredicate` が1つ以上含まれるとき、`-0.3` の減算は**1回のみ**とする（同一 guard 内の個数・出現箇所の数には比例しない）。
+
 詳細ルール:
 
 ```
