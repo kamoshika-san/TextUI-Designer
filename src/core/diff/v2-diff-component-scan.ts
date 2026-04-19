@@ -8,13 +8,20 @@ import { toComponentNode } from './diff-pairing';
 import { normalizeDefaults } from '../diff-normalization/normalize-defaults';
 
 function makeComponentRecord(
-  event: 'component_added' | 'component_removed' | 'component_action_changed' | 'component_availability_changed',
+  event:
+    | 'component_added'
+    | 'component_removed'
+    | 'component_action_changed'
+    | 'component_availability_changed'
+    | 'component_guard_changed',
   targetId: string,
   beforePredicate?: unknown,
-  afterPredicate?: unknown
+  afterPredicate?: unknown,
+  confidence = 1.0,
+  ambiguityReason?: string
 ): V2DiffRecord {
   return {
-    decision: buildV2Decision(event, targetId, 1.0),
+    decision: buildV2Decision(event, targetId, confidence, ambiguityReason),
     explanation: {
       evidence: [],
       before_predicate: beforePredicate,
@@ -92,6 +99,33 @@ function extractAvailabilityAxis(component: unknown): {
   };
 }
 
+function stableGuardStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(item => stableGuardStringify(item)).join(',')}]`;
+  }
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, nested]) => `${JSON.stringify(key)}:${stableGuardStringify(nested)}`);
+    return `{${entries.join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function hasUnresolvedGuard(value: unknown): boolean {
+  if (Array.isArray(value)) {
+    return value.some(hasUnresolvedGuard);
+  }
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  if (record['kind'] === 'unresolved') {
+    return true;
+  }
+  return Object.values(record).some(hasUnresolvedGuard);
+}
+
 export function scanComponentDiffs(
   previous: DiffCompareDocument,
   next: DiffCompareDocument
@@ -150,6 +184,23 @@ export function scanComponentDiffs(
       result.push({
         component_id: key,
         diffs: [makeComponentRecord('component_availability_changed', key, prevAvailability, nextAvailability)],
+      });
+    }
+
+    const previousGuard = getNormalizedComponentNode(previousEntry.component)?.['guard'];
+    const nextGuard = getNormalizedComponentNode(nextEntry.component)?.['guard'];
+    if (stableGuardStringify(previousGuard) !== stableGuardStringify(nextGuard)) {
+      const unresolved = hasUnresolvedGuard(previousGuard) || hasUnresolvedGuard(nextGuard);
+      result.push({
+        component_id: key,
+        diffs: [makeComponentRecord(
+          'component_guard_changed',
+          key,
+          previousGuard,
+          nextGuard,
+          unresolved ? 0.7 : 1.0,
+          unresolved ? 'guard contains unresolved predicate' : undefined
+        )],
       });
     }
   }

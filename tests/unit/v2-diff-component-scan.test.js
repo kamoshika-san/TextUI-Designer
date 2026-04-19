@@ -99,4 +99,36 @@ describe('semantic diff v2 component scan', () => {
     assert.strictEqual(diffs.length, 1);
     assert.strictEqual(diffs[0].diffs[0].decision.diff_event, 'component_availability_changed');
   });
+
+  it('emits component_guard_changed for matched components whose guard changed', () => {
+    const previous = makeDoc('previous', [
+      { Button: { id: 'save', label: 'Save', guard: { op: 'eq', fact: 'mode', value: 'draft' } } },
+    ]);
+    const next = makeDoc('next', [
+      { Button: { id: 'save', label: 'Save', guard: { op: 'eq', fact: 'mode', value: 'published' } } },
+    ]);
+
+    const diffs = componentScan.scanComponentDiffs(previous, next);
+
+    assert.strictEqual(diffs.length, 1);
+    assert.strictEqual(diffs[0].diffs[0].decision.diff_event, 'component_guard_changed');
+    assert.strictEqual(diffs[0].diffs[0].decision.confidence_band, 'high');
+  });
+
+  it('drops component_guard_changed to low confidence when guard contains unresolved predicate', () => {
+    const previous = makeDoc('previous', [
+      { Button: { id: 'save', label: 'Save', guard: { kind: 'unresolved', reason: 'missing fact' } } },
+    ]);
+    const next = makeDoc('next', [
+      { Button: { id: 'save', label: 'Save', guard: { op: 'eq', fact: 'mode', value: 'draft' } } },
+    ]);
+
+    const diffs = componentScan.scanComponentDiffs(previous, next);
+    const decision = diffs[0].diffs[0].decision;
+
+    assert.strictEqual(decision.diff_event, 'component_guard_changed');
+    assert.strictEqual(decision.confidence, 0.7);
+    assert.strictEqual(decision.confidence_band, 'low');
+    assert.strictEqual(decision.review_status, 'needs_review');
+  });
 });
