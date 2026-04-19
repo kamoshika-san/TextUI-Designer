@@ -160,7 +160,7 @@ export default [{
         "no-restricted-imports": exporterNonInternalToInternalRestriction,
     },
 }, {
-    files: ["tests/**/*.js", "tests/**/*.ts"],
+    files: ["tests/**/*.js", "tests/**/*.ts", "tests/**/*.tsx"],
     ignores: ["tests/helpers/fallback-helper.js"],
     plugins: {
         "@typescript-eslint": typescriptEslint,
