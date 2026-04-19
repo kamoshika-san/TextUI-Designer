@@ -17,11 +17,11 @@
    ```
 
    - `runtime fallback entry files`: **本番の明示的 fallback 呼び出し元**（T-010 適用後は **0 件**を期待）
-   - `fallback helper definitions`: `html-export-lane-options.ts`（ヘルパ定義は維持）
+   - `fallback helper definitions`: `src/exporters/internal/fallback-lane-options.ts`（ヘルパ定義は維持・T-020）
    - `primary-default routes`: 既定 Primary の経路ファイル一覧
    - `fallback execution test files`: 互換レーン専用テスト
 
-2. **ソース上の `useReactRender: false` 直書き**: `tests/unit/html-exporter-route-viability.test.js` 内の **「HtmlExporter fallback entry guard」** describe が **`src/**` では `html-export-lane-options.ts` のみ**に閉じていることを機械保証（T-016 で `html-exporter-fallback-entry-guard.test.js` から統合）。
+2. **ソース上の `useReactRender: false` 直書き**: `tests/unit/html-exporter-route-viability.test.js` 内の **「HtmlExporter fallback entry guard」** describe が **`src/**` では `internal/fallback-lane-options.ts` のみ**に閉じていることを機械保証（T-016 で `html-exporter-fallback-entry-guard.test.js` から統合。T-020 でパス更新）。
 
 3. **経路別の呼び出し元（手動メモ）**
 
@@ -37,7 +37,7 @@
 
 | 区分 | 対象 | 根拠 |
 |------|------|------|
-| **必須（残す）** | `withExplicitFallbackHtmlExport` / `EXPLICIT_FALLBACK_HTML_EXPORT_OPTIONS`（`html-export-lane-options.ts`） | テスト・将来の互換経路を **明示的**にルーティングするための API 表面 |
+| **必須（残す）** | `withExplicitFallbackHtmlExport` / `EXPLICIT_FALLBACK_HTML_EXPORT_OPTIONS`（`internal/fallback-lane-options.ts`） | テスト・将来の互換経路を **明示的**にルーティングするための API 表面（T-020 で `internal/` へ移動） |
 | **必須（残す）** | `HtmlExporter` の `useReactRender === false` 分岐本体 | 互換レーンの実装コア |
 | **必須（残す）** | `buildFallbackCompatibilityStyleBlock` 等（fallback 専用 CSS） | 互換レーンの見た目差分吸収 |
 | **移行可能（Primary へ寄せた）** | CLI `capture`（旧: ヘルパで fallback 固定） | `prepareCaptureArtifacts` が既に **Primary 既定**のため、二重指定は不要（T-010 で除去） |

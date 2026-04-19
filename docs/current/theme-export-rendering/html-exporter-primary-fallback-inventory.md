@@ -53,7 +53,7 @@ Post-T-010 snapshot (rerun `npm run report:react-fallback-usage`):
 | Metric | Value | Notes |
 |---|---|---|
 | runtime fallback entries | `0` | no production runtime file lists an explicit fallback entry; compatibility lane remains for tests via `withExplicitFallbackHtmlExport` |
-| fallback helper definitions | `1` | helper stays centralized in `src/exporters/html-export-lane-options.ts` |
+| fallback helper definitions | `1` | helper stays centralized in `src/exporters/internal/fallback-lane-options.ts` (T-020) |
 | primary-default routes | `2` | built-in HTML provider and preview-capture preparation remain Primary by default |
 | fallback execution test files | `2` | compatibility lane remains covered only by explicit fallback-lane observability and style-lane tests |
 | fallback governance files | `4` | guard, route-viability, taxonomy, and this inventory page document the lane |
@@ -61,7 +61,7 @@ Post-T-010 snapshot (rerun `npm run report:react-fallback-usage`):
 Lane ownership in the current snapshot:
 
 - CLI `capture` export lane: **Primary** (`src/cli/commands/capture-command.ts`, T-010)
-- Fallback helper owner: `src/exporters/html-export-lane-options.ts`
+- Fallback helper owner: `src/exporters/internal/fallback-lane-options.ts` (`fallback-access.ts` facade)
 - Primary-default routes: `src/cli/provider-registry.ts`, `src/utils/preview-capture/html-preparation.ts`
 - Fallback execution test lane:
   - `tests/unit/html-exporter-lane-observability.test.js`

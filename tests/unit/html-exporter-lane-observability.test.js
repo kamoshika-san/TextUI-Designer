@@ -2,13 +2,13 @@
  * HtmlExporter lane observability (debug / deprecation signals).
  *
  * T-016 / T-019: These tests intentionally exercise the **fallback HTML lane** (via
- * `withExplicitFallbackHtmlExport`) or assert the **runtime hard gate** for raw `useReactRender:false`.
+ * `createFallbackOptions`) or assert the **runtime hard gate** for raw `useReactRender:false`.
  * They complement `html-exporter-fallback-style-lane.test.js` (markup/CSS) and cannot be merged there
  * without mixing unrelated assertions.
  */
 const assert = require('assert');
 const { HtmlExporter } = require('../../out/exporters/html-exporter');
-const { withExplicitFallbackHtmlExport } = require('../../out/exporters/html-export-lane-options');
+const { createFallbackOptions } = require('../helpers/fallback-helper');
 
 describe('HtmlExporter lane observability', () => {
   const dsl = {
@@ -49,7 +49,7 @@ describe('HtmlExporter lane observability', () => {
       originalDebug(message, ...args);
     };
 
-    await exporter.export(dsl, withExplicitFallbackHtmlExport({ format: 'html' }));
+    await exporter.export(dsl, createFallbackOptions({ format: 'html' }));
 
     assert.ok(
       logs.some(message => message.includes('using fallback HTML render path (useReactRender=false)')),

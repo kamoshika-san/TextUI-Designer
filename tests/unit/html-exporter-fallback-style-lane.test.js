@@ -3,12 +3,12 @@
  *
  * Primary lane renders through React; assertions here about **Tailwind-like compatibility rules**
  * and **static semantic hooks** (`textui-*` classes) are only meaningful when
- * `withExplicitFallbackHtmlExport` forces `useReactRender: false`. Primary-only tests cannot
+ * `createFallbackOptions` forces `useReactRender: false`. Primary-only tests cannot
  * substitute without changing product architecture (T-010 keeps production on Primary).
  */
 const assert = require('assert');
 const { HtmlExporter } = require('../../out/exporters/html-exporter');
-const { withExplicitFallbackHtmlExport } = require('../../out/exporters/html-export-lane-options');
+const { createFallbackOptions } = require('../helpers/fallback-helper');
 
 const {
   buildHtmlDocument,
@@ -88,7 +88,7 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
           }
         ]
       }
-    }, withExplicitFallbackHtmlExport({ format: 'html' }));
+    }, createFallbackOptions({ format: 'html' }));
 
     assert.ok(html.includes('textui-tabs-list'));
     assert.ok(html.includes('textui-tab-panel-body'));
@@ -131,7 +131,7 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
           { Divider: { orientation: 'vertical', spacing: 'md' } }
         ]
       }
-    }, withExplicitFallbackHtmlExport({ format: 'html' }));
+    }, createFallbackOptions({ format: 'html' }));
 
     assert.ok(html.includes('textui-tabs'));
     assert.ok(html.includes('textui-tabs-list'));
@@ -159,7 +159,7 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
           { Alert: { title: 'Heads up', message: 'needs attention', variant: 'warning' } }
         ]
       }
-    }, withExplicitFallbackHtmlExport({ format: 'html' }));
+    }, createFallbackOptions({ format: 'html' }));
 
     assert.ok(html.includes('textui-input'));
     assert.ok(html.includes('textui-checkbox'));
@@ -198,7 +198,7 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
           }
         ]
       }
-    }, withExplicitFallbackHtmlExport({ format: 'html' }));
+    }, createFallbackOptions({ format: 'html' }));
 
     assert.ok(html.includes('textui-accordion'));
     assert.ok(html.includes('textui-accordion-item'));
