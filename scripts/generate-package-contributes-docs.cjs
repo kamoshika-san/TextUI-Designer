@@ -69,7 +69,7 @@ function main() {
   lines.push('| ファイル | マージ先 `contributes` キー | 責務 |');
   lines.push('|---|---|---|');
   for (const row of PACKAGE_CONTRIBUTES_BUILD) {
-    const resp = (RESPONSIBILITY[row.fragment] || '—').replace(/\|/g, '\\|');
+    const resp = (RESPONSIBILITY[row.fragment] || '—').replace(/[\\|]/g, '\\$&');
     const keys = row.contributesKeys.map((k) => `\`${k}\``).join('<br>');
     lines.push(`| \`${row.fragment}\` | ${keys} | ${resp} |`);
   }
