@@ -108,7 +108,9 @@ function formatMarkdown(contributes, stats) {
   lines.push('| フラグメント | `contributes` キー | メモ |');
   lines.push('|---|---|---|');
   for (const row of PACKAGE_CONTRIBUTES_BUILD) {
-    const note = (FRAGMENT_NOTES[row.fragment] || '').replace(/\|/g, '\\|');
+    const note = (FRAGMENT_NOTES[row.fragment] || '')
+      .replace(/\\/g, '\\\\')
+      .replace(/\|/g, '\\|');
     lines.push(`| \`${row.fragment}\` | ${row.contributesKeys.map((k) => `\`${k}\``).join(', ')} | ${note} |`);
   }
   lines.push('');
