@@ -15,6 +15,8 @@ import {
 } from './structure-diff';
 import { createNormalizedFlowDiffDocument } from './flow-diff';
 import { scanEntityDiffs } from './v2-diff-entity-scan';
+import { scanComponentDiffs } from './v2-diff-component-scan';
+import type { V2EntityDiff } from './diff-v2-types';
 
 export class V2SemanticDiffProvider implements SemanticDiffProvider {
   createStructureDiffDocument(
@@ -31,12 +33,29 @@ export class V2SemanticDiffProvider implements SemanticDiffProvider {
   ): DiffCompareResult {
     const result = createDiffResultSkeleton(previous, next, policy);
     const screens = scanEntityDiffs(previous, next);
-    const totalRecords = screens.reduce(
-      (sum, s) => sum + ('outOfScope' in s ? 0 : s.diffs.length),
-      0
-    );
+    const componentDiffs = scanComponentDiffs(previous, next);
+
+    const populatedScreens = screens.map(s => {
+      if ('outOfScope' in s) return s;
+      const entities: V2EntityDiff[] =
+        componentDiffs.length > 0
+          ? [{ entity_id: `${s.screen_id}-components`, diffs: [], components: componentDiffs }]
+          : [];
+      return { ...s, entities };
+    });
+
+    const totalRecords = populatedScreens.reduce((sum, s) => {
+      if ('outOfScope' in s) return sum;
+      const screenDiffs = s.diffs.length;
+      const compDiffs = s.entities.reduce(
+        (es, e) => es + e.components.reduce((cs, c) => cs + c.diffs.length, 0),
+        0
+      );
+      return sum + screenDiffs + compDiffs;
+    }, 0);
+
     const v2: DiffCompareResultV2Payload = {
-      screens,
+      screens: populatedScreens,
       metadata: { schemaVersion: 'v2-compare-logic/v0', totalRecords },
     };
     return { ...result, v2 };
