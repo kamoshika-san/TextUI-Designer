@@ -62,6 +62,8 @@ component_availability_changed
 component_guard_changed
 ```
 
+**正本（P3-8）**: 各 `diff_event` の `layer`（`structure` / `surface` / `semantic`）は **`docs/future/types/v2/layer-mapping.ts`** の `DIFF_EVENT_LAYER` を参照。上記 sort の layer 段および `structure` / `surface` / `semantic` の境界は当該マップと一致する。
+
 > **注（P2-3）**: `component_label_changed` は closed vocabulary に **含めない**（PM 決定: ラベルは surface のみで 5 軸意味差分の対象外）。将来採用する場合は `DiffEvent`・本表・設計 F/E を同時更新する。
 
 sort order を定義する根拠:

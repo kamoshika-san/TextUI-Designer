@@ -17,6 +17,8 @@ layer 分類:
 | `surface` | `entity_renamed` |
 | `structure` | `entity_added`, `entity_removed`, `transition_added`, `transition_removed`, `component_added`, `component_removed` |
 
+- **正本（P3-8）**: `diff_event` → `layer` の対応は TypeScript では **`docs/future/types/v2/layer-mapping.ts`**（`DIFF_EVENT_LAYER` / `CompareLogicLayer` / `diffEventLayer`）を参照。本節の表と差異がある場合は **当該ファイルを正** とし、本文を追随する。
+
 - `structure` / `surface` イベントは、存在差分または表示ラベル変化の記録であり、registry にある evidence_shape の比較対象ではない。
   evidence_shape は before/after ペアを前提とするため、これらのイベントへの添付は不適切。
 - `semantic` イベントでも registry 未登録のものは `before_predicate`/`after_predicate` 側で説明し、evidence は空配列にする。
