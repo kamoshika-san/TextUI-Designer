@@ -116,4 +116,13 @@ describe('semantic diff v2 entity scan', () => {
     assert.strictEqual(result.v2.metadata.totalRecords, 1);
     assert.strictEqual(result.v2.screens[0].entities[0].diffs[0].decision.diff_event, 'entity_state_changed');
   });
+
+  it('adds non-empty evidence for entity-level records', () => {
+    const previous = makeDoc('previous', { id: 'profile', title: 'Profile', state: { stage: 'draft' } });
+    const next = makeDoc('next', { id: 'profile', title: 'Profile', state: { stage: 'published' } });
+
+    const screens = entityScan.scanEntityDiffs(previous, next);
+
+    assert.ok(screens[0].entities[0].diffs[0].explanation.evidence.length > 0);
+  });
 });

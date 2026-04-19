@@ -131,4 +131,33 @@ describe('semantic diff v2 component scan', () => {
     assert.strictEqual(decision.confidence_band, 'low');
     assert.strictEqual(decision.review_status, 'needs_review');
   });
+
+  it('adds non-empty evidence for component-level diff events', () => {
+    const previous = makeDoc('previous', [
+      { Button: { id: 'save', label: 'Save', action: { trigger: 'submit' } } },
+    ]);
+    const next = makeDoc('next', [
+      { Button: { id: 'save', label: 'Save', action: { trigger: 'approve' } } },
+    ]);
+
+    const diffs = componentScan.scanComponentDiffs(previous, next);
+
+    assert.ok(Array.isArray(diffs[0].diffs[0].explanation.evidence));
+    assert.ok(diffs[0].diffs[0].explanation.evidence.length > 0);
+  });
+
+  it('returns component diffs in stable component_id order', () => {
+    const previous = makeDoc('previous', [
+      { Button: { id: 'b', label: 'B' } },
+      { Button: { id: 'a', label: 'A' } },
+    ]);
+    const next = makeDoc('next', [
+      { Button: { id: 'b', label: 'B', disabled: true } },
+      { Button: { id: 'a', label: 'A', action: { trigger: 'go' } } },
+    ]);
+
+    const diffs = componentScan.scanComponentDiffs(previous, next);
+
+    assert.deepStrictEqual(diffs.map(diff => diff.component_id), ['Button:a', 'Button:b']);
+  });
 });

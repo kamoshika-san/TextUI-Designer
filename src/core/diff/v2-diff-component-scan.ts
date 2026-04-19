@@ -18,12 +18,13 @@ function makeComponentRecord(
   beforePredicate?: unknown,
   afterPredicate?: unknown,
   confidence = 1.0,
-  ambiguityReason?: string
+  ambiguityReason?: string,
+  evidence: unknown[] = []
 ): V2DiffRecord {
   return {
     decision: buildV2Decision(event, targetId, confidence, ambiguityReason),
     explanation: {
-      evidence: [],
+      evidence,
       before_predicate: beforePredicate,
       after_predicate: afterPredicate,
     },
@@ -145,7 +146,7 @@ export function scanComponentDiffs(
     if (!nextMap.has(key)) {
       result.push({
         component_id: key,
-        diffs: [makeComponentRecord('component_removed', key)],
+        diffs: [makeComponentRecord('component_removed', key, undefined, undefined, 1.0, undefined, ['component removed'])],
       });
     }
   }
@@ -154,7 +155,7 @@ export function scanComponentDiffs(
     if (!prevMap.has(key)) {
       result.push({
         component_id: key,
-        diffs: [makeComponentRecord('component_added', key)],
+        diffs: [makeComponentRecord('component_added', key, undefined, undefined, 1.0, undefined, ['component added'])],
       });
     }
   }
@@ -170,7 +171,7 @@ export function scanComponentDiffs(
     if (prevAction.domain !== nextAction.domain || prevAction.type !== nextAction.type) {
       result.push({
         component_id: key,
-        diffs: [makeComponentRecord('component_action_changed', key, prevAction, nextAction)],
+        diffs: [makeComponentRecord('component_action_changed', key, prevAction, nextAction, 1.0, undefined, ['action axis changed'])],
       });
     }
 
@@ -183,7 +184,7 @@ export function scanComponentDiffs(
     ) {
       result.push({
         component_id: key,
-        diffs: [makeComponentRecord('component_availability_changed', key, prevAvailability, nextAvailability)],
+        diffs: [makeComponentRecord('component_availability_changed', key, prevAvailability, nextAvailability, 1.0, undefined, ['availability axis changed'])],
       });
     }
 
@@ -199,11 +200,12 @@ export function scanComponentDiffs(
           previousGuard,
           nextGuard,
           unresolved ? 0.7 : 1.0,
-          unresolved ? 'guard contains unresolved predicate' : undefined
+          unresolved ? 'guard contains unresolved predicate' : undefined,
+          [unresolved ? 'guard axis changed with unresolved predicate' : 'guard axis changed']
         )],
       });
     }
   }
 
-  return result;
+  return result.sort((left, right) => left.component_id.localeCompare(right.component_id));
 }
