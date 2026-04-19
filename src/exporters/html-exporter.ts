@@ -114,7 +114,7 @@ export class HtmlExporter extends BaseComponentRenderer {
     const fallbackStructured = {
       kind: TEXTUI_HTML_EXPORTER_FALLBACK_LANE_EVENT_ID,
       lane: 'fallback',
-      useReactRender: false,
+      useReactRender: options.useReactRender,
       ticket: 'T-022'
     } as const;
     this.logger.debug(
