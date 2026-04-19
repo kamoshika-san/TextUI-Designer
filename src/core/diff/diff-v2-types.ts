@@ -21,8 +21,10 @@ export type V2DiffEvent =
   | 'component_guard_changed';
 
 export type V2ReviewStatus = 'approved' | 'rejected' | 'needs_review';
+export type V2DecisionConfidenceBand = 'high' | 'low';
 
-export interface V2DiffDecision {
+export interface V2HighConfidenceDecision {
+  confidence_band: 'high';
   diff_event: V2DiffEvent;
   target_id: string;
   confidence: number;
@@ -30,13 +32,22 @@ export interface V2DiffDecision {
   review_status?: V2ReviewStatus;
 }
 
-/**
- * v2 explanation payload is kept permissive for now because canonical
- * predicate and evidence runtime types are not wired into src/ yet.
- */
+export interface V2LowConfidenceDecision {
+  confidence_band: 'low';
+  diff_event: V2DiffEvent;
+  target_id: string;
+  confidence: number;
+  ambiguity_reason: string;
+  review_status: V2ReviewStatus;
+}
+
+export type V2DiffDecision = V2HighConfidenceDecision | V2LowConfidenceDecision;
+
+/** v2 explanation payload is kept permissive because evidence/predicate runtime types are not wired into src/ yet. */
 export interface V2DiffExplanation {
   evidence: unknown[];
-  canonical_predicate?: unknown;
+  before_predicate?: unknown;
+  after_predicate?: unknown;
 }
 
 export interface V2DiffRecord {
@@ -55,11 +66,18 @@ export interface V2EntityDiff {
   components: V2ComponentDiff[];
 }
 
-export interface V2ScreenDiff {
+export interface V2ScreenDiffInScope {
   screen_id: string;
   diffs: V2DiffRecord[];
   entities: V2EntityDiff[];
 }
+
+export interface V2ScreenDiffOutOfScope {
+  screen_id: string;
+  outOfScope: true;
+}
+
+export type V2ScreenDiff = V2ScreenDiffInScope | V2ScreenDiffOutOfScope;
 
 export interface DiffCompareResultV2Payload {
   screens: V2ScreenDiff[];

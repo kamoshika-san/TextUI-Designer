@@ -1,5 +1,5 @@
 /**
- * `DiffCompareResultV2Payload`（runtime snake_case）→ パネル用 camelCase ツリー
+ * Convert runtime semantic diff v2 payloads into WebView-facing panel trees.
  */
 
 import type {
@@ -22,15 +22,14 @@ import type {
 function mapExplanation(ex: V2DiffRecord['explanation']): SemanticDiffV2ExplanationView {
   return {
     evidence: ex.evidence ?? [],
-    beforePredicate: undefined,
-    afterPredicate: undefined,
-    canonicalPredicate: ex.canonical_predicate,
+    beforePredicate: ex.before_predicate,
+    afterPredicate: ex.after_predicate,
   };
 }
 
 function mapDecision(dec: V2DiffRecord['decision']): SemanticDiffV2RecordView['decision'] {
   return {
-    confidenceBand: 'high',
+    confidenceBand: dec.confidence_band,
     diffEvent: dec.diff_event,
     targetId: dec.target_id,
     confidence: dec.confidence,
@@ -62,6 +61,13 @@ function mapEntity(e: V2EntityDiff): SemanticDiffV2EntityView {
 }
 
 function mapScreen(s: V2ScreenDiff): SemanticDiffV2ScreenView {
+  if ('outOfScope' in s) {
+    return {
+      screenId: s.screen_id,
+      outOfScope: true,
+    };
+  }
+
   return {
     screenId: s.screen_id,
     diffs: s.diffs.map(mapRecord),
@@ -73,6 +79,9 @@ function payloadHasChanges(payload: SemanticDiffV2PanelPayload): boolean {
   const recordsNonEmpty = (rs: SemanticDiffV2RecordView[]) => rs.length > 0;
 
   for (const screen of payload.screens) {
+    if ('outOfScope' in screen) {
+      continue;
+    }
     if (recordsNonEmpty(screen.diffs)) {
       return true;
     }
@@ -90,7 +99,6 @@ function payloadHasChanges(payload: SemanticDiffV2PanelPayload): boolean {
   return false;
 }
 
-/** WebView 受信側: wire `payload` のみから `hasChanges` を復元する */
 export function toVisualDiffV2ResultFromPanelPayload(payload: SemanticDiffV2PanelPayload): VisualDiffV2Result {
   return {
     payload,
@@ -98,9 +106,6 @@ export function toVisualDiffV2ResultFromPanelPayload(payload: SemanticDiffV2Pane
   };
 }
 
-/**
- * Runtime `DiffCompareResultV2Payload` を WebView パネル用 `VisualDiffV2Result` に変換する。
- */
 export function toVisualDiffV2FromPayload(v2: DiffCompareResultV2Payload): VisualDiffV2Result {
   const payload: SemanticDiffV2PanelPayload = {
     screens: v2.screens.map(mapScreen),

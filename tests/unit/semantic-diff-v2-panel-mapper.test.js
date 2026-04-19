@@ -1,5 +1,5 @@
 /**
- * semantic-diff-v2-panel-mapper — Wave 1（domain + mapper）
+ * semantic-diff-v2-panel-mapper unit tests
  */
 const assert = require('assert');
 const { describe, it } = require('mocha');
@@ -7,7 +7,7 @@ const { describe, it } = require('mocha');
 const { toVisualDiffV2FromPayload } = require('../../out/domain/diff/semantic-diff-v2-panel-mapper.js');
 
 describe('toVisualDiffV2FromPayload', () => {
-  it('空 screens — hasChanges false', () => {
+  it('returns hasChanges false for empty screens', () => {
     const out = toVisualDiffV2FromPayload({
       screens: [],
       metadata: { schemaVersion: 'v2-compare-logic/v0', totalRecords: 0 },
@@ -16,7 +16,7 @@ describe('toVisualDiffV2FromPayload', () => {
     assert.deepStrictEqual(out.payload.screens, []);
   });
 
-  it('単一 screen / entity / component / diff — camelCase と hasChanges', () => {
+  it('maps decision confidence band and predicate split fields', () => {
     const v2 = {
       screens: [
         {
@@ -32,11 +32,18 @@ describe('toVisualDiffV2FromPayload', () => {
                   diffs: [
                     {
                       decision: {
+                        confidence_band: 'low',
                         diff_event: 'component_action_changed',
-                        target_id: 'cmp_submit#action',
-                        confidence: 0.92,
+                        target_id: 'cmp_submit',
+                        confidence: 0.72,
+                        ambiguity_reason: 'action normalization fell back to heuristic',
+                        review_status: 'needs_review',
                       },
-                      explanation: { evidence: [], canonical_predicate: { op: 'eq' } },
+                      explanation: {
+                        evidence: [],
+                        before_predicate: { op: 'eq', field: 'action.type', value: 'submit' },
+                        after_predicate: { op: 'eq', field: 'action.type', value: 'approve' },
+                      },
                     },
                   ],
                 },
@@ -53,24 +60,42 @@ describe('toVisualDiffV2FromPayload', () => {
     assert.strictEqual(out.payload.screens[0].screenId, 'screen_main');
     assert.strictEqual(out.payload.screens[0].entities[0].entityId, 'entity_orders');
     assert.strictEqual(out.payload.screens[0].entities[0].components[0].componentId, 'cmp_submit');
-    const d = out.payload.screens[0].entities[0].components[0].diffs[0].decision;
-    assert.strictEqual(d.diffEvent, 'component_action_changed');
-    assert.strictEqual(d.targetId, 'cmp_submit#action');
-    assert.strictEqual(d.confidenceBand, 'high');
-    assert.deepStrictEqual(
-      out.payload.screens[0].entities[0].components[0].diffs[0].explanation.canonicalPredicate,
-      { op: 'eq' },
-    );
+    const record = out.payload.screens[0].entities[0].components[0].diffs[0];
+    assert.strictEqual(record.decision.diffEvent, 'component_action_changed');
+    assert.strictEqual(record.decision.targetId, 'cmp_submit');
+    assert.strictEqual(record.decision.confidenceBand, 'low');
+    assert.strictEqual(record.decision.reviewStatus, 'needs_review');
+    assert.deepStrictEqual(record.explanation.beforePredicate, {
+      op: 'eq',
+      field: 'action.type',
+      value: 'submit',
+    });
+    assert.deepStrictEqual(record.explanation.afterPredicate, {
+      op: 'eq',
+      field: 'action.type',
+      value: 'approve',
+    });
   });
 
-  it('screen 直下 diffs のみ — hasChanges true', () => {
-    const v2 = {
+  it('preserves out-of-scope screens without treating them as changes', () => {
+    const out = toVisualDiffV2FromPayload({
+      screens: [{ screen_id: 'screen_new', outOfScope: true }],
+      metadata: { schemaVersion: 'v2-compare-logic/v0', totalRecords: 0 },
+    });
+
+    assert.strictEqual(out.hasChanges, false);
+    assert.deepStrictEqual(out.payload.screens, [{ screenId: 'screen_new', outOfScope: true }]);
+  });
+
+  it('treats screen-level diffs as changes', () => {
+    const out = toVisualDiffV2FromPayload({
       screens: [
         {
           screen_id: 's1',
           diffs: [
             {
               decision: {
+                confidence_band: 'high',
                 diff_event: 'entity_added',
                 target_id: 'e1',
                 confidence: 1,
@@ -82,8 +107,8 @@ describe('toVisualDiffV2FromPayload', () => {
         },
       ],
       metadata: { schemaVersion: 'v2-compare-logic/v0', totalRecords: 1 },
-    };
-    const out = toVisualDiffV2FromPayload(v2);
+    });
+
     assert.strictEqual(out.hasChanges, true);
     assert.strictEqual(out.payload.screens[0].diffs.length, 1);
     assert.strictEqual(out.payload.screens[0].diffs[0].decision.diffEvent, 'entity_added');

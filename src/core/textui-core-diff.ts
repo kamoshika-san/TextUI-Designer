@@ -13,11 +13,16 @@
 export type {
   V2DiffEvent,
   V2ReviewStatus,
+  V2DecisionConfidenceBand,
+  V2HighConfidenceDecision,
+  V2LowConfidenceDecision,
   V2DiffDecision,
   V2DiffExplanation,
   V2DiffRecord,
   V2ComponentDiff,
   V2EntityDiff,
+  V2ScreenDiffInScope,
+  V2ScreenDiffOutOfScope,
   V2ScreenDiff,
   DiffCompareResultV2Payload,
 } from './diff/diff-v2-types';
