@@ -72,7 +72,7 @@ evidence: [{
 - `entity_state_changed`: registry 未登録 → `evidence: []`
 - `component_action_changed`: registry 未登録 → `evidence: []`
 - `component_availability_changed`: evidence_shape が対応しない → `evidence: []`
-- `component_guard_changed`: canonical_predicate で表現するため evidence は `[]`
+- `component_guard_changed`: guard の変化は `before_predicate` / `after_predicate` で表現するため evidence は `[]`
 - DSL の情報が不足（`state` が `undefined` 等）: `evidence: []` で記録し confidence を参照
 
 空配列の場合の V2DiffRecord 例:
