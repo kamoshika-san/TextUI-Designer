@@ -63,6 +63,12 @@ AvailabilityAxis 変化 ≡ prev.availability.visibility  !== next.availability.
 4. Logical 枝（`AllOfPredicate` / `AnyOfPredicate` / `NotPredicate`）は `op: 'all_of' | 'any_of' | 'not'` を必須とし、型ガードは `in` ではなく `switch (pred.op)` を正とする（P2-4）
 ```
 
+**安全要件（P4-12）** — `normalizeGuard` の入力・実装境界:
+
+- **再帰深度**: `all_of` / `any_of` / `not` の入れ子は **最大深度 4**（ルートの `CanonicalPredicate` を深さ 0 と数え、Logical 子へ降りるたびに +1）。これを超える入力は v2 本節の正規化対象外とし、実装は拒否するか設計外として扱う（詳細は実装チケットでよい）。
+- **`value` フィールド**: `eq` / `ne` / `in` 等に付随する `value` は **`string | number | boolean` のみ**とする（オブジェクト・配列を `value` に載せない）。**`undefined` を `value` に渡さない**。
+- **JSON.stringify**: 正規化に渡すオブジェクトに **`undefined` 値のプロパティを含めない**（`JSON.stringify` はキーを落とし比較が不安定になるため）。`UnresolvedPredicate` の `candidates` の各要素も上記プリミティブに収まる前提とする。
+
 同値判定アルゴリズム:
 
 ```typescript
@@ -88,12 +94,12 @@ function normalizeGuard(pred: CanonicalPredicate): string {
     case 'eq':
     case 'ne':
     case 'in':
-    case 'exists':
-      return JSON.stringify({
-        fact: pred.fact,
-        op: pred.op,
-        value: 'value' in pred ? pred.value : undefined,
-      });
+    case 'exists': {
+      // P4-12: `value` は string|number|boolean のみ; `undefined` はオブジェクトに載せない
+      const base = { fact: pred.fact, op: pred.op } as { fact: string; op: string; value?: string | number | boolean };
+      if ('value' in pred && pred.value !== undefined) base.value = pred.value;
+      return JSON.stringify(base);
+    }
   }
 }
 
