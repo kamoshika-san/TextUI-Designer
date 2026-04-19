@@ -7,8 +7,10 @@ import { WebViewPreviewCacheManager } from './cache-manager';
 import { WebViewErrorHandler } from './webview-error-handler';
 import { ConfigManager } from '../../utils/config-manager';
 import { Logger } from '../../utils/logger';
+import { TextUICoreEngine } from '../../core/textui-core-engine';
+import { toVisualDiffV2FromPayload } from '../../domain/diff/semantic-diff-v2-panel-mapper';
 import { deliverPreviewPayload } from './preview-webview-deliver';
-import { deliverDiffPayload } from './diff-webview-deliver';
+import { deliverDiffPayload, deliverSemanticDiffV2Panel } from './diff-webview-deliver';
 import { deliverConflictPayload } from '../diff/conflict-webview-deliver';
 import type { ConflictResult } from '../../domain/diff/conflict-detector';
 import { DiffManager } from '../../exporters/metrics/diff-manager';
@@ -75,6 +77,8 @@ export class WebViewUpdateManager {
   private readonly session = new PreviewUpdateSessionState();
   private readonly logger = new Logger('WebViewUpdateManager');
   private readonly diffManager = new DiffManager();
+  /** `compareUi` は v2 ペイロード有無の判定にのみ使用（遅延生成で初回プレビュー負荷を抑える） */
+  private coreEngineForSemanticV2: TextUICoreEngine | null = null;
   private lastDeliveredDsl: TextUIDSL | null = null;
   private lastConflictResult: ConflictResult | null = null;
 
@@ -176,6 +180,32 @@ export class WebViewUpdateManager {
     return this.session.lastTuiFile;
   }
 
+  private getCoreEngineForSemanticV2(): TextUICoreEngine {
+    this.coreEngineForSemanticV2 ??= new TextUICoreEngine();
+    return this.coreEngineForSemanticV2;
+  }
+
+  /**
+   * 直前 DSL と更新後 DSL から `compareUi` を走らせ、`DiffCompareResult.v2` が付いていれば WebView へ送る。
+   * v2 未生成時は no-op（Wave 3 本線配線）。
+   */
+  private maybeDeliverSemanticV2Panel(previous: TextUIDSL | null, next: TextUIDSL): void {
+    if (!previous || !this.lifecycleManager.getPanel()) {
+      return;
+    }
+    const response = this.getCoreEngineForSemanticV2().compareUi({
+      previousDsl: previous,
+      nextDsl: next,
+      previousSourcePath: this.session.lastTuiFile,
+      nextSourcePath: this.session.lastTuiFile,
+      skipTokenValidation: true
+    });
+    if (!response.ok || !response.result?.v2) {
+      return;
+    }
+    deliverSemanticDiffV2Panel(this.lifecycleManager, toVisualDiffV2FromPayload(response.result.v2));
+  }
+
   /**
    * WebViewにYAMLデータを送信（キャッシュ付き）
    */
@@ -229,6 +259,7 @@ export class WebViewUpdateManager {
           const cachedDiffResult = this.diffManager.computeDiff(cachedDsl);
           if (cachedDiffResult.hasChanges) {
             deliverDiffPayload(this.lifecycleManager, cachedDiffResult, oldComponentsC, newComponentsC);
+            this.maybeDeliverSemanticV2Panel(this.lastDeliveredDsl, cachedDsl);
           }
           if (this.lastConflictResult) {
             deliverConflictPayload(this.lifecycleManager, this.lastConflictResult);
@@ -265,6 +296,7 @@ export class WebViewUpdateManager {
       const diffResult = this.diffManager.computeDiff(newDsl);
       if (diffResult.hasChanges) {
         deliverDiffPayload(this.lifecycleManager, diffResult, oldComponents, newComponents);
+        this.maybeDeliverSemanticV2Panel(this.lastDeliveredDsl, newDsl);
       }
       if (this.lastConflictResult) {
         deliverConflictPayload(this.lifecycleManager, this.lastConflictResult);
