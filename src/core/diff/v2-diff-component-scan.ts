@@ -15,7 +15,9 @@ function makeComponentRecord(
 
 function buildComponentKey(component: unknown, index: number): string {
   const node = toComponentNode(component);
-  if (!node) return `unknown:structural:${index}`;
+  if (!node) {
+    return `unknown:structural:${index}`;
+  }
   const id = typeof node['id'] === 'string' && node['id'] ? node['id'] : undefined;
   return id ? `${node.__kind}:${id}` : `${node.__kind}:structural:${index}`;
 }
