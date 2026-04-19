@@ -113,6 +113,124 @@ function stableGuardStringify(value: unknown): string {
   return JSON.stringify(value);
 }
 
+type NormalizedGuard =
+  | {
+    kind: 'unresolved';
+    reason: string;
+    candidates?: string[];
+  }
+  | {
+    op: 'eq' | 'ne' | 'in' | 'exists';
+    fact: string;
+    value?: string | number | boolean;
+  }
+  | {
+    op: 'all_of';
+    all_of: NormalizedGuard[];
+  }
+  | {
+    op: 'any_of';
+    any_of: NormalizedGuard[];
+  }
+  | {
+    op: 'not';
+    not: NormalizedGuard;
+  };
+
+function normalizeUnresolvedGuard(value: Record<string, unknown>, reason = 'invalid_guard_shape'): NormalizedGuard {
+  const candidateValues = value['candidates'];
+  const candidates = Array.isArray(candidateValues)
+    ? candidateValues
+      .filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
+      .map(entry => entry.trim())
+      .sort((left, right) => left.localeCompare(right))
+    : undefined;
+  return {
+    kind: 'unresolved',
+    reason: typeof value['reason'] === 'string' && value['reason'].trim().length > 0
+      ? value['reason'].trim()
+      : reason,
+    ...(candidates && candidates.length > 0 ? { candidates } : {}),
+  };
+}
+
+function normalizeGuardValue(value: unknown): string | number | boolean | undefined {
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return value;
+  }
+  return undefined;
+}
+
+function normalizeGuardPredicate(value: unknown, depth = 0): NormalizedGuard | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const record = value as Record<string, unknown>;
+  if (record['kind'] === 'unresolved') {
+    return normalizeUnresolvedGuard(record);
+  }
+
+  const op = typeof record['op'] === 'string' ? record['op'] : undefined;
+  if (!op) {
+    return normalizeUnresolvedGuard(record);
+  }
+
+  switch (op) {
+    case 'eq':
+    case 'ne':
+    case 'in':
+    case 'exists': {
+      const fact = typeof record['fact'] === 'string' ? record['fact'].trim() : '';
+      if (!fact) {
+        return normalizeUnresolvedGuard(record, 'invalid_atomic_guard');
+      }
+      const normalizedValue = normalizeGuardValue(record['value']);
+      return normalizedValue === undefined
+        ? { op, fact }
+        : { op, fact, value: normalizedValue };
+    }
+    case 'all_of':
+    case 'any_of': {
+      if (depth >= 4) {
+        return normalizeUnresolvedGuard(record, 'guard_depth_exceeded');
+      }
+      const rawChildren = record[op];
+      if (!Array.isArray(rawChildren) || rawChildren.length === 0) {
+        return normalizeUnresolvedGuard(record, 'invalid_logical_guard');
+      }
+      const children = rawChildren
+        .map(child => normalizeGuardPredicate(child, depth + 1))
+        .filter((child): child is NormalizedGuard => child !== undefined)
+        .sort((left, right) => stableGuardStringify(left).localeCompare(stableGuardStringify(right)));
+      if (children.length === 0) {
+        return normalizeUnresolvedGuard(record, 'invalid_logical_guard');
+      }
+      if (children.length === 1) {
+        return children[0];
+      }
+      return op === 'all_of'
+        ? { op: 'all_of', all_of: children }
+        : { op: 'any_of', any_of: children };
+    }
+    case 'not': {
+      if (depth >= 4) {
+        return normalizeUnresolvedGuard(record, 'guard_depth_exceeded');
+      }
+      const normalizedChild = normalizeGuardPredicate(record['not'], depth + 1);
+      if (!normalizedChild) {
+        return normalizeUnresolvedGuard(record, 'invalid_not_guard');
+      }
+      if ('op' in normalizedChild && normalizedChild.op === 'not') {
+        return normalizedChild.not;
+      }
+      return { op: 'not', not: normalizedChild };
+    }
+    default:
+      return normalizeUnresolvedGuard(record);
+  }
+}
+
 function hasUnresolvedGuard(value: unknown): boolean {
   if (Array.isArray(value)) {
     return value.some(hasUnresolvedGuard);
@@ -190,15 +308,20 @@ export function scanComponentDiffs(
 
     const previousGuard = getNormalizedComponentNode(previousEntry.component)?.['guard'];
     const nextGuard = getNormalizedComponentNode(nextEntry.component)?.['guard'];
-    if (stableGuardStringify(previousGuard) !== stableGuardStringify(nextGuard)) {
-      const unresolved = hasUnresolvedGuard(previousGuard) || hasUnresolvedGuard(nextGuard);
+    const normalizedPreviousGuard = normalizeGuardPredicate(previousGuard);
+    const normalizedNextGuard = normalizeGuardPredicate(nextGuard);
+    if (stableGuardStringify(normalizedPreviousGuard) !== stableGuardStringify(normalizedNextGuard)) {
+      const unresolved = hasUnresolvedGuard(previousGuard)
+        || hasUnresolvedGuard(nextGuard)
+        || hasUnresolvedGuard(normalizedPreviousGuard)
+        || hasUnresolvedGuard(normalizedNextGuard);
       result.push({
         component_id: key,
         diffs: [makeComponentRecord(
           'component_guard_changed',
           key,
-          previousGuard,
-          nextGuard,
+          normalizedPreviousGuard,
+          normalizedNextGuard,
           unresolved ? 0.7 : 1.0,
           unresolved ? 'guard contains unresolved predicate' : undefined,
           [unresolved ? 'guard axis changed with unresolved predicate' : 'guard axis changed']

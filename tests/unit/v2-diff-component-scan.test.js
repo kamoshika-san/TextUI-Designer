@@ -132,6 +132,117 @@ describe('semantic diff v2 component scan', () => {
     assert.strictEqual(decision.review_status, 'needs_review');
   });
 
+  it('treats reordered all_of guard clauses as equivalent', () => {
+    const previous = makeDoc('previous', [
+      {
+        Button: {
+          id: 'save',
+          label: 'Save',
+          guard: {
+            op: 'all_of',
+            all_of: [
+              { op: 'eq', fact: 'mode', value: 'draft' },
+              { op: 'exists', fact: 'canSave' },
+            ],
+          },
+        },
+      },
+    ]);
+    const next = makeDoc('next', [
+      {
+        Button: {
+          id: 'save',
+          label: 'Save',
+          guard: {
+            op: 'all_of',
+            all_of: [
+              { op: 'exists', fact: 'canSave' },
+              { op: 'eq', fact: 'mode', value: 'draft' },
+            ],
+          },
+        },
+      },
+    ]);
+
+    const diffs = componentScan.scanComponentDiffs(previous, next);
+
+    assert.strictEqual(diffs.length, 0);
+  });
+
+  it('folds single-child any_of guards before comparison', () => {
+    const previous = makeDoc('previous', [
+      {
+        Button: {
+          id: 'save',
+          label: 'Save',
+          guard: {
+            op: 'any_of',
+            any_of: [
+              { op: 'eq', fact: 'mode', value: 'draft' },
+            ],
+          },
+        },
+      },
+    ]);
+    const next = makeDoc('next', [
+      { Button: { id: 'save', label: 'Save', guard: { op: 'eq', fact: 'mode', value: 'draft' } } },
+    ]);
+
+    const diffs = componentScan.scanComponentDiffs(previous, next);
+
+    assert.strictEqual(diffs.length, 0);
+  });
+
+  it('marks over-depth guards as low-confidence unresolved changes', () => {
+    const previous = makeDoc('previous', [
+      {
+        Button: {
+          id: 'save',
+          label: 'Save',
+          guard: {
+            op: 'all_of',
+            all_of: [
+              {
+                op: 'all_of',
+                all_of: [
+                  {
+                    op: 'all_of',
+                    all_of: [
+                      {
+                        op: 'all_of',
+                        all_of: [
+                          {
+                            op: 'all_of',
+                            all_of: [{ op: 'eq', fact: 'mode', value: 'draft' }],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+    ]);
+    const next = makeDoc('next', [
+      { Button: { id: 'save', label: 'Save', guard: { op: 'eq', fact: 'mode', value: 'draft' } } },
+    ]);
+
+    const diffs = componentScan.scanComponentDiffs(previous, next);
+    const decision = diffs[0].diffs[0].decision;
+
+    assert.strictEqual(diffs.length, 1);
+    assert.strictEqual(decision.diff_event, 'component_guard_changed');
+    assert.strictEqual(decision.confidence_band, 'low');
+    assert.strictEqual(decision.review_status, 'needs_review');
+    assert.deepStrictEqual(diffs[0].diffs[0].explanation.before_predicate, {
+      kind: 'unresolved',
+      reason: 'guard_depth_exceeded',
+    });
+  });
+
   it('adds non-empty evidence for component-level diff events', () => {
     const previous = makeDoc('previous', [
       { Button: { id: 'save', label: 'Save', action: { trigger: 'submit' } } },
