@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { ThemeToggle } from './components/ThemeToggle';
 import { CustomThemeSelector } from './components/CustomThemeSelector';
 import { OverlayDiffViewer } from './components/OverlayDiffViewer';
+import { OverlayDiffV2Panel } from './components/OverlayDiffV2Panel';
 import { FlowPreviewPanel } from './components/FlowPreviewPanel';
 import type { NavHistoryEntry } from './components/PreviewNavBar';
 import { renderRegisteredComponent, registerBuiltInComponents } from './component-map';
@@ -337,6 +338,10 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
     );
     setShowJumpToDslOnboarding(false);
   };
+
+  if (semanticDiffV2) {
+    return <OverlayDiffV2Panel result={semanticDiffV2} />;
+  }
 
   if (overlayDiffState) {
     return <OverlayDiffViewer state={overlayDiffState} />;
