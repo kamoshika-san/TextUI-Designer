@@ -35,6 +35,17 @@
 
 ---
 
+## 論点A-3: `compareScreen` が片側 `undefined` のときの記録（P1-2）
+
+**決定: `V2ScreenDiff` は `outOfScope: true` を持つ専用枝と、通常の `diffs` / `entities` を持つ枝の判別可能 union とする（`docs/future/types/v2/dsl-structure.ts`）。**
+
+- **スコープ外**: `prev` または `next` が `undefined` のときは `{ screen_id, outOfScope: true }` を返す。`diffs` / `entities` を空配列で返さない（空配列は「両側とも Screen が存在し、当該レベルに差分が無い」という in-scope の意味に留める）。
+- **スコープ内・変化なし**: 両側 `Screen` が存在し、entity/component 走査の結果イベントが無い場合は `{ screen_id, diffs: [], entities: [] }` のように in-scope 枝で空配列を返す。
+
+根拠: 空配列だけでは「比較対象外」と「比較したが結果ゼロ」を区別できず、provider や UI が誤読する。`outOfScopeScreenIds` のような配列メタは単一 screen 比較では冗長のため、ブール専用枝を採用する。
+
+---
+
 ## パイプライン入出力型シグネチャ
 
 以下は TypeScript 風擬似コードで示す設計上の関数シグネチャである（実装ファイルではない）。
@@ -44,7 +55,8 @@ import type { Screen, V2ScreenDiff, V2EntityDiff, V2ComponentDiff } from '../typ
 
 /**
  * トップレベルエントリポイント。
- * prev または next が undefined の場合は current compare-logic v2 の scope 外として扱う。
+ * prev または next が undefined の場合は `V2ScreenDiffOutOfScope`（`outOfScope: true`）を返す。
+ * 両側が定義されている場合は `V2ScreenDiffInScope`（`diffs` / `entities` 必須）を返す。
  */
 function compareScreen(
   screenId: string,
@@ -73,7 +85,7 @@ function compareComponent(
 ): V2ComponentDiff;
 ```
 
-型参照: `Screen`, `V2ScreenDiff`, `V2EntityDiff`, `V2ComponentDiff` は
+型参照: `Screen`, `V2ScreenDiff`（`V2ScreenDiffInScope | V2ScreenDiffOutOfScope`）, `V2EntityDiff`, `V2ComponentDiff` は
 `docs/future/types/v2/dsl-structure.ts` で定義済み。
 
 ---
@@ -82,11 +94,9 @@ function compareComponent(
 
 ```
 compareScreen(screenId, prev, next)
-  ├─ prev == undefined → diffs: [], entities: []  // screen-level added は current scope 外
-  ├─ next == undefined → diffs: [], entities: []  // screen-level removed は current scope 外
-  └─ 両側存在 →
-       diffs: []  (screen レベルの直接 diff はなし — entity/component に委譲)
-       entities: union(prev.entity.id, next.entity.id) をキーに
+  ├─ prev == undefined OR next == undefined → { screen_id: screenId, outOfScope: true }  // A-3: 空配列では表さない
+  └─ 両側存在 → in-scope 枝 `{ screen_id, diffs: [], entities: [...] }`（screen 直下の diffs は通常 []）
+       └─ entities は union(prev.entity.id, next.entity.id) をキーに各 entity へ
          └─ compareEntity(entityId, prev.entity | undefined, next.entity | undefined)
               ├─ prev == undefined → diffs: [entity_added], components: []
               ├─ next == undefined → diffs: [entity_removed], components: []

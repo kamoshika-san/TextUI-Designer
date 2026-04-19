@@ -126,9 +126,24 @@ export interface V2EntityDiff {
   components: V2ComponentDiff[];
 }
 
-/** Comparison result at screen granularity (top-level unit) */
-export interface V2ScreenDiff {
+/**
+ * In-scope screen comparison: both `prev` and `next` were defined for `compareScreen`.
+ * Empty `diffs` / `entities` means no semantic changes at this level — not the same as {@link V2ScreenDiffOutOfScope}.
+ */
+export interface V2ScreenDiffInScope {
   screen_id: string;
   diffs: V2DiffRecord[];
   entities: V2EntityDiff[];
 }
+
+/**
+ * `compareScreen` received `undefined` for `prev` or `next` Screen (screen-level add/remove is v2 non-goal).
+ * Use this branch instead of empty arrays so consumers never misread "no arrays" as an in-scope no-op.
+ */
+export interface V2ScreenDiffOutOfScope {
+  screen_id: string;
+  outOfScope: true;
+}
+
+/** Top-level screen comparison unit — discriminated by `outOfScope` vs in-scope payload */
+export type V2ScreenDiff = V2ScreenDiffInScope | V2ScreenDiffOutOfScope;
