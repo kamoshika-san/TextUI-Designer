@@ -41,16 +41,22 @@ export interface UnresolvedPredicate {
 
 /** Logical AND — all children must be satisfied */
 export interface AllOfPredicate {
+  /** Discriminant for `switch (p.op)`; must match logical shape. */
+  op: 'all_of';
   all_of: CanonicalPredicate[];
 }
 
 /** Logical OR — at least one child must be satisfied */
 export interface AnyOfPredicate {
+  /** Discriminant for `switch (p.op)`; must match logical shape. */
+  op: 'any_of';
   any_of: CanonicalPredicate[];
 }
 
 /** Logical NOT — exactly one child must NOT be satisfied */
 export interface NotPredicate {
+  /** Discriminant for `switch (p.op)`; must match logical shape. */
+  op: 'not';
   not: CanonicalPredicate;
 }
 
@@ -61,6 +67,7 @@ export type LogicalPredicate = AllOfPredicate | AnyOfPredicate | NotPredicate;
  * Canonical predicate v0.1 — the complete union of all valid predicate forms.
  * Depth limit: max 4 from root. Empty arrays in all_of/any_of are invalid.
  * Single-element all_of/any_of must be collapsed to the child directly.
+ * Logical nodes (`AllOfPredicate` / `AnyOfPredicate` / `NotPredicate`) include `op` so consumers need not use `in` checks on `all_of` / `any_of` / `not` keys.
  */
 export type CanonicalPredicate =
   | FactPredicate

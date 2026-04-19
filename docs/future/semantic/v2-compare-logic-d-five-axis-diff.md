@@ -60,23 +60,13 @@ AvailabilityAxis 変化 ≡ prev.availability.visibility  !== next.availability.
 1. all_of / any_of の子要素を stable sort する（各要素を JSON.stringify して辞書順ソート）
 2. not の内部は再帰的に正規化する
 3. UnresolvedPredicate は `kind`, `reason`, 正規化済み `candidates` を比較に含める
+4. Logical 枝（`AllOfPredicate` / `AnyOfPredicate` / `NotPredicate`）は `op: 'all_of' | 'any_of' | 'not'` を必須とし、型ガードは `in` ではなく `switch (pred.op)` を正とする（P2-4）
 ```
 
 同値判定アルゴリズム:
 
 ```typescript
 function normalizeGuard(pred: CanonicalPredicate): string {
-  if ('all_of' in pred) {
-    const children = pred.all_of.map(normalizeGuard).sort();
-    return `all_of:[${children.join(',')}]`;
-  }
-  if ('any_of' in pred) {
-    const children = pred.any_of.map(normalizeGuard).sort();
-    return `any_of:[${children.join(',')}]`;
-  }
-  if ('not' in pred) {
-    return `not:${normalizeGuard(pred.not)}`;
-  }
   if ('kind' in pred && pred.kind === 'unresolved') {
     return JSON.stringify({
       kind: 'unresolved',
@@ -84,8 +74,27 @@ function normalizeGuard(pred: CanonicalPredicate): string {
       candidates: [...(pred.candidates ?? [])].sort(),
     });
   }
-  // FactPredicate: fact/op/value を安定文字列化
-  return JSON.stringify({ fact: (pred as any).fact, op: (pred as any).op, value: (pred as any).value });
+  switch (pred.op) {
+    case 'all_of': {
+      const children = pred.all_of.map(normalizeGuard).sort();
+      return `all_of:[${children.join(',')}]`;
+    }
+    case 'any_of': {
+      const children = pred.any_of.map(normalizeGuard).sort();
+      return `any_of:[${children.join(',')}]`;
+    }
+    case 'not':
+      return `not:${normalizeGuard(pred.not)}`;
+    case 'eq':
+    case 'ne':
+    case 'in':
+    case 'exists':
+      return JSON.stringify({
+        fact: pred.fact,
+        op: pred.op,
+        value: 'value' in pred ? pred.value : undefined,
+      });
+  }
 }
 
 guard 変化 ≡ normalizeGuard(prev.guard) !== normalizeGuard(next.guard)
