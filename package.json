@@ -514,6 +514,7 @@
     "metrics:check:ssot": "node ./scripts/check-ssot-regression-metrics.cjs",
     "check:dsl-types-ssot": "node ./scripts/check-dsl-type-imports.cjs",
     "check:html-exporter-fallback-lane": "node ./scripts/check-html-exporter-fallback-lane-contract.cjs",
+    "check:webview-media-drift": "node ./scripts/check-webview-media-drift.cjs",
     "check:import-graph": "node ./scripts/check-import-graph-boundaries.cjs",
     "check:ssot:non-renderer": "mocha --no-config --require ./tests/setup.js --timeout 5000 --exit tests/unit/non-renderer-ssot-meta-guard.test.js",
     "check:ssot:exporters": "mocha --no-config --require ./tests/setup.js --timeout 5000 --exit tests/unit/exporters-ssot-import-guard.test.js tests/unit/exporter-common-foundation-ssot-guard.test.js tests/unit/react-exporter-wave-ssot-guard.test.js tests/unit/exporter-format-wave-ssot-guard.test.js tests/unit/html-renderers-exporter-ssot-guard.test.js tests/unit/exporter-ssot-guard-coverage.test.js",

@@ -276,6 +276,7 @@ Detailed setup: [docs/current/workflow-onboarding/SETUP.md](docs/current/workflo
 |---|---|
 | `npm run compile` | TypeScript compile + schema checks |
 | `npm run build-webview` | Build React + Vite WebView assets |
+| `npm run check:webview-media-drift` | Regenerate WebView assets and fail if `media/` differs from committed files (same gate as CI **T-002**) |
 | `npm run lint` | ESLint (zero warnings) |
 | `npm test` | Compile, lint, unit tests |
 | `npm run test:all:ci` | Full CI-equivalent lane |

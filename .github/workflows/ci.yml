@@ -323,12 +323,11 @@ jobs:
     - name: Check code formatting
       run: npm run format:check
 
-  build:
-    name: Build Extension
+  webview-media-drift:
+    name: WebView media sync (T-002)
     permissions:
       contents: read
     runs-on: ubuntu-latest
-    needs: [code-metrics, react-ssot-check, mcp-tests, test-all-ci, test, lint, real-vscode-smoke]
 
     steps:
     - name: Checkout code
@@ -345,10 +344,35 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    # build-webview is NOT run here: media/ build artifacts (webview.js, assets/) are
-    # committed to the repository. The packaged .vsix uses those committed files.
-    # When webview source changes, run `npm run build-webview` locally and commit
-    # the updated media/ files before merging.
+    - name: Verify committed media/ matches build-webview
+      run: npm run check:webview-media-drift
+
+  build:
+    name: Build Extension
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    needs: [code-metrics, react-ssot-check, mcp-tests, test-all-ci, test, lint, real-vscode-smoke, webview-media-drift]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    # build-webview is NOT run in this job: media/ artifacts are committed; the packaged
+    # .vsix uses those files. Drift vs sources is enforced by the `webview-media-drift`
+    # CI job (`npm run check:webview-media-drift`). After changing webview sources, run
+    # `npm run build-webview`, commit updated `media/`, and ensure that check passes locally.
     - name: Build extension
       run: npm run compile
     
@@ -420,8 +444,8 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    # build-webview is NOT run here: smoke tests use the committed media/ artifacts.
-    # See the Build Extension job comment for the authoritative policy.
+    # build-webview is NOT run here: smoke uses committed media/ artifacts. Drift is
+    # gated by `webview-media-drift` (see Build Extension job comment).
     - name: Build extension sources
       run: npm run compile
 
