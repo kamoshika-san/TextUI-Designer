@@ -1,3 +1,11 @@
+/**
+ * HtmlExporter lane observability (debug / deprecation signals).
+ *
+ * T-016: These tests intentionally execute the **fallback HTML lane** (or raw `useReactRender:false`)
+ * to assert **logging and deprecation warnings** — behavior that does not appear when only Primary
+ * export runs. They complement `html-exporter-fallback-style-lane.test.js` (markup/CSS) and cannot
+ * be merged there without mixing unrelated assertions.
+ */
 const assert = require('assert');
 const { HtmlExporter } = require('../../out/exporters/html-exporter');
 const { withExplicitFallbackHtmlExport } = require('../../out/exporters/html-export-lane-options');
@@ -29,6 +37,7 @@ describe('HtmlExporter lane observability', () => {
     console.warn = originalConsoleWarn;
   });
 
+  // Fallback-only: Primary lane must not emit the fallback debug string (see sibling test below).
   it('emits a debug log only for the internal fallback lane when debug logging is enabled', async () => {
     process.env.TEXTUI_LOG_LEVEL = 'debug';
     const logs = [];
@@ -48,6 +57,7 @@ describe('HtmlExporter lane observability', () => {
     );
   });
 
+  // Executes raw `useReactRender:false` to ensure deprecation warning path stays wired (tests are sole intentional callers).
   it('warns when a public caller requests the fallback lane directly', async () => {
     const warnings = [];
     const exporter = new HtmlExporter();
@@ -65,6 +75,7 @@ describe('HtmlExporter lane observability', () => {
     );
   });
 
+  // Primary control: same debug instrumentation must stay silent without fallback options.
   it('does not emit the fallback debug log on the primary lane', async () => {
     process.env.TEXTUI_LOG_LEVEL = 'debug';
     const logs = [];

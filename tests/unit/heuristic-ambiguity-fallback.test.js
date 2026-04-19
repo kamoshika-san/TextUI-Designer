@@ -4,6 +4,10 @@
  * Verifies that tie, multi-candidate, and below-threshold ambiguities all
  * produce pairingReason:'unpaired' / fallbackMarker:'remove-add-fallback' with
  * the correct ambiguityReason, and that normal unique matches are NOT affected.
+ *
+ * T-016 note: "fallback" here is the **diff/heuristic pairing** fallback marker in `textui-core-diff`,
+ * not the HtmlExporter `useReactRender:false` compatibility lane. These tests must stay because
+ * Primary HTML export tests cannot observe `remove-add-fallback` / `ambiguityReason` pairing traces.
  */
 'use strict';
 const assert = require('assert');
@@ -34,6 +38,7 @@ describe('heuristic ambiguity deterministic fallback (HH-MC series)', () => {
   }
 
   // HH-MC01: tie-best-score → remove-add-fallback with ambiguityReason='tie-best-score'
+  // Contract: only exercised via diff skeleton — no HTML exporter involvement.
   it('HH-MC01: tie-best-score — two next candidates equally match a previous → remove-add-fallback', () => {
     // previous: one Text component with label 'hello'
     // next: two identical Text components both with label 'hello' (tied)
@@ -64,6 +69,7 @@ describe('heuristic ambiguity deterministic fallback (HH-MC series)', () => {
   });
 
   // HH-MC02: multi-candidate — mutual best check fails
+  // Contract: mutual-best failure must surface remove-add-fallback (diff-only assertion).
   it('HH-MC02: multi-candidate — mutual-best check fails → remove-add-fallback', () => {
     // Two previous Text components A and B, two next Text components.
     // Both A and B score best against the same next candidate (next[0]).
@@ -99,6 +105,7 @@ describe('heuristic ambiguity deterministic fallback (HH-MC series)', () => {
   });
 
   // HH-MC03: below-threshold — bestScore >= weightScalarExact but below minScore
+  // Contract: custom policy thresholds must flip to below-threshold fallback (diff engine only).
   it('HH-MC03: below-threshold — score has scalar signal but below minScore → remove-add-fallback', () => {
     // Use a custom policy with minScore=4 so score=3 (one scalar match + keyset) is below threshold.
     // weightScalarExact=2: one matching scalar gives 2 pts; keyset adds 1 → total 3 < 4 = minScore.
@@ -131,6 +138,7 @@ describe('heuristic ambiguity deterministic fallback (HH-MC series)', () => {
   });
 
   // Normal case: unique unambiguous match → heuristic-similarity (not remove-add-fallback)
+  // Guardrail: proves fallback markers do not fire on happy-path heuristic pairing.
   it('normal case: unique match above threshold → heuristic-similarity, NOT remove-add-fallback', () => {
     const result = diff.createDiffResultSkeleton(
       makePrev([{ Text: { label: 'unique' } }]),
@@ -149,6 +157,7 @@ describe('heuristic ambiguity deterministic fallback (HH-MC series)', () => {
   });
 
   // Ambiguous candidates must not flow to index pairing (no structural-path pairing for ambiguous)
+  // Contract: tie-heavy grids must not be mis-labelled as heuristic-similarity (diff-only).
   it('ambiguous candidates do not flow to index-based pairing', () => {
     // Two identical Text components in previous, two identical in next → all tied → all fallback
     const result = diff.createDiffResultSkeleton(

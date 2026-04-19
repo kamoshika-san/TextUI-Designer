@@ -16,7 +16,7 @@ This note closes HR1 by separating what is already Primary, what remains an inte
 | Fallback observability | fallback lane emits a dedicated debug log and stays quiet on Primary | `tests/unit/html-exporter-lane-observability.test.js` |
 | Primary default path | built-in HTML provider and preview preparation are fixed to Primary by default | `src/cli/provider-registry.ts`, `src/utils/preview-capture/html-preparation.ts`, `tests/unit/html-exporter-route-viability.test.js` |
 | Explicit fallback entry | CLI capture fallback is centralized behind a named helper | `src/exporters/html-export-lane-options.ts`, `src/cli/commands/capture-command.ts` |
-| Fallback sprawl guard | raw `useReactRender: false` additions in `src/**` are blocked outside the approved helper | `tests/unit/html-exporter-fallback-entry-guard.test.js` |
+| Fallback sprawl guard | raw `useReactRender: false` additions in `src/**` are blocked outside the approved helper | `tests/unit/html-exporter-route-viability.test.js`（entry guard describe） |
 | Primary-first guidance | maintainer and built-in authoring docs treat Primary as source of truth | `docs/current/runtime-boundaries/exporter-boundary-guide.md`, `docs/current/workflow-onboarding/adding-built-in-component.md`, `docs/current/operations/MAINTAINER_GUIDE.md` |
 
 ## Remaining compatibility lane

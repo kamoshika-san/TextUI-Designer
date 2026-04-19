@@ -21,7 +21,7 @@
    - `primary-default routes`: 既定 Primary の経路ファイル一覧
    - `fallback execution test files`: 互換レーン専用テスト
 
-2. **ソース上の `useReactRender: false` 直書き**: `tests/unit/html-exporter-fallback-entry-guard.test.js` が **`src/**` では `html-export-lane-options.ts` のみ**に閉じていることを機械保証。
+2. **ソース上の `useReactRender: false` 直書き**: `tests/unit/html-exporter-route-viability.test.js` 内の **「HtmlExporter fallback entry guard」** describe が **`src/**` では `html-export-lane-options.ts` のみ**に閉じていることを機械保証（T-016 で `html-exporter-fallback-entry-guard.test.js` から統合）。
 
 3. **経路別の呼び出し元（手動メモ）**
 
@@ -41,7 +41,7 @@
 | **必須（残す）** | `HtmlExporter` の `useReactRender === false` 分岐本体 | 互換レーンの実装コア |
 | **必須（残す）** | `buildFallbackCompatibilityStyleBlock` 等（fallback 専用 CSS） | 互換レーンの見た目差分吸収 |
 | **移行可能（Primary へ寄せた）** | CLI `capture`（旧: ヘルパで fallback 固定） | `prepareCaptureArtifacts` が既に **Primary 既定**のため、二重指定は不要（T-010 で除去） |
-| **廃止候補** | なし（本フェーズでは **本番の fallback 強制 0 件化**のみ。ヘルパ・テストは残置） | 次フェーズでテスト構成の整理や helper の縮小を検討 |
+| **廃止候補** | なし（本フェーズでは **本番の fallback 強制 0 件化**のみ。ヘルパ・テストは残置） | テスト棚卸しは **T-016**（[t016-fallback-unit-tests-inventory.md](./t016-fallback-unit-tests-inventory.md)） |
 
 ## Primary vs fallback 差分マトリクス（要約）
 
@@ -64,5 +64,5 @@
 ```bash
 npm run compile
 npm run check:html-exporter-fallback-lane
-npx mocha tests/unit/html-exporter-route-viability.test.js tests/unit/html-exporter-fallback-entry-guard.test.js
+npx mocha tests/unit/html-exporter-route-viability.test.js
 ```

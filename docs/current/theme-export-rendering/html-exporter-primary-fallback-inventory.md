@@ -93,7 +93,7 @@ This is the current separation between intentional differences, acceptable tempo
 | Fallback-only compatibility CSS | Isolated to the fallback lane append path in `html-template-builder` | acceptable temporary debt | Primary default no longer carries badge / tabs / progress compatibility CSS unless the fallback lane asks for it |
 | Fallback-only code comments / handoff justification | Required for any new fallback-only change | acceptable temporary debt | This keeps compatibility fixes reviewable instead of allowing silent lane drift |
 | Normal export path behaving differently from Primary documentation | Not observed in current HR1 evidence | unresolved mismatch: none observed | Treat any future reproduction here as a new Primary-path bug first |
-| New raw fallback entrypoints outside the approved helper | Blocked by guard | unresolved mismatch: none observed | `html-exporter-fallback-entry-guard.test.js` is the mechanical stopgap |
+| New raw fallback entrypoints outside the approved helper | Blocked by guard | unresolved mismatch: none observed | `html-exporter-route-viability.test.js`（fallback entry guard describe）が機械保証 |
 
 ## Route viability snapshot (HR1-S3 / T-352)
 

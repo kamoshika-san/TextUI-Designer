@@ -116,3 +116,64 @@ describe('HtmlExporter route viability (T-20260322-352)', () => {
     );
   });
 });
+
+/**
+ * HtmlExporter fallback entry guard (T-20260322-354, merged from html-exporter-fallback-entry-guard.test.js in T-016)
+ *
+ * Why this lives next to route-viability tests: T-010 requires **zero production callers** forcing
+ * `useReactRender: false` except the typed helper in `html-export-lane-options.ts`. This guard is
+ * not a runtime fallback execution test — it is a **source-level contract** that must hold for
+ * Primary-only routing to remain trustworthy. Keeping it here avoids an extra `*fallback*` file
+ * whose name implied HTML execution when it only scans `src/**`.
+ */
+describe('HtmlExporter fallback entry guard (T-20260322-354)', () => {
+  const repoRoot = path.resolve(__dirname, '../..');
+  const srcDir = path.join(repoRoot, 'src');
+  const fallbackLiteral = /useReactRender\s*:\s*false\b/;
+  const allowedLiteralFiles = new Set(['src/exporters/html-export-lane-options.ts']);
+
+  function walkSourceLikeFiles(dir, out = []) {
+    if (!fs.existsSync(dir)) {
+      return out;
+    }
+    for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, ent.name);
+      if (ent.isDirectory()) {
+        walkSourceLikeFiles(full, out);
+        continue;
+      }
+      if (/\.(ts|tsx|js)$/.test(ent.name)) {
+        out.push(full);
+      }
+    }
+    return out;
+  }
+
+  function toPosixRelative(filePath) {
+    return path.relative(repoRoot, filePath).split(path.sep).join('/');
+  }
+
+  function stripComments(source) {
+    return source
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/gm, '');
+  }
+
+  it('src では useReactRender: false の直書きを helper 定義だけに制限する', () => {
+    const violations = [];
+
+    for (const filePath of walkSourceLikeFiles(srcDir)) {
+      const rel = toPosixRelative(filePath);
+      const text = stripComments(fs.readFileSync(filePath, 'utf8'));
+      if (fallbackLiteral.test(text) && !allowedLiteralFiles.has(rel)) {
+        violations.push(`${rel}: useReactRender: false must go through html-export-lane-options helper`);
+      }
+    }
+
+    assert.deepStrictEqual(
+      violations,
+      [],
+      `Unexpected fallback entrypoint detected in src/**\n${violations.join('\n')}`
+    );
+  });
+});

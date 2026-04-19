@@ -1,3 +1,11 @@
+/**
+ * T-016: HTML exporter **compatibility (fallback) lane** — markup + static CSS contracts.
+ *
+ * Primary lane renders through React; assertions here about **Tailwind-like compatibility rules**
+ * and **static semantic hooks** (`textui-*` classes) are only meaningful when
+ * `withExplicitFallbackHtmlExport` forces `useReactRender: false`. Primary-only tests cannot
+ * substitute without changing product architecture (T-010 keeps production on Primary).
+ */
 const assert = require('assert');
 const { HtmlExporter } = require('../../out/exporters/html-exporter');
 const { withExplicitFallbackHtmlExport } = require('../../out/exporters/html-export-lane-options');
@@ -14,6 +22,8 @@ function extractDefaultStyleBlock(html) {
 }
 
 describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
+  // Primary `buildHtmlDocument` must not bundle legacy compatibility rules into the default <style>;
+  // that split is invisible once output is React-only — only the non-React document builder exposes it.
   it('keeps fallback compatibility CSS out of the primary default document style block', () => {
     const styleBlock = extractDefaultStyleBlock(
       buildHtmlDocument('<div class="textui-tabs"></div>', '', { noWrap: true })
@@ -25,6 +35,7 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(!styleBlock.includes('.textui-tabs .flex > button.textui-tab-active'));
   });
 
+  // Complements the previous test: default document style must still carry light-theme utilities used by both lanes.
   it('omits unused light-theme shared utilities from the default export style block', () => {
     const styleBlock = extractDefaultStyleBlock(
       buildHtmlDocument('<div class="textui-tabs"></div>', '', { noWrap: true })
@@ -38,6 +49,8 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(styleBlock.includes('.bg-gray-200 {'));
   });
 
+  // Ensures opt-in `compatibilityCss` still injects badge/progress/tab rules — exercised without HtmlExporter
+  // because we are pinning template-builder layering, not React render output.
   it('keeps compatibility CSS available only when the fallback lane appends it explicitly', () => {
     const html = buildHtmlDocument('<div class="textui-tabs"></div>', '', {
       compatibilityCss: buildFallbackCompatibilityStyleBlock()
@@ -48,6 +61,7 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(html.includes('.textui-tabs .flex > button.textui-tab-active'));
   });
 
+  // Full HtmlExporter export on fallback lane: validates Tabs/Table DOM hooks that exist only in static HTML output.
   it('fallback HTML lane keeps Tabs/Table semantic classes alongside compatibility utilities', async () => {
     const exporter = new HtmlExporter();
     const html = await exporter.export({
@@ -87,6 +101,7 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(html.includes('hover:bg-gray-800/80 transition-colors has-hover'));
   });
 
+  // Same as above — Divider + nested Tabs structures differ from the first scenario; still unreachable on Primary.
   it('fallback HTML lane keeps Tabs and Divider parity hooks for sample-style structures', async () => {
     const exporter = new HtmlExporter();
     const html = await exporter.export({
@@ -128,6 +143,7 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(html.includes('textui-divider vertical my-4'));
   });
 
+  // Form primitives + Alert variant attributes: static fallback renderer emits different class graph than React preview.
   it('fallback HTML lane keeps FormControl and Alert semantic classes alongside compatibility utilities', async () => {
     const exporter = new HtmlExporter();
     const html = await exporter.export({
@@ -159,6 +175,7 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(html.includes('border-yellow-700'));
   });
 
+  // Accordion/TreeView: another static surface area; Primary tests cover behavior, not this CSS/DOM pairing.
   it('fallback HTML lane keeps Accordion/TreeView semantic classes alongside compatibility utilities', async () => {
     const exporter = new HtmlExporter();
     const html = await exporter.export({
