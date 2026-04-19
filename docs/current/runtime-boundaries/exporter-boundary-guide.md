@@ -12,6 +12,23 @@
 
 `src/exporters/html-exporter.ts` は HTML 出力に **2 系統**ある。修正・拡張の「正」を迷わないための整理。
 
+### T-001 — Primary = source of truth、fallback = compatibility lane のみ（契約アンカー）
+
+**Primary を source of truth（正）**とし、**fallback（`useReactRender === false` 経路）は compatibility lane（互換レーン）に限定**する。新規の **プロダクト機能**（ユーザー向け挙動・コンポーネント契約の拡張）を **fallback だけに追加することは禁止**。互換のための **最小差分**にとどめる。
+
+次の 3 行は **`scripts/check-html-exporter-fallback-lane-contract.cjs`**（`npm run check:html-exporter-fallback-lane`）が **文字列として存在するか**検証する。**削除・改変する場合はスクリプトと同時に更新**すること。
+
+T-001-ANCHOR:PRIMARY-IS-SOURCE-OF-TRUTH
+T-001-ANCHOR:FALLBACK-IS-COMPATIBILITY-LANE-ONLY
+T-001-ANCHOR:NO-NEW-PRODUCT-FEATURES-IN-FALLBACK-PATH
+
+#### 新規機能が fallback に入っていないことの確認（レビュー / ローカル）
+
+1. **差分の入口**: 変更が `src/exporters/html-renderers/**` または `useReactRender === false` 専用分岐に限定されていないかを見る。  
+2. **新規コンポーネント / 新契約**: まず **Primary**（`renderPageComponentsToStaticHtml` / `react-static-export` 系）に追加されているかを確認する。  
+3. **Fallback-only 変更**（Primary を触らず互換レーンのみ）のときは、PR または近接コメントに **「なぜ Primary ではないか」「影響する entry」「Primary へ寄せる余地」**を必ず残す（下節「Fallback-only change note」と同一基準）。  
+4. **CI 前ローカル**: `npm run check:html-exporter-fallback-lane` が PASS すること（ドキュメント・アンカー縮退防止）。
+
 | 経路 | 条件 | 実装の要点 | 位置づけ |
 |------|------|------------|----------|
 | **Primary** | `ExportOptions.useReactRender` が **省略または true**（既定） | `renderPageComponentsToStaticHtml` → `buildHtmlDocument(..., { noWrap: true })`。WebView と同じ React コンポーネント＋`webviewCss` を前提とした系統。 | **通常の export / プレビュー連携で直す先**。新コンポーネントの HTML 対応もこちらを優先。 |
@@ -22,7 +39,7 @@
 
 ### Fallback を compatibility lane（互換レーン）として扱う
 
-**定義**: `useReactRender === false` の経路は、**プレビュー／CLI の既定 export と同じ React 静的経路ではない**ため、**互換・補助**のレーンとみなす。新機能・不具合修正の **正（source of truth）は Primary**。公開経路では built-in `html` provider と preview-preparation が先に Primary を通る。
+**定義**: `useReactRender === false` の経路は、**プレビュー／CLI の既定 export と同じ React 静的経路ではない**ため、**互換・補助**のレーンとみなす（**enforced**: ここを「正式機能の本線」とみなさない）。新機能・不具合修正の **正（source of truth）は Primary**。公開経路では built-in `html` provider と preview-preparation が先に Primary を通る。
 
 | 観点 | 方針 |
 |------|------|
@@ -59,9 +76,10 @@
 - 新規 provider 追加時に既存 provider の契約と検証導線を壊していないか
 - フォーマット固有ロジックが共通層へ漏れ出していないか
 - Exporter の挙動差分を README / docs に反映できているか
+
 ## Fallback-only change note
 
-- `useReactRender === false` の経路だけを変更する場合は、Primary ではなく fallback を触る理由を必ず残す。
+- `useReactRender === false` の経路だけを変更する場合は、Primary ではなく fallback を触る理由を **必ず残す（enforced）**。
 - 一般 exporter regression は React-primary contract を先に見る。fallback 固有 coverage は observability / style lane のような明示レーンだけに留める。
 - 記録場所は 1 つでよい: 近接コードコメント、review handoff、または PR の影響欄。
 - 最低限残す内容:
