@@ -748,3 +748,45 @@ normalization:
   reason: trigger だけでは ActionType を一意に確定できない
   candidates: [navigate.open, workflow.submit]
 ```
+## compare 入力前段の DSL id 整合性検証
+
+compare-logic v2 は `screen` / `entity.id` / `components[].id` / `transitions[].id` を stable reference として使うため、比較本体へ入る前に **compare 可能な入力か** を検証する。ここでの責務は validation であり、diff_event や `outOfScope` を返す段階ではない。
+
+### 検証対象
+
+- screen 識別子（`screen`）
+- `entity.id`
+- `components[].id`
+- `transitions[].id`
+
+### 検証ルール
+
+- `screen` は compare 呼び出し単位で必須とし、欠損は fail-fast
+- `components[].id` は同一 screen スコープ内で一意でなければならず、欠損または重複は fail-fast
+- `transitions[].id` は同一 screen スコープ内で一意でなければならず、欠損または重複は fail-fast
+- `entity.id` は compare 入力としては欠損を許容するが、同一 screen スコープ内で重複してはならない
+- `entity.id` が欠損した場合のみ、compare-logic B-4 の補助規則で `entity.name` を使った照合へ進んでよい
+
+### fail-fast と compare 継続の境界
+
+- fail-fast: compare キーが壊れており、added/removed / matched のいずれにも安全に進めないケース
+- compare 継続可能: stable reference が一部欠けていても、設計済みの補助規則で曖昧ケースとして保持できるケース
+
+現行 v2 では次のように扱う。
+
+| ケース | 扱い |
+|---|---|
+| `screen` 欠損 | fail-fast |
+| `components[].id` 欠損 | fail-fast |
+| `components[].id` 重複 | fail-fast |
+| `transitions[].id` 欠損 | fail-fast |
+| `transitions[].id` 重複 | fail-fast |
+| `entity.id` 重複 | fail-fast |
+| `entity.id` 片側のみ欠損 | compare 継続可（B-4） |
+| `entity.id` 両側欠損 | compare 継続可（B-4） |
+
+### compare-logic との責務分離
+
+- 前段 validation は「この入力を compare に渡してよいか」を判定する
+- compare-logic A〜D は「compare 可能な入力に対して何を added/removed/changed とみなすか」を判定する
+- `outOfScope: true` は screen-level add/remove non-goal の表現であり、validation failure の代替ではない

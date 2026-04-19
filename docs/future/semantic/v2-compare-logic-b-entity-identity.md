@@ -123,3 +123,8 @@ function classifyEntityPair(
 ---
 
 *作成: 2026-04-19 / チケット: v2比較ロジック設計B*
+## B-0 Addendum: 前段 validation との境界
+
+- B-4 が扱うのは **前段 validation を通過した後** の `entity.id` 欠損ケースだけである
+- `entity.id` の欠損は compare 継続可能だが、同一 screen スコープ内で `entity.id` が重複するケースは compare に入る前段で fail-fast とする
+- したがって B-4 は「compare 入力として許された曖昧ケースの補助照合規則」であり、「壊れた id 入力を救済する validator」ではない

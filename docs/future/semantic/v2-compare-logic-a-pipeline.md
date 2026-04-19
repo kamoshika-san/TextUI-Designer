@@ -126,3 +126,10 @@ compareScreen(screenId, prev, next)
 ---
 
 *作成: 2026-04-19 / チケット: v2比較ロジック設計A*
+## A-0 Addendum: compare 入力前段の DSL id validation
+
+- `compareScreen` に入る前に、対象 `Screen` の `screen` / `entity.id` / `components[].id` / `transitions[].id` を検査する前段 validation を置く
+- 前段 validation の責務は「比較キーとして使う stable reference が compare 可能な状態か」を判定することであり、diff_event を生成しない
+- `screen` 欠損、`components[].id` 重複、`transitions[].id` 重複のように compare キーが壊れるケースは fail-fast とし、compare-logic A〜D へ進めない
+- `entity.id` 欠損は fail-fast にしない。B-4 の補助規則が扱う曖昧ケースとして compare 継続可能だが、重複は fail-fast とする
+- 前段 validation の結果は compare 本体の `outOfScope: true` とは別概念である。`outOfScope` は screen-level add/remove non-goal を表し、入力不正の隠れ蓑に使わない
