@@ -11,6 +11,19 @@ const workspaceRoot = path.resolve(__dirname, '..');
 const fragmentsDir = path.join(workspaceRoot, 'package-contributes');
 const packageJsonPath = path.join(workspaceRoot, 'package.json');
 
+/**
+ * Fragment → merged `package.json` `contributes` keys (T-011 tooling SSoT).
+ * Order matches `mergePackageContributes` assembly.
+ * @type {{ fragment: string, contributesKeys: string[] }[]}
+ */
+const PACKAGE_CONTRIBUTES_BUILD = [
+  { fragment: 'configuration.json', contributesKeys: ['configuration'] },
+  { fragment: 'commands.json', contributesKeys: ['commands'] },
+  { fragment: 'menus.json', contributesKeys: ['menus'] },
+  { fragment: 'languages-snippets.json', contributesKeys: ['languages', 'snippets'] },
+  { fragment: 'schemas.json', contributesKeys: ['yaml.schemas', 'jsonValidation'] }
+];
+
 function readFragment(name) {
   const p = path.join(fragmentsDir, name);
   if (!fs.existsSync(p)) {
@@ -62,4 +75,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { mergePackageContributes };
+module.exports = { mergePackageContributes, PACKAGE_CONTRIBUTES_BUILD };
