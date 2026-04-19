@@ -119,9 +119,19 @@ Small-slice verification in `tests/unit/html-exporter-route-viability.test.js` l
 4. If a difference is still isolated to the explicit fallback lane and has a named guard, classify it as acceptable temporary debt rather than as a hidden mismatch.
 5. If a difference affects Primary-default routes or requires a new unapproved fallback entrypoint, classify it as an unresolved mismatch and open follow-up work.
 
+## Semantic contract migration (T-023 / T-025 / T-028)
+
+| Topic | Primary coverage | Fallback coverage | Notes |
+|-------|------------------|-------------------|-------|
+| Tabs — list / tab / active / panel | `tests/unit/html-exporter-primary-tabs-semantic.test.js` | `html-exporter-fallback-style-lane.test.js`（Table 同梱、`Tabs+Divider` シナリオ） | Primary は `textui-tab is-active`。fallback はレガシー `textui-tab-active is-active` 等を継続。 |
+| FormControl — Input | `tests/unit/html-exporter-primary-formcontrol-input.test.js` | 複合 DSL 内の Input ノードは残すが **`textui-input` の単体 assert は Primary に移管** | Checkbox / Radio / DatePicker は当面 fallback のみ。 |
+| FormControl — 残件（T-025） | — | `html-exporter-fallback-style-lane.test.js` の FormControl+Alert `it` | **Checkbox / Radio / DatePicker**: レガシー `html-form-renderer` はラベル行・Tailwind 連結クラスが React の `Input` 等と一致せず、**同一文字列 assert を Primary に複製すると誤検知**になりやすい。次スプリントで意味対応表を切ってから移管。**Alert**: 本スプリントでは未移管（variant / border 系は fallback のまま）。 |
+| compatibility CSS 削減計画 | — | `buildFallbackCompatibilityStyleBlock` 供給分 | 正本: [t028-fallback-compatibility-css-reduction-matrix.md](./t028-fallback-compatibility-css-reduction-matrix.md)。実 CSS 削除は別作業。 |
+
 ## Related documents
 
 - [html-exporter-fallback-shrink-t010.md](html-exporter-fallback-shrink-t010.md)（T-010 縮小フェーズ 1・分類と計測手順）
+- [t028-fallback-compatibility-css-reduction-matrix.md](./t028-fallback-compatibility-css-reduction-matrix.md)
 - [exporter-boundary-guide.md](exporter-boundary-guide.md)
 - [export-fallback-lane-boundary-policy.md](export-fallback-lane-boundary-policy.md)
 - [export-webview-runtime-coupling-inventory.md](export-webview-runtime-coupling-inventory.md)

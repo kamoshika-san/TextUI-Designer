@@ -61,8 +61,9 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(html.includes('.textui-tabs .flex > button.textui-tab-active'));
   });
 
-  // Full HtmlExporter export on fallback lane: validates Tabs/Table DOM hooks that exist only in static HTML output.
-  it('fallback HTML lane keeps Tabs/Table semantic classes alongside compatibility utilities', async () => {
+  // Full HtmlExporter export on fallback lane: Table + static utility hooks stay here; Tabs-only Primary hooks
+  // are covered by `html-exporter-primary-tabs-semantic.test.js` (T-023).
+  it('fallback HTML lane keeps Table semantic classes alongside compatibility utilities', async () => {
     const exporter = new HtmlExporter();
     const html = await exporter.export({
       page: {
@@ -90,11 +91,6 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
       }
     }, createFallbackOptions({ format: 'html' }));
 
-    assert.ok(html.includes('textui-tabs-list'));
-    assert.ok(html.includes('textui-tab-panel-body'));
-    assert.ok(html.includes('textui-tab-active is-active'));
-    assert.ok(html.includes('bg-gray-200 text-gray-900'));
-    assert.ok(html.includes('bg-gray-100 text-gray-700'));
     assert.ok(html.includes('textui-table-container'));
     assert.ok(html.includes('textui-table-header'));
     assert.ok(html.includes('textui-table-row'));
@@ -144,6 +140,7 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
   });
 
   // Form primitives + Alert variant attributes: static fallback renderer emits different class graph than React preview.
+  // Input `textui-input` / wrapper hooks are asserted on Primary in `html-exporter-primary-formcontrol-input.test.js` (T-025).
   it('fallback HTML lane keeps FormControl and Alert semantic classes alongside compatibility utilities', async () => {
     const exporter = new HtmlExporter();
     const html = await exporter.export({
@@ -161,7 +158,6 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
       }
     }, createFallbackOptions({ format: 'html' }));
 
-    assert.ok(html.includes('textui-input'));
     assert.ok(html.includes('textui-checkbox'));
     assert.ok(html.includes('textui-radio-group'));
     assert.ok(html.includes('textui-radio-option'));
