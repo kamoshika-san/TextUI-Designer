@@ -12,4 +12,4 @@
 ## 関連
 
 - 現行向けの置き場ルール: [`../current/README.md`](../current/README.md)
-- v1（MVP）判定契約（現行寄りのコード正本）: `docs/diff-semantic-mvp-contract-and-ir.md`（リポジトリルート相対）
+- v1（MVP）判定契約（現行寄りのコード正本）: `docs/current/diff/diff-semantic-mvp-contract-and-ir.md`（リポジトリルート相対）

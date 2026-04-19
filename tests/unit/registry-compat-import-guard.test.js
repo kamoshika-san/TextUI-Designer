@@ -2,7 +2,7 @@
  * T-20260321-040: registry 互換レイヤ（component-manifest / component-registry）への
  * import が許可リスト外から増殖しないことを検知する。
  *
- * 正本・運用: docs/registry-compat-layer-policy.md
+ * 正本・運用: docs/current/dsl-ssot-types/registry-compat-layer-policy.md
  */
 const assert = require('assert');
 const fs = require('fs');
@@ -62,7 +62,7 @@ describe('registry compat import guard (T-20260321-040)', () => {
     assert.deepStrictEqual(
       violations,
       [],
-      `互換レイヤ import の増殖を検知しました。docs/registry-compat-layer-policy.md を確認し、許可リストを更新するか正本へ寄せてください。\n${violations.join(
+      `互換レイヤ import の増殖を検知しました。docs/current/dsl-ssot-types/registry-compat-layer-policy.md を確認し、許可リストを更新するか正本へ寄せてください。\n${violations.join(
         '\n'
       )}`
     );

@@ -2,7 +2,7 @@
  * WebViewUtilsの基本テスト
  *
  * E6-S3-T1: tests/setup.js 経由の vscode モックを使用し、本ファイル専用の
- * Module.prototype.require フックは置かない（docs/test-setup-policy.md）。
+ * Module.prototype.require フックは置かない（docs/current/testing-ci/test-setup-policy.md）。
  */
 
 const assert = require('assert');

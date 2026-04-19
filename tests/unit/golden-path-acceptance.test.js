@@ -8,7 +8,7 @@
  * Purpose: non-developers can read test output and see which user scenario
  * passed or failed, without digging into implementation test files.
  *
- * Full test references → docs/ACCEPTANCE.md
+ * Full test references → docs/current/operations/ACCEPTANCE.md
  */
 
 const assert = require('assert');

@@ -4,7 +4,7 @@ caseRef:
   goldenCaseId: G-008
   ruleFamily: default-expansion
   stage: stage-2
-  sourceDoc: docs/diff-semantic-normalization-mvp-rules.md
+  sourceDoc: docs/current/diff/diff-semantic-normalization-mvp-rules.md
 summary: Omitted documented default and explicit default normalize to the same canonical value while preserving explicitness
 assertionMode: equivalent
 inputs:

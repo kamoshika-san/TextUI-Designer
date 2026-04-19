@@ -2,11 +2,11 @@
 
 This page is the canonical contributor workflow for TextUI Designer.
 
-Use [README.md](README.md) for entry and the main documentation map. Use [docs/SETUP.md](docs/SETUP.md) for environment bootstrap and daily command entry. Use this page for branch strategy, pull request flow, and review expectations.
+Use [README.md](README.md) for entry and the main documentation map. Use [docs/current/workflow-onboarding/SETUP.md](docs/current/workflow-onboarding/SETUP.md) for environment bootstrap and daily command entry. Use this page for branch strategy, pull request flow, and review expectations.
 
 ## Workflow At A Glance
 
-1. Start from [README.md](README.md) and complete the local bootstrap in [docs/SETUP.md](docs/SETUP.md).
+1. Start from [README.md](README.md) and complete the local bootstrap in [docs/current/workflow-onboarding/SETUP.md](docs/current/workflow-onboarding/SETUP.md).
 2. Create a focused working branch for one ticket or one tightly coupled slice.
 3. Implement the change and run the verification that matches the touched area.
 4. Open a pull request with the required context, checks, and doc-update notes.
@@ -40,8 +40,8 @@ Every PR should make these items easy to find:
 Use the repository PR template as the source of truth for the exact checklist:
 
 - [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md)
-- [docs/documentation-owner-and-review-cadence.md](docs/documentation-owner-and-review-cadence.md)
-- [docs/css-ssot-contributor-checklist.md](docs/css-ssot-contributor-checklist.md) when the PR touches component or export CSS
+- [docs/current/documentation-governance/documentation-owner-and-review-cadence.md](docs/current/documentation-governance/documentation-owner-and-review-cadence.md)
+- [docs/current/theme-export-rendering/css-ssot-contributor-checklist.md](docs/current/theme-export-rendering/css-ssot-contributor-checklist.md) when the PR touches component or export CSS
 
 ## Review Expectations
 
@@ -76,12 +76,12 @@ Common entry points:
 
 Use the current CI / release-gate page for which checks are required on `main`:
 
-- [docs/ci-quality-gate.md](docs/ci-quality-gate.md)
+- [docs/current/testing-ci/ci-quality-gate.md](docs/current/testing-ci/ci-quality-gate.md)
 
 Use the test lane guide for what each lane means:
 
-- [docs/TESTING.md](docs/TESTING.md)
-- [docs/test-matrix.md](docs/test-matrix.md)
+- [docs/current/workflow-onboarding/TESTING.md](docs/current/workflow-onboarding/TESTING.md)
+- [docs/current/testing-ci/test-matrix.md](docs/current/testing-ci/test-matrix.md)
 
 ## Documentation Update Rule
 
@@ -89,15 +89,15 @@ If the change affects contributor flow, quality gates, runtime boundaries, or ca
 
 Use the current owner and review-cadence model when deciding which canonical page should move:
 
-- [docs/documentation-owner-and-review-cadence.md](docs/documentation-owner-and-review-cadence.md)
+- [docs/current/documentation-governance/documentation-owner-and-review-cadence.md](docs/current/documentation-governance/documentation-owner-and-review-cadence.md)
 
 Typical examples:
 
 - README or workflow changes -> update [README.md](README.md) or this page
-- setup or install changes -> update [docs/SETUP.md](docs/SETUP.md) and, if needed, [docs/LOCAL_INSTALLER.md](docs/LOCAL_INSTALLER.md)
-- CI / release-gate changes -> update [docs/ci-quality-gate.md](docs/ci-quality-gate.md)
-- built-in component workflow changes -> update [docs/adding-built-in-component.md](docs/adding-built-in-component.md)
-- component or export CSS SSoT changes -> update [docs/css-ssot-contributor-checklist.md](docs/css-ssot-contributor-checklist.md) or the linked metric definition when the counting rule changes
+- setup or install changes -> update [docs/current/workflow-onboarding/SETUP.md](docs/current/workflow-onboarding/SETUP.md) and, if needed, [docs/current/workflow-onboarding/LOCAL_INSTALLER.md](docs/current/workflow-onboarding/LOCAL_INSTALLER.md)
+- CI / release-gate changes -> update [docs/current/testing-ci/ci-quality-gate.md](docs/current/testing-ci/ci-quality-gate.md)
+- built-in component workflow changes -> update [docs/current/workflow-onboarding/adding-built-in-component.md](docs/current/workflow-onboarding/adding-built-in-component.md)
+- component or export CSS SSoT changes -> update [docs/current/theme-export-rendering/css-ssot-contributor-checklist.md](docs/current/theme-export-rendering/css-ssot-contributor-checklist.md) or the linked metric definition when the counting rule changes
 
 ## When To Escalate Instead Of Expanding
 
@@ -113,13 +113,13 @@ Record the issue for PM when the right next step is a new ticket rather than a l
 ## Related Pages
 
 - [README.md](README.md)
-- [docs/GLOSSARY.md](docs/GLOSSARY.md)
-- [docs/LOCAL_INSTALLER.md](docs/LOCAL_INSTALLER.md)
-- [docs/TESTING.md](docs/TESTING.md)
-- [docs/test-matrix.md](docs/test-matrix.md)
-- [docs/ci-quality-gate.md](docs/ci-quality-gate.md)
-- [docs/MAINTAINER_GUIDE.md](docs/MAINTAINER_GUIDE.md)
-- [docs/css-ssot-contributor-checklist.md](docs/css-ssot-contributor-checklist.md)
+- [docs/current/workflow-onboarding/GLOSSARY.md](docs/current/workflow-onboarding/GLOSSARY.md)
+- [docs/current/workflow-onboarding/LOCAL_INSTALLER.md](docs/current/workflow-onboarding/LOCAL_INSTALLER.md)
+- [docs/current/workflow-onboarding/TESTING.md](docs/current/workflow-onboarding/TESTING.md)
+- [docs/current/testing-ci/test-matrix.md](docs/current/testing-ci/test-matrix.md)
+- [docs/current/testing-ci/ci-quality-gate.md](docs/current/testing-ci/ci-quality-gate.md)
+- [docs/current/operations/MAINTAINER_GUIDE.md](docs/current/operations/MAINTAINER_GUIDE.md)
+- [docs/current/theme-export-rendering/css-ssot-contributor-checklist.md](docs/current/theme-export-rendering/css-ssot-contributor-checklist.md)
 
 ## Out Of Scope Here
 

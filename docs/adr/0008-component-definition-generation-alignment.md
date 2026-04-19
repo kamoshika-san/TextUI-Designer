@@ -48,4 +48,4 @@
 - [ADR 0003](./0003-dsl-types-canonical-source.md)（DSL 型の正本）
 - [ADR 0004](./0004-component-definition-graph-canonical.md)（component definition graph）
 - 実装: `src/components/definitions/component-definitions.ts`, `src/components/definitions/component-spec.ts`
-- 変更増幅: `docs/change-amplification-dsl.md`
+- 変更増幅: `docs/current/dsl-ssot-types/change-amplification-dsl.md`

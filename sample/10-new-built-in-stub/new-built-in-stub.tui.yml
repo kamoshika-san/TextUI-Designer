@@ -1,5 +1,5 @@
 # 新規ビルトイン追加時のコピー用スタブ（E2-S2-T3）
-# 手順は docs/new-built-in-sample-regression-stub.md および本ディレクトリ README を参照。
+# 手順は docs/current/testing-ci/new-built-in-sample-regression-stub.md および本ディレクトリ README を参照。
 page:
   id: new-built-in-stub
   title: "Stub for new built-in component"

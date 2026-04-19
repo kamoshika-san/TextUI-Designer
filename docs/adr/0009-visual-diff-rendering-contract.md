@@ -187,8 +187,8 @@ Those decisions belong to later V0 tickets and must build on this contract rathe
 ## References
 
 - [ADR 0007](./0007-export-diff-purpose.md)
-- [docs/export-instrumentation.md](../export-instrumentation.md)
-- [docs/export-diff-observation-path.md](../export-diff-observation-path.md)
+- [docs/current/theme-export-rendering/export-instrumentation.md](../export-instrumentation.md)
+- [docs/current/theme-export-rendering/export-diff-observation-path.md](../export-diff-observation-path.md)
 - `src/core/textui-visual-diff-view-model.ts`
 - `src/core/textui-visual-diff-presentation.ts`
 - `src/core/textui-visual-diff-navigation.ts`

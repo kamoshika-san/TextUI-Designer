@@ -52,7 +52,7 @@ import { Logger } from '../utils/logger';
  * テストの安定化や capture 等で明示的に切り替える。挙動差・コンポーネント対応差が残りうるため、
  * **不具合修正・新コンポーネント対応は通常 primary 側を正とする**（fallback は縮小・削除は別チケット）。
  *
- * 運用の一覧は `docs/exporter-boundary-guide.md` の「HtmlExporter」の節を参照。
+ * 運用の一覧は `docs/current/runtime-boundaries/exporter-boundary-guide.md` の「HtmlExporter」の節を参照。
  */
 export class HtmlExporter extends BaseComponentRenderer {
   private readonly formRenderer: HtmlFormRenderer;

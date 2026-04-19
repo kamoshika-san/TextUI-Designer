@@ -9,7 +9,7 @@
  * Design guardrails (enforced by type):
  * - Rules must not read raw DSL text. Inputs are structural hook values only.
  * - Rules must not reinvent category semantics beyond the fixed vocabulary in
- *   docs/diff-summary-event-vocabulary.md.
+ *   docs/current/diff/diff-summary-event-vocabulary.md.
  * - Rules that cannot determine a clear domain signal must return null so the
  *   caller preserves the D2-1 baseline instead of inventing a weaker guess.
  */
@@ -25,7 +25,7 @@ import type {
 // -- Extension hook context --------------------------------------------------
 //
 // These types mirror the reserved hooks documented in
-// docs/diff-ir-extension-points.md. They are optional because the extraction
+// docs/current/diff/diff-ir-extension-points.md. They are optional because the extraction
 // layer does not populate them today — they are "reserved" per Epic A Sprint A3.
 // When population arrives, it must match these shapes.
 

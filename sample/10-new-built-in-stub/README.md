@@ -8,7 +8,7 @@
 2. `page.id` と `title` をユニークな値に変える。
 3. `components` 内の `Text` ブロックを、追加した **新 kind**（例: `Foo`）に置き換える。
 4. リポジトリルートで `npm run compile` のあと `npm run validate:samples` を実行し、**当該 YAML が緑**であることを確認する。
-5. 契約・タッチ箇所の一覧は [../../docs/adding-built-in-component.md](../../docs/adding-built-in-component.md)。回帰テストの足し方は [../../docs/new-built-in-sample-regression-stub.md](../../docs/new-built-in-sample-regression-stub.md)。
+5. 契約・タッチ箇所の一覧は [../../docs/current/workflow-onboarding/adding-built-in-component.md](../../docs/current/workflow-onboarding/adding-built-in-component.md)。回帰テストの足し方は [../../docs/current/testing-ci/new-built-in-sample-regression-stub.md](../../docs/current/testing-ci/new-built-in-sample-regression-stub.md)。
 
 ## 関連
 

@@ -2,7 +2,7 @@
  * T-20260321-129 / Sprint 1 guardrail:
  * `src/renderer/**` 以外、および test code から `renderer/types` を import しないことを検知する。
  *
- * 正本・棚卸し: docs/dsl-types-renderer-types-inventory.md
+ * 正本・棚卸し: docs/current/dsl-ssot-types/dsl-types-renderer-types-inventory.md
  */
 const assert = require('assert');
 const path = require('path');
@@ -26,7 +26,7 @@ describe('renderer/types non-renderer import guard (T-20260321-129)', () => {
     assert.deepStrictEqual(
       violations,
       [],
-      `renderer/types 依存の増殖を検知しました。docs/dsl-types-renderer-types-inventory.md を確認してください。\n${violations.join(
+      `renderer/types 依存の増殖を検知しました。docs/current/dsl-ssot-types/dsl-types-renderer-types-inventory.md を確認してください。\n${violations.join(
         '\n'
       )}`
     );

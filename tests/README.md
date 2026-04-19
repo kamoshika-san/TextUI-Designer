@@ -4,7 +4,7 @@
 
 ## テストの種類
 
-**層の定義（unit / integration / smoke）と CI との対応**は [`docs/test-matrix.md`](../docs/test-matrix.md) を参照。
+**層の定義（unit / integration / smoke）と CI との対応**は [`docs/current/testing-ci/test-matrix.md`](../docs/current/testing-ci/test-matrix.md) を参照。
 
 ### 1. 回帰テスト (`regression/`)
 プレビュー画面からのエクスポート機能に関する回帰テストです。
@@ -48,7 +48,7 @@
 
 ### Integration と simulated E2E の判断基準（1ページ）
 
-**どちらも Node + Mocha + `tests/setup.js` のモック `vscode` 上で動く**点は同じです。**実 VS Code Extension Host を起動するテストではありません**（実機検証は [`docs/real-vscode-smoke.md`](../docs/real-vscode-smoke.md) および別ラインを参照）。
+**どちらも Node + Mocha + `tests/setup.js` のモック `vscode` 上で動く**点は同じです。**実 VS Code Extension Host を起動するテストではありません**（実機検証は [`docs/current/testing-ci/real-vscode-smoke.md`](../docs/current/testing-ci/real-vscode-smoke.md) および別ラインを参照）。
 
 | 観点 | `tests/integration/`（統合） | `tests/e2e/`（simulated E2E・`npm run test:e2e`） |
 |------|------------------------------|--------------------------------------------------|
@@ -62,7 +62,7 @@
 2. **サービス同士の配線**や **WebView メッセージとハンドラの契約** → `integration/`。
 3. **画面操作の流れをまるごと**モックで再現し、退行を捕まえたい → `e2e/`（simulated）。CI 上の名前は historical に `test:e2e` のまま。
 
-詳細なレイヤ定義と CI 対応は [`docs/test-matrix.md`](../docs/test-matrix.md) を正とする。
+詳細なレイヤ定義と CI 対応は [`docs/current/testing-ci/test-matrix.md`](../docs/current/testing-ci/test-matrix.md) を正とする。
 
 ### 新規テストの最短経路（setup.js 非拡大）
 
@@ -71,8 +71,8 @@
 - **推奨**: 対象クラスに **constructor / factory 注入**（例: `SchemaManager` の `SchemaManagerSeams`、`CommandManager` の `RuntimeInspectionCommandBindings`）を使い、**差し替え可能な依存**だけをテストでスタブする。
 - **統合テストのサービス束**: `tests/helpers/integration-service-factory.js` の `createIntegrationServices`（`ServiceFactory` オーバーライドの雛形）。
 - **WebView 系 unit テストのローカル補完**: `tests/unit/webview-utils.test.js` の `createTestWebviewPanel()` を基準に、`cspSource` や `asWebviewUri` のような **不足 API だけ**をテスト内 helper で補完する。`global.vscode` の手書き差し替えや、その場限りの `Module.prototype.require` 横取りで埋めない。
-- **反パターン**: `global.vscode` を手書きで上書きし続ける、テスト専用に `setup.js` にグローバルフックを追加する（方針上の詳細は [`docs/test-setup-policy.md`](../docs/test-setup-policy.md)）。
-- **レイヤと CI の対応**: [`docs/test-matrix.md`](../docs/test-matrix.md)。
+- **反パターン**: `global.vscode` を手書きで上書きし続ける、テスト専用に `setup.js` にグローバルフックを追加する（方針上の詳細は [`docs/current/testing-ci/test-setup-policy.md`](../docs/current/testing-ci/test-setup-policy.md)）。
+- **レイヤと CI の対応**: [`docs/current/testing-ci/test-matrix.md`](../docs/current/testing-ci/test-matrix.md)。
 
 ### 4. Simulated E2E（`e2e/`・Node + Mocha）
 
@@ -88,7 +88,7 @@
 
 **実 VS Code 上での検証**が必要な場合は、`npm run test:vscode-smoke` を使います。これは `@vscode/test-electron` ベースの narrow smoke で、デフォルトの Mocha ラインを置き換えるものではありません。
 
-**手動の最小スモーク**（活性化 → プレビュー → HTML エクスポート）は、拡張リポジトリの [`docs/real-vscode-smoke.md`](../docs/real-vscode-smoke.md) を正とする。
+**手動の最小スモーク**（活性化 → プレビュー → HTML エクスポート）は、拡張リポジトリの [`docs/current/testing-ci/real-vscode-smoke.md`](../docs/current/testing-ci/real-vscode-smoke.md) を正とする。
 
 ## テストの実行方法
 
@@ -180,7 +180,7 @@ node ./tests/e2e/export-from-preview-e2e.test.js
 
 ## 関連ドキュメント
 
-- [テストセットアップ方針（グローバルフック非拡大）](../docs/test-setup-policy.md)
+- [テストセットアップ方針（グローバルフック非拡大）](../docs/current/testing-ci/test-setup-policy.md)
 - [VS Code Extension Testing](https://code.visualstudio.com/api/working-with-extensions/testing-extension)
 - [Mocha Testing Framework](https://mochajs.org/)
 - [Node.js Assert Module](https://nodejs.org/api/assert.html) 

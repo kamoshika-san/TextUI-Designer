@@ -71,4 +71,4 @@ When you add or change a sample:
 
 - Generated artifacts do not belong in `sample/`.
 - Intentionally failing samples should be called out explicitly in the owning README and validation expectations.
-- For Navigation v2 authoring guidance, continue with [`../docs/navigation-v2-guide.md`](../docs/navigation-v2-guide.md).
+- For Navigation v2 authoring guidance, continue with [`../docs/current/dsl-ssot-types/navigation-v2-guide.md`](../docs/current/dsl-ssot-types/navigation-v2-guide.md).

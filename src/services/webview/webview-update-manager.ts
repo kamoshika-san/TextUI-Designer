@@ -58,7 +58,7 @@ export interface WebViewYamlCacheTestAdapter {
  * - **PreviewDelivery**: `preview-webview-deliver.ts`（`deliverPreviewPayload`）
  * - **PreviewFailurePolicy**: `preview-failure-policy.ts`（`applyPreviewFailurePolicy`）
  *
- * 正本: `docs/preview-update-pipeline-ports.md`
+ * 正本: `docs/current/services-webview/preview-update-pipeline-ports.md`
  *
  * **テスト用差し替え（T-210）**: 第3引数 `deps` でキュー・キャッシュ・失敗ポリシーを注入可能。
  * 例: `tests/helpers/direct-webview-update-queue.js` を `updateQueueManager` に渡すとデバウンス待ちが不要。

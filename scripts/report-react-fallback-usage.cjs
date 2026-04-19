@@ -25,7 +25,7 @@ const fallbackGovernanceFiles = [
   'tests/unit/html-exporter-fallback-entry-guard.test.js',
   'tests/unit/html-exporter-route-viability.test.js',
   'tests/README.md',
-  'docs/html-exporter-primary-fallback-inventory.md'
+  'docs/current/theme-export-rendering/html-exporter-primary-fallback-inventory.md'
 ];
 
 function countMatches(filePath, pattern) {

@@ -3,7 +3,7 @@ const assert = require('assert');
 /**
  * T-20260321-111: DI 注入の実演（第2段階）。
  * ServiceFactory オーバーライドでテスト対象を差し替え、`tests/setup.js` のグローバルフックを増やさない。
- * 方針正本: docs/test-setup-policy.md
+ * 方針正本: docs/current/testing-ci/test-setup-policy.md
  */
 describe('T-111: ServiceFactory による DI（グローバルフック非拡大）', () => {
   let ServiceFactory;

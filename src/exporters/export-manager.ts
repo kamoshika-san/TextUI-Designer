@@ -24,7 +24,7 @@ import { Logger } from '../utils/logger';
  * **観測**（DSL 差分・キャッシュヒット等のメトリクスを `PerformanceMonitor` へ送る処理）を 1 インスタンスで束ねる。
  *
  * - **本流**: `exportFromFile` / `batchExport` が返す文字列・ファイル出力。高速化の主手段は **キャッシュ再利用**。
- * - **観測**: `DiffManager` の差分はメトリクス／レポート用（増分レンダーには未使用）。経路は `docs/export-instrumentation.md` と `docs/adr/0007-export-diff-purpose.md`。
+ * - **観測**: `DiffManager` の差分はメトリクス／レポート用（増分レンダーには未使用）。経路は `docs/current/theme-export-rendering/export-instrumentation.md` と `docs/adr/0007-export-diff-purpose.md`。
  */
 export class ExportManager {
   private exporters: Map<string, Exporter> = new Map();

@@ -575,7 +575,7 @@ diff:
 
 ## 既存ドキュメントとの関係（重要）
 
-本リポジトリの Semantic Diff MVP 契約は `docs/diff-semantic-mvp-contract-and-ir.md` が正本であり、
+本リポジトリの Semantic Diff MVP 契約は `docs/current/diff/diff-semantic-mvp-contract-and-ir.md` が正本であり、
 
 - `layer` は `structure | behavior | visual | data`（実装・レビュー向けの分類）
 
@@ -597,7 +597,7 @@ diff:
 
 `T-20260418-001` の決定として、Semantic Diff は **v1 系と v2 系を分離**して扱う。
 
-- `v1` 判定語彙の正本: `docs/diff-semantic-mvp-contract-and-ir.md`
+- `v1` 判定語彙の正本: `docs/current/diff/diff-semantic-mvp-contract-and-ir.md`
 - `v2` 判定語彙の正本: `docs/future/semantic/semantic-meaning-core-ontology-v0-ja.md`（本書）
 - `v2` では概念語彙（本書で定義する語彙）を **説明用ではなく判定ロジック本体**として扱う
 - `v2` は `v1` と **非互換（breaking change）** とし、v1 への写像規則は定義しない
@@ -622,14 +622,14 @@ compare-logic v2 の **コード寄り正本**は `docs/future/types/v2/diff-rec
 ### 運用ルール
 
 - compare-logic v2 の機械判定は `decision` を基準に行う
-- `explanation.evidence` は **空配列を許容**する。registry 登録済み `evidence_shape` がある場合だけ各要素を `docs/v2-evidence-shapes-registry-ja.md` と JSON Schema で検証する
+- `explanation.evidence` は **空配列を許容**する。registry 登録済み `evidence_shape` がある場合だけ各要素を `docs/current/dsl-ssot-types/v2-evidence-shapes-registry-ja.md` と JSON Schema で検証する
 - `canonical_predicate` は evidence 未登録イベントや predicate 系差分の説明に使う
 - `confidence` は 0.0–1.0 の確信度とし、compare-logic v2 では `0.8` 未満を `needs_review` とする
 
 ### 歴史的メモ
 
 - `T-20260418-006` で議論した `decision_payload` / `explanation_payload` 形式は compare-logic v2 の背景メモとして残すが、現行の record 形そのものの正本ではない
-- compare-logic v2 実装・レビューでは `docs/future/types/v2/diff-record.ts`、設計E/F/H、`docs/v2-evidence-shapes-registry-ja.md` を優先する
+- compare-logic v2 実装・レビューでは `docs/future/types/v2/diff-record.ts`、設計E/F/H、`docs/current/dsl-ssot-types/v2-evidence-shapes-registry-ja.md` を優先する
 
 ## 変更履歴
 
@@ -641,8 +641,8 @@ compare-logic v2 の **コード寄り正本**は `docs/future/types/v2/diff-rec
 - 2026-04-18: `T-20260418-006` 合意を反映（論点1=案B、論点2=案A、判定/説明の完全分離、最小JSON例）
 - 2026-04-18: 論点3（`evidence` 内部の正規形粒度）を `T-20260418-007` に切り出し追跡する旨を追記
 - 2026-04-18: `T-20260418-007` 方針決定を反映（証拠は案C＝`evidence_shape` を検証正本、案B＝表の階層構造。`evidence_shape` を MUST に追加し最小JSON例を更新）
-- 2026-04-18: `T-20260418-007` 正本化 — `docs/v2-evidence-shapes-registry-ja.md` と `docs/future/schemas/v2/evidence/` を追加し、本書の論点3から参照
-- 2026-04-18: 現行／将来ドキュメント分離のため `docs/future/semantic/` へ移動（旧 `docs/semantic-meaning-core-ontology-v0-ja.md` はリダイレクト用スタブ）
+- 2026-04-18: `T-20260418-007` 正本化 — `docs/current/dsl-ssot-types/v2-evidence-shapes-registry-ja.md` と `docs/future/schemas/v2/evidence/` を追加し、本書の論点3から参照
+- 2026-04-18: 現行／将来ドキュメント分離のため `docs/future/semantic/` へ移動（旧 `docs/current/dsl-ssot-types/semantic-meaning-core-ontology-v0-ja.md` はリダイレクト用スタブ）
 - 2026-04-18: v2 証拠 JSON Schema を `docs/future/schemas/v2/evidence/` へ移動（論点3の検証正本の置き場を将来トラックに統一）
 - 2026-04-18: `T-20260418-003` — `canonical predicate` v0.1（fact 案A、演算子案B+`in`案α、論理合成の平易説明と既定、未解決案A、決定性案A）
 - 2026-04-18: `T-20260418-002` 反映 — 差異＝業務意味に効く不一致（狭義）、案A包含（観測差分 ⊇ 差異 ⊇ 意味差分）、観測と判定の分離、表層ラベル例

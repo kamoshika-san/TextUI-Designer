@@ -17,12 +17,12 @@ export interface ComponentDiff {
 
 /**
  * DSL の差分を検出するクラス。export パイプライン上で **メトリクス／レポート用**に配置される（`src/exporters/metrics/`）。
- * **増分レンダー（コンポーネント単位の省略描画）には未使用**。経路は `docs/export-diff-observation-path.md` を参照。
+ * **増分レンダー（コンポーネント単位の省略描画）には未使用**。経路は `docs/current/theme-export-rendering/export-diff-observation-path.md` を参照。
  */
 export class DiffManager {
   private lastDSL: TextUIDSL | null = null;
   private lastHash: string | null = null;
-  /** `computeDiff` の直近戻り値（メトリクス/デバッグ用。export の増分レンダーには未使用）。詳細は `docs/export-instrumentation.md`。 */
+  /** `computeDiff` の直近戻り値（メトリクス/デバッグ用。export の増分レンダーには未使用）。詳細は `docs/current/theme-export-rendering/export-instrumentation.md`。 */
   private lastDiffResult: DiffResult | null = null;
 
   /**

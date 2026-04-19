@@ -268,7 +268,7 @@ npm run build-webview
 npm test
 ```
 
-Detailed setup: [docs/SETUP.md](docs/SETUP.md)
+Detailed setup: [docs/current/workflow-onboarding/SETUP.md](docs/current/workflow-onboarding/SETUP.md)
 
 ### Key Commands
 
@@ -283,10 +283,10 @@ Detailed setup: [docs/SETUP.md](docs/SETUP.md)
 
 ### Developer Docs
 
-- [Setup](docs/SETUP.md) · [Testing](docs/TESTING.md) · [Contributing](CONTRIBUTING.md) · [FAQ](docs/FAQ.md)
-- [Extension Boundary Guide](docs/extension-boundary-guide.md) · [Exporter Boundary Guide](docs/exporter-boundary-guide.md)
-- [Adding Built-In Component](docs/adding-built-in-component.md) · [Glossary](docs/GLOSSARY.md)
-- [Semantic Meaning / Diff Taxonomy（日本語・将来向け）](docs/future/semantic/semantic-meaning-core-ontology-v0-ja.md) · [旧パススタブ](docs/semantic-meaning-core-ontology-v0-ja.md)
+- [Setup](docs/current/workflow-onboarding/SETUP.md) · [Testing](docs/current/workflow-onboarding/TESTING.md) · [Contributing](CONTRIBUTING.md) · [FAQ](docs/current/workflow-onboarding/FAQ.md)
+- [Extension Boundary Guide](docs/current/runtime-boundaries/extension-boundary-guide.md) · [Exporter Boundary Guide](docs/current/runtime-boundaries/exporter-boundary-guide.md)
+- [Adding Built-In Component](docs/current/workflow-onboarding/adding-built-in-component.md) · [Glossary](docs/current/workflow-onboarding/GLOSSARY.md)
+- [Semantic Meaning / Diff Taxonomy（日本語・将来向け）](docs/future/semantic/semantic-meaning-core-ontology-v0-ja.md) · [旧パススタブ](docs/current/dsl-ssot-types/semantic-meaning-core-ontology-v0-ja.md)
 
 ---
 

@@ -4,7 +4,7 @@ caseRef:
   goldenCaseId: NG-001
   ruleFamily: canonical-order-boundary
   stage: stage-1
-  sourceDoc: docs/diff-semantic-normalization-mvp-rules.md
+  sourceDoc: docs/current/diff/diff-semantic-normalization-mvp-rules.md
 summary: Reviewer-visible action order must remain different and must not normalize away
 assertionMode: non-equivalent
 inputs:

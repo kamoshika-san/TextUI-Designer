@@ -99,7 +99,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Added
 - **Navigation v2 rollout lane**: Graph-first `.tui.flow.yml` support now includes CLI route analysis, terminal-aware validation, stable transition identity, migration guidance, and representative rollout samples.
-- **Navigation v2 documentation**: Added `docs/navigation-v2-guide.md`, `docs/navigation-v2-migration.md`, and `docs/RELEASE_NOTES_v0.10.0.md` to clarify adoption, compatibility, and migration-required cases.
+- **Navigation v2 documentation**: Added `docs/current/dsl-ssot-types/navigation-v2-guide.md`, `docs/current/dsl-ssot-types/navigation-v2-migration.md`, and `docs/RELEASE_NOTES_v0.10.0.md` to clarify adoption, compatibility, and migration-required cases.
 
 ### Changed
 - **Sample validation gate**: `scripts/validate-samples.cjs` now validates representative navigation flows directly, including `flow validate`, `flow analyze`, and terminal-aware `flow route` coverage for the v2 enterprise sample.

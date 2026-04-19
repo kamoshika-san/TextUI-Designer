@@ -78,7 +78,7 @@
 
 <!-- PR 縺ｧ縺ｩ縺ｮ繝√ぉ繝・け繧貞ｿ・医↓縺吶ｋ縺九・`test:all:ci` 縺ｮ菴咲ｽｮ縺･縺代・ T-043 縺ｮ繝峨く繝･繝｡繝ｳ繝医↓貅匁侠 -->
 
-- 蠢・医メ繧ｧ繝・け縺ｮ驕ｸ螳壹・branch protection 謇矩・ [`docs/ci-quality-gate.md`](docs/ci-quality-gate.md)
+- 蠢・医メ繧ｧ繝・け縺ｮ驕ｸ螳壹・branch protection 謇矩・ [`docs/current/testing-ci/ci-quality-gate.md`](docs/current/testing-ci/ci-quality-gate.md)
 - 繝ｭ繝ｼ繧ｫ繝ｫ縺ｧ CI 逶ｸ蠖薙・蜴ｳ縺励＆繧貞・迴ｾ縺吶ｋ蝣ｴ蜷・ `npm run test:all:ci`・・pretest:ci` 繧貞性繧・・
 
 ---
@@ -103,26 +103,26 @@
 
 ## 髢｢騾｣繝峨く繝･繝｡繝ｳ繝・
 
-- 繝｡繝ｳ繝・リ繝ｼ蜷代￠螳溷漁: [`docs/MAINTAINER_GUIDE.md`](docs/MAINTAINER_GUIDE.md)
-- CI / DSL Plan: [`docs/CI_TEMPLATE.md`](docs/CI_TEMPLATE.md)
+- 繝｡繝ｳ繝・リ繝ｼ蜷代￠螳溷漁: [`docs/current/operations/MAINTAINER_GUIDE.md`](docs/current/operations/MAINTAINER_GUIDE.md)
+- CI / DSL Plan: [`docs/current/testing-ci/CI_TEMPLATE.md`](docs/current/testing-ci/CI_TEMPLATE.md)
 - SSoT 譁ｹ驥・ADR: [`docs/adr/0003-dsl-types-canonical-source.md`](docs/adr/0003-dsl-types-canonical-source.md)
-- 蝙玖ｿｽ蜉繝輔Ο繝ｼ: [`docs/adding-built-in-component.md`](docs/adding-built-in-component.md)
-- 蠖ｱ髻ｿ蜊雁ｾ・・螳御ｺ・屮譟ｻ: [`docs/dsl-types-change-impact-audit.md`](docs/dsl-types-change-impact-audit.md)
+- 蝙玖ｿｽ蜉繝輔Ο繝ｼ: [`docs/current/workflow-onboarding/adding-built-in-component.md`](docs/current/workflow-onboarding/adding-built-in-component.md)
+- 蠖ｱ髻ｿ蜊雁ｾ・・螳御ｺ・屮譟ｻ: [`docs/current/dsl-ssot-types/dsl-types-change-impact-audit.md`](docs/current/dsl-ssot-types/dsl-types-change-impact-audit.md)
 ## Docs Update Check
 
-<!-- Documentation governance baseline: docs/documentation-owner-and-review-cadence.md -->
+<!-- Documentation governance baseline: docs/current/documentation-governance/documentation-owner-and-review-cadence.md -->
 
 - [ ] I checked whether this PR changes contributor flow, setup, testing or CI, runtime boundaries, canonical contracts, or operations docs.
 - [ ] If docs updates are required, I updated the canonical page and the narrow entry or workflow links that point to it.
 - [ ] If no docs update is required, I stated the reason explicitly in this PR.
-- [ ] I used the current owner and review-cadence policy when deciding which page to update: [`docs/documentation-owner-and-review-cadence.md`](docs/documentation-owner-and-review-cadence.md)
+- [ ] I used the current owner and review-cadence policy when deciding which page to update: [`docs/current/documentation-governance/documentation-owner-and-review-cadence.md`](docs/current/documentation-governance/documentation-owner-and-review-cadence.md)
 
 ## CSS SSoT Check
 
-<!-- CSS canonicalization baseline: docs/css-ssot-contributor-checklist.md and docs/css-ssot-metrics-definition.md -->
+<!-- CSS canonicalization baseline: docs/current/theme-export-rendering/css-ssot-contributor-checklist.md and docs/current/theme-export-rendering/css-ssot-metrics-definition.md -->
 
-- [ ] If this PR touches built-in component CSS or export-side CSS, I checked the current CSS SSoT checklist: [`docs/css-ssot-contributor-checklist.md`](docs/css-ssot-contributor-checklist.md)
-- [ ] I checked whether this PR changes one of the approved CSS SSoT metrics in [`docs/css-ssot-metrics-definition.md`](docs/css-ssot-metrics-definition.md)
+- [ ] If this PR touches built-in component CSS or export-side CSS, I checked the current CSS SSoT checklist: [`docs/current/theme-export-rendering/css-ssot-contributor-checklist.md`](docs/current/theme-export-rendering/css-ssot-contributor-checklist.md)
+- [ ] I checked whether this PR changes one of the approved CSS SSoT metrics in [`docs/current/theme-export-rendering/css-ssot-metrics-definition.md`](docs/current/theme-export-rendering/css-ssot-metrics-definition.md)
 - [ ] If a CSS SSoT metric moved, I stated which metric changed and why in this PR or in the review handoff
 - [ ] If this PR changes fallback compatibility CSS only, I recorded why the Primary path was not the right target
 

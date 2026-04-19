@@ -3,7 +3,7 @@
  *
  * プレビュー画面からのエクスポート機能に関連するコマンド処理をテストします
  *
- * T-211: インスタンス生成は `ServiceFactory` + `createIntegrationServices` 雛形を使用（`docs/integration-test-service-factory.md`）。
+ * T-211: インスタンス生成は `ServiceFactory` + `createIntegrationServices` 雛形を使用（`docs/current/testing-ci/integration-test-service-factory.md`）。
  */
 
 const assert = require('assert');

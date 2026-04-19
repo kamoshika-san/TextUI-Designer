@@ -4,7 +4,7 @@ caseRef:
   goldenCaseId: G-003
   ruleFamily: shorthand-expansion
   stage: stage-1
-  sourceDoc: docs/diff-semantic-normalization-mvp-rules.md
+  sourceDoc: docs/current/diff/diff-semantic-normalization-mvp-rules.md
 summary: Scalar padding shorthand and expanded padding object normalize to the same canonical structure
 assertionMode: equivalent
 inputs:

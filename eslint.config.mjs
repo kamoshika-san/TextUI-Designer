@@ -17,11 +17,11 @@ const rendererTypesImportRestriction = ["error", {
     }],
 }];
 
-/** T-110: WebView レーンから Export ランタイムへの逆流を抑止（docs/import-boundaries-4-lanes.md）*/
+/** T-110: WebView レーンから Export ランタイムへの逆流を抑止（docs/current/testing-ci/import-boundaries-4-lanes.md）*/
 const rendererToExportersImportRestriction = ["warn", {
     patterns: [
-        { group: ["**/exporters/**"], message: "WebView runtime must not import export runtime. See docs/import-boundaries-4-lanes.md (T-110)." },
-        { group: ["**/exporters"], message: "WebView runtime must not import export runtime. See docs/import-boundaries-4-lanes.md (T-110)." },
+        { group: ["**/exporters/**"], message: "WebView runtime must not import export runtime. See docs/current/testing-ci/import-boundaries-4-lanes.md (T-110)." },
+        { group: ["**/exporters"], message: "WebView runtime must not import export runtime. See docs/current/testing-ci/import-boundaries-4-lanes.md (T-110)." },
     ],
 }];
 

@@ -125,7 +125,7 @@ function ownerBasedAxis(_entityKind: DiffEntityKind): DiffSummaryImpactAxis {
  * Classify a single diff event into a base review-impact category.
  *
  * Rule application order follows the mapping matrix in
- * docs/diff-summary-event-vocabulary.md:
+ * docs/current/diff/diff-summary-event-vocabulary.md:
  *
  * 1. Conservative fallback (`remove+add` or `fallbackMarker: remove-add-fallback`)
  *    -> entity-replaced / s3-critical / ambiguity

@@ -1,6 +1,6 @@
 /**
  * Semantic v2 evidence_shape TypeScript types
- * Source: docs/v2-evidence-shapes-registry-ja.md
+ * Source: docs/current/dsl-ssot-types/v2-evidence-shapes-registry-ja.md
  * Target boundary: design artifact only — do NOT import from src/
  */
 

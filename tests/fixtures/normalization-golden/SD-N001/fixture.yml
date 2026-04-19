@@ -4,7 +4,7 @@ caseRef:
   goldenCaseId: G-001
   ruleFamily: canonical-order
   stage: stage-1
-  sourceDoc: docs/diff-semantic-normalization-mvp-rules.md
+  sourceDoc: docs/current/diff/diff-semantic-normalization-mvp-rules.md
 summary: Event and property maps with different key order normalize to the same canonical bag
 assertionMode: equivalent
 inputs:

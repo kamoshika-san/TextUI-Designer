@@ -84,7 +84,7 @@ export function loadStatePayload(inputArg?: string): unknown {
 export function printHelp(): void {
   process.stdout.write('Usage: textui <validate|plan|apply|export|capture|compare|flow|import|state|providers|lint|scaffold|version> ...\n');
   process.stdout.write('Options: --provider <name> --provider-module <path> --theme <path> --file <path> --dir <path> --json --token-on-error <error|warn|ignore>\n');
-  process.stdout.write('Guide: docs/cli-user-guide.md\n');
+  process.stdout.write('Guide: docs/current/workflow-onboarding/cli-user-guide.md\n');
   process.stdout.write('Workflows:\n');
   process.stdout.write('  Validate: textui validate --file <path> [--json]\n');
   process.stdout.write('  Plan: textui plan --file <path> [--state .textui/state.json] [--json]\n');

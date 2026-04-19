@@ -54,10 +54,10 @@ flowchart LR
 ## 次スライス候補（起票用）
 
 - **1 派生経路の単一化**: 補完が参照するメタデータを **descriptor グラフの単一フィールド**に寄せ、重複する参照を1つ減らす（例: プロパティ説明の出所を `COMPONENT_DEFINITIONS` に統一）。
-- **スキーマと descriptor の検証**: 既存の `schema-descriptor-consistency` 系テストを拡張し、**新コンポーネント追加時のチェックリスト**（`docs/change-amplification-dsl.md`）と1対1で対応づける。
+- **スキーマと descriptor の検証**: 既存の `schema-descriptor-consistency` 系テストを拡張し、**新コンポーネント追加時のチェックリスト**（`docs/current/dsl-ssot-types/change-amplification-dsl.md`）と1対1で対応づける。
 
 ## 関連
 
 - 親エピック: T-062（外部レビュー保守性）/ T-089（深層アーキレビュー）
 - 製品要約: Vault `Tasks/Product/` のロードマップと整合
-- 変更増幅: `docs/change-amplification-dsl.md`
+- 変更増幅: `docs/current/dsl-ssot-types/change-amplification-dsl.md`

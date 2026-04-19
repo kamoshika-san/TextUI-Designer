@@ -8,7 +8,7 @@ const path = require('path');
  * - `[area:schema]` … PR テンプレの「schema」分類・schema/descriptor 周辺の失敗切り分け用
  * - `@tier-unit` … `npm run test:unit` に含まれる層。例: `npx mocha --grep "@tier-unit"`（プロジェクトの mocha 設定に従う）
  *
- * 第1パイロットは `export-instrumentation.test.js`（T-044）。運用定義は `docs/ci-quality-gate.md`（T-043）を参照。
+ * 第1パイロットは `export-instrumentation.test.js`（T-044）。運用定義は `docs/current/testing-ci/ci-quality-gate.md`（T-043）を参照。
  */
 /**
  * descriptor / schema パイプライン整合（Phase 2 分離）。registry 互換は参照しない。
