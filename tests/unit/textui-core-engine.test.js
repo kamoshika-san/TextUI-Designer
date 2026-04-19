@@ -4,9 +4,11 @@ describe('TextUICoreEngine', () => {
   let TextUICoreEngine;
   let getComponentSpecTypesForTesting;
   let getComponentSpecHandlerFlagsForTesting;
+  let V2SemanticDiffProvider;
 
   before(() => {
     ({ TextUICoreEngine, getComponentSpecTypesForTesting, getComponentSpecHandlerFlagsForTesting } = require('../../out/core/textui-core-engine'));
+    ({ V2SemanticDiffProvider } = require('../../out/core/diff/v2-semantic-diff-provider'));
   });
 
   it('generateUi でDSLとHTMLを生成できる', async () => {
@@ -94,6 +96,35 @@ page:
     assert.strictEqual(result.result.entityResults[0].children[2].metadata.eventIds.length >= 1, true);
     assert.ok(result.result.events.some(event => event.entityKind === 'component' && event.kind === 'update'));
     assert.strictEqual(result.result.entityResults[0].metadata.eventIds.length, result.result.events.length);
+  });
+
+  it('compareUi returns semantic v2 payload when the v2 provider is wired', () => {
+    const engine = new TextUICoreEngine(new V2SemanticDiffProvider());
+    const result = engine.compareUi({
+      previousDsl: {
+        page: {
+          id: 'account',
+          title: 'Account',
+          layout: 'vertical',
+          components: [{ Text: { value: 'Before', variant: 'p' } }]
+        }
+      },
+      nextDsl: {
+        page: {
+          id: 'account',
+          title: 'Account',
+          layout: 'vertical',
+          components: [{ Text: { value: 'After', variant: 'p' } }]
+        }
+      }
+    });
+
+    assert.strictEqual(result.ok, true);
+    assert.ok(result.result);
+    assert.ok(result.result.v2);
+    assert.strictEqual(result.result.v2.metadata.schemaVersion, 'v2-compare-logic/v0');
+    assert.strictEqual(result.result.v2.screens.length, 1);
+    assert.strictEqual(result.result.v2.screens[0].screen_id, 'account');
   });
 
   it('compareUi keeps deterministic continuity when component ids match', () => {

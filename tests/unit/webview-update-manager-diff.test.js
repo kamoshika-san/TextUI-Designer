@@ -6,6 +6,7 @@ const { describe, it } = require('mocha');
 
 const { WebViewUpdateManager } = require('../../out/services/webview/webview-update-manager.js');
 const { deliverDiffPayload } = require('../../out/services/webview/diff-webview-deliver.js');
+const { DirectWebViewUpdateQueueForTest } = require('../helpers/direct-webview-update-queue.js');
 
 function makeLifecycleManager(hasPanel = true) {
   const messages = [];
@@ -14,7 +15,10 @@ function makeLifecycleManager(hasPanel = true) {
     getPanel: () =>
       hasPanel
         ? {
-            webview: { postMessage: (msg) => messages.push(msg) },
+            webview: {
+              postMessage: (msg) => messages.push(msg),
+              asWebviewUri: (uri) => uri,
+            },
           }
         : null,
     _messages: messages,
@@ -25,6 +29,17 @@ function makeSchemaLoader() {
   return {
     loadSchema: async () => ({ type: 'object' }),
     getSchema: () => ({ type: 'object' }),
+  };
+}
+
+function makeDsl(pageId, title, components = []) {
+  return {
+    page: {
+      id: pageId,
+      title,
+      layout: 'vertical',
+      components,
+    },
   };
 }
 
@@ -133,6 +148,59 @@ describe('WebViewUpdateManager diff delivery wiring', () => {
     assert.deepStrictEqual(
       lm._messages.map((message) => message.type),
       ['diff-update']
+    );
+  });
+
+  it('delivers diff-update-v2 through compareUi wiring after preview diff delivery', async () => {
+    const lm = makeLifecycleManager(true);
+    const mgr = new WebViewUpdateManager(lm, makeSchemaLoader(), {
+      updateQueueManager: new DirectWebViewUpdateQueueForTest(),
+    });
+    const previousDsl = makeDsl('account', 'Account', []);
+    const nextDsl = makeDsl('account', 'Account', [{ Text: { value: 'Profile', variant: 'p' } }]);
+
+    mgr.diffManager.computeDiff(previousDsl);
+    mgr.lastDeliveredDsl = previousDsl;
+    mgr.yamlSourceResolver.resolveCurrentYamlForCache = async () => null;
+    mgr.yamlParser.parseYamlFile = async () => ({
+      fileName: 'C:/tmp/account.tui.yml',
+      content: 'page: {}',
+      data: nextDsl,
+    });
+
+    await mgr.sendYamlToWebview(true);
+
+    assert.deepStrictEqual(
+      lm._messages.map((message) => message.type),
+      ['update', 'diff-update', 'diff-update-v2']
+    );
+    assert.ok(lm._messages[2].payload);
+    assert.ok(Array.isArray(lm._messages[2].payload.screens));
+    assert.strictEqual(lm._messages[2].payload.screens.length, 1);
+  });
+
+  it('keeps legacy diff-update as the only diff message when there is no previous DSL for v2 compareUi', async () => {
+    const lm = makeLifecycleManager(true);
+    const mgr = new WebViewUpdateManager(lm, makeSchemaLoader(), {
+      updateQueueManager: new DirectWebViewUpdateQueueForTest(),
+    });
+    const previousDsl = makeDsl('account', 'Account', []);
+    const nextDsl = makeDsl('account', 'Account', [{ Text: { value: 'Profile', variant: 'p' } }]);
+
+    mgr.diffManager.computeDiff(previousDsl);
+    mgr.lastDeliveredDsl = null;
+    mgr.yamlSourceResolver.resolveCurrentYamlForCache = async () => null;
+    mgr.yamlParser.parseYamlFile = async () => ({
+      fileName: 'C:/tmp/account.tui.yml',
+      content: 'page: {}',
+      data: nextDsl,
+    });
+
+    await mgr.sendYamlToWebview(true);
+
+    assert.deepStrictEqual(
+      lm._messages.map((message) => message.type),
+      ['update', 'diff-update']
     );
   });
 });
