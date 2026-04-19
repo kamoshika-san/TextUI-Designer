@@ -16,9 +16,9 @@
 | 家族（セレクタのまとまり） | 主なセレクタ例 | 現状の役割 | 分類 | 削除順（小さいほど先） | メモ |
 |----------------------------|----------------|------------|------|------------------------|------|
 | Badge ベース | `.textui-badge` | 静的 HTML で badge 系のレイアウト底上げ | Keep (Temporary) | 50 | fallback レーン専用。Primary は React 経路。 |
-| Badge サイズ | `.textui-badge-sm` / `.textui-badge-md` | サイズ別トークン | Absorbable | 40 | WebView の badge トークンと照合し、重複なら後段で統合。 |
+| Badge サイズ | ~~`.textui-badge-sm` / `.textui-badge-md`~~（**T-037 で compatibility から削除**） | サイズ別トークン | **Removed（compat 重複）** | 40 | `Badge.css` の `.textui-badge-sm` / `.textui-badge-md` と宣言が重複していたため **fallback compatibility のみ**削除。 |
 | Badge バリアント | `.textui-badge-default` 等 | 色面の互換 | Keep (Temporary) | 45 | export 互換スタイルの中核。 |
-| Divider | `.textui-divider` / `.vertical` | レガシー文字列レンダラの divider 見た目 | Absorbable | 35 | `Divider.tsx` + 既定 CSS と差分比較後に縮小。 |
+| Divider | ~~`.textui-divider` / `.vertical`~~（**T-037 で compatibility から削除**） | レガシー文字列レンダラの divider 見た目 | **Removed（compat 重複）** | 35 | `Divider.css`（`webviewCss`）が既定で供給するため **fallback compatibility のみ**削除。 |
 | Tabs コンテナ・タブボタン | `.textui-tabs` ～ `.textui-tabs .flex > button.textui-tab-active` | レガシー Tabs の flex 行・ active 色 | Keep (Temporary) | 30 | Primary は DOM クラス構成が異なる（`textui-tab is-active`）。当面は fallback 契約が残る。 |
 | Progress 骨格 | `.textui-progress` ～ `.textui-progress-fill` | プログレスバー互換 | Keep (Temporary) | 25 | fallback スタイルレーンでピン留め。 |
 | Progress バリアント色 | ~~`.textui-progress-default`~~（**T-035 で削除**） / `.textui-progress-primary` ～ `.textui-progress-error` | fill の色バリアント | Absorbable → default は **Removed** | 20 | **`.textui-progress-fill`** と同一色の **default 重複ルール**を compatibility から除去（`Progress.tsx` + WebView `Progress.css` が `.textui-progress-default` を継続）。 |
@@ -30,7 +30,7 @@
 
 1. ~~**Delete candidate の解消** — `.textui-button.submit` …~~ **完了（T-032）** — `getFallbackCompatibilityStyleBlock` から該当ルール削除。SSoT セレクタ数 **30**。  
 2. ~~**Progress default の整理**~~ **完了（T-035）** — compatibility から `.textui-progress-default` ルール削除。SSoT セレクタ数 **29**。  
-3. **Divider / Badge サイズ** — WebView CSS との差分表を取り、重複ルールを段階削除。  
+3. ~~**Divider / Badge サイズ**~~ **進行中（T-037 第1スライス完了）** — `Divider.css` / `Badge.css` と重複していた **compatibility 内の Divider 2 本 + Badge サイズ 2 本**を実削除。SSoT セレクタ数 **25**。残差分は Tabs / Progress 骨格など。  
 4. **Tabs ブロック** — Primary 契約と fallback 契約の差分縮小（T-023 系）が進んだあと、セレクタ単位で削減可否を再判定。
 
 ## 削除候補（≥1 本チケット要件）
@@ -39,6 +39,8 @@
 |------|------|------|
 | **`.textui-button.submit` ブロック** | `.textui-button.primary` と同一宣言の重複。 | **実削除済み（T-032）** |
 | **`.textui-progress-default` ブロック** | `.textui-progress-fill` と同一宣言の重複。 | **実削除済み（T-035）** |
+| **Divider family（`.textui-divider` / `.vertical`）** | `webviewCss` の `Divider.css` と重複。 | **実削除済み（T-037）** |
+| **Badge サイズ（`.textui-badge-sm` / `.textui-badge-md`）** | `webviewCss` の `Badge.css` と重複。 | **実削除済み（T-037）** |
 
 ## 関連
 

@@ -1,37 +1,37 @@
 {
-  "generatedAt": "2026-04-14T12:52:12.309Z",
+  "generatedAt": "2026-04-19T21:26:59.571Z",
   "summary": {
-    "files": 694,
-    "totalLines": 84277,
-    "nonEmptyLines": 73771
+    "files": 731,
+    "totalLines": 89003,
+    "nonEmptyLines": 78000
   },
   "byPattern": {
     "src/typescript": {
-      "files": 350,
-      "totalLines": 41457,
-      "nonEmptyLines": 36457
+      "files": 360,
+      "totalLines": 43014,
+      "nonEmptyLines": 37847
     },
     "src/tsx": {
-      "files": 41,
-      "totalLines": 4067,
-      "nonEmptyLines": 3707
+      "files": 43,
+      "totalLines": 4827,
+      "nonEmptyLines": 4423
     },
     "tests": {
-      "files": 282,
-      "totalLines": 35591,
-      "nonEmptyLines": 30913
+      "files": 300,
+      "totalLines": 37403,
+      "nonEmptyLines": 32505
     },
     "scripts": {
-      "files": 21,
-      "totalLines": 3162,
-      "nonEmptyLines": 2694
+      "files": 28,
+      "totalLines": 3759,
+      "nonEmptyLines": 3225
     }
   },
   "bySegment": {
     "src/cli": {
-      "files": 45,
-      "totalLines": 4259,
-      "nonEmptyLines": 3693
+      "files": 46,
+      "totalLines": 4194,
+      "nonEmptyLines": 3637
     },
     "src/components": {
       "files": 11,
@@ -40,18 +40,18 @@
     },
     "src/config": {
       "files": 2,
-      "totalLines": 74,
-      "nonEmptyLines": 60
+      "totalLines": 75,
+      "nonEmptyLines": 61
     },
     "src/core": {
-      "files": 39,
-      "totalLines": 7958,
-      "nonEmptyLines": 7125
+      "files": 45,
+      "totalLines": 8638,
+      "nonEmptyLines": 7724
     },
     "src/domain": {
-      "files": 12,
-      "totalLines": 939,
-      "nonEmptyLines": 799
+      "files": 14,
+      "totalLines": 1131,
+      "nonEmptyLines": 963
     },
     "src/dsl": {
       "files": 3,
@@ -59,9 +59,9 @@
       "nonEmptyLines": 140
     },
     "src/exporters": {
-      "files": 45,
-      "totalLines": 5232,
-      "nonEmptyLines": 4558
+      "files": 46,
+      "totalLines": 5254,
+      "nonEmptyLines": 4582
     },
     "src/extension.ts": {
       "files": 1,
@@ -75,8 +75,8 @@
     },
     "src/mcp": {
       "files": 13,
-      "totalLines": 1777,
-      "nonEmptyLines": 1646
+      "totalLines": 1817,
+      "nonEmptyLines": 1681
     },
     "src/registry": {
       "files": 5,
@@ -84,14 +84,14 @@
       "nonEmptyLines": 306
     },
     "src/renderer": {
-      "files": 54,
-      "totalLines": 4865,
-      "nonEmptyLines": 4416
+      "files": 56,
+      "totalLines": 5662,
+      "nonEmptyLines": 5165
     },
     "src/services": {
       "files": 102,
-      "totalLines": 11553,
-      "nonEmptyLines": 10019
+      "totalLines": 12201,
+      "nonEmptyLines": 10607
     },
     "src/shared": {
       "files": 4,
@@ -110,8 +110,8 @@
     },
     "src/utils": {
       "files": 20,
-      "totalLines": 3574,
-      "nonEmptyLines": 3171
+      "totalLines": 3576,
+      "nonEmptyLines": 3173
     },
     "src/workflow": {
       "files": 8,
@@ -119,14 +119,14 @@
       "nonEmptyLines": 1124
     },
     "tests": {
-      "files": 282,
-      "totalLines": 35591,
-      "nonEmptyLines": 30913
+      "files": 300,
+      "totalLines": 37403,
+      "nonEmptyLines": 32505
     },
     "scripts": {
-      "files": 21,
-      "totalLines": 3162,
-      "nonEmptyLines": 2694
+      "files": 28,
+      "totalLines": 3759,
+      "nonEmptyLines": 3225
     }
   },
   "ssot": {
@@ -136,22 +136,18 @@
     "cssThresholds": {
       "todoPartialCount": 0,
       "nonExemptInlineUtilityClassOccurrences": 6,
-      "fallbackCompatibilitySelectorCount": 31
+      "fallbackCompatibilitySelectorCount": 25
     },
     "cssMetrics": {
       "todoPartialCount": 0,
       "nonExemptInlineUtilityClassOccurrences": 0,
-      "fallbackCompatibilitySelectorCount": 31
+      "fallbackCompatibilitySelectorCount": 25
     },
     "cssViolations": {
       "todoPartialCount": [],
       "nonExemptInlineUtilityClassOccurrences": [],
       "fallbackCompatibilitySelectorCount": [
         ".textui-badge",
-        ".textui-badge-sm",
-        ".textui-badge-md",
-        ".textui-divider",
-        ".textui-divider.vertical",
         ".textui-badge-default",
         ".textui-badge-primary",
         ".textui-badge-success",
@@ -166,7 +162,6 @@
         ".textui-progress-header",
         ".textui-progress-track",
         ".textui-progress-fill",
-        ".textui-progress-default",
         ".textui-progress-primary",
         ".textui-progress-success",
         ".textui-progress-warning",
@@ -176,7 +171,6 @@
         ".textui-button.secondary",
         ".textui-button.danger",
         ".textui-button.ghost",
-        ".textui-button.submit",
         ".textui-button:disabled,\n    .textui-button.disabled"
       ]
     },
@@ -186,29 +180,29 @@
     "header": {
       "cloc_url": "github.com/AlDanial/cloc",
       "cloc_version": "2.08",
-      "elapsed_seconds": 4.88461184501648,
-      "n_files": 765,
-      "n_lines": 90967,
-      "files_per_second": 156.614286717683,
-      "lines_per_second": 18623.1788494738
+      "elapsed_seconds": 12.3270831108093,
+      "n_files": 809,
+      "n_lines": 95828,
+      "files_per_second": 65.6278531366927,
+      "lines_per_second": 7773.77739231519
     },
     "TypeScript": {
-      "nFiles": 394,
-      "blank": 5069,
-      "comment": 3747,
-      "code": 37198
+      "nFiles": 406,
+      "blank": 5268,
+      "comment": 3878,
+      "code": 39173
     },
     "JavaScript": {
-      "nFiles": 302,
-      "blank": 4863,
-      "comment": 2084,
-      "code": 31405
+      "nFiles": 327,
+      "blank": 5124,
+      "comment": 2613,
+      "code": 32999
     },
     "CSS": {
-      "nFiles": 28,
-      "blank": 639,
-      "comment": 129,
-      "code": 3300
+      "nFiles": 29,
+      "blank": 666,
+      "comment": 132,
+      "code": 3418
     },
     "HTML": {
       "nFiles": 5,
@@ -223,22 +217,22 @@
       "code": 756
     },
     "YAML": {
-      "nFiles": 14,
+      "nFiles": 20,
       "blank": 0,
       "comment": 0,
-      "code": 248
+      "code": 269
     },
     "Markdown": {
       "nFiles": 1,
       "blank": 57,
       "comment": 0,
-      "code": 137
+      "code": 140
     },
     "SUM": {
-      "blank": 10695,
-      "comment": 5968,
-      "code": 74304,
-      "nFiles": 765
+      "blank": 11182,
+      "comment": 6631,
+      "code": 78015,
+      "nFiles": 809
     }
   }
 }

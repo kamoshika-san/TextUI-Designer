@@ -84,35 +84,6 @@ function getFallbackCompatibilityStyleBlock(): string {
       vertical-align: middle;
     }
 
-    .textui-badge-sm {
-      font-size: 0.75rem;
-      height: 1.25rem;
-      padding: 0 0.5rem;
-      line-height: 1;
-    }
-
-    .textui-badge-md {
-      font-size: 0.875rem;
-      min-height: 1.5rem;
-      padding: 0.25em 0.6em;
-    }
-
-    .textui-divider {
-      border: none;
-      border-top: 1px solid rgb(75 85 99);
-    }
-
-    .textui-divider.vertical {
-      margin-left: 1rem;
-      margin-right: 1rem;
-      border-top: none;
-      border-left: 1px solid rgb(75 85 99);
-      width: 0;
-      height: 1.5rem;
-      min-height: 1em;
-      vertical-align: middle;
-    }
-
     .textui-badge-default { background-color: rgba(107, 114, 128, 0.25); color: #e5e7eb; }
     .textui-badge-primary { background-color: rgba(59, 130, 246, 0.2); color: #93c5fd; }
     .textui-badge-success { background-color: rgba(34, 197, 94, 0.2); color: #86efac; }

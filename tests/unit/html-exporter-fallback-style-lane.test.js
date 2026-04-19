@@ -7,9 +7,6 @@
  * substitute without changing product architecture (T-010 keeps production on Primary).
  */
 const assert = require('assert');
-const { HtmlExporter } = require('../../out/exporters/html-exporter');
-const { createFallbackOptions } = require('../helpers/fallback-helper');
-
 const {
   buildHtmlDocument,
   buildFallbackCompatibilityStyleBlock
@@ -65,42 +62,5 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
   // Tabs + Divider composite: Primary-only (`html-exporter-primary-tabs-divider-composite.test.js`, T-033).
   // FormControl (Input + Checkbox + Radio + DatePicker): Primary-only (`html-exporter-primary-formcontrol-*.test.js`, T-025 / T-034).
 
-  // Accordion/TreeView: another static surface area; Primary tests cover behavior, not this CSS/DOM pairing.
-  it('fallback HTML lane keeps Accordion/TreeView semantic classes alongside compatibility utilities', async () => {
-    const exporter = new HtmlExporter();
-    const html = await exporter.export({
-      page: {
-        id: 'fallback-accordion-tree-structure',
-        title: 'Fallback Accordion Tree Structure',
-        layout: 'vertical',
-        components: [
-          {
-            Accordion: {
-              items: [{ title: 'Section 1', open: true, components: [{ Text: { value: 'body content' } }] }]
-            }
-          },
-          {
-            TreeView: {
-              showLines: true,
-              expandAll: true,
-              items: [{ label: 'root', children: [{ label: 'child' }] }]
-            }
-          }
-        ]
-      }
-    }, createFallbackOptions({ format: 'html' }));
-
-    assert.ok(html.includes('textui-accordion'));
-    assert.ok(html.includes('textui-accordion-item'));
-    assert.ok(html.includes('textui-accordion-trigger'));
-    assert.ok(html.includes('textui-accordion-title'));
-    assert.ok(html.includes('textui-accordion-indicator'));
-    assert.ok(html.includes('textui-accordion-panel'));
-    assert.ok(html.includes('textui-accordion-body'));
-    assert.ok(html.includes('is-open'));
-    assert.ok(html.includes('textui-treeview-actions'));
-    assert.ok(html.includes('textui-treeview-action-link'));
-    assert.ok(html.includes('textui-treeview-list with-lines'));
-    assert.ok(html.includes('textui-treeview-children'));
-  });
+  // Accordion / TreeView: Primary-only (`html-exporter-primary-accordion-treeview-semantic.test.js`, T-036).
 });
