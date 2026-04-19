@@ -46,17 +46,18 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(styleBlock.includes('.bg-gray-200 {'));
   });
 
-  // Ensures opt-in `compatibilityCss` still injects badge/progress/button rules — exercised without HtmlExporter
-  // because we are pinning template-builder layering, not React render output.
-  // Tabs: `Tabs.css` in webviewCss covers legacy string markup (`textui-tabs-list` / `textui-tab`); T-040 removed duplicate compat rules.
-  it('keeps compatibility CSS available only when the fallback lane appends it explicitly', () => {
+  // Ensures opt-in `compatibilityCss` still concatenates into the document — rules are empty (T-042–T-044)
+  // but the placeholder comment remains for layering symmetry; real .textui-* styles come from webviewCss.
+  it('keeps compatibility CSS slot available only when the fallback lane appends it explicitly', () => {
+    const compat = buildFallbackCompatibilityStyleBlock();
+    assert.ok(compat.includes('T-042'), 'expected placeholder comment in compatibility block');
     const html = buildHtmlDocument('<div class="textui-tabs"></div>', '', {
-      compatibilityCss: buildFallbackCompatibilityStyleBlock()
+      compatibilityCss: compat
     });
 
-    assert.ok(html.includes('.textui-badge-primary {'));
-    assert.ok(html.includes('.textui-progress-fill {'));
-    assert.ok(html.includes('.textui-button.primary {'));
+    assert.ok(html.includes('T-042'));
+    assert.ok(!html.includes('.textui-badge-primary {'));
+    assert.ok(!html.includes('.textui-progress-fill {'));
   });
 
   // Table semantic hooks: Primary-only (`html-exporter-primary-table-semantic.test.js`, T-030).

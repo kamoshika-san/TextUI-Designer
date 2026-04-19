@@ -53,17 +53,17 @@ describe('HtmlExporter primary sample regression (T-20260322-348)', () => {
   [
     {
       sampleRelativePath: 'sample/01-basic/sample.tui.yml',
-      expectedHash: '6ba036235f8867576b33ad9043f532e6d9caea3d090d6b322145f94198338890', // T-033/T-034: FormControl + Tabs/Divider markup; Checkbox/Radio/DatePicker disabled classes
+      expectedHash: '7159e5e433dbf2a712476e6ae8efbf0eeaaace2ecfc2bc1f775849a1d9db94cd', // T-042–044: Button.css danger/ghost/disabled in default export style path
       markers: ['TextUI Designer - All Components', 'This sample includes every supported component.', 'Agree to terms']
     },
     {
       sampleRelativePath: 'sample/08-github/sample.tui.yml',
-      expectedHash: '0830f5562499487b8cf847c67995a85dc3e5439ff41d6cff94f0f2ca755a585e', // T-034: FormControl disabled class graph on Primary HTML
+      expectedHash: '34cc4374e33c0e8fdbb426d508b48c951b42afb93ee9385577ed1eda9a3f6654', // T-042–044: bundled default export CSS drift (Button.css)
       markers: ['kamoshika-san / TextUI-Designer', 'VS Code extension for designing text-based UIs with YAML/JSON DSL.', 'Pull requests']
     },
     {
       sampleRelativePath: 'sample/09-modal/sample.tui.yml',
-      expectedHash: 'af70163859bf7cbdac73ee50c152072ecdc11d709c39f081ce97bf66c2eb676b', // T-034: modal buttons inherit disabled-class parity where applicable
+      expectedHash: '46dbf8850e8f08188ba3d2247310ba5a384113474698801c6a04f59500e89954', // T-042–044: modal footer buttons + default export CSS
       markers: ['削除の確認', 'この操作は元に戻せません', '削除する', 'ユーザー詳細']
     }
   ].forEach(({ sampleRelativePath, expectedHash, markers }) => {

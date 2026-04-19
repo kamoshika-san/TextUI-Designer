@@ -2,7 +2,7 @@
 
 **チケット**: T-021（Vault）  
 **読み手**: Maintainer / Developer / Reviewer / PM  
-**関連**: [t017-html-export-lane-options-internal-api.md](./t017-html-export-lane-options-internal-api.md) · [t016-fallback-unit-tests-inventory.md](./t016-fallback-unit-tests-inventory.md) · [html-exporter-primary-fallback-inventory.md](./html-exporter-primary-fallback-inventory.md) · [export-fallback-lane-boundary-policy.md](./export-fallback-lane-boundary-policy.md) · [t038-fallback-removal-pr-gate.md](./t038-fallback-removal-pr-gate.md)（**T-038**: 削除 PR 運用ゲート草案） · [t041-fallback-removal-evidence-pack.md](./t041-fallback-removal-evidence-pack.md)（**T-041**: A1 / C1 証跡テンプレ）
+**関連**: [t017-html-export-lane-options-internal-api.md](./t017-html-export-lane-options-internal-api.md) · [t016-fallback-unit-tests-inventory.md](./t016-fallback-unit-tests-inventory.md) · [html-exporter-primary-fallback-inventory.md](./html-exporter-primary-fallback-inventory.md) · [export-fallback-lane-boundary-policy.md](./export-fallback-lane-boundary-policy.md) · [t038-fallback-removal-pr-gate.md](./t038-fallback-removal-pr-gate.md)（**T-038**: 削除 PR 運用ゲート草案） · [t041-fallback-removal-evidence-pack.md](./t041-fallback-removal-evidence-pack.md)（**T-041**: A1 / C1 証跡テンプレ） · [t045-fallback-removal-evidence-structural.md](./t045-fallback-removal-evidence-structural.md)（**T-045**: A2 / A4 証跡テンプレ）
 
 ---
 
@@ -16,7 +16,7 @@
 
 ---
 
-## Current status（2026-04-19 時点のリポジトリ前提）
+## Current status（2026-04-20 時点のリポジトリ前提）
 
 | 領域 | 状態 | 根拠（例） |
 |------|------|------------|
@@ -78,6 +78,7 @@
 - **合意**: maintainer review の記録（PR approval / 議事メモ）。
 - **C3〜C5（削除 PR 直前）**: [t038-fallback-removal-pr-gate.md](./t038-fallback-removal-pr-gate.md) の **§3（rollback）** / **§2（migration 草案）** / **§4（follow-up 候補）**を PR 本文またはチェックリストに取り込み、リンクを残す（**T-038**）。
 - **A1 / C1（継続証跡）**: [t041-fallback-removal-evidence-pack.md](./t041-fallback-removal-evidence-pack.md) の手順・テンプレに従い、削除判断時に **日付付きスナップショット**または **CI 一覧 URL** を追記する（**T-041**）。
+- **A2 / A4（構造証跡）**: [t045-fallback-removal-evidence-structural.md](./t045-fallback-removal-evidence-structural.md) の **rg 手順と記録テンプレ**に従う（**T-045**）。
 
 ---
 
@@ -103,11 +104,11 @@
 | FormControl 系（Input/Checkbox/Radio/DatePicker の `textui-*`） | Primary `html-exporter-primary-formcontrol-input.test.js` + `html-exporter-primary-formcontrol-remaining.test.js` | yes | **yes** | **no** | T-025 / T-034: 全カテゴリ Primary。fallback から FormControl assert 除去済み。 |
 | Alert variant hooks（`data-alert-variant` 等） | Primary `html-exporter-primary-alert-variant.test.js` | yes | **yes** | **no** | T-031: Primary に `data-alert-variant` 付与 + 専用テスト。fallback から Alert assert 除去。 |
 | Accordion / TreeView 静的クラス | Primary `html-exporter-primary-accordion-treeview-semantic.test.js` | medium | **yes** | **no** | T-036: Primary で DOM 契約を固定。fallback style lane から assert 除去済み。 |
-| **compatibility CSS**（`buildFallbackCompatibilityStyleBlock` 系） | fallback style + boundary policy | yes（現レーン） | partial（`webviewCss` 強化後に縮小） | **yes** | T-032/T-035/T-037/T-039/T-040: submit・progress-default・Divider+Badge サイズ・**Progress バリアント色**・**Tabs（.textui-tabs .flex 系）**を実削除。SSoT セレクタ数 **16**。残は Badge / Progress 骨格 / Button。[t028](./t028-fallback-compatibility-css-reduction-matrix.md) 参照。 |
-| **debug observability**（fallback ログ・警告の有無） | lane-observability tests | low（運用） | yes（ログ契約を Primary に寄せられるなら） | maybe | Primary で同ログが取れるなら移管、不要なら削除 |
+| **compatibility CSS**（`buildFallbackCompatibilityStyleBlock` 系） | fallback style + boundary policy（プレースホルダコメントのみ） | yes（レーン自体） | **yes**（webview 集約済） | **no** | T-042〜T-044: **Badge / Progress 骨格 / Button** の `.textui-*` 宣言を **compat から削除**し **SSoT 0**。`Button.css` に **danger / ghost / disabled** を追加。[t028](./t028-fallback-compatibility-css-reduction-matrix.md) 参照。 |
+| **debug observability**（fallback ログ・警告の有無） | lane-observability tests | low（運用） | yes（任意） | **no** | T-046: **互換レーン観測専用**であり、Primary 契約の blocker ではない。削除 PR 後も **監視用テスト**として存続可。 |
 | **route viability guard**（Primary-only / entry guard / T-019 gate） | route-viability tests | **yes** | **no**（削除**後**も Primary 契約として残る） | **no** | fallback 削除後も **ファイル存続**を前提にアサーション更新 |
 | CLI capture Primary 既定 | route-viability | yes | **already Primary** | no | 維持 |
-| `TEXTUI_ENABLE_FALLBACK` Hard Gate | route-viability | yes | **削除時は env 要件の撤去 or 置換が別 PR** | maybe | **T-038**: 除去対象一覧・migration / rollback 草案を [t038-fallback-removal-pr-gate.md](./t038-fallback-removal-pr-gate.md) に整理。削除 PR で実施。 |
+| `TEXTUI_ENABLE_FALLBACK` Hard Gate | route-viability | yes | **削除時は env 要件の撤去 or 置換が別 PR** | **no** | T-046: **CSS 契約の blocker ではない**（ランタイム安全装置）。撤去手順は **t038** 正本。削除 PR スコープで対応。 |
 
 ---
 
