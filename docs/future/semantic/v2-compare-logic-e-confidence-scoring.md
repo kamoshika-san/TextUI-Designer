@@ -70,6 +70,20 @@ guard 比較時:
 guard 変化を「なし」と誤判定することによる false-negative は、
 「変化あり」の false-positive より影響が大きい（意味的差分の見落としになる）。
 
+### -0.3 固定値の採用根拠と暫定性（T-20260419-036）
+
+**固定値採用の根拠:**
+- `0.3` は B-2（0.5）と D-3（0.7 = 1.0 - 0.3）の両ケースで `AMBIGUITY_THRESHOLD` を下回る最小の整数刻み値として選定した。
+- 件数比例減算（UnresolvedPredicate の個数 × δ）は実データなしには δ を合理的に決定できないため、現フェーズでは採用しない。
+
+**代替案（将来の再検討候補）:**
+- 件数比例: `confidence -= min(count * 0.1, 0.5)` — UnresolvedPredicate 複数時により強く下げる
+- 上限付き比例: 1件目 -0.3、2件目以降 -0.05 加算（上限 -0.5）
+
+**再検討トリガー条件:**
+1. 実運用で `component_guard_changed` の false-positive 率が 20% を超えることが計測された場合
+2. UnresolvedPredicate を含む guard が多数発生し `confidence < AMBIGUITY_THRESHOLD` フィルタが過検出になった場合
+
 ---
 
 ## 論点E-3: review_status: needs_review の自動付与閾値
