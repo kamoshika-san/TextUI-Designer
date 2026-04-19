@@ -62,6 +62,29 @@ interface DiffCompareResult {
 
 ---
 
+## target_id 規約
+
+`V2DiffRecord.decision.target_id`（`docs/future/types/v2/diff-record.ts`）は、**当該 `diff_event` の主対象** を表す文字列 id である。以下の表は v2 比較（設計A〜D）で扱う **canonical id**（`entity.id` / `transition.id` / `component.id`）に対応する。
+
+| diff_event | `target_id` の意味 |
+|---|---|
+| `entity_added` | 追加された entity の id（`next` 側ドキュメント上の `entity.id`） |
+| `entity_removed` | 削除された entity の id（`prev` 側ドキュメント上の `entity.id`） |
+| `entity_renamed` | **改名後**の entity の id（`next` 側の `entity.id`）。旧 id は `ExplanationPayload` 等で補足する |
+| `entity_state_changed` | 状態が変化した entity の id（設計Bでマッチした entity の `id`） |
+| `transition_added` | 追加された transition の id（`next` 側の `transition.id`） |
+| `transition_removed` | 削除された transition の id（`prev` 側の `transition.id`） |
+| `transition_edge_changed` | 辺（from/to）が変化した transition の id（設計Bでマッチした transition の `id`） |
+| `component_added` | 追加された component の id（`next` 側の `component.id`） |
+| `component_removed` | 削除された component の id（`prev` 側の `component.id`） |
+| `component_action_changed` | action が変化した component の id（設計Cでマッチした component の `id`） |
+| `component_availability_changed` | availability が変化した component の id（設計Cでマッチした component の `id`） |
+| `component_guard_changed` | guard が変化した component の id（設計Cでマッチした component の `id`） |
+
+**注（prev / next / マッチ）**: 「`prev` 側」「`next` 側」は比較入力のスナップショットを指す。「マッチした」は設計B（entity / transition）および設計C（component）の同一性判定の結果として **同一視されたオブジェクトの id** を指す。
+
+---
+
 ## V2SemanticDiffProvider の全体構造（擬似コード）
 
 ```typescript
