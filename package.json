@@ -540,7 +540,7 @@
     "typecheck:strict:warn": "npm run typecheck:strict || true",
     "pretest:ci": "npm run compile && npm run typecheck:strict && npm run lint && npm run check:html-exporter-fallback-lane",
     "pretest:local": "npm run compile",
-    "lint": "eslint src --max-warnings 0 && eslint tests/helpers/fallback-helper.js tests/unit/html-exporter-route-viability.test.js tests/unit/html-exporter-lane-observability.test.js tests/unit/html-exporter-fallback-style-lane.test.js --max-warnings 0",
+    "lint": "eslint src --max-warnings 0 && eslint tests/unit/html-exporter-route-viability.test.js tests/unit/html-exporter-fallback-style-lane.test.js --max-warnings 0",
     "format:check": "npm run lint",
     "test": "mocha --no-config --require ./tests/setup.js --timeout 5000 --exit \"tests/unit/**/*.js\"",
     "vscode-test": "node ./out/test/runTest.js",

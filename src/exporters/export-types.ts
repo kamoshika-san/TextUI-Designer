@@ -10,17 +10,9 @@ export interface ExportOptions {
   /**
    * Selects the HtmlExporter path.
    * - omitted / true: primary path via react-static-export. This is the default source-of-truth path.
-   * - false: deprecated public fallback request. **Only exporter-internal compatibility code** may set
-   *   this together with `__internalLegacyFallback`; do not wire new CLI/MCP/service call sites to
-   *   `withExplicitFallbackHtmlExport` (see `docs/current/theme-export-rendering/t017-html-export-lane-options-internal-api.md`).
+   * - false: **unsupported** — the string-renderer compatibility lane was removed (T-20260420-001); `HtmlExporter` throws.
    */
   useReactRender?: boolean;
-  /**
-   * @internal Temporary compatibility marker for the explicit fallback helper only.
-   * When `useReactRender === false`, **HtmlExporter** also requires **`TEXTUI_ENABLE_FALLBACK=1`**
-   * at runtime (set in `tests/setup.js` for unit tests; never in production paths).
-   */
-  __internalLegacyFallback?: boolean;
   /** Extension root path used to resolve WebView CSS such as `media/assets/index-*.css`. */
   extensionPath?: string;
   /** Whether to include descriptive comments in the generated output. */

@@ -6,19 +6,14 @@ const repoRoot = path.resolve(__dirname, '..');
 /** Production runtime call sites that intentionally force the HTML fallback lane (T-010: currently none). */
 const runtimeFallbackEntryFiles = [];
 
-const fallbackHelperFiles = [
-  'src/exporters/internal/fallback-lane-options.ts'
-];
+const fallbackHelperFiles = [];
 
 const primaryDefaultRouteFiles = [
   'src/cli/provider-registry.ts',
   'src/utils/preview-capture/html-preparation.ts'
 ];
 
-const fallbackExecutionTestFiles = [
-  'tests/unit/html-exporter-lane-observability.test.js',
-  'tests/unit/html-exporter-fallback-style-lane.test.js'
-];
+const fallbackExecutionTestFiles = ['tests/unit/html-exporter-fallback-style-lane.test.js'];
 
 const fallbackGovernanceFiles = [
   'tests/unit/html-exporter-route-viability.test.js',

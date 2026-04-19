@@ -22,8 +22,6 @@ const { expect } = require('chai');
 
 // テスト環境変数を設定
 process.env.NODE_ENV = 'test';
-// T-019: allow HtmlExporter fallback lane only in test runs (runtime hard gate in exporter)
-process.env.TEXTUI_ENABLE_FALLBACK = '1';
 if (!process.env.TEXTUI_LOG_LEVEL) {
   process.env.TEXTUI_LOG_LEVEL = 'error';
 }

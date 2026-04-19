@@ -22,26 +22,24 @@
 |------|------|
 | `npm run report:react-fallback-usage` | **runtime fallback entries: 0**（下記スナップショット） |
 
-**スナップショット（2026-04-20 ローカル実行）**
+**スナップショット（2026-04-20 · T-20260420-001 後ローカル実行）**
 
 ```text
 runtime fallback entries: 0
-fallback helper definitions: 1
+fallback helper definitions: 0
 primary-default routes: 2
-fallback execution test files: 2
+fallback execution test files: 1
 fallback governance files: 4
-explicit false literals in execution tests: 4
+explicit false literals in execution tests: 0
 helper calls in runtime source: 0
 primary-default markers: 1
 
 runtime fallback entry files: 0
-fallback helper files: 1
-- src/exporters/internal/fallback-lane-options.ts
+fallback helper files: 0
 primary-default route files: 2
 - src/cli/provider-registry.ts
 - src/utils/preview-capture/html-preparation.ts
-fallback execution test files: 2
-- tests/unit/html-exporter-lane-observability.test.js
+fallback execution test files: 1
 - tests/unit/html-exporter-fallback-style-lane.test.js
 fallback governance files: 4
 - tests/unit/html-exporter-route-viability.test.js
@@ -53,8 +51,8 @@ fallback governance files: 4
 ### A2 / A4 — 手順正本と記録
 
 - **手順**: [t045-fallback-removal-evidence-structural.md](./t045-fallback-removal-evidence-structural.md)
-- **A2（internal-only）**: `src/**/*.ts` における `withExplicitFallbackHtmlExport` の**実呼び出し**は **`src/exporters/internal/fallback-lane-options.ts` の定義**および **`internal/fallback-access.ts` の橋渡し**に収まる。`html-exporter.ts` / `export-types.ts` は **JSDoc・エラーメッセージ・型コメント**のみ。
-- **A4（テスト閉包）**: `createFallbackOptions(` の **`tests/**/*.js` ヒット**は次の 4 のみ — `tests/helpers/fallback-helper.js`（定義）+ `html-exporter-fallback-structured-log.test.js` + `html-exporter-lane-observability.test.js` + `html-exporter-route-viability.test.js`。
+- **A2（internal-only）**: **T-20260420-001 後** — `withExplicitFallbackHtmlExport` / `fallback-lane-options` / `fallback-access` は **削除済み**（`src/` に該当 import なし）。
+- **A4（テスト閉包）**: **T-20260420-001 後** — 互換オプション構築ヘルパーは **削除**。`createFallbackOptions(` は **0 件**。
 
 | 日付 | A2 要約 | A4 要約 | 判定 |
 |------|---------|---------|------|
@@ -95,7 +93,7 @@ fallback governance files: 4
 |---|------|------|
 | 1 | `t021` 契約表 **Blocker? = yes** がゼロ | **済**（本書 §1） |
 | 2 | **A1〜A5 / B1〜B5** の証跡を PR に集約可能な形で固定 | **済**（本書 + `t021` / `t041` / `t045` リンク） |
-| 3 | `t038` **§1** に基づき、削除 PR 差分で **env 行が残っていない**ことの self-check | **未実施（削除 PR 時）** — 本ゲートでは §1 を **読了・差分対象の列挙完了**までとする |
+| 3 | `t038` **§1** に基づき、削除 PR 差分で **env 行が残っていない**ことの self-check | **済（T-20260420-001）** — `t038` §6 本文を `[x]` 化。`rg TEXTUI_ENABLE_FALLBACK` は **コード・CI・setup から 0**（ドキュメントの過去記述のみ残る場合あり）。 |
 
 ---
 

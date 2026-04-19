@@ -6,6 +6,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+### Removed
+- **HtmlExporter string-renderer compatibility lane** — `useReactRender: false` and the `TEXTUI_ENABLE_FALLBACK` test gate are removed; HTML export is **Primary (React static) only** ([`t038-fallback-removal-pr-gate.md`](docs/current/theme-export-rendering/t038-fallback-removal-pr-gate.md); implementation batch **T-20260420-001**; Vault **T-20260420-090**). Internal `fallback-lane-options` / `fallback-access` helpers and fallback-only unit tests were deleted; `npm run report:react-fallback-usage` and exporter boundary anchors were updated accordingly.
+
 ---
 
 ## [0.9.2] - 2026-04-18

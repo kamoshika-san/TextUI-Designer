@@ -1,7 +1,6 @@
 # T-028: fallback compatibility CSS 削減マトリクス
 
-**正本**: `buildFallbackCompatibilityStyleBlock` → 実体は `src/exporters/html-template-builder.ts` の **`getFallbackCompatibilityStyleBlock`**。  
-**スコープ**: ルール家族の歴史と **削除済みスライス**。**T-042〜T-044** により **`.textui-*` の compatibility 宣言は空**（プレースホルダコメントのみ）。実体は **バンドル WebView CSS**（`Badge.css` / `Progress.css` / `Button.css` 等）。
+**正本（履歴）**: ~~`buildFallbackCompatibilityStyleBlock` / `getFallbackCompatibilityStyleBlock`~~ は **T-20260420-001 で削除**（`html-template-builder` から除去）。互換 CSS の実体は **バンドル WebView CSS**（`Badge.css` / `Progress.css` / `Button.css` 等）。`buildHtmlDocument(..., { compatibilityCss })` の **任意スロット**のみ残存。
 
 ## 分類の凡例
 

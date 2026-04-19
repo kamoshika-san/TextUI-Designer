@@ -28,7 +28,7 @@ import type {
 } from '../domain/dsl-types';
 import type { ExportOptions } from './export-types';
 import { BaseComponentRenderer } from './legacy/base-component-renderer';
-import { buildFallbackCompatibilityStyleBlock, buildHtmlDocument, readWebviewCssIfPresent } from './html-template-builder';
+import { buildHtmlDocument, readWebviewCssIfPresent } from './html-template-builder';
 import { renderPageComponentsToStaticHtml } from './react-static-export';
 import { buildThemeStyleBlock } from './theme-style-builder';
 import { buildThemeVariables } from './theme-definition-resolver';
@@ -38,26 +38,14 @@ import { HtmlTextualRenderer } from './legacy/html-renderers/html-textual-render
 import { HtmlLayoutRenderer } from './legacy/html-renderers/html-layout-renderer';
 import type { HtmlRendererUtils } from './legacy/html-renderers/html-renderer-utils';
 import { resolveImageSourcesInDsl } from '../utils/image-source-resolver';
-import { Logger } from '../utils/logger';
-
-/**
- * Fallback 互換レーン通過時の **structured debug ログ**用の安定 ID（T-022）。
- * CI・grep・ログ集約でこの文字列をキーにする。
- */
-export const TEXTUI_HTML_EXPORTER_FALLBACK_LANE_EVENT_ID = 'textui.html_exporter.fallback_lane';
-
 /**
  * HTML 形式へのエクスポート。
  *
- * **Primary path（既定）**: `ExportOptions.useReactRender !== false` のとき。
+ * **Primary path（唯一）**: `ExportOptions.useReactRender` が **省略または true** のとき。
  * `renderPageComponentsToStaticHtml`（React コンポーネントの静的 HTML 化）でページ本体を生成し、
  * `buildHtmlDocument(..., { noWrap: true })` でラップする。WebView プレビューと同系統の見た目を目指す経路。
  *
- * **Fallback path**: `useReactRender === false` のときのみ。
- * `renderPageComponents`（本クラス継承の文字列ベース HTML レンダラ群）を使用。
- * **ランタイム Hard Gate（T-019）**: `__internalLegacyFallback`（`withExplicitFallbackHtmlExport` 経由）と
- * **`TEXTUI_ENABLE_FALLBACK=1`**（テスト用）の両方が満たされない限り **例外**とする。
- * 挙動差・コンポーネント対応差が残りうるため、**不具合修正・新コンポーネント対応は通常 primary 側を正とする**。
+ * **`useReactRender === false` は廃止**（T-20260420-001）。文字列レンダラ互換レーンは削除済み。
  *
  * 運用の一覧は `docs/current/runtime-boundaries/exporter-boundary-guide.md` の「HtmlExporter」の節を参照。
  */
@@ -65,7 +53,6 @@ export class HtmlExporter extends BaseComponentRenderer {
   private readonly formRenderer: HtmlFormRenderer;
   private readonly textualRenderer: HtmlTextualRenderer;
   private readonly layoutRenderer: HtmlLayoutRenderer;
-  private readonly logger = new Logger('HtmlExporter');
 
   constructor() {
     super('html');
@@ -85,46 +72,18 @@ export class HtmlExporter extends BaseComponentRenderer {
       themeStyles = ThemeUtils.getDefaultThemeCssVariables();
     }
 
-    // Primary: WebView と同じ React 静的レンダー ＋ webviewCss（既定）
-    // Primary: normally the source-of-truth path for export / provider / preview alignment.
     const useReact = options.useReactRender !== false;
-    if (useReact) {
-      const components = normalizedDsl.page?.components ?? [];
-      const reactBody = renderPageComponentsToStaticHtml(components);
-      return buildHtmlDocument(reactBody, themeStyles, {
-        webviewCss: webviewCss ?? undefined,
-        noWrap: true
-      });
+    if (!useReact) {
+      throw new Error(
+        '[HtmlExporter:FALLBACK_REMOVED] The string-renderer compatibility lane was removed (T-20260420-001). Use Primary export: omit useReactRender or set useReactRender: true. See docs/current/theme-export-rendering/t038-fallback-removal-pr-gate.md §2.'
+      );
     }
 
-    // Fallback: 文字列レンダー（useReactRender: false のときのみ。テスト専用の互換レーン）
-    // Fallback: compatibility lane — runtime hard gate (T-019) to block accidental re-entry.
-    const isInternalFallback = options.__internalLegacyFallback === true;
-    const fallbackBlocked = '[HtmlExporter:FALLBACK_BLOCKED]';
-    if (!isInternalFallback) {
-      throw new Error(
-        `${fallbackBlocked} Fallback lane is disabled in production. (missing __internalLegacyFallback; use withExplicitFallbackHtmlExport from exporter-internal compatibility code or tests only)`
-      );
-    }
-    if (process.env.TEXTUI_ENABLE_FALLBACK !== '1') {
-      throw new Error(
-        `${fallbackBlocked} Fallback lane is disabled in production. (set TEXTUI_ENABLE_FALLBACK=1 for intentional fallback tests only)`
-      );
-    }
-    const fallbackStructured = {
-      kind: TEXTUI_HTML_EXPORTER_FALLBACK_LANE_EVENT_ID,
-      lane: 'fallback',
-      useReactRender: options.useReactRender,
-      ticket: 'T-022'
-    } as const;
-    this.logger.debug(
-      `[${TEXTUI_HTML_EXPORTER_FALLBACK_LANE_EVENT_ID}] HtmlExporter compatibility lane (T-022)`,
-      fallbackStructured
-    );
-    const componentCode = this.renderPageComponents(normalizedDsl);
-    return buildHtmlDocument(componentCode, themeStyles, {
+    const components = normalizedDsl.page?.components ?? [];
+    const reactBody = renderPageComponentsToStaticHtml(components);
+    return buildHtmlDocument(reactBody, themeStyles, {
       webviewCss: webviewCss ?? undefined,
-      compatibilityCss: buildFallbackCompatibilityStyleBlock()
+      noWrap: true
     });
   }
 

@@ -18,7 +18,7 @@ const rendererTypesImportRestriction = ["error", {
         },
         {
             group: ["**/exporters/internal/**"],
-            message: "T-020: do not import `src/exporters/internal/**` from this lane. Tests must use `tests/helpers/fallback-helper.js`.",
+            message: "T-020: do not import `src/exporters/internal/**` from this lane (HtmlExporter fallback lane removed, T-20260420-001).",
         },
     ],
 }];
@@ -32,11 +32,11 @@ const cliMcpServicesHtmlLaneOptionsRestriction = ["error", {
         },
         {
             group: ["**/exporters/internal/**"],
-            message: "Do not import `src/exporters/internal/**` from CLI, MCP, or services (T-020). Tests must use `tests/helpers/fallback-helper.js`. See docs/current/theme-export-rendering/t017-html-export-lane-options-internal-api.md.",
+            message: "Do not import `src/exporters/internal/**` from CLI, MCP, or services (T-020). See docs/current/theme-export-rendering/t017-html-export-lane-options-internal-api.md.",
         },
         {
             group: ["**/html-export-lane-options"],
-            message: "Removed in T-020: use `tests/helpers/fallback-helper.js` in tests or `src/exporters/internal/*` inside exporters only.",
+            message: "Removed in T-020: do not import deprecated `html-export-lane-options`; use exporter public APIs only.",
         },
     ],
 }];
@@ -59,12 +59,12 @@ const exporterNonInternalToInternalRestriction = ["error", {
     ],
 }];
 
-/** T-020: unit tests must not deep-import exporter internal modules (use tests/helpers/fallback-helper.js). */
+/** T-020: unit tests must not deep-import exporter internal modules. */
 const testsNoDeepInternalExportersRestriction = ["error", {
     patterns: [
         {
             group: ["**/exporters/internal/**"],
-            message: "T-020: do not require/import `**/exporters/internal/**` from tests. Use `tests/helpers/fallback-helper.js` (`createFallbackOptions`).",
+            message: "T-020: do not require/import `**/exporters/internal/**` from tests.",
         },
     ],
 }];
@@ -161,7 +161,6 @@ export default [{
     },
 }, {
     files: ["tests/**/*.js", "tests/**/*.ts", "tests/**/*.tsx"],
-    ignores: ["tests/helpers/fallback-helper.js"],
     plugins: {
         "@typescript-eslint": typescriptEslint,
     },

@@ -1,16 +1,11 @@
 /**
  * T-016: HTML exporter **compatibility (fallback) lane** — markup + static CSS contracts.
  *
- * Primary lane renders through React; assertions here about **Tailwind-like compatibility rules**
- * and **static semantic hooks** (`textui-*` classes) are only meaningful when
- * `createFallbackOptions` forces `useReactRender: false`. Primary-only tests cannot
- * substitute without changing product architecture (T-010 keeps production on Primary).
+ * Primary lane renders through React. Assertions here target **document-level style blocks**
+ * (`buildHtmlDocument`) including optional `compatibilityCss` concatenation (T-20260420-001: HtmlExporter fallback lane removed).
  */
 const assert = require('assert');
-const {
-  buildHtmlDocument,
-  buildFallbackCompatibilityStyleBlock
-} = require('../../out/exporters/html-template-builder.js');
+const { buildHtmlDocument } = require('../../out/exporters/html-template-builder.js');
 
 function extractDefaultStyleBlock(html) {
   const match = html.match(/<style>([\s\S]*?)<\/style>/);
@@ -46,11 +41,9 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(styleBlock.includes('.bg-gray-200 {'));
   });
 
-  // Ensures opt-in `compatibilityCss` still concatenates into the document — rules are empty (T-042–T-044)
-  // but the placeholder comment remains for layering symmetry; real .textui-* styles come from webviewCss.
-  it('keeps compatibility CSS slot available only when the fallback lane appends it explicitly', () => {
-    const compat = buildFallbackCompatibilityStyleBlock();
-    assert.ok(compat.includes('T-042'), 'expected placeholder comment in compatibility block');
+  // Ensures opt-in `compatibilityCss` still concatenates into the document (lane removed; slot remains in builder).
+  it('concatenates optional compatibilityCss into the document style block', () => {
+    const compat = '/* T-042–T-044: compat block removed; WebView CSS is SSoT */\n';
     const html = buildHtmlDocument('<div class="textui-tabs"></div>', '', {
       compatibilityCss: compat
     });

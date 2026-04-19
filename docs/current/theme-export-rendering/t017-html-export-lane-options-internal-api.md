@@ -1,9 +1,11 @@
 # T-017 / T-020: HtmlExporter 互換（fallback）レーン — 内部専用 API
 
+> **履歴（T-20260420-001）**: 以下に記載した **`withExplicitFallbackHtmlExport` / `fallback-lane-options` / `fallback-helper` 経路は削除済み**。現行の HTML export は **Primary のみ**（`t021`・`t038`・`exporter-boundary-guide.md`）。
+
 **チケット**: T-017（内部 API 方針）· **T-020**（`src/exporters/internal/` への物理隔離とテスト経路の一本化）  
 **前提**: T-010（本番の明示 fallback 0）、T-016（fallback テスト棚卸し）、T-019（ランタイム Hard Gate）。
 
-## 方針（正本）
+## 方針（正本 · アーカイブ）
 
 - **`withExplicitFallbackHtmlExport` / `EXPLICIT_FALLBACK_HTML_EXPORT_OPTIONS`** は **`src/exporters/internal/fallback-lane-options.ts` で定義される**互換レーン用の実装詳細とする（**パッケージの public surface からは export しない**）。
 - **アプリコード（CLI / MCP / `src/services` / renderer 等）**から **`src/exporters/internal/**` を直接 import しない**（ESLint `no-restricted-imports` で **error**）。

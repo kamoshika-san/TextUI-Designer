@@ -8,27 +8,26 @@
 
 ## Purpose
 
-- **fallback renderer（`useReactRender === false` 互換レーン）を撤去してよい条件**を、定量・定性の両方で固定する。
-- 「**何が満たされたら消すか**」を正本化し、**削除判断の属人化**を防ぐ。
-- **legacy compatibility lane** を一時避難所から、**計画的廃止対象**へ移すための **Go / No-Go ゲート**とする。
+- **（達成）** `useReactRender === false` の **HtmlExporter 互換レーン**は **T-20260420-001** で撤去済み。以下は **削除前に満たすべきだった条件**および **残フォロー（ドキュメント・C1 等）**の参照として残す。
+- 「**何が満たされたら消すか**」を正本化し、**削除判断の属人化**を防ぐ、という **当初目的**は完了扱い。
+- **legacy compatibility lane** は **廃止済み**（Primary のみ）。
 
 **判断の軸（最重要）**: 「削除できる理由」を積み上げるのではなく、**「削除できない理由」（ブロッカー）を先に潰し、残件をゼロにする**こと。
 
 ---
 
-## Current status（2026-04-20 時点のリポジトリ前提 · T-049 追記）
+## Current status（2026-04-20 · T-20260420-001 反映後）
 
 | 領域 | 状態 | 根拠（例） |
 |------|------|------------|
-| 本番経路の Primary 化 | **T-010 完了** | `capture-command` が fallback を強制しない（[html-exporter-fallback-shrink-t010.md](./html-exporter-fallback-shrink-t010.md)） |
-| fallback テスト棚卸し | **T-016 完了** | [t016-fallback-unit-tests-inventory.md](./t016-fallback-unit-tests-inventory.md) |
-| internal API 方針 | **T-017 完了** | [t017-html-export-lane-options-internal-api.md](./t017-html-export-lane-options-internal-api.md) |
-| ランタイム Hard Gate | **T-019 完了** | `TEXTUI_ENABLE_FALLBACK=1` 無しでは互換レーン実行不可（`tests/unit/html-exporter-route-viability.test.js`） |
-| helper 物理隔離 | **T-020 完了** | `src/exporters/internal/fallback-lane-options.ts` + `tests/helpers/fallback-helper.js` 経路（t017 正本） |
-| `src/**` の `useReactRender: false` 直書き | **単一許可ファイル**に制限 | `allowedLiteralFiles` = `src/exporters/internal/fallback-lane-options.ts`（同一テストファイル内ガード） |
-| Primary-only routing のソース契約 | **テストで固定** | `html-exporter-route-viability.test.js`（built-in html provider / preview capture / capture CLI） |
+| 本番経路の Primary 化 | **維持** | `capture-command` / provider / preview-capture（T-010 系） |
+| HtmlExporter 互換レーン | **削除済み** | `useReactRender: false` → **`[HtmlExporter:FALLBACK_REMOVED]`**（`html-exporter.ts`） |
+| `TEXTUI_ENABLE_FALLBACK` | **撤去済み** | `tests/setup.js`・`.github/workflows/ci.yml` から除去 |
+| internal helper（旧） | **削除済み** | `fallback-lane-options.ts` / `fallback-access.ts` / `tests/helpers/fallback-helper.js` を削除 |
+| `src/**` の `useReactRender: false` 直書き | **ゼロ必須** | `html-exporter-route-viability.test.js` entry guard（`allowedLiteralFiles` は空） |
+| Primary-only routing のソース契約 | **テストで固定** | `html-exporter-route-viability.test.js` |
 
-互換レーンは **本番機能ではなく**、**単体テストと明示ヘルパー経由の検証レーン**として残存している。
+**互換レーンは存在しない**。`buildHtmlDocument` の **`compatibilityCss`** は任意スロットとしてテスト可能（`html-exporter-fallback-style-lane.test.js`）。
 
 ---
 
@@ -42,8 +41,8 @@
 |---|------|------------|----------|
 | A1 | **production runtime path** で明示 fallback エントリが **継続 0** | `npm run report:react-fallback-usage` の **runtime fallback entries = 0** がトレンドで維持 | レポート出力・または CI での定期実行ログ |
 | A2 | **helper / 互換オプション**が **internal-only**（パッケージ public から露出しない） | T-020 受け入れと同等 | ESLint 設定・`out/` の export 面、t017 |
-| A3 | **`src/**` に「許可リスト外」の `useReactRender: false` 直書きが無い** | 現行どおり **唯一** `src/exporters/internal/fallback-lane-options.ts` | `html-exporter-route-viability` の fallback entry guard |
-| A4 | **互換レーン到達が unit test（＋ドキュメント上の明示経路）に閉じる** | 新規の CLI/MCP/services/renderer からの `withExplicitFallbackHtmlExport` 呼び出し **0** | grep / ESLint / コードレビュー記録 |
+| A3 | **`src/**` に `useReactRender: false` 直書きが無い** | **0 ファイル**（ヘルパー削除後） | `html-exporter-route-viability` の fallback entry guard |
+| A4 | **互換レーン呼び出しが存在しない** | `withExplicitFallbackHtmlExport` / `createFallbackOptions` **0**（削除後） | grep / ESLint / コードレビュー記録 |
 | A5 | **route viability** が **Primary-only** を保証し続ける | `html-exporter-route-viability.test.js` が **緑**のまま維持 | CI ログ |
 
 補足: A3 の「raw が存在しない」は **チケット文言の短縮**であり、実務上の定義は **「許可リスト外に `useReactRender: false` 直書きが無い」**（内部正本モジュールは除外）。
@@ -95,7 +94,7 @@
 
 ## Contract inventory（契約棚卸し表）
 
-**凡例**: `Current lane` は主に **`html-exporter-fallback-style-lane`** / **`html-exporter-lane-observability`** / ガード系テストを指す。`Blocker?` が **yes** の行が 1 つでも残れば削除不可。
+**凡例**: `Current lane` は **Primary 専用テスト**・**`html-exporter-fallback-style-lane`（`buildHtmlDocument` 契約）**・ガード系を指す。`Blocker?` が **yes** の行が 1 つでも残れば削除不可。
 
 | Contract | Current lane | Product-critical? | Can move to Primary? | Blocker? | Action |
 |----------|--------------|-------------------|----------------------|----------|--------|
@@ -105,11 +104,11 @@
 | FormControl 系（Input/Checkbox/Radio/DatePicker の `textui-*`） | Primary `html-exporter-primary-formcontrol-input.test.js` + `html-exporter-primary-formcontrol-remaining.test.js` | yes | **yes** | **no** | T-025 / T-034: 全カテゴリ Primary。fallback から FormControl assert 除去済み。 |
 | Alert variant hooks（`data-alert-variant` 等） | Primary `html-exporter-primary-alert-variant.test.js` | yes | **yes** | **no** | T-031: Primary に `data-alert-variant` 付与 + 専用テスト。fallback から Alert assert 除去。 |
 | Accordion / TreeView 静的クラス | Primary `html-exporter-primary-accordion-treeview-semantic.test.js` | medium | **yes** | **no** | T-036: Primary で DOM 契約を固定。fallback style lane から assert 除去済み。 |
-| **compatibility CSS**（`buildFallbackCompatibilityStyleBlock` 系） | fallback style + boundary policy（プレースホルダコメントのみ） | yes（レーン自体） | **yes**（webview 集約済） | **no** | T-042〜T-044: **Badge / Progress 骨格 / Button** の `.textui-*` 宣言を **compat から削除**し **SSoT 0**。`Button.css` に **danger / ghost / disabled** を追加。[t028](./t028-fallback-compatibility-css-reduction-matrix.md) 参照。 |
-| **debug observability**（fallback ログ・警告の有無） | lane-observability tests | low（運用） | yes（任意） | **no** | T-046: **互換レーン観測専用**であり、Primary 契約の blocker ではない。削除 PR 後も **監視用テスト**として存続可。 |
+| **compatibility CSS**（旧 `buildFallbackCompatibilityStyleBlock`） | **`buildHtmlDocument` の任意 `compatibilityCss`**（レーン削除後） | yes（スロットの存在） | **yes** | **no** | T-20260420-001: **builder から互換ブロック生成 API を削除**。WebView CSS が SSoT。[t028](./t028-fallback-compatibility-css-reduction-matrix.md) 参照。 |
+| **debug observability**（旧 fallback ログ） | （削除） | low | — | **no** | T-20260420-001: structured log テストは **削除**。Primary の観測は別途設計可。 |
 | **route viability guard**（Primary-only / entry guard / T-019 gate） | route-viability tests | **yes** | **no**（削除**後**も Primary 契約として残る） | **no** | fallback 削除後も **ファイル存続**を前提にアサーション更新 |
 | CLI capture Primary 既定 | route-viability | yes | **already Primary** | no | 維持 |
-| `TEXTUI_ENABLE_FALLBACK` Hard Gate | route-viability | yes | **削除時は env 要件の撤去 or 置換が別 PR** | **no** | T-046: **CSS 契約の blocker ではない**（ランタイム安全装置）。撤去手順は **t038** 正本。削除 PR スコープで対応。 |
+| `TEXTUI_ENABLE_FALLBACK` Hard Gate | （削除済み） | — | — | **no** | T-20260420-001: **env・setup・CI から除去**。 |
 
 ---
 

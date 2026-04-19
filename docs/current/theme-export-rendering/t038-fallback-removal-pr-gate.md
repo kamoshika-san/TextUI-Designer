@@ -66,4 +66,4 @@
 
 - [x] t021 **契約棚卸し表**の **Blocker? = yes** がゼロであることを再確認する。 — **2026-04-20 記録**: [t049-fallback-removal-evidence-gate-completion.md](./t049-fallback-removal-evidence-gate-completion.md) §1  
 - [x] **A1〜A5 / B1〜B5** の証跡リンクを PR に集約する。 — **2026-04-20 記録**: 上記 **t049**（スナップショット + `t041` / `t045` / `t021` への参照）  
-- [ ] 本ファイルの **§1** を元に、削除 PR の差分から **env 行が残っていない**ことを self-check する。 — **削除 PR 実施時**（互換レーン除去の差分が存在して初めて実施）
+- [x] 本ファイルの **§1** を元に、削除 PR の差分から **env 行が残っていない**ことを self-check する。 — **2026-04-20 実施**（`rg TEXTUI_ENABLE_FALLBACK` で **`src/`・`tests/setup.js`・`.github/workflows/ci.yml` が 0 件**を確認。残存は **ドキュメント本文の過去記述**のみの想定で、`t021` / `t049` の追記と整合）。

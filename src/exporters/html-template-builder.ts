@@ -7,7 +7,7 @@ export interface BuildHtmlDocumentOptions {
   webviewCss?: string;
   /** React static export path writes the component HTML directly without the default wrapper. */
   noWrap?: boolean;
-  /** Fallback lane only: append compatibility CSS without widening the primary default contract. */
+  /** Optional extra `<style>` fragment appended after the default export styles (e.g. tests). */
   compatibilityCss?: string;
 }
 
@@ -70,12 +70,6 @@ ${getExportCriticalLayoutUtilities()}
 `;
 }
 
-function getFallbackCompatibilityStyleBlock(): string {
-  return `
-    /* T-042–T-044: former .textui-* compatibility rules live in bundled WebView CSS (Badge.css, Progress.css, Button.css). */
-`;
-}
-
 export function buildHtmlDocument(
   componentCode: string,
   themeStyles: string,
@@ -103,10 +97,6 @@ ${themeStyles}
 ${bodyContent}
 </body>
 </html>`;
-}
-
-export function buildFallbackCompatibilityStyleBlock(): string {
-  return getFallbackCompatibilityStyleBlock();
 }
 
 /**

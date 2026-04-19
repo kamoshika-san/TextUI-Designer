@@ -23,7 +23,7 @@ describe('CSS SSoT metrics gate', () => {
     assert.deepStrictEqual(result.matches, []);
   });
 
-  it('counts selectors inside the append-only fallback compatibility block', () => {
+  it('counts legacy fallback compatibility selectors (removed block => 0)', () => {
     const result = collectFallbackCompatibilitySelectorCount();
 
     assert.strictEqual(result.count, 0);

@@ -120,17 +120,13 @@ describe('HtmlExporter route viability (T-20260322-352)', () => {
 /**
  * HtmlExporter fallback entry guard (T-20260322-354, merged from html-exporter-fallback-entry-guard.test.js in T-016)
  *
- * Why this lives next to route-viability tests: T-010 requires **zero production callers** forcing
- * `useReactRender: false` except the typed helper in `src/exporters/internal/fallback-lane-options.ts`. This guard is
- * not a runtime fallback execution test — it is a **source-level contract** that must hold for
- * Primary-only routing to remain trustworthy. Keeping it here avoids an extra `*fallback*` file
- * whose name implied HTML execution when it only scans `src/**`.
+ * After T-20260420-001, **no** `src/**` file may contain a `useReactRender: false` literal — the compatibility lane was removed.
  */
 describe('HtmlExporter fallback entry guard (T-20260322-354)', () => {
   const repoRoot = path.resolve(__dirname, '../..');
   const srcDir = path.join(repoRoot, 'src');
   const fallbackLiteral = /useReactRender\s*:\s*false\b/;
-  const allowedLiteralFiles = new Set(['src/exporters/internal/fallback-lane-options.ts']);
+  const allowedLiteralFiles = new Set();
 
   function walkSourceLikeFiles(dir, out = []) {
     if (!fs.existsSync(dir)) {
@@ -159,14 +155,14 @@ describe('HtmlExporter fallback entry guard (T-20260322-354)', () => {
       .replace(/\/\/.*$/gm, '');
   }
 
-  it('src では useReactRender: false の直書きを helper 定義だけに制限する', () => {
+  it('src では useReactRender: false の直書きが存在しない（T-20260420-001）', () => {
     const violations = [];
 
     for (const filePath of walkSourceLikeFiles(srcDir)) {
       const rel = toPosixRelative(filePath);
       const text = stripComments(fs.readFileSync(filePath, 'utf8'));
       if (fallbackLiteral.test(text) && !allowedLiteralFiles.has(rel)) {
-        violations.push(`${rel}: useReactRender: false must go through internal fallback-lane-options helper`);
+        violations.push(`${rel}: useReactRender: false is not allowed in src/** (compatibility lane removed, T-20260420-001)`);
       }
     }
 
@@ -178,33 +174,21 @@ describe('HtmlExporter fallback entry guard (T-20260322-354)', () => {
   });
 });
 
-const { createFallbackOptions } = require('../helpers/fallback-helper');
-
-describe('HtmlExporter fallback runtime hard gate (T-019)', () => {
+describe('HtmlExporter useReactRender:false rejection (T-20260420-001)', () => {
   const dsl = {
     page: {
-      components: [{ Text: { value: 'hard gate' } }]
+      components: [{ Text: { value: 'removed lane' } }]
     }
   };
 
-  it('throws when TEXTUI_ENABLE_FALLBACK is not 1 even with the internal compatibility flag', async () => {
+  it('throws when useReactRender is false (compatibility lane removed)', async () => {
     const exporter = new HtmlExporter();
-    const prev = process.env.TEXTUI_ENABLE_FALLBACK;
-    delete process.env.TEXTUI_ENABLE_FALLBACK;
-    try {
-      await assert.rejects(
-        async () => exporter.export(dsl, createFallbackOptions({ format: 'html' })),
-        (err) =>
-          err instanceof Error &&
-          err.message.includes('[HtmlExporter:FALLBACK_BLOCKED]') &&
-          err.message.includes('TEXTUI_ENABLE_FALLBACK')
-      );
-    } finally {
-      if (prev === undefined) {
-        process.env.TEXTUI_ENABLE_FALLBACK = '1';
-      } else {
-        process.env.TEXTUI_ENABLE_FALLBACK = prev;
-      }
-    }
+    await assert.rejects(
+      async () => exporter.export(dsl, { format: 'html', useReactRender: false }),
+      (err) =>
+        err instanceof Error &&
+        err.message.includes('[HtmlExporter:FALLBACK_REMOVED]') &&
+        err.message.includes('T-20260420-001')
+    );
   });
 });
