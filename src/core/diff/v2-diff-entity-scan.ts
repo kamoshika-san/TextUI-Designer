@@ -8,34 +8,31 @@ import { buildV2Decision } from './v2-confidence-scorer';
 
 function makeEntityRecord(
   event: 'entity_added' | 'entity_removed',
-  targetId: string
+  targetId: string,
+  confidence: number,
+  ambiguityReason?: string
 ): V2DiffRecord {
-  return { decision: buildV2Decision(event, targetId, 1.0), explanation: { evidence: [] } };
+  return { decision: buildV2Decision(event, targetId, confidence, ambiguityReason), explanation: { evidence: [] } };
 }
 
-/**
- * Pure function: detects entity_added / entity_removed between two versions of the
- * same screen. Comparison is index-based (count delta); pairing refinement is a
- * future sprint.
- */
 export function scanEntityDiffs(
   previous: DiffCompareDocument,
   next: DiffCompareDocument
 ): V2ScreenDiff[] {
-  const screenId = previous.page.id;
-  const prevCount = previous.normalizedDsl.page.components.length;
-  const nextCount = next.normalizedDsl.page.components.length;
+  const prevId = previous.page.id;
+  const nextId = next.page.id;
   const diffs: V2DiffRecord[] = [];
 
-  for (let i = prevCount; i < nextCount; i++) {
-    diffs.push(makeEntityRecord('entity_added', `${screenId}-entity-${i}`));
-  }
-  for (let i = nextCount; i < prevCount; i++) {
-    diffs.push(makeEntityRecord('entity_removed', `${screenId}-entity-${i}`));
+  if (prevId !== nextId) {
+    const sameTitle = previous.page.title === next.page.title;
+    const confidence = sameTitle ? 0.5 : 1.0;
+    const ambiguityReason = sameTitle ? 'same title, different id' : undefined;
+    diffs.push(makeEntityRecord('entity_removed', prevId, confidence, ambiguityReason));
+    diffs.push(makeEntityRecord('entity_added', nextId, confidence, ambiguityReason));
   }
 
   const screenDiff: V2ScreenDiffInScope = {
-    screen_id: screenId,
+    screen_id: prevId,
     diffs,
     entities: [],
   };

@@ -4,6 +4,7 @@ import type {
   V2DiffRecord,
 } from './diff-v2-types';
 import { buildV2Decision } from './v2-confidence-scorer';
+import { toComponentNode } from './diff-pairing';
 
 function makeComponentRecord(
   event: 'component_added' | 'component_removed',
@@ -12,33 +13,44 @@ function makeComponentRecord(
   return { decision: buildV2Decision(event, targetId, 1.0), explanation: { evidence: [] } };
 }
 
-/**
- * Pure function: detects component_added / component_removed between two versions
- * of the same screen. Comparison is index-based (count delta); pairing refinement
- * is a future sprint.
- */
+function buildComponentKey(component: unknown, index: number): string {
+  const node = toComponentNode(component);
+  if (!node) return `unknown:structural:${index}`;
+  const id = typeof node['id'] === 'string' && node['id'] ? node['id'] : undefined;
+  return id ? `${node.__kind}:${id}` : `${node.__kind}:structural:${index}`;
+}
+
 export function scanComponentDiffs(
   previous: DiffCompareDocument,
   next: DiffCompareDocument
 ): V2ComponentDiff[] {
-  const screenId = previous.page.id;
-  const prevCount = previous.normalizedDsl.page.components.length;
-  const nextCount = next.normalizedDsl.page.components.length;
+  const prevComponents = previous.normalizedDsl.page.components;
+  const nextComponents = next.normalizedDsl.page.components;
+
+  const prevMap = new Map<string, number>();
+  prevComponents.forEach((c, i) => prevMap.set(buildComponentKey(c, i), i));
+
+  const nextMap = new Map<string, number>();
+  nextComponents.forEach((c, i) => nextMap.set(buildComponentKey(c, i), i));
+
   const result: V2ComponentDiff[] = [];
 
-  for (let i = prevCount; i < nextCount; i++) {
-    const componentId = `${screenId}-cmp-${i}`;
-    result.push({
-      component_id: componentId,
-      diffs: [makeComponentRecord('component_added', componentId)],
-    });
+  for (const [key] of prevMap) {
+    if (!nextMap.has(key)) {
+      result.push({
+        component_id: key,
+        diffs: [makeComponentRecord('component_removed', key)],
+      });
+    }
   }
-  for (let i = nextCount; i < prevCount; i++) {
-    const componentId = `${screenId}-cmp-${i}`;
-    result.push({
-      component_id: componentId,
-      diffs: [makeComponentRecord('component_removed', componentId)],
-    });
+
+  for (const [key] of nextMap) {
+    if (!prevMap.has(key)) {
+      result.push({
+        component_id: key,
+        diffs: [makeComponentRecord('component_added', key)],
+      });
+    }
   }
 
   return result;
