@@ -34,6 +34,8 @@
 
 **決定: sort order を定義する。以下の優先順で固定する。**
 
+**適用スコープ（P3-9）**: layer 段および下記「具体的な全順序」は **各 `diffs[]` 配列ごと**に適用する（同一 parent 配下の `V2DiffRecord` のみを並べ替え、entity / component / screen を跨いでフラット化してからグローバルに sort する方式は採用しない）。
+
 sort キー（優先順）:
 
 ```
