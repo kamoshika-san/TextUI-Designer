@@ -42,9 +42,9 @@
 
 ### Historical notes の扱い
 
-- `docs/current/historical-notes/ssot-renderer-sprint3-candidates.md`
-- `docs/current/historical-notes/ssot-webview-dsl-types-direct-import-poc.md`
-- `docs/current/historical-notes/ssot-renderer-sprint3-entry-closeout.md`
+- `docs/archive/ssot-renderer-sprint3-candidates.md`
+- `docs/archive/ssot-webview-dsl-types-direct-import-poc.md`
+- `docs/archive/ssot-renderer-sprint3-entry-closeout.md`
 
 上の 3 文書は historical note として保持している。現行 backlog や次スプリントの入口として読むのではなく、判断の経緯参照にだけ使う。
 

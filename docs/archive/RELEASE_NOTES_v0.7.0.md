@@ -1,3 +1,9 @@
+> Status: historical
+> Updated: 2026-04-19
+> Owner: Maintainer
+> Reason: `docs/current/historical-notes` から読者主導線を切り離すため `docs/archive/` へ移設（T-20260419-022）
+> Replacement: [現行ドキュメント索引](../current/README.md) 。リリース内容の要約はリポジトリルートの `CHANGELOG.md` を参照。
+
 ## v0.7.0 リリースノート（2026-03-22）
 
 ### 概要

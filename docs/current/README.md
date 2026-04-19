@@ -14,7 +14,6 @@
 | [`theme-export-rendering/`](theme-export-rendering/README.md) | テーマ・トークン、エクスポート契約、モーダル／Svelte 等の出力仕様 |
 | [`dsl-ssot-types/`](dsl-ssot-types/README.md) | DSL・型・SSoT・ナビ v2・スクリーン DSL 設計メモ |
 | [`architecture-assessments/`](architecture-assessments/README.md) | アーキレビュー、リファクタ評価、命名整理メモ |
-| [`historical-notes/`](historical-notes/README.md) | リリースノート、スプリント締め、スパイク・旧計画メモ |
 | [`diff/`](diff/README.md) | diff 正規化・IR・サマリ・回帰・ヒューリスティクス等の契約群 |
 | [`documentation-governance/`](documentation-governance/README.md) | ドキュメント IA・台帳・運用ルール・負債ランキング |
 | [`visual-diff/`](visual-diff/README.md) | ビジュアル diff・オーバーレイ・段階的レンダリング導入 |
@@ -24,7 +23,8 @@
 - **ADR**: 引き続き [`../adr/`](../adr/)（アーキ決定の長期参照）
 - **Runbook**: [`../runbook/`](../runbook/)
 - **将来仕様・v2 語彙**: [`../future/README.md`](../future/README.md)
+- **履歴（リリースノート・スプリント締め等）**: [`../archive/README.md`](../archive/README.md)（[`historical-notes/README.md`](historical-notes/README.md) に退避の案内のみ残置）
 
 ## 参照パスについて
 
-リポジトリ内の相互リンクは `docs/current/<カテゴリ>/<ファイル名>.md` 形式に更新済みである。外部ブックマークは新パスへの差し替えが必要な場合がある。
+リポジトリ内の相互リンクは `docs/current/<カテゴリ>/<ファイル名>.md` 形式に更新済みである。履歴系は `docs/archive/<ファイル名>.md`。外部ブックマークは新パスへの差し替えが必要な場合がある。

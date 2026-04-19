@@ -642,7 +642,7 @@ compare-logic v2 の **コード寄り正本**は `docs/future/types/v2/diff-rec
 - 2026-04-18: 論点3（`evidence` 内部の正規形粒度）を `T-20260418-007` に切り出し追跡する旨を追記
 - 2026-04-18: `T-20260418-007` 方針決定を反映（証拠は案C＝`evidence_shape` を検証正本、案B＝表の階層構造。`evidence_shape` を MUST に追加し最小JSON例を更新）
 - 2026-04-18: `T-20260418-007` 正本化 — `docs/current/dsl-ssot-types/v2-evidence-shapes-registry-ja.md` と `docs/future/schemas/v2/evidence/` を追加し、本書の論点3から参照
-- 2026-04-18: 現行／将来ドキュメント分離のため `docs/future/semantic/` へ移動（旧 `docs/current/dsl-ssot-types/semantic-meaning-core-ontology-v0-ja.md` はリダイレクト用スタブ）
+- 2026-04-18: 現行／将来ドキュメント分離のため `docs/future/semantic/` へ移動（旧 `docs/archive/semantic-meaning-core-ontology-v0-ja.md` はリダイレクト用スタブ）
 - 2026-04-18: v2 証拠 JSON Schema を `docs/future/schemas/v2/evidence/` へ移動（論点3の検証正本の置き場を将来トラックに統一）
 - 2026-04-18: `T-20260418-003` — `canonical predicate` v0.1（fact 案A、演算子案B+`in`案α、論理合成の平易説明と既定、未解決案A、決定性案A）
 - 2026-04-18: `T-20260418-002` 反映 — 差異＝業務意味に効く不一致（狭義）、案A包含（観測差分 ⊇ 差異 ⊇ 意味差分）、観測と判定の分離、表層ラベル例

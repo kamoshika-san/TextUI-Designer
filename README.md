@@ -286,7 +286,7 @@ Detailed setup: [docs/current/workflow-onboarding/SETUP.md](docs/current/workflo
 - [Setup](docs/current/workflow-onboarding/SETUP.md) · [Testing](docs/current/workflow-onboarding/TESTING.md) · [Contributing](CONTRIBUTING.md) · [FAQ](docs/current/workflow-onboarding/FAQ.md)
 - [Extension Boundary Guide](docs/current/runtime-boundaries/extension-boundary-guide.md) · [Exporter Boundary Guide](docs/current/runtime-boundaries/exporter-boundary-guide.md)
 - [Adding Built-In Component](docs/current/workflow-onboarding/adding-built-in-component.md) · [Glossary](docs/current/workflow-onboarding/GLOSSARY.md)
-- [Semantic Meaning / Diff Taxonomy（日本語・将来向け）](docs/future/semantic/semantic-meaning-core-ontology-v0-ja.md) · [旧パススタブ](docs/current/dsl-ssot-types/semantic-meaning-core-ontology-v0-ja.md)
+- [Semantic Meaning / Diff Taxonomy（日本語・将来向け）](docs/future/semantic/semantic-meaning-core-ontology-v0-ja.md) · [旧パススタブ](docs/archive/semantic-meaning-core-ontology-v0-ja.md)
 
 ---
 

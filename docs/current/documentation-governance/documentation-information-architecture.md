@@ -28,7 +28,7 @@ Define a single navigation model for project documentation so readers can reach 
 | `Specification / Architecture` | canonical contracts and ADR-backed design | ADRs, type rules, schema pipeline, theme implementation, provider contracts | `docs/adr/*`, `docs/current/services-webview/schema-pipeline-from-spec.md`, `docs/current/theme-export-rendering/THEME_IMPLEMENTATION.md` |
 | `Testing / Quality Gates` | verification and release gates | test matrix, CI gates, smoke guidance, guard matrices | `docs/current/testing-ci/test-matrix.md`, `docs/current/testing-ci/ci-quality-gate.md`, `docs/current/testing-ci/quality-gate-green-main.md`, `docs/current/testing-ci/ssot-import-guard-matrix.md` |
 | `Operations / Maintenance` | recurring review and governance | maintainer guide, monthly review, playbooks, roadmap/checklists | `docs/current/operations/MAINTAINER_GUIDE.md`, `docs/current/operations/ssot-monthly-review.md`, `docs/current/operations/ssot-violation-playbook.md`, `docs/current/documentation-governance/documentation-owner-and-review-cadence.md` |
-| `Historical / Archive` | superseded context with replacement pointers | release notes, closeout notes, historical sprint input | `docs/current/historical-notes/RELEASE_NOTES_v*.md`, `docs/current/historical-notes/ssot-renderer-sprint3-candidates.md` |
+| `Historical / Archive` | superseded context with replacement pointers | release notes, closeout notes, historical sprint input | `docs/archive/RELEASE_NOTES_v*.md`, `docs/archive/ssot-renderer-sprint3-candidates.md` |
 
 ## Required Destination Map
 

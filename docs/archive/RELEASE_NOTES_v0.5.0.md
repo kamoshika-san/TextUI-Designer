@@ -1,0 +1,36 @@
+> Status: historical
+> Updated: 2026-04-19
+> Owner: Maintainer
+> Reason: `docs/current/historical-notes` から読者主導線を切り離すため `docs/archive/` へ移設（T-20260419-022）
+> Replacement: [現行ドキュメント索引](../current/README.md) 。リリース内容の要約はリポジトリルートの `CHANGELOG.md` を参照。
+
+# TextUI Designer v0.5.0 リリースノート
+
+**リリース日**: 2026-03-08
+
+## ハイライト
+
+- **Cursor で MCP が使えるように**: Cursor などで MCP サーバーがタイムアウトする問題を解消し、ヘッダーなし JSON 形式の送受信に対応しました。
+- **業務サンプルの追加**: ダッシュボード・検索・一覧・承認フローを想定した `sample/07-enterprise` を追加しました。
+
+## 主な変更（v0.4.0 からの変更点）
+
+### MCP の安定化・互換性
+
+- **起動の高速化**: `TextUICoreEngine` とコンポーネントカタログを初回利用時まで遅延読み込みし、`initialize` の応答を素早く返すようにしました。
+- **Cursor 互換**: クライアントが Content-Length ヘッダーなしで JSON を送る形式（Cursor の MCP クライアント）に対応。受信・応答ともヘッダーなしで扱えるようにしました。
+- **メッセージ境界の拡張**: 単一の `\r\n` または `\n` の直後に JSON が始まる形式も正しくパースするようにしました。
+
+### サンプル・ドキュメント
+
+- **07-enterprise サンプル**: 業務システム想定の複雑な UI（検索フォーム、テーブル、タブ、承認フロー、レポート）のサンプルを追加。
+- **MCP トラブルシューティング**: Cursor で MCP が使えない場合の原因と対処をドキュメントに記載。
+
+### バグ修正
+
+- Cursor で MCP サーバー作成がタイムアウトする問題を修正。
+- Cursor が「Content-Length: ... is not valid JSON」でエラーになる問題を修正（レスポンス形式の互換対応）。
+
+---
+
+詳細は [CHANGELOG.md](../CHANGELOG.md) を参照してください。

@@ -1,3 +1,9 @@
+> Status: historical
+> Updated: 2026-04-19
+> Owner: Maintainer
+> Reason: `docs/current/historical-notes` から読者主導線を切り離すため `docs/archive/` へ移設（T-20260419-022）
+> Replacement: [現行ドキュメント索引](../current/README.md) 。リリース内容の要約はリポジトリルートの `CHANGELOG.md` を参照。
+
 # console と Logger の棚卸し（Phase 0）
 
 外部アーキレビュー **Phase 0** の整理メモ。当初は判断用の分類のみだったが、**プレビュー経路（`WebViewUpdateManager` / `WebViewPreviewCacheManager` / `WebViewMessageHandler`）は T-20260321-065 で `Logger` に寄せ済み**。下表の行番号・記述はスナップショットのため未更新の箇所あり。残りは別チケットで本格統一。

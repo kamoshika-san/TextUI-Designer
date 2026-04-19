@@ -198,30 +198,36 @@ Updated: 2026-03-28
 
 ### 11. Historical Notes And Archive Candidates
 
-- Location: historical notes currently still living in `docs/`
+- Location: `docs/archive/`（2026-04-19 に `docs/current/historical-notes/` から退避）
 - Purpose: retain prior planning context, release history, and superseded sprint notes until archive policy lands
 - Updated: `2026-03-20..2026-03-28`
 - Owner: `Maintainer`
 - Frequency: `frozen`
 - Members:
-  - `docs/current/historical-notes/AI_WORKFLOW_ROADMAP.md (2026-03-20)`
-  - `docs/current/historical-notes/application-usecase-spike-2026-03-21.md (2026-03-21)`
-  - `docs/current/historical-notes/architecture-review-F-boundary-roadmap.md (2026-03-21)`
-  - `docs/current/historical-notes/change-amplification-codegen-spike.md (2026-03-26)`
-  - `docs/current/historical-notes/console-logger-inventory-phase0.md (2026-03-24)`
-  - `docs/current/historical-notes/dev-team-10rounds-mandatory-2026-03-21.md (2026-03-21)`
-  - `docs/current/historical-notes/hr1-next-epic-backlog-split.md (2026-03-24)`
-  - `docs/current/historical-notes/RELEASE_NOTES_v0.5.0.md (2026-03-20)`
-  - `docs/current/historical-notes/RELEASE_NOTES_v0.6.0.md (2026-03-20)`
-  - `docs/current/historical-notes/RELEASE_NOTES_v0.7.2.md (2026-03-28)`
-  - `docs/current/historical-notes/RELEASE_NOTES_v0.7.1.md (2026-03-28)`
-  - `docs/current/historical-notes/RELEASE_NOTES_v0.7.0.md (2026-03-22)`
-  - `docs/current/historical-notes/ssot-renderer-sprint3-candidates.md (2026-03-27)`
-  - `docs/current/historical-notes/ssot-renderer-sprint3-entry-closeout.md (2026-03-27)`
-  - `docs/current/historical-notes/ssot-sprint1-boundary-baseline.md (2026-03-27)`
-  - `docs/current/historical-notes/ssot-sprint1-closeout-and-sprint2-input.md (2026-03-27)`
-  - `docs/current/historical-notes/ssot-sprint2-closeout-and-sprint3-input.md (2026-03-27)`
-  - `docs/current/historical-notes/ssot-webview-dsl-types-direct-import-poc.md (2026-03-27)`
+  - `docs/archive/AI_WORKFLOW_ROADMAP.md (2026-03-20)`
+  - `docs/archive/application-usecase-spike-2026-03-21.md (2026-03-21)`
+  - `docs/archive/architecture-review-F-boundary-roadmap.md (2026-03-21)`
+  - `docs/archive/change-amplification-codegen-spike.md (2026-03-26)`
+  - `docs/archive/console-logger-inventory-phase0.md (2026-03-24)`
+  - `docs/archive/dev-team-10rounds-mandatory-2026-03-21.md (2026-03-21)`
+  - `docs/archive/hr1-next-epic-backlog-split.md (2026-03-24)`
+  - `docs/archive/RELEASE_NOTES_v0.5.0.md (2026-03-20)`
+  - `docs/archive/RELEASE_NOTES_v0.6.0.md (2026-03-20)`
+  - `docs/archive/RELEASE_NOTES_v0.7.2.md (2026-03-28)`
+  - `docs/archive/RELEASE_NOTES_v0.7.1.md (2026-03-28)`
+  - `docs/archive/RELEASE_NOTES_v0.7.0.md (2026-03-22)`
+  - `docs/archive/RELEASE_NOTES_v0.7.3.md (2026-03-20)`
+  - `docs/archive/RELEASE_NOTES_v0.8.0.md (2026-03-22)`
+  - `docs/archive/RELEASE_NOTES_v0.8.1.md (2026-03-22)`
+  - `docs/archive/RELEASE_NOTES_v0.9.2.md (2026-03-28)`
+  - `docs/archive/phase1-execution-plan.md (2026-03-20)`
+  - `docs/archive/semantic-meaning-core-ontology-v0-ja.md (2026-04-19)`
+  - `docs/archive/ssot-renderer-sprint3-candidates.md (2026-03-27)`
+  - `docs/archive/ssot-renderer-sprint3-entry-closeout.md (2026-03-27)`
+  - `docs/archive/ssot-sprint1-boundary-baseline.md (2026-03-27)`
+  - `docs/archive/ssot-sprint1-closeout-and-sprint2-input.md (2026-03-27)`
+  - `docs/archive/ssot-sprint2-closeout-and-sprint3-input.md (2026-03-27)`
+  - `docs/archive/ssot-webview-dsl-types-direct-import-poc.md (2026-03-27)`
 
 ### 12. ADR Catalog
 
@@ -246,26 +252,32 @@ Updated: 2026-03-28
 
 - No missing canonical destinations are currently called out in the covered scope.
 
-### Historical docs mixed into the live root
+### Historical docs under `docs/archive/`
 
-- `docs/current/historical-notes/AI_WORKFLOW_ROADMAP.md`
-- `docs/current/historical-notes/application-usecase-spike-2026-03-21.md`
-- `docs/current/historical-notes/architecture-review-F-boundary-roadmap.md`
-- `docs/current/historical-notes/change-amplification-codegen-spike.md`
-- `docs/current/historical-notes/console-logger-inventory-phase0.md`
-- `docs/current/historical-notes/dev-team-10rounds-mandatory-2026-03-21.md`
-- `docs/current/historical-notes/hr1-next-epic-backlog-split.md`
-- `docs/current/historical-notes/RELEASE_NOTES_v0.5.0.md`
-- `docs/current/historical-notes/RELEASE_NOTES_v0.6.0.md`
-- `docs/current/historical-notes/RELEASE_NOTES_v0.7.2.md`
-- `docs/current/historical-notes/RELEASE_NOTES_v0.7.1.md`
-- `docs/current/historical-notes/RELEASE_NOTES_v0.7.0.md`
-- `docs/current/historical-notes/ssot-renderer-sprint3-candidates.md`
-- `docs/current/historical-notes/ssot-renderer-sprint3-entry-closeout.md`
-- `docs/current/historical-notes/ssot-sprint1-boundary-baseline.md`
-- `docs/current/historical-notes/ssot-sprint1-closeout-and-sprint2-input.md`
-- `docs/current/historical-notes/ssot-sprint2-closeout-and-sprint3-input.md`
-- `docs/current/historical-notes/ssot-webview-dsl-types-direct-import-poc.md`
+- `docs/archive/AI_WORKFLOW_ROADMAP.md`
+- `docs/archive/application-usecase-spike-2026-03-21.md`
+- `docs/archive/architecture-review-F-boundary-roadmap.md`
+- `docs/archive/change-amplification-codegen-spike.md`
+- `docs/archive/console-logger-inventory-phase0.md`
+- `docs/archive/dev-team-10rounds-mandatory-2026-03-21.md`
+- `docs/archive/hr1-next-epic-backlog-split.md`
+- `docs/archive/RELEASE_NOTES_v0.5.0.md`
+- `docs/archive/RELEASE_NOTES_v0.6.0.md`
+- `docs/archive/RELEASE_NOTES_v0.7.2.md`
+- `docs/archive/RELEASE_NOTES_v0.7.1.md`
+- `docs/archive/RELEASE_NOTES_v0.7.0.md`
+- `docs/archive/RELEASE_NOTES_v0.7.3.md`
+- `docs/archive/RELEASE_NOTES_v0.8.0.md`
+- `docs/archive/RELEASE_NOTES_v0.8.1.md`
+- `docs/archive/RELEASE_NOTES_v0.9.2.md`
+- `docs/archive/phase1-execution-plan.md`
+- `docs/archive/semantic-meaning-core-ontology-v0-ja.md`
+- `docs/archive/ssot-renderer-sprint3-candidates.md`
+- `docs/archive/ssot-renderer-sprint3-entry-closeout.md`
+- `docs/archive/ssot-sprint1-boundary-baseline.md`
+- `docs/archive/ssot-sprint1-closeout-and-sprint2-input.md`
+- `docs/archive/ssot-sprint2-closeout-and-sprint3-input.md`
+- `docs/archive/ssot-webview-dsl-types-direct-import-poc.md`
 
 ### Overlap clusters likely to need consolidation
 

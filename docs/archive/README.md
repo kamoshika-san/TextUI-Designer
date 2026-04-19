@@ -6,9 +6,10 @@ Use current canonical pages for active work:
 
 - [README.md](../../README.md)
 - [CONTRIBUTING.md](../../CONTRIBUTING.md)
-- [SETUP.md](../SETUP.md)
-- [documentation-information-architecture.md](../documentation-information-architecture.md)
-- [documentation-archive-policy.md](../documentation-archive-policy.md)
+- [SETUP.md](../current/workflow-onboarding/SETUP.md)
+- [Documentation index (current)](../current/README.md)
+- [Documentation information architecture](../current/documentation-governance/documentation-information-architecture.md)
+- [Documentation archive policy](../current/documentation-governance/documentation-archive-policy.md)
 
 Archived pages should explain one of two things at the top of the file:
 
