@@ -4,6 +4,7 @@
 前提: 設計A〜D 完了済み。設計B-2・D-3 で予告された confidence 規定をここで確定する。
 
 **正本（P4-11）**: 曖昧さ判定に用いる閾値 `0.8` の数値の単一定義は `docs/future/types/v2/diff-record.ts` の **`export const AMBIGUITY_THRESHOLD`** とする。設計E 本文の `0.8` および `confidence < 0.8` は、いずれも同一定数を指す。
+**正本（T-20260419-029）**: `confidence_band` は caller が直接書かず、`docs/future/types/v2/diff-record.ts` に示す `createDecisionPayload(...)` 相当の factory で `confidence` と `AMBIGUITY_THRESHOLD` から自動導出する。
 
 ---
 
@@ -84,11 +85,35 @@ function deriveReviewStatus(confidence: number): ReviewStatus {
 }
 ```
 
+```typescript
+function createDecisionPayload(input): DecisionPayload {
+  const confidence_band = input.confidence < AMBIGUITY_THRESHOLD ? 'low' : 'high';
+  return confidence_band === 'low'
+    ? {
+        confidence_band,
+        diff_event: input.diff_event,
+        target_id: input.target_id,
+        confidence: input.confidence,
+        ambiguity_reason: input.ambiguity_reason!,
+        review_status: input.review_status ?? 'needs_review',
+      }
+    : {
+        confidence_band,
+        diff_event: input.diff_event,
+        target_id: input.target_id,
+        confidence: input.confidence,
+        ambiguity_reason: input.ambiguity_reason,
+        review_status: input.review_status,
+      };
+}
+```
+
 固定とする根拠:
 - `0.8` は B-2（0.5）と D-3（0.7 = 1.0 - 0.3）の両ケースをカバーする閾値である。
 - 閾値を open（設定可能）にすると、呼び出し元が閾値を省略した場合の挙動が不定になり、
   V2SemanticDiffProvider の実装が複雑化する。
 - v2 の設計原則は決定論的であり、可変パラメータを最小化することと一致する。
+- `confidence_band` を factory 側で導出すれば、provider / mapper / ViewModel が band を手書きせずに済み、数値 `confidence` と判別子の乖離を防げる。
 
 閾値変更の再検討条件: 「実運用フィードバックで false-positive/false-negative の比率が
 著しく偏った場合」に別チケットで閾値の設定可能化を検討する。

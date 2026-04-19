@@ -38,6 +38,8 @@ class V2SemanticDiffProvider implements SemanticDiffProvider {
   swap seam の目的（impl を差し替えるだけでよい）が崩れる。
 - v2 の `V2ScreenDiff[]` とその内部 `V2DiffRecord` 形は `docs/future/types/v2/diff-record.ts` をコード寄り正本とし、
   `DiffCompareResult.v2` に収録する方式で対応する。
+- `V2DiffRecord.decision` は `confidence_band` を caller が直接埋めるのではなく、
+  `docs/future/types/v2/diff-record.ts` に示す `createDecisionPayload(...)` 相当の factory で生成する前提とする。
 - 将来的に v2 型を first-class にする場合は interface 拡張ではなく、
   別の `V2DiffCompareResult` 型を返す新 interface を定義し段階的に移行する。
 

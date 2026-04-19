@@ -70,6 +70,30 @@ export interface LowConfidenceDecision {
 /** Decision payload — discriminated union on `confidence_band` */
 export type DecisionPayload = HighConfidenceDecision | LowConfidenceDecision;
 
+/**
+ * Factory-authoring boundary for `DecisionPayload`.
+ *
+ * Design rule:
+ * - Call sites must not hand-author `confidence_band`.
+ * - A helper such as `createDecisionPayload(...)` derives `confidence_band`
+ *   from numeric `confidence` and `AMBIGUITY_THRESHOLD`.
+ * - This keeps provider / mapper / runtime outputs aligned with the
+ *   discriminated union while avoiding duplicated threshold logic.
+ */
+export interface DecisionPayloadFactoryInput {
+  diff_event: DiffEvent;
+  target_id: string;
+  confidence: number;
+  ambiguity_reason?: string;
+  review_status?: ReviewStatus;
+}
+
+/**
+ * Authoring contract sketch for runtime implementation.
+ * `confidence_band` is derived, not supplied by callers.
+ */
+export type CreateDecisionPayload = (input: DecisionPayloadFactoryInput) => DecisionPayload;
+
 /** Explanation payload — evidence and predicates that support the decision */
 export interface ExplanationPayload {
   /** Empty array is valid when no registered evidence_shape applies. */
