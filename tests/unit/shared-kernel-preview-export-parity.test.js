@@ -5,6 +5,9 @@
  * 注: Tabs / Accordion などを renderRegisteredComponent で再帰するコンポーネントでは
  * プレビュー時のみ textui-jump-target が付く。共有カーネル parity の比較では
  * __renderContext 由来の wrapper 差分を除き、inner markup が同一であることを見る。
+ *
+ * T-005 正本: docs/current/runtime-boundaries/react-shared-kernel-preview-export.md
+ * （react-ssot-check で保証する範囲 / しない範囲の説明）
  */
 const assert = require('assert');
 const React = require('react');

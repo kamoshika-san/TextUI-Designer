@@ -1,0 +1,21 @@
+{
+  "languages": [
+    {
+      "id": "yaml",
+      "extensions": [
+        ".tui.flow.yml",
+        ".tui.flow.yaml"
+      ]
+    }
+  ],
+  "snippets": [
+    {
+      "language": "yaml",
+      "path": "./snippets/tui-snippets.json"
+    },
+    {
+      "language": "json",
+      "path": "./snippets/tui-snippets.json"
+    }
+  ]
+}

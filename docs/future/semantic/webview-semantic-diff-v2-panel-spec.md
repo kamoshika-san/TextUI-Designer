@@ -68,7 +68,7 @@ Extension 側の配信は **`DiffUpdateMessage`** として固定されている
                     "decision": {
                       "confidence_band": "high",
                       "diff_event": "component_action_changed",
-                      "target_id": "cmp_submit#action",
+                      "target_id": "cmp_submit",
                       "confidence": 0.92
                     },
                     "explanation": {
@@ -93,6 +93,7 @@ Extension 側の配信は **`DiffUpdateMessage`** として固定されている
 
 - **`schemaVersion`**: メッセージ自体の互換バージョン（整数）。破壊的変更時にインクリメント。  
 - **`payload.screens[]`**: P0-IA に従い **ツリー**（Screen → Entity → Component → `diffs[]`）。各 `diffs[]` 要素は v2 正本の **`V2DiffRecord`**（`decision` + `explanation`）に **用語・意味で 1:1** になるよう Wave 1 で型を接続する。  
+- **`decision.target_id`**: core 規約では **`component.id` そのもの**（例: `"cmp_submit"`）。`"cmp_submit#action"` のようなサフィックス付与は ViewModel 層でのみ行う。core 層（mapper 含む）は素の `component.id` を `target_id` として使用すること（T-20260419-034）。  
 - **`meta`**: 任意。相関 ID や生成時刻など、UI が必要なら Wave 1 以降で拡張。  
 
 ### 3.3 既存 `diff-update` との併存

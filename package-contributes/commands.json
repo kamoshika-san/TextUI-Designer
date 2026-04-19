@@ -1,0 +1,98 @@
+[
+  {
+    "command": "textui-designer.openPreview",
+    "title": "TUI: Preview"
+  },
+  {
+    "command": "textui-designer.openFlowPreview",
+    "title": "TextUI: Open Flow Preview"
+  },
+  {
+    "command": "textui-designer.capturePreviewImage",
+    "title": "TextUI: Capture Preview Image"
+  },
+  {
+    "command": "textui-designer.openDevTools",
+    "title": "TextUI: Open Developer Tools"
+  },
+  {
+    "command": "textui-designer.export",
+    "title": "TextUI: Export to Code"
+  },
+  {
+    "command": "textui-designer.export-preview",
+    "title": "TextUI: Export Preview (Dry Run)"
+  },
+  {
+    "command": "textui-designer.showJumpToDslHelp",
+    "title": "TextUI: Preview to DSL Jump (How to Use)"
+  },
+  {
+    "command": "textui-designer.openOverlayDiff",
+    "title": "TUI: Diff"
+  },
+  {
+    "command": "textui-designer.createTemplate",
+    "title": "TextUI: Create New Template"
+  },
+  {
+    "command": "textui-designer.insertTemplate",
+    "title": "TextUI: Insert Template"
+  },
+  {
+    "command": "textui-designer.openSettings",
+    "title": "TextUI: Open Settings"
+  },
+  {
+    "command": "textui-designer.resetSettings",
+    "title": "TextUI: Reset Settings"
+  },
+  {
+    "command": "textui-designer.showSettings",
+    "title": "TextUI: Show Settings"
+  },
+  {
+    "command": "textui-designer.checkAutoPreviewSetting",
+    "title": "TextUI: Check Auto Preview Setting"
+  },
+  {
+    "command": "textui-designer.reinitializeSchemas",
+    "title": "TextUI: Reinitialize Schemas"
+  },
+  {
+    "command": "textui-designer.debugSchemas",
+    "title": "TextUI: Debug Schema State"
+  },
+  {
+    "command": "textui-designer.showPerformanceReport",
+    "title": "TextUI: Show Performance Report"
+  },
+  {
+    "command": "textui-designer.clearPerformanceMetrics",
+    "title": "TextUI: Clear Performance Metrics"
+  },
+  {
+    "command": "textui-designer.togglePerformanceMonitoring",
+    "title": "TextUI: Toggle Performance Monitoring"
+  },
+  {
+    "command": "textui-designer.enablePerformanceMonitoring",
+    "title": "TextUI: Enable Performance Monitoring"
+  },
+  {
+    "command": "textui-designer.generateSampleEvents",
+    "title": "TextUI: Generate Sample Events"
+  },
+  {
+    "command": "textui-designer.showMemoryReport",
+    "title": "TextUI: Show Memory Report"
+  },
+  {
+    "command": "textui-designer.toggleMemoryTracking",
+    "title": "TextUI: Toggle Memory Tracking"
+  },
+  {
+    "command": "textui-designer.enableMemoryTracking",
+    "title": "TextUI: Enable Memory Tracking"
+  }
+]

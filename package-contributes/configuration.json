@@ -1,0 +1,249 @@
+{
+  "title": "TextUI Designer",
+  "properties": {
+    "textui-designer.supportedFileExtensions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        ".tui.yml",
+        ".tui.yaml"
+      ],
+      "description": "サポートするファイル拡張子"
+    },
+    "textui-designer.autoPreview.enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "ファイルを開いた時に自動的にプレビューを表示"
+    },
+    "textui-designer.devTools.enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "開発者ツールの有効化"
+    },
+    "textui-designer.webview.disableThemeVariables": {
+      "type": "boolean",
+      "default": true,
+      "description": "VS Codeのテーマ変数を無効化して独自スタイルを使用"
+    },
+    "textui-designer.webview.theme": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "light",
+        "dark"
+      ],
+      "default": "auto",
+      "description": "WebViewのテーマ"
+    },
+    "textui-designer.webview.fontSize": {
+      "type": "number",
+      "default": 14,
+      "description": "WebViewのフォントサイズ"
+    },
+    "textui-designer.webview.jumpToDsl.showHoverIndicator": {
+      "type": "boolean",
+      "default": true,
+      "description": "Preview jump-to-DSL hover indicator visibility"
+    },
+    "textui-designer.preview.showUpdateIndicator": {
+      "type": "boolean",
+      "default": true,
+      "description": "Preview update indicator visibility"
+    },
+    "textui-designer.export.defaultFormat": {
+      "type": "string",
+      "enum": [
+        "html",
+        "react",
+        "svelte",
+        "vue",
+        "pug"
+      ],
+      "default": "html",
+      "description": "Default export format"
+    },
+    "textui-designer.export.includeComments": {
+      "type": "boolean",
+      "default": true,
+      "description": "エクスポート時にコメントを含める"
+    },
+    "textui-designer.export.minify": {
+      "type": "boolean",
+      "default": false,
+      "description": "エクスポート時にコードを圧縮"
+    },
+    "textui-designer.diagnostics.enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "診断機能の有効化"
+    },
+    "textui-designer.diagnostics.maxProblems": {
+      "type": "number",
+      "default": 100,
+      "description": "最大診断問題数"
+    },
+    "textui-designer.diagnostics.validateOnSave": {
+      "type": "boolean",
+      "default": true,
+      "description": "保存時に診断を実行"
+    },
+    "textui-designer.diagnostics.validateOnChange": {
+      "type": "boolean",
+      "default": true,
+      "description": "変更時に診断を実行"
+    },
+    "textui-designer.schema.validation.enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "スキーマ検証の有効化"
+    },
+    "textui-designer.schema.autoReload": {
+      "type": "boolean",
+      "default": true,
+      "description": "スキーマの自動再読み込み"
+    },
+    "textui-designer.templates.defaultLocation": {
+      "type": "string",
+      "default": "",
+      "description": "Default folder for saving templates"
+    },
+    "textui-designer.templates.customTemplates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "テンプレート名"
+          },
+          "path": {
+            "type": "string",
+            "description": "テンプレートファイルのパス"
+          },
+          "description": {
+            "type": "string",
+            "description": "テンプレートの説明"
+          }
+        },
+        "required": [
+          "name",
+          "path"
+        ]
+      },
+      "default": [],
+      "description": "カスタムテンプレートの設定"
+    },
+    "textui-designer.performance.webviewDebounceDelay": {
+      "type": "number",
+      "default": 300,
+      "minimum": 0,
+      "maximum": 2000,
+      "description": "WebView更新のデバウンス時間（ミリ秒）"
+    },
+    "textui-designer.performance.diagnosticDebounceDelay": {
+      "type": "number",
+      "default": 500,
+      "minimum": 0,
+      "maximum": 2000,
+      "description": "診断のデバウンス時間（ミリ秒）"
+    },
+    "textui-designer.performance.completionDebounceDelay": {
+      "type": "number",
+      "default": 200,
+      "minimum": 0,
+      "maximum": 1000,
+      "description": "補完のデバウンス時間（ミリ秒）"
+    },
+    "textui-designer.performance.cacheTTL": {
+      "type": "number",
+      "default": 30000,
+      "minimum": 1000,
+      "maximum": 60000,
+      "description": "キャッシュの有効期限（ミリ秒）"
+    },
+    "textui-designer.performance.schemaCacheTTL": {
+      "type": "number",
+      "default": 60000,
+      "minimum": 5000,
+      "maximum": 300000,
+      "description": "スキーマキャッシュの有効期限（ミリ秒）"
+    },
+    "textui-designer.performance.memoryMonitorInterval": {
+      "type": "number",
+      "default": 30000,
+      "minimum": 10000,
+      "maximum": 300000,
+      "description": "メモリ使用量の監視間隔（ミリ秒、開発時のみ）"
+    },
+    "textui-designer.performance.enablePerformanceLogs": {
+      "type": "boolean",
+      "default": true,
+      "description": "パフォーマンスログの有効化"
+    },
+    "textui-designer.performance.minUpdateInterval": {
+      "type": "number",
+      "default": 100,
+      "minimum": 50,
+      "maximum": 1000,
+      "description": "最小更新間隔（ミリ秒）"
+    },
+    "textui-designer.performance.maxConcurrentOperations": {
+      "type": "number",
+      "default": 2,
+      "minimum": 1,
+      "maximum": 5,
+      "description": "最大同時処理数"
+    },
+    "textui-designer.performance.enableMemoryTracking": {
+      "type": "boolean",
+      "default": true,
+      "description": "TextUI Designer専用のメモリ追跡を有効化"
+    },
+    "textui-designer.performance.memoryMeasurementInterval": {
+      "type": "number",
+      "default": 5000,
+      "minimum": 1000,
+      "maximum": 30000,
+      "description": "メモリ測定間隔（ミリ秒）"
+    },
+    "textui-designer.performance.memoryCleanupInterval": {
+      "type": "number",
+      "default": 30000,
+      "minimum": 10000,
+      "maximum": 300000,
+      "description": "メモリクリーンアップ間隔（ミリ秒）"
+    },
+    "textui-designer.mcp.autoConfigure": {
+      "type": "boolean",
+      "default": true,
+      "description": "拡張起動時にMCP設定を自動構成する（workspace: .vscode/mcp.json、user: ~/.config/.../mcp.json または .codex/config.toml の mcp_servers を更新）"
+    },
+    "textui-designer.mcp.scope": {
+      "type": "string",
+      "enum": [
+        "workspace",
+        "user",
+        "both"
+      ],
+      "default": "both",
+      "description": "MCP設定の書き込み先（mcp.json と Codex用 .codex/config.toml）"
+    },
+    "textui-designer.mcp.serverId": {
+      "type": "string",
+      "default": "textui-designer",
+      "description": "mcp.jsonで使用するMCPサーバーID"
+    },
+    "textui-designer.mcp.command": {
+      "type": "string",
+      "default": "node",
+      "description": "MCPサーバー起動コマンド（通常はnode）"
+    },
+    "textui-designer.mcp.notifyOnConfigured": {
+      "type": "boolean",
+      "default": true,
+      "description": "MCP設定更新時に通知を表示する"
+    }
+  }
+}

@@ -270,6 +270,13 @@ npm test
 
 Detailed setup: [docs/current/workflow-onboarding/SETUP.md](docs/current/workflow-onboarding/SETUP.md)
 
+### Package `contributes`（T-003）
+
+- **`package.json` の `contributes` は手編集しない**。`package-contributes/*.json` をソースとし、`npm run sync:package-contributes` で `package.json` にマージする。
+- **commands / menus**: `npm run sync:commands`（`package-contributes/commands.json` · `menus.json` を生成してマージ）
+- **configuration**: `npm run sync:configuration`（`package-contributes/configuration.json` を生成してマージ）
+- **languages / snippets / yaml.schemas / jsonValidation**: `package-contributes/languages-snippets.json` と `package-contributes/schemas.json` を編集し、必要なら `npm run sync:package-contributes`
+
 ### Key Commands
 
 | Command | Use |
@@ -277,6 +284,7 @@ Detailed setup: [docs/current/workflow-onboarding/SETUP.md](docs/current/workflo
 | `npm run compile` | TypeScript compile + schema checks |
 | `npm run build-webview` | Build React + Vite WebView assets |
 | `npm run check:webview-media-drift` | Regenerate WebView assets and fail if `media/` differs from committed files (same gate as CI **T-002**) |
+| `npm run sync:package-contributes` | Merge `package-contributes/*.json` into `package.json` → `contributes` (**T-003**) |
 | `npm run lint` | ESLint (zero warnings) |
 | `npm test` | Compile, lint, unit tests |
 | `npm run test:all:ci` | Full CI-equivalent lane |
