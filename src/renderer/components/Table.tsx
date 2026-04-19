@@ -48,8 +48,8 @@ export const Table: React.FC<TableProps> = ({ columns = [], rows = [], striped =
               key={rowIndex}
               className={[
                 'textui-table-row',
-                striped && rowIndex % 2 === 1 ? 'is-striped' : '',
-                rowHover ? 'has-hover' : ''
+                striped && rowIndex % 2 === 1 ? 'bg-gray-800/70 is-striped' : '',
+                rowHover ? 'hover:bg-gray-800/80 transition-colors has-hover' : ''
               ]
                 .filter(Boolean)
                 .join(' ')}

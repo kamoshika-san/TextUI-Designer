@@ -12,7 +12,7 @@ describe('CSS SSoT metrics gate', () => {
 
     assert.strictEqual(ssot.cssMetrics.todoPartialCount, 0);
     assert.strictEqual(ssot.cssMetrics.nonExemptInlineUtilityClassOccurrences, 0);
-    assert.strictEqual(ssot.cssMetrics.fallbackCompatibilitySelectorCount, 31);
+    assert.strictEqual(ssot.cssMetrics.fallbackCompatibilitySelectorCount, 30);
     assert.strictEqual(ssot.status, 'pass');
   });
 
@@ -26,7 +26,7 @@ describe('CSS SSoT metrics gate', () => {
   it('counts selectors inside the append-only fallback compatibility block', () => {
     const result = collectFallbackCompatibilitySelectorCount();
 
-    assert.strictEqual(result.count, 31);
+    assert.strictEqual(result.count, 30);
     assert.ok(result.matches.includes('.textui-badge'));
     assert.ok(result.matches.includes('.textui-tabs .flex > button.textui-tab-active'));
     assert.ok(result.matches.includes('.textui-progress-error'));
