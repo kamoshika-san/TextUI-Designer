@@ -94,7 +94,7 @@ export function createAuthoringFeatureRegistry(
     openSettings: () => deps.settingsService.openSettings(),
     showJumpToDslHelp: async () => {
       const message =
-        'Preview tip: Ctrl+Shift+Click a component to jump to its DSL source. プレビュー上のコンポーネントを Ctrl+Shift+クリックすると DSL ソースへジャンプできます。';
+        'Preview tip: Ctrl+Shift+Click (Mac: ⌘+Shift+Click) a component in the preview to jump to its DSL source.';
       deps.logger.info('jump-to-dsl usage help requested');
       ErrorHandler.showInfo(message);
     },
@@ -103,10 +103,10 @@ export function createAuthoringFeatureRegistry(
     checkAutoPreviewSetting: async () => {
       const result = await ErrorHandler.executeSafely(async () => {
         const autoPreviewEnabled = ConfigManager.isAutoPreviewEnabled();
-        const message = `自動プレビュー設定: ${autoPreviewEnabled ? 'ON' : 'OFF'}`;
+        const message = `Auto preview: ${autoPreviewEnabled ? 'ON' : 'OFF'}`;
         deps.logger.info(message);
         ErrorHandler.showInfo(message);
-      }, '自動プレビュー設定の確認に失敗しました');
+      }, 'Failed to read auto preview setting.');
 
       if (!result) {
         return;

@@ -32,7 +32,7 @@ describe('ThemeSwitchService', () => {
     assert.strictEqual(result.cssVariables, '');
     assert.deepStrictEqual(result.notice, {
       kind: 'info',
-      message: 'デフォルトテーマに切り替えました'
+      message: 'Switched to the default theme.'
     });
   });
 
@@ -54,7 +54,7 @@ describe('ThemeSwitchService', () => {
     assert.strictEqual(result.cssVariables, '--existing: css;');
     assert.deepStrictEqual(result.notice, {
       kind: 'error',
-      message: 'テーマファイルが見つかりません: missing-theme.yml'
+      message: 'Theme file not found: missing-theme.yml'
     });
   });
 
@@ -89,7 +89,7 @@ describe('ThemeSwitchService', () => {
       assert.strictEqual(result.cssVariables, '--generated: css;');
       assert.deepStrictEqual(result.notice, {
         kind: 'info',
-        message: 'テーマを切り替えました: custom-theme.yml'
+        message: 'Theme switched: custom-theme.yml'
       });
     } finally {
       fs.rmSync(tempDir, { recursive: true, force: true });

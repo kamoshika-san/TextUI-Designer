@@ -133,7 +133,7 @@ export function buildConfigurationSchema(defaults: SettingsDefaults): Record<str
         type: 'string',
         enum: ['html', 'react', 'svelte', 'vue', 'pug'],
         default: defaultValue('export.defaultFormat'),
-        description: 'デフォルトのエクスポート形式'
+        description: 'Default export format'
       },
       'export.includeComments': {
         type: 'boolean',
@@ -178,7 +178,7 @@ export function buildConfigurationSchema(defaults: SettingsDefaults): Record<str
       'templates.defaultLocation': {
         type: 'string',
         default: defaultValue('templates.defaultLocation'),
-        description: 'テンプレートのデフォルト保存場所'
+        description: 'Default folder for saving templates'
       },
       'templates.customTemplates': {
         type: 'array',

@@ -72,10 +72,10 @@ export function DiffToolbar({
           value={stepIndex}
           onChange={event => onStepChange(Number(event.target.value))}
           style={{ width: '100%', cursor: 'pointer' }}
-          aria-label="透過度スライダー（Before と After の切替）"
+          aria-label="Opacity slider (switch between Before and After)"
         />
         <span style={{ fontSize: '0.72rem', opacity: 0.7 }}>
-          {slider === 0 ? 'Before のみ' : slider === 100 ? 'After のみ' : `After ${slider}%`}
+          {slider === 0 ? 'Before only' : slider === 100 ? 'After only' : `After ${slider}%`}
         </span>
       </div>
 

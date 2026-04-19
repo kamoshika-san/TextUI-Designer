@@ -80,7 +80,7 @@ export const CustomThemeSelector: React.FC<CustomThemeSelectorProps> = ({ classN
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isLoading}
-        title={`現在のテーマ: ${activeTheme?.name || 'デフォルト'}`}
+        title={`Current theme: ${activeTheme?.name || 'Default'}`}
         style={{
           backgroundColor: 'rgba(75, 85, 99, 0.8)',
           color: '#d1d5db',
@@ -122,7 +122,7 @@ export const CustomThemeSelector: React.FC<CustomThemeSelectorProps> = ({ classN
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap'
             }}>
-              {activeTheme?.name || 'テーマ'}
+              {activeTheme?.name || 'Theme'}
             </span>
             <span style={{ marginLeft: '0.25rem', fontSize: '0.75rem' }}>
               {isOpen ? '▲' : '▼'}

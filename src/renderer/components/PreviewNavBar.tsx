@@ -55,7 +55,7 @@ export const PreviewNavBar: React.FC<PreviewNavBarProps> = ({ history, onBack })
           cursor: 'pointer',
           fontSize: '0.78rem',
         }}
-        title={`前の画面: ${prevLabel}`}
+        title={`Previous screen: ${prevLabel}`}
       >
         ← {prevLabel}
       </button>

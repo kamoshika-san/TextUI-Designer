@@ -37,13 +37,13 @@ const DOCUMENT_LINKS = {
 export const createErrorGuidance = (errorInfo: ErrorInfo | string): ErrorGuidance => {
   if (typeof errorInfo === 'string') {
     return {
-      title: 'YAMLパースエラー',
+      title: 'YAML parse error',
       actionItems: [
-        'エラー行付近のインデントとコロンの有無を確認してください。',
-        'クォートと配列・オブジェクトの閉じ忘れがないかを確認してください。'
+        'Check indentation and colons near the reported line.',
+        'Verify quotes and that arrays/objects are properly closed.'
       ],
       documentLinks: [
-        { label: 'YAML仕様', href: DOCUMENT_LINKS.yamlSyntax },
+        { label: 'YAML specification', href: DOCUMENT_LINKS.yamlSyntax },
         { label: 'TextUI README', href: DOCUMENT_LINKS.textuiReadme }
       ],
       technicalDetails: errorInfo
@@ -52,13 +52,13 @@ export const createErrorGuidance = (errorInfo: ErrorInfo | string): ErrorGuidanc
 
   if (errorInfo.type === 'parse' && errorInfo.details) {
     return {
-      title: 'YAML構文エラー',
+      title: 'YAML syntax error',
       actionItems: [
         ...errorInfo.details.suggestions.slice(0, 2),
-        '修正後にファイルを保存するとプレビューが自動更新されます。'
+        'Save the file after fixing to refresh the preview automatically.'
       ],
       documentLinks: [
-        { label: 'YAML仕様', href: DOCUMENT_LINKS.yamlSyntax },
+        { label: 'YAML specification', href: DOCUMENT_LINKS.yamlSyntax },
         { label: 'TextUI README', href: DOCUMENT_LINKS.textuiReadme }
       ],
       technicalDetails: errorInfo.details.message
@@ -71,25 +71,25 @@ export const createErrorGuidance = (errorInfo: ErrorInfo | string): ErrorGuidanc
       .join('\n');
 
     return {
-      title: 'スキーマバリデーションエラー',
+      title: 'Schema validation error',
       actionItems: [
         ...errorInfo.details.suggestions.slice(0, 2),
-        'コンポーネントのプロパティ名・値が schema.json と一致しているか確認してください。'
+        'Confirm component property names and values match schema.json.'
       ],
       documentLinks: [
-        { label: 'TextUIスキーマ定義', href: DOCUMENT_LINKS.textuiSchema },
+        { label: 'TextUI schema', href: DOCUMENT_LINKS.textuiSchema },
         { label: 'TextUI README', href: DOCUMENT_LINKS.textuiReadme }
       ],
       technicalDetails: allErrorsSummary || errorInfo.details.message
     };
   }
 
-  const fallbackMessage = errorInfo.message || '不明なエラー';
+  const fallbackMessage = errorInfo.message || 'Unknown error';
   return {
-    title: 'プレビューエラー',
+    title: 'Preview error',
     actionItems: [
-      'DSLの構文と設定値を確認してください。',
-      '修正後にファイルを保存して再度プレビューを確認してください。'
+      'Review your DSL syntax and configuration values.',
+      'Save the file and open the preview again after fixing.'
     ],
     documentLinks: [{ label: 'TextUI README', href: DOCUMENT_LINKS.textuiReadme }],
     technicalDetails: fallbackMessage

@@ -28,10 +28,10 @@ describe('CustomThemeSelector 単体テスト', () => {
                 type: 'available-themes',
                 themes: [
                   {
-                    name: 'デフォルト',
+                    name: 'Default',
                     path: '',
                     isActive: true,
-                    description: 'システムデフォルトテーマ'
+                    description: 'System default theme'
                   },
                   {
                     name: 'Test Theme',
@@ -91,10 +91,10 @@ describe('CustomThemeSelector 単体テスト', () => {
       // テーマ一覧の状態をテスト
       const themes = [
         {
-          name: 'デフォルト',
+          name: 'Default',
           path: '',
           isActive: true,
-          description: 'システムデフォルトテーマ'
+          description: 'System default theme'
         },
         {
           name: 'Test Theme',
@@ -107,7 +107,7 @@ describe('CustomThemeSelector 単体テスト', () => {
       // アクティブテーマの検出をテスト
       const activeTheme = themes.find(t => t.isActive);
       assert.ok(activeTheme, 'アクティブテーマが見つかった');
-      assert.strictEqual(activeTheme.name, 'デフォルト', 'アクティブテーマ名が正しい');
+      assert.strictEqual(activeTheme.name, 'Default', 'アクティブテーマ名が正しい');
 
       // テーマの切り替えロジックをテスト
       const targetTheme = themes.find(t => !t.isActive);
@@ -181,7 +181,7 @@ describe('CustomThemeSelector 単体テスト', () => {
           assert.ok(Array.isArray(receivedThemes), 'テーマ配列を受信した');
           assert.ok(receivedThemes.length > 0, 'テーマが含まれている');
           
-          const defaultTheme = receivedThemes.find(t => t.name === 'デフォルト');
+          const defaultTheme = receivedThemes.find(t => t.name === 'Default');
           assert.ok(defaultTheme, 'デフォルトテーマが含まれている');
           assert.strictEqual(defaultTheme.isActive, true, 'デフォルトテーマがアクティブ');
           
@@ -197,10 +197,10 @@ describe('CustomThemeSelector 単体テスト', () => {
           type: 'available-themes',
           themes: [
             {
-              name: 'デフォルト',
+              name: 'Default',
               path: '',
               isActive: true,
-              description: 'システムデフォルトテーマ'
+              description: 'System default theme'
             },
             {
               name: 'Test Theme',

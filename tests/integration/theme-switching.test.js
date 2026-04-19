@@ -203,7 +203,7 @@ describe('テーマ切り替え機能 結合テスト', () => {
     assert.ok(Array.isArray(themeMessage.themes), 'themesが配列で返る');
 
     const names = themeMessage.themes.map(theme => theme.name);
-    assert.ok(names.includes('デフォルト'), 'デフォルトテーマが含まれる');
+    assert.ok(names.includes('Default'), 'Default theme is included');
     assert.ok(names.includes('Integration Theme One'), '追加テーマ1が検出される');
     assert.ok(names.includes('Integration Theme Two'), '追加テーマ2が検出される');
     assert.ok(names.includes('Integration Nested Theme'), 'ネストディレクトリのテーマが検出される');

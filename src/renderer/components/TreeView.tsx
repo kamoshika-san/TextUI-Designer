@@ -112,7 +112,7 @@ export const TreeView: React.FC<TreeViewProps> = ({
                   className="textui-treeview-toggle"
                   onClick={() => toggleNode(path)}
                   aria-expanded={isOpen}
-                  aria-label={isOpen ? '折りたたむ' : '展開する'}
+                  aria-label={isOpen ? 'Collapse' : 'Expand'}
                 >
                   {isOpen ? '▾' : '▸'}
                 </button>

@@ -104,7 +104,7 @@
             "pug"
           ],
           "default": "html",
-          "description": "デフォルトのエクスポート形式"
+          "description": "Default export format"
         },
         "textui-designer.export.includeComments": {
           "type": "boolean",
@@ -149,7 +149,7 @@
         "textui-designer.templates.defaultLocation": {
           "type": "string",
           "default": "",
-          "description": "テンプレートのデフォルト保存場所"
+          "description": "Default folder for saving templates"
         },
         "textui-designer.templates.customTemplates": {
           "type": "array",

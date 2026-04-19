@@ -385,10 +385,7 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
               Flow preview tips
             </div>
             <div style={{ fontSize: '0.9rem', lineHeight: 1.5, opacity: 0.96 }}>
-              画面ノードを <strong>Ctrl+Shift+Click</strong>（Mac: <strong>⌘+Shift+Click</strong>）すると対応する DSL ソースへジャンプできます。
-            </div>
-            <div style={{ fontSize: '0.8rem', lineHeight: 1.45, opacity: 0.82, marginTop: '0.35rem' }}>
-              Ctrl+Shift+Click (Mac: ⌘+Shift+Click) a screen node to jump to its DSL source.
+              <strong>Ctrl+Shift+Click</strong> (Mac: <strong>⌘+Shift+Click</strong>) a screen node in the flow preview to jump to its DSL source.
             </div>
             <div
               style={{
@@ -414,7 +411,7 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
                   checked={dismissJumpToDslForever}
                   onChange={(event) => setDismissJumpToDslForever(event.target.checked)}
                 />
-                以後は表示しない / Don&apos;t show again
+                Don&apos;t show again
               </label>
               <button
                 type="button"
@@ -430,7 +427,7 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
                   cursor: 'pointer'
                 }}
               >
-                使い方を見る / Learn more
+                Learn more
               </button>
               <button
                 type="button"
@@ -502,10 +499,7 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
             Preview tips
           </div>
           <div style={{ fontSize: '0.9rem', lineHeight: 1.5, opacity: 0.96 }}>
-            コンポーネントを <strong>Ctrl+Shift+Click</strong> すると DSL ソースへジャンプできます。
-          </div>
-          <div style={{ fontSize: '0.8rem', lineHeight: 1.45, opacity: 0.82, marginTop: '0.35rem' }}>
-            Ctrl+Shift+Click a component in the preview to jump back to its DSL source.
+            <strong>Ctrl+Shift+Click</strong> (Mac: <strong>⌘+Shift+Click</strong>) a component in the preview to jump to its DSL source.
           </div>
           <div
             style={{
@@ -531,7 +525,7 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
                 checked={dismissJumpToDslForever}
                 onChange={(event) => setDismissJumpToDslForever(event.target.checked)}
               />
-              以後は表示しない / Don&apos;t show again
+              Don&apos;t show again
             </label>
             <button
               type="button"
@@ -547,7 +541,7 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
                 cursor: 'pointer'
               }}
             >
-              使い方を見る / Learn more
+              Learn more
             </button>
             <button
               type="button"

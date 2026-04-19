@@ -72,10 +72,10 @@ export class ThemeDiscoveryService {
     }
 
     themes.unshift({
-      name: 'デフォルト',
+      name: 'Default',
       path: '',
       isActive: isDefaultThemeActive,
-      description: 'システムデフォルトテーマ'
+      description: 'System default theme'
     });
 
     return themes;

@@ -106,7 +106,7 @@ describe('command feature registries', () => {
       'reinitializeSchemas',
       'debugSchemas'
     ]);
-    assert.strictEqual(infoMessage, '自動プレビュー設定: ON');
+    assert.strictEqual(infoMessage, 'Auto preview: ON');
   });
 
   it('createCommandFeatureBindings merges feature registries into command catalog deps', () => {
@@ -173,7 +173,7 @@ describe('command feature registries', () => {
 
     assert.strictEqual(
       infoMessage,
-      'Preview tip: Ctrl+Shift+Click a component to jump to its DSL source. プレビュー上のコンポーネントを Ctrl+Shift+クリックすると DSL ソースへジャンプできます。'
+      'Preview tip: Ctrl+Shift+Click (Mac: ⌘+Shift+Click) a component in the preview to jump to its DSL source.'
     );
   });
 });

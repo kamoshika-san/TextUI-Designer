@@ -85,13 +85,13 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
   const getThemeLabel = () => {
     switch (themeMode) {
       case 'light':
-        return 'ライト';
+        return 'Light';
       case 'dark':
-        return 'ダーク';
+        return 'Dark';
       case 'auto':
-        return '自動';
+        return 'Auto';
       default:
-        return '自動';
+        return 'Auto';
     }
   };
 
@@ -99,7 +99,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
     <button
       onClick={handleThemeChange}
       className={`theme-toggle ${className}`}
-      title={`テーマ: ${getThemeLabel()} (クリックで切り替え)`}
+      title={`Theme: ${getThemeLabel()} (click to cycle)`}
       style={{
         backgroundColor: 'rgba(75, 85, 99, 0.8)',
         color: '#d1d5db',

@@ -26,7 +26,7 @@ export class SettingsService implements ISettingsService {
   async openSettings(): Promise<void> {
     const result = await this.errorHandler.executeSafely(async () => {
       await vscode.commands.executeCommand('workbench.action.openSettings', 'textui-designer');
-    }, '設定画面を開けませんでした');
+    }, 'Could not open settings.');
 
     if (!result) {
       // エラーハンドリングは既にErrorHandlerで処理済み
@@ -40,16 +40,16 @@ export class SettingsService implements ISettingsService {
   async resetSettings(): Promise<void> {
     const result = await this.errorHandler.executeSafely(async () => {
       const confirmed = await vscode.window.showWarningMessage(
-        'すべての設定をデフォルト値にリセットしますか？',
+        'Reset all TextUI Designer settings to their defaults?',
         { modal: true },
-        'リセット'
+        'Reset'
       );
 
-      if (confirmed === 'リセット') {
+      if (confirmed === 'Reset') {
         await this.configManager.resetConfiguration();
-        this.errorHandler.showInfo('設定をリセットしました。');
+        this.errorHandler.showInfo('Settings have been reset.');
       }
-    }, '設定のリセットに失敗しました');
+    }, 'Failed to reset settings.');
 
     if (!result) {
       // エラーハンドリングは既にErrorHandlerで処理済み
@@ -71,7 +71,7 @@ export class SettingsService implements ISettingsService {
       });
 
       await vscode.window.showTextDocument(document);
-    }, '設定の表示に失敗しました');
+    }, 'Failed to show settings.');
 
     if (!result) {
       // エラーハンドリングは既にErrorHandlerで処理済み
@@ -85,10 +85,10 @@ export class SettingsService implements ISettingsService {
   async showAutoPreviewSetting(): Promise<void> {
     const result = await this.errorHandler.executeSafely(async () => {
       const autoPreviewEnabled = this.configManager.isAutoPreviewEnabled();
-      const message = `自動プレビュー設定: ${autoPreviewEnabled ? 'ON' : 'OFF'}`;
+      const message = `Auto preview: ${autoPreviewEnabled ? 'ON' : 'OFF'}`;
       this.logger.info(message);
       this.errorHandler.showInfo(message);
-    }, '自動プレビュー設定の表示に失敗しました');
+    }, 'Failed to show auto preview setting.');
 
     if (!result) {
       // エラーハンドリングは既にErrorHandlerで処理済み

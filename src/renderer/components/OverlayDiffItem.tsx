@@ -20,10 +20,10 @@ const PREFIX_COLOR: Record<string, string> = {
 };
 
 const PREFIX_LABEL: Record<string, string> = {
-  '+': '追加',
-  '~': '変更',
-  '-': '削除',
-  '?': '要確認',
+  '+': 'Add',
+  '~': 'Change',
+  '-': 'Remove',
+  '?': 'Needs review',
 };
 
 export interface ComponentGroup {
@@ -50,7 +50,7 @@ export function groupSummaryLines(lines: SemanticSummaryLine[], pairings: Compon
       groupKey: line.eventId,
       componentIndexA: line.componentIndexA,
       componentIndexB: line.componentIndexB,
-      label: line.displayName ?? line.componentType ?? 'コンポーネント',
+      label: line.displayName ?? line.componentType ?? 'Component',
       prefix: line.prefix,
       lines: [line],
     };
@@ -63,7 +63,7 @@ export function groupSummaryLines(lines: SemanticSummaryLine[], pairings: Compon
     }
   }
 
-  const pageGroup: ComponentGroup = { groupKey: 'page', label: 'ページ', prefix: '~', lines: [] };
+  const pageGroup: ComponentGroup = { groupKey: 'page', label: 'Page', prefix: '~', lines: [] };
   let hasPageLines = false;
 
   for (const line of lines) {
@@ -79,7 +79,7 @@ export function groupSummaryLines(lines: SemanticSummaryLine[], pairings: Compon
         groupKey: placeholderKey,
         componentIndexA: line.componentIndexA,
         componentIndexB: line.componentIndexB,
-        label: line.displayName ?? line.componentType ?? 'コンポーネント',
+        label: line.displayName ?? line.componentType ?? 'Component',
         prefix: line.prefix,
         lines: [],
       };

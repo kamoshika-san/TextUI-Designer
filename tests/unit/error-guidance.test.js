@@ -5,9 +5,9 @@ describe('createErrorGuidance', () => {
   it('文字列エラーにYAML向けの次アクションを返す', () => {
     const guidance = createErrorGuidance('bad yaml');
 
-    assert.strictEqual(guidance.title, 'YAMLパースエラー');
+    assert.strictEqual(guidance.title, 'YAML parse error');
     assert.ok(guidance.actionItems.length >= 2);
-    assert.ok(guidance.documentLinks.some(link => link.label === 'YAML仕様'));
+    assert.ok(guidance.documentLinks.some(link => link.label === 'YAML specification'));
     assert.strictEqual(guidance.technicalDetails, 'bad yaml');
   });
 
@@ -26,8 +26,8 @@ describe('createErrorGuidance', () => {
       }
     });
 
-    assert.strictEqual(guidance.title, 'スキーマバリデーションエラー');
-    assert.ok(guidance.documentLinks.some(link => link.label === 'TextUIスキーマ定義'));
+    assert.strictEqual(guidance.title, 'Schema validation error');
+    assert.ok(guidance.documentLinks.some(link => link.label === 'TextUI schema'));
     assert.ok(guidance.technicalDetails.includes('/page/components/0/type'));
   });
 });

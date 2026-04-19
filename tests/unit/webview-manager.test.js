@@ -515,7 +515,7 @@ describe('WebViewManager 単体テスト', () => {
         assert.ok(Array.isArray(sentMessage.themes), 'テーマ配列が含まれている');
 
         const names = sentMessage.themes.map(theme => theme.name);
-        assert.ok(names.includes('デフォルト'), 'デフォルトテーマが含まれる');
+        assert.ok(names.includes('Default'), 'Default theme is included');
         assert.ok(names.includes('Test Theme'), '作成したテーマ1が含まれる');
         assert.ok(names.includes('Custom Theme'), '作成したテーマ2が含まれる');
       } finally {

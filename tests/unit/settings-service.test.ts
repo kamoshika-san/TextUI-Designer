@@ -107,7 +107,7 @@ describe('SettingsService', () => {
     mockConfig.autoPreview.enabled = true;
     await service.resetSettings();
     assert.strictEqual(mockConfig.autoPreview.enabled, false);
-    assert.ok(infoMessages.includes('設定をリセットしました。'));
+    assert.ok(infoMessages.includes('Settings have been reset.'));
   });
 
   it('設定変更イベントが正しく発火する', () => {

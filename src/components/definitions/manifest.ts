@@ -314,7 +314,7 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
         name: 'variant',
         description: '見た目種別',
         values: [
-          { value: 'default', description: 'デフォルト' },
+          { value: 'default', description: 'Default' },
           { value: 'primary', description: 'プライマリ' },
           { value: 'success', description: '成功' },
           { value: 'warning', description: '警告' },
@@ -343,7 +343,7 @@ export const COMPONENT_MANIFEST: Record<BuiltInComponentName, ComponentManifestE
         name: 'variant',
         description: '見た目種別',
         values: [
-          { value: 'default', description: 'デフォルト' },
+          { value: 'default', description: 'Default' },
           { value: 'primary', description: 'プライマリ' },
           { value: 'success', description: '成功' },
           { value: 'warning', description: '警告' },

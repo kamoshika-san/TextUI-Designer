@@ -25,7 +25,7 @@ export class ThemeSwitchService {
         cssVariables: '',
         notice: {
           kind: 'info',
-          message: 'デフォルトテーマに切り替えました'
+          message: 'Switched to the default theme.'
         }
       };
     }
@@ -36,7 +36,7 @@ export class ThemeSwitchService {
         cssVariables: input.themeManager.generateCSSVariables(),
         notice: {
           kind: 'error',
-          message: `テーマファイルが見つかりません: ${input.themePath}`
+          message: `Theme file not found: ${input.themePath}`
         }
       };
     }
@@ -48,7 +48,7 @@ export class ThemeSwitchService {
       cssVariables: input.themeManager.generateCSSVariables(),
       notice: {
         kind: 'info',
-        message: `テーマを切り替えました: ${path.basename(input.themePath)}`
+        message: `Theme switched: ${path.basename(input.themePath)}`
       }
     };
   }
