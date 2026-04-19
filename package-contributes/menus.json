@@ -1,0 +1,61 @@
+{
+  "editor/title": [
+    {
+      "command": "textui-designer.openPreview",
+      "when": "resourceLangId == yaml || resourceFilename =~ /\\.tui\\./",
+      "group": "navigation"
+    },
+    {
+      "command": "textui-designer.export",
+      "when": "resourceLangId == yaml || resourceFilename =~ /\\.tui\\./",
+      "group": "navigation"
+    },
+    {
+      "command": "textui-designer.openOverlayDiff",
+      "when": "resourceLangId == yaml || resourceFilename =~ /\\.tui\\./",
+      "group": "navigation"
+    }
+  ],
+  "commandPalette": [
+    {
+      "command": "textui-designer.openDevTools",
+      "when": "false"
+    },
+    {
+      "command": "textui-designer.debugSchemas",
+      "when": "false"
+    },
+    {
+      "command": "textui-designer.showPerformanceReport",
+      "when": "false"
+    },
+    {
+      "command": "textui-designer.clearPerformanceMetrics",
+      "when": "false"
+    },
+    {
+      "command": "textui-designer.togglePerformanceMonitoring",
+      "when": "false"
+    },
+    {
+      "command": "textui-designer.enablePerformanceMonitoring",
+      "when": "false"
+    },
+    {
+      "command": "textui-designer.generateSampleEvents",
+      "when": "false"
+    },
+    {
+      "command": "textui-designer.showMemoryReport",
+      "when": "false"
+    },
+    {
+      "command": "textui-designer.toggleMemoryTracking",
+      "when": "false"
+    },
+    {
+      "command": "textui-designer.enableMemoryTracking",
+      "when": "false"
+    }
+  ]
+}

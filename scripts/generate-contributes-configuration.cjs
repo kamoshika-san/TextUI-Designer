@@ -6,6 +6,7 @@ const path = require('path');
 const workspaceRoot = path.resolve(__dirname, '..');
 const packageJsonPath = path.join(workspaceRoot, 'package.json');
 const builtConfigurationPath = path.join(workspaceRoot, 'out', 'config', 'configuration-properties.js');
+const fragmentsDir = path.join(workspaceRoot, 'package-contributes');
 
 if (!fs.existsSync(builtConfigurationPath)) {
   throw new Error(
@@ -14,18 +15,24 @@ if (!fs.existsSync(builtConfigurationPath)) {
   );
 }
 
-const { getGeneratedContributesConfiguration } = require(builtConfigurationPath);
-const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+const { mergePackageContributes } = require('./merge-package-contributes.cjs');
 
-if (!pkg.contributes) {
-  throw new Error('package.json に contributes が見つかりません');
+const { getGeneratedContributesConfiguration } = require(builtConfigurationPath);
+
+if (!fs.existsSync(packageJsonPath)) {
+  throw new Error(`package.json が見つかりません: ${packageJsonPath}`);
 }
 
 const nextConfiguration = getGeneratedContributesConfiguration();
-pkg.contributes.configuration = nextConfiguration;
 
-fs.writeFileSync(packageJsonPath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
+fs.mkdirSync(fragmentsDir, { recursive: true });
+fs.writeFileSync(
+  path.join(fragmentsDir, 'configuration.json'),
+  `${JSON.stringify(nextConfiguration, null, 2)}\n`,
+  'utf8'
+);
 
-console.log('[generate-contributes-configuration] package.json の contributes.configuration を同期しました');
+mergePackageContributes();
+
+console.log('[generate-contributes-configuration] package-contributes/configuration.json を同期しました');
 console.log(`[generate-contributes-configuration] properties: ${Object.keys(nextConfiguration.properties).length} 件`);
-
