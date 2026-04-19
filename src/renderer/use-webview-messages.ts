@@ -19,6 +19,23 @@ import { createPreviewUpdateFeedbackController } from './preview-update-feedback
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
+export function readSemanticDiffV2ResultMessage(message: unknown): VisualDiffV2Result | null {
+  if (!isRecord(message) || message.type !== 'diff-update-v2') {
+    return null;
+  }
+
+  if (message.schemaVersion !== 1 || !isRecord(message.payload)) {
+    return null;
+  }
+
+  const payload = message.payload;
+  if (!Array.isArray(payload.screens)) {
+    return null;
+  }
+
+  return toVisualDiffV2ResultFromPanelPayload(payload as unknown as SemanticDiffV2PanelPayload);
+}
+
 const isDevelopmentMode = Boolean(
   (typeof globalThis !== 'undefined' && (globalThis as { __TUI_DEV_MODE__?: boolean }).__TUI_DEV_MODE__) ||
   (typeof window !== 'undefined' && window.location.search.includes('textui-dev=true'))
@@ -175,15 +192,10 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
           onDiffUpdate?.(message.diff as VisualDiffResult);
           break;
         case 'diff-update-v2': {
-          const m = message as Record<string, unknown>;
-          if (m.schemaVersion !== 1 || !isRecord(m.payload)) {
+          const result = readSemanticDiffV2ResultMessage(message);
+          if (!result) {
             break;
           }
-          const pl = m.payload;
-          if (!Array.isArray(pl.screens)) {
-            break;
-          }
-          const result = toVisualDiffV2ResultFromPanelPayload(pl as unknown as SemanticDiffV2PanelPayload);
           onSemanticDiffV2Update?.(result);
           break;
         }
