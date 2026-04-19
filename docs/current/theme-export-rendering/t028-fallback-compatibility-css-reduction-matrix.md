@@ -23,21 +23,21 @@
 | Progress 骨格 | `.textui-progress` ～ `.textui-progress-fill` | プログレスバー互換 | Keep (Temporary) | 25 | fallback スタイルレーンでピン留め。 |
 | Progress バリアント色 | `.textui-progress-default` ～ `.textui-progress-error` | fill の色バリアント | Absorbable | 20 | `.textui-progress-fill` の既定色と **`.textui-progress-default` の重複**が大きい。統合時は default を先に検討。 |
 | Button ベース・バリアント | `.textui-button` / `.primary` / `.secondary` 等 | ボタン互換 | Keep (Temporary) | 15 | レガシー Button と整合。 |
-| Button submit | `.textui-button.submit` | submit 時の見た目 | **Delete candidate** | **10** | **`.textui-button.primary` と宣言が同一**（背景・文字色・枠）。submit 専用ルールは冗長のため、Primary/WebView 側で `submit` を `primary` に寄せたうえで **先に削除候補**とする。 |
+| Button submit | ~~`.textui-button.submit`~~（**T-032 で削除済み**） | fallback 互換ブロックから除去 | **Removed** | — | **WebView**（`Button.css` / `index.css`）に `.textui-button.submit` が残るため submit ボタンの見た目は Primary 既定で担保。fallback 専用重複のみ削除。 |
 | Button disabled | `.textui-button:disabled` / `.disabled` | 無効化スタイル | Keep (Temporary) | 12 | submit 削除後も disabled は残す。 |
 
 ## 削除順序（要約）
 
-1. **Delete candidate の解消** — `.textui-button.submit` を `.textui-button.primary` へ寄せる設計合意のもと **重複セレクタのみ削除**（テスト・スナップショットの更新を含む）。  
+1. ~~**Delete candidate の解消** — `.textui-button.submit` …~~ **完了（T-032）** — `getFallbackCompatibilityStyleBlock` から該当ルール削除。SSoT セレクタ数 **30**。  
 2. **Progress default の整理** — `.textui-progress-default` と `.textui-progress-fill` 既定色の重複解消（Absorbable）。  
 3. **Divider / Badge サイズ** — WebView CSS との差分表を取り、重複ルールを段階削除。  
 4. **Tabs ブロック** — Primary 契約と fallback 契約の差分縮小（T-023 系）が進んだあと、セレクタ単位で削減可否を再判定。
 
 ## 削除候補（≥1 本チケット要件）
 
-| 候補 | 理由 | 実削除時の前提 |
-|------|------|----------------|
-| **`.textui-button.submit` ブロック** | `.textui-button.primary` と同一宣言であり、fallback 専用互換 CSS のみが benefit。 | レンダラが `submit` でも `primary` と同じクラスグラフになる、または WebView 側で submit をカバーすることを確認したうえで削除。 |
+| 候補 | 理由 | 状態 |
+|------|------|------|
+| **`.textui-button.submit` ブロック** | `.textui-button.primary` と同一宣言の重複。 | **実削除済み（T-032）** — 以降の候補は Progress default 等をマトリクス更新で追記。 |
 
 ## 関連
 

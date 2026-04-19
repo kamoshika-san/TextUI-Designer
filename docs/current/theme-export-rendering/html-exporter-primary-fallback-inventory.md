@@ -123,10 +123,12 @@ Small-slice verification in `tests/unit/html-exporter-route-viability.test.js` l
 
 | Topic | Primary coverage | Fallback coverage | Notes |
 |-------|------------------|-------------------|-------|
-| Tabs — list / tab / active / panel | `tests/unit/html-exporter-primary-tabs-semantic.test.js` | `html-exporter-fallback-style-lane.test.js`（Table 同梱、`Tabs+Divider` シナリオ） | Primary は `textui-tab is-active`。fallback はレガシー `textui-tab-active is-active` 等を継続。 |
+| Tabs — list / tab / active / panel | `tests/unit/html-exporter-primary-tabs-semantic.test.js` | `html-exporter-fallback-style-lane.test.js`（`Tabs+Divider` シナリオ） | Primary は `textui-tab is-active`。fallback はレガシー `textui-tab-active is-active` 等を継続。 |
+| Table — semantic hooks | `tests/unit/html-exporter-primary-table-semantic.test.js` | — | T-030: Primary のみで `textui-table*` + hover/striped トークンを検証。fallback から Table assert 除去。 |
 | FormControl — Input | `tests/unit/html-exporter-primary-formcontrol-input.test.js` | 複合 DSL 内の Input ノードは残すが **`textui-input` の単体 assert は Primary に移管** | Checkbox / Radio / DatePicker は当面 fallback のみ。 |
-| FormControl — 残件（T-025） | — | `html-exporter-fallback-style-lane.test.js` の FormControl+Alert `it` | **Checkbox / Radio / DatePicker**: レガシー `html-form-renderer` はラベル行・Tailwind 連結クラスが React の `Input` 等と一致せず、**同一文字列 assert を Primary に複製すると誤検知**になりやすい。次スプリントで意味対応表を切ってから移管。**Alert**: 本スプリントでは未移管（variant / border 系は fallback のまま）。 |
-| compatibility CSS 削減計画 | — | `buildFallbackCompatibilityStyleBlock` 供給分 | 正本: [t028-fallback-compatibility-css-reduction-matrix.md](./t028-fallback-compatibility-css-reduction-matrix.md)。実 CSS 削除は別作業。 |
+| FormControl — 残件（T-025） | — | `html-exporter-fallback-style-lane.test.js` の FormControl `it` | **Checkbox / Radio / DatePicker**: レガシー `html-form-renderer` はラベル行・Tailwind 連結クラスが React の `Input` 等と一致せず、**同一文字列 assert を Primary に複製すると誤検知**になりやすい。次スプリントで意味対応表を切ってから移管。 |
+| Alert — variant hooks | `tests/unit/html-exporter-primary-alert-variant.test.js` | — | T-031: `data-alert-variant` + `textui-alert` 系を Primary で検証。 |
+| compatibility CSS 削減計画 | WebView / `Button.css` の `.textui-button.submit` は維持 | `buildFallbackCompatibilityStyleBlock`（**T-032**: `.textui-button.submit` 重複ルール削除済み） | 正本: [t028-fallback-compatibility-css-reduction-matrix.md](./t028-fallback-compatibility-css-reduction-matrix.md)。 |
 
 ## Related documents
 

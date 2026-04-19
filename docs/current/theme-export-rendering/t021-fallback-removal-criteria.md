@@ -95,11 +95,11 @@
 
 | Contract | Current lane | Product-critical? | Can move to Primary? | Blocker? | Action |
 |----------|--------------|-------------------|----------------------|----------|--------|
-| Tabs semantic classes（`textui-tabs*` 等） | fallback style tests + Primary `html-exporter-primary-tabs-semantic.test.js` | yes（静的 HTML 契約） | **partial**（一覧・パネル・active は Primary で検証） | **partial**（Table 同梱・Divider 複合は fallback `html-exporter-fallback-style-lane` に残存） | シンプル Tabs は Primary へ移管済み（T-023）。複合は fallback 継続。 |
-| Table semantic classes | 同上 | yes | partial | yes | 同上 |
+| Tabs semantic classes（`textui-tabs*` 等） | fallback style tests + Primary `html-exporter-primary-tabs-semantic.test.js` | yes（静的 HTML 契約） | **partial**（一覧・パネル・active は Primary で検証） | **partial**（`Tabs+Divider` 複合は fallback `html-exporter-fallback-style-lane` に残存） | シンプル Tabs は Primary へ移管済み（T-023）。複合は fallback 継続。 |
+| Table semantic classes | Primary `html-exporter-primary-table-semantic.test.js` | yes | **yes**（Primary 完全検証） | **no** | T-030 完了。fallback style lane から Table assert 除去。 |
 | Divider + Tabs 複合マークアップ | 同上 | medium | partial | yes | 同上 |
 | FormControl 系（Input/Checkbox/Radio/DatePicker の `textui-*`） | fallback style + Primary Input テスト | yes | **partial**（Input は Primary で検証） | **partial**（Checkbox/Radio/DatePicker は fallback のみ） | Input: `html-exporter-primary-formcontrol-input.test.js`（T-025）。他は従来どおり fallback。 |
-| Alert variant hooks（`data-alert-variant` 等） | 同上 | yes | partial | yes | 同上 |
+| Alert variant hooks（`data-alert-variant` 等） | Primary `html-exporter-primary-alert-variant.test.js` | yes | **yes** | **no** | T-031: Primary に `data-alert-variant` 付与 + 専用テスト。fallback から Alert assert 除去。 |
 | Accordion / TreeView 静的クラス | 同上 | medium | partial | yes | 同上 |
 | **compatibility CSS**（`buildFallbackCompatibilityStyleBlock` 系） | fallback style + boundary policy | yes（現レーン） | partial（`webviewCss` 強化後に縮小） | **yes** | [export-fallback-lane-boundary-policy.md](./export-fallback-lane-boundary-policy.md) に沿って **Temporary → 削除候補** へ段階移行 |
 | **debug observability**（fallback ログ・警告の有無） | lane-observability tests | low（運用） | yes（ログ契約を Primary に寄せられるなら） | maybe | Primary で同ログが取れるなら移管、不要なら削除 |

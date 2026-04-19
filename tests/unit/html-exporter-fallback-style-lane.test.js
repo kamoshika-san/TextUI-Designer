@@ -61,41 +61,7 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(html.includes('.textui-tabs .flex > button.textui-tab-active'));
   });
 
-  // Full HtmlExporter export on fallback lane: Table + static utility hooks stay here; Tabs-only Primary hooks
-  // are covered by `html-exporter-primary-tabs-semantic.test.js` (T-023).
-  it('fallback HTML lane keeps Table semantic classes alongside compatibility utilities', async () => {
-    const exporter = new HtmlExporter();
-    const html = await exporter.export({
-      page: {
-        id: 'fallback-structure',
-        title: 'Fallback Structure',
-        layout: 'vertical',
-        components: [
-          {
-            Tabs: {
-              defaultTab: 0,
-              items: [
-                { label: 'Tab 1', components: [{ Text: { value: 'tab body' } }] },
-                { label: 'Tab 2', components: [{ Text: { value: 'other body' } }] }
-              ]
-            }
-          },
-          {
-            Table: {
-              columns: [{ key: 'name', header: 'Name' }],
-              rows: [{ name: 'Alice' }],
-              rowHover: true
-            }
-          }
-        ]
-      }
-    }, createFallbackOptions({ format: 'html' }));
-
-    assert.ok(html.includes('textui-table-container'));
-    assert.ok(html.includes('textui-table-header'));
-    assert.ok(html.includes('textui-table-row'));
-    assert.ok(html.includes('hover:bg-gray-800/80 transition-colors has-hover'));
-  });
+  // Table semantic hooks: Primary-only (`html-exporter-primary-table-semantic.test.js`, T-030).
 
   // Same as above — Divider + nested Tabs structures differ from the first scenario; still unreachable on Primary.
   it('fallback HTML lane keeps Tabs and Divider parity hooks for sample-style structures', async () => {
@@ -139,9 +105,10 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(html.includes('textui-divider vertical my-4'));
   });
 
-  // Form primitives + Alert variant attributes: static fallback renderer emits different class graph than React preview.
-  // Input `textui-input` / wrapper hooks are asserted on Primary in `html-exporter-primary-formcontrol-input.test.js` (T-025).
-  it('fallback HTML lane keeps FormControl and Alert semantic classes alongside compatibility utilities', async () => {
+  // Form primitives: static fallback renderer emits different class graph than React preview.
+  // Input: Primary `html-exporter-primary-formcontrol-input.test.js` (T-025).
+  // Alert variant hooks: Primary `html-exporter-primary-alert-variant.test.js` (T-031).
+  it('fallback HTML lane keeps FormControl semantic classes alongside compatibility utilities', async () => {
     const exporter = new HtmlExporter();
     const html = await exporter.export({
       page: {
@@ -152,8 +119,7 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
           { Input: { label: 'Email', type: 'email', disabled: true, placeholder: 'name@example.com' } },
           { Checkbox: { label: 'Agree', checked: true, disabled: true } },
           { Radio: { label: 'Priority', name: 'priority', options: [{ label: 'High', value: 'high', checked: true }], disabled: true } },
-          { DatePicker: { label: 'Due', name: 'dueDate', disabled: true } },
-          { Alert: { title: 'Heads up', message: 'needs attention', variant: 'warning' } }
+          { DatePicker: { label: 'Due', name: 'dueDate', disabled: true } }
         ]
       }
     }, createFallbackOptions({ format: 'html' }));
@@ -162,13 +128,8 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(html.includes('textui-radio-group'));
     assert.ok(html.includes('textui-radio-option'));
     assert.ok(html.includes('textui-datepicker'));
-    assert.ok(html.includes('data-alert-variant="warning"'));
-    assert.ok(html.includes('class="textui-alert'));
-    assert.ok(html.includes('textui-alert-title'));
-    assert.ok(html.includes('textui-alert-message'));
     assert.ok(html.includes('textui-text'));
     assert.ok(html.includes('opacity-50 cursor-not-allowed'));
-    assert.ok(html.includes('border-yellow-700'));
   });
 
   // Accordion/TreeView: another static surface area; Primary tests cover behavior, not this CSS/DOM pairing.

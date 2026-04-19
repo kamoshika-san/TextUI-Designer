@@ -226,12 +226,6 @@ function getFallbackCompatibilityStyleBlock(): string {
       border-color: rgba(107, 114, 128, 0.3);
     }
 
-    .textui-button.submit {
-      background-color: #3b82f6;
-      color: #fff;
-      border-color: transparent;
-    }
-
     .textui-button:disabled,
     .textui-button.disabled {
       opacity: 0.5;

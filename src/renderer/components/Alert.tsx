@@ -22,7 +22,7 @@ export const Alert: React.FC<AlertProps> = ({
   title 
 }) => {
   return (
-    <div className={variantClasses[variant]}>
+    <div className={variantClasses[variant]} data-alert-variant={variant}>
       {title && <div className="textui-alert-title">{title}</div>}
       <div className="textui-alert-message">{message}</div>
     </div>

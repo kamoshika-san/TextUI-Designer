@@ -2,20 +2,14 @@ import type { DiffCompareDocument } from './diff-types';
 import type {
   V2ComponentDiff,
   V2DiffRecord,
-  V2HighConfidenceDecision,
 } from './diff-v2-types';
+import { buildV2Decision } from './v2-confidence-scorer';
 
 function makeComponentRecord(
   event: 'component_added' | 'component_removed',
   targetId: string
 ): V2DiffRecord {
-  const decision: V2HighConfidenceDecision = {
-    confidence_band: 'high',
-    diff_event: event,
-    target_id: targetId,
-    confidence: 1.0,
-  };
-  return { decision, explanation: { evidence: [] } };
+  return { decision: buildV2Decision(event, targetId, 1.0), explanation: { evidence: [] } };
 }
 
 /**

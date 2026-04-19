@@ -86,3 +86,5 @@ export interface DiffCompareResultV2Payload {
     totalRecords: number;
   };
 }
+
+export const AMBIGUITY_THRESHOLD = 0.8 as const;
