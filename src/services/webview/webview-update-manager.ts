@@ -8,6 +8,7 @@ import { WebViewErrorHandler } from './webview-error-handler';
 import { ConfigManager } from '../../utils/config-manager';
 import { Logger } from '../../utils/logger';
 import { TextUICoreEngine } from '../../core/textui-core-engine';
+import { V2SemanticDiffProvider } from '../../core/diff/v2-semantic-diff-provider';
 import { toVisualDiffV2FromPayload } from '../../domain/diff/semantic-diff-v2-panel-mapper';
 import { deliverPreviewPayload } from './preview-webview-deliver';
 import { deliverDiffPayload, deliverSemanticDiffV2Panel } from './diff-webview-deliver';
@@ -181,7 +182,7 @@ export class WebViewUpdateManager {
   }
 
   private getCoreEngineForSemanticV2(): TextUICoreEngine {
-    this.coreEngineForSemanticV2 ??= new TextUICoreEngine();
+    this.coreEngineForSemanticV2 ??= new TextUICoreEngine(new V2SemanticDiffProvider());
     return this.coreEngineForSemanticV2;
   }
 

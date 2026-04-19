@@ -124,6 +124,10 @@ Rationale:
 3. Keep Primary default CSS minimal; compatibility selectors stay append-only and helper-routed until they are removed.
 4. If a selector family no longer appears in approved fallback tests or routes, reclassify it to delete candidate before implementation.
 
+## T-028 compatibility CSS reduction matrix
+
+ルール単位の列挙・分類・削除順・削除候補の正本: [t028-fallback-compatibility-css-reduction-matrix.md](./t028-fallback-compatibility-css-reduction-matrix.md)。
+
 ## B3 / B4 input
 
 - `B3` should use this memo to decide which compatibility families may remain while standardizing `readWebviewCssIfPresent()`.
