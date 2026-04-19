@@ -1,6 +1,13 @@
 #!/usr/bin/env node
 "use strict";
 
+/**
+ * Import graph boundary rules (machine check) — human-readable rationale and lane tables:
+ * docs/current/testing-ci/import-boundaries-4-lanes.md
+ * Keep ALLOWED_EXPORT_TO_RENDERER in sync with the doc section
+ * "allowlist（Export → Renderer の橋）" (same from/to paths).
+ */
+
 const fs = require("fs");
 const path = require("path");
 
@@ -9,21 +16,9 @@ const srcRoot = path.join(repoRoot, "src");
 const SOURCE_EXTS = [".ts", ".tsx", ".js", ".cjs", ".mjs"];
 
 const ALLOWED_EXPORT_TO_RENDERER = [
-    {
-        from: "src/exporters/react-static-export.ts",
-        to: "src/renderer/preview-diff.ts",
-        reason: "Primary static HTML export reuses preview key generation.",
-    },
-    {
-        from: "src/exporters/react-static-export.ts",
-        to: "src/renderer/component-map.tsx",
-        reason: "Primary static HTML export reuses the registered preview component map.",
-    },
-    {
-        from: "src/exporters/static-html-render-adapter.ts",
-        to: "src/renderer/render-context.ts",
-        reason: "Primary static HTML export only imports the shared render context type.",
-    },
+    { from: "src/exporters/react-static-export.ts", to: "src/renderer/preview-diff.ts" },
+    { from: "src/exporters/react-static-export.ts", to: "src/renderer/component-map.tsx" },
+    { from: "src/exporters/static-html-render-adapter.ts", to: "src/renderer/render-context.ts" },
 ];
 
 const allowedExportToRendererPairs = new Set(
