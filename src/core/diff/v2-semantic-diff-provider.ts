@@ -14,14 +14,7 @@ import {
   createDiffResultSkeleton,
 } from './structure-diff';
 import { createNormalizedFlowDiffDocument } from './flow-diff';
-
-const STUB_V2_PAYLOAD: DiffCompareResultV2Payload = {
-  screens: [],
-  metadata: {
-    schemaVersion: 'v2-compare-logic/v0',
-    totalRecords: 0,
-  },
-};
+import { scanEntityDiffs } from './v2-diff-entity-scan';
 
 export class V2SemanticDiffProvider implements SemanticDiffProvider {
   createStructureDiffDocument(
@@ -37,7 +30,16 @@ export class V2SemanticDiffProvider implements SemanticDiffProvider {
     policy?: HeuristicPolicy
   ): DiffCompareResult {
     const result = createDiffResultSkeleton(previous, next, policy);
-    return { ...result, v2: STUB_V2_PAYLOAD };
+    const screens = scanEntityDiffs(previous, next);
+    const totalRecords = screens.reduce(
+      (sum, s) => sum + ('outOfScope' in s ? 0 : s.diffs.length),
+      0
+    );
+    const v2: DiffCompareResultV2Payload = {
+      screens,
+      metadata: { schemaVersion: 'v2-compare-logic/v0', totalRecords },
+    };
+    return { ...result, v2 };
   }
 
   createFlowDiffDocument(
