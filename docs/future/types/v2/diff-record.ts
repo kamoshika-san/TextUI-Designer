@@ -43,7 +43,10 @@ export interface DecisionPayload {
 export interface ExplanationPayload {
   /** Empty array is valid when no registered evidence_shape applies. */
   evidence: EvidenceShape[];
-  canonical_predicate?: CanonicalPredicate;
+  /** Predicate describing the state before the change. Optional; omit when no structural diff applies. */
+  before_predicate?: CanonicalPredicate;
+  /** Predicate describing the state after the change. Optional; omit when no structural diff applies. */
+  after_predicate?: CanonicalPredicate;
 }
 
 /** Semantic v2 diff record — decision and explanation are fully separated */

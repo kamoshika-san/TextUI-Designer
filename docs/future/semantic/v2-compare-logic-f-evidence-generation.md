@@ -19,7 +19,7 @@ layer 分類:
 
 - `structure` / `surface` イベントは、存在差分または表示ラベル変化の記録であり、registry にある evidence_shape の比較対象ではない。
   evidence_shape は before/after ペアを前提とするため、これらのイベントへの添付は不適切。
-- `semantic` イベントでも registry 未登録のものは `canonical_predicate` 側で説明し、evidence は空配列にする。
+- `semantic` イベントでも registry 未登録のものは `before_predicate`/`after_predicate` 側で説明し、evidence は空配列にする。
 
 根拠: evidence は「なぜ変化と判断したか」の根拠であり、structure / surface イベントは
 存在/非存在という事実だけで根拠が自明。evidence を添付しても情報が増えない。
@@ -34,11 +34,11 @@ layer 分類:
 
 | diff_event | 適用 evidence_shape | 選択根拠 |
 |---|---|---|
-| `entity_state_changed` | なし（空 evidence） | registry 未登録。state 変化は `canonical_predicate` で表現 |
+| `entity_state_changed` | なし（空 evidence） | registry 未登録。state 変化は `before_predicate`/`after_predicate` で表現 |
 | `transition_edge_changed` | `state_machine.transition` | registry 登録済みで from/to/trigger が直接対応 |
-| `component_action_changed` | なし（空 evidence） | registry 未登録。action 変化は `canonical_predicate` で表現 |
-| `component_availability_changed` | なし（空 evidence） | 3フィールドの before/after は `explanation.canonical_predicate` に収録（F-3参照） |
-| `component_guard_changed` | なし（空 evidence） | CanonicalPredicate の変化は `explanation.canonical_predicate` で表現 |
+| `component_action_changed` | なし（空 evidence） | registry 未登録。action 変化は `before_predicate`/`after_predicate` で表現 |
+| `component_availability_changed` | なし（空 evidence） | 3フィールドの before/after は `before_predicate`/`after_predicate` に収録（F-3参照） |
+| `component_guard_changed` | なし（空 evidence） | CanonicalPredicate の変化は `before_predicate`/`after_predicate` で表現 |
 
 ### structure / surface イベント → evidence なし（F-1 の決定により）
 
@@ -86,10 +86,16 @@ const record: V2DiffRecord = {
     review_status: 'approved',
   },
   explanation: {
-    evidence: [],  // availability の before/after は下記 canonical_predicate に収録
-    canonical_predicate: {
-      // availability 変化の場合: 両側 availability の構造を predicate 形式で表現
+    evidence: [],
+    before_predicate: {
+      // 変化前の availability 状態を predicate 形式で表現
       // (設計D-2 で「explanation_payload に 3フィールドの before/after を収録」と予告)
+      all_of: [
+        { fact: 'availability', op: 'eq', value: { visibility: prev.visibility, enabled: prev.enabled, editability: prev.editability } }
+      ]
+    },
+    after_predicate: {
+      // 変化後の availability 状態を predicate 形式で表現
       all_of: [
         { fact: 'availability', op: 'eq', value: { visibility: next.visibility, enabled: next.enabled, editability: next.editability } }
       ]
@@ -104,7 +110,7 @@ const record: V2DiffRecord = {
 
 ## 完全マッピング確認（12 diff_event 全件）
 
-| diff_event | layer | evidence_shape | canonical_predicate |
+| diff_event | layer | evidence_shape | before_predicate / after_predicate |
 |---|---|---|---|
 | `entity_added` | structure | `[]` | なし |
 | `entity_removed` | structure | `[]` | なし |
@@ -116,8 +122,8 @@ const record: V2DiffRecord = {
 | `component_added` | structure | `[]` | なし |
 | `component_removed` | structure | `[]` | なし |
 | `component_action_changed` | semantic | `[]` | action before/after |
-| `component_availability_changed` | semantic | `[]` | availability 3フィールド |
-| `component_guard_changed` | semantic | `[]` | guard の CanonicalPredicate |
+| `component_availability_changed` | semantic | `[]` | availability 3フィールド before/after |
+| `component_guard_changed` | semantic | `[]` | guard の CanonicalPredicate before/after |
 
 ---
 
@@ -127,7 +133,7 @@ const record: V2DiffRecord = {
 |---|
 | 設計D-2: availability の詳細は explanation_payload に収録と予告済み |
 | docs/future/types/v2/evidence.ts: EvidenceShape 3種定義 |
-| docs/future/types/v2/diff-record.ts: ExplanationPayload 型 |
+| docs/future/types/v2/diff-record.ts: ExplanationPayload 型（before_predicate / after_predicate） |
 
 | 次ステップ |
 |---|
