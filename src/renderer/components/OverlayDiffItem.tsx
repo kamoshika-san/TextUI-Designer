@@ -227,7 +227,7 @@ export function AccordionItem({
               }}
             >
               <span style={{ color: PREFIX_COLOR['~'], fontWeight: 700, flexShrink: 0, width: 10, textAlign: 'center' }}>~</span>
-              <span>並び替え: {group.componentIndexA! + 1}番目 → {group.componentIndexB! + 1}番目</span>
+              <span>Reorder: #{group.componentIndexA! + 1} → #{group.componentIndexB! + 1}</span>
             </li>
           )}
           {childLines.map(line => (
