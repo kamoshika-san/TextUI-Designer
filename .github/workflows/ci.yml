@@ -346,6 +346,8 @@ jobs:
 
     - name: Verify committed media/ matches build-webview
       run: npm run check:webview-media-drift
+    # T-015: artifact commit vs build-on-CI — strategy / phased migration memo:
+    # docs/current/ci-webview-artifact-strategy-t015.md
 
   build:
     name: Build Extension
