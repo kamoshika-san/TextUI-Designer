@@ -1,6 +1,8 @@
 import { useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
 import type { NavigationFlowDSL, TextUIDSL } from '../domain/dsl-types';
 import type { VisualDiffResult } from '../domain/diff/visual-diff-model';
+import type { SemanticDiffV2PanelPayload, VisualDiffV2Result } from '../domain/diff/semantic-diff-v2-panel-model';
+import { toVisualDiffV2ResultFromPanelPayload } from '../domain/diff/semantic-diff-v2-panel-mapper';
 import type { ConflictViewResult } from '../domain/diff/conflict-webview-model';
 import type { OverlayDiffState } from '../domain/diff/overlay-diff-types';
 import {
@@ -55,6 +57,7 @@ interface UseWebviewMessagesOptions {
   setShowUpdateIndicator: (value: boolean) => void;
   setShowJumpToDslHoverIndicator: (value: boolean) => void;
   onDiffUpdate?: (diff: VisualDiffResult) => void;
+  onSemanticDiffV2Update?: (v: VisualDiffV2Result) => void;
   onConflictUpdate?: (conflict: ConflictViewResult) => void;
   onHighlightComponent?: (index: number | null) => void;
   onOverlayDiffInit?: (state: OverlayDiffState) => void;
@@ -85,6 +88,7 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
     setShowUpdateIndicator,
     setShowJumpToDslHoverIndicator,
     onDiffUpdate,
+    onSemanticDiffV2Update,
     onConflictUpdate,
     onHighlightComponent,
     onOverlayDiffInit,
@@ -170,6 +174,19 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
         case 'diff-update':
           onDiffUpdate?.(message.diff as VisualDiffResult);
           break;
+        case 'diff-update-v2': {
+          const m = message as Record<string, unknown>;
+          if (m.schemaVersion !== 1 || !isRecord(m.payload)) {
+            break;
+          }
+          const pl = m.payload;
+          if (!Array.isArray(pl.screens)) {
+            break;
+          }
+          const result = toVisualDiffV2ResultFromPanelPayload(pl as unknown as SemanticDiffV2PanelPayload);
+          onSemanticDiffV2Update?.(result);
+          break;
+        }
         case 'conflict-update':
           onConflictUpdate?.(message.conflict as ConflictViewResult);
           break;
@@ -206,5 +223,5 @@ export function useWebviewMessages(options: UseWebviewMessagesOptions): void {
       previewUpdateFeedbackRef.current = null;
       window.removeEventListener('message', onMessage);
     };
-  }, [postReady, applyDslUpdate, setError, setUpdateStatus, setLastCompletedAt, setShowUpdateIndicator, setShowJumpToDslHoverIndicator, onDiffUpdate, onConflictUpdate, onHighlightComponent, onOverlayDiffInit, onSetReturnPath, onSourcePathUpdate]);
+  }, [postReady, applyDslUpdate, setError, setUpdateStatus, setLastCompletedAt, setShowUpdateIndicator, setShowJumpToDslHoverIndicator, onDiffUpdate, onSemanticDiffV2Update, onConflictUpdate, onHighlightComponent, onOverlayDiffInit, onSetReturnPath, onSourcePathUpdate]);
 }

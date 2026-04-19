@@ -9,6 +9,7 @@ import { renderRegisteredComponent, registerBuiltInComponents } from './componen
 import type { NavigationFlowDSL, TextUIDSL, ComponentDef } from '../domain/dsl-types';
 import { isNavigationFlowDSL } from '../domain/dsl-types';
 import type { VisualDiffResult } from '../domain/diff/visual-diff-model';
+import type { VisualDiffV2Result } from '../domain/diff/semantic-diff-v2-panel-model';
 import type { ConflictViewResult } from '../domain/diff/conflict-webview-model';
 import type { OverlayDiffState } from '../domain/diff/overlay-diff-types';
 import { getVSCodeApi } from './vscode-api';
@@ -30,6 +31,7 @@ import {
 
 const vscodeApi = getVSCodeApi();
 type PreviewDocument = TextUIDSL | NavigationFlowDSL;
+type DiffPanelTab = 'structure' | 'semantic';
 
 const isDevelopmentMode = Boolean(
   (typeof globalThis !== 'undefined' && (globalThis as { __TUI_DEV_MODE__?: boolean }).__TUI_DEV_MODE__) ||
@@ -63,6 +65,8 @@ const App: React.FC = () => {
   const [lastCompletedAt, setLastCompletedAt] = useState<number | null>(null);
   const [showUpdateIndicator, setShowUpdateIndicator] = useState(true);
   const [diffResult, setDiffResult] = useState<VisualDiffResult | null>(null);
+  const [semanticDiffV2, setSemanticDiffV2] = useState<VisualDiffV2Result | null>(null);
+  const [diffPanelTab, setDiffPanelTab] = useState<DiffPanelTab>('structure');
   const [conflictResult, setConflictResult] = useState<ConflictViewResult | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
   const [showJumpToDslHoverIndicator, setShowJumpToDslHoverIndicator] = useState(true);
@@ -221,6 +225,7 @@ const App: React.FC = () => {
     setShowUpdateIndicator,
     setShowJumpToDslHoverIndicator,
     onDiffUpdate: setDiffResult,
+    onSemanticDiffV2Update: setSemanticDiffV2,
     onConflictUpdate: setConflictResult,
     onHighlightComponent: setHighlightedIndex,
     onOverlayDiffInit: setOverlayDiffState,
@@ -614,11 +619,70 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
           showRelativeTimestamp={isDevelopmentMode}
         />
       ) : null}
-      {diffResult?.hasChanges ? (
-        <span style={{ fontSize: '0.75rem', color: '#fbbf24', padding: '0.2rem 0.5rem', borderRadius: '0.375rem', background: 'rgba(251,191,36,0.12)' }}>
-          {diffResult.nodes.filter(n => n.changeType !== 'unchanged').length} changes
-        </span>
-      ) : null}
+      <div
+        role="tablist"
+        aria-label="Diff panel"
+        style={{
+          position: 'fixed',
+          top: '3.25rem',
+          right: '1rem',
+          zIndex: 1000,
+          display: 'flex',
+          gap: 4,
+          flexWrap: 'wrap',
+          alignItems: 'center'
+        }}
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={diffPanelTab === 'structure'}
+          onClick={() => setDiffPanelTab('structure')}
+          style={{
+            fontSize: '0.72rem',
+            padding: '0.2rem 0.45rem',
+            borderRadius: 4,
+            border: '1px solid var(--vscode-widget-border, rgba(148,163,184,0.35))',
+            background: diffPanelTab === 'structure' ? 'var(--vscode-button-background, #0e639c)' : 'transparent',
+            color: diffPanelTab === 'structure' ? 'var(--vscode-button-foreground, #fff)' : 'var(--vscode-foreground, #ccc)',
+            cursor: 'pointer'
+          }}
+        >
+          構造
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={diffPanelTab === 'semantic'}
+          onClick={() => setDiffPanelTab('semantic')}
+          style={{
+            fontSize: '0.72rem',
+            padding: '0.2rem 0.45rem',
+            borderRadius: 4,
+            border: '1px solid var(--vscode-widget-border, rgba(148,163,184,0.35))',
+            background: diffPanelTab === 'semantic' ? 'var(--vscode-button-background, #0e639c)' : 'transparent',
+            color: diffPanelTab === 'semantic' ? 'var(--vscode-button-foreground, #fff)' : 'var(--vscode-foreground, #ccc)',
+            cursor: 'pointer'
+          }}
+        >
+          意味
+        </button>
+        {diffPanelTab === 'structure' && diffResult?.hasChanges ? (
+          <span style={{ fontSize: '0.75rem', color: '#fbbf24', padding: '0.2rem 0.5rem', borderRadius: '0.375rem', background: 'rgba(251,191,36,0.12)' }}>
+            {diffResult.nodes.filter(n => n.changeType !== 'unchanged').length} changes
+          </span>
+        ) : null}
+        {diffPanelTab === 'semantic' ? (
+          semanticDiffV2 ? (
+            <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: '0.72rem', color: 'var(--vscode-foreground, #dbeafe)', maxWidth: '14rem' }}>
+              <li>hasChanges: {String(semanticDiffV2.hasChanges)}</li>
+              <li>screens: {semanticDiffV2.payload.screens.length}</li>
+            </ul>
+          ) : (
+            <span style={{ fontSize: '0.72rem', opacity: 0.75 }}>意味 diff (v2) 未受信</span>
+          )
+        ) : null}
+      </div>
       {conflictResult?.hasConflicts ? (
         <span style={{ fontSize: '0.75rem', color: '#f87171', padding: '0.2rem 0.5rem', borderRadius: '0.375rem', background: 'rgba(248,113,113,0.12)' }}>
           &#9888; {conflictResult.entries.length} conflicts

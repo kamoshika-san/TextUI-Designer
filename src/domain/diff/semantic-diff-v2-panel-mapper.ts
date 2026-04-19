@@ -90,6 +90,14 @@ function payloadHasChanges(payload: SemanticDiffV2PanelPayload): boolean {
   return false;
 }
 
+/** WebView 受信側: wire `payload` のみから `hasChanges` を復元する */
+export function toVisualDiffV2ResultFromPanelPayload(payload: SemanticDiffV2PanelPayload): VisualDiffV2Result {
+  return {
+    payload,
+    hasChanges: payloadHasChanges(payload),
+  };
+}
+
 /**
  * Runtime `DiffCompareResultV2Payload` を WebView パネル用 `VisualDiffV2Result` に変換する。
  */
