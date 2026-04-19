@@ -29,7 +29,7 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(styleBlock.includes('.bg-gray-900'));
     assert.ok(!styleBlock.includes('.textui-badge-primary {'));
     assert.ok(!styleBlock.includes('.textui-progress-fill {'));
-    assert.ok(!styleBlock.includes('.textui-tabs .flex > button.textui-tab-active'));
+    assert.ok(!styleBlock.includes('.textui-button.primary {'));
   });
 
   // Complements the previous test: default document style must still carry light-theme utilities used by both lanes.
@@ -46,8 +46,9 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
     assert.ok(styleBlock.includes('.bg-gray-200 {'));
   });
 
-  // Ensures opt-in `compatibilityCss` still injects badge/progress/tab rules — exercised without HtmlExporter
+  // Ensures opt-in `compatibilityCss` still injects badge/progress/button rules — exercised without HtmlExporter
   // because we are pinning template-builder layering, not React render output.
+  // Tabs: `Tabs.css` in webviewCss covers legacy string markup (`textui-tabs-list` / `textui-tab`); T-040 removed duplicate compat rules.
   it('keeps compatibility CSS available only when the fallback lane appends it explicitly', () => {
     const html = buildHtmlDocument('<div class="textui-tabs"></div>', '', {
       compatibilityCss: buildFallbackCompatibilityStyleBlock()
@@ -55,7 +56,7 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
 
     assert.ok(html.includes('.textui-badge-primary {'));
     assert.ok(html.includes('.textui-progress-fill {'));
-    assert.ok(html.includes('.textui-tabs .flex > button.textui-tab-active'));
+    assert.ok(html.includes('.textui-button.primary {'));
   });
 
   // Table semantic hooks: Primary-only (`html-exporter-primary-table-semantic.test.js`, T-030).

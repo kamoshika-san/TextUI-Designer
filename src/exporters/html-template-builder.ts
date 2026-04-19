@@ -90,35 +90,6 @@ function getFallbackCompatibilityStyleBlock(): string {
     .textui-badge-warning { background-color: rgba(245, 158, 11, 0.22); color: #fcd34d; }
     .textui-badge-error { background-color: rgba(239, 68, 68, 0.2); color: #fca5a5; }
 
-    .textui-tabs {
-      border-color: rgb(208 215 222);
-    }
-
-    .textui-tabs .flex {
-      display: flex;
-      flex-wrap: nowrap;
-      border-bottom-color: rgb(208 215 222);
-    }
-
-    .textui-tabs .flex > button {
-      flex-shrink: 0;
-      min-height: 2.25rem;
-      padding: 0.5rem 1rem;
-      font-size: 0.875rem;
-      border-right-color: rgb(208 215 222);
-      background-color: rgb(246 248 250);
-      color: rgb(101 109 118);
-    }
-
-    .textui-tabs .flex > button:last-child {
-      border-right-width: 0;
-    }
-
-    .textui-tabs .flex > button.textui-tab-active {
-      background-color: rgb(234 238 242);
-      color: rgb(31 35 40);
-    }
-
     .textui-progress {
       display: block;
       width: 100%;
@@ -151,11 +122,6 @@ function getFallbackCompatibilityStyleBlock(): string {
       transition: width 0.2s ease;
       background-color: rgba(107, 114, 128, 0.7);
     }
-
-    .textui-progress-primary { background-color: #3b82f6; }
-    .textui-progress-success { background-color: #22c55e; }
-    .textui-progress-warning { background-color: #f59e0b; }
-    .textui-progress-error { background-color: #ef4444; }
 
     .textui-button {
       display: inline-flex;
