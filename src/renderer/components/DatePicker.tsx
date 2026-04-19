@@ -45,7 +45,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         min={min}
         max={max}
         onChange={handleChange}
-        className="textui-input"
+        className={['textui-input', disabled ? 'opacity-50 cursor-not-allowed' : ''].filter(Boolean).join(' ')}
       />
     </div>
   );

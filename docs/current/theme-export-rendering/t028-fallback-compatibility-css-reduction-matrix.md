@@ -21,7 +21,7 @@
 | Divider | `.textui-divider` / `.vertical` | レガシー文字列レンダラの divider 見た目 | Absorbable | 35 | `Divider.tsx` + 既定 CSS と差分比較後に縮小。 |
 | Tabs コンテナ・タブボタン | `.textui-tabs` ～ `.textui-tabs .flex > button.textui-tab-active` | レガシー Tabs の flex 行・ active 色 | Keep (Temporary) | 30 | Primary は DOM クラス構成が異なる（`textui-tab is-active`）。当面は fallback 契約が残る。 |
 | Progress 骨格 | `.textui-progress` ～ `.textui-progress-fill` | プログレスバー互換 | Keep (Temporary) | 25 | fallback スタイルレーンでピン留め。 |
-| Progress バリアント色 | `.textui-progress-default` ～ `.textui-progress-error` | fill の色バリアント | Absorbable | 20 | `.textui-progress-fill` の既定色と **`.textui-progress-default` の重複**が大きい。統合時は default を先に検討。 |
+| Progress バリアント色 | ~~`.textui-progress-default`~~（**T-035 で削除**） / `.textui-progress-primary` ～ `.textui-progress-error` | fill の色バリアント | Absorbable → default は **Removed** | 20 | **`.textui-progress-fill`** と同一色の **default 重複ルール**を compatibility から除去（`Progress.tsx` + WebView `Progress.css` が `.textui-progress-default` を継続）。 |
 | Button ベース・バリアント | `.textui-button` / `.primary` / `.secondary` 等 | ボタン互換 | Keep (Temporary) | 15 | レガシー Button と整合。 |
 | Button submit | ~~`.textui-button.submit`~~（**T-032 で削除済み**） | fallback 互換ブロックから除去 | **Removed** | — | **WebView**（`Button.css` / `index.css`）に `.textui-button.submit` が残るため submit ボタンの見た目は Primary 既定で担保。fallback 専用重複のみ削除。 |
 | Button disabled | `.textui-button:disabled` / `.disabled` | 無効化スタイル | Keep (Temporary) | 12 | submit 削除後も disabled は残す。 |
@@ -29,7 +29,7 @@
 ## 削除順序（要約）
 
 1. ~~**Delete candidate の解消** — `.textui-button.submit` …~~ **完了（T-032）** — `getFallbackCompatibilityStyleBlock` から該当ルール削除。SSoT セレクタ数 **30**。  
-2. **Progress default の整理** — `.textui-progress-default` と `.textui-progress-fill` 既定色の重複解消（Absorbable）。  
+2. ~~**Progress default の整理**~~ **完了（T-035）** — compatibility から `.textui-progress-default` ルール削除。SSoT セレクタ数 **29**。  
 3. **Divider / Badge サイズ** — WebView CSS との差分表を取り、重複ルールを段階削除。  
 4. **Tabs ブロック** — Primary 契約と fallback 契約の差分縮小（T-023 系）が進んだあと、セレクタ単位で削減可否を再判定。
 
@@ -37,7 +37,8 @@
 
 | 候補 | 理由 | 状態 |
 |------|------|------|
-| **`.textui-button.submit` ブロック** | `.textui-button.primary` と同一宣言の重複。 | **実削除済み（T-032）** — 以降の候補は Progress default 等をマトリクス更新で追記。 |
+| **`.textui-button.submit` ブロック** | `.textui-button.primary` と同一宣言の重複。 | **実削除済み（T-032）** |
+| **`.textui-progress-default` ブロック** | `.textui-progress-fill` と同一宣言の重複。 | **実削除済み（T-035）** |
 
 ## 関連
 

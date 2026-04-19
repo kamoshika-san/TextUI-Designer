@@ -53,17 +53,17 @@ describe('HtmlExporter primary sample regression (T-20260322-348)', () => {
   [
     {
       sampleRelativePath: 'sample/01-basic/sample.tui.yml',
-      expectedHash: '1700b91bc216d463f9599d8f1ed29c52ce6e580e8ab1a3281af0ca342f684f3c', // updated after latest generated WebView styles refresh
+      expectedHash: '6ba036235f8867576b33ad9043f532e6d9caea3d090d6b322145f94198338890', // T-033/T-034: FormControl + Tabs/Divider markup; Checkbox/Radio/DatePicker disabled classes
       markers: ['TextUI Designer - All Components', 'This sample includes every supported component.', 'Agree to terms']
     },
     {
       sampleRelativePath: 'sample/08-github/sample.tui.yml',
-      expectedHash: '9751794756ca2c34815ef320c24c34ae3c26c20e8e485cdd8de4833246c8a267', // updated after latest generated WebView styles refresh
+      expectedHash: '0830f5562499487b8cf847c67995a85dc3e5439ff41d6cff94f0f2ca755a585e', // T-034: FormControl disabled class graph on Primary HTML
       markers: ['kamoshika-san / TextUI-Designer', 'VS Code extension for designing text-based UIs with YAML/JSON DSL.', 'Pull requests']
     },
     {
       sampleRelativePath: 'sample/09-modal/sample.tui.yml',
-      expectedHash: 'a8fa45453a7b2513e53b33a4b04508fa433e68e58da7aa88d42b776396615a31', // updated after latest generated WebView styles refresh
+      expectedHash: 'af70163859bf7cbdac73ee50c152072ecdc11d709c39f081ce97bf66c2eb676b', // T-034: modal buttons inherit disabled-class parity where applicable
       markers: ['削除の確認', 'この操作は元に戻せません', '削除する', 'ユーザー詳細']
     }
   ].forEach(({ sampleRelativePath, expectedHash, markers }) => {

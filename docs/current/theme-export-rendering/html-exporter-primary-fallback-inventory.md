@@ -119,16 +119,16 @@ Small-slice verification in `tests/unit/html-exporter-route-viability.test.js` l
 4. If a difference is still isolated to the explicit fallback lane and has a named guard, classify it as acceptable temporary debt rather than as a hidden mismatch.
 5. If a difference affects Primary-default routes or requires a new unapproved fallback entrypoint, classify it as an unresolved mismatch and open follow-up work.
 
-## Semantic contract migration (T-023 / T-025 / T-028)
+## Semantic contract migration (T-023 / T-025 / T-028 / T-033 / T-034 / T-035)
 
 | Topic | Primary coverage | Fallback coverage | Notes |
 |-------|------------------|-------------------|-------|
-| Tabs — list / tab / active / panel | `tests/unit/html-exporter-primary-tabs-semantic.test.js` | `html-exporter-fallback-style-lane.test.js`（`Tabs+Divider` シナリオ） | Primary は `textui-tab is-active`。fallback はレガシー `textui-tab-active is-active` 等を継続。 |
-| Table — semantic hooks | `tests/unit/html-exporter-primary-table-semantic.test.js` | — | T-030: Primary のみで `textui-table*` + hover/striped トークンを検証。fallback から Table assert 除去。 |
-| FormControl — Input | `tests/unit/html-exporter-primary-formcontrol-input.test.js` | 複合 DSL 内の Input ノードは残すが **`textui-input` の単体 assert は Primary に移管** | Checkbox / Radio / DatePicker は当面 fallback のみ。 |
-| FormControl — 残件（T-025） | — | `html-exporter-fallback-style-lane.test.js` の FormControl `it` | **Checkbox / Radio / DatePicker**: レガシー `html-form-renderer` はラベル行・Tailwind 連結クラスが React の `Input` 等と一致せず、**同一文字列 assert を Primary に複製すると誤検知**になりやすい。次スプリントで意味対応表を切ってから移管。 |
-| Alert — variant hooks | `tests/unit/html-exporter-primary-alert-variant.test.js` | — | T-031: `data-alert-variant` + `textui-alert` 系を Primary で検証。 |
-| compatibility CSS 削減計画 | WebView / `Button.css` の `.textui-button.submit` は維持 | `buildFallbackCompatibilityStyleBlock`（**T-032**: `.textui-button.submit` 重複ルール削除済み） | 正本: [t028-fallback-compatibility-css-reduction-matrix.md](./t028-fallback-compatibility-css-reduction-matrix.md)。 |
+| Tabs — list / tab / active / panel | `html-exporter-primary-tabs-semantic.test.js` | — | T-023。 |
+| Tabs + Divider 複合 | `html-exporter-primary-tabs-divider-composite.test.js` | — | T-033。 |
+| Table — semantic hooks | `html-exporter-primary-table-semantic.test.js` | — | T-030。 |
+| FormControl — Input / 残カテゴリ | `html-exporter-primary-formcontrol-input.test.js` + `html-exporter-primary-formcontrol-remaining.test.js` | — | T-025 / T-034。無効化時 `opacity-50 cursor-not-allowed` を Primary 側で付与（export 契約）。 |
+| Alert — variant hooks | `html-exporter-primary-alert-variant.test.js` | — | T-031。 |
+| compatibility CSS 削減 | WebView の `.textui-button.submit` / `.textui-progress-default` は維持 | `buildFallbackCompatibilityStyleBlock`（**T-032** submit 削除、**T-035** progress-default 削除） | [t028-fallback-compatibility-css-reduction-matrix.md](./t028-fallback-compatibility-css-reduction-matrix.md)。 |
 
 ## Related documents
 

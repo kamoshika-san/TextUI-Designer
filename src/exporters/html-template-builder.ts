@@ -181,7 +181,6 @@ function getFallbackCompatibilityStyleBlock(): string {
       background-color: rgba(107, 114, 128, 0.7);
     }
 
-    .textui-progress-default { background-color: rgba(107, 114, 128, 0.7); }
     .textui-progress-primary { background-color: #3b82f6; }
     .textui-progress-success { background-color: #22c55e; }
     .textui-progress-warning { background-color: #f59e0b; }

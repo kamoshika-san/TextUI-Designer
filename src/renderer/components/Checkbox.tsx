@@ -31,7 +31,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
         checked={isChecked}
         disabled={disabled}
         onChange={handleChange}
-        className="textui-checkbox"
+        className={['textui-checkbox', disabled ? 'opacity-50 cursor-not-allowed' : ''].filter(Boolean).join(' ')}
       />
       <label htmlFor={name} className="textui-checkbox-label textui-text">
         {label}

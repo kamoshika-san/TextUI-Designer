@@ -95,13 +95,13 @@
 
 | Contract | Current lane | Product-critical? | Can move to Primary? | Blocker? | Action |
 |----------|--------------|-------------------|----------------------|----------|--------|
-| Tabs semantic classes（`textui-tabs*` 等） | fallback style tests + Primary `html-exporter-primary-tabs-semantic.test.js` | yes（静的 HTML 契約） | **partial**（一覧・パネル・active は Primary で検証） | **partial**（`Tabs+Divider` 複合は fallback `html-exporter-fallback-style-lane` に残存） | シンプル Tabs は Primary へ移管済み（T-023）。複合は fallback 継続。 |
+| Tabs semantic classes（`textui-tabs*` 等） | Primary `html-exporter-primary-tabs-semantic.test.js` + `html-exporter-primary-tabs-divider-composite.test.js` | yes（静的 HTML 契約） | **yes** | **no** | T-033: Tabs+Divider 複合を Primary へ。fallback から Tabs assert 除去済み。 |
 | Table semantic classes | Primary `html-exporter-primary-table-semantic.test.js` | yes | **yes**（Primary 完全検証） | **no** | T-030 完了。fallback style lane から Table assert 除去。 |
-| Divider + Tabs 複合マークアップ | 同上 | medium | partial | yes | 同上 |
-| FormControl 系（Input/Checkbox/Radio/DatePicker の `textui-*`） | fallback style + Primary Input テスト | yes | **partial**（Input は Primary で検証） | **partial**（Checkbox/Radio/DatePicker は fallback のみ） | Input: `html-exporter-primary-formcontrol-input.test.js`（T-025）。他は従来どおり fallback。 |
+| Divider + Tabs 複合マークアップ | Primary `html-exporter-primary-tabs-divider-composite.test.js` | medium | **yes** | **no** | T-033 完了。 |
+| FormControl 系（Input/Checkbox/Radio/DatePicker の `textui-*`） | Primary `html-exporter-primary-formcontrol-input.test.js` + `html-exporter-primary-formcontrol-remaining.test.js` | yes | **yes** | **no** | T-025 / T-034: 全カテゴリ Primary。fallback から FormControl assert 除去済み。 |
 | Alert variant hooks（`data-alert-variant` 等） | Primary `html-exporter-primary-alert-variant.test.js` | yes | **yes** | **no** | T-031: Primary に `data-alert-variant` 付与 + 専用テスト。fallback から Alert assert 除去。 |
 | Accordion / TreeView 静的クラス | 同上 | medium | partial | yes | 同上 |
-| **compatibility CSS**（`buildFallbackCompatibilityStyleBlock` 系） | fallback style + boundary policy | yes（現レーン） | partial（`webviewCss` 強化後に縮小） | **yes** | [export-fallback-lane-boundary-policy.md](./export-fallback-lane-boundary-policy.md) に沿って **Temporary → 削除候補** へ段階移行 |
+| **compatibility CSS**（`buildFallbackCompatibilityStyleBlock` 系） | fallback style + boundary policy | yes（現レーン） | partial（`webviewCss` 強化後に縮小） | **yes** | T-032/T-035 で **`.textui-button.submit`** / **`.textui-progress-default`** を実削除。残ルールは [t028-fallback-compatibility-css-reduction-matrix.md](./t028-fallback-compatibility-css-reduction-matrix.md) 参照。 |
 | **debug observability**（fallback ログ・警告の有無） | lane-observability tests | low（運用） | yes（ログ契約を Primary に寄せられるなら） | maybe | Primary で同ログが取れるなら移管、不要なら削除 |
 | **route viability guard**（Primary-only / entry guard / T-019 gate） | route-viability tests | **yes** | **no**（削除**後**も Primary 契約として残る） | **no** | fallback 削除後も **ファイル存続**を前提にアサーション更新 |
 | CLI capture Primary 既定 | route-viability | yes | **already Primary** | no | 維持 |

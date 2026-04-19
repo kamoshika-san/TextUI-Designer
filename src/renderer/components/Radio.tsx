@@ -40,6 +40,7 @@ export const Radio: React.FC<RadioProps> = ({
             checked={selectedValue === option.value}
             disabled={disabled}
             onChange={handleChange}
+            className={disabled ? 'opacity-50 cursor-not-allowed' : undefined}
           />
           <label htmlFor={`${name}-${index}`} className="textui-text">
             {option.label}

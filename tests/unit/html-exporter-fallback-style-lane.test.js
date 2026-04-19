@@ -62,75 +62,8 @@ describe('HtmlExporter fallback style lane (T-20260327-057)', () => {
   });
 
   // Table semantic hooks: Primary-only (`html-exporter-primary-table-semantic.test.js`, T-030).
-
-  // Same as above — Divider + nested Tabs structures differ from the first scenario; still unreachable on Primary.
-  it('fallback HTML lane keeps Tabs and Divider parity hooks for sample-style structures', async () => {
-    const exporter = new HtmlExporter();
-    const html = await exporter.export({
-      page: {
-        id: 'fallback-tabs-divider-structure',
-        title: 'Fallback Tabs Divider Structure',
-        layout: 'vertical',
-        components: [
-          {
-            Tabs: {
-              defaultTab: 0,
-              items: [
-                {
-                  label: 'Code',
-                  components: [
-                    { Divider: { orientation: 'horizontal', spacing: 'md' } },
-                    { Text: { value: 'body content' } }
-                  ]
-                },
-                {
-                  label: 'Issues',
-                  components: [{ Text: { value: 'issue body' } }]
-                }
-              ]
-            }
-          },
-          { Divider: { orientation: 'vertical', spacing: 'md' } }
-        ]
-      }
-    }, createFallbackOptions({ format: 'html' }));
-
-    assert.ok(html.includes('textui-tabs'));
-    assert.ok(html.includes('textui-tabs-list'));
-    assert.ok(html.includes('textui-tab-active is-active'));
-    assert.ok(html.includes('bg-gray-200 text-gray-900'));
-    assert.ok(html.includes('bg-gray-100 text-gray-700'));
-    assert.ok(html.includes('textui-tab-panel-body'));
-    assert.ok(html.includes('textui-divider horizontal my-4'));
-    assert.ok(html.includes('textui-divider vertical my-4'));
-  });
-
-  // Form primitives: static fallback renderer emits different class graph than React preview.
-  // Input: Primary `html-exporter-primary-formcontrol-input.test.js` (T-025).
-  // Alert variant hooks: Primary `html-exporter-primary-alert-variant.test.js` (T-031).
-  it('fallback HTML lane keeps FormControl semantic classes alongside compatibility utilities', async () => {
-    const exporter = new HtmlExporter();
-    const html = await exporter.export({
-      page: {
-        id: 'fallback-form-alert-structure',
-        title: 'Fallback Form Alert Structure',
-        layout: 'vertical',
-        components: [
-          { Input: { label: 'Email', type: 'email', disabled: true, placeholder: 'name@example.com' } },
-          { Checkbox: { label: 'Agree', checked: true, disabled: true } },
-          { Radio: { label: 'Priority', name: 'priority', options: [{ label: 'High', value: 'high', checked: true }], disabled: true } },
-          { DatePicker: { label: 'Due', name: 'dueDate', disabled: true } }
-        ]
-      }
-    }, createFallbackOptions({ format: 'html' }));
-
-    assert.ok(html.includes('textui-checkbox'));
-    assert.ok(html.includes('textui-radio-group'));
-    assert.ok(html.includes('textui-radio-option'));
-    assert.ok(html.includes('textui-datepicker'));
-    assert.ok(html.includes('textui-text'));
-    assert.ok(html.includes('opacity-50 cursor-not-allowed'));
-  });
+  // Tabs + Divider composite: Primary-only (`html-exporter-primary-tabs-divider-composite.test.js`, T-033).
+  // FormControl (Input + Checkbox + Radio + DatePicker): Primary-only (`html-exporter-primary-formcontrol-*.test.js`, T-025 / T-034).
 
   // Accordion/TreeView: another static surface area; Primary tests cover behavior, not this CSS/DOM pairing.
   it('fallback HTML lane keeps Accordion/TreeView semantic classes alongside compatibility utilities', async () => {
