@@ -8,6 +8,12 @@ import type { EvidenceShape } from './evidence';
 import type { CanonicalPredicate } from './canonical-predicate';
 
 /**
+ * Ambiguity / low-confidence authoring boundary (design E).
+ * Numeric SSOT — keep design E prose aligned with this value.
+ */
+export const AMBIGUITY_THRESHOLD = 0.8 as const;
+
+/**
  * Closed vocabulary of 12 diff events (v0 recommended set).
  * UI component **label** text changes are out of scope for compare-logic v2 (surface copy only; no `component_label_changed` event).
  */
@@ -33,12 +39,12 @@ export type ReviewStatus = 'approved' | 'rejected' | 'needs_review';
 
 /**
  * Discriminant for `DecisionPayload` (design E / P3-6).
- * `low` forces `ambiguity_reason` and `review_status` at the type level (authoring boundary: confidence below 0.8).
+ * `low` forces `ambiguity_reason` and `review_status` at the type level (authoring boundary: confidence below `AMBIGUITY_THRESHOLD`).
  * Call sites must set `confidence_band` consistently with numeric `confidence`; TypeScript does not correlate the two automatically.
  */
 export type DecisionConfidenceBand = 'high' | 'low';
 
-/** High-band decision — `ambiguity_reason` / `review_status` remain optional (typical: confidence ≥ 0.8). */
+/** High-band decision — `ambiguity_reason` / `review_status` remain optional (typical: confidence ≥ `AMBIGUITY_THRESHOLD`). */
 export interface HighConfidenceDecision {
   confidence_band: 'high';
   diff_event: DiffEvent;
@@ -49,7 +55,7 @@ export interface HighConfidenceDecision {
   review_status?: ReviewStatus;
 }
 
-/** Low-band decision — `ambiguity_reason` and `review_status` are required (authoring boundary: confidence below 0.8). */
+/** Low-band decision — `ambiguity_reason` and `review_status` are required (authoring boundary: confidence below `AMBIGUITY_THRESHOLD`). */
 export interface LowConfidenceDecision {
   confidence_band: 'low';
   diff_event: DiffEvent;

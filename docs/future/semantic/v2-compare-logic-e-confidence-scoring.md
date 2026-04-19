@@ -3,6 +3,8 @@
 設計フェーズ成果物。コード実装は含まない。
 前提: 設計A〜D 完了済み。設計B-2・D-3 で予告された confidence 規定をここで確定する。
 
+**正本（P4-11）**: 曖昧さ判定に用いる閾値 `0.8` の数値の単一定義は `docs/future/types/v2/diff-record.ts` の **`export const AMBIGUITY_THRESHOLD`** とする。設計E 本文の `0.8` および `confidence < 0.8` は、いずれも同一定数を指す。
+
 ---
 
 ## 論点E-1: confidence 初期値と低下条件
