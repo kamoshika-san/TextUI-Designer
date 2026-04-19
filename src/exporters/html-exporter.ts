@@ -41,6 +41,12 @@ import { resolveImageSourcesInDsl } from '../utils/image-source-resolver';
 import { Logger } from '../utils/logger';
 
 /**
+ * Fallback 互換レーン通過時の **structured debug ログ**用の安定 ID（T-022）。
+ * CI・grep・ログ集約でこの文字列をキーにする。
+ */
+export const TEXTUI_HTML_EXPORTER_FALLBACK_LANE_EVENT_ID = 'textui.html_exporter.fallback_lane';
+
+/**
  * HTML 形式へのエクスポート。
  *
  * **Primary path（既定）**: `ExportOptions.useReactRender !== false` のとき。
@@ -105,7 +111,16 @@ export class HtmlExporter extends BaseComponentRenderer {
         `${fallbackBlocked} Fallback lane is disabled in production. (set TEXTUI_ENABLE_FALLBACK=1 for intentional fallback tests only)`
       );
     }
-    this.logger.debug('using fallback HTML render path (useReactRender=false)');
+    const fallbackStructured = {
+      kind: TEXTUI_HTML_EXPORTER_FALLBACK_LANE_EVENT_ID,
+      lane: 'fallback',
+      useReactRender: false,
+      ticket: 'T-022'
+    } as const;
+    this.logger.debug(
+      `[${TEXTUI_HTML_EXPORTER_FALLBACK_LANE_EVENT_ID}] HtmlExporter compatibility lane (T-022)`,
+      fallbackStructured
+    );
     const componentCode = this.renderPageComponents(normalizedDsl);
     return buildHtmlDocument(componentCode, themeStyles, {
       webviewCss: webviewCss ?? undefined,

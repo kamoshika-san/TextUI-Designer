@@ -7,7 +7,7 @@
  * without mixing unrelated assertions.
  */
 const assert = require('assert');
-const { HtmlExporter } = require('../../out/exporters/html-exporter');
+const { HtmlExporter, TEXTUI_HTML_EXPORTER_FALLBACK_LANE_EVENT_ID } = require('../../out/exporters/html-exporter');
 const { createFallbackOptions } = require('../helpers/fallback-helper');
 
 describe('HtmlExporter lane observability', () => {
@@ -37,7 +37,7 @@ describe('HtmlExporter lane observability', () => {
     console.warn = originalConsoleWarn;
   });
 
-  // Fallback-only: Primary lane must not emit the fallback debug string (see sibling test below).
+  // Fallback-only: Primary lane must not emit the fallback structured debug (see sibling test below).
   it('emits a debug log only for the internal fallback lane when debug logging is enabled', async () => {
     process.env.TEXTUI_LOG_LEVEL = 'debug';
     const logs = [];
@@ -52,8 +52,8 @@ describe('HtmlExporter lane observability', () => {
     await exporter.export(dsl, createFallbackOptions({ format: 'html' }));
 
     assert.ok(
-      logs.some(message => message.includes('using fallback HTML render path (useReactRender=false)')),
-      'fallback lane should be observable through a dedicated debug log'
+      logs.some(message => message.includes(TEXTUI_HTML_EXPORTER_FALLBACK_LANE_EVENT_ID)),
+      'fallback lane should be observable through structured debug (T-022)'
     );
   });
 
@@ -84,7 +84,7 @@ describe('HtmlExporter lane observability', () => {
     await exporter.export(dsl, { format: 'html' });
 
     assert.ok(
-      logs.every(message => !message.includes('using fallback HTML render path')),
+      logs.every(message => !message.includes(TEXTUI_HTML_EXPORTER_FALLBACK_LANE_EVENT_ID)),
       'primary lane should stay quiet even when debug logging is enabled'
     );
   });

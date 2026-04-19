@@ -31,7 +31,7 @@
 
 ## Observability
 
-- `src/exporters/html-exporter.ts` emits the debug log `using fallback HTML render path (useReactRender=false)` only on the fallback lane.
+- `src/exporters/html-exporter.ts` emits a **structured debug** log on the fallback lane only (`TEXTUI_HTML_EXPORTER_FALLBACK_LANE_EVENT_ID` = `textui.html_exporter.fallback_lane`, payload `lane` / `ticket: T-022`). Set **`TEXTUI_LOG_LEVEL=debug`** to observe.
 - Raw public `useReactRender: false` requests also emit a deprecation warning; helper-routed internal fallback stays warning-free.
 - The Primary lane stays quiet. Use `TEXTUI_LOG_LEVEL=debug` only when fallback usage needs to be observed.
 
