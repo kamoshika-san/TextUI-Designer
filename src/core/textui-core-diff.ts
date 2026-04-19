@@ -72,4 +72,4 @@ export {
 
 // ---- Provider (v1/v2 seam) ------------------------------------------------
 export type { SemanticDiffProvider } from './diff/diff-provider';
-export { V1SemanticDiffProvider } from './diff/diff-provider';
+export { V1SemanticDiffProvider, V2SemanticDiffProvider } from './diff/diff-provider';

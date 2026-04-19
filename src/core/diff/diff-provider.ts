@@ -6,12 +6,23 @@ import type {
   DiffCompareResult,
   FlowDiffCompareDocument,
 } from './diff-types';
+import type { DiffCompareResultV2Payload } from './diff-v2-types';
 import type { HeuristicPolicy } from './heuristic-policy';
 import {
   createNormalizedDiffDocument,
   createDiffResultSkeleton,
 } from './structure-diff';
 import { createNormalizedFlowDiffDocument } from './flow-diff';
+
+function createEmptyV2Payload(): DiffCompareResultV2Payload {
+  return {
+    screens: [],
+    metadata: {
+      schemaVersion: 'v2-compare-logic/v0',
+      totalRecords: 0,
+    },
+  };
+}
 
 /** Seam interface for the semantic diff engine — implement v2 to swap without changing call sites */
 export interface SemanticDiffProvider {
@@ -54,5 +65,33 @@ export class V1SemanticDiffProvider implements SemanticDiffProvider {
     options: { side: DiffCompareSide; sourcePath?: string }
   ): FlowDiffCompareDocument {
     return createNormalizedFlowDiffDocument(normalizedDsl, options);
+  }
+}
+
+/** v2 entry: same structure/flow IR as v1; attaches minimal semantic v2 payload (populated in later slices). */
+export class V2SemanticDiffProvider implements SemanticDiffProvider {
+  private readonly inner = new V1SemanticDiffProvider();
+
+  createStructureDiffDocument(
+    normalizedDsl: TextUIDSL,
+    options: { side: DiffCompareSide; sourcePath?: string }
+  ): DiffCompareDocument {
+    return this.inner.createStructureDiffDocument(normalizedDsl, options);
+  }
+
+  compareStructureDiff(
+    previous: DiffCompareDocument,
+    next: DiffCompareDocument,
+    policy?: HeuristicPolicy
+  ): DiffCompareResult {
+    const base = this.inner.compareStructureDiff(previous, next, policy);
+    return { ...base, v2: createEmptyV2Payload() };
+  }
+
+  createFlowDiffDocument(
+    normalizedDsl: NavigationFlowDSL,
+    options: { side: DiffCompareSide; sourcePath?: string }
+  ): FlowDiffCompareDocument {
+    return this.inner.createFlowDiffDocument(normalizedDsl, options);
   }
 }
