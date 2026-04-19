@@ -17,6 +17,20 @@ const rendererTypesImportRestriction = ["error", {
     }],
 }];
 
+/** T-017: `html-export-lane-options` は exporter 内部互換 API — CLI / MCP / services からの import を禁止 */
+const cliMcpServicesHtmlLaneOptionsRestriction = ["error", {
+    patterns: [
+        {
+            group: ["**/renderer/types"],
+            message: "Use `src/domain/dsl-types` for shared DSL types. `renderer/types` has been removed; do not add legacy imports under non-renderer lanes (T-101 / Epic A A3).",
+        },
+        {
+            group: ["**/html-export-lane-options"],
+            message: "Do not import `html-export-lane-options` from CLI, MCP, or services. It is an internal compatibility API for `src/exporters/**` and intentional unit tests only (T-017). See docs/current/theme-export-rendering/t017-html-export-lane-options-internal-api.md.",
+        },
+    ],
+}];
+
 /** T-110: WebView レーンから Export ランタイムへの逆流を抑止（docs/current/testing-ci/import-boundaries-4-lanes.md）*/
 const rendererToExportersImportRestriction = ["warn", {
     patterns: [
@@ -75,15 +89,32 @@ export default [{
     },
 }, {
     files: [
-        "src/domain/**/*.ts",
+        "src/cli/**/*.ts",
+        "src/cli/**/*.tsx",
+        "src/mcp/**/*.ts",
+        "src/mcp/**/*.tsx",
         "src/services/**/*.ts",
+        "src/services/**/*.tsx",
+    ],
+    plugins: {
+        "@typescript-eslint": typescriptEslint,
+    },
+    languageOptions: {
+        parser: tsParser,
+        ecmaVersion: 2022,
+        sourceType: "module",
+    },
+    rules: {
+        "no-restricted-imports": cliMcpServicesHtmlLaneOptionsRestriction,
+    },
+}, {
+    files: [
+        "src/domain/**/*.ts",
         "src/components/**/*.ts",
         "src/core/**/*.ts",
         "src/core/**/*.tsx",
         "src/exporters/**/*.ts",
         "src/exporters/**/*.tsx",
-        "src/cli/**/*.ts",
-        "src/cli/**/*.tsx",
         "src/utils/**/*.ts",
         "src/utils/**/*.tsx",
         "tests/**/*.ts",

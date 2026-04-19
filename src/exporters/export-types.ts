@@ -10,8 +10,9 @@ export interface ExportOptions {
   /**
    * Selects the HtmlExporter path.
    * - omitted / true: primary path via react-static-export. This is the default source-of-truth path.
-   * - false: deprecated public fallback request. Internal compatibility callers must pair it with
-   *   `withExplicitFallbackHtmlExport(...)` from `html-export-lane-options`.
+   * - false: deprecated public fallback request. **Only exporter-internal compatibility code** may set
+   *   this together with `__internalLegacyFallback`; do not wire new CLI/MCP/service call sites to
+   *   `withExplicitFallbackHtmlExport` (see `docs/current/theme-export-rendering/t017-html-export-lane-options-internal-api.md`).
    */
   useReactRender?: boolean;
   /** @internal Temporary compatibility marker for the explicit fallback helper only. */

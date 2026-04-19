@@ -143,9 +143,9 @@ ADR: [0001 解析パイプライン（初稿）](adr/0001-document-analysis-serv
 ### HTML exporter: Primary default path quick check
 - 既定の HTML export provider は `src/cli/provider-registry.ts` で `useReactRender: true` を明示し、Primary path を使う。
 - preview capture 側の HTML 準備は `src/utils/preview-capture/html-preparation.ts` で `options.useReactRender ?? true` を使い、未指定時は Primary path を選ぶ。
-- 明示的な CLI fallback は `src/cli/commands/capture-command.ts` から `src/exporters/html-export-lane-options.ts` の helper を通して選ぶ。
-- built-in / exporter の差分切り分けでは、この 3 入口を先に確認してから renderer 実装や fallback 側を追う。
-- current docs と review では通常 export / preview を React-primary path に合わせ、fallback は capture / compatibility lane としてだけ扱う。
+- **CLI / MCP / services から `html-export-lane-options`（`withExplicitFallbackHtmlExport`）を直接 import しない**（T-010 以降、capture も Primary 既定）。正本: [t017-html-export-lane-options-internal-api.md](../theme-export-rendering/t017-html-export-lane-options-internal-api.md)。
+- built-in / exporter の差分切り分けでは、**provider-registry · html-preparation · HtmlExporter** を先に確認してから renderer 実装や互換レーンを追う。
+- current docs と review では通常 export / preview を React-primary path に合わせ、**互換レーンは単体テスト等の明示利用のみ**と読む。
 - fallback-only test coverage は general regression の正本ではなく、明示された observability / style lane として読む。
 
 ### 2) CLI エントリ遅延ロード

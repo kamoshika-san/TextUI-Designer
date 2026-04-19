@@ -41,7 +41,7 @@
 | **必須（残す）** | `HtmlExporter` の `useReactRender === false` 分岐本体 | 互換レーンの実装コア |
 | **必須（残す）** | `buildFallbackCompatibilityStyleBlock` 等（fallback 専用 CSS） | 互換レーンの見た目差分吸収 |
 | **移行可能（Primary へ寄せた）** | CLI `capture`（旧: ヘルパで fallback 固定） | `prepareCaptureArtifacts` が既に **Primary 既定**のため、二重指定は不要（T-010 で除去） |
-| **廃止候補** | なし（本フェーズでは **本番の fallback 強制 0 件化**のみ。ヘルパ・テストは残置） | テスト棚卸しは **T-016**（[t016-fallback-unit-tests-inventory.md](./t016-fallback-unit-tests-inventory.md)） |
+| **廃止候補** | なし（本フェーズでは **本番の fallback 強制 0 件化**のみ。ヘルパ・テストは残置） | テスト棚卸しは **T-016**（[t016-fallback-unit-tests-inventory.md](./t016-fallback-unit-tests-inventory.md)）／helper の import 境界は **T-017**（[t017-html-export-lane-options-internal-api.md](./t017-html-export-lane-options-internal-api.md)） |
 
 ## Primary vs fallback 差分マトリクス（要約）
 
