@@ -3,3 +3,4 @@
 テーマ実装、トークン、エクスポート方針、HTML／モーダル／Svelte 等の出力契約を置く。
 
 - 親索引: [`../README.md`](../README.md)
+- **fallback 削除判断**: [t021-fallback-removal-criteria.md](./t021-fallback-removal-criteria.md)

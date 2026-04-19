@@ -27,5 +27,6 @@
 
 ## 関連
 
+- [t021-fallback-removal-criteria.md](./t021-fallback-removal-criteria.md)（**fallback レーン削除の Go/No-Go 正本**）
 - [html-exporter-fallback-shrink-t010.md](./html-exporter-fallback-shrink-t010.md)
 - [t016-fallback-unit-tests-inventory.md](./t016-fallback-unit-tests-inventory.md)

@@ -3,6 +3,7 @@
 **Purpose**: keep the meaning of `ExportOptions.useReactRender` on one page so changes can be judged against a single source of truth.
 **Source of truth**: `src/exporters/html-exporter.ts` and [exporter-boundary-guide.md](exporter-boundary-guide.md).
 **How to read this page**: fallback is a compatibility lane, not the default design target. This inventory records owner, trigger, follow-up, and route viability.
+**Removal gate**: when planning to delete the lane, use [t021-fallback-removal-criteria.md](./t021-fallback-removal-criteria.md).
 
 ## Lane summary
 
