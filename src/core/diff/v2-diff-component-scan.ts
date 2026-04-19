@@ -5,12 +5,22 @@ import type {
 } from './diff-v2-types';
 import { buildV2Decision } from './v2-confidence-scorer';
 import { toComponentNode } from './diff-pairing';
+import { normalizeDefaults } from '../diff-normalization/normalize-defaults';
 
 function makeComponentRecord(
-  event: 'component_added' | 'component_removed',
-  targetId: string
+  event: 'component_added' | 'component_removed' | 'component_action_changed',
+  targetId: string,
+  beforePredicate?: unknown,
+  afterPredicate?: unknown
 ): V2DiffRecord {
-  return { decision: buildV2Decision(event, targetId, 1.0), explanation: { evidence: [] } };
+  return {
+    decision: buildV2Decision(event, targetId, 1.0),
+    explanation: {
+      evidence: [],
+      before_predicate: beforePredicate,
+      after_predicate: afterPredicate,
+    },
+  };
 }
 
 function buildComponentKey(component: unknown, index: number): string {
@@ -22,6 +32,39 @@ function buildComponentKey(component: unknown, index: number): string {
   return id ? `${node.__kind}:${id}` : `${node.__kind}:structural:${index}`;
 }
 
+function getNormalizedComponentNode(component: unknown): Record<string, unknown> & { __kind: string } | undefined {
+  const node = toComponentNode(component);
+  if (!node) {
+    return undefined;
+  }
+
+  return {
+    ...node,
+    ...((normalizeDefaults(node) as unknown) as Record<string, unknown>),
+  };
+}
+
+function extractActionAxis(component: unknown): { domain: 'none' | 'submit' | 'trigger'; type: string } {
+  const node = getNormalizedComponentNode(component);
+  if (!node) {
+    return { domain: 'none', type: 'none' };
+  }
+
+  const action = node['action'];
+  if (action && typeof action === 'object' && !Array.isArray(action)) {
+    const trigger = (action as Record<string, unknown>)['trigger'];
+    if (typeof trigger === 'string' && trigger.trim().length > 0) {
+      return { domain: 'trigger', type: trigger.trim() };
+    }
+  }
+
+  if (node['submit'] === true) {
+    return { domain: 'submit', type: 'submit' };
+  }
+
+  return { domain: 'none', type: 'none' };
+}
+
 export function scanComponentDiffs(
   previous: DiffCompareDocument,
   next: DiffCompareDocument
@@ -29,11 +72,11 @@ export function scanComponentDiffs(
   const prevComponents = previous.normalizedDsl.page.components;
   const nextComponents = next.normalizedDsl.page.components;
 
-  const prevMap = new Map<string, number>();
-  prevComponents.forEach((c, i) => prevMap.set(buildComponentKey(c, i), i));
+  const prevMap = new Map<string, { index: number; component: unknown }>();
+  prevComponents.forEach((c, i) => prevMap.set(buildComponentKey(c, i), { index: i, component: c }));
 
-  const nextMap = new Map<string, number>();
-  nextComponents.forEach((c, i) => nextMap.set(buildComponentKey(c, i), i));
+  const nextMap = new Map<string, { index: number; component: unknown }>();
+  nextComponents.forEach((c, i) => nextMap.set(buildComponentKey(c, i), { index: i, component: c }));
 
   const result: V2ComponentDiff[] = [];
 
@@ -51,6 +94,22 @@ export function scanComponentDiffs(
       result.push({
         component_id: key,
         diffs: [makeComponentRecord('component_added', key)],
+      });
+    }
+  }
+
+  for (const [key, previousEntry] of prevMap) {
+    const nextEntry = nextMap.get(key);
+    if (!nextEntry) {
+      continue;
+    }
+
+    const prevAction = extractActionAxis(previousEntry.component);
+    const nextAction = extractActionAxis(nextEntry.component);
+    if (prevAction.domain !== nextAction.domain || prevAction.type !== nextAction.type) {
+      result.push({
+        component_id: key,
+        diffs: [makeComponentRecord('component_action_changed', key, prevAction, nextAction)],
       });
     }
   }
