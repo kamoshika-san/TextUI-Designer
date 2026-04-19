@@ -40,10 +40,10 @@ sort キー（優先順）:
 1. layer: `structure` イベントを先
 2. layer: `surface` イベントを次
 3. layer: `semantic` イベントを後
-4. 同一 layer 内は diff_event の辞書順
+4. 同一 layer 内は **下記「具体的な全順序」で固定**（辞書順ではなく、実装・スナップショットの安定用の正本列）
 ```
 
-具体的な全順序:
+具体的な全順序（`docs/future/types/v2/diff-record.ts` の `DiffEvent` union と **同一の 12 語**、余分な行なし）:
 
 ```
 entity_added
@@ -61,6 +61,8 @@ component_action_changed
 component_availability_changed
 component_guard_changed
 ```
+
+> **注（P2-3）**: `component_label_changed` は closed vocabulary に **含めない**（PM 決定: ラベルは surface のみで 5 軸意味差分の対象外）。将来採用する場合は `DiffEvent`・本表・設計 F/E を同時更新する。
 
 sort order を定義する根拠:
 - sort order が未定義だと実装ごとに出力が揺れ、スナップショットテストが不安定になる。

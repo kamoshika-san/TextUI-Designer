@@ -7,7 +7,10 @@
 import type { EvidenceShape } from './evidence';
 import type { CanonicalPredicate } from './canonical-predicate';
 
-/** Closed vocabulary of 12 diff events (v0 recommended set) */
+/**
+ * Closed vocabulary of 12 diff events (v0 recommended set).
+ * UI component **label** text changes are out of scope for compare-logic v2 (surface copy only; no `component_label_changed` event).
+ */
 export type DiffEvent =
   // entity
   | 'entity_added'
