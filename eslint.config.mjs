@@ -11,13 +11,19 @@ import tsParser from "@typescript-eslint/parser";
  * 旧互換 import path 自体を禁止する。
  */
 const rendererTypesImportRestriction = ["error", {
-    patterns: [{
-        group: ["**/renderer/types"],
-        message: "Use `src/domain/dsl-types` for shared DSL types. `renderer/types` has been removed; do not add legacy imports under non-renderer lanes (T-101 / Epic A A3).",
-    }],
+    patterns: [
+        {
+            group: ["**/renderer/types"],
+            message: "Use `src/domain/dsl-types` for shared DSL types. `renderer/types` has been removed; do not add legacy imports under non-renderer lanes (T-101 / Epic A A3).",
+        },
+        {
+            group: ["**/exporters/internal/**"],
+            message: "T-020: do not import `src/exporters/internal/**` from this lane. Tests must use `tests/helpers/fallback-helper.js`.",
+        },
+    ],
 }];
 
-/** T-017: `html-export-lane-options` は exporter 内部互換 API — CLI / MCP / services からの import を禁止 */
+/** T-017 / T-020: exporter internal modules — CLI / MCP / services からの import を禁止 */
 const cliMcpServicesHtmlLaneOptionsRestriction = ["error", {
     patterns: [
         {
@@ -25,8 +31,40 @@ const cliMcpServicesHtmlLaneOptionsRestriction = ["error", {
             message: "Use `src/domain/dsl-types` for shared DSL types. `renderer/types` has been removed; do not add legacy imports under non-renderer lanes (T-101 / Epic A A3).",
         },
         {
+            group: ["**/exporters/internal/**"],
+            message: "Do not import `src/exporters/internal/**` from CLI, MCP, or services (T-020). Tests must use `tests/helpers/fallback-helper.js`. See docs/current/theme-export-rendering/t017-html-export-lane-options-internal-api.md.",
+        },
+        {
             group: ["**/html-export-lane-options"],
-            message: "Do not import `html-export-lane-options` from CLI, MCP, or services. It is an internal compatibility API for `src/exporters/**` and intentional unit tests only (T-017). See docs/current/theme-export-rendering/t017-html-export-lane-options-internal-api.md.",
+            message: "Removed in T-020: use `tests/helpers/fallback-helper.js` in tests or `src/exporters/internal/*` inside exporters only.",
+        },
+    ],
+}];
+
+/** T-020: non-internal exporter files must not reach into `internal/` (HtmlExporter is allowlisted). */
+const exporterNonInternalToInternalRestriction = ["error", {
+    patterns: [
+        {
+            group: ["**/exporters/internal/**"],
+            message: "T-020: do not import `src/exporters/internal/**` from exporter modules other than the allowlisted entrypoints. Use `src/exporters/html-exporter.ts` pattern or keep logic outside `internal/`.",
+        },
+        {
+            group: ["./internal/**"],
+            message: "T-020: do not import `./internal/**` except from `src/exporters/html-exporter.ts` (allowlisted).",
+        },
+        {
+            group: ["../internal/**"],
+            message: "T-020: do not import `../internal/**` from this exporter module.",
+        },
+    ],
+}];
+
+/** T-020: unit tests must not deep-import exporter internal modules (use tests/helpers/fallback-helper.js). */
+const testsNoDeepInternalExportersRestriction = ["error", {
+    patterns: [
+        {
+            group: ["**/exporters/internal/**"],
+            message: "T-020: do not require/import `**/exporters/internal/**` from tests. Use `tests/helpers/fallback-helper.js` (`createFallbackOptions`).",
         },
     ],
 }];
@@ -108,6 +146,34 @@ export default [{
         "no-restricted-imports": cliMcpServicesHtmlLaneOptionsRestriction,
     },
 }, {
+    files: ["src/exporters/**/*.ts", "src/exporters/**/*.tsx"],
+    ignores: ["src/exporters/internal/**", "src/exporters/html-exporter.ts"],
+    plugins: {
+        "@typescript-eslint": typescriptEslint,
+    },
+    languageOptions: {
+        parser: tsParser,
+        ecmaVersion: 2022,
+        sourceType: "module",
+    },
+    rules: {
+        "no-restricted-imports": exporterNonInternalToInternalRestriction,
+    },
+}, {
+    files: ["tests/**/*.js", "tests/**/*.ts"],
+    ignores: ["tests/helpers/fallback-helper.js"],
+    plugins: {
+        "@typescript-eslint": typescriptEslint,
+    },
+    languageOptions: {
+        parser: tsParser,
+        ecmaVersion: 2022,
+        sourceType: "module",
+    },
+    rules: {
+        "no-restricted-imports": testsNoDeepInternalExportersRestriction,
+    },
+}, {
     files: [
         "src/domain/**/*.ts",
         "src/components/**/*.ts",
@@ -117,9 +183,6 @@ export default [{
         "src/exporters/**/*.tsx",
         "src/utils/**/*.ts",
         "src/utils/**/*.tsx",
-        "tests/**/*.ts",
-        "tests/**/*.tsx",
-        "tests/**/*.js",
     ],
     plugins: {
         "@typescript-eslint": typescriptEslint,

@@ -7,7 +7,7 @@ const repoRoot = path.resolve(__dirname, '..');
 const runtimeFallbackEntryFiles = [];
 
 const fallbackHelperFiles = [
-  'src/exporters/html-export-lane-options.ts'
+  'src/exporters/internal/fallback-lane-options.ts'
 ];
 
 const primaryDefaultRouteFiles = [

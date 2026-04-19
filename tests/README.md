@@ -188,7 +188,8 @@ node ./tests/e2e/export-from-preview-e2e.test.js
 ## Primary / Fallback lane taxonomy
 
 - `Primary`: `HtmlExporter` の既定経路。`useReactRender` を省略するか `true` を渡すケースで、通常の export / provider / preview 整合はこちらを正とする。
-- `Fallback`: `useReactRender === false` を明示したケース。**本番経路では使わず**（T-010）、**単体テストなどで互換 HTML を意図的に検証する場合のみ** `withExplicitFallbackHtmlExport(...)` を使う。正本: [t017-html-export-lane-options-internal-api.md](../docs/current/theme-export-rendering/t017-html-export-lane-options-internal-api.md)。
+- `Fallback`: `useReactRender === false` を明示したケース。**本番経路では使わず**（T-010）、**単体テストで互換 HTML を検証するときは** `tests/helpers/fallback-helper.js` の **`createFallbackOptions(...)` のみ**を使う（**`out/exporters/internal/*` を直接 require しない** — T-020）。正本: [t017-html-export-lane-options-internal-api.md](../docs/current/theme-export-rendering/t017-html-export-lane-options-internal-api.md)。
+- **T-019（ランタイム Hard Gate）**: `HtmlExporter` の fallback 本体は **`TEXTUI_ENABLE_FALLBACK=1` が無いと例外**（`[HtmlExporter:FALLBACK_BLOCKED]`）。ユニットテストでは **`tests/setup.js` が `1` を既定注入**する。CI のテスト系ジョブでも **workflow 側に同 env** を付けて二重化している。
 - fallback 専用テストは `describe` または `it` に `fallback` を含め、`withExplicitFallbackHtmlExport(...)` で internal compatibility lane を明示する。
 - primary 前提テストは `useReactRender` を省略するか `true` を明示し、preview/export parity や provider 既定経路の確認として読める名前にする。
 - regression / unit / integration / simulated e2e のどの階層でもこの lane 用語を優先し、`legacy` や曖昧な表現だけで済ませない。

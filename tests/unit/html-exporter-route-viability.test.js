@@ -121,7 +121,7 @@ describe('HtmlExporter route viability (T-20260322-352)', () => {
  * HtmlExporter fallback entry guard (T-20260322-354, merged from html-exporter-fallback-entry-guard.test.js in T-016)
  *
  * Why this lives next to route-viability tests: T-010 requires **zero production callers** forcing
- * `useReactRender: false` except the typed helper in `html-export-lane-options.ts`. This guard is
+ * `useReactRender: false` except the typed helper in `src/exporters/internal/fallback-lane-options.ts`. This guard is
  * not a runtime fallback execution test — it is a **source-level contract** that must hold for
  * Primary-only routing to remain trustworthy. Keeping it here avoids an extra `*fallback*` file
  * whose name implied HTML execution when it only scans `src/**`.
@@ -130,7 +130,7 @@ describe('HtmlExporter fallback entry guard (T-20260322-354)', () => {
   const repoRoot = path.resolve(__dirname, '../..');
   const srcDir = path.join(repoRoot, 'src');
   const fallbackLiteral = /useReactRender\s*:\s*false\b/;
-  const allowedLiteralFiles = new Set(['src/exporters/html-export-lane-options.ts']);
+  const allowedLiteralFiles = new Set(['src/exporters/internal/fallback-lane-options.ts']);
 
   function walkSourceLikeFiles(dir, out = []) {
     if (!fs.existsSync(dir)) {
@@ -166,7 +166,7 @@ describe('HtmlExporter fallback entry guard (T-20260322-354)', () => {
       const rel = toPosixRelative(filePath);
       const text = stripComments(fs.readFileSync(filePath, 'utf8'));
       if (fallbackLiteral.test(text) && !allowedLiteralFiles.has(rel)) {
-        violations.push(`${rel}: useReactRender: false must go through html-export-lane-options helper`);
+        violations.push(`${rel}: useReactRender: false must go through internal fallback-lane-options helper`);
       }
     }
 
@@ -175,5 +175,36 @@ describe('HtmlExporter fallback entry guard (T-20260322-354)', () => {
       [],
       `Unexpected fallback entrypoint detected in src/**\n${violations.join('\n')}`
     );
+  });
+});
+
+const { createFallbackOptions } = require('../helpers/fallback-helper');
+
+describe('HtmlExporter fallback runtime hard gate (T-019)', () => {
+  const dsl = {
+    page: {
+      components: [{ Text: { value: 'hard gate' } }]
+    }
+  };
+
+  it('throws when TEXTUI_ENABLE_FALLBACK is not 1 even with the internal compatibility flag', async () => {
+    const exporter = new HtmlExporter();
+    const prev = process.env.TEXTUI_ENABLE_FALLBACK;
+    delete process.env.TEXTUI_ENABLE_FALLBACK;
+    try {
+      await assert.rejects(
+        async () => exporter.export(dsl, createFallbackOptions({ format: 'html' })),
+        (err) =>
+          err instanceof Error &&
+          err.message.includes('[HtmlExporter:FALLBACK_BLOCKED]') &&
+          err.message.includes('TEXTUI_ENABLE_FALLBACK')
+      );
+    } finally {
+      if (prev === undefined) {
+        process.env.TEXTUI_ENABLE_FALLBACK = '1';
+      } else {
+        process.env.TEXTUI_ENABLE_FALLBACK = prev;
+      }
+    }
   });
 });
