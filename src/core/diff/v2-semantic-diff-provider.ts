@@ -37,21 +37,34 @@ export class V2SemanticDiffProvider implements SemanticDiffProvider {
 
     const populatedScreens = screens.map(s => {
       if ('outOfScope' in s) { return s; }
-      const entities: V2EntityDiff[] =
-        componentDiffs.length > 0
-          ? [{ entity_id: `${s.screen_id}-components`, diffs: [], components: componentDiffs }]
-          : [];
-      return { ...s, entities };
+      if (componentDiffs.length === 0) {
+        return s;
+      }
+
+      if (s.entities.length > 0) {
+        const [firstEntity, ...rest] = s.entities;
+        const mergedEntity: V2EntityDiff = {
+          ...firstEntity,
+          components: componentDiffs,
+        };
+        return { ...s, entities: [mergedEntity, ...rest] };
+      }
+
+      return {
+        ...s,
+        entities: [{ entity_id: `${s.screen_id}-components`, diffs: [], components: componentDiffs }],
+      };
     });
 
     const totalRecords = populatedScreens.reduce((sum, s) => {
       if ('outOfScope' in s) { return sum; }
       const screenDiffs = s.diffs.length;
+      const entityDiffs = s.entities.reduce((es, e) => es + e.diffs.length, 0);
       const compDiffs = s.entities.reduce(
         (es, e) => es + e.components.reduce((cs, c) => cs + c.diffs.length, 0),
         0
       );
-      return sum + screenDiffs + compDiffs;
+      return sum + screenDiffs + entityDiffs + compDiffs;
     }, 0);
 
     const v2: DiffCompareResultV2Payload = {

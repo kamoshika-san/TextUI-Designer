@@ -3,6 +3,7 @@ import type {
   V2ScreenDiff,
   V2ScreenDiffInScope,
   V2DiffRecord,
+  V2EntityDiff,
 } from './diff-v2-types';
 import { buildV2Decision } from './v2-confidence-scorer';
 
@@ -32,6 +33,23 @@ function makeEntityRecord(
   return { decision: buildV2Decision(event, targetId, confidence, ambiguityReason), explanation: { evidence: [] } };
 }
 
+function makeStateRecord(
+  targetId: string,
+  confidence: number,
+  beforeState: unknown,
+  afterState: unknown,
+  ambiguityReason?: string
+): V2DiffRecord {
+  return {
+    decision: buildV2Decision('entity_state_changed', targetId, confidence, ambiguityReason),
+    explanation: {
+      evidence: [],
+      before_predicate: beforeState,
+      after_predicate: afterState,
+    },
+  };
+}
+
 function normalizeEntityId(value: string): string | undefined {
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
@@ -44,6 +62,25 @@ function resolveMatchedEntityId(
   return normalizeEntityId(next.page.id)
     ?? normalizeEntityId(previous.page.id)
     ?? '/page';
+}
+
+function stableStateStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(item => stableStateStringify(item)).join(',')}]`;
+  }
+
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, nested]) => `${JSON.stringify(key)}:${stableStateStringify(nested)}`);
+    return `{${entries.join(',')}}`;
+  }
+
+  return JSON.stringify(value);
+}
+
+function readEntityState(document: DiffCompareDocument): unknown {
+  return ((document.normalizedDsl.page as unknown) as Record<string, unknown>)['state'];
 }
 
 export function pairEntityIdentityV2(
@@ -104,16 +141,27 @@ export function scanEntityDiffs(
 ): V2ScreenDiff[] {
   const pair = pairEntityIdentityV2(previous, next);
   const diffs: V2DiffRecord[] = [];
+  const entities: V2EntityDiff[] = [];
 
   if (pair.kind === 'unmatched') {
     diffs.push(makeEntityRecord('entity_removed', pair.removedEntityId, pair.confidence, pair.ambiguityReason));
     diffs.push(makeEntityRecord('entity_added', pair.addedEntityId, pair.confidence, pair.ambiguityReason));
+  } else {
+    const previousState = readEntityState(previous);
+    const nextState = readEntityState(next);
+    if (stableStateStringify(previousState) !== stableStateStringify(nextState)) {
+      entities.push({
+        entity_id: pair.entityId,
+        diffs: [makeStateRecord(pair.entityId, pair.confidence, previousState, nextState, pair.ambiguityReason)],
+        components: [],
+      });
+    }
   }
 
   const screenDiff: V2ScreenDiffInScope = {
     screen_id: resolveMatchedEntityId(previous, next),
     diffs,
-    entities: [],
+    entities,
   };
   return [screenDiff];
 }
