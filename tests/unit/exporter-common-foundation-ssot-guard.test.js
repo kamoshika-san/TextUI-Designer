@@ -9,7 +9,7 @@ const path = require('path');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 const targets = [
-  'src/exporters/base-component-renderer.ts',
+  'src/exporters/legacy/base-component-renderer.ts',
   'src/exporters/export-types.ts',
   'src/exporters/export-pipeline.ts',
 ];

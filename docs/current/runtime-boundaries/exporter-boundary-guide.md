@@ -24,7 +24,7 @@ T-001-ANCHOR:NO-NEW-PRODUCT-FEATURES-IN-FALLBACK-PATH
 
 #### 新規機能が fallback に入っていないことの確認（レビュー / ローカル）
 
-1. **差分の入口**: 変更が `src/exporters/html-renderers/**` または `useReactRender === false` 専用分岐に限定されていないかを見る。  
+1. **差分の入口**: 変更が `src/exporters/legacy/html-renderers/**` または `useReactRender === false` 専用分岐に限定されていないかを見る。  
 2. **新規コンポーネント / 新契約**: まず **Primary**（`renderPageComponentsToStaticHtml` / `react-static-export` 系）に追加されているかを確認する。  
 3. **Fallback-only 変更**（Primary を触らず互換レーンのみ）のときは、PR または近接コメントに **「なぜ Primary ではないか」「影響する entry」「Primary へ寄せる余地」**を必ず残す（下節「Fallback-only change note」と同一基準）。  
 4. **CI 前ローカル**: `npm run check:html-exporter-fallback-lane` が PASS すること（ドキュメント・アンカー縮退防止）。
@@ -55,7 +55,7 @@ T-001-ANCHOR:NO-NEW-PRODUCT-FEATURES-IN-FALLBACK-PATH
 | 区分 | 置き場の目安 | メモ |
 |------|----------------|------|
 | **共有カーネル** | `src/exporters/react-static-export.ts` が参照する **`src/renderer/component-map`** 経由の描画 | HTML exporter の **primary**（`useReactRender` 既定）とプレビューが交差しやすい。変更は **両経路の回帰**を意識する。 |
-| **Export 専用** | 各 `*exporter.ts`・`html-renderers/*`・`pug/*` など **文字列生成系** | `useReactRender === false` や非 React 形式の本体。プレビューと **挙動差**がありうる（上表の fallback 列）。 |
+| **Export 専用** | 各 `*exporter.ts`・`legacy/html-renderers/*`・`pug/*` など **文字列生成系** | `useReactRender === false` や非 React 形式の本体。プレビューと **挙動差**がありうる（上表の fallback 列）。 |
 | **Preview 専用** | WebView パネル・メッセージハンドラ（`src/renderer/` の UI シェル） | DSL の **表示**には関与するが、CLI export 成果物の **契約**とは切り分ける。 |
 
 - 結合パターンの詳細: [export-webview-runtime-coupling-inventory.md](export-webview-runtime-coupling-inventory.md)

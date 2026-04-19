@@ -79,7 +79,7 @@
 
 ### P2: Exporter系のテンプレート/文字列構築責務を整理
 
-対象: `src/exporters/pug-exporter.ts`, `src/exporters/base-component-renderer.ts`
+対象: `src/exporters/pug-exporter.ts`, `src/exporters/legacy/base-component-renderer.ts`
 
 観点:
 - 出力フォーマット固有処理と共通構造（属性組み立て・ネスト処理）がファイル間で分散。

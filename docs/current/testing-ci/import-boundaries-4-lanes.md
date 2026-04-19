@@ -29,7 +29,8 @@
 | **Shared domain** | `src/domain/*`、`src/components/definitions/*`、codec / DSL 型 | DSL 中立・再利用可能な型と不変条件 |
 | **Extension host** | `extension.ts`、`src/services/*` | VS Code API・ユースケースオーケストレーション |
 | **WebView runtime** | `src/renderer/*` | React / `postMessage` 側のプレゼンテーション |
-| **Export runtime** | `src/exporters/*` | 出力形式ごとの差分を吸収する実行層 |
+| **Export runtime** | `src/exporters/*`（`src/exporters/legacy/**` を除く） | Primary 側の出力パイプライン（React 静的 HTML 等） |
+| **Export runtime（Legacy）** | `src/exporters/legacy/**` | Fallback 文字列生成など削除候補境界のモジュール（T-018） |
 
 ## 4 レーン俯瞰図 {#4-lane-overview}
 
@@ -104,7 +105,8 @@ Export runtime
 | `shared-domain` | `src/domain/**`、`src/components/definitions/**` | `vscode` import **禁止** |
 | `navigation-lane` | 次のいずれかに一致するパス（**`classifyLane` と同一条件**）: `src/cli/commands/flow-command.ts` / `src/core/diff-normalization/flow-normalizer.ts` / `src/domain/dsl-types/navigation.ts` / `src/exporters/flow-export-route-utils.ts` / `src/exporters/flow-` で始まるパス / `src/services/semantic-diff/flow-` で始まるパス / `src/shared/navigation-flow-validator.ts` | `vscode` import **禁止**、かつ `src/renderer/**` への相対依存 **禁止** |
 | `webview-runtime` | `src/renderer/**` | `src/exporters/**` への相対依存 **禁止** |
-| `export-runtime` | `src/exporters/**` | `src/renderer/**` への相対依存は **allowlist のみ許可**（下記） |
+| `export-runtime` | `src/exporters/**`（`src/exporters/legacy/**` を除く） | `src/renderer/**` への相対依存は **allowlist のみ許可**（下記） |
+| `export-runtime-legacy` | `src/exporters/legacy/**` | `export-runtime` と同じ **Export → WebView** 制約（allowlist のみ） |
 | `other` | 上記以外 | import graph の追加ルールなし |
 
 **境界（読み手向けのまとめ）**
@@ -128,6 +130,11 @@ Export runtime
 | `src/exporters/static-html-render-adapter.ts` | `src/renderer/render-context.ts` | Primary static HTML export が **共有 render context 型**だけを renderer から取り込み、UI 実装全体への依存を避ける。 |
 
 **運用**: allowlist は既存の正当な bridge を固定するためのもの。新規 edge は review-only にせず、**専用 ticket で増減**を判断する（スクリプトの配列と **本表を同時更新**すること）。
+
+### Primary export-runtime → Legacy（可視化のみ）{#export-runtime-primary-to-legacy-info}
+
+- **目的**: Fallback 用コードを `src/exporters/legacy/**` に寄せた結果、Primary（`export-runtime`）から Legacy（`export-runtime-legacy`）へ向く **相対 import のエッジ**を CI ログに出し、削除候補境界を追跡しやすくする（**違反ではない**）。
+- **機械出力**: `npm run check:import-graph` 成功時に `Observed export-runtime -> export-runtime-legacy edges (informational; not violations):` として一覧表示（`scripts/check-import-graph-boundaries.cjs` の `classifyLane` と **同一の分岐順**）。
 
 ## 次の作業（バックログ）
 

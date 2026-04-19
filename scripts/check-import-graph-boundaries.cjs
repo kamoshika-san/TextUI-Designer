@@ -64,6 +64,9 @@ function classifyLane(relPath) {
     if (relPath.startsWith("src/renderer/")) {
         return "webview-runtime";
     }
+    if (relPath.startsWith("src/exporters/legacy/")) {
+        return "export-runtime-legacy";
+    }
     if (relPath.startsWith("src/exporters/")) {
         return "export-runtime";
     }
@@ -106,6 +109,7 @@ function resolveRelativeImport(fromAbsPath, specifier) {
 const files = walk(srcRoot);
 const violations = [];
 const observedAllowedPairs = [];
+const primaryToLegacyEdges = [];
 
 for (const absPath of files) {
     const relPath = toPosix(path.relative(repoRoot, absPath));
@@ -155,7 +159,10 @@ for (const absPath of files) {
             continue;
         }
 
-        if (lane === "export-runtime" && resolvedRelative.startsWith("src/renderer/")) {
+        if (
+            (lane === "export-runtime" || lane === "export-runtime-legacy")
+            && resolvedRelative.startsWith("src/renderer/")
+        ) {
             const pairKey = `${relPath}=>${resolvedRelative}`;
             if (allowedExportToRendererPairs.has(pairKey)) {
                 observedAllowedPairs.push(pairKey);
@@ -165,6 +172,14 @@ for (const absPath of files) {
                 file: relPath,
                 edge: `${specifier} -> ${resolvedRelative}`,
                 reason: "Export runtime may only use the documented allowlisted renderer bridges.",
+            });
+        }
+
+        if (lane === "export-runtime" && resolvedRelative.startsWith("src/exporters/legacy/")) {
+            primaryToLegacyEdges.push({
+                from: relPath,
+                to: resolvedRelative,
+                edge: `${specifier} -> ${resolvedRelative}`,
             });
         }
     }
@@ -181,6 +196,17 @@ if (observedAllowedPairs.length > 0) {
         const entry = ALLOWED_EXPORT_TO_RENDERER.find((item) => `${item.from}=>${item.to}` === pairKey);
         if (entry) {
             console.log(`  - ${entry.from} -> ${entry.to}`);
+        }
+    }
+}
+
+if (primaryToLegacyEdges.length > 0) {
+    console.log("\nObserved export-runtime -> export-runtime-legacy edges (informational; not violations):");
+    const keys = [...new Set(primaryToLegacyEdges.map((item) => `${item.from}=>${item.to}`))].sort((a, b) => a.localeCompare(b));
+    for (const key of keys) {
+        const sample = primaryToLegacyEdges.find((item) => `${item.from}=>${item.to}` === key);
+        if (sample) {
+            console.log(`  - ${sample.from} -> ${sample.to}`);
         }
     }
 }

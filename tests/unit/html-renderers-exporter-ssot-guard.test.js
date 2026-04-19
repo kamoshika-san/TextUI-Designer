@@ -1,5 +1,5 @@
 /**
- * T-20260322-164: src/exporters/html-renderers 配下の .ts の SSoT 境界を固定する。
+ * T-20260322-164: src/exporters/legacy/html-renderers 配下の .ts の SSoT 境界を固定する。
  * domain/dsl-types 起点・renderer/types（互換レイヤ）非依存。
  */
 const assert = require('assert');
@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
-const htmlRenderersDir = path.join(repoRoot, 'src', 'exporters', 'html-renderers');
+const htmlRenderersDir = path.join(repoRoot, 'src', 'exporters', 'legacy', 'html-renderers');
 
 function walkTsFiles(dir, out = []) {
   if (!fs.existsSync(dir)) {
@@ -31,7 +31,7 @@ function toPosixRelative(filePath) {
 describe('html-renderers exporter SSoT guard (T-20260322-164)', () => {
   it('html-renderers 配下は domain/dsl-types を参照し renderer/types を参照しない', () => {
     const allFiles = walkTsFiles(htmlRenderersDir);
-    assert.ok(allFiles.length > 0, 'src/exporters/html-renderers に .ts が存在すること');
+      assert.ok(allFiles.length > 0, 'src/exporters/legacy/html-renderers に .ts が存在すること');
 
     const violations = [];
     const rendererTypesPath = ['renderer', 'types'].join('/');

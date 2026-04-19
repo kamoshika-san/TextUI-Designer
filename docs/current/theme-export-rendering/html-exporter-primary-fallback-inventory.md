@@ -15,7 +15,7 @@
 
 | Item | Primary | Fallback |
 |------|---------|----------|
-| **owner** | `src/exporters/react-static-export.ts` and `src/renderer/component-map.tsx` | `src/exporters/base-component-renderer.ts` and `src/exporters/html-renderers/*` |
+| **owner** | `src/exporters/react-static-export.ts` and `src/renderer/component-map.tsx` | `src/exporters/legacy/base-component-renderer.ts` and `src/exporters/legacy/html-renderers/*` |
 | **trigger** | normal HTML export, built-in `html` provider, preview preparation | explicit helper-routed fallback for capture, compatibility regression, or legacy behavior checks |
 | **follow-up** | treat drift as work against the main renderer contract | require a reason, keep Primary as source of truth, and record the reason in code comments or review handoff |
 

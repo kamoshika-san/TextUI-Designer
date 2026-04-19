@@ -57,7 +57,7 @@ describe('拡張API契約', () => {
   });
 
   describe('BaseComponentRenderer の拡張ポイント', () => {
-    const { BaseComponentRenderer } = require('../../out/exporters/base-component-renderer');
+    const { BaseComponentRenderer } = require('../../out/exporters/legacy/base-component-renderer');
 
     class TestRenderer extends BaseComponentRenderer {
       constructor() {

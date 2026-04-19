@@ -8,7 +8,7 @@ const path = require('path');
  */
 describe('dispatchExporterRenderer coverage (Phase 0)', () => {
   const workspaceRoot = path.resolve(__dirname, '../..');
-  const rendererPath = path.join(workspaceRoot, 'src', 'exporters', 'base-component-renderer.ts');
+  const rendererPath = path.join(workspaceRoot, 'src', 'exporters', 'legacy', 'base-component-renderer.ts');
   const typesPath = path.join(workspaceRoot, 'src', 'components', 'definitions', 'types.ts');
 
   const { BUILT_IN_EXPORTER_RENDERER_DEFINITIONS } = require(

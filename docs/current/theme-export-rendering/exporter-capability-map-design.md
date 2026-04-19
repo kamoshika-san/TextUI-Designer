@@ -6,7 +6,7 @@
 
 ## 1. 問題意識（現状）
 
-`BaseComponentRenderer`（`src/exporters/base-component-renderer.ts`）は次の二層を併せ持つ。
+`BaseComponentRenderer`（`src/exporters/legacy/base-component-renderer.ts`）は次の二層を併せ持つ。
 
 1. **ランタイムディスパッチ**: `EXPORTER_RENDERER_DISPATCH` が `ExporterRendererMethod` から `renderXxx(props, key)` へ型付きで接続する。
 2. **サブクラス契約**: 各 `HtmlExporter` / `PugExporter` / `ReactExporter` 等は **`protected abstract renderXxx` を built-in 種類ぶんすべて実装**する必要がある。
@@ -64,7 +64,7 @@
 
 ## 6. 関連コード・ドキュメント
 
-- `src/exporters/base-component-renderer.ts` — `EXPORTER_RENDERER_DISPATCH`、抽象 `renderXxx`
+- `src/exporters/legacy/base-component-renderer.ts` — `EXPORTER_RENDERER_DISPATCH`、抽象 `renderXxx`
 - `src/components/definitions/exporter-renderer-definitions.ts` — `BUILT_IN_EXPORTER_RENDERER_DEFINITIONS`
 - `src/components/definitions/types.ts` — `ExporterRendererMethod`
 - [exporter-boundary-guide.md](./exporter-boundary-guide.md) — Primary / Fallback

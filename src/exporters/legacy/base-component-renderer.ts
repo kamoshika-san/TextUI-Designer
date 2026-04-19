@@ -26,20 +26,20 @@ import type {
   ImageComponent,
   IconComponent,
   ModalComponent
-} from '../domain/dsl-types';
-import type { ExportOptions, Exporter } from './export-types';
-import type { ExporterRendererMethod } from '../components/definitions/types';
-import { StyleManager, type ExportFormat } from '../utils/style-manager';
-import { decodeDslComponent, decodeDslComponentUnion } from '../registry/dsl-component-codec';
+} from '../../domain/dsl-types';
+import type { ExportOptions, Exporter } from '../export-types';
+import type { ExporterRendererMethod } from '../../components/definitions/types';
+import { StyleManager, type ExportFormat } from '../../utils/style-manager';
+import { decodeDslComponent, decodeDslComponentUnion } from '../../registry/dsl-component-codec';
 import {
   getDeclaredTokenSlotsForComponent,
   getDefaultTokenSlotForComponent,
   getTokenStylePropertyKebab,
   slotIdToTuiCssVarName
-} from '../components/definitions/token-style-property-map';
-import { componentDescriptorRegistry } from '../registry/component-descriptor-registry';
-import { AttributeSerializer, type ExporterAstNode, renderExporterAst } from './exporter-ast';
-import { themeStyleResolver } from './theme-style-resolver';
+} from '../../components/definitions/token-style-property-map';
+import { componentDescriptorRegistry } from '../../registry/component-descriptor-registry';
+import { AttributeSerializer, type ExporterAstNode, renderExporterAst } from '../exporter-ast';
+import { themeStyleResolver } from '../theme-style-resolver';
 
 export type ComponentHandler = (props: unknown, key: number) => string;
 

@@ -13,7 +13,7 @@
 |------|----------------------|------|
 | **静的 React 出力** | `src/exporters/react-static-export.ts` | HTML exporter の primary 経路。WebView プレビュー用 React 実装とのコード共有が集中しやすい。 |
 | **テンプレ／断片** | `react-template-renderer.ts`・`react-basic-renderer.ts`・`react-form-control-templates.ts` | コンポーネント種別ごとのレンダリング。`renderer/types` からの型 import が多い（[dsl-types-renderer-types-inventory.md](dsl-types-renderer-types-inventory.md) と重複参照）。 |
-| **非 React exporter** | `base-component-renderer.ts`・`html-renderers/*`・`pug/*` | 文字列生成系。Preview diff / component-map との共有ユーティリティに注意。 |
+| **非 React exporter** | `legacy/base-component-renderer.ts`・`legacy/html-renderers/*`・`pug/*` | 文字列生成系。Preview diff / component-map との共有ユーティリティに注意。 |
 | **プレビュー観測** | `src/utils/preview-capture*.ts` | キャプチャ経路。Export 本流とプレビューの import グラフが交差しうる。 |
 
 ## 縮退の次ステップ（提案・未起票）

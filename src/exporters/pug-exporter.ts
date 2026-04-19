@@ -25,7 +25,7 @@ import type {
   FormComponent
 } from '../domain/dsl-types';
 import type { ExportOptions } from './export-types';
-import { BaseComponentRenderer } from './base-component-renderer';
+import { BaseComponentRenderer } from './legacy/base-component-renderer';
 import { buildPugPageDocument } from './pug/pug-page-document';
 import {
   renderPugText,

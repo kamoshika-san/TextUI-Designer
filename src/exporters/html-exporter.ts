@@ -27,16 +27,16 @@ import type {
   ModalComponent
 } from '../domain/dsl-types';
 import type { ExportOptions } from './export-types';
-import { BaseComponentRenderer } from './base-component-renderer';
+import { BaseComponentRenderer } from './legacy/base-component-renderer';
 import { buildFallbackCompatibilityStyleBlock, buildHtmlDocument, readWebviewCssIfPresent } from './html-template-builder';
 import { renderPageComponentsToStaticHtml } from './react-static-export';
 import { buildThemeStyleBlock } from './theme-style-builder';
 import { buildThemeVariables } from './theme-definition-resolver';
 import { ThemeUtils } from '../theme/theme-utils';
-import { HtmlFormRenderer } from './html-renderers/html-form-renderer';
-import { HtmlTextualRenderer } from './html-renderers/html-textual-renderer';
-import { HtmlLayoutRenderer } from './html-renderers/html-layout-renderer';
-import type { HtmlRendererUtils } from './html-renderers/html-renderer-utils';
+import { HtmlFormRenderer } from './legacy/html-renderers/html-form-renderer';
+import { HtmlTextualRenderer } from './legacy/html-renderers/html-textual-renderer';
+import { HtmlLayoutRenderer } from './legacy/html-renderers/html-layout-renderer';
+import type { HtmlRendererUtils } from './legacy/html-renderers/html-renderer-utils';
 import { resolveImageSourcesInDsl } from '../utils/image-source-resolver';
 import { Logger } from '../utils/logger';
 

@@ -1,5 +1,5 @@
-import type { ComponentDef, FormAction, FormField, SpacerComponent } from '../../domain/dsl-types';
-import type { StyleManager } from '../../utils/style-manager';
+import type { ComponentDef, FormAction, FormField, SpacerComponent } from '../../../domain/dsl-types';
+import type { StyleManager } from '../../../utils/style-manager';
 
 export type HtmlRendererUtils = {
   escapeHtml: (value: unknown) => string;

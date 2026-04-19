@@ -8,7 +8,7 @@ const path = require('path');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 const REQUIRED_EXPORTER_FILES = [
-  'src/exporters/base-component-renderer.ts',
+  'src/exporters/legacy/base-component-renderer.ts',
   'src/exporters/export-types.ts',
   'src/exporters/export-pipeline.ts',
   'src/exporters/react-exporter.ts',

@@ -5,7 +5,7 @@ import type {
   ContainerComponent, AccordionComponent, TabsComponent, TreeViewComponent, TableComponent, LinkComponent, BreadcrumbComponent, BadgeComponent, ProgressComponent, ImageComponent, IconComponent, ModalComponent
 } from '../domain/dsl-types';
 import type { ExportOptions } from './export-types';
-import { BaseComponentRenderer } from './base-component-renderer';
+import { BaseComponentRenderer } from './legacy/base-component-renderer';
 import { renderAlertTemplate, renderBadgeTemplate, renderBreadcrumbTemplate, renderButtonTemplate, renderDividerTemplate, renderIconTemplate, renderImageTemplate, renderLinkTemplate, renderProgressTemplate, renderSpacerTemplate, renderTextTemplate } from './react-basic-renderer';
 import { renderAccordionTemplate, renderContainerTemplate, renderFormTemplate, renderTableTemplate, renderTabsTemplate, renderTreeViewTemplate } from './react-template-renderer';
 import { buildReactPageDocument } from './react-export-page-template';
