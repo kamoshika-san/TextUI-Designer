@@ -25,7 +25,7 @@
 |------|---------------|------|
 | `src/cli/provider-registry.ts` built-in `html` provider | `useReactRender: true` | **Primary** |
 | `src/utils/preview-capture/html-preparation.ts` | `options.useReactRender ?? true` | default is **Primary**, explicit override only |
-| `src/cli/commands/capture-command.ts` | `withExplicitFallbackHtmlExport(...)` | **Fallback** |
+| `src/cli/commands/capture-command.ts` | （オプション未指定 → `prepareCaptureArtifacts` の `useReactRender ?? true`） | **Primary**（T-010） |
 | fallback-focused unit tests such as `tests/unit/html-exporter-lane-observability.test.js` | `withExplicitFallbackHtmlExport(...)` or explicit deprecation-boundary requests | **Fallback** |
 
 ## Observability
@@ -42,11 +42,17 @@ Rerun command:
 npm run report:react-fallback-usage
 ```
 
-Current snapshot on `2026-03-27`:
+Current snapshot on `2026-03-27` (pre-T-010):
 
 | Metric | Value | Notes |
 |---|---|---|
-| runtime fallback entries | `1` | current runtime fallback entry stays isolated to `src/cli/commands/capture-command.ts` |
+| runtime fallback entries | `1` | ~~isolated to `src/cli/commands/capture-command.ts`~~ **removed in T-010** (CLI capture now Primary-default) |
+
+Post-T-010 snapshot (rerun `npm run report:react-fallback-usage`):
+
+| Metric | Value | Notes |
+|---|---|---|
+| runtime fallback entries | `0` | no production runtime file lists an explicit fallback entry; compatibility lane remains for tests via `withExplicitFallbackHtmlExport` |
 | fallback helper definitions | `1` | helper stays centralized in `src/exporters/html-export-lane-options.ts` |
 | primary-default routes | `2` | built-in HTML provider and preview-capture preparation remain Primary by default |
 | fallback execution test files | `2` | compatibility lane remains covered only by explicit fallback-lane observability and style-lane tests |
@@ -54,7 +60,7 @@ Current snapshot on `2026-03-27`:
 
 Lane ownership in the current snapshot:
 
-- CLI runtime fallback entry: `src/cli/commands/capture-command.ts`
+- CLI `capture` export lane: **Primary** (`src/cli/commands/capture-command.ts`, T-010)
 - Fallback helper owner: `src/exporters/html-export-lane-options.ts`
 - Primary-default routes: `src/cli/provider-registry.ts`, `src/utils/preview-capture/html-preparation.ts`
 - Fallback execution test lane:
@@ -71,7 +77,7 @@ Use these labels when a behavior difference is found.
 | 2 | Markup rendering stack | React static render | legacy string renderer stack | intended difference | Primary is the design target for new work |
 | 3 | Component support expansion | new support should land here first | may lag or remain compatibility-only | compatibility lane | if fallback needs bespoke work, record why |
 | 4 | Theme / `webviewCss` handling | carried through the main document build; default document CSS stays minimal when `webviewCss` is absent | route-specific; fallback-only compatibility CSS may be appended explicitly | intended but narrow | judge against current runtime behavior |
-| 5 | CLI / test usage | provider export is Primary by default | capture and explicit compatibility tests use fallback | intended and documented | do not silently widen fallback entry points |
+| 5 | CLI / test usage | provider export is Primary by default | **CLI capture is Primary-default (T-010)**; explicit compatibility tests still use fallback | intended and documented | do not silently widen fallback entry points |
 | 6 | Small DOM differences | evaluate case by case | evaluate case by case | investigate individually | open an issue or extend this table when found |
 
 ## T-350 classification
@@ -82,7 +88,7 @@ This is the current separation between intentional differences, acceptable tempo
 |---|---|---|---|
 | Primary render stack vs legacy string renderer stack | Two rendering stacks still exist | intended difference | HR1 fixed Primary as the source of truth without claiming same-sprint fallback removal |
 | Built-in HTML provider and preview preparation | Default to Primary | intended difference | These are now the normal product-facing routes and should stay Primary-first |
-| Capture command fallback entry | Explicit helper-based fallback entry remains | acceptable temporary debt | The route is isolated, named, and guarded while replacement criteria remain outside HR1 |
+| CLI capture forcing fallback via helper | Removed (T-010) | resolved toward Primary | Capture preparation already defaulted to Primary; the extra helper wrap only duplicated the compatibility lane |
 | Fallback-focused regression tests | Only explicit fallback-lane observability/style coverage remains | acceptable temporary debt | General regression coverage moved back to the React-primary contract |
 | Fallback-only compatibility CSS | Isolated to the fallback lane append path in `html-template-builder` | acceptable temporary debt | Primary default no longer carries badge / tabs / progress compatibility CSS unless the fallback lane asks for it |
 | Fallback-only code comments / handoff justification | Required for any new fallback-only change | acceptable temporary debt | This keeps compatibility fixes reviewable instead of allowing silent lane drift |
@@ -97,23 +103,24 @@ This separates routes that are already safe to treat as Primary from routes that
 |---|---|---|---|
 | Built-in HTML provider | `src/cli/provider-registry.ts` | Fully movable / already Primary | The built-in `html` provider explicitly passes `useReactRender: true`, so normal CLI export is already anchored to the Primary renderer. |
 | Preview capture preparation | `src/utils/preview-capture/html-preparation.ts` | Fully movable / already Primary by default | `prepareCaptureArtifacts()` uses `options.useReactRender ?? true`, so preview HTML preparation already validates the Primary lane unless a caller asks for fallback on purpose. |
-| Capture command | `src/cli/commands/capture-command.ts` | Keep for now | `capture` still routes through `withExplicitFallbackHtmlExport(...)`; that path remains the compatibility lane until capture-specific replacement criteria are cleared. |
+| Capture command | `src/cli/commands/capture-command.ts` | Fully movable / now Primary-default (T-010) | `capture` no longer wraps options with `withExplicitFallbackHtmlExport(...)`; `prepareCaptureArtifacts` already defaulted to Primary (`useReactRender ?? true`). |
 | Fallback-focused regression tests | `tests/unit/*` with explicit fallback setup | Partial difference | These tests protect compatibility behavior and should remain fallback-specific even while production and default routes converge on Primary. |
 
-Small-slice verification in `tests/unit/html-exporter-route-viability.test.js` locks the first two routes as Primary and the third route as intentionally fallback-only.
+Small-slice verification in `tests/unit/html-exporter-route-viability.test.js` locks the built-in provider, preview preparation, and **CLI capture** as Primary-default (T-010 updated the capture expectation).
 
 `T-20260328-097` adds one more guard on the Primary-first CSS path: when an explicit `extensionPath` does not contain `media/assets/index-*.css`, Export now falls back to the local built WebView assets before treating the route as a missing-WebView-CSS case.
 
 ## Decision rules
 
 1. If drift reproduces on normal export, provider output, or preview preparation, treat it as a **Primary** issue first.
-2. If drift reproduces only on `capture` or helper-routed fallback paths, treat it as a documented fallback compatibility issue.
+2. If drift reproduces on **CLI `capture`**, treat it as a **Primary** issue first (T-010). If drift reproduces only on **helper-routed fallback tests**, treat it as a documented fallback compatibility issue.
 3. When fallback-specific code is changed, keep Primary as the source of truth and leave a short reason in code comments or the review handoff.
 4. If a difference is still isolated to the explicit fallback lane and has a named guard, classify it as acceptable temporary debt rather than as a hidden mismatch.
 5. If a difference affects Primary-default routes or requires a new unapproved fallback entrypoint, classify it as an unresolved mismatch and open follow-up work.
 
 ## Related documents
 
+- [html-exporter-fallback-shrink-t010.md](html-exporter-fallback-shrink-t010.md)（T-010 縮小フェーズ 1・分類と計測手順）
 - [exporter-boundary-guide.md](exporter-boundary-guide.md)
 - [export-fallback-lane-boundary-policy.md](export-fallback-lane-boundary-policy.md)
 - [export-webview-runtime-coupling-inventory.md](export-webview-runtime-coupling-inventory.md)

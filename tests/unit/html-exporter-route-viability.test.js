@@ -99,20 +99,20 @@ describe('HtmlExporter route viability (T-20260322-352)', () => {
     assert.strictEqual(calls[0].useReactRender, true);
   });
 
-  it('capture command remains intentionally fallback-only until its replacement criteria are cleared', () => {
+  it('capture command uses the primary HtmlExporter lane (T-010)', () => {
     const repoRoot = path.resolve(__dirname, '../..');
     const captureCommandPath = path.join(repoRoot, 'src/cli/commands/capture-command.ts');
     const source = fs.readFileSync(captureCommandPath, 'utf8');
 
-    assert.match(
+    assert.doesNotMatch(
       source,
       /withExplicitFallbackHtmlExport\s*\(/,
-      'capture command should keep using the explicit fallback helper while this route remains compatibility-only'
+      'CLI capture should not force the compatibility fallback lane; preview-capture defaults to Primary (useReactRender ?? true)'
     );
     assert.doesNotMatch(
       source,
       /useReactRender\s*:\s*false/,
-      'capture command should not carry a raw fallback literal outside the approved helper'
+      'capture command should not carry a raw fallback literal'
     );
   });
 });

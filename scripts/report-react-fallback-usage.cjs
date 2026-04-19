@@ -3,9 +3,8 @@ const path = require('path');
 
 const repoRoot = path.resolve(__dirname, '..');
 
-const runtimeFallbackEntryFiles = [
-  'src/cli/commands/capture-command.ts'
-];
+/** Production runtime call sites that intentionally force the HTML fallback lane (T-010: currently none). */
+const runtimeFallbackEntryFiles = [];
 
 const fallbackHelperFiles = [
   'src/exporters/html-export-lane-options.ts'
@@ -25,7 +24,8 @@ const fallbackGovernanceFiles = [
   'tests/unit/html-exporter-fallback-entry-guard.test.js',
   'tests/unit/html-exporter-route-viability.test.js',
   'tests/README.md',
-  'docs/current/theme-export-rendering/html-exporter-primary-fallback-inventory.md'
+  'docs/current/theme-export-rendering/html-exporter-primary-fallback-inventory.md',
+  'docs/current/theme-export-rendering/html-exporter-fallback-shrink-t010.md'
 ];
 
 function countMatches(filePath, pattern) {
