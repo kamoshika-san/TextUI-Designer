@@ -31,16 +31,38 @@ export type DiffEvent =
 /** Human review verdict for a diff record */
 export type ReviewStatus = 'approved' | 'rejected' | 'needs_review';
 
-/** Decision payload — what happened and how certain we are */
-export interface DecisionPayload {
+/**
+ * Discriminant for `DecisionPayload` (design E / P3-6).
+ * `low` forces `ambiguity_reason` and `review_status` at the type level (authoring boundary: confidence below 0.8).
+ * Call sites must set `confidence_band` consistently with numeric `confidence`; TypeScript does not correlate the two automatically.
+ */
+export type DecisionConfidenceBand = 'high' | 'low';
+
+/** High-band decision — `ambiguity_reason` / `review_status` remain optional (typical: confidence ≥ 0.8). */
+export interface HighConfidenceDecision {
+  confidence_band: 'high';
   diff_event: DiffEvent;
   target_id: string;
   /** Certainty of the comparison conclusion (0.0–1.0) */
   confidence: number;
-  /** Required when confidence is low; free text, short sentence */
   ambiguity_reason?: string;
   review_status?: ReviewStatus;
 }
+
+/** Low-band decision — `ambiguity_reason` and `review_status` are required (authoring boundary: confidence below 0.8). */
+export interface LowConfidenceDecision {
+  confidence_band: 'low';
+  diff_event: DiffEvent;
+  target_id: string;
+  /** Certainty of the comparison conclusion (0.0–1.0); authoring boundary pairs with `confidence_band: 'low'` */
+  confidence: number;
+  /** Required for low band; free text, short sentence */
+  ambiguity_reason: string;
+  review_status: ReviewStatus;
+}
+
+/** Decision payload — discriminated union on `confidence_band` */
+export type DecisionPayload = HighConfidenceDecision | LowConfidenceDecision;
 
 /** Explanation payload — evidence and predicates that support the decision */
 export interface ExplanationPayload {
