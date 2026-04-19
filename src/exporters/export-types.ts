@@ -15,7 +15,11 @@ export interface ExportOptions {
    *   `withExplicitFallbackHtmlExport` (see `docs/current/theme-export-rendering/t017-html-export-lane-options-internal-api.md`).
    */
   useReactRender?: boolean;
-  /** @internal Temporary compatibility marker for the explicit fallback helper only. */
+  /**
+   * @internal Temporary compatibility marker for the explicit fallback helper only.
+   * When `useReactRender === false`, **HtmlExporter** also requires **`TEXTUI_ENABLE_FALLBACK=1`**
+   * at runtime (set in `tests/setup.js` for unit tests; never in production paths).
+   */
   __internalLegacyFallback?: boolean;
   /** Extension root path used to resolve WebView CSS such as `media/assets/index-*.css`. */
   extensionPath?: string;

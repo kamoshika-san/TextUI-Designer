@@ -177,3 +177,34 @@ describe('HtmlExporter fallback entry guard (T-20260322-354)', () => {
     );
   });
 });
+
+const { withExplicitFallbackHtmlExport } = require('../../out/exporters/html-export-lane-options');
+
+describe('HtmlExporter fallback runtime hard gate (T-019)', () => {
+  const dsl = {
+    page: {
+      components: [{ Text: { value: 'hard gate' } }]
+    }
+  };
+
+  it('throws when TEXTUI_ENABLE_FALLBACK is not 1 even with the internal compatibility flag', async () => {
+    const exporter = new HtmlExporter();
+    const prev = process.env.TEXTUI_ENABLE_FALLBACK;
+    delete process.env.TEXTUI_ENABLE_FALLBACK;
+    try {
+      await assert.rejects(
+        async () => exporter.export(dsl, withExplicitFallbackHtmlExport({ format: 'html' })),
+        (err) =>
+          err instanceof Error &&
+          err.message.includes('[HtmlExporter:FALLBACK_BLOCKED]') &&
+          err.message.includes('TEXTUI_ENABLE_FALLBACK')
+      );
+    } finally {
+      if (prev === undefined) {
+        process.env.TEXTUI_ENABLE_FALLBACK = '1';
+      } else {
+        process.env.TEXTUI_ENABLE_FALLBACK = prev;
+      }
+    }
+  });
+});

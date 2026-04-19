@@ -49,8 +49,9 @@ import { Logger } from '../utils/logger';
  *
  * **Fallback path**: `useReactRender === false` のときのみ。
  * `renderPageComponents`（本クラス継承の文字列ベース HTML レンダラ群）を使用。
- * テストの安定化や capture 等で明示的に切り替える。挙動差・コンポーネント対応差が残りうるため、
- * **不具合修正・新コンポーネント対応は通常 primary 側を正とする**（fallback は縮小・削除は別チケット）。
+ * **ランタイム Hard Gate（T-019）**: `__internalLegacyFallback`（`withExplicitFallbackHtmlExport` 経由）と
+ * **`TEXTUI_ENABLE_FALLBACK=1`**（テスト用）の両方が満たされない限り **例外**とする。
+ * 挙動差・コンポーネント対応差が残りうるため、**不具合修正・新コンポーネント対応は通常 primary 側を正とする**。
  *
  * 運用の一覧は `docs/current/runtime-boundaries/exporter-boundary-guide.md` の「HtmlExporter」の節を参照。
  */
@@ -90,12 +91,18 @@ export class HtmlExporter extends BaseComponentRenderer {
       });
     }
 
-    // Fallback: 文字列レンダー（useReactRender: false のときのみ。テスト・capture 等）
-    // Fallback: compatibility lane used only when useReactRender is explicitly false.
+    // Fallback: 文字列レンダー（useReactRender: false のときのみ。テスト専用の互換レーン）
+    // Fallback: compatibility lane — runtime hard gate (T-019) to block accidental re-entry.
     const isInternalFallback = options.__internalLegacyFallback === true;
+    const fallbackBlocked = '[HtmlExporter:FALLBACK_BLOCKED]';
     if (!isInternalFallback) {
-      this.logger.warn(
-        'useReactRender=false is deprecated for public export callers; use the primary React lane or route through withExplicitFallbackHtmlExport(...) only for internal compatibility paths'
+      throw new Error(
+        `${fallbackBlocked} Fallback lane is disabled in production. (missing __internalLegacyFallback; use withExplicitFallbackHtmlExport from exporter-internal compatibility code or tests only)`
+      );
+    }
+    if (process.env.TEXTUI_ENABLE_FALLBACK !== '1') {
+      throw new Error(
+        `${fallbackBlocked} Fallback lane is disabled in production. (set TEXTUI_ENABLE_FALLBACK=1 for intentional fallback tests only)`
       );
     }
     this.logger.debug('using fallback HTML render path (useReactRender=false)');
