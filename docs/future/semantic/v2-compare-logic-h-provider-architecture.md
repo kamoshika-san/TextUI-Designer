@@ -96,6 +96,7 @@ class V2SemanticDiffProvider implements SemanticDiffProvider {
     _policy?: HeuristicPolicy  // v2 では無視
   ): DiffCompareResult {
     const screens = this.compareAllScreens(previous, next);
+    // P4-10: `buildV1CompatibleResult` は既存 v1 の比較実装へ delegate し、`v2` 以外の従来フィールドを構築する。
     // H-2: v2 結果を DiffCompareResult.v2 に収録
     return {
       ...buildV1CompatibleResult(previous, next),
