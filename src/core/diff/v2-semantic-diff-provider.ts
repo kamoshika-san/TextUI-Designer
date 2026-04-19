@@ -36,7 +36,9 @@ export class V2SemanticDiffProvider implements SemanticDiffProvider {
     const componentDiffs = scanComponentDiffs(previous, next);
 
     const populatedScreens = screens.map(s => {
-      if ('outOfScope' in s) return s;
+      if ('outOfScope' in s) {
+        return s;
+      }
       const entities: V2EntityDiff[] =
         componentDiffs.length > 0
           ? [{ entity_id: `${s.screen_id}-components`, diffs: [], components: componentDiffs }]
@@ -45,7 +47,9 @@ export class V2SemanticDiffProvider implements SemanticDiffProvider {
     });
 
     const totalRecords = populatedScreens.reduce((sum, s) => {
-      if ('outOfScope' in s) return sum;
+      if ('outOfScope' in s) {
+        return sum;
+      }
       const screenDiffs = s.diffs.length;
       const compDiffs = s.entities.reduce(
         (es, e) => es + e.components.reduce((cs, c) => cs + c.diffs.length, 0),
