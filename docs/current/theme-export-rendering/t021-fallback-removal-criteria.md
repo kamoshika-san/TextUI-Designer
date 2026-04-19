@@ -2,7 +2,7 @@
 
 **チケット**: T-021（Vault）  
 **読み手**: Maintainer / Developer / Reviewer / PM  
-**関連**: [t017-html-export-lane-options-internal-api.md](./t017-html-export-lane-options-internal-api.md) · [t016-fallback-unit-tests-inventory.md](./t016-fallback-unit-tests-inventory.md) · [html-exporter-primary-fallback-inventory.md](./html-exporter-primary-fallback-inventory.md) · [export-fallback-lane-boundary-policy.md](./export-fallback-lane-boundary-policy.md) · [t038-fallback-removal-pr-gate.md](./t038-fallback-removal-pr-gate.md)（**T-038**: 削除 PR 運用ゲート草案） · [t041-fallback-removal-evidence-pack.md](./t041-fallback-removal-evidence-pack.md)（**T-041**: A1 / C1 証跡テンプレ） · [t045-fallback-removal-evidence-structural.md](./t045-fallback-removal-evidence-structural.md)（**T-045**: A2 / A4 証跡テンプレ）
+**関連**: [t017-html-export-lane-options-internal-api.md](./t017-html-export-lane-options-internal-api.md) · [t016-fallback-unit-tests-inventory.md](./t016-fallback-unit-tests-inventory.md) · [html-exporter-primary-fallback-inventory.md](./html-exporter-primary-fallback-inventory.md) · [export-fallback-lane-boundary-policy.md](./export-fallback-lane-boundary-policy.md) · [t038-fallback-removal-pr-gate.md](./t038-fallback-removal-pr-gate.md)（**T-038**: 削除 PR 運用ゲート草案） · [t041-fallback-removal-evidence-pack.md](./t041-fallback-removal-evidence-pack.md)（**T-041**: A1 / C1 証跡テンプレ） · [t045-fallback-removal-evidence-structural.md](./t045-fallback-removal-evidence-structural.md)（**T-045**: A2 / A4 証跡テンプレ） · [t049-fallback-removal-evidence-gate-completion.md](./t049-fallback-removal-evidence-gate-completion.md)（**T-049**: 削除 PR 前ゲート Evidence 実填・`t038` §6 記録）
 
 ---
 
@@ -16,7 +16,7 @@
 
 ---
 
-## Current status（2026-04-20 時点のリポジトリ前提）
+## Current status（2026-04-20 時点のリポジトリ前提 · T-049 追記）
 
 | 領域 | 状態 | 根拠（例） |
 |------|------|------------|
@@ -79,6 +79,7 @@
 - **C3〜C5（削除 PR 直前）**: [t038-fallback-removal-pr-gate.md](./t038-fallback-removal-pr-gate.md) の **§3（rollback）** / **§2（migration 草案）** / **§4（follow-up 候補）**を PR 本文またはチェックリストに取り込み、リンクを残す（**T-038**）。
 - **A1 / C1（継続証跡）**: [t041-fallback-removal-evidence-pack.md](./t041-fallback-removal-evidence-pack.md) の手順・テンプレに従い、削除判断時に **日付付きスナップショット**または **CI 一覧 URL** を追記する（**T-041**）。
 - **A2 / A4（構造証跡）**: [t045-fallback-removal-evidence-structural.md](./t045-fallback-removal-evidence-structural.md) の **rg 手順と記録テンプレ**に従う（**T-045**）。
+- **削除 PR 前ゲート（集約記録）**: [t049-fallback-removal-evidence-gate-completion.md](./t049-fallback-removal-evidence-gate-completion.md) に **A1 スナップショット**・**A2/A4 判定**・**B/C の扱い**・**`t038` §6 記録**を残す（**T-049**）。
 
 ---
 
