@@ -29,6 +29,7 @@
 
 ## 参照
 
+- [フラグメント責務・生成メタ（自動更新可）](./package-contributes-fragments-responsibility.md)（**T-011**: `npm run docs:package-contributes`）
 - `package.json` の `contributes`
 - `docs/current/operations/MAINTAINER_GUIDE.md`（変更種別別のクイックスタート表）
 - `scripts/check-contributes-integrity.cjs`
