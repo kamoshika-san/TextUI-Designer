@@ -23,6 +23,7 @@
 
 ## 関連ドキュメント
 
+- Preview / Export 共有 React カーネル境界（**T-005**）: `docs/current/runtime-boundaries/react-shared-kernel-preview-export.md`
 - コマンド仕様: `docs/current/services-webview/contributes-commands.md`
 - 設定体系: `docs/current/workflow-onboarding/SETTINGS.md`
 - サービス登録規約: `docs/current/services-webview/service-registration.md`
