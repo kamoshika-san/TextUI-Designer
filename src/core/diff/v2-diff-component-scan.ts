@@ -8,7 +8,7 @@ import { toComponentNode } from './diff-pairing';
 import { normalizeDefaults } from '../diff-normalization/normalize-defaults';
 
 function makeComponentRecord(
-  event: 'component_added' | 'component_removed' | 'component_action_changed',
+  event: 'component_added' | 'component_removed' | 'component_action_changed' | 'component_availability_changed',
   targetId: string,
   beforePredicate?: unknown,
   afterPredicate?: unknown
@@ -65,6 +65,33 @@ function extractActionAxis(component: unknown): { domain: 'none' | 'submit' | 't
   return { domain: 'none', type: 'none' };
 }
 
+function extractAvailabilityAxis(component: unknown): {
+  visibility: 'visible' | 'hidden';
+  enabled: 'enabled' | 'disabled';
+  editability: 'editable' | 'readonly';
+} {
+  const node = getNormalizedComponentNode(component);
+  if (!node) {
+    return {
+      visibility: 'visible',
+      enabled: 'enabled',
+      editability: 'editable',
+    };
+  }
+
+  const visible = node['visible'] !== false;
+  const enabled = node['disabled'] !== true;
+  const editable = node['editable'] === false
+    ? false
+    : !(node['readOnly'] === true || node['readonly'] === true);
+
+  return {
+    visibility: visible ? 'visible' : 'hidden',
+    enabled: enabled ? 'enabled' : 'disabled',
+    editability: editable ? 'editable' : 'readonly',
+  };
+}
+
 export function scanComponentDiffs(
   previous: DiffCompareDocument,
   next: DiffCompareDocument
@@ -110,6 +137,19 @@ export function scanComponentDiffs(
       result.push({
         component_id: key,
         diffs: [makeComponentRecord('component_action_changed', key, prevAction, nextAction)],
+      });
+    }
+
+    const prevAvailability = extractAvailabilityAxis(previousEntry.component);
+    const nextAvailability = extractAvailabilityAxis(nextEntry.component);
+    if (
+      prevAvailability.visibility !== nextAvailability.visibility
+      || prevAvailability.enabled !== nextAvailability.enabled
+      || prevAvailability.editability !== nextAvailability.editability
+    ) {
+      result.push({
+        component_id: key,
+        diffs: [makeComponentRecord('component_availability_changed', key, prevAvailability, nextAvailability)],
       });
     }
   }
