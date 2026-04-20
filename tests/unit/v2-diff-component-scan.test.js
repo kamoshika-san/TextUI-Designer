@@ -257,6 +257,50 @@ describe('semantic diff v2 component scan', () => {
     assert.ok(diffs[0].diffs[0].explanation.evidence.length > 0);
   });
 
+  it('emits V2EvidenceComponentChanged shape with correct event on every component diff event', () => {
+    const cases = [
+      {
+        label: 'component_added',
+        previous: makeDoc('previous', []),
+        next: makeDoc('next', [{ Button: { id: 'btn', label: 'X' } }]),
+        expectedEvent: 'component_added',
+      },
+      {
+        label: 'component_removed',
+        previous: makeDoc('previous', [{ Button: { id: 'btn', label: 'X' } }]),
+        next: makeDoc('next', []),
+        expectedEvent: 'component_removed',
+      },
+      {
+        label: 'component_action_changed',
+        previous: makeDoc('previous', [{ Button: { id: 'btn', label: 'X', action: { trigger: 'a' } } }]),
+        next: makeDoc('next', [{ Button: { id: 'btn', label: 'X', action: { trigger: 'b' } } }]),
+        expectedEvent: 'component_action_changed',
+      },
+      {
+        label: 'component_availability_changed',
+        previous: makeDoc('previous', [{ Button: { id: 'btn', label: 'X', disabled: false } }]),
+        next: makeDoc('next', [{ Button: { id: 'btn', label: 'X', disabled: true } }]),
+        expectedEvent: 'component_availability_changed',
+      },
+      {
+        label: 'component_guard_changed',
+        previous: makeDoc('previous', [{ Button: { id: 'btn', label: 'X', guard: { op: 'eq', fact: 'f', value: '1' } } }]),
+        next: makeDoc('next', [{ Button: { id: 'btn', label: 'X', guard: { op: 'eq', fact: 'f', value: '2' } } }]),
+        expectedEvent: 'component_guard_changed',
+      },
+    ];
+
+    for (const { label, previous, next, expectedEvent } of cases) {
+      const diffs = componentScan.scanComponentDiffs(previous, next);
+      assert.strictEqual(diffs.length, 1, `${label}: expected 1 diff`);
+      const evidence = diffs[0].diffs[0].explanation.evidence;
+      assert.ok(Array.isArray(evidence) && evidence.length > 0, `${label}: evidence must be non-empty`);
+      assert.strictEqual(evidence[0].evidence_shape, 'component.changed', `${label}: evidence_shape must be 'component.changed'`);
+      assert.strictEqual(evidence[0].event, expectedEvent, `${label}: event field must match diff_event`);
+    }
+  });
+
   it('returns component diffs in stable component_id order', () => {
     const previous = makeDoc('previous', [
       { Button: { id: 'b', label: 'B' } },

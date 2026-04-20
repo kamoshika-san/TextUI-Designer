@@ -160,6 +160,34 @@ export default [{
         "no-restricted-imports": exporterNonInternalToInternalRestriction,
     },
 }, {
+    files: ["src/exporters/html-exporter.ts"],
+    plugins: {
+        "@typescript-eslint": typescriptEslint,
+    },
+    languageOptions: {
+        parser: tsParser,
+        ecmaVersion: 2022,
+        sourceType: "module",
+    },
+    rules: {
+        "no-restricted-imports": ["error", {
+            patterns: [
+                {
+                    group: ["**/exporters/legacy/**", "./legacy/**", "../legacy/**"],
+                    message: "HtmlExporter is Primary-only: do not reintroduce `legacy/` exporter stack (T-20260421-026 / E-HTML).",
+                },
+                {
+                    group: ["**/exporters/internal/**", "./internal/**", "../internal/**"],
+                    message: "T-020: do not import `src/exporters/internal/**` from HtmlExporter.",
+                },
+                {
+                    group: ["**/renderer/types"],
+                    message: "Use `src/domain/dsl-types` for shared DSL types. `renderer/types` has been removed (T-101).",
+                },
+            ],
+        }],
+    },
+}, {
     files: ["tests/**/*.js", "tests/**/*.ts", "tests/**/*.tsx"],
     plugins: {
         "@typescript-eslint": typescriptEslint,

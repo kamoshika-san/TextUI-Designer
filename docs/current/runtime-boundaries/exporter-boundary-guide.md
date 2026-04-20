@@ -36,10 +36,10 @@ T-001-ANCHOR:NO-RAW-USE-REACT-RENDER-FALSE-IN-SRC
 
 ### 構造負債（runtime truth vs 型構造）— Vault **T-20260421-018**（E-HTML-PRIMARY-STRUCTURE）
 
-- **実行経路**は上表の **Primary のみ**だが、現行 `HtmlExporter` は **`BaseComponentRenderer` 継承**および **`legacy/html-renderers/*` のフィールド保持**を残している（**runtime と型が一致していない**）。
-- **棚卸し正本**: `docs/current/theme-export-rendering/html-exporter-primary-structure-inventory.md`（call path・`runtime used` / `structural` / `dead structure`・削除／保留）。
-- **収束予定**: **T-20260421-022〜027**（継承切離し・未使用フィールド除去・import ガード・docs/CHANGELOG）。
-- **レビュー時の確認**: inventory の **削除候補**に触れる変更は、**意図的な構造収束**か **回帰**かを PR 説明で明示する。
+- **実行経路**は上表の **Primary のみ**。**Sprint 2（`T-20260421-022` / `023`）** により `HtmlExporter` は **`Exporter` のみ実装**し、**`BaseComponentRenderer` / `legacy/html-renderers/*` 依存を除去**した（**runtime と公開型が一致**）。
+- **棚卸し正本**: `docs/current/theme-export-rendering/html-exporter-primary-structure-inventory.md`。
+- **残エピック**: **T-025〜027**（`BaseComponentRenderer` 利用者の縮小・**T-026** 本格・CHANGELOG 仕上げ）。**HtmlExporter への legacy 再 import** は **ESLint** で検出（`eslint.config.mjs`）。
+- **レビュー時の確認**: `HtmlExporter` に **legacy** を戻す PR は **ガード違反**として弾かれる。
 
 ## Export と Preview（WebView）の共有境界（T-117）
 

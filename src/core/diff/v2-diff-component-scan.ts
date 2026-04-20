@@ -3,6 +3,7 @@ import type {
   V2ComponentDiff,
   V2DiffRecord,
   V2EvidenceItem,
+  V2EvidenceComponentChanged,
 } from './diff-v2-types';
 import { buildV2Decision } from './v2-confidence-scorer';
 import { toComponentNode } from './diff-pairing';
@@ -20,12 +21,13 @@ function makeComponentRecord(
   afterPredicate?: unknown,
   confidence = 1.0,
   ambiguityReason?: string,
-  evidence: V2EvidenceItem[] = []
+  evidence?: V2EvidenceItem[]
 ): V2DiffRecord {
+  const defaultEvidence: V2EvidenceComponentChanged = { evidence_shape: 'component.changed', event };
   return {
     decision: buildV2Decision(event, targetId, confidence, ambiguityReason),
     explanation: {
-      evidence,
+      evidence: evidence ?? [defaultEvidence],
       before_predicate: beforePredicate,
       after_predicate: afterPredicate,
     },
@@ -265,7 +267,7 @@ export function scanComponentDiffs(
     if (!nextMap.has(key)) {
       result.push({
         component_id: key,
-        diffs: [makeComponentRecord('component_removed', key, undefined, undefined, 1.0, undefined, ['component removed'])],
+        diffs: [makeComponentRecord('component_removed', key)],
       });
     }
   }
@@ -274,7 +276,7 @@ export function scanComponentDiffs(
     if (!prevMap.has(key)) {
       result.push({
         component_id: key,
-        diffs: [makeComponentRecord('component_added', key, undefined, undefined, 1.0, undefined, ['component added'])],
+        diffs: [makeComponentRecord('component_added', key)],
       });
     }
   }
@@ -290,7 +292,7 @@ export function scanComponentDiffs(
     if (prevAction.domain !== nextAction.domain || prevAction.type !== nextAction.type) {
       result.push({
         component_id: key,
-        diffs: [makeComponentRecord('component_action_changed', key, prevAction, nextAction, 1.0, undefined, ['action axis changed'])],
+        diffs: [makeComponentRecord('component_action_changed', key, prevAction, nextAction)],
       });
     }
 
@@ -303,7 +305,7 @@ export function scanComponentDiffs(
     ) {
       result.push({
         component_id: key,
-        diffs: [makeComponentRecord('component_availability_changed', key, prevAvailability, nextAvailability, 1.0, undefined, ['availability axis changed'])],
+        diffs: [makeComponentRecord('component_availability_changed', key, prevAvailability, nextAvailability)],
       });
     }
 
@@ -324,8 +326,7 @@ export function scanComponentDiffs(
           normalizedPreviousGuard,
           normalizedNextGuard,
           unresolved ? 0.7 : 1.0,
-          unresolved ? 'guard contains unresolved predicate' : undefined,
-          [unresolved ? 'guard axis changed with unresolved predicate' : 'guard axis changed']
+          unresolved ? 'guard contains unresolved predicate' : undefined
         )],
       });
     }
