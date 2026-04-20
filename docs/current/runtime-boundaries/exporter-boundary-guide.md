@@ -34,6 +34,13 @@ T-001-ANCHOR:NO-RAW-USE-REACT-RENDER-FALSE-IN-SRC
 
 - オプションの意味: `src/exporters/export-types.ts` の `useReactRender` JSDoc。
 
+### 構造負債（runtime truth vs 型構造）— Vault **T-20260421-018**（E-HTML-PRIMARY-STRUCTURE）
+
+- **実行経路**は上表の **Primary のみ**だが、現行 `HtmlExporter` は **`BaseComponentRenderer` 継承**および **`legacy/html-renderers/*` のフィールド保持**を残している（**runtime と型が一致していない**）。
+- **棚卸し正本**: `docs/current/theme-export-rendering/html-exporter-primary-structure-inventory.md`（call path・`runtime used` / `structural` / `dead structure`・削除／保留）。
+- **収束予定**: **T-20260421-022〜027**（継承切離し・未使用フィールド除去・import ガード・docs/CHANGELOG）。
+- **レビュー時の確認**: inventory の **削除候補**に触れる変更は、**意図的な構造収束**か **回帰**かを PR 説明で明示する。
+
 ## Export と Preview（WebView）の共有境界（T-117）
 
 **目的**: Export の primary 経路と WebView プレビューが **同じ React 実装**を共有しうるため、「どこまでが Export 契約で、どこがプレビュー専用か」を迷わない。
@@ -51,6 +58,7 @@ T-001-ANCHOR:NO-RAW-USE-REACT-RENDER-FALSE-IN-SRC
 
 - Exporter の `renderXxx` 抽象を **capability map** に寄せる設計案（追加コスト削減・段階移行）: [exporter-capability-map-design.md](exporter-capability-map-design.md)
 - Primary / fallback 差分の棚卸し（分類表）: [html-exporter-primary-fallback-inventory.md](html-exporter-primary-fallback-inventory.md)
+- **Primary-only 構造棚卸し**（継承・legacy フィールド・`export` call path）: [html-exporter-primary-structure-inventory.md](../theme-export-rendering/html-exporter-primary-structure-inventory.md)
 - fallback CSS 境界ポリシー: [export-fallback-lane-boundary-policy.md](export-fallback-lane-boundary-policy.md)
 - theme token / CSS variable 契約の current state: [theme-token-vocabulary.md](theme-token-vocabulary.md)
 - Provider契約: `docs/current/services-webview/PROVIDER_CONTRACT.md`
@@ -71,5 +79,5 @@ T-001-ANCHOR:NO-RAW-USE-REACT-RENDER-FALSE-IN-SRC
 ### T-350 classification rule（更新）
 
 - **intended difference**: Primary-only routing and behavior documented in `html-exporter-primary-fallback-inventory.md`（履歴としての fallback 記述は **過去形**に更新されていく）。
-- **acceptable temporary debt**: legacy `html-renderers/*` が HtmlExporter 以外から参照される限りの技術的負債（HtmlExporter 経路では未使用）。
+- **acceptable temporary debt**: （1）legacy `html-renderers/*` が **HtmlExporter 以外**から参照される限りの依存。（2）**HtmlExporter が基底＋renderer フィールドを保持しているが `export()` の Primary では未到達**という構造負債 — **inventory 正本**で追跡し、**T-022〜027** で縮退するまでの暫定許容とする。
 - **unresolved mismatch**: export / provider / preview preparation のいずれかで Primary と実出力が食い違う場合は **Primary を先に**修正する。

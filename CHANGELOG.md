@@ -6,6 +6,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+### Documentation
+- **HtmlExporter Primary-only structure** — Added `html-exporter-primary-structure-inventory.md` (call path and legacy-field classification for Vault **T-20260421-019**), updated `exporter-boundary-guide.md` for epic **T-20260421-018** Sprint 1, and added `html-exporter-primary-only-structure` unit guards (**T-20260421-020**).
+
 ### Removed
 - **HtmlExporter string-renderer compatibility lane** — `useReactRender: false` and the `TEXTUI_ENABLE_FALLBACK` test gate are removed; HTML export is **Primary (React static) only** ([`t038-fallback-removal-pr-gate.md`](docs/current/theme-export-rendering/t038-fallback-removal-pr-gate.md); implementation batch **T-20260420-001**; Vault **T-20260420-090**). Internal `fallback-lane-options` / `fallback-access` helpers and fallback-only unit tests were deleted; `npm run report:react-fallback-usage` and exporter boundary anchors were updated accordingly.
 
