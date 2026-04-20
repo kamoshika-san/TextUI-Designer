@@ -87,15 +87,17 @@ Current excluded example:
 
 - the warning fallback block in `Table.tsx` stays out of this metric because it is a local invalid-state message rather than the canonical table presentation path
 
-### 3. Fallback compatibility selector count
+### 3. Fallback compatibility selector count（履歴メトリクス）
 
-Count selectors defined inside the append-only fallback compatibility CSS block in:
+`getFallbackCompatibilityStyleBlock()` は **T-20260420-001 で削除**。現行は **`t028`** の分類（WebView SSoT と `buildHtmlDocument` の **`compatibilityCss` 任意スロット**）を正とする。
 
-- `src/exporters/html-template-builder.ts`
+旧手順の参照先（削除前）:
 
-Count:
+- ~~`src/exporters/html-template-builder.ts` 内の専用ブロック~~（撤去済み）
 
-- each selector header in `getFallbackCompatibilityStyleBlock()`
+旧カウント対象:
+
+- ~~`getFallbackCompatibilityStyleBlock()` 内の各セレクタヘッダ~~
 
 Do not count:
 

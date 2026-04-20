@@ -166,7 +166,7 @@ These selectors are the main convergence target because they keep Export behavio
 
 Reason:
 - They have clear duplicated selector families on both sides.
-- The Export copies live in `getFallbackCompatibilityStyleBlock()` and are already conceptually isolated.
+- ~~The Export copies live in `getFallbackCompatibilityStyleBlock()`~~ **Removed (`T-20260420-001`)**; duplication is now tracked against **WebView CSS SSoT** vs any **`compatibilityCss`** append usage (see `t028`).
 - `B2` can decide which parts remain compatibility-only and which should disappear behind WebView CSS reuse.
 
 ### Priority 2: Shared layout overlap

@@ -1,13 +1,13 @@
 # Export fallback lane boundary policy
 
-Updated: 2026-03-28
+Updated: 2026-04-21（T-20260420-091: lane 撤去後の文言整合）
 Owner: Maintainer
 Audience: PM, Developer, Reviewer
 Review cadence: per change
 
 ## Goal
 
-Define the current boundary for fallback-only export CSS so later convergence work can remove duplication in a controlled order without widening compatibility debt.
+Define the policy boundary for **HTML document `compatibilityCss` append behavior** (and historically: “fallback-only” export CSS) so duplication can be removed in a controlled order. **HtmlExporter no longer has a second runtime lane** (`T-20260420-001`); this memo still guides **selector families** that may appear when callers pass **`compatibilityCss`** into `buildHtmlDocument`.
 
 ## Inputs
 
@@ -17,7 +17,7 @@ Define the current boundary for fallback-only export CSS so later convergence wo
 
 ## Scope
 
-- Covers only the fallback compatibility CSS appended from `getFallbackCompatibilityStyleBlock()` in `src/exporters/html-template-builder.ts`.
+- Covers **compatibility-oriented selector families** that may be supplied via **`buildHtmlDocument(..., { compatibilityCss })`** (the old `getFallbackCompatibilityStyleBlock()` / `buildFallbackCompatibilityStyleBlock` helpers were **removed** in `T-20260420-001`; see `t028`).
 - Sets the current policy for permanent compatibility, temporary compatibility, and delete-candidate classification.
 - Provides sequencing guidance for `B3` and `B4`.
 
@@ -31,8 +31,8 @@ Define the current boundary for fallback-only export CSS so later convergence wo
 
 | Class | Meaning | Allowed action in this slice |
 |------|---------|-------------------------------|
-| Permanent compatibility | Keep indefinitely because the fallback lane still needs a stable compatibility contract with no planned removal path. | None approved in this memo. |
-| Temporary compatibility | Keep for now because the explicit fallback lane still depends on it, but plan for removal after the standard `webviewCss` path is strengthened. | Record, isolate, and remove in later narrow implementation slices. |
+| Permanent compatibility | Keep indefinitely because a **document-level compatibility CSS** contract still needs a stable boundary with no planned removal path. | None approved in this memo. |
+| Temporary compatibility | Keep for now because **append-only compatibility CSS** may still be injected via `compatibilityCss`, but plan for removal after the standard `webviewCss` path is strengthened. | Record, isolate, and remove in later narrow implementation slices. |
 | Delete candidate | No longer justified by the approved fallback routes or tests. | Mark for later removal, but do not delete in this policy slice. |
 
 ## Current boundary decision
@@ -48,7 +48,7 @@ Rationale:
 
 ### Temporary compatibility
 
-These selectors stay temporarily allowed because they are isolated to the fallback append path and still map to the compatibility lane described in the current inventories.
+These selector families stay temporarily allowed because they are isolated to **append-only `compatibilityCss`** usage (tests / narrow tooling) and still map to the inventories in **`t028`** / **`html-exporter-primary-fallback-inventory.md`**.
 
 #### Badge family
 
@@ -89,7 +89,7 @@ These selectors stay temporarily allowed because they are isolated to the fallba
 Rationale:
 
 - These families are already duplicated against WebView-side canonical CSS.
-- They still serve the explicit fallback lane and are confined to an append-only compatibility block.
+- They still serve **append-only compatibility CSS** and are **not** part of the Primary default `<style>` block from `buildHtmlDocument` without an explicit `compatibilityCss` argument.
 - Removing them before `B3` would mix boundary-setting with runtime convergence and make regressions harder to judge.
 
 ### Delete candidates
@@ -103,7 +103,7 @@ Rationale:
 
 ## Migration order
 
-1. Keep the current fallback compatibility CSS isolated as temporary compatibility only.
+1. Keep **append-only compatibility CSS** isolated as temporary compatibility only (no second HtmlExporter runtime lane).
 2. In `B3`, strengthen `readWebviewCssIfPresent()` as the standard path so missing-WebView-CSS cases are the only normal reason to append fallback compatibility CSS.
 3. Remove temporary selector families in narrow follow-up slices once the route and regression evidence shows they are no longer needed.
 4. Only after the fallback family boundary is reduced should `B4` touch shared utility cleanup in `getExportCriticalLayoutUtilities()`.
@@ -113,7 +113,7 @@ Rationale:
 | Topic | Risk | Why |
 |------|------|-----|
 | Primary lane regression | High | Primary export is the public default and must stay the source of truth. |
-| Capture or helper-routed fallback regression | Medium | The lane is isolated and explicit, but still required for compatibility coverage. |
+| `compatibilityCss` append regressions | Medium | Slot remains for tests; misuse could reintroduce “shadow styling” outside WebView SSoT. |
 | Utility cleanup before fallback boundary is fixed | High | Mixing utility reduction with compatibility-boundary decisions makes drift hard to attribute. |
 | Declaring a family permanent too early | Medium | It would normalize temporary duplication without route-level evidence. |
 
@@ -121,8 +121,8 @@ Rationale:
 
 1. Do not move any selector family into permanent compatibility without a new approved ticket and explicit route evidence.
 2. Do not delete temporary compatibility CSS in the same ticket that changes the policy itself.
-3. Keep Primary default CSS minimal; compatibility selectors stay append-only and helper-routed until they are removed.
-4. If a selector family no longer appears in approved fallback tests or routes, reclassify it to delete candidate before implementation.
+3. Keep Primary default CSS minimal; compatibility selectors stay **append-only** (`compatibilityCss`) until removed.
+4. If a selector family no longer appears in **approved** `compatibilityCss` / builder tests, reclassify it to delete candidate before implementation.
 
 ## T-028 compatibility CSS reduction matrix
 

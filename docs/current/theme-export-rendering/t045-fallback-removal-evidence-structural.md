@@ -9,7 +9,7 @@
 
 ### 意図
 
-- `withExplicitFallbackHtmlExport` / `__internalLegacyFallback` が **パッケージ公開 API** や **本番 CLI** から直参照されないこと。
+- **（T-20260420-001 完了後）** 旧 **`withExplicitFallbackHtmlExport` / `__internalLegacyFallback`** は **削除済み**。Evidence では **`src/` に復活が無い**ことを確認する。
 
 ### 推奨チェック（ローカル）
 
@@ -19,7 +19,7 @@
 rg "withExplicitFallbackHtmlExport\\s*\\(" --glob "*.ts" --glob "!**/internal/**"
 ```
 
-期待: **`src/exporters/internal/` 以外にヒットしない**（テストの `createFallbackOptions` は `tests/helpers/fallback-helper.js` が `internal` を経由するため、**テスト・ドキュメント以外の `src/` での新規呼び出し 0** を確認する運用）。
+期待（**T-20260420-001 完了後 · T-091 更新**）: **`src/**/*.ts` にヒット 0**（内部ヘルパと互換ラッパは削除済み）。残るのは **ドキュメント**や **`scripts/report-react-fallback-usage.cjs`** の説明用パターン文字列のみであることを確認する。
 
 補足: **ESLint** の `no-restricted-imports` 等で `fallback-lane-options` を `src/**` の許可リストに閉じている場合は、その設定ファイル名とルール ID を Evidence に 1 行で記載する。
 
@@ -35,7 +35,7 @@ rg "withExplicitFallbackHtmlExport\\s*\\(" --glob "*.ts" --glob "!**/internal/**
 
 ### 意図
 
-- `withExplicitFallbackHtmlExport` / `createFallbackOptions` の実行が **`tests/unit/` の観測・境界テスト**に限定されていること。
+- **`createFallbackOptions` / `withExplicitFallbackHtmlExport` はリポジトリから削除済み**であること（`rg "createFallbackOptions\\(" tests` → **0 件**）。HtmlExporter の境界は **`html-exporter-primary-only-structure.test.js`** と **`html-exporter-route-viability.test.js`** が正。
 
 ### 推奨チェック（ローカル）
 
@@ -43,7 +43,7 @@ rg "withExplicitFallbackHtmlExport\\s*\\(" --glob "*.ts" --glob "!**/internal/**
 rg "createFallbackOptions\\(" tests --glob "*.js"
 ```
 
-期待: **`html-exporter-fallback-structured-log.test.js`**、**`html-exporter-lane-observability.test.js`**、**`html-exporter-route-viability.test.js`** 等の既知ファイルに収まる（新規の `src/cli` / `src/mcp` 等に **0**）。
+期待: **`rg "createFallbackOptions\\(" tests` → 0 件**。旧 observability / structured-log テストは **削除済み**（T-20260420-090）。新規の `src/cli` / `src/mcp` 等への再導入が **0** であること。
 
 ### 記録テンプレ
 

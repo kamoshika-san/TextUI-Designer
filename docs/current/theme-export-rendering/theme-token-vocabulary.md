@@ -19,8 +19,8 @@
 ## Current Rendering Contract
 
 - Preview remains the UI source of truth for theme variable meaning.
-- Export follows the same merged token map before HTML / CSS emission, even when the fallback compatibility lane still exists for narrow capture-only use.
-- Theme vocabulary changes should be judged against Primary Preview / Export parity first, not against fallback-only behavior.
+- Export follows the same merged token map before HTML / CSS emission (**HtmlExporter は Primary のみ**; `T-20260420-001`）。
+- Theme vocabulary changes should be judged against Primary Preview / Export parity first.
 
 See also:
 

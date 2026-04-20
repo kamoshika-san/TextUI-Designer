@@ -11,6 +11,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - **E-HTML Sprint 3 (Vault T-20260421-018 close-out)** — Documented **`BaseComponentRenderer` subclasses** (`ReactExporter`, `PugExporter` only) in `base-component-renderer-consumers.md`, expanded `BaseComponentRenderer` JSDoc, refreshed **T-350** debt text in `exporter-boundary-guide.md`, linked inventory §7, noted structure tests in `tests/README.md`. **`npm run lint`** is green repo-wide (**T-20260421-026**).
 
 ### Documentation
+- **Theme export doc sweep (Vault T-20260420-091)** — After HtmlExporter fallback-lane removal, refreshed `docs/current/theme-export-rendering/` so deleted tests/helpers (`html-exporter-lane-observability`, `fallback-helper`, `withExplicitFallbackHtmlExport`, `getFallbackCompatibilityStyleBlock`) are **past-tense or archived**, and Primary-only truth links to `html-exporter-primary-structure-inventory.md` / `exporter-boundary-guide.md`.
 - **HtmlExporter Primary-only structure (E-HTML)** — Sprint 1: inventory (**T-019**), boundary guide, `html-exporter-primary-only-structure` tests (**T-020**). Sprint 2: inventory §3/§4 と `exporter-boundary-guide` の構造負債節を **Sprint 2 完了**に追随 (**T-021** 系の継続更新)。
 
 ### Removed

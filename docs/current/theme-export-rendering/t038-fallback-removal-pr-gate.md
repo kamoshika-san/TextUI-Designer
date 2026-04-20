@@ -45,10 +45,10 @@
 
 ## 4. 削除後 follow-up チケット候補（起票用メモ）
 
-1. **ドキュメント掃除**: `t016` / `t017` / inventory から「fallback 実行パス」の記述を過去形へ。
-2. **残 compatibility CSS**: `getFallbackCompatibilityStyleBlock` 自体を削除したうえでの **SSoT メトリクス**整理（t028 完了扱いの最終化）。
-3. **観測ログ**: `TEXTUI_HTML_EXPORTER_FALLBACK_LANE_EVENT_ID` を削除した場合の **デバッグ代替**（必要なら Primary 側の観測に寄せる）。
-4. **ESLint / 許可リスト**: `useReactRender: false` の許可ファイルリストから fallback 専用条項を削除。
+1. ~~**ドキュメント掃除**~~ **実施（Vault T-20260420-091 / 2026-04-21）**: `t016` / `t017` / `html-exporter-primary-fallback-inventory.md` ほかを Primary-only 真実へ整合。
+2. **残 compatibility CSS**: `getFallbackCompatibilityStyleBlock` 削除後の **SSoT メトリクス**最終化（`t028`・`css-ssot-metrics-definition.md` の数値更新が残る場合あり）。
+3. ~~**観測ログ**~~ **実施済み**: `TEXTUI_HTML_EXPORTER_FALLBACK_LANE_EVENT_ID` は HtmlExporter 互換レーン撤去に伴い **不要**。
+4. ~~**ESLint / 許可リスト**~~ **実施済み**: `src/**` の `useReactRender: false` は **禁止**（`html-exporter.ts` 専用 ESLint は legacy import 抑止へ寄せる）。
 
 ---
 

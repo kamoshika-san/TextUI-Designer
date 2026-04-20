@@ -147,3 +147,10 @@
 - [html-exporter-primary-fallback-inventory.md](./html-exporter-primary-fallback-inventory.md)
 - [html-exporter-fallback-shrink-t010.md](./html-exporter-fallback-shrink-t010.md)
 - [tests/README.md](../../../tests/README.md)（Fallback 節）
+
+---
+
+## T-091（doc 掃除）— grep に残る「削除済み」語の扱い
+
+- **Evidence / 手順ドキュメント**（`t038` / `t045` / `t049` 等）に **`withExplicitFallbackHtmlExport`** 等が **チェックコマンド例**として残る場合は **過去〜完了後の対比**として読む。
+- **現行の正**: **`html-exporter-primary-fallback-inventory.md`** の **Removed artifacts**、`t045` の **T-091 更新**、`t017`（アーカイブ表頭の注意書き）。
