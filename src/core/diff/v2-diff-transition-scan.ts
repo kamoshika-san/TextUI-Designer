@@ -18,10 +18,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function readTransitions(document: DiffCompareDocument): TransitionRef[] {
   const page = (document.normalizedDsl.page as unknown) as Record<string, unknown>;
   const raw = page['transitions'];
-  if (!Array.isArray(raw)) return [];
+  if (!Array.isArray(raw)) {
+    return [];
+  }
   const result: TransitionRef[] = [];
   for (const item of raw) {
-    if (!isRecord(item)) continue;
+    if (!isRecord(item)) {
+      continue;
+    }
     const from = typeof item['from'] === 'string' ? item['from'] : '';
     const to = typeof item['to'] === 'string' ? item['to'] : '';
     const trigger = typeof item['trigger'] === 'string' ? item['trigger'] : '';
@@ -65,10 +69,14 @@ export function scanTransitionDiffs(
   next: DiffCompareDocument
 ): V2DiffRecord[] {
   const prevMap = new Map<string, TransitionRef>();
-  for (const t of readTransitions(previous)) prevMap.set(t.key, t);
+  for (const t of readTransitions(previous)) {
+    prevMap.set(t.key, t);
+  }
 
   const nextMap = new Map<string, TransitionRef>();
-  for (const t of readTransitions(next)) nextMap.set(t.key, t);
+  for (const t of readTransitions(next)) {
+    nextMap.set(t.key, t);
+  }
 
   const result: V2DiffRecord[] = [];
 
