@@ -4,6 +4,8 @@ import type {
   V2ScreenDiffInScope,
   V2DiffRecord,
   V2EntityDiff,
+  V2EvidenceItem,
+  V2EvidenceStateChanged,
 } from './diff-v2-types';
 import { buildV2Decision } from './v2-confidence-scorer';
 
@@ -29,7 +31,7 @@ function makeEntityRecord(
   targetId: string,
   confidence: number,
   ambiguityReason?: string,
-  evidence: unknown[] = []
+  evidence: V2EvidenceItem[] = []
 ): V2DiffRecord {
   return { decision: buildV2Decision(event, targetId, confidence, ambiguityReason), explanation: { evidence } };
 }
@@ -41,10 +43,15 @@ function makeStateRecord(
   afterState: unknown,
   ambiguityReason?: string
 ): V2DiffRecord {
+  const stateEvidence: V2EvidenceStateChanged = {
+    evidence_shape: 'entity.state_changed',
+    before: beforeState,
+    after: afterState,
+  };
   return {
     decision: buildV2Decision('entity_state_changed', targetId, confidence, ambiguityReason),
     explanation: {
-      evidence: ['entity state changed'],
+      evidence: [stateEvidence],
       before_predicate: beforeState,
       after_predicate: afterState,
     },

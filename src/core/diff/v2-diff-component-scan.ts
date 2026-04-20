@@ -2,6 +2,7 @@ import type { DiffCompareDocument } from './diff-types';
 import type {
   V2ComponentDiff,
   V2DiffRecord,
+  V2EvidenceItem,
 } from './diff-v2-types';
 import { buildV2Decision } from './v2-confidence-scorer';
 import { toComponentNode } from './diff-pairing';
@@ -19,7 +20,7 @@ function makeComponentRecord(
   afterPredicate?: unknown,
   confidence = 1.0,
   ambiguityReason?: string,
-  evidence: unknown[] = []
+  evidence: V2EvidenceItem[] = []
 ): V2DiffRecord {
   return {
     decision: buildV2Decision(event, targetId, confidence, ambiguityReason),

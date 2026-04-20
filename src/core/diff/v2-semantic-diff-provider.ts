@@ -16,6 +16,7 @@ import {
 import { createNormalizedFlowDiffDocument } from './flow-diff';
 import { scanEntityDiffs } from './v2-diff-entity-scan';
 import { scanComponentDiffs } from './v2-diff-component-scan';
+import { scanTransitionDiffs } from './v2-diff-transition-scan';
 import type { V2EntityDiff } from './diff-v2-types';
 
 export class V2SemanticDiffProvider implements SemanticDiffProvider {
@@ -34,25 +35,32 @@ export class V2SemanticDiffProvider implements SemanticDiffProvider {
     const result = createDiffResultSkeleton(previous, next, policy);
     const screens = scanEntityDiffs(previous, next);
     const componentDiffs = scanComponentDiffs(previous, next);
+    const transitionDiffs = scanTransitionDiffs(previous, next);
 
     const populatedScreens = screens.map(s => {
       if ('outOfScope' in s) { return s; }
+      const screenDiffsWithTransitions = transitionDiffs.length > 0
+        ? [...s.diffs, ...transitionDiffs]
+        : s.diffs;
+      const sWithTransitions = transitionDiffs.length > 0
+        ? { ...s, diffs: screenDiffsWithTransitions }
+        : s;
       if (componentDiffs.length === 0) {
-        return s;
+        return sWithTransitions;
       }
 
-      if (s.entities.length > 0) {
-        const [firstEntity, ...rest] = s.entities;
+      if (sWithTransitions.entities.length > 0) {
+        const [firstEntity, ...rest] = sWithTransitions.entities;
         const mergedEntity: V2EntityDiff = {
           ...firstEntity,
           components: componentDiffs,
         };
-        return { ...s, entities: [mergedEntity, ...rest] };
+        return { ...sWithTransitions, entities: [mergedEntity, ...rest] };
       }
 
       return {
-        ...s,
-        entities: [{ entity_id: `${s.screen_id}-components`, diffs: [], components: componentDiffs }],
+        ...sWithTransitions,
+        entities: [{ entity_id: `${sWithTransitions.screen_id}-components`, diffs: [], components: componentDiffs }],
       };
     });
 
@@ -65,7 +73,7 @@ export class V2SemanticDiffProvider implements SemanticDiffProvider {
         0
       );
       return sum + screenDiffs + entityDiffs + compDiffs;
-    }, 0);
+    }, 0) + transitionDiffs.length;
 
     const v2: DiffCompareResultV2Payload = {
       screens: populatedScreens,

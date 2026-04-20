@@ -340,7 +340,12 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
   };
 
   if (semanticDiffV2) {
-    return <OverlayDiffV2Panel result={semanticDiffV2} />;
+    return (
+      <OverlayDiffV2Panel
+        result={semanticDiffV2}
+        onSwitchToStructure={overlayDiffState ? () => setSemanticDiffV2(null) : undefined}
+      />
+    );
   }
 
   if (overlayDiffState) {

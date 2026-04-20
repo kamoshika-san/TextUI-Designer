@@ -43,9 +43,35 @@ export interface V2LowConfidenceDecision {
 
 export type V2DiffDecision = V2HighConfidenceDecision | V2LowConfidenceDecision;
 
-/** v2 explanation payload is kept permissive because evidence/predicate runtime types are not wired into src/ yet. */
+/** Typed evidence shapes for implemented event groups. Additional shapes are registry-TODO. */
+export interface V2EvidenceStateChanged {
+  evidence_shape: 'entity.state_changed';
+  before: unknown;
+  after: unknown;
+}
+
+export interface V2EvidenceTransitionEdgeChanged {
+  evidence_shape: 'transition.edge_changed';
+  before_label?: string;
+  after_label?: string;
+  before_condition?: string;
+  after_condition?: string;
+}
+
+export interface V2EvidenceComponentChanged {
+  evidence_shape: 'component.changed';
+  event: string;
+}
+
+/** Discriminated evidence item — string fallback preserved for unregistered events. */
+export type V2EvidenceItem =
+  | V2EvidenceStateChanged
+  | V2EvidenceTransitionEdgeChanged
+  | V2EvidenceComponentChanged
+  | string;
+
 export interface V2DiffExplanation {
-  evidence: unknown[];
+  evidence: V2EvidenceItem[];
   before_predicate?: unknown;
   after_predicate?: unknown;
 }

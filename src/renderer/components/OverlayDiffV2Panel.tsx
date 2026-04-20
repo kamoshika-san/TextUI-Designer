@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { VisualDiffV2Result } from '../../domain/diff/semantic-diff-v2-panel-model';
 
 function formatCountLabel(count: number, singular: string, plural: string): string {
@@ -76,11 +76,14 @@ function DiffRecordList({
               {record.decision.confidenceBand ? (
                 <span style={{ color: '#cbd5e1' }}>band {record.decision.confidenceBand}</span>
               ) : null}
+              {/* review_status: read-only display — editing is out of scope for v2 MVP */}
               {record.decision.reviewStatus ? (
                 <span
+                  data-testid="review-status-badge"
+                  title="Review status (read-only)"
                   style={{
                     color: isNeedsReview ? '#fbbf24' : '#86efac',
-                    border: '1px solid rgba(148,163,184,0.25)',
+                    border: `1px solid ${isNeedsReview ? 'rgba(251,191,36,0.4)' : 'rgba(134,239,172,0.4)'}`,
                     borderRadius: 999,
                     padding: '1px 6px',
                     fontSize: '0.72rem',
@@ -106,7 +109,13 @@ function DiffRecordList({
   );
 }
 
-export function OverlayDiffV2Panel({ result }: { result: VisualDiffV2Result }) {
+export function OverlayDiffV2Panel({
+  result,
+  onSwitchToStructure,
+}: {
+  result: VisualDiffV2Result;
+  onSwitchToStructure?: () => void;
+}) {
   const { screens } = result.payload;
   const totalChanges = screens.reduce((sum, s) => {
     if ('outOfScope' in s) return sum;
@@ -114,6 +123,18 @@ export function OverlayDiffV2Panel({ result }: { result: VisualDiffV2Result }) {
   }, 0);
   const inScopeScreens = screens.filter(s => !('outOfScope' in s));
   const outOfScopeScreens = screens.length - inScopeScreens.length;
+
+  const [collapsedScreens, setCollapsedScreens] = useState<Set<number>>(
+    () => new Set(screens.map((s, i) => (!('outOfScope' in s) && countScreenRecords(s) === 0 ? i : -1)).filter(i => i >= 0))
+  );
+
+  function toggleScreen(i: number) {
+    setCollapsedScreens(prev => {
+      const next = new Set(prev);
+      if (next.has(i)) { next.delete(i); } else { next.add(i); }
+      return next;
+    });
+  }
 
   return (
     <div
@@ -131,15 +152,48 @@ export function OverlayDiffV2Panel({ result }: { result: VisualDiffV2Result }) {
         zIndex: 100,
       }}
     >
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(148,163,184,0.15)' }}>
-        <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#60a5fa', marginBottom: 2 }}>
-          Semantic Diff v2
-        </div>
-        <div style={{ color: '#94a3b8', fontSize: '0.80rem' }}>
+      <div style={{ padding: '12px 20px 0', borderBottom: '1px solid rgba(148,163,184,0.15)' }}>
+        {onSwitchToStructure ? (
+          <div style={{ display: 'flex', gap: 0, marginBottom: 0 }}>
+            <button
+              onClick={onSwitchToStructure}
+              style={{
+                background: 'none',
+                border: 'none',
+                borderBottom: '2px solid transparent',
+                padding: '6px 14px',
+                color: '#94a3b8',
+                fontSize: '0.82rem',
+                cursor: 'pointer',
+              }}
+            >
+              Structure
+            </button>
+            <button
+              style={{
+                background: 'none',
+                border: 'none',
+                borderBottom: '2px solid #60a5fa',
+                padding: '6px 14px',
+                color: '#60a5fa',
+                fontSize: '0.82rem',
+                cursor: 'default',
+                fontWeight: 600,
+              }}
+            >
+              Semantic v2
+            </button>
+          </div>
+        ) : (
+          <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#60a5fa', paddingBottom: 8 }}>
+            Semantic Diff v2
+          </div>
+        )}
+        <div style={{ color: '#94a3b8', fontSize: '0.80rem', padding: '4px 0 10px' }}>
           {formatCountLabel(totalChanges, 'change', 'changes')} across {formatCountLabel(inScopeScreens.length, 'in-scope screen', 'in-scope screens')}
         </div>
         {outOfScopeScreens > 0 ? (
-          <div style={{ color: '#64748b', fontSize: '0.74rem', marginTop: 4 }}>
+          <div style={{ color: '#64748b', fontSize: '0.74rem', paddingBottom: 6 }}>
             {formatCountLabel(outOfScopeScreens, 'out-of-scope screen', 'out-of-scope screens')}
           </div>
         ) : null}
@@ -176,6 +230,7 @@ export function OverlayDiffV2Panel({ result }: { result: VisualDiffV2Result }) {
             );
           }
           const screenChanges = countScreenRecords(s);
+          const isCollapsed = collapsedScreens.has(i);
           return (
             <section
               key={i}
@@ -187,59 +242,67 @@ export function OverlayDiffV2Panel({ result }: { result: VisualDiffV2Result }) {
                 background: 'rgba(15,23,42,0.45)',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
+              <div
+                role="button"
+                onClick={() => toggleScreen(i)}
+                style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', cursor: 'pointer' }}
+              >
                 <div>
                   <div style={{ fontWeight: 700, color: '#f8fafc' }}>{s.screenId}</div>
                   <div style={{ color: '#94a3b8', fontSize: '0.76rem', marginTop: 2 }}>
                     {formatCountLabel(screenChanges, 'record', 'records')}
                   </div>
                 </div>
+                <span style={{ color: '#64748b', fontSize: '0.72rem' }}>{isCollapsed ? '▶' : '▼'}</span>
               </div>
 
-              <div style={{ marginTop: 12, paddingLeft: 12, borderLeft: '2px solid rgba(96,165,250,0.22)' }}>
-                <div style={{ color: '#60a5fa', fontWeight: 600, marginBottom: 6 }}>Screen diffs</div>
-                <DiffRecordList records={s.diffs} emptyLabel="No screen-level diffs" />
-              </div>
-
-              <div style={{ marginTop: 14, paddingLeft: 12, borderLeft: '2px solid rgba(148,163,184,0.18)' }}>
-                <div style={{ color: '#cbd5e1', fontWeight: 600, marginBottom: 8 }}>
-                  Entities ({s.entities.length})
-                </div>
-                {s.entities.length === 0 ? (
-                  <div style={{ color: '#64748b', fontSize: '0.76rem' }}>No entity-level changes</div>
-                ) : (
-                  s.entities.map(entity => (
-                    <section key={entity.entityId} style={{ marginBottom: 12 }}>
-                      <div style={{ color: '#f8fafc', fontWeight: 600 }}>
-                        Entity <code style={{ color: '#93c5fd' }}>{entity.entityId}</code>
-                      </div>
-                      <div style={{ marginTop: 6, paddingLeft: 12, borderLeft: '2px solid rgba(148,163,184,0.15)' }}>
-                        <div style={{ color: '#94a3b8', fontWeight: 600, marginBottom: 6 }}>Entity diffs</div>
-                        <DiffRecordList records={entity.diffs} emptyLabel="No entity-level diffs" />
-                      </div>
-                      <div style={{ marginTop: 8, paddingLeft: 12, borderLeft: '2px solid rgba(148,163,184,0.12)' }}>
-                        <div style={{ color: '#94a3b8', fontWeight: 600, marginBottom: 6 }}>
-                          Components ({entity.components.length})
-                        </div>
-                        {entity.components.length === 0 ? (
-                          <div style={{ color: '#64748b', fontSize: '0.76rem' }}>No component-level changes</div>
-                        ) : (
-                          entity.components.map(component => (
-                            <section key={component.componentId} style={{ marginBottom: 10 }}>
-                              <div style={{ color: '#e2e8f0', fontWeight: 600 }}>
-                                Component <code style={{ color: '#93c5fd' }}>{component.componentId}</code>
-                              </div>
-                              <div style={{ marginTop: 6, paddingLeft: 12, borderLeft: '2px solid rgba(148,163,184,0.1)' }}>
-                                <DiffRecordList records={component.diffs} emptyLabel="No component-level diffs" />
-                              </div>
-                            </section>
-                          ))
-                        )}
-                      </div>
-                    </section>
-                  ))
-                )}
-              </div>
+              {!isCollapsed && (
+                <>
+                  <div style={{ marginTop: 12, paddingLeft: 12, borderLeft: '2px solid rgba(96,165,250,0.22)' }}>
+                    <div style={{ color: '#60a5fa', fontWeight: 600, marginBottom: 6 }}>Screen diffs</div>
+                    <DiffRecordList records={s.diffs} emptyLabel="No screen-level diffs" />
+                  </div>
+                  <div style={{ marginTop: 14, paddingLeft: 12, borderLeft: '2px solid rgba(148,163,184,0.18)' }}>
+                    <div style={{ color: '#cbd5e1', fontWeight: 600, marginBottom: 8 }}>
+                      Entities ({s.entities.length})
+                    </div>
+                    {s.entities.length === 0 ? (
+                      <div style={{ color: '#64748b', fontSize: '0.76rem' }}>No entity-level changes</div>
+                    ) : (
+                      s.entities.map(entity => (
+                        <section key={entity.entityId} style={{ marginBottom: 12 }}>
+                          <div style={{ color: '#f8fafc', fontWeight: 600 }}>
+                            Entity <code style={{ color: '#93c5fd' }}>{entity.entityId}</code>
+                          </div>
+                          <div style={{ marginTop: 6, paddingLeft: 12, borderLeft: '2px solid rgba(148,163,184,0.15)' }}>
+                            <div style={{ color: '#94a3b8', fontWeight: 600, marginBottom: 6 }}>Entity diffs</div>
+                            <DiffRecordList records={entity.diffs} emptyLabel="No entity-level diffs" />
+                          </div>
+                          <div style={{ marginTop: 8, paddingLeft: 12, borderLeft: '2px solid rgba(148,163,184,0.12)' }}>
+                            <div style={{ color: '#94a3b8', fontWeight: 600, marginBottom: 6 }}>
+                              Components ({entity.components.length})
+                            </div>
+                            {entity.components.length === 0 ? (
+                              <div style={{ color: '#64748b', fontSize: '0.76rem' }}>No component-level changes</div>
+                            ) : (
+                              entity.components.map(component => (
+                                <section key={component.componentId} style={{ marginBottom: 10 }}>
+                                  <div style={{ color: '#e2e8f0', fontWeight: 600 }}>
+                                    Component <code style={{ color: '#93c5fd' }}>{component.componentId}</code>
+                                  </div>
+                                  <div style={{ marginTop: 6, paddingLeft: 12, borderLeft: '2px solid rgba(148,163,184,0.1)' }}>
+                                    <DiffRecordList records={component.diffs} emptyLabel="No component-level diffs" />
+                                  </div>
+                                </section>
+                              ))
+                            )}
+                          </div>
+                        </section>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
             </section>
           );
         })}
