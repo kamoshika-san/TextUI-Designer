@@ -192,3 +192,4 @@ node ./tests/e2e/export-from-preview-e2e.test.js
 - **履歴・削除条件**: [t021-fallback-removal-criteria.md](../docs/current/theme-export-rendering/t021-fallback-removal-criteria.md) · [t038-fallback-removal-pr-gate.md](../docs/current/theme-export-rendering/t038-fallback-removal-pr-gate.md)。
 - **ドキュメント上の「Fallback」語**は、`buildHtmlDocument` の **`compatibilityCss` スロット**や旧インベントリを指す場合がある（HtmlExporter の実行経路ではない）。
 - primary 前提テストは `useReactRender` を省略するか `true` を明示し、preview/export parity や provider 既定経路の確認として読める名前にする。
+- **E-HTML（構造）**: `html-exporter-primary-only-structure.test.js` — Primary-only のクラス面（`BaseComponentRenderer` 非継承）・`useReactRender:false` 拒否・Navigation flow の誤用拒否など（Vault **T-20260421-020** 系）。

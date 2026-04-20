@@ -95,3 +95,12 @@ flowchart LR
 - エピック: Vault **T-20260421-018**（E-HTML-PRIMARY-STRUCTURE）
 - 境界ガイド: `docs/current/runtime-boundaries/exporter-boundary-guide.md`
 - Fallback 撤去: Vault **T-20260420-090** / 実装ラベル **T-20260420-001**
+- **`BaseComponentRenderer` 利用者**: [base-component-renderer-consumers.md](base-component-renderer-consumers.md)（**T-025**）
+
+---
+
+## 7. Sprint 3（T-025〜027）反映
+
+- **T-025**: 上記 **consumers** ドキュメントと `base-component-renderer.ts` 先頭 JSDoc で利用者を固定。
+- **T-026**: `npm run lint` 全緑を含む CI ゲートと一致（`eslint.config.mjs` の `html-exporter.ts` 専用ルールは維持）。
+- **T-027**: `exporter-boundary-guide` の **T-350** 負債記述更新、`CHANGELOG` 記録、`tests/README` に構造テストの一言。

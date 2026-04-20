@@ -44,8 +44,12 @@ import { themeStyleResolver } from '../theme-style-resolver';
 export type ComponentHandler = (props: unknown, key: number) => string;
 
 /**
- * コンポーネントレンダリングの基底クラス
- * Mapベースのディスパッチにより、新コンポーネント追加時の変更箇所を最小化
+ * コンポーネントレンダリングの基底クラス（**文字列レンダラ系 exporter 用**）。
+ *
+ * **Subclass 利用者**: `ReactExporter` · `PugExporter` のみ。`HtmlExporter` は Primary-only で
+ * `Exporter` を直接実装し、本基底を継承しない（Vault **T-20260421-025** · `base-component-renderer-consumers.md`）。
+ *
+ * Mapベースのディスパッチにより、新コンポーネント追加時の変更箇所を最小化する。
  */
 export abstract class BaseComponentRenderer implements Exporter {
   /**

@@ -8,6 +8,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Changed
 - **HtmlExporter structure (E-HTML Sprint 2)** — `HtmlExporter` now **`implements Exporter` only** (no `BaseComponentRenderer` / no `legacy/html-renderers/*`). Navigation flow DSL is rejected with a **`html-flow`** hint. ESLint **`no-restricted-imports`** on `src/exporters/html-exporter.ts` blocks reintroducing `legacy/`, `internal/`, or `renderer/types` imports (Vault **T-20260421-022** / **023**; **T-026** intent). Inventory + boundary guide updated; **`T-20260421-024`**: no extra util module needed.
+- **E-HTML Sprint 3 (Vault T-20260421-018 close-out)** — Documented **`BaseComponentRenderer` subclasses** (`ReactExporter`, `PugExporter` only) in `base-component-renderer-consumers.md`, expanded `BaseComponentRenderer` JSDoc, refreshed **T-350** debt text in `exporter-boundary-guide.md`, linked inventory §7, noted structure tests in `tests/README.md`. **`npm run lint`** is green repo-wide (**T-20260421-026**).
 
 ### Documentation
 - **HtmlExporter Primary-only structure (E-HTML)** — Sprint 1: inventory (**T-019**), boundary guide, `html-exporter-primary-only-structure` tests (**T-020**). Sprint 2: inventory §3/§4 と `exporter-boundary-guide` の構造負債節を **Sprint 2 完了**に追随 (**T-021** 系の継続更新)。

@@ -38,7 +38,8 @@ T-001-ANCHOR:NO-RAW-USE-REACT-RENDER-FALSE-IN-SRC
 
 - **実行経路**は上表の **Primary のみ**。**Sprint 2（`T-20260421-022` / `023`）** により `HtmlExporter` は **`Exporter` のみ実装**し、**`BaseComponentRenderer` / `legacy/html-renderers/*` 依存を除去**した（**runtime と公開型が一致**）。
 - **棚卸し正本**: `docs/current/theme-export-rendering/html-exporter-primary-structure-inventory.md`。
-- **残エピック**: **T-025〜027**（`BaseComponentRenderer` 利用者の縮小・**T-026** 本格・CHANGELOG 仕上げ）。**HtmlExporter への legacy 再 import** は **ESLint** で検出（`eslint.config.mjs`）。
+- **`BaseComponentRenderer` 利用者**: `docs/current/theme-export-rendering/base-component-renderer-consumers.md`（**T-20260421-025**）。**HtmlExporter への legacy 再 import** は **ESLint** で検出（`eslint.config.mjs` · **T-20260421-026**）。
+- **エピック完了**: Vault **T-20260421-018** Sprint 3（**T-025〜027**）で文書・CHANGELOG を最終整合（**legacy skeleton removed** 後の読み手向け記録）。
 - **レビュー時の確認**: `HtmlExporter` に **legacy** を戻す PR は **ガード違反**として弾かれる。
 
 ## Export と Preview（WebView）の共有境界（T-117）
@@ -59,6 +60,7 @@ T-001-ANCHOR:NO-RAW-USE-REACT-RENDER-FALSE-IN-SRC
 - Exporter の `renderXxx` 抽象を **capability map** に寄せる設計案（追加コスト削減・段階移行）: [exporter-capability-map-design.md](exporter-capability-map-design.md)
 - Primary / fallback 差分の棚卸し（分類表）: [html-exporter-primary-fallback-inventory.md](html-exporter-primary-fallback-inventory.md)
 - **Primary-only 構造棚卸し**（継承・legacy フィールド・`export` call path）: [html-exporter-primary-structure-inventory.md](../theme-export-rendering/html-exporter-primary-structure-inventory.md)
+- **`BaseComponentRenderer` 利用者（HtmlExporter 非対象）**: [base-component-renderer-consumers.md](../theme-export-rendering/base-component-renderer-consumers.md)
 - fallback CSS 境界ポリシー: [export-fallback-lane-boundary-policy.md](export-fallback-lane-boundary-policy.md)
 - theme token / CSS variable 契約の current state: [theme-token-vocabulary.md](theme-token-vocabulary.md)
 - Provider契約: `docs/current/services-webview/PROVIDER_CONTRACT.md`
@@ -79,5 +81,5 @@ T-001-ANCHOR:NO-RAW-USE-REACT-RENDER-FALSE-IN-SRC
 ### T-350 classification rule（更新）
 
 - **intended difference**: Primary-only routing and behavior documented in `html-exporter-primary-fallback-inventory.md`（履歴としての fallback 記述は **過去形**に更新されていく）。
-- **acceptable temporary debt**: （1）legacy `html-renderers/*` が **HtmlExporter 以外**から参照される限りの依存。（2）**HtmlExporter が基底＋renderer フィールドを保持しているが `export()` の Primary では未到達**という構造負債 — **inventory 正本**で追跡し、**T-022〜027** で縮退するまでの暫定許容とする。
+- **acceptable temporary debt**: legacy `html-renderers/*` が **`ReactExporter` / `PugExporter` 等、HtmlExporter 以外**から参照される限りの依存（文字列レンダラ系の共有実装）。**HtmlExporter** は Sprint 2 以降 **基底非依存**（`base-component-renderer-consumers.md`）。
 - **unresolved mismatch**: export / provider / preview preparation のいずれかで Primary と実出力が食い違う場合は **Primary を先に**修正する。
