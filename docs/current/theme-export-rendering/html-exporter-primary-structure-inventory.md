@@ -1,7 +1,8 @@
 # HtmlExporter — Primary-only 構造棚卸し（Vault **T-20260421-019**）
 
 **正本コード**: `src/exporters/html-exporter.ts`  
-**目的**: **runtime truth**（`export()` は Primary のみ）と **型・継承・フィールド**の差分を固定し、後続 **T-022〜T-027** の削除／切離し判断材料にする。
+**目的**: **runtime truth**（`export()` は Primary のみ）と **型・継承・フィールド**の差分を固定し、後続 **T-022〜T-027** の削除／切離し判断材料にする。  
+**Sprint 2（`T-20260421-022` / `023`）反映後**: `HtmlExporter` は **`Exporter` のみ実装**し、**`legacy/*` へ依存しない**（inventory §3 旧表は歴史参照）。
 
 ---
 
@@ -43,30 +44,36 @@ flowchart LR
 
 ---
 
-## 3. 依存・メンバー一覧
+## 3. 依存・メンバー一覧（Sprint 2 後の現状）
 
-| 対象 | 分類 | `export()` Primary での説明 |
-|------|------|------------------------------|
-| `extends BaseComponentRenderer` | **dead structure**（継承） | Primary 本体は `renderPageComponentsToStaticHtml`。**継承は歴史的**。`getFileExtension` 等の小メソッドは基底実装に依存。→ **T-022** で切離し候補 |
-| `super('html')` | **structural / ctor** | 基底の状態初期化のみ。Primary HTML 生成には不要な可能性 → **T-022** |
-| `HtmlFormRenderer` / `HtmlTextualRenderer` / `HtmlLayoutRenderer` | **structural / ctor** | constructor で生成。**`export()` は呼ばない**。→ **T-023** 削除候補 |
-| `createRendererUtils()` | **structural / ctor** | 上記 renderer へ注入するためだけ。**`export()` 未到達** → **T-023** 削除候補 |
-| 全 `protected renderXxx(...)` | **dead structure** | **外部は `export()` のみ**（`html-provider-adapter` / `provider-registry` / `html-preparation`）。文字列レンダラ経路は撤去済み → **T-023** 削除候補 |
+| 対象 | 分類 | 説明 |
+|------|------|------|
+| `implements Exporter` | **runtime / 契約** | `export` / `getFileExtension` のみ。Navigation flow DSL は **`isNavigationFlowDSL` で拒否**し `html-flow` へ誘導。 |
 | `renderPageComponentsToStaticHtml` | **runtime used** | Primary の中核 |
 | `buildHtmlDocument` / `readWebviewCssIfPresent` | **runtime used** | ドキュメント組み立て |
-| `buildThemeStyles` / `ThemeUtils` | **runtime used** | テーマ CSS |
-| `resolveLocalImageSourcesForExport` | **runtime used** | 画像コピー・src 書換 |
+| `buildThemeStyles`（private）/ `ThemeUtils` | **runtime used** | テーマ CSS |
+| `resolveLocalImageSourcesForExport`（private） | **runtime used** | 画像コピー・src 書換 |
 | `resolveImageSourcesInDsl` | **runtime used** | 上記から利用 |
+| **`BaseComponentRenderer` / `Html*Renderer` / `renderXxx`** | **（撤去済み）** | Sprint 2 で **ファイルから削除**。再導入は **ESLint**（`eslint.config.mjs` の `src/exporters/html-exporter.ts` 専用 `no-restricted-imports`）で検出。 |
+
+### 3b. Sprint 1 時点の旧表（アーカイブ・判断根拠）
+
+| 対象（旧） | 分類（旧） | メモ |
+|------------|------------|------|
+| `extends BaseComponentRenderer` | dead structure | **T-022** で除去 |
+| `HtmlFormRenderer` / `HtmlTextualRenderer` / `HtmlLayoutRenderer` | structural / ctor | **T-023** で除去 |
+| 全 `protected renderXxx(...)` | dead structure | **T-023** で除去 |
 
 ---
 
-## 4. 削除候補 vs 保留候補
+## 4. 削除候補 vs 保留候補（更新）
 
 | 区分 | 内容 |
 |------|------|
-| **削除候補（後続チケット）** | `formRenderer` / `textualRenderer` / `layoutRenderer` / `createRendererUtils` / **全 `renderXxx` オーバーライド**（Primary のみなら）、**`BaseComponentRenderer` 継承の解消**（**T-022**） |
-| **保留（当面）** | `buildThemeStyles` 内の `console.warn` などの観測は別チケットで整理可。**他 exporter** が `BaseComponentRenderer` を継続利用する限り基底クラス自体の削除は **T-025** 範囲 |
-| **再結合防止** | **`HtmlExporter` → `legacy/html-renderers/*`** の import を **T-026** で機械ガード |
+| **完了（Sprint 2）** | **`BaseComponentRenderer` 継承**・**legacy renderer フィールド**・**`renderXxx` 群**・**`createRendererUtils`** — 実装から除去済み（**T-022** / **T-023**）。 |
+| **保留（当面）** | `buildThemeStyles` 内の `console.warn`。**他 exporter** の `BaseComponentRenderer` 利用は **T-025** で縮小。 |
+| **再結合防止（先行）** | `eslint.config.mjs` に **`src/exporters/html-exporter.ts` 専用**の `no-restricted-imports`（`legacy/`・`internal/`・`renderer/types`）を追加（**T-026** の意図を先行実装）。 |
+| **T-024** | 新規 util モジュールは **不要**（HtmlExporter 内の private メソッドで完結）。 |
 
 ---
 
