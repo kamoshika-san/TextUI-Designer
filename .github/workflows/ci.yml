@@ -316,6 +316,9 @@ jobs:
     
     - name: Install dependencies
       run: npm ci
+
+    - name: Check undeclared direct requires (src/)
+      run: npm run check:undeclared-requires
     
     - name: Run ESLint
       run: npm run lint

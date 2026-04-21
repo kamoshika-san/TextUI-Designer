@@ -1,3 +1,8 @@
+## Package / contributes (optional)
+
+- For **manifest / contributes** changes, review **`package-contributes/*.json`** diffs first (`npm run diff:contributes:fragments`). Treat `package.json` updates from `npm run sync:package-contributes` as **generated** unless you intentionally edited `package.json` for non-contributes reasons.
+- See `docs/current/operations/package-contributes-pr-review.md` (Japanese).
+
 ## 讎りｦ・
 
 <!-- 1縲・陦後〒縲御ｽ輔ｒ繝ｻ縺ｪ縺懊阪ｒ譖ｸ縺・※縺上□縺輔＞ -->
