@@ -22,6 +22,34 @@ export type ExporterRendererDefinition = {
   tokenSlots?: string[];
 };
 
+export const BUILT_IN_COMPONENT_EXPORTER_IDS = [
+  'html',
+  'react',
+  'vue',
+  'svelte',
+  'pug',
+  'react-flow',
+  'vue-flow',
+  'svelte-flow',
+  'html-flow'
+] as const;
+
+export type BuiltInComponentExporterId = typeof BUILT_IN_COMPONENT_EXPORTER_IDS[number];
+
+export type ExporterCapabilitySupport = 'native' | 'static' | 'unsupported';
+
+export type BuiltInExporterCapability = {
+  component: BuiltInComponentName;
+  exporter: BuiltInComponentExporterId;
+  support: ExporterCapabilitySupport;
+  /**
+   * Present only while a source exporter still routes through the legacy
+   * renderer-method definition table. React/Pug adapter work should shrink
+   * this dependency instead of expanding it.
+   */
+  rendererMethod?: ExporterRendererMethod;
+};
+
 /**
  * Exporter 側の「組み込み handler」と「token 既定反映先」を定義するテーブル（値の正本）。
  * `component-definitions.ts` で `COMPONENT_DEFINITIONS` に合成され、ランタイム参照は `token-style-property-map.ts` 経由。
@@ -59,6 +87,76 @@ export const BUILT_IN_EXPORTER_RENDERER_DEFINITIONS: Record<
   Icon: { rendererMethod: 'renderIcon', tokenStyleProperty: 'color' },
   Modal: { rendererMethod: 'renderModal', tokenStyleProperty: 'background-color' }
 };
+
+const FRAMEWORK_NATIVE_COMPONENTS = new Set<BuiltInComponentName>([
+  'Input',
+  'Checkbox',
+  'Radio',
+  'Select',
+  'DatePicker',
+  'Container',
+  'Form'
+]);
+
+function getCapabilitySupport(
+  exporter: BuiltInComponentExporterId,
+  component: BuiltInComponentName
+): ExporterCapabilitySupport {
+  switch (exporter) {
+    case 'html':
+      return 'static';
+    case 'react':
+    case 'pug':
+      return 'native';
+    case 'vue':
+    case 'svelte':
+      return FRAMEWORK_NATIVE_COMPONENTS.has(component) ? 'native' : 'static';
+    case 'react-flow':
+    case 'vue-flow':
+    case 'svelte-flow':
+    case 'html-flow':
+      return 'unsupported';
+  }
+}
+
+function buildExporterCapability(
+  exporter: BuiltInComponentExporterId,
+  component: BuiltInComponentName
+): BuiltInExporterCapability {
+  const support = getCapabilitySupport(exporter, component);
+  const rendererMethod = exporter === 'react' || exporter === 'pug'
+    ? BUILT_IN_EXPORTER_RENDERER_DEFINITIONS[component].rendererMethod
+    : undefined;
+
+  return {
+    component,
+    exporter,
+    support,
+    ...(rendererMethod ? { rendererMethod } : {})
+  };
+}
+
+export const BUILT_IN_EXPORTER_CAPABILITIES: Record<
+  BuiltInComponentExporterId,
+  Record<BuiltInComponentName, BuiltInExporterCapability>
+> = Object.fromEntries(
+  BUILT_IN_COMPONENT_EXPORTER_IDS.map(exporter => [
+    exporter,
+    Object.fromEntries(
+      BUILT_IN_COMPONENTS.map(component => [
+        component,
+        buildExporterCapability(exporter, component)
+      ])
+    ) as Record<BuiltInComponentName, BuiltInExporterCapability>
+  ])
+) as Record<BuiltInComponentExporterId, Record<BuiltInComponentName, BuiltInExporterCapability>>;
+
+export function getBuiltInExporterCapability(
+  exporter: BuiltInComponentExporterId,
+  component: BuiltInComponentName
+): BuiltInExporterCapability {
+  return BUILT_IN_EXPORTER_CAPABILITIES[exporter][component];
+}
 
 // 取り違えを早期に検知するため、BUILT_IN_COMPONENTS とキーの一致を確認。
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions

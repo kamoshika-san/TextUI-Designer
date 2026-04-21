@@ -34,4 +34,11 @@ describe('Exporter family structure regression', () => {
     assert.ok(pug.includes('form') && pug.includes('contact-form'));
     assert.ok(pug.includes('table.min-w-full'));
   });
+
+  it('React/Pug exporters no longer depend on legacy BaseComponentRenderer', () => {
+    const reactSource = ReactExporter.toString();
+    const pugSource = PugExporter.toString();
+    assert.ok(!reactSource.includes('BaseComponentRenderer'));
+    assert.ok(!pugSource.includes('BaseComponentRenderer'));
+  });
 });
