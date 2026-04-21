@@ -12,6 +12,16 @@
 
 `src/exporters/html-exporter.ts` の HTML 出力は **Primary（React 静的レンダー）のみ**。`ExportOptions.useReactRender === false` は **未対応**（`[HtmlExporter:FALLBACK_REMOVED]` を送出）。
 
+### EXPORTER-FA-002 — HtmlExporter boundary（A案）
+
+`HtmlExporter` は **React static primary path の独立 exporter** として固定する。本文生成の入口は
+`renderPageComponentsToStaticHtml` のみであり、`BaseComponentRenderer`、`src/exporters/legacy/**`、`src/exporters/internal/**`
+へ依存しない。
+
+この境界は `tests/unit/html-exporter-primary-only-structure.test.js` と `eslint.config.mjs` の
+`src/exporters/html-exporter.ts` 専用 `no-restricted-imports` で検出する。HTML fallback lane を戻す変更や、
+HtmlExporter を文字列レンダラ基底へ再接続する変更は、Exporter final architecture の A案に反する。
+
 ### T-001 — Primary = source of truth（契約アンカー）
 
 **Primary を source of truth（正）**とする。互換レーン（文字列レンダラ）は **削除済み**（Vault **T-20260420-001** / `t038`）。

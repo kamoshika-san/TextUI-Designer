@@ -1,4 +1,6 @@
 const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
 const { HtmlExporter } = require('../../out/exporters/html-exporter');
 const { BaseComponentRenderer } = require('../../out/exporters/legacy/base-component-renderer');
 
@@ -7,6 +9,8 @@ const { BaseComponentRenderer } = require('../../out/exporters/legacy/base-compo
  * Complements route-viability: fixes export() staying on React static path without legacy renderXxx.
  */
 describe('HtmlExporter Primary-only structure (T-20260421-020)', () => {
+  const repoRoot = path.resolve(__dirname, '../..');
+  const sourcePath = path.join(repoRoot, 'src', 'exporters', 'html-exporter.ts');
   const dsl = {
     page: {
       components: [{ Text: { value: 'primary structure guard' } }]
@@ -27,6 +31,34 @@ describe('HtmlExporter Primary-only structure (T-20260421-020)', () => {
       new HtmlExporter() instanceof BaseComponentRenderer,
       false,
       'HtmlExporter must implement Exporter without legacy renderer inheritance'
+    );
+  });
+
+  it('source imports the React static primary path and no legacy exporter modules (EXPORTER-FA-002)', () => {
+    const source = fs.readFileSync(sourcePath, 'utf8');
+    const codeOnly = source
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/gm, '');
+
+    assert.match(
+      codeOnly,
+      /import\s*\{\s*renderPageComponentsToStaticHtml\s*\}\s*from\s*['"]\.\/react-static-export['"]/,
+      'HtmlExporter must import renderPageComponentsToStaticHtml as its primary body renderer'
+    );
+    assert.match(
+      codeOnly,
+      /renderPageComponentsToStaticHtml\s*\(\s*components\s*\)/,
+      'HtmlExporter.export must render page components through the React static primary path'
+    );
+    assert.doesNotMatch(
+      codeOnly,
+      /BaseComponentRenderer|from\s*['"][^'"]*legacy|from\s*['"][^'"]*internal/,
+      'HtmlExporter must not depend on BaseComponentRenderer, legacy exporters, or fallback/internal lanes'
+    );
+    assert.doesNotMatch(
+      codeOnly,
+      /withExplicitFallbackHtmlExport|createHtmlExportLaneOptions|fallback-access|fallback-lane-options/,
+      'HtmlExporter must not regain fallback lane helper dependencies'
     );
   });
 
