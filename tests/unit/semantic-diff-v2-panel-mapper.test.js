@@ -41,8 +41,8 @@ describe('toVisualDiffV2FromPayload', () => {
                       },
                       explanation: {
                         evidence: [],
-                        before_predicate: { op: 'eq', field: 'action.type', value: 'submit' },
-                        after_predicate: { op: 'eq', field: 'action.type', value: 'approve' },
+                        before_predicate: { fact: 'action', op: 'eq', value: 'submit' },
+                        after_predicate: { fact: 'action', op: 'eq', value: 'approve' },
                       },
                     },
                   ],
@@ -66,13 +66,13 @@ describe('toVisualDiffV2FromPayload', () => {
     assert.strictEqual(record.decision.confidenceBand, 'low');
     assert.strictEqual(record.decision.reviewStatus, 'needs_review');
     assert.deepStrictEqual(record.explanation.beforePredicate, {
+      fact: 'action',
       op: 'eq',
-      field: 'action.type',
       value: 'submit',
     });
     assert.deepStrictEqual(record.explanation.afterPredicate, {
+      fact: 'action',
       op: 'eq',
-      field: 'action.type',
       value: 'approve',
     });
   });

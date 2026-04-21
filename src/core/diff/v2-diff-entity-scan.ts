@@ -5,8 +5,8 @@ import type {
   V2DiffRecord,
   V2EntityDiff,
   V2EvidenceItem,
-  V2EvidenceStateChanged,
 } from './diff-v2-types';
+import type { CanonicalPredicate } from './canonical-predicate';
 import { buildV2Decision } from './v2-confidence-scorer';
 
 export interface V2MatchedEntityPair {
@@ -36,6 +36,10 @@ function makeEntityRecord(
   return { decision: buildV2Decision(event, targetId, confidence, ambiguityReason), explanation: { evidence } };
 }
 
+function entityStateSnapshot(value: unknown): CanonicalPredicate {
+  return { fact: 'entity_state', op: 'eq', value };
+}
+
 function makeStateRecord(
   targetId: string,
   confidence: number,
@@ -43,17 +47,12 @@ function makeStateRecord(
   afterState: unknown,
   ambiguityReason?: string
 ): V2DiffRecord {
-  const stateEvidence: V2EvidenceStateChanged = {
-    evidence_shape: 'entity.state_changed',
-    before: beforeState,
-    after: afterState,
-  };
   return {
     decision: buildV2Decision('entity_state_changed', targetId, confidence, ambiguityReason),
     explanation: {
-      evidence: [stateEvidence],
-      before_predicate: beforeState,
-      after_predicate: afterState,
+      evidence: [],
+      before_predicate: entityStateSnapshot(beforeState),
+      after_predicate: entityStateSnapshot(afterState),
     },
   };
 }
@@ -152,8 +151,8 @@ export function scanEntityDiffs(
   const entities: V2EntityDiff[] = [];
 
   if (pair.kind === 'unmatched') {
-    diffs.push(makeEntityRecord('entity_removed', pair.removedEntityId, pair.confidence, pair.ambiguityReason, ['entity removed']));
-    diffs.push(makeEntityRecord('entity_added', pair.addedEntityId, pair.confidence, pair.ambiguityReason, ['entity added']));
+    diffs.push(makeEntityRecord('entity_removed', pair.removedEntityId, pair.confidence, pair.ambiguityReason, []));
+    diffs.push(makeEntityRecord('entity_added', pair.addedEntityId, pair.confidence, pair.ambiguityReason, []));
   } else {
     const previousState = readEntityState(previous);
     const nextState = readEntityState(next);

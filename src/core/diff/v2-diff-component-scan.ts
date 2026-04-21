@@ -3,11 +3,19 @@ import type {
   V2ComponentDiff,
   V2DiffRecord,
   V2EvidenceItem,
-  V2EvidenceComponentChanged,
 } from './diff-v2-types';
+import type { CanonicalPredicate } from './canonical-predicate';
 import { buildV2Decision } from './v2-confidence-scorer';
 import { toComponentNode } from './diff-pairing';
 import { normalizeDefaults } from '../diff-normalization/normalize-defaults';
+
+function asCanonicalPredicateSnapshot(value: unknown): CanonicalPredicate {
+  return value as CanonicalPredicate;
+}
+
+function wrapFactSnapshot(fact: 'action' | 'availability', value: unknown): CanonicalPredicate {
+  return { fact, op: 'eq', value };
+}
 
 function makeComponentRecord(
   event:
@@ -23,13 +31,47 @@ function makeComponentRecord(
   ambiguityReason?: string,
   evidence?: V2EvidenceItem[]
 ): V2DiffRecord {
-  const defaultEvidence: V2EvidenceComponentChanged = { evidence_shape: 'component.changed', event };
+  const structure = event === 'component_added' || event === 'component_removed';
+  const resolvedEvidence = evidence ?? [];
+
+  if (structure) {
+    return {
+      decision: buildV2Decision(event, targetId, confidence, ambiguityReason),
+      explanation: { evidence: resolvedEvidence },
+    };
+  }
+
+  let beforeP: CanonicalPredicate | undefined;
+  let afterP: CanonicalPredicate | undefined;
+  if (event === 'component_guard_changed') {
+    if (beforePredicate !== undefined) {
+      beforeP = asCanonicalPredicateSnapshot(beforePredicate);
+    }
+    if (afterPredicate !== undefined) {
+      afterP = asCanonicalPredicateSnapshot(afterPredicate);
+    }
+  } else if (event === 'component_action_changed') {
+    if (beforePredicate !== undefined) {
+      beforeP = wrapFactSnapshot('action', beforePredicate);
+    }
+    if (afterPredicate !== undefined) {
+      afterP = wrapFactSnapshot('action', afterPredicate);
+    }
+  } else if (event === 'component_availability_changed') {
+    if (beforePredicate !== undefined) {
+      beforeP = wrapFactSnapshot('availability', beforePredicate);
+    }
+    if (afterPredicate !== undefined) {
+      afterP = wrapFactSnapshot('availability', afterPredicate);
+    }
+  }
+
   return {
     decision: buildV2Decision(event, targetId, confidence, ambiguityReason),
     explanation: {
-      evidence: evidence ?? [defaultEvidence],
-      before_predicate: beforePredicate,
-      after_predicate: afterPredicate,
+      evidence: resolvedEvidence,
+      ...(beforeP !== undefined ? { before_predicate: beforeP } : {}),
+      ...(afterP !== undefined ? { after_predicate: afterP } : {}),
     },
   };
 }

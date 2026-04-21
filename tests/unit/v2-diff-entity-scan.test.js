@@ -70,8 +70,16 @@ describe('semantic diff v2 entity scan', () => {
     assert.strictEqual(entityDiffs[0].diffs.length, 1);
     assert.strictEqual(entityDiffs[0].diffs[0].decision.diff_event, 'entity_state_changed');
     assert.strictEqual(entityDiffs[0].diffs[0].decision.target_id, 'settings');
-    assert.deepStrictEqual(entityDiffs[0].diffs[0].explanation.before_predicate, { mode: 'draft', flags: ['editable'] });
-    assert.deepStrictEqual(entityDiffs[0].diffs[0].explanation.after_predicate, { mode: 'published', flags: ['editable'] });
+    assert.deepStrictEqual(entityDiffs[0].diffs[0].explanation.before_predicate, {
+      fact: 'entity_state',
+      op: 'eq',
+      value: { mode: 'draft', flags: ['editable'] },
+    });
+    assert.deepStrictEqual(entityDiffs[0].diffs[0].explanation.after_predicate, {
+      fact: 'entity_state',
+      op: 'eq',
+      value: { mode: 'published', flags: ['editable'] },
+    });
   });
 
   it('keeps entity_state_changed low-confidence when the matched entity has a missing id', () => {
@@ -117,12 +125,22 @@ describe('semantic diff v2 entity scan', () => {
     assert.strictEqual(result.v2.screens[0].entities[0].diffs[0].decision.diff_event, 'entity_state_changed');
   });
 
-  it('adds non-empty evidence for entity-level records', () => {
+  it('uses empty evidence for entity_state_changed with predicates carrying state snapshots', () => {
     const previous = makeDoc('previous', { id: 'profile', title: 'Profile', state: { stage: 'draft' } });
     const next = makeDoc('next', { id: 'profile', title: 'Profile', state: { stage: 'published' } });
 
     const screens = entityScan.scanEntityDiffs(previous, next);
 
-    assert.ok(screens[0].entities[0].diffs[0].explanation.evidence.length > 0);
+    assert.strictEqual(screens[0].entities[0].diffs[0].explanation.evidence.length, 0);
+    assert.deepStrictEqual(screens[0].entities[0].diffs[0].explanation.before_predicate, {
+      fact: 'entity_state',
+      op: 'eq',
+      value: { stage: 'draft' },
+    });
+    assert.deepStrictEqual(screens[0].entities[0].diffs[0].explanation.after_predicate, {
+      fact: 'entity_state',
+      op: 'eq',
+      value: { stage: 'published' },
+    });
   });
 });

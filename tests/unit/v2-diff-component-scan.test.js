@@ -29,8 +29,16 @@ describe('semantic diff v2 component scan', () => {
     assert.strictEqual(diffs.length, 1);
     assert.strictEqual(diffs[0].component_id, 'Button:submit');
     assert.strictEqual(diffs[0].diffs[0].decision.diff_event, 'component_action_changed');
-    assert.deepStrictEqual(diffs[0].diffs[0].explanation.before_predicate, { domain: 'trigger', type: 'submit' });
-    assert.deepStrictEqual(diffs[0].diffs[0].explanation.after_predicate, { domain: 'trigger', type: 'approve' });
+    assert.deepStrictEqual(diffs[0].diffs[0].explanation.before_predicate, {
+      fact: 'action',
+      op: 'eq',
+      value: { domain: 'trigger', type: 'submit' },
+    });
+    assert.deepStrictEqual(diffs[0].diffs[0].explanation.after_predicate, {
+      fact: 'action',
+      op: 'eq',
+      value: { domain: 'trigger', type: 'approve' },
+    });
   });
 
   it('does not emit component_action_changed for add/remove-only changes', () => {
@@ -57,8 +65,16 @@ describe('semantic diff v2 component scan', () => {
 
     assert.strictEqual(diffs.length, 1);
     assert.strictEqual(diffs[0].diffs[0].decision.diff_event, 'component_action_changed');
-    assert.deepStrictEqual(diffs[0].diffs[0].explanation.before_predicate, { domain: 'none', type: 'none' });
-    assert.deepStrictEqual(diffs[0].diffs[0].explanation.after_predicate, { domain: 'submit', type: 'submit' });
+    assert.deepStrictEqual(diffs[0].diffs[0].explanation.before_predicate, {
+      fact: 'action',
+      op: 'eq',
+      value: { domain: 'none', type: 'none' },
+    });
+    assert.deepStrictEqual(diffs[0].diffs[0].explanation.after_predicate, {
+      fact: 'action',
+      op: 'eq',
+      value: { domain: 'submit', type: 'submit' },
+    });
   });
 
   it('emits component_availability_changed for matched components whose disabled state changed', () => {
@@ -75,14 +91,22 @@ describe('semantic diff v2 component scan', () => {
     assert.strictEqual(diffs[0].component_id, 'Button:structural:0');
     assert.strictEqual(diffs[0].diffs[0].decision.diff_event, 'component_availability_changed');
     assert.deepStrictEqual(diffs[0].diffs[0].explanation.before_predicate, {
-      visibility: 'visible',
-      enabled: 'enabled',
-      editability: 'editable',
+      fact: 'availability',
+      op: 'eq',
+      value: {
+        visibility: 'visible',
+        enabled: 'enabled',
+        editability: 'editable',
+      },
     });
     assert.deepStrictEqual(diffs[0].diffs[0].explanation.after_predicate, {
-      visibility: 'visible',
-      enabled: 'disabled',
-      editability: 'editable',
+      fact: 'availability',
+      op: 'eq',
+      value: {
+        visibility: 'visible',
+        enabled: 'disabled',
+        editability: 'editable',
+      },
     });
   });
 
@@ -243,7 +267,7 @@ describe('semantic diff v2 component scan', () => {
     });
   });
 
-  it('adds non-empty evidence for component-level diff events', () => {
+  it('uses empty evidence for semantic component-level diff events', () => {
     const previous = makeDoc('previous', [
       { Button: { id: 'save', label: 'Save', action: { trigger: 'submit' } } },
     ]);
@@ -254,10 +278,10 @@ describe('semantic diff v2 component scan', () => {
     const diffs = componentScan.scanComponentDiffs(previous, next);
 
     assert.ok(Array.isArray(diffs[0].diffs[0].explanation.evidence));
-    assert.ok(diffs[0].diffs[0].explanation.evidence.length > 0);
+    assert.strictEqual(diffs[0].diffs[0].explanation.evidence.length, 0);
   });
 
-  it('emits V2EvidenceComponentChanged shape with correct event on every component diff event', () => {
+  it('uses empty evidence on structure events and semantic events (compare-logic F)', () => {
     const cases = [
       {
         label: 'component_added',
@@ -295,9 +319,8 @@ describe('semantic diff v2 component scan', () => {
       const diffs = componentScan.scanComponentDiffs(previous, next);
       assert.strictEqual(diffs.length, 1, `${label}: expected 1 diff`);
       const evidence = diffs[0].diffs[0].explanation.evidence;
-      assert.ok(Array.isArray(evidence) && evidence.length > 0, `${label}: evidence must be non-empty`);
-      assert.strictEqual(evidence[0].evidence_shape, 'component.changed', `${label}: evidence_shape must be 'component.changed'`);
-      assert.strictEqual(evidence[0].event, expectedEvent, `${label}: event field must match diff_event`);
+      assert.ok(Array.isArray(evidence) && evidence.length === 0, `${label}: evidence must be empty`);
+      assert.strictEqual(diffs[0].diffs[0].decision.diff_event, expectedEvent, `${label}: diff_event`);
     }
   });
 

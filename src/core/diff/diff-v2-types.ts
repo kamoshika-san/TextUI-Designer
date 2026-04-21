@@ -6,6 +6,9 @@
  * interface or importing design-only docs artifacts.
  */
 
+import type { EvidenceShape } from './evidence-shape';
+import type { CanonicalPredicate } from './canonical-predicate';
+
 export type V2DiffEvent =
   | 'entity_added'
   | 'entity_removed'
@@ -63,17 +66,19 @@ export interface V2EvidenceComponentChanged {
   event: string;
 }
 
-/** Discriminated evidence item — string fallback preserved for unregistered events. */
-export type V2EvidenceItem =
+/** Evidence carried on v2 explanations: registry shapes plus compare-logic snapshots. */
+export type V2RuntimeEvidence =
+  | EvidenceShape
   | V2EvidenceStateChanged
   | V2EvidenceTransitionEdgeChanged
-  | V2EvidenceComponentChanged
-  | string;
+  | V2EvidenceComponentChanged;
+
+export type V2EvidenceItem = V2RuntimeEvidence;
 
 export interface V2DiffExplanation {
-  evidence: V2EvidenceItem[];
-  before_predicate?: unknown;
-  after_predicate?: unknown;
+  evidence: V2RuntimeEvidence[];
+  before_predicate?: CanonicalPredicate;
+  after_predicate?: CanonicalPredicate;
 }
 
 export interface V2DiffRecord {

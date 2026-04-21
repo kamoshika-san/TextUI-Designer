@@ -42,7 +42,7 @@ function makeTransitionRecord(
 ): V2DiffRecord {
   return {
     decision: buildV2Decision(event, targetId, 1.0),
-    explanation: { evidence: [event === 'transition_added' ? 'transition added' : 'transition removed'] },
+    explanation: { evidence: [] },
   };
 }
 
