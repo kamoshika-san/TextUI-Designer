@@ -24,6 +24,13 @@ describe('ExportManager incremental diff route flag', () => {
     ].join('\n'));
   };
 
+  const registerCountingHtmlExporter = (manager, handler) => {
+    manager.registerExporter('html', {
+      export: handler,
+      getFileExtension: () => '.html'
+    });
+  };
+
   before(() => {
     ({ ExportManager } = require('../../out/exporters'));
   });
@@ -37,10 +44,10 @@ describe('ExportManager incremental diff route flag', () => {
 
     writeDsl(filePath, 'First');
 
-    manager.optimizingExecutor.runOptimizedExport = async () => {
+    registerCountingHtmlExporter(manager, async () => {
       optimizedCalls += 1;
       return 'optimized';
-    };
+    });
     manager.exportWithDiffUpdate = async () => {
       diffCalls += 1;
       return { result: 'diff', isFullUpdate: true, changedComponents: [0] };
@@ -52,7 +59,7 @@ describe('ExportManager incremental diff route flag', () => {
 
       assert.strictEqual(first, 'optimized');
       assert.strictEqual(second, 'optimized');
-      assert.strictEqual(optimizedCalls, 2);
+      assert.strictEqual(optimizedCalls, 1);
       assert.strictEqual(diffCalls, 0);
     } finally {
       manager.dispose();
@@ -71,10 +78,10 @@ describe('ExportManager incremental diff route flag', () => {
 
     writeDsl(filePath, 'First');
 
-    manager.optimizingExecutor.runOptimizedExport = async () => {
+    registerCountingHtmlExporter(manager, async () => {
       optimizedCalls += 1;
       return 'optimized';
-    };
+    });
     manager.exportWithDiffUpdate = async (dsl, options) => {
       diffCalls += 1;
       lastTargets = options.incrementalRenderTargets || [];
@@ -109,7 +116,7 @@ describe('ExportManager incremental diff route flag', () => {
     }
   });
 
-  it('keeps the legacy route for cross-file exports even when the flag is ON', async () => {
+  it('keeps the full-render route for cross-file exports even when the flag is ON', async () => {
     const manager = new ExportManager();
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-export-'));
     const fileA = path.join(tempDir, 'a.tui.yml');
@@ -120,10 +127,10 @@ describe('ExportManager incremental diff route flag', () => {
     writeDsl(fileA, 'First-A');
     writeDsl(fileB, 'First-B');
 
-    manager.optimizingExecutor.runOptimizedExport = async () => {
+    registerCountingHtmlExporter(manager, async () => {
       optimizedCalls += 1;
       return 'optimized';
-    };
+    });
     manager.exportWithDiffUpdate = async () => {
       diffCalls += 1;
       return { result: 'diff', isFullUpdate: true, changedComponents: [0] };
@@ -143,7 +150,7 @@ describe('ExportManager incremental diff route flag', () => {
     }
   });
 
-  it('auto-downgrades to the legacy full render when exportWithDiffUpdate throws', async () => {
+  it('auto-downgrades to the full render when exportWithDiffUpdate throws', async () => {
     const manager = new ExportManager();
     clearMonitor(manager);
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-export-'));
@@ -153,10 +160,10 @@ describe('ExportManager incremental diff route flag', () => {
 
     writeDsl(filePath, 'First');
 
-    manager.optimizingExecutor.runOptimizedExport = async dsl => {
+    registerCountingHtmlExporter(manager, async dsl => {
       optimizedCalls += 1;
       return `optimized:${dsl.page.title}`;
-    };
+    });
     manager.exportWithDiffUpdate = async () => {
       diffCalls += 1;
       throw new Error('incremental apply mismatch');
@@ -186,7 +193,7 @@ describe('ExportManager incremental diff route flag', () => {
     }
   });
 
-  it('auto-downgrades to the legacy full render when exportWithDiffUpdate returns an invalid payload', async () => {
+  it('auto-downgrades to the full render when exportWithDiffUpdate returns an invalid payload', async () => {
     const manager = new ExportManager();
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-export-'));
     const filePath = path.join(tempDir, 'sample.tui.yml');
@@ -194,10 +201,10 @@ describe('ExportManager incremental diff route flag', () => {
 
     writeDsl(filePath, 'First');
 
-    manager.optimizingExecutor.runOptimizedExport = async dsl => {
+    registerCountingHtmlExporter(manager, async dsl => {
       optimizedCalls += 1;
       return `optimized:${dsl.page.title}`;
-    };
+    });
     manager.exportWithDiffUpdate = async () => ({
       result: '',
       isFullUpdate: false,

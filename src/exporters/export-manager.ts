@@ -8,7 +8,7 @@ import { ConfigManager } from '../utils/config-manager';
 import type { ExportOptions, Exporter } from './export-types';
 import { populateBuiltInExporters } from './built-in-exporter-registry';
 import type { ExportPipelineDeps } from './export-pipeline';
-import { OptimizingExportExecutor } from './export-optimizing-executor';
+import { runExportWithDiffUpdate, runOptimizedExport } from './export-pipeline';
 import { runBatchExport } from './export-batch';
 import { createPerformanceMonitorExportObserver } from './export-metrics-observer';
 import {
@@ -32,7 +32,6 @@ export class ExportManager {
   private diffManager: DiffManager;
   private performanceMonitor: PerformanceMonitor;
   private readonly maxConcurrentOperations: number;
-  private readonly optimizingExecutor: OptimizingExportExecutor;
   private readonly exportSnapshots = new Map<string, TextUIDSL>();
   private readonly logger = new Logger('ExportManager');
   /** Last reason incremental route was downgraded to full rerender. Exposed for future observability. */
@@ -52,7 +51,6 @@ export class ExportManager {
     this.diffManager = new DiffManager();
     this.performanceMonitor = PerformanceMonitor.getInstance();
 
-    this.optimizingExecutor = new OptimizingExportExecutor(() => this.pipelineDeps());
   }
 
   private pipelineDeps(): ExportPipelineDeps {
@@ -185,7 +183,7 @@ export class ExportManager {
     const startedAt = performance.now();
     const result = isNavigationFlowDSL(dsl)
       ? await this.runNavigationExporter(dsl, options)
-      : await this.optimizingExecutor.runOptimizedExport(dsl, options);
+      : await runOptimizedExport(dsl, options, this.pipelineDeps());
     this.performanceMonitor.recordIncrementalRouteSample(
       'full-render',
       performance.now() - startedAt,
@@ -276,7 +274,9 @@ export class ExportManager {
     isFullUpdate: boolean;
     changedComponents: number[];
   }> {
-    return this.optimizingExecutor.runExportWithDiffUpdate(dsl, options);
+    return runExportWithDiffUpdate(dsl, options, this.pipelineDeps(), (d, o) =>
+      runOptimizedExport(d, o, this.pipelineDeps())
+    );
   }
 
   async batchExport(files: Array<{ path: string; options: ExportOptions }>): Promise<Map<string, string>> {

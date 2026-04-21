@@ -1,13 +1,10 @@
-/**
- * T-20260322-164: src/exporters/legacy/html-renderers 配下の .ts の SSoT 境界を固定する。
- * domain/dsl-types 起点・renderer/types（互換レイヤ）非依存。
- */
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 const htmlRenderersDir = path.join(repoRoot, 'src', 'exporters', 'legacy', 'html-renderers');
+const exportersDir = path.join(repoRoot, 'src', 'exporters');
 
 function walkTsFiles(dir, out = []) {
   if (!fs.existsSync(dir)) {
@@ -28,31 +25,27 @@ function toPosixRelative(filePath) {
   return path.relative(repoRoot, filePath).split(path.sep).join('/');
 }
 
-describe('html-renderers exporter SSoT guard (T-20260322-164)', () => {
-  it('html-renderers 配下は domain/dsl-types を参照し renderer/types を参照しない', () => {
-    const allFiles = walkTsFiles(htmlRenderersDir);
-      assert.ok(allFiles.length > 0, 'src/exporters/legacy/html-renderers に .ts が存在すること');
+describe('html-renderers exporter legacy removal guard (T-20260422-014)', () => {
+  it('legacy html-renderers TypeScript files are absent', () => {
+    assert.deepStrictEqual(
+      walkTsFiles(htmlRenderersDir).map(toPosixRelative),
+      [],
+      'src/exporters/legacy/html-renderers must not contain tracked TypeScript files; HtmlExporter is primary-only'
+    );
+  });
 
+  it('exporter source does not import legacy html-renderers', () => {
     const violations = [];
-    const rendererTypesPath = ['renderer', 'types'].join('/');
-    const importsDomainDslTypes = /from\s+['"][^'"]*domain\/dsl-types['"]/;
-    const importsRendererTypes = new RegExp(`from\\s+['"][^'"]*${rendererTypesPath}['"]`);
-
-    for (const abs of allFiles) {
+    for (const abs of walkTsFiles(exportersDir)) {
       const rel = toPosixRelative(abs);
-      const code = fs.readFileSync(abs, 'utf8');
-      if (!importsDomainDslTypes.test(code)) {
-        violations.push(`${rel}: domain/dsl-types import が存在しない`);
-      }
-      if (importsRendererTypes.test(code)) {
-        violations.push(`${rel}: renderer/types import が残存`);
+      const code = fs.readFileSync(abs, 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/\/\/.*$/gm, '');
+      if (/legacy\/html-renderers|html-renderers/.test(code)) {
+        violations.push(rel);
       }
     }
 
-    assert.deepStrictEqual(
-      violations,
-      [],
-      `html-renderers の SSoT 境界違反を検知\n${violations.join('\n')}`
-    );
+    assert.deepStrictEqual(violations, [], `legacy html-renderers import/reference found\n${violations.join('\n')}`);
   });
 });

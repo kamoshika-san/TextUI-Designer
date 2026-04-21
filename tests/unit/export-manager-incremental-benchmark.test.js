@@ -21,6 +21,13 @@ describe('ExportManager incremental benchmark scenarios', () => {
     fs.writeFileSync(filePath, YAML.stringify(dsl), 'utf8');
   }
 
+  function registerTitleExporter(manager) {
+    manager.registerExporter('html', {
+      export: async dsl => `optimized:${dsl.page.title}`,
+      getFileExtension: () => '.html'
+    });
+  }
+
   it('exercises the incremental route on a nested 100+ component dashboard across repeated passes', async () => {
     const manager = new ExportManager();
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-ir-benchmark-'));
@@ -32,7 +39,7 @@ describe('ExportManager incremental benchmark scenarios', () => {
 
     assert.ok(countScenarioComponents(baseDsl) >= 100);
 
-    manager.optimizingExecutor.runOptimizedExport = async dsl => `optimized:${dsl.page.title}`;
+    registerTitleExporter(manager);
     manager.exportWithDiffUpdate = async (dsl, options) => {
       capturedTargets.push(options.incrementalRenderTargets || []);
       return {
@@ -80,7 +87,7 @@ describe('ExportManager incremental benchmark scenarios', () => {
 
     assert.ok(countScenarioComponents(baseDsl) >= 100);
 
-    manager.optimizingExecutor.runOptimizedExport = async dsl => `optimized:${dsl.page.title}`;
+    registerTitleExporter(manager);
     manager.exportWithDiffUpdate = async (dsl, options) => {
       capturedTargets = options.incrementalRenderTargets || [];
       return {
