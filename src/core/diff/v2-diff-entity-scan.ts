@@ -38,7 +38,7 @@ function makeEntityRecord(
   return { decision: buildV2Decision(event, targetId, confidence, ambiguityReason), explanation: { evidence: resolved } };
 }
 
-function entityStateSnapshot(value: unknown): CanonicalPredicate {
+function normalizeEntityStateChangedPredicate(value: unknown): CanonicalPredicate {
   return { fact: 'entity_state', op: 'eq', value };
 }
 
@@ -53,8 +53,8 @@ function makeStateRecord(
     decision: buildV2Decision('entity_state_changed', targetId, confidence, ambiguityReason),
     explanation: {
       evidence: [],
-      before_predicate: entityStateSnapshot(beforeState),
-      after_predicate: entityStateSnapshot(afterState),
+      before_predicate: normalizeEntityStateChangedPredicate(beforeState),
+      after_predicate: normalizeEntityStateChangedPredicate(afterState),
     },
   };
 }

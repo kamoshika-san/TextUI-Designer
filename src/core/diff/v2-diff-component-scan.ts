@@ -6,13 +6,10 @@ import type {
   V2RuntimeEvidence,
 } from './diff-v2-types';
 import type { CanonicalPredicate } from './canonical-predicate';
+import { normalizedGuardToCanonical, type NormalizedGuardNode } from './guard-normalized-to-canonical';
 import { buildV2Decision } from './v2-confidence-scorer';
 import { toComponentNode } from './diff-pairing';
 import { normalizeDefaults } from '../diff-normalization/normalize-defaults';
-
-function asCanonicalPredicateSnapshot(value: unknown): CanonicalPredicate {
-  return value as CanonicalPredicate;
-}
 
 /** CanonicalPredicate へ寄せた availability 軸スナップショット（Design F）。 */
 function normalizeAvailabilityAxisPredicate(value: unknown): CanonicalPredicate {
@@ -52,10 +49,10 @@ function makeComponentRecord(
   let afterP: CanonicalPredicate | undefined;
   if (event === 'component_guard_changed') {
     if (beforePredicate !== undefined) {
-      beforeP = asCanonicalPredicateSnapshot(beforePredicate);
+      beforeP = normalizedGuardToCanonical(beforePredicate as NormalizedGuardNode);
     }
     if (afterPredicate !== undefined) {
-      afterP = asCanonicalPredicateSnapshot(afterPredicate);
+      afterP = normalizedGuardToCanonical(afterPredicate as NormalizedGuardNode);
     }
   } else if (event === 'component_action_changed') {
     if (beforePredicate !== undefined) {
