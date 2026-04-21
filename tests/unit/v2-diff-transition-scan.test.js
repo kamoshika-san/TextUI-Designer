@@ -28,7 +28,7 @@ describe('semantic diff v2 transition scan', () => {
     const result = transitionScan.scanTransitionDiffs(prev, next);
     assert.strictEqual(result.length, 1);
     assert.strictEqual(result[0].decision.diff_event, 'transition_added');
-    assert.strictEqual(result[0].decision.target_id, 'A→B:submit');
+    assert.strictEqual(result[0].decision.target_id, 'A->B:submit');
     assert.strictEqual(result[0].decision.confidence_band, 'high');
   });
 
@@ -48,12 +48,44 @@ describe('semantic diff v2 transition scan', () => {
     assert.strictEqual(result[0].decision.diff_event, 'transition_edge_changed');
   });
 
+  it('emits transition_edge_changed for same id when from/to/trigger changes', () => {
+    const prev = makeDoc('s1', [{ id: 'checkout-next', from: 'cart', to: 'shipping', trigger: 'next' }]);
+    const next = makeDoc('s1', [{ id: 'checkout-next', from: 'cart', to: 'review', trigger: 'continue' }]);
+    const result = transitionScan.scanTransitionDiffs(prev, next);
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].decision.diff_event, 'transition_edge_changed');
+    assert.strictEqual(result[0].decision.target_id, 'checkout-next');
+    assert.deepStrictEqual(result[0].explanation.before_predicate.value, {
+      kind: 'v2.transition_edge_snapshot',
+      from: 'cart',
+      to: 'shipping',
+      trigger: 'next',
+      label: undefined,
+      condition: undefined,
+    });
+    assert.deepStrictEqual(result[0].explanation.after_predicate.value, {
+      kind: 'v2.transition_edge_snapshot',
+      from: 'cart',
+      to: 'review',
+      trigger: 'continue',
+      label: undefined,
+      condition: undefined,
+    });
+  });
+
   it('emits transition_edge_changed when condition changes', () => {
     const prev = makeDoc('s1', [{ from: 'A', to: 'B', trigger: 'click', condition: 'isValid' }]);
     const next = makeDoc('s1', [{ from: 'A', to: 'B', trigger: 'click', condition: 'isReady' }]);
     const result = transitionScan.scanTransitionDiffs(prev, next);
     assert.strictEqual(result.length, 1);
     assert.strictEqual(result[0].decision.diff_event, 'transition_edge_changed');
+    assert.deepStrictEqual(result[0].explanation.evidence, [
+      {
+        evidence_shape: 'state_machine.transition',
+        before: { from: 'A', to: 'B', trigger: 'click', guard: 'isValid' },
+        after: { from: 'A', to: 'B', trigger: 'click', guard: 'isReady' },
+      },
+    ]);
   });
 
   it('emits no diff for identical transitions', () => {

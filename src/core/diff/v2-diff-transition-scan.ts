@@ -1,9 +1,11 @@
 import type { DiffCompareDocument } from './diff-types';
+import type { EvidenceShape } from './evidence-shape';
 import type { V2DiffRecord } from './diff-v2-types';
 import type { CanonicalPredicate } from './canonical-predicate';
 import { buildV2Decision } from './v2-confidence-scorer';
 
 interface TransitionRef {
+  id?: string;
   key: string;
   from: string;
   to: string;
@@ -30,9 +32,10 @@ function readTransitions(document: DiffCompareDocument): TransitionRef[] {
     const from = typeof item['from'] === 'string' ? item['from'] : '';
     const to = typeof item['to'] === 'string' ? item['to'] : '';
     const trigger = typeof item['trigger'] === 'string' ? item['trigger'] : '';
+    const id = typeof item['id'] === 'string' && item['id'].trim().length > 0 ? item['id'].trim() : undefined;
     const label = typeof item['label'] === 'string' ? item['label'] : undefined;
     const condition = typeof item['condition'] === 'string' ? item['condition'] : undefined;
-    result.push({ key: `${from}→${to}:${trigger}`, from, to, trigger, label, condition });
+    result.push({ id, key: id ?? `${from}->${to}:${trigger}`, from, to, trigger, label, condition });
   }
   return result;
 }
@@ -62,11 +65,29 @@ function transitionEdgeSnapshotPredicate(leg: TransitionRef): CanonicalPredicate
   };
 }
 
+function transitionEvidence(prev: TransitionRef, next: TransitionRef): EvidenceShape {
+  return {
+    evidence_shape: 'state_machine.transition',
+    before: {
+      from: prev.from,
+      to: prev.to,
+      trigger: prev.trigger,
+      ...(prev.condition ? { guard: prev.condition } : {}),
+    },
+    after: {
+      from: next.from,
+      to: next.to,
+      trigger: next.trigger,
+      ...(next.condition ? { guard: next.condition } : {}),
+    },
+  };
+}
+
 function makeEdgeChangedRecord(targetId: string, prev: TransitionRef, next: TransitionRef): V2DiffRecord {
   return {
     decision: buildV2Decision('transition_edge_changed', targetId, 1.0),
     explanation: {
-      evidence: [],
+      evidence: [transitionEvidence(prev, next)],
       before_predicate: transitionEdgeSnapshotPredicate(prev),
       after_predicate: transitionEdgeSnapshotPredicate(next),
     },
@@ -74,7 +95,11 @@ function makeEdgeChangedRecord(targetId: string, prev: TransitionRef, next: Tran
 }
 
 function transitionEdgeChanged(prev: TransitionRef, next: TransitionRef): boolean {
-  return prev.label !== next.label || prev.condition !== next.condition;
+  return prev.from !== next.from
+    || prev.to !== next.to
+    || prev.trigger !== next.trigger
+    || prev.label !== next.label
+    || prev.condition !== next.condition;
 }
 
 export function scanTransitionDiffs(

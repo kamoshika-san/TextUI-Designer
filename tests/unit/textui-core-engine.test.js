@@ -5,10 +5,12 @@ describe('TextUICoreEngine', () => {
   let getComponentSpecTypesForTesting;
   let getComponentSpecHandlerFlagsForTesting;
   let V2SemanticDiffProvider;
+  let toVisualDiffV2FromPayload;
 
   before(() => {
     ({ TextUICoreEngine, getComponentSpecTypesForTesting, getComponentSpecHandlerFlagsForTesting } = require('../../out/core/textui-core-engine'));
     ({ V2SemanticDiffProvider } = require('../../out/core/diff/v2-semantic-diff-provider'));
+    ({ toVisualDiffV2FromPayload } = require('../../out/domain/diff/semantic-diff-v2-panel-mapper'));
   });
 
   it('generateUi でDSLとHTMLを生成できる', async () => {
@@ -125,6 +127,60 @@ page:
     assert.strictEqual(result.result.v2.metadata.schemaVersion, 'v2-compare-logic/v0');
     assert.strictEqual(result.result.v2.screens.length, 1);
     assert.strictEqual(result.result.v2.screens[0].screen_id, 'account');
+  });
+
+  it('compareUi preserves semantic v2 evidence and predicates through the panel mapper', () => {
+    const engine = new TextUICoreEngine(new V2SemanticDiffProvider());
+    const result = engine.compareUi({
+      previousDsl: {
+        page: {
+          id: 'checkout',
+          title: 'Checkout',
+          layout: 'vertical',
+          transitions: [{ id: 'checkout-next', from: 'cart', to: 'shipping', trigger: 'next', condition: 'hasAddress' }],
+          components: [
+            {
+              Text: {
+                value: 'Shipping',
+                variant: 'p',
+              },
+            },
+          ],
+        },
+      },
+      nextDsl: {
+        page: {
+          id: 'checkout',
+          title: 'Checkout',
+          layout: 'vertical',
+          transitions: [{ id: 'checkout-next', from: 'cart', to: 'review', trigger: 'continue', condition: 'isReady' }],
+          components: [
+            {
+              Text: {
+                value: 'Review',
+                variant: 'p',
+              },
+            },
+          ],
+        },
+      },
+    });
+
+    assert.strictEqual(result.ok, true);
+    assert.ok(result.result.v2);
+
+    const panel = toVisualDiffV2FromPayload(result.result.v2);
+    assert.strictEqual(panel.hasChanges, true);
+    const screen = panel.payload.screens[0];
+    const transitionRecord = screen.diffs.find(record => record.decision.diffEvent === 'transition_edge_changed');
+    assert.ok(transitionRecord);
+    assert.deepStrictEqual(transitionRecord.explanation.evidence[0], {
+      evidence_shape: 'state_machine.transition',
+      before: { from: 'cart', to: 'shipping', trigger: 'next', guard: 'hasAddress' },
+      after: { from: 'cart', to: 'review', trigger: 'continue', guard: 'isReady' },
+    });
+    assert.strictEqual(transitionRecord.explanation.beforePredicate.value.from, 'cart');
+    assert.strictEqual(transitionRecord.explanation.afterPredicate.value.to, 'review');
   });
 
   it('compareUi keeps deterministic continuity when component ids match', () => {

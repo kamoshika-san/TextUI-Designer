@@ -73,7 +73,7 @@ export class V2SemanticDiffProvider implements SemanticDiffProvider {
         0
       );
       return sum + screenDiffs + entityDiffs + compDiffs;
-    }, 0) + transitionDiffs.length;
+    }, 0);
 
     const v2: DiffCompareResultV2Payload = {
       screens: populatedScreens,
