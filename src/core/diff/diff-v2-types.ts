@@ -53,14 +53,6 @@ export interface V2EvidenceStateChanged {
   after: unknown;
 }
 
-export interface V2EvidenceTransitionEdgeChanged {
-  evidence_shape: 'transition.edge_changed';
-  before_label?: string;
-  after_label?: string;
-  before_condition?: string;
-  after_condition?: string;
-}
-
 export interface V2EvidenceComponentChanged {
   evidence_shape: 'component.changed';
   event: string;
@@ -70,7 +62,6 @@ export interface V2EvidenceComponentChanged {
 export type V2RuntimeEvidence =
   | EvidenceShape
   | V2EvidenceStateChanged
-  | V2EvidenceTransitionEdgeChanged
   | V2EvidenceComponentChanged;
 
 export type V2EvidenceItem = V2RuntimeEvidence;

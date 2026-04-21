@@ -1,5 +1,6 @@
 import type { DiffCompareDocument } from './diff-types';
-import type { V2DiffRecord, V2EvidenceTransitionEdgeChanged } from './diff-v2-types';
+import type { V2DiffRecord } from './diff-v2-types';
+import type { CanonicalPredicate } from './canonical-predicate';
 import { buildV2Decision } from './v2-confidence-scorer';
 
 interface TransitionRef {
@@ -46,17 +47,29 @@ function makeTransitionRecord(
   };
 }
 
-function makeEdgeChangedRecord(targetId: string, prev: TransitionRef, next: TransitionRef): V2DiffRecord {
-  const edgeEvidence: V2EvidenceTransitionEdgeChanged = {
-    evidence_shape: 'transition.edge_changed',
-    before_label: prev.label,
-    after_label: next.label,
-    before_condition: prev.condition,
-    after_condition: next.condition,
+function transitionEdgeSnapshotPredicate(leg: TransitionRef): CanonicalPredicate {
+  return {
+    fact: 'entity_state',
+    op: 'eq',
+    value: {
+      kind: 'v2.transition_edge_snapshot',
+      from: leg.from,
+      to: leg.to,
+      trigger: leg.trigger,
+      label: leg.label,
+      condition: leg.condition,
+    },
   };
+}
+
+function makeEdgeChangedRecord(targetId: string, prev: TransitionRef, next: TransitionRef): V2DiffRecord {
   return {
     decision: buildV2Decision('transition_edge_changed', targetId, 1.0),
-    explanation: { evidence: [edgeEvidence] },
+    explanation: {
+      evidence: [],
+      before_predicate: transitionEdgeSnapshotPredicate(prev),
+      after_predicate: transitionEdgeSnapshotPredicate(next),
+    },
   };
 }
 

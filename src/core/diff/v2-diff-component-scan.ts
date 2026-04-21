@@ -1,8 +1,9 @@
 import type { DiffCompareDocument } from './diff-types';
+import type { EvidenceShape } from './evidence-shape';
 import type {
   V2ComponentDiff,
   V2DiffRecord,
-  V2EvidenceItem,
+  V2RuntimeEvidence,
 } from './diff-v2-types';
 import type { CanonicalPredicate } from './canonical-predicate';
 import { buildV2Decision } from './v2-confidence-scorer';
@@ -13,8 +14,14 @@ function asCanonicalPredicateSnapshot(value: unknown): CanonicalPredicate {
   return value as CanonicalPredicate;
 }
 
-function wrapFactSnapshot(fact: 'action' | 'availability', value: unknown): CanonicalPredicate {
-  return { fact, op: 'eq', value };
+/** CanonicalPredicate へ寄せた availability 軸スナップショット（Design F）。 */
+function normalizeAvailabilityAxisPredicate(value: unknown): CanonicalPredicate {
+  return { fact: 'availability', op: 'eq', value };
+}
+
+/** CanonicalPredicate へ寄せた action 軸スナップショット（Design F）。 */
+function normalizeActionAxisPredicate(value: unknown): CanonicalPredicate {
+  return { fact: 'action', op: 'eq', value };
 }
 
 function makeComponentRecord(
@@ -29,10 +36,10 @@ function makeComponentRecord(
   afterPredicate?: unknown,
   confidence = 1.0,
   ambiguityReason?: string,
-  evidence?: V2EvidenceItem[]
+  evidence?: EvidenceShape[]
 ): V2DiffRecord {
   const structure = event === 'component_added' || event === 'component_removed';
-  const resolvedEvidence = evidence ?? [];
+  const resolvedEvidence: V2RuntimeEvidence[] = evidence ? [...evidence] : [];
 
   if (structure) {
     return {
@@ -52,17 +59,17 @@ function makeComponentRecord(
     }
   } else if (event === 'component_action_changed') {
     if (beforePredicate !== undefined) {
-      beforeP = wrapFactSnapshot('action', beforePredicate);
+      beforeP = normalizeActionAxisPredicate(beforePredicate);
     }
     if (afterPredicate !== undefined) {
-      afterP = wrapFactSnapshot('action', afterPredicate);
+      afterP = normalizeActionAxisPredicate(afterPredicate);
     }
   } else if (event === 'component_availability_changed') {
     if (beforePredicate !== undefined) {
-      beforeP = wrapFactSnapshot('availability', beforePredicate);
+      beforeP = normalizeAvailabilityAxisPredicate(beforePredicate);
     }
     if (afterPredicate !== undefined) {
-      afterP = wrapFactSnapshot('availability', afterPredicate);
+      afterP = normalizeAvailabilityAxisPredicate(afterPredicate);
     }
   }
 

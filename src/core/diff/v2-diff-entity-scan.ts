@@ -4,8 +4,9 @@ import type {
   V2ScreenDiffInScope,
   V2DiffRecord,
   V2EntityDiff,
-  V2EvidenceItem,
+  V2RuntimeEvidence,
 } from './diff-v2-types';
+import type { EvidenceShape } from './evidence-shape';
 import type { CanonicalPredicate } from './canonical-predicate';
 import { buildV2Decision } from './v2-confidence-scorer';
 
@@ -31,9 +32,10 @@ function makeEntityRecord(
   targetId: string,
   confidence: number,
   ambiguityReason?: string,
-  evidence: V2EvidenceItem[] = []
+  evidence: EvidenceShape[] = []
 ): V2DiffRecord {
-  return { decision: buildV2Decision(event, targetId, confidence, ambiguityReason), explanation: { evidence } };
+  const resolved: V2RuntimeEvidence[] = [...evidence];
+  return { decision: buildV2Decision(event, targetId, confidence, ambiguityReason), explanation: { evidence: resolved } };
 }
 
 function entityStateSnapshot(value: unknown): CanonicalPredicate {
