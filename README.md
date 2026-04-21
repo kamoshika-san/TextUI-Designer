@@ -270,6 +270,12 @@ npm test
 
 Detailed setup: [docs/current/workflow-onboarding/SETUP.md](docs/current/workflow-onboarding/SETUP.md)
 
+### Package Governance
+
+- For scripts, package payload, dependencies, and overrides, use [package-json-governance.md](docs/current/operations/package-json-governance.md).
+- Do not hand-edit the merged `package.json` `contributes` block. Edit `package-contributes/*.json`, then run `npm run sync:package-contributes`.
+- For contributes review, prefer `npm run inspect:contributes`, `npm run diff:contributes:fragments`, and `npm run contributes:pr-summary`.
+
 ### Package `contributes`（T-003 / T-011）
 
 - **`package.json` の `contributes` は手編集しない**。`package-contributes/*.json` をソースとし、`npm run sync:package-contributes` で `package.json` にマージする。
