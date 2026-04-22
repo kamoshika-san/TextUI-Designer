@@ -136,6 +136,8 @@ Current notable dependency policy:
 
 - `chokidar` is a direct runtime dependency because `textui validate --watch` requires file watching at runtime.
 - `@types/*`, `typescript`, `eslint`, `mocha`, `vite`, `webpack`, and similar tools stay in `devDependencies`.
+- `autoprefixer`, `postcss`, `tailwindcss` は `npm run build-webview`（Vite + PostCSS/Tailwind）でのみ使用し、拡張の実行時（`out/**` / CLI / MCP）では `require()` しないため `devDependencies` に置く。
+- 上記CSSビルド系は成果物 `media/**` に変換済みで同梱されるため、`files` に `node_modules/autoprefixer|postcss|tailwindcss` を追加しない。
 - Do not rely on transitive runtime dependencies for source `require()` calls.
 
 ## Verification
