@@ -34,7 +34,8 @@ describe('webview / capture layout parity', () => {
     });
 
     assert.strictEqual(element.props.style.flexGrow, 2);
-    assert.strictEqual(element.props.style.flexShrink, 0);
+    // width:'0' + flexGrow > 0 → column must be able to shrink below minWidth at narrow panels
+    assert.strictEqual(element.props.style.flexShrink, 1);
     assert.strictEqual(element.props.style.flexBasis, '0');
     assert.strictEqual(element.props.style.width, '0');
     assert.strictEqual(element.props.style.minWidth, '36rem');
