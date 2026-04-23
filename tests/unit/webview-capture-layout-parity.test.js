@@ -10,6 +10,7 @@ const {
 const { Container } = require('../../out/renderer/components/Container');
 const { renderPageComponentsToStaticHtml } = require('../../out/exporters/react-static-export');
 const { buildHtmlDocument } = require('../../out/exporters/html-template-builder');
+const { loadDslWithIncludesFromPath } = require('../../out/dsl/load-dsl-with-includes');
 
 describe('webview / capture layout parity', () => {
   const repoRoot = path.resolve(__dirname, '../..');
@@ -68,5 +69,23 @@ describe('webview / capture layout parity', () => {
     assert.ok(html.includes(`<div id="root" class="${PREVIEW_SHELL_ROOT_CLASS}">`));
     assert.ok(!html.includes('class="textui-preview-root"'));
     assert.ok(!html.includes('padding:1.5rem'));
+  });
+
+  it('Pattern B (reviewer-drilldown): multi-column layout is wrapped in PreviewShellCore frame', () => {
+    const fixtureB = path.resolve(__dirname, '../../docs/future/semantic/webview-layout-v2/pattern-b-reviewer-drilldown.tui.yml');
+    const { dsl } = loadDslWithIncludesFromPath(fixtureB);
+    const html = renderPageComponentsToStaticHtml(dsl.page.components);
+
+    assert.ok(html.startsWith('<div class="textui-preview-root"'), 'PreviewShellCore frame must wrap Pattern B output');
+    assert.ok(html.includes('60%') || html.includes('width:60%') || html.includes('60'), 'width-percent column must appear in output');
+  });
+
+  it('Pattern C (evidence-audit): horizontal container is wrapped in PreviewShellCore frame', () => {
+    const fixtureC = path.resolve(__dirname, '../../docs/future/semantic/webview-layout-v2/pattern-c-evidence-audit.tui.yml');
+    const { dsl } = loadDslWithIncludesFromPath(fixtureC);
+    const html = renderPageComponentsToStaticHtml(dsl.page.components);
+
+    assert.ok(html.startsWith('<div class="textui-preview-root"'), 'PreviewShellCore frame must wrap Pattern C output');
+    assert.ok(html.includes('Evidence Audit') || html.includes('evidence'), 'Pattern C content must appear in output');
   });
 });

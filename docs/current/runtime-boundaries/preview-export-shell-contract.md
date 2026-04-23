@@ -41,3 +41,15 @@ If any of the shell rules above changes, update:
 - this document
 - `tests/unit/webview-capture-layout-parity.test.js`
 - any follow-up `PreviewShellCore` implementation ticket that depends on the baseline
+
+## Pattern Fixtures Covered By Guard
+
+The parity guard test (`tests/unit/webview-capture-layout-parity.test.js`) covers the following layout patterns:
+
+| Pattern | Fixture file | Key property tested |
+| --- | --- | --- |
+| Pattern A (component-level) | inline in test | PreviewShellCore wraps single component |
+| Pattern B (reviewer-drilldown) | `docs/future/semantic/webview-layout-v2/pattern-b-reviewer-drilldown.tui.yml` | PreviewShellCore wraps 60%/40% multi-column layout |
+| Pattern C (evidence-audit) | `docs/future/semantic/webview-layout-v2/pattern-c-evidence-audit.tui.yml` | PreviewShellCore wraps horizontal evidence container |
+
+When adding a new shell rule that affects layout width, add a representative pattern to the guard table above and a corresponding test case.
