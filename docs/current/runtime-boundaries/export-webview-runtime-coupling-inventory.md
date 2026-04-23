@@ -26,4 +26,5 @@
 
 - TextUI-Designer-Doc: `Tasks/Inbox-PM/Archive/2026-03-21_Architect_reply_PM_backlog_EF_next.md`（Architect バックログ回答・処理済み）
 - [exporter-boundary-guide.md](exporter-boundary-guide.md)
+- [preview-export-shell-contract.md](preview-export-shell-contract.md)
 - [observability-and-cache-boundary.md](observability-and-cache-boundary.md)
