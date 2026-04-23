@@ -1,0 +1,132 @@
+page:
+  id: semantic-diff-v2-reviewer-drilldown
+  title: Semantic Diff v2 - Reviewer Drilldown
+  layout: vertical
+  components:
+    - Breadcrumb:
+        separator: ">"
+        items:
+          - label: "screen_checkout"
+          - label: "entity_payment"
+          - label: "cmp_card_form"
+    - Container:
+        layout: horizontal
+        components:
+          - Container:
+              layout: vertical
+              width: "60%"
+              components:
+                - Text:
+                    variant: h1
+                    value: "cmp_card_form"
+                - Text:
+                    variant: p
+                    value: "選択中コンポーネントの semantic diff をレビューし、承認・要確認・所有者確認を判断する画面。"
+          - Container:
+              layout: horizontal
+              width: "40%"
+              components:
+                - Badge:
+                    label: "low confidence"
+                    variant: error
+                - Badge:
+                    label: "review required"
+                    variant: warning
+                - Button:
+                    label: Mark reviewed
+                    kind: primary
+    - Divider:
+        orientation: horizontal
+    - Tabs:
+        defaultTab: 0
+        items:
+          - label: Review Required
+            components:
+              - Table:
+                  striped: true
+                  rowHover: true
+                  columns:
+                    - key: axis
+                      header: Axis
+                      width: "22%"
+                    - key: event
+                      header: diff_event
+                      width: "30%"
+                    - key: before
+                      header: Before
+                      width: "24%"
+                    - key: after
+                      header: After
+                      width: "24%"
+                  rows:
+                    - axis: "data contract"
+                      event: "data_contract.field_requiredness"
+                      before: "securityCode optional"
+                      after: "securityCode required"
+                    - axis: "state machine"
+                      event: "state_machine.transition"
+                      before: "submit -> review"
+                      after: "submit -> processing"
+              - Accordion:
+                  allowMultiple: true
+                  items:
+                    - title: "Decision: data_contract.field_requiredness"
+                      open: true
+                      content: "target_id=cmp_card_form, confidence_band=low, confidence=0.48, review_status=review_required"
+                    - title: "Explanation"
+                      content: "requiredness の変化は入力失敗率に影響する可能性がある。フォーム owner の確認対象。"
+                    - title: "Evidence"
+                      content: "sourceRef: screens/checkout.tui.yml#/page/components/payment/fields/securityCode"
+          - label: High Confidence
+            components:
+              - Table:
+                  striped: true
+                  columns:
+                    - key: target
+                      header: Target
+                    - key: event
+                      header: diff_event
+                    - key: confidence
+                      header: Confidence
+                    - key: status
+                      header: Review
+                  rows:
+                    - target: "cmp_submit_order"
+                      event: "component_action_changed"
+                      confidence: "0.92"
+                      status: "accepted"
+                    - target: "entity_receipt"
+                      event: "entity_added"
+                      confidence: "0.88"
+                      status: "accepted"
+          - label: Copy and Locale
+            components:
+              - Alert:
+                  variant: info
+                  message: "Copy review: message_string 変更は UX copy owner の確認対象としてまとめて表示する。"
+              - Table:
+                  columns:
+                    - key: target
+                      header: Target
+                    - key: before
+                      header: Before
+                    - key: after
+                      header: After
+                  rows:
+                    - target: "cmp_shipping_notice"
+                      before: "Ships in 3 days"
+                      after: "Arrives in 3 business days"
+    - Spacer:
+        size: md
+    - Container:
+        layout: horizontal
+        components:
+          - Button:
+              label: Accept selected
+              kind: primary
+          - Button:
+              label: Assign owner
+              kind: secondary
+          - Button:
+              label: Open source
+              kind: secondary

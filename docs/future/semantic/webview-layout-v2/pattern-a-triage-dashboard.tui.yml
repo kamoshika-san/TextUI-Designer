@@ -1,0 +1,142 @@
+page:
+  id: semantic-diff-v2-triage-dashboard
+  title: Semantic Diff v2 - Triage Dashboard
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: Semantic Diff v2
+    - Text:
+        variant: p
+        value: "Triage view for Screen -> Entity -> Component -> diffs[]."
+    - Container:
+        layout: horizontal
+        components:
+          - Badge:
+              label: "12 diffs"
+              variant: primary
+          - Badge:
+              label: "3 review required"
+              variant: warning
+          - Badge:
+              label: "1 low confidence"
+              variant: error
+          - Progress:
+              label: Confidence distribution
+              showValue: true
+              segments:
+                - value: 67
+                  label: high
+                  variant: success
+                - value: 25
+                  label: medium
+                  variant: warning
+                - value: 8
+                  label: low
+                  variant: error
+    - Divider:
+        orientation: horizontal
+    - Container:
+        layout: horizontal
+        components:
+          - Container:
+              layout: vertical
+              width: "16rem"
+              flexGrow: 0
+              minWidth: "14rem"
+              components:
+                - Text:
+                    variant: h2
+                    value: Scope
+                - TreeView:
+                    showLines: true
+                    items:
+                      - label: "screen_checkout"
+                        icon: screen
+                        expanded: true
+                        children:
+                          - label: "entity_cart"
+                            icon: entity
+                            expanded: true
+                            children:
+                              - label: "cmp_submit_order"
+                                icon: component
+                              - label: "cmp_shipping_notice"
+                                icon: component
+                          - label: "entity_payment"
+                            icon: entity
+                            children:
+                              - label: "cmp_card_form"
+                                icon: component
+                      - label: "screen_confirmation"
+                        icon: screen
+                        children:
+                          - label: "entity_receipt"
+                            icon: entity
+          - Container:
+              layout: vertical
+              width: "0"
+              flexGrow: 2
+              minWidth: "36rem"
+              components:
+                - Text:
+                    variant: h2
+                    value: Diff Events
+                - Table:
+                    striped: true
+                    rowHover: true
+                    columns:
+                      - key: target
+                        header: Target
+                        width: "28%"
+                      - key: event
+                        header: diff_event
+                        width: "30%"
+                      - key: confidence
+                        header: Conf.
+                        width: "16%"
+                      - key: status
+                        header: Review
+                        width: "26%"
+                    rows:
+                      - target: "cmp_submit_order"
+                        event: "component_action_changed"
+                        confidence: "high 0.92"
+                        status: "accepted"
+                      - target: "cmp_shipping_notice"
+                        event: "copy_locale.message"
+                        confidence: "medium 0.71"
+                        status: "review required"
+                      - target: "cmp_card_form"
+                        event: "field_requiredness"
+                        confidence: "low 0.48"
+                        status: "needs owner"
+                      - target: "entity_receipt"
+                        event: "entity_added"
+                        confidence: "high 0.88"
+                        status: "accepted"
+          - Container:
+              layout: vertical
+              width: "0"
+              flexGrow: 1
+              minWidth: "22rem"
+              components:
+                - Text:
+                    variant: h2
+                    value: Evidence
+                - Alert:
+                    variant: warning
+                    message: "Current focus: cmp_shipping_notice. Check copy locale predicate."
+                - Accordion:
+                    allowMultiple: true
+                    items:
+                      - title: "decision"
+                        open: true
+                        content: "diff_event=copy_locale.message, confidence_band=medium, confidence=0.71, target_id=cmp_shipping_notice"
+                      - title: "explanation"
+                        content: "before_predicate and after_predicate show a message change within the same entity."
+                      - title: "evidence summary"
+                        content: "sourceRef: screens/checkout.tui.yml#/page/components/2, evidence_shape=copy_locale.message"
+                - Button:
+                    label: Open source
+                    kind: secondary

@@ -1,0 +1,135 @@
+page:
+  id: semantic-diff-v2-evidence-audit
+  title: Semantic Diff v2 - Evidence Audit
+  layout: vertical
+  components:
+    - Text:
+        variant: h1
+        value: Evidence Audit
+    - Text:
+        variant: p
+        value: "semantic diff v2 の decision と explanation を根拠から検証する監査向けレイアウト。"
+    - Container:
+        layout: horizontal
+        components:
+          - Progress:
+              label: Confidence bands
+              showValue: true
+              segments:
+                - value: 8
+                  label: low
+                  variant: error
+                - value: 25
+                  label: medium
+                  variant: warning
+                - value: 67
+                  label: high
+                  variant: success
+          - Badge:
+              label: "4 evidence shapes"
+              variant: primary
+          - Badge:
+              label: "2 predicate changes"
+              variant: warning
+          - Badge:
+              label: "1 degraded result"
+              variant: error
+    - Divider:
+        orientation: horizontal
+    - Container:
+        layout: horizontal
+        components:
+          - Container:
+              layout: vertical
+              width: "28%"
+              components:
+                - Text:
+                    variant: h2
+                    value: Evidence Paths
+                - TreeView:
+                    showLines: true
+                    expandAll: true
+                    items:
+                      - label: "screen_checkout"
+                        icon: screen
+                        children:
+                          - label: "entity_payment"
+                            icon: entity
+                            children:
+                              - label: "cmp_card_form"
+                                icon: component
+                                children:
+                                  - label: "data_contract.field_requiredness"
+                                    icon: evidence
+                                  - label: "state_machine.transition"
+                                    icon: evidence
+                          - label: "entity_cart"
+                            icon: entity
+                            children:
+                              - label: "cmp_shipping_notice"
+                                icon: component
+                                children:
+                                  - label: "copy_locale.message_string"
+                                    icon: evidence
+          - Container:
+              layout: vertical
+              width: "42%"
+              components:
+                - Text:
+                    variant: h2
+                    value: Canonical Predicates
+                - Table:
+                    striped: true
+                    rowHover: true
+                    columns:
+                      - key: target
+                        header: Target
+                        width: "24%"
+                      - key: predicate
+                        header: Predicate
+                        width: "34%"
+                      - key: before
+                        header: Before
+                        width: "21%"
+                      - key: after
+                        header: After
+                        width: "21%"
+                    rows:
+                      - target: "cmp_card_form"
+                        predicate: "field.requiredness(securityCode)"
+                        before: "optional"
+                        after: "required"
+                      - target: "cmp_card_form"
+                        predicate: "transition.submit.destination"
+                        before: "review"
+                        after: "processing"
+                      - target: "cmp_shipping_notice"
+                        predicate: "message.en"
+                        before: "Ships in 3 days"
+                        after: "Arrives in 3 business days"
+                - Alert:
+                    variant: info
+                    message: "Audit note: canonical predicate の before/after が説明文と一致するかを確認する。"
+          - Container:
+              layout: vertical
+              width: "30%"
+              components:
+                - Text:
+                    variant: h2
+                    value: Explanation Detail
+                - Accordion:
+                    allowMultiple: true
+                    items:
+                      - title: "before_predicate"
+                        open: true
+                        content: "field.requiredness(securityCode)=optional; transition.submit.destination=review"
+                      - title: "after_predicate"
+                        open: true
+                        content: "field.requiredness(securityCode)=required; transition.submit.destination=processing"
+                      - title: "confidence rationale"
+                        content: "requiredness は低信頼。transition は同一 trigger の destination 変更として中信頼。"
+                      - title: "source refs"
+                        content: "screens/checkout.tui.yml#/page/components/payment/fields/securityCode; screens/checkout.tui.yml#/page/components/payment/actions/submit"
+                - Button:
+                    label: Export audit note
+                    kind: secondary
