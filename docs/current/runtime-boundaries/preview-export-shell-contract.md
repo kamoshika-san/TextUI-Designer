@@ -13,10 +13,9 @@ Use it when investigating width drift between WebView preview and HTML export / 
 | Lane | Owner file | Width-affecting rule | Notes |
 | --- | --- | --- | --- |
 | WebView document | `src/renderer/components/styles/Globals.css` | `body { padding: 0 20px; }` | Adds horizontal inset before `#root` exists |
-| WebView root | `src/renderer/components/styles/Globals.css` | `#root { padding: 1rem; min-height: 100vh; }` | Applies only in WebView DOM, not static export body |
-| WebView preview shell | `src/renderer/webview.tsx` | `.textui-preview-root` host rendered with `style={{ padding: 24, position: 'relative' }}` | Shared component tree is mounted inside this shell |
-| Static export wrapper | `src/exporters/react-static-export.ts` | outer wrapper `div` uses `width: '100%'`, `maxWidth: '100%'`, `padding: 24` | This is the export-side approximation of the preview shell |
-| HTML document shell | `src/exporters/html-template-builder.ts` | export `body` uses `padding: 0`; `html, body { max-width: 100%; overflow-x: auto; }` | No `#root` / `.textui-preview-root` structure exists in export HTML |
+| Shared root shell | `src/shared/preview-shell.tsx`, `src/renderer/components/styles/Globals.css` | `#root, .textui-preview-shell-root { padding: 1rem; min-height: 100vh; }` | Export/capture recreates the same root shell class used by WebView |
+| Shared preview frame | `src/shared/preview-shell.tsx`, `src/renderer/components/styles/Globals.css` | `PreviewShellCore` renders `.textui-preview-root` with `width: 100%`, `maxWidth: 100%`, `padding: 24`, `position: relative` | Shared component tree is mounted inside the same frame in WebView and export |
+| HTML document shell | `src/exporters/html-template-builder.ts` | export `body` now uses `padding: 0 20px` and wraps body content with `<div id="root" class="textui-preview-shell-root">...</div>` | `noWrap` export now recreates the WebView root shell contract instead of approximating it |
 
 ## Why Pattern A Drifts
 
@@ -27,11 +26,12 @@ Use it when investigating width drift between WebView preview and HTML export / 
 - right `width: "0"`, `flexGrow: 1`, `minWidth: "22rem"`
 
 This makes parent available width part of the layout contract.
-Even when `Container` itself is shared, WebView and export/capture can diverge because they do not share the same outer shell.
+Even when `Container` itself is shared, WebView and export/capture can diverge if they do not share the same outer shell.
+`PreviewShellCore` closes that gap by moving the width-affecting preview frame into a shared React helper and by recreating the root shell in export HTML.
 
 ## Design Boundary For Follow-up
 
-- Shared later: shell core that affects width calculation
+- Shared now: shell core that affects width calculation (`PreviewShellCore`, root shell wrapper, export body padding)
 - Keep lane-specific: WebView-only adornments such as Export button, Theme toggle, Jump to DSL affordances, onboarding, VS Code wiring
 
 ## Guard Expectation

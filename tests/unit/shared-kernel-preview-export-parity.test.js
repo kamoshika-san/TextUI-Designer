@@ -16,6 +16,7 @@ const { renderSharedRegisteredOutput } = require('../../out/renderer/registered-
 const { renderPageComponentsToStaticHtml } = require('../../out/exporters/react-static-export');
 const { createComponentKeys } = require('../../out/renderer/preview-diff');
 const { registerBuiltInComponents } = require('../../out/renderer/component-map');
+const { PreviewShellCore } = require('../../out/shared/preview-shell');
 
 describe('shared kernel: preview vs export inner markup parity (T-195)', () => {
   before(() => {
@@ -79,8 +80,8 @@ describe('shared kernel: preview vs export inner markup parity (T-195)', () => {
     const staticHtml = renderPageComponentsToStaticHtml(components);
     const fromSharedOnly = renderToStaticMarkup(
       React.createElement(
-        'div',
-        { style: { boxSizing: 'border-box', width: '100%', maxWidth: '100%', padding: 24 } },
+        PreviewShellCore,
+        null,
         ...components.map((comp, i) => renderSharedRegisteredOutput(comp, keys[i] ?? i, undefined).node)
       )
     );

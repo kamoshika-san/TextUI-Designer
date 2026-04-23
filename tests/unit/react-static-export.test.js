@@ -62,6 +62,7 @@ describe('React static export (renderToStaticMarkup)', () => {
 
   it('renders an empty component list as a padded root div', () => {
     const html = renderPageComponentsToStaticHtml([]);
+    assert.ok(html.includes('class="textui-preview-root"'));
     assert.ok(html.includes('padding:24px') || html.includes('padding: 24px'));
     assert.ok(html.includes('<div'));
   });

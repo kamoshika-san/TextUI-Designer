@@ -24,6 +24,7 @@ import { UpdateIndicator } from './components/UpdateIndicator';
 import { useWebviewMessages } from './use-webview-messages';
 import { attachDevToolsListener } from './devtools-listener';
 import { getSharedLayoutStyles } from '../shared/layout-styles';
+import { getPreviewShellClassName, PreviewShellCore } from '../shared/preview-shell';
 import type { PreviewUpdateStatus } from './preview-update-status';
 import {
   persistJumpToDslOnboardingDismissed,
@@ -366,10 +367,7 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
 
   if (isNavigationFlowDSL(json)) {
     return (
-      <div
-        className={showJumpToDslHoverIndicator ? 'textui-preview-root' : 'textui-preview-root textui-preview-root-hide-jump-hover'}
-        style={{ padding: 24, position: 'relative' }}
-      >
+      <PreviewShellCore className={getPreviewShellClassName(showJumpToDslHoverIndicator)}>
         <div style={{ position: 'fixed', top: '1rem', right: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center', zIndex: 1000, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <ThemeToggle />
           <CustomThemeSelector />
@@ -477,7 +475,7 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
             <ErrorPanel error={error} />
           </div>
         ) : null}
-      </div>
+      </PreviewShellCore>
     );
   }
 
@@ -494,10 +492,7 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
   prevComponentsKeysRef.current = { components, keys: componentKeys };
 
   return (
-    <div
-      className={showJumpToDslHoverIndicator ? 'textui-preview-root' : 'textui-preview-root textui-preview-root-hide-jump-hover'}
-      style={{ padding: 24, position: 'relative' }}
-    >
+    <PreviewShellCore className={getPreviewShellClassName(showJumpToDslHoverIndicator)}>
 {showJumpToDslOnboarding ? (
         <div
           style={{
@@ -762,7 +757,7 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
           <ErrorPanel error={error} />
         </div>
       ) : null}
-    </div>
+    </PreviewShellCore>
   );
 };
 

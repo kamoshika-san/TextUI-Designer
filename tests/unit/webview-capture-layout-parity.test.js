@@ -2,6 +2,11 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { getSharedLayoutStyles } = require('../../out/shared/layout-styles');
+const {
+  PREVIEW_SHELL_BODY_CLASS,
+  PREVIEW_SHELL_FRAME_STYLE,
+  PREVIEW_SHELL_ROOT_CLASS
+} = require('../../out/shared/preview-shell');
 const { Container } = require('../../out/renderer/components/Container');
 const { renderPageComponentsToStaticHtml } = require('../../out/exporters/react-static-export');
 const { buildHtmlDocument } = require('../../out/exporters/html-template-builder');
@@ -42,23 +47,26 @@ describe('webview / capture layout parity', () => {
 
     assert.ok(globalsCss.includes('body {'));
     assert.ok(globalsCss.includes('padding: 0 20px;'));
-    assert.ok(globalsCss.includes('#root {'));
+    assert.ok(globalsCss.includes('#root,'));
     assert.ok(globalsCss.includes('padding: 1rem;'));
+    assert.ok(globalsCss.includes('width: 100%;'));
+    assert.ok(globalsCss.includes('padding: 24px;'));
   });
 
-  it('keeps the current export shell wrapper as a thin 24px padded container', () => {
+  it('wraps export output in the same PreviewShellCore frame used by WebView', () => {
     const html = renderPageComponentsToStaticHtml([{ Text: { value: 'shell baseline' } }]);
 
-    assert.ok(html.startsWith('<div style="box-sizing:border-box;width:100%;max-width:100%;padding:24px">'));
+    assert.ok(html.startsWith('<div class="textui-preview-root"'));
+    assert.ok(html.includes(`padding:${PREVIEW_SHELL_FRAME_STYLE.padding}px`) || html.includes(`padding: ${PREVIEW_SHELL_FRAME_STYLE.padding}px`));
     assert.ok(html.includes('shell baseline'));
   });
 
-  it('documents that noWrap export does not recreate WebView root chrome', () => {
+  it('recreates the WebView root shell in noWrap export documents', () => {
     const html = buildHtmlDocument('<div>body</div>', '', { noWrap: true });
 
-    assert.ok(html.includes('<body class="bg-gray-900 text-gray-300 min-h-screen">'));
-    assert.ok(!html.includes('id="root"'));
-    assert.ok(!html.includes('textui-preview-root'));
+    assert.ok(html.includes(`<body class="bg-gray-900 text-gray-300 min-h-screen ${PREVIEW_SHELL_BODY_CLASS}">`));
+    assert.ok(html.includes(`<div id="root" class="${PREVIEW_SHELL_ROOT_CLASS}">`));
+    assert.ok(!html.includes('class="textui-preview-root"'));
     assert.ok(!html.includes('padding:1.5rem'));
   });
 });

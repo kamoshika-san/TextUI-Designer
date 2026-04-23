@@ -53,18 +53,18 @@ describe('HtmlExporter primary sample regression (T-20260322-348)', () => {
   [
     {
       sampleRelativePath: 'sample/01-basic/sample.tui.yml',
-      expectedHash: '7159e5e433dbf2a712476e6ae8efbf0eeaaace2ecfc2bc1f775849a1d9db94cd', // T-042–044: Button.css danger/ghost/disabled in default export style path
+      expectedHash: '1d365fc09ecdf7e6247cf0b25055c4eebf0c60891b3b436b1d082d55fae420d0', // PreviewShellCore + export root shell parity
       markers: ['TextUI Designer - All Components', 'This sample includes every supported component.', 'Agree to terms']
     },
     {
       sampleRelativePath: 'sample/08-github/sample.tui.yml',
-      expectedHash: '34cc4374e33c0e8fdbb426d508b48c951b42afb93ee9385577ed1eda9a3f6654', // T-042–044: bundled default export CSS drift (Button.css)
+      expectedHash: '3f160d1c37977c5688664054e5c190a65edebd5c7fbd2347bda8801278157908', // PreviewShellCore + export root shell parity
       markers: ['kamoshika-san / TextUI-Designer', 'VS Code extension for designing text-based UIs with YAML/JSON DSL.', 'Pull requests']
     },
     {
       sampleRelativePath: 'sample/09-modal/sample.tui.yml',
-      expectedHash: '46dbf8850e8f08188ba3d2247310ba5a384113474698801c6a04f59500e89954', // T-042–044: modal footer buttons + default export CSS
-      markers: ['削除の確認', 'この操作は元に戻せません', '削除する', 'ユーザー詳細']
+      expectedHash: 'a826a78acf0cccf436273faff55de5c67542f1216b244a8a3ed0a0f8eefb98b9', // PreviewShellCore + export root shell parity
+      markers: ['textui-modal-title', 'textui-modal-body', 'textui-modal-footer', 'textui-modal-card']
     }
   ].forEach(({ sampleRelativePath, expectedHash, markers }) => {
     it(`${sampleRelativePath} stays stable on the Primary HTML path`, async () => {

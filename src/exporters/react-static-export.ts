@@ -8,6 +8,7 @@ import type { ComponentDef } from '../domain/dsl-types';
 import { createComponentKeys } from '../renderer/preview-diff';
 import { registerBuiltInComponents, renderRegisteredComponent } from '../renderer/component-map';
 import { getStaticHtmlRenderContext } from './static-html-render-adapter';
+import { PreviewShellCore } from '../shared/preview-shell';
 
 /**
  * Build static HTML from page components using the primary React-based path.
@@ -24,6 +25,6 @@ export function renderPageComponentsToStaticHtml(components: ComponentDef[]): st
   );
 
   return renderToStaticMarkup(
-    React.createElement('div', { style: { boxSizing: 'border-box', width: '100%', maxWidth: '100%', padding: 24 } }, ...children)
+    React.createElement(PreviewShellCore, null, ...children)
   );
 }
