@@ -353,7 +353,7 @@ jobs:
     # docs/current/ci-webview-artifact-strategy-t015.md
 
   build:
-    name: Build Extension
+    name: Build & Package VSIX
     permissions:
       contents: read
     runs-on: ubuntu-latest
@@ -374,15 +374,11 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    # build-webview is NOT run in this job: media/ artifacts are committed; the packaged
-    # .vsix uses those files. Drift vs sources is enforced by the `webview-media-drift`
-    # CI job (`npm run check:webview-media-drift`). After changing webview sources, run
-    # `npm run build-webview`, commit updated `media/`, and ensure that check passes locally.
-    - name: Build extension
-      run: npm run compile
-    
-    - name: Package extension
-      run: npm run package
+    # Artifact contract (T-050): this job's artifact is the generated `.vsix` from
+    # `npm run package:vsix`. It is a release-candidate package for validation/distribution,
+    # but this workflow does not publish a release automatically.
+    - name: Build and package VSIX
+      run: npm run package:vsix
     
     - name: Upload build artifacts
       if: success()
