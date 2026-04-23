@@ -1,5 +1,4 @@
 import type { NavigationFlowDSL, TextUIDSL } from '../domain/dsl-types';
-import { isNavigationFlowDSL } from '../domain/dsl-types';
 import { loadDslWithIncludesFromPath } from '../dsl/load-dsl-with-includes';
 import { CacheManager } from '../utils/cache-manager';
 import { DiffManager } from './metrics/diff-manager';
@@ -7,17 +6,15 @@ import { PerformanceMonitor } from '../utils/performance-monitor';
 import { ConfigManager } from '../utils/config-manager';
 import type { ExportOptions, Exporter } from './export-types';
 import { populateBuiltInExporters } from './built-in-exporter-registry';
-import type { ExportPipelineDeps } from './export-pipeline';
+import type { ExportPipelineDeps, ExportWithDiffUpdateResult } from './export-pipeline';
 import { runExportWithDiffUpdate, runOptimizedExport } from './export-pipeline';
 import { runBatchExport } from './export-batch';
 import { createPerformanceMonitorExportObserver } from './export-metrics-observer';
-import {
-  buildRenderTargetsFromDiffResult,
-  createDiffResultSkeleton,
-  createNormalizedDiffDocument,
-  type DiffRenderTarget
-} from '../core/textui-core-diff';
 import { Logger } from '../utils/logger';
+import { ExportRoutePolicy } from './export-route-policy';
+import { ExportSnapshotState } from './export-snapshot-state';
+import { ExportObservabilityRecorder } from './export-observability-recorder';
+import { ExportExecutionFacade } from './export-execution-facade';
 
 /**
  * ユーザー向けの export 結果を組み立てる **本流**（ファイル読込・形式に応じた `Exporter`・`CacheManager`）と、
@@ -28,14 +25,13 @@ import { Logger } from '../utils/logger';
  */
 export class ExportManager {
   private exporters: Map<string, Exporter> = new Map();
-  private cacheManager: CacheManager;
-  private diffManager: DiffManager;
-  private performanceMonitor: PerformanceMonitor;
+  private readonly cacheManager: CacheManager;
+  private readonly diffManager: DiffManager;
+  private readonly performanceMonitor: PerformanceMonitor;
   private readonly maxConcurrentOperations: number;
-  private readonly exportSnapshots = new Map<string, TextUIDSL>();
-  private readonly logger = new Logger('ExportManager');
-  /** Last reason incremental route was downgraded to full rerender. Exposed for future observability. */
-  lastIncrementalDowngradeReason: string | null = null;
+  private readonly snapshotState: ExportSnapshotState;
+  private readonly observability: ExportObservabilityRecorder;
+  private readonly executionFacade: ExportExecutionFacade;
 
   constructor() {
     populateBuiltInExporters(this.exporters);
@@ -50,7 +46,27 @@ export class ExportManager {
 
     this.diffManager = new DiffManager();
     this.performanceMonitor = PerformanceMonitor.getInstance();
+    this.snapshotState = new ExportSnapshotState();
+    const routePolicy = new ExportRoutePolicy(this.snapshotState);
+    const logger = new Logger('ExportManager');
+    this.observability = new ExportObservabilityRecorder(this.performanceMonitor, logger);
+    this.executionFacade = new ExportExecutionFacade({
+      routePolicy,
+      snapshotState: this.snapshotState,
+      observability: this.observability,
+      pipelineDeps: () => this.pipelineDeps(),
+      runNavigationExporter: (dsl, options) => this.runNavigationExporter(dsl, options),
+      exportWithDiffUpdate: (dsl, options) => this.exportWithDiffUpdate(dsl, options)
+    });
 
+  }
+
+  get lastIncrementalDowngradeReason(): string | null {
+    return this.observability.lastIncrementalDowngradeReason;
+  }
+
+  set lastIncrementalDowngradeReason(reason: string | null) {
+    this.observability.setLastIncrementalDowngradeReason(reason);
   }
 
   private pipelineDeps(): ExportPipelineDeps {
@@ -89,111 +105,13 @@ export class ExportManager {
           ...options,
           sourcePath: options.sourcePath ?? filePath
         };
-        this.lastIncrementalDowngradeReason = null;
-
-        let result: string;
-        if (!isNavigationFlowDSL(dsl) && this.shouldAttemptIncrementalRoute(normalizedOptions)) {
-          const incrementalDecisionStart = performance.now();
-          const incrementalTargets = this.buildIncrementalRenderTargets(dsl, normalizedOptions);
-          if (incrementalTargets) {
-            const incrementalResult = await this.tryIncrementalExport(
-              dsl,
-              normalizedOptions,
-              incrementalTargets,
-              incrementalDecisionStart
-            );
-            if (incrementalResult !== undefined) {
-              result = incrementalResult;
-            } else {
-              result = await this.runMeasuredFullRender(dsl, normalizedOptions, 'fallback');
-            }
-          } else {
-            this.recordIncrementalFallbackSample(incrementalDecisionStart, 'preflight');
-            result = await this.runMeasuredFullRender(dsl, normalizedOptions, 'fallback');
-          }
-        } else {
-          result = await this.runMeasuredFullRender(dsl, normalizedOptions, 'direct');
-        }
-
-        if (normalizedOptions.sourcePath && !isNavigationFlowDSL(dsl)) {
-          this.exportSnapshots.set(normalizedOptions.sourcePath, dsl);
-        }
+        const result = await this.executionFacade.export(dsl, normalizedOptions);
+        this.executionFacade.rememberSnapshotIfPossible(dsl, normalizedOptions.sourcePath);
         return result;
       } catch (error) {
         throw new Error(`Export failed: ${error instanceof Error ? error.message : String(error)}`);
       }
     });
-  }
-
-  private isValidIncrementalResult(result: {
-    result: string;
-    isFullUpdate: boolean;
-    changedComponents: number[];
-  }): boolean {
-    return typeof result.result === 'string' && result.result.length > 0 && Array.isArray(result.changedComponents);
-  }
-
-  private async tryIncrementalExport(
-    dsl: TextUIDSL,
-    options: ExportOptions,
-    incrementalTargets: DiffRenderTarget[],
-    startedAt: number
-  ): Promise<string | undefined> {
-    try {
-      const incrementalResult = await this.exportWithDiffUpdate(dsl, {
-        ...options,
-        incrementalRenderTargets: incrementalTargets
-      });
-
-      if (!this.isValidIncrementalResult(incrementalResult)) {
-        const reason = 'invalid-incremental-result';
-        this.lastIncrementalDowngradeReason = reason;
-        this.recordIncrementalFallbackSample(startedAt, 'invalid-result');
-        this.logger.warn(`Incremental route downgraded to full rerender - ${reason}`);
-        return undefined;
-      }
-
-      this.lastIncrementalDowngradeReason = null;
-      this.performanceMonitor.recordIncrementalRouteSample(
-        'incremental-diff',
-        performance.now() - startedAt,
-        { outcome: 'success' }
-      );
-      return incrementalResult.result;
-    } catch (error) {
-      const reason = `incremental-route-error: ${error instanceof Error ? error.message : String(error)}`;
-      this.lastIncrementalDowngradeReason = reason;
-      this.recordIncrementalFallbackSample(startedAt, 'execution-error');
-      this.logger.warn(`Incremental route downgraded to full rerender - ${reason}`);
-      return undefined;
-    }
-  }
-
-  private shouldAttemptIncrementalRoute(options: ExportOptions): boolean {
-    return options.enableIncrementalDiffRoute === true
-      && !!options.sourcePath
-      && this.exportSnapshots.has(options.sourcePath);
-  }
-
-  private async runMeasuredFullRender(
-    dsl: TextUIDSL | NavigationFlowDSL,
-    options: ExportOptions,
-    trigger: 'direct' | 'fallback'
-  ): Promise<string> {
-    const startedAt = performance.now();
-    const result = isNavigationFlowDSL(dsl)
-      ? await this.runNavigationExporter(dsl, options)
-      : await runOptimizedExport(dsl, options, this.pipelineDeps());
-    this.performanceMonitor.recordIncrementalRouteSample(
-      'full-render',
-      performance.now() - startedAt,
-      {
-        trigger,
-        outcome: 'success',
-        fallbackReason: trigger === 'fallback' ? this.lastIncrementalDowngradeReason : undefined
-      }
-    );
-    return result;
   }
 
   private async runNavigationExporter(dsl: NavigationFlowDSL, options: ExportOptions): Promise<string> {
@@ -204,76 +122,13 @@ export class ExportManager {
     return exporter.export(dsl, options);
   }
 
-  private recordIncrementalFallbackSample(
-    startedAt: number,
-    failureKind: 'preflight' | 'execution-error' | 'invalid-result'
-  ): void {
-    this.performanceMonitor.recordIncrementalRouteSample(
-      'incremental-diff',
-      performance.now() - startedAt,
-      {
-        outcome: 'fallback',
-        failureKind,
-        fallbackReason: this.lastIncrementalDowngradeReason
-      }
-    );
-  }
-
-  private buildIncrementalRenderTargets(
-    dsl: TextUIDSL,
-    options: ExportOptions
-  ): DiffRenderTarget[] | undefined {
-    const sourcePath = options.sourcePath;
-    if (options.enableIncrementalDiffRoute !== true || !sourcePath) {
-      return undefined;
-    }
-    const previousDsl = this.exportSnapshots.get(sourcePath);
-    if (!previousDsl) {
-      return undefined;
-    }
-
-    let renderTargets: DiffRenderTarget[];
-    try {
-      const previous = createNormalizedDiffDocument(previousDsl, { side: 'previous', sourcePath });
-      const next = createNormalizedDiffDocument(dsl, { side: 'next', sourcePath });
-      renderTargets = buildRenderTargetsFromDiffResult(createDiffResultSkeleton(previous, next));
-    } catch (error) {
-      const reason = `diff-computation-error: ${error instanceof Error ? error.message : String(error)}`;
-      this.lastIncrementalDowngradeReason = reason;
-      this.logger.warn(`Incremental route downgraded to full rerender — ${reason}`);
-      return undefined;
-    }
-
-    if (renderTargets.length === 0) {
-      const reason = 'empty-render-targets';
-      this.lastIncrementalDowngradeReason = reason;
-      this.logger.warn(`Incremental route downgraded to full rerender — ${reason}`);
-      return undefined;
-    }
-
-    const unresolved = renderTargets.filter(t => t.resolution !== 'resolved');
-    if (unresolved.length > 0) {
-      const reason = `unresolved-targets: ${unresolved.length}/${renderTargets.length}`;
-      this.lastIncrementalDowngradeReason = reason;
-      this.logger.warn(`Incremental route downgraded to full rerender — ${reason}`);
-      return undefined;
-    }
-
-    this.lastIncrementalDowngradeReason = null;
-    return renderTargets;
-  }
-
   /**
    * キャッシュ短絡を含む経路。`DiffManager` の結果で分岐するが、**コンポーネント単位の増分描画には使わない**。
    */
   async exportWithDiffUpdate(
     dsl: TextUIDSL,
     options: ExportOptions
-  ): Promise<{
-    result: string;
-    isFullUpdate: boolean;
-    changedComponents: number[];
-  }> {
+  ): Promise<ExportWithDiffUpdateResult> {
     return runExportWithDiffUpdate(dsl, options, this.pipelineDeps(), (d, o) =>
       runOptimizedExport(d, o, this.pipelineDeps())
     );
@@ -291,7 +146,7 @@ export class ExportManager {
   clearCache(): void {
     this.cacheManager.clear();
     this.diffManager.reset();
-    this.exportSnapshots.clear();
+    this.snapshotState.clear();
   }
 
   clearFormatCache(format: string): void {
@@ -372,6 +227,6 @@ ${report}
     this.cacheManager.clear();
     this.diffManager.reset();
     this.performanceMonitor.dispose();
-    this.exportSnapshots.clear();
+    this.snapshotState.clear();
   }
 }

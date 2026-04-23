@@ -15,6 +15,12 @@ export interface ExportPipelineDeps {
   exporters: Map<string, Exporter>;
 }
 
+export interface ExportWithDiffUpdateResult {
+  result: string;
+  isFullUpdate: boolean;
+  changedComponents: number[];
+}
+
 /**
  * キャッシュ・差分メトリクス付きの 1 回のエクスポート。
  * 差分は観測用（増分レンダーには未使用）。省略は主にキャッシュヒット。
@@ -56,11 +62,7 @@ export async function runExportWithDiffUpdate(
   options: ExportOptions,
   deps: ExportPipelineDeps,
   runOptimized: (d: TextUIDSL, o: ExportOptions) => Promise<string>
-): Promise<{
-  result: string;
-  isFullUpdate: boolean;
-  changedComponents: number[];
-}> {
+): Promise<ExportWithDiffUpdateResult> {
   const diffResult = deps.diffManager.computeDiff(dsl);
 
   if (!diffResult.hasChanges) {
