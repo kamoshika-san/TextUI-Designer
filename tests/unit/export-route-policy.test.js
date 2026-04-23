@@ -58,20 +58,27 @@ describe('ExportRoutePolicy', () => {
     assert.ok(decision.renderTargets.every(target => target.resolution === 'resolved'));
   });
 
-  it('returns downgrade reason when render targets are empty', () => {
+  it('returns downgrade reason when diff computation fails', () => {
     const state = new ExportSnapshotState();
     const policy = new ExportRoutePolicy(state);
     const sourcePath = '/tmp/sample.tui.yml';
-    const sameDsl = createDsl('same');
-    state.rememberSnapshot(sourcePath, sameDsl);
+    const invalidPreviousDsl = {
+      page: {
+        id: 'broken-page',
+        title: 'broken',
+        layout: 'vertical'
+      }
+    };
+    const nextDsl = createDsl('next');
+    state.rememberSnapshot(sourcePath, invalidPreviousDsl);
 
-    const decision = policy.decideIncrementalRoute(sameDsl, {
+    const decision = policy.decideIncrementalRoute(nextDsl, {
       format: 'html',
       sourcePath,
       enableIncrementalDiffRoute: true
     });
 
     assert.strictEqual(decision.shouldAttempt, false);
-    assert.strictEqual(decision.downgradeReason, 'empty-render-targets');
+    assert.match(decision.downgradeReason || '', /^diff-computation-error:/);
   });
 });
