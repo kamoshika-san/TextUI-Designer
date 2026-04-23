@@ -87,7 +87,7 @@ Use the test lane guide for what each lane means:
 
 If the change affects contributor flow, quality gates, runtime boundaries, or canonical contracts, update the related docs in the same PR or state explicitly why no doc change is needed.
 
-Keep repository entrypoints clean: do not leave ad hoc verification files at `repo root`; move reusable experiments to `scripts/experimental/` and test-only data to `tests/fixtures/`. See [docs/current/operations/repo-root-hygiene.md](docs/current/operations/repo-root-hygiene.md).
+`repo root` の入口はクリーンに保ち、ad hoc な検証ファイルを直下に残さない。再利用する実験は `scripts/experimental/`、テスト専用データは `tests/fixtures/` へ配置する。詳細は [docs/current/operations/repo-root-hygiene.md](docs/current/operations/repo-root-hygiene.md) を参照。
 
 Use the current owner and review-cadence model when deciding which canonical page should move:
 
