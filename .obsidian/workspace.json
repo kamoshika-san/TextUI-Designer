@@ -184,6 +184,7 @@
   },
   "active": "1be5af3b58a9bb9b",
   "lastOpenFiles": [
+    "docs/current/theme-export-rendering/base-component-renderer-consumers.md",
     "tests/fixtures/theme-integration-test/sample/nested/themes/integration-nested-theme.yml",
     "tests/fixtures/theme-integration-test/sample/nested/themes",
     "tests/fixtures/theme-integration-test/sample/integration-one-theme.yml",
@@ -194,7 +195,6 @@
     "tests/fixtures/theme-integration-test/folder-b/textui-theme.yml",
     "tests/fixtures/theme-integration-test/folder-b/active-b.tui.yml",
     "tests/fixtures/theme-integration-test/folder-a/textui-theme.yml",
-    "tests/fixtures/theme-integration-test/folder-a/active-a.tui.yml",
     "docs/current/theme-export-rendering/html-exporter-primary-structure-inventory.md",
     "docs/current/theme-export-rendering/t049-fallback-removal-evidence-gate-completion.md",
     "docs/current/theme-export-rendering/t048-fallback-removal-evidence-gate-completion.md",
