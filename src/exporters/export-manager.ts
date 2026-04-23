@@ -1,20 +1,15 @@
 import type { NavigationFlowDSL, TextUIDSL } from '../domain/dsl-types';
 import { loadDslWithIncludesFromPath } from '../dsl/load-dsl-with-includes';
-import { CacheManager } from '../utils/cache-manager';
-import { DiffManager } from './metrics/diff-manager';
-import { PerformanceMonitor } from '../utils/performance-monitor';
-import { ConfigManager } from '../utils/config-manager';
+import type { PerformanceMonitor } from '../utils/performance-monitor';
 import type { ExportOptions, Exporter } from './export-types';
-import { populateBuiltInExporters } from './built-in-exporter-registry';
-import type { ExportPipelineDeps, ExportWithDiffUpdateResult } from './export-pipeline';
-import { runExportWithDiffUpdate, runOptimizedExport } from './export-pipeline';
 import { runBatchExport } from './export-batch';
-import { createPerformanceMonitorExportObserver } from './export-metrics-observer';
-import { Logger } from '../utils/logger';
-import { ExportRoutePolicy } from './export-route-policy';
-import { ExportSnapshotState } from './export-snapshot-state';
+import { ExportManagerCompositionRoot } from './export-manager-composition-root';
+import { ExporterRegistryCoordinator } from './exporter-registry-coordinator';
+import { ExportPipelineWiring } from './export-pipeline-wiring';
+import type { ExportPerformanceStats, ExportWithDiffUpdateResult } from './export-pipeline-wiring';
 import { ExportObservabilityRecorder } from './export-observability-recorder';
 import { ExportExecutionFacade } from './export-execution-facade';
+import { ExportSnapshotState } from './export-snapshot-state';
 
 /**
  * ユーザー向けの export 結果を組み立てる **本流**（ファイル読込・形式に応じた `Exporter`・`CacheManager`）と、
@@ -24,9 +19,8 @@ import { ExportExecutionFacade } from './export-execution-facade';
  * - **観測**: `DiffManager` の差分はメトリクス／レポート用（増分レンダーには未使用）。経路は `docs/current/theme-export-rendering/export-instrumentation.md` と `docs/adr/0007-export-diff-purpose.md`。
  */
 export class ExportManager {
-  private exporters: Map<string, Exporter> = new Map();
-  private readonly cacheManager: CacheManager;
-  private readonly diffManager: DiffManager;
+  private readonly registry: ExporterRegistryCoordinator;
+  private readonly pipelineWiring: ExportPipelineWiring;
   private readonly performanceMonitor: PerformanceMonitor;
   private readonly maxConcurrentOperations: number;
   private readonly snapshotState: ExportSnapshotState;
@@ -34,31 +28,21 @@ export class ExportManager {
   private readonly executionFacade: ExportExecutionFacade;
 
   constructor() {
-    populateBuiltInExporters(this.exporters);
-
-    const settings = ConfigManager.getPerformanceSettings();
-    this.maxConcurrentOperations = Math.max(1, settings.maxConcurrentOperations || 3);
-
-    this.cacheManager = new CacheManager({
-      ttl: settings.cacheTTL,
-      maxSize: 100
-    });
-
-    this.diffManager = new DiffManager();
-    this.performanceMonitor = PerformanceMonitor.getInstance();
-    this.snapshotState = new ExportSnapshotState();
-    const routePolicy = new ExportRoutePolicy(this.snapshotState);
-    const logger = new Logger('ExportManager');
-    this.observability = new ExportObservabilityRecorder(this.performanceMonitor, logger);
+    const composition = ExportManagerCompositionRoot.compose();
+    this.registry = composition.registry;
+    this.pipelineWiring = composition.pipelineWiring;
+    this.performanceMonitor = composition.performanceMonitor;
+    this.maxConcurrentOperations = composition.maxConcurrentOperations;
+    this.snapshotState = composition.snapshotState;
+    this.observability = composition.observability;
     this.executionFacade = new ExportExecutionFacade({
-      routePolicy,
+      routePolicy: composition.routePolicy,
       snapshotState: this.snapshotState,
       observability: this.observability,
-      pipelineDeps: () => this.pipelineDeps(),
+      pipelineDeps: () => this.pipelineWiring.createPipelineDeps(),
       runNavigationExporter: (dsl, options) => this.runNavigationExporter(dsl, options),
       exportWithDiffUpdate: (dsl, options) => this.exportWithDiffUpdate(dsl, options)
     });
-
   }
 
   get lastIncrementalDowngradeReason(): string | null {
@@ -69,22 +53,12 @@ export class ExportManager {
     this.observability.setLastIncrementalDowngradeReason(reason);
   }
 
-  private pipelineDeps(): ExportPipelineDeps {
-    return {
-      cacheManager: this.cacheManager,
-      diffManager: this.diffManager,
-      performanceMonitor: this.performanceMonitor,
-      metricsObserver: createPerformanceMonitorExportObserver(this.performanceMonitor),
-      exporters: this.exporters
-    };
-  }
-
   registerExporter(format: string, exporter: Exporter): void {
-    this.exporters.set(format, exporter);
+    this.registry.register(format, exporter);
   }
 
   unregisterExporter(format: string): boolean {
-    return this.exporters.delete(format);
+    return this.registry.unregister(format);
   }
 
   /**
@@ -96,15 +70,11 @@ export class ExportManager {
       try {
         const { dsl } = loadDslWithIncludesFromPath(filePath);
 
-        const exporter = this.exporters.get(options.format);
-        if (!exporter) {
-          throw new Error(`Unsupported export format: ${options.format}`);
-        }
-
         const normalizedOptions: ExportOptions = {
           ...options,
           sourcePath: options.sourcePath ?? filePath
         };
+        this.registry.resolveOrThrow(normalizedOptions.format);
         const result = await this.executionFacade.export(dsl, normalizedOptions);
         this.executionFacade.rememberSnapshotIfPossible(dsl, normalizedOptions.sourcePath);
         return result;
@@ -115,10 +85,7 @@ export class ExportManager {
   }
 
   private async runNavigationExporter(dsl: NavigationFlowDSL, options: ExportOptions): Promise<string> {
-    const exporter = this.exporters.get(options.format);
-    if (!exporter) {
-      throw new Error(`Unsupported export format: ${options.format}`);
-    }
+    const exporter = this.registry.resolveOrThrow(options.format);
     return exporter.export(dsl, options);
   }
 
@@ -129,9 +96,7 @@ export class ExportManager {
     dsl: TextUIDSL,
     options: ExportOptions
   ): Promise<ExportWithDiffUpdateResult> {
-    return runExportWithDiffUpdate(dsl, options, this.pipelineDeps(), (d, o) =>
-      runOptimizedExport(d, o, this.pipelineDeps())
-    );
+    return this.pipelineWiring.exportWithDiffUpdate(dsl, options);
   }
 
   async batchExport(files: Array<{ path: string; options: ExportOptions }>): Promise<Map<string, string>> {
@@ -144,88 +109,34 @@ export class ExportManager {
   }
 
   clearCache(): void {
-    this.cacheManager.clear();
-    this.diffManager.reset();
+    this.pipelineWiring.clearCache();
     this.snapshotState.clear();
   }
 
   clearFormatCache(format: string): void {
-    if (format) {
-      this.cacheManager.clearFormat(format);
-    }
+    this.pipelineWiring.clearFormatCache(format);
   }
 
   /** **観測**用: キャッシュ・直近 diff・集約メトリクスのスナップショット（本流の戻り値ではない）。 */
-  getPerformanceStats(): {
-    cacheStats: { size: number; maxSize: number; hitRate: number };
-    diffStats: { totalChanges: number; changeRate: number; efficiency: number };
-    exportMetrics: {
-      renderTime: number;
-      cacheHitRate: number;
-      diffEfficiency: number;
-      memoryUsage: number;
-      totalOperations: number;
-    };
-    incrementalRouteMetrics: ReturnType<PerformanceMonitor['getIncrementalRouteMetrics']>;
-  } {
-    const cacheStats = this.cacheManager.getStats();
-    const exportMetrics = this.performanceMonitor.getMetrics();
-    const incrementalRouteMetrics = this.performanceMonitor.getIncrementalRouteMetrics();
-
-    const lastDiff = this.diffManager.getLastDiffResult();
-    const diffStats = lastDiff
-      ? this.diffManager.getDiffStats(lastDiff)
-      : { totalChanges: 0, changeRate: 0, efficiency: 100 };
-
-    return {
-      cacheStats,
-      diffStats,
-      exportMetrics,
-      incrementalRouteMetrics
-    };
+  getPerformanceStats(): ExportPerformanceStats {
+    return this.pipelineWiring.getPerformanceStats();
   }
 
   /** 人間可読な **観測**レポート（デバッグ・チューニング用）。 */
   generatePerformanceReport(): string {
-    const stats = this.getPerformanceStats();
-    const report = this.performanceMonitor.generateReport();
-
-    return `
-# 最適化エクスポートマネージャー パフォーマンスレポート
-
-${report}
-
-## キャッシュ統計
-- キャッシュサイズ: ${stats.cacheStats.size}/${stats.cacheStats.maxSize}
-- キャッシュヒット率: ${stats.cacheStats.hitRate.toFixed(1)}%
-
-## 差分更新統計
-- 総変更数: ${stats.diffStats.totalChanges}
-- 変更率: ${stats.diffStats.changeRate.toFixed(1)}%
-- 効率（直近 DSL 比較）: ${stats.diffStats.efficiency.toFixed(1)}%
-- ローリング差分効率（\`exportMetrics.diffEfficiency\`）: ${stats.exportMetrics.diffEfficiency.toFixed(1)}%
-
-> 差分は現状レンダー省略には使わず、上記は観測用。実際の省略は主にキャッシュヒット。
-
-## 最適化効果
-- 平均レンダリング時間: ${stats.exportMetrics.renderTime.toFixed(2)}ms
-- メモリ使用量: ${stats.exportMetrics.memoryUsage.toFixed(2)}MB
-- 総操作数: ${stats.exportMetrics.totalOperations}
-    `.trim();
+    return this.pipelineWiring.generatePerformanceReport();
   }
 
   getSupportedFormats(): string[] {
-    return Array.from(this.exporters.keys());
+    return this.registry.getSupportedFormats();
   }
 
   getFileExtension(format: string): string {
-    const exporter = this.exporters.get(format);
-    return exporter ? exporter.getFileExtension() : '';
+    return this.registry.getFileExtension(format);
   }
 
   dispose(): void {
-    this.cacheManager.clear();
-    this.diffManager.reset();
+    this.pipelineWiring.dispose();
     this.performanceMonitor.dispose();
     this.snapshotState.clear();
   }
