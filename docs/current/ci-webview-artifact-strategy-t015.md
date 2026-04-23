@@ -15,7 +15,7 @@
 |--------|------|
 | **ローカル / リリース** | ソース変更後は `build-webview` → **`git add media/`** でコミット（T-002 のエラーメッセージと同趣旨） |
 | **CI（`webview-media-drift`）** | checkout → `npm ci` → `check:webview-media-drift`（内部で `build-webview` 実行後に `git diff media/`） |
-| **CI（`build` / VSIX）** | `compile` + `package` のみ。**このジョブでは `build-webview` は再実行しない**（コミット済み `media/` をパッケージが取り込む前提）。`.github/workflows/ci.yml` 内コメント参照。 |
+| **CI（`build` / VSIX）** | `npm run package:vsix` を実行し、**生成した `.vsix` を artifact として upload** する。`package:vsix` 内で `compile` / `package` / `build-webview` を実行した結果を単一成果物に集約する。 |
 | **`package.json`** | `vscode:prepublish` / `package:vsix` は **`build-webview` を含む** → ローカル／release で **ビルド直後の `media/`** が VSIX に入る。 |
 
 ## 2. build-on-CI 方式（検討メモ）
@@ -57,22 +57,28 @@ build-on-CI へ移行する場合に **追加で必要**になりうること:
 
 | 選択肢 | 本スプリントでの判定 |
 |--------|----------------------|
-| **artifact commit を当面維持** | **採用（フェーズ 0）** — T-002 が既に「ソースとコミット済み成果物のズレ」を抑止しており、VSIX パイプライン（`build` ジョブが `build-webview` を再実行しない設計）とも **矛盾なく整合**している。 |
+| **artifact commit を当面維持** | **採用（フェーズ 0）** — T-002 が既に「ソースとコミット済み成果物のズレ」を抑止しており、VSIX パイプライン（`build` ジョブが `package:vsix` で `.vsix` を生成し upload する設計）とも **矛盾なく整合**している。 |
 | **即時廃止（`media/` 非コミット化）** | **非採用** — VSIX・ローカル・CI の **三点の契約を同時に書き換える**必要があり、本チケットの優先度（低）とコストが見合わない。 |
 | **段階移行** | **推奨** — 次フェーズで (1) CI 上の **並行ビルド＋ artifact** の PoC、(2) VSIX が **artifact 経由でも**同じ内容になる検証、(3) 開発者向け手順の一本化、の順で進められる。 |
 
 ### 採用条件（build-on-CI へ進むためのゲート例）
 
-- VSIX を **`build-webview` 非実行ジョブ**だけで組み立てる場合でも、**常に同一バイト列**になる検証が自動化されている。
+- VSIX を **事前生成済み WebView 依存のジョブ**だけで組み立てる場合でも、**常に同一バイト列**になる検証が自動化されている。
 - `media/` 非コミット時の **初回 clone 体験**（必須コマンド 1 本以内推奨）が合意されている。
 - **T-002 の代替**（「コミットとの diff」から「期待ハッシュ」または「artifact 署名」へ）が定義されている。
 
 ### 次スプリントへの入力（PM / Architect 向けメモ）
 
-- **実装スプリント**では、上記ゲートのうち **1 つ**を選び PoC 化する（例: `build` 前ジョブで `build-webview` → artifact upload → `build` が download して `package`、**まだ**リポジトリの `media/` は残す「二重ソース期間」）。
+- **実装スプリント**では、上記ゲートのうち **1 つ**を選び PoC 化する（例: `build` 前ジョブで `build-webview` → artifact upload → `build` が download して `package:vsix`、**まだ**リポジトリの `media/` は残す「二重ソース期間」）。
+
+## 5. T-050 で確定した Artifact 契約（Final Debt Closure）
+
+- CI の `build` job は **`npm run package:vsix` を実行し、生成された `.vsix` のみを upload する**。
+- この artifact は **配布・検証に使えるリリース候補 VSIX** であり、**CI 内で自動公開は行わない**。
+- これにより「実行コマンド」と「artifact upload 対象」の意味論が 1 対 1 で一致する。
 - **T-002 を変える場合**は PM 承認と **移行チケット**を分離する（本ドキュメントでは **無効化しない**）。
 
-## 5. 関連
+## 6. 関連
 
 - `scripts/check-webview-media-drift.cjs`（T-002）
 - `.github/workflows/ci.yml` — `webview-media-drift` / `build` ジョブのコメント
