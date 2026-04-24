@@ -21,10 +21,10 @@
 1. VS Codeを開く
 2. `manual-test.tui.yml`ファイルを開く
 3. コマンドパレット（`Ctrl+Shift+P`）を開く
-4. `TUI: Preview`を実行
+4. `TextUI: Preview Current File`を実行
 5. プレビュー画面が表示されることを確認
 6. コマンドパレットを開く
-7. `TextUI: Export to Code`を実行
+7. `TextUI: Export Current File`を実行
 8. エクスポートが正常に実行されることを確認
 
 #### 期待結果
@@ -38,7 +38,7 @@
 1. 上記の手順1-5を実行
 2. プレビュー画面（WebView）をクリックしてアクティブにする
 3. コマンドパレットを開く
-4. `TextUI: Export to Code`を実行
+4. `TextUI: Export Current File`を実行
 5. エクスポートが正常に実行されることを確認
 
 #### 期待結果
@@ -100,4 +100,4 @@
 
 ## 関連ファイル
 - `manual-test.tui.yml`: テスト用のYAMLファイル
-- 拡張のログ: VS Codeの開発者ツールで確認可能 
+- 拡張のログ: VS Codeの開発者ツールで確認可能

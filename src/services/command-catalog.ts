@@ -51,7 +51,7 @@ const HIDDEN_COMMAND_PALETTE_COMMANDS = new Set([
 const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
   {
     command: 'textui-designer.openPreview',
-    title: 'TUI: Preview',
+    title: 'TextUI: Preview Current File',
     menus: [
       {
         location: 'editor/title',
@@ -63,7 +63,7 @@ const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
   },
   {
     command: 'textui-designer.openFlowPreview',
-    title: 'TextUI: Open Flow Preview',
+    title: 'TextUI: Preview Flow',
     callback: deps => () => deps.openPreviewWithCheck()
   },
   {
@@ -78,7 +78,7 @@ const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
   },
   {
     command: 'textui-designer.export',
-    title: 'TextUI: Export to Code',
+    title: 'TextUI: Export Current File',
     menus: [
       {
         location: 'editor/title',
@@ -102,7 +102,7 @@ const CORE_COMMAND_CATALOG: readonly CommandCatalogEntry[] = [
   },
   {
     command: 'textui-designer.openOverlayDiff',
-    title: 'TUI: Diff',
+    title: 'TextUI: Compare Files',
     menus: [
       {
         location: 'editor/title',

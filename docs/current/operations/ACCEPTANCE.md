@@ -10,7 +10,7 @@ This document maps the Phase 1 golden paths to their test coverage. Use it to ve
 
 **Steps:**
 1. Create or open any `.tui.yml` file (e.g. `sample/01-basic/sample.tui.yml`)
-2. Run **TUI: Preview** from the Command Palette
+2. Run **TextUI: Preview Current File** from the Command Palette
 
 **Automated coverage:**
 
@@ -28,7 +28,7 @@ This document maps the Phase 1 golden paths to their test coverage. Use it to ve
 
 **Steps:**
 1. Open `sample/12-navigation/app.tui.flow.yml`
-2. Run **TextUI: Open Flow Preview**
+2. Run **TextUI: Preview Flow**
 3. Select a transition target and click **Open linked page**
 4. Confirm the screen preview loads; use **Back to flow** to return
 

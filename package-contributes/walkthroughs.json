@@ -1,0 +1,43 @@
+[
+  {
+    "id": "textui-designer.gettingStarted",
+    "title": "Get started with TextUI Designer",
+    "description": "Create a TextUI screen, preview it, edit it live, inspect export output, and open a flow preview without leaving VS Code.",
+    "steps": [
+      {
+        "id": "create-sample-tui",
+        "title": "Create a sample .tui.yml file",
+        "description": "Create a file named `hello.tui.yml` and paste the minimal sample from the README or `sample/01-basic/sample.tui.yml`. Success: the file is saved with a `page` block and at least one component."
+      },
+      {
+        "id": "open-preview",
+        "title": "Open Preview",
+        "description": "Run [TextUI: Preview Current File](command:textui-designer.openPreview) while the `.tui.yml` file is active. Success: a side panel renders the current screen.",
+        "completionEvents": [
+          "onCommand:textui-designer.openPreview"
+        ]
+      },
+      {
+        "id": "edit-live-preview",
+        "title": "Edit and watch the Preview update",
+        "description": "Change text or a button label in the YAML file, then save or let auto preview refresh. Success: the Preview reflects the edit and the update indicator appears when enabled."
+      },
+      {
+        "id": "open-export-preview",
+        "title": "Inspect Export Preview",
+        "description": "Run [TextUI: Export Preview (Dry Run)](command:textui-designer.export-preview) to inspect generated code before writing files. Success: generated output is shown without changing project files.",
+        "completionEvents": [
+          "onCommand:textui-designer.export-preview"
+        ]
+      },
+      {
+        "id": "open-flow-preview",
+        "title": "Open Flow Preview",
+        "description": "Open `sample/12-navigation/app.tui.flow.yml`, then run [TextUI: Preview Flow](command:textui-designer.openFlowPreview). Success: the flow map opens and linked screens can be inspected.",
+        "completionEvents": [
+          "onCommand:textui-designer.openFlowPreview"
+        ]
+      }
+    ]
+  }
+]

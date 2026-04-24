@@ -19,6 +19,7 @@ const packageJsonPath = path.join(workspaceRoot, 'package.json');
 const PACKAGE_CONTRIBUTES_BUILD = [
   { fragment: 'configuration.json', contributesKeys: ['configuration'] },
   { fragment: 'commands.json', contributesKeys: ['commands'] },
+  { fragment: 'walkthroughs.json', contributesKeys: ['walkthroughs'] },
   { fragment: 'menus.json', contributesKeys: ['menus'] },
   { fragment: 'languages-snippets.json', contributesKeys: ['languages', 'snippets'] },
   { fragment: 'schemas.json', contributesKeys: ['yaml.schemas', 'jsonValidation'] }
@@ -35,12 +36,16 @@ function readFragment(name) {
 function mergePackageContributes() {
   const configuration = readFragment('configuration.json');
   const commands = readFragment('commands.json');
+  const walkthroughs = readFragment('walkthroughs.json');
   const menus = readFragment('menus.json');
   const langSnip = readFragment('languages-snippets.json');
   const schemas = readFragment('schemas.json');
 
   if (!Array.isArray(commands)) {
     throw new Error('[merge-package-contributes] commands.json must be a JSON array');
+  }
+  if (!Array.isArray(walkthroughs)) {
+    throw new Error('[merge-package-contributes] walkthroughs.json must be a JSON array');
   }
   if (!menus || typeof menus !== 'object' || Array.isArray(menus)) {
     throw new Error('[merge-package-contributes] menus.json must be a JSON object');
@@ -56,6 +61,7 @@ function mergePackageContributes() {
   pkg.contributes = {
     configuration,
     commands,
+    walkthroughs,
     languages: langSnip.languages,
     menus,
     snippets: langSnip.snippets,

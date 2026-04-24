@@ -1,8 +1,8 @@
 # TextUI Designer
 
-**Design UI screens in YAML. Preview them live. Export to HTML, React, Svelte, Vue, or Pug — without writing layout code.**
+**Design UI as Code inside VS Code. Write YAML. Preview instantly. Export to frontend code. Compare design changes semantically.**
 
-TextUI Designer is a VS Code extension that turns a simple YAML description into a live UI preview and production-ready frontend code. Describe your screen, see it instantly, and ship the markup.
+TextUI Designer is a VS Code extension for teams that want UI structure to be readable, reviewable, and reusable. Describe screens in YAML, inspect them in a live Preview, explore navigation flows, compare changes, and export production-ready HTML, React, Svelte, Vue, or Pug.
 
 ![TextUI Designer icon](icon.png)
 
@@ -10,7 +10,7 @@ TextUI Designer is a VS Code extension that turns a simple YAML description into
 
 ## What It Does
 
-Write a `.tui.yml` file describing your page and components. The extension renders a live preview in a side panel and can export the design to multiple frontend formats with one command.
+Write a `.tui.yml` file describing your page and components. The extension renders a live Preview in a side panel, supports Flow Preview for navigation maps, provides semantic/overlay diff workflows, and can export the design to multiple frontend formats with one command.
 
 ```yaml
 page:
@@ -37,13 +37,37 @@ page:
         submit: true
 ```
 
-Open `TUI: Preview` → see it rendered. Run `TextUI: Export to Code` → get HTML, React, Svelte, Vue, or Pug output ready to drop into your project.
+Open `TextUI: Preview Current File` -> see it rendered. Run `TextUI: Export Current File` -> get HTML, React, Svelte, Vue, or Pug output ready to drop into your project.
+
+---
+
+## Who It Is For
+
+- Frontend engineers who want screen structure to be easy to review in code.
+- Design-system and prototyping teams who want repeatable UI samples without rebuilding layouts by hand.
+- AI-assisted development workflows that need deterministic YAML, validation, preview capture, and export.
+
+TextUI Designer is not a full visual drag-and-drop builder. It is a UI-as-code workflow for authoring, previewing, comparing, and exporting structured screens from YAML.
+
+---
+
+## 30-Second Quick Start
+
+1. Create `hello.tui.yml` with the sample below.
+2. Run **TextUI: Preview Current File**.
+3. Edit a label in YAML and confirm the Preview updates.
+4. Run **TextUI: Export Preview (Dry Run)** to inspect generated code.
+5. Open `sample/12-navigation/app.tui.flow.yml` and run **TextUI: Preview Flow**.
+
+The VS Code walkthrough **Get started with TextUI Designer** mirrors this path inside the editor after installation.
 
 ---
 
 ## Key Features
 
 - **Live preview** — React-powered WebView refreshes as you type
+- **Flow preview** — inspect multi-screen navigation and linked screen routes
+- **Semantic and overlay diff** — compare TextUI changes by structure and meaning
 - **Multi-format export** — generates HTML, React, Svelte, Vue, and Pug output from the same DSL
 - **20+ built-in components** — buttons, inputs, forms, tables, modals, tabs, and more
 - **Theme support** — define a `textui-theme.yml` to apply consistent colors and spacing across preview and export
@@ -83,26 +107,41 @@ page:
         label: "Get started"
 ```
 
-3. Run **TUI: Preview** from the Command Palette (`Ctrl+Shift+P`)
+3. Run **TextUI: Preview Current File** from the Command Palette (`Ctrl+Shift+P`)
 4. Edit the file — the preview updates live
 
 ### Phase 1 Golden Path
 
 Phase 1 defines three fixed onboarding paths as the standard check for new users.
 
-1. **Path 1 (quickest)**: Create a `.tui.yml` file → run **TUI: Preview**
-2. **Path 2 (Flow)**: Open `sample/12-navigation/app.tui.flow.yml` → run **TextUI: Open Flow Preview** → use **Open linked page** on a transition target to confirm screen navigation
+1. **Path 1 (quickest)**: Create a `.tui.yml` file -> run **TextUI: Preview Current File**
+2. **Path 2 (Flow)**: Open `sample/12-navigation/app.tui.flow.yml` -> run **TextUI: Preview Flow** -> use **Open linked page** on a transition target to confirm screen navigation
 3. **Path 3 (AI)**: MCP `scaffold_app` → `validate_ui`/`validate_flow` → `capture_preview`
 
 For starting samples, see `sample/README.md`.
 
 ### Export to Code
 
-Run **TextUI: Export to Code** to generate frontend code. The default format is HTML; change the target in extension settings:
+Run **TextUI: Export Current File** to generate frontend code. The default format is HTML; change the target in extension settings:
 
 | Setting | Values |
 |---|---|
 | `textui-designer.export.defaultFormat` | `html` (default), `react`, `svelte`, `vue`, `pug` |
+
+### Settings Guide
+
+Basic settings are the ones most users may adjust during normal authoring:
+
+| Setting | Use when |
+|---|---|
+| `textui-designer.autoPreview.enabled` | Open Preview automatically when opening TextUI files |
+| `textui-designer.export.defaultFormat` | Change the default export target |
+| `textui-designer.webview.theme` | Match VS Code, force light, or force dark Preview |
+| `textui-designer.webview.fontSize` | Tune Preview readability |
+| `textui-designer.preview.showUpdateIndicator` | Show or hide refresh status in Preview |
+| `textui-designer.webview.jumpToDsl.showHoverIndicator` | Show or hide Jump-to-DSL hover guidance |
+
+Advanced settings are for diagnostics, schema cache behavior, performance timing, memory tracking, MCP configuration, and troubleshooting commands. Keep defaults unless you are debugging, tuning a large workspace, or integrating MCP clients.
 
 ---
 
@@ -172,7 +211,7 @@ flow:
       file: reset-password.tui.yml
 ```
 
-Open **TextUI: Open Flow Preview** to see the screen map. Selecting any screen in the map shows:
+Open **TextUI: Preview Flow** to see the screen map. Selecting any screen in the map shows:
 
 - **Routes to here** — all loop-free paths from the entry screen to the selected screen, with full trigger chains. Paginated when more than 5 routes exist.
 - **Screen detail** — the rendered preview of the selected screen on the right.

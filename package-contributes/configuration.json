@@ -10,22 +10,22 @@
         ".tui.yml",
         ".tui.yaml"
       ],
-      "description": "サポートするファイル拡張子"
+      "description": "Choose which file extensions TextUI Designer treats as TextUI DSL files."
     },
     "textui-designer.autoPreview.enabled": {
       "type": "boolean",
       "default": false,
-      "description": "ファイルを開いた時に自動的にプレビューを表示"
+      "description": "Open the Preview automatically when you open a TextUI file."
     },
     "textui-designer.devTools.enabled": {
       "type": "boolean",
       "default": false,
-      "description": "開発者ツールの有効化"
+      "description": "Allow the WebView developer tools command for troubleshooting extension internals."
     },
     "textui-designer.webview.disableThemeVariables": {
       "type": "boolean",
       "default": true,
-      "description": "VS Codeのテーマ変数を無効化して独自スタイルを使用"
+      "description": "Use TextUI preview styling instead of inheriting VS Code theme variables."
     },
     "textui-designer.webview.theme": {
       "type": "string",
@@ -35,22 +35,22 @@
         "dark"
       ],
       "default": "auto",
-      "description": "WebViewのテーマ"
+      "description": "Choose the Preview theme: follow VS Code, light, or dark."
     },
     "textui-designer.webview.fontSize": {
       "type": "number",
       "default": 14,
-      "description": "WebViewのフォントサイズ"
+      "description": "Set the Preview font size in pixels."
     },
     "textui-designer.webview.jumpToDsl.showHoverIndicator": {
       "type": "boolean",
       "default": true,
-      "description": "Preview jump-to-DSL hover indicator visibility"
+      "description": "Show the hover hint for jumping from Preview components back to YAML."
     },
     "textui-designer.preview.showUpdateIndicator": {
       "type": "boolean",
       "default": true,
-      "description": "Preview update indicator visibility"
+      "description": "Show a small status indicator when the Preview refreshes."
     },
     "textui-designer.export.defaultFormat": {
       "type": "string",
@@ -62,7 +62,7 @@
         "pug"
       ],
       "default": "html",
-      "description": "Default export format"
+      "description": "Choose the export format used when no format is specified."
     },
     "textui-designer.export.includeComments": {
       "type": "boolean",
@@ -77,7 +77,7 @@
     "textui-designer.diagnostics.enabled": {
       "type": "boolean",
       "default": true,
-      "description": "診断機能の有効化"
+      "description": "Show validation diagnostics for TextUI files."
     },
     "textui-designer.diagnostics.maxProblems": {
       "type": "number",
@@ -97,7 +97,7 @@
     "textui-designer.schema.validation.enabled": {
       "type": "boolean",
       "default": true,
-      "description": "スキーマ検証の有効化"
+      "description": "Validate TextUI files against the bundled schemas."
     },
     "textui-designer.schema.autoReload": {
       "type": "boolean",
@@ -140,7 +140,7 @@
       "default": 300,
       "minimum": 0,
       "maximum": 2000,
-      "description": "WebView更新のデバウンス時間（ミリ秒）"
+      "description": "Delay Preview refreshes while typing, in milliseconds."
     },
     "textui-designer.performance.diagnosticDebounceDelay": {
       "type": "number",
@@ -199,7 +199,7 @@
     "textui-designer.performance.enableMemoryTracking": {
       "type": "boolean",
       "default": true,
-      "description": "TextUI Designer専用のメモリ追跡を有効化"
+      "description": "Track TextUI Designer memory usage for troubleshooting."
     },
     "textui-designer.performance.memoryMeasurementInterval": {
       "type": "number",
@@ -228,7 +228,7 @@
         "both"
       ],
       "default": "both",
-      "description": "MCP設定の書き込み先（mcp.json と Codex用 .codex/config.toml）"
+      "description": "Choose where TextUI Designer writes MCP client configuration."
     },
     "textui-designer.mcp.serverId": {
       "type": "string",

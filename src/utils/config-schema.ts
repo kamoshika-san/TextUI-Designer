@@ -91,49 +91,49 @@ export function buildConfigurationSchema(defaults: SettingsDefaults): Record<str
         type: 'array',
         items: { type: 'string' },
         default: defaultValue('supportedFileExtensions'),
-        description: 'サポートするファイル拡張子'
+        description: 'Choose which file extensions TextUI Designer treats as TextUI DSL files.'
       },
       'autoPreview.enabled': {
         type: 'boolean',
         default: defaultValue('autoPreview.enabled'),
-        description: 'ファイルを開いた時に自動的にプレビューを表示'
+        description: 'Open the Preview automatically when you open a TextUI file.'
       },
       'devTools.enabled': {
         type: 'boolean',
         default: defaultValue('devTools.enabled'),
-        description: '開発者ツールの有効化'
+        description: 'Allow the WebView developer tools command for troubleshooting extension internals.'
       },
       'webview.disableThemeVariables': {
         type: 'boolean',
         default: defaultValue('webview.disableThemeVariables'),
-        description: 'VS Codeのテーマ変数を無効化して独自スタイルを使用'
+        description: 'Use TextUI preview styling instead of inheriting VS Code theme variables.'
       },
       'webview.theme': {
         type: 'string',
         enum: ['auto', 'light', 'dark'],
         default: defaultValue('webview.theme'),
-        description: 'WebViewのテーマ'
+        description: 'Choose the Preview theme: follow VS Code, light, or dark.'
       },
       'webview.fontSize': {
         type: 'number',
         default: defaultValue('webview.fontSize'),
-        description: 'WebViewのフォントサイズ'
+        description: 'Set the Preview font size in pixels.'
       },
       'webview.jumpToDsl.showHoverIndicator': {
         type: 'boolean',
         default: defaultValue('webview.jumpToDsl.showHoverIndicator'),
-        description: 'Preview jump-to-DSL hover indicator visibility'
+        description: 'Show the hover hint for jumping from Preview components back to YAML.'
       },
       'preview.showUpdateIndicator': {
         type: 'boolean',
         default: defaultValue('preview.showUpdateIndicator'),
-        description: 'Preview update indicator visibility'
+        description: 'Show a small status indicator when the Preview refreshes.'
       },
       'export.defaultFormat': {
         type: 'string',
         enum: ['html', 'react', 'svelte', 'vue', 'pug'],
         default: defaultValue('export.defaultFormat'),
-        description: 'Default export format'
+        description: 'Choose the export format used when no format is specified.'
       },
       'export.includeComments': {
         type: 'boolean',
@@ -148,7 +148,7 @@ export function buildConfigurationSchema(defaults: SettingsDefaults): Record<str
       'diagnostics.enabled': {
         type: 'boolean',
         default: defaultValue('diagnostics.enabled'),
-        description: '診断機能の有効化'
+        description: 'Show validation diagnostics for TextUI files.'
       },
       'diagnostics.maxProblems': {
         type: 'number',
@@ -168,7 +168,7 @@ export function buildConfigurationSchema(defaults: SettingsDefaults): Record<str
       'schema.validation.enabled': {
         type: 'boolean',
         default: defaultValue('schema.validation.enabled'),
-        description: 'スキーマ検証の有効化'
+        description: 'Validate TextUI files against the bundled schemas.'
       },
       'schema.autoReload': {
         type: 'boolean',
@@ -208,7 +208,7 @@ export function buildConfigurationSchema(defaults: SettingsDefaults): Record<str
         default: defaultValue('performance.webviewDebounceDelay'),
         minimum: 0,
         maximum: 2000,
-        description: 'WebView更新のデバウンス時間（ミリ秒）'
+        description: 'Delay Preview refreshes while typing, in milliseconds.'
       },
       'performance.diagnosticDebounceDelay': {
         type: 'number',
@@ -267,7 +267,7 @@ export function buildConfigurationSchema(defaults: SettingsDefaults): Record<str
       'performance.enableMemoryTracking': {
         type: 'boolean',
         default: defaultValue('performance.enableMemoryTracking'),
-        description: 'TextUI Designer専用のメモリ追跡を有効化'
+        description: 'Track TextUI Designer memory usage for troubleshooting.'
       },
       'performance.memoryMeasurementInterval': {
         type: 'number',
@@ -292,7 +292,7 @@ export function buildConfigurationSchema(defaults: SettingsDefaults): Record<str
         type: 'string',
         enum: ['workspace', 'user', 'both'],
         default: defaultValue('mcp.scope'),
-        description: 'MCP設定の書き込み先（mcp.json と Codex用 .codex/config.toml）'
+        description: 'Choose where TextUI Designer writes MCP client configuration.'
       },
       'mcp.serverId': {
         type: 'string',

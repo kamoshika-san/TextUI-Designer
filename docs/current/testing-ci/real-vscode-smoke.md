@@ -27,13 +27,13 @@
 ### 2. プレビューを開く（Open Preview）
 
 1. **アクティブエディタ**で上記 `.tui.yml` を開いた状態にする。
-2. コマンドパレットで **`TUI: Preview`**（command: `textui-designer.openPreview`）を実行する。  
+2. コマンドパレットで **`TextUI: Preview Current File`**（command: `textui-designer.openPreview`）を実行する。
    - またはエディタタイトルバーのアイコンから同一コマンド（YAML 編集中のみ表示）。
 3. **期待**: プレビュー用 WebView が開き、致命的なエラーで止まらない。
 
 ### 3. HTML エクスポート（Export）
 
-1. 引き続き同じ `.tui.yml` を対象に、コマンドパレットで **`TextUI: Export to Code`**（command: `textui-designer.export`）を実行する。  
+1. 引き続き同じ `.tui.yml` を対象に、コマンドパレットで **`TextUI: Export Current File`**（command: `textui-designer.export`）を実行する。
    - またはエディタタイトルバーから実行。
 2. 保存先と形式を聞かれた場合は **HTML** を選び、一時フォルダなどに保存する。
 3. **期待**: 保存が完了し、生成 HTML をブラウザで開いて **空でない・明らかに壊れていない**ことが確認できる（詳細な見た目は回帰テストの範囲）。

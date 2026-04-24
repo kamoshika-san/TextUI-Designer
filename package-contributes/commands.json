@@ -1,11 +1,11 @@
 [
   {
     "command": "textui-designer.openPreview",
-    "title": "TUI: Preview"
+    "title": "TextUI: Preview Current File"
   },
   {
     "command": "textui-designer.openFlowPreview",
-    "title": "TextUI: Open Flow Preview"
+    "title": "TextUI: Preview Flow"
   },
   {
     "command": "textui-designer.capturePreviewImage",
@@ -17,7 +17,7 @@
   },
   {
     "command": "textui-designer.export",
-    "title": "TextUI: Export to Code"
+    "title": "TextUI: Export Current File"
   },
   {
     "command": "textui-designer.export-preview",
@@ -29,7 +29,7 @@
   },
   {
     "command": "textui-designer.openOverlayDiff",
-    "title": "TUI: Diff"
+    "title": "TextUI: Compare Files"
   },
   {
     "command": "textui-designer.createTemplate",

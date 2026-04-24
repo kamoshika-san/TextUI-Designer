@@ -5,10 +5,10 @@ Updated: 2026-03-28
 ## Scope
 
 - Coverage target: `README.md`, `docs/*.md`, `docs/adr/*.md`
-- Coverage result: `111/111` entries covered
+- Coverage result: `113/113` entries covered
 - Directory coverage:
   - repo root entry docs: `1`
-  - `docs/`: `102`
+  - `docs/`: `104`
   - `docs/adr/`: `8`
 - Missing canonical destinations already visible in current state:
   - no missing canonical destinations currently identified in the covered scope
@@ -30,6 +30,7 @@ Updated: 2026-03-28
 - Frequency: `monthly`
 - Members:
   - `README.md (2026-03-22)`
+  - `docs/current/documentation-governance/marketplace-asset-backlog.md (2026-04-24)`
 
 ### 2. Information Architecture
 
@@ -96,6 +97,7 @@ Updated: 2026-03-28
   - `docs/current/services-webview/contributes-commands.md (2026-03-21)`
   - `docs/current/services-webview/package-contributes-policy.md (2026-03-21)`
   - `docs/current/services-webview/PROVIDER_CONTRACT.md (2026-03-20)`
+  - `docs/current/services-webview/webview-mode-separation.md (2026-04-24)`
 
 ### 6. Testing, CI, And Release Gates
 
