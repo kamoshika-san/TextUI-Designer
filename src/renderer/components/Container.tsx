@@ -6,6 +6,8 @@ type Layout = 'vertical' | 'horizontal' | 'flex' | 'grid';
 
 interface ContainerProps extends Omit<ContainerComponent, 'components'> {
   layout?: Layout;
+  /** External style override — applied on top of computed flex style (used by jump-target hoisting). */
+  style?: React.CSSProperties;
   children?: React.ReactNode;
 }
 
@@ -23,6 +25,7 @@ export const Container: React.FC<ContainerProps> = ({
   minWidth,
   token,
   tokenSlots,
+  style: externalStyle,
   children
 }) => {
   const className = layoutClasses[layout];
@@ -47,5 +50,9 @@ export const Container: React.FC<ContainerProps> = ({
         }
       : undefined;
 
-  return <div className={className} style={style}>{children || null}</div>;
+  const appliedStyle = externalStyle !== undefined
+    ? { ...style, ...externalStyle }
+    : style;
+
+  return <div className={className} style={appliedStyle}>{children || null}</div>;
 };

@@ -67,11 +67,11 @@ export function renderSharedRegisteredOutput(
 }
 
 // flex-row 親の中でコンポーネントが flex アイテムになれるよう、
-// inner の style から flex / width 関連プロパティをラッパーへ引き上げる。
+// inner の flex / width 関連プロパティをラッパーへ引き上げる。
 // jump-target が間に挟まると flex-grow 等が flex item に効かなくなるため。
-const LAYOUT_STYLE_PROPS: ReadonlyArray<keyof React.CSSProperties> = [
-  'flexGrow', 'flexShrink', 'flexBasis', 'width', 'minWidth',
-];
+//
+// inner が DOM 要素（style prop あり）の場合と、React コンポーネント要素
+// （flexGrow/width/minWidth を直接 props に持つ Container 等）の場合を両方処理する。
 
 function hoistLayoutStyle(inner: React.ReactNode): {
   layoutStyle: React.CSSProperties | undefined;
@@ -80,30 +80,65 @@ function hoistLayoutStyle(inner: React.ReactNode): {
   if (!React.isValidElement(inner)) {
     return { layoutStyle: undefined, resolvedInner: inner };
   }
-  const innerEl = inner as React.ReactElement<{ style?: React.CSSProperties }>;
-  const innerStyle: React.CSSProperties = innerEl.props.style ?? {};
-  const extracted: Partial<React.CSSProperties> = {};
-  const remaining: React.CSSProperties = { ...innerStyle };
-  let hasLayout = false;
 
-  for (const prop of LAYOUT_STYLE_PROPS) {
-    if (prop in innerStyle) {
-      (extracted as Record<string, unknown>)[prop] = (innerStyle as Record<string, unknown>)[prop];
-      delete (remaining as Record<string, unknown>)[prop];
-      hasLayout = true;
+  const innerEl = inner as React.ReactElement<{
+    style?: React.CSSProperties;
+    flexGrow?: number;
+    width?: string;
+    minWidth?: string;
+  }>;
+  const p = innerEl.props;
+
+  // Path A: DOM element — flex styles already computed in a `style` prop
+  const innerStyle: React.CSSProperties = p.style ?? {};
+  const STYLE_KEYS: ReadonlyArray<keyof React.CSSProperties> = [
+    'flexGrow', 'flexShrink', 'flexBasis', 'width', 'minWidth',
+  ];
+  const hasStyleLayout = STYLE_KEYS.some(k => k in innerStyle);
+  if (hasStyleLayout) {
+    const extracted: Partial<React.CSSProperties> = {};
+    const remaining: React.CSSProperties = { ...innerStyle };
+    for (const k of STYLE_KEYS) {
+      if (k in innerStyle) {
+        (extracted as Record<string, unknown>)[k] = (innerStyle as Record<string, unknown>)[k];
+        delete (remaining as Record<string, unknown>)[k];
+      }
     }
+    return {
+      layoutStyle: extracted as React.CSSProperties,
+      resolvedInner: React.cloneElement(innerEl, { style: { ...remaining, width: '100%' } }),
+    };
   }
 
-  if (!hasLayout) {
-    return { layoutStyle: undefined, resolvedInner: inner };
+  // Path B: React component element (e.g. Container) — flex layout expressed as component props
+  const { flexGrow, width, minWidth } = p;
+  if (typeof flexGrow === 'number') {
+    const layoutStyle: React.CSSProperties = {
+      flexGrow,
+      flexShrink: flexGrow > 0 && width === '0' ? 1 : 0,
+      flexBasis: width ?? 0,
+      minWidth: minWidth ?? 0,
+      ...(width && width !== '0' ? { width } : {}),
+    };
+    // Override width to 100% so the component fills the wrapper after flex distributes space
+    return {
+      layoutStyle,
+      resolvedInner: React.cloneElement(innerEl, { style: { width: '100%' } }),
+    };
   }
 
-  return {
-    layoutStyle: extracted as React.CSSProperties,
-    resolvedInner: React.cloneElement(innerEl, {
-      style: { ...remaining, width: '100%' },
-    }),
-  };
+  if (width || minWidth) {
+    const layoutStyle: React.CSSProperties = {
+      ...(width ? { width } : {}),
+      ...(minWidth ? { minWidth } : {}),
+    };
+    return {
+      layoutStyle,
+      resolvedInner: React.cloneElement(innerEl, { style: { width: '100%' } }),
+    };
+  }
+
+  return { layoutStyle: undefined, resolvedInner: inner };
 }
 
 /**
