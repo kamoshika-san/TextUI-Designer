@@ -319,13 +319,13 @@ Detailed setup: [docs/current/workflow-onboarding/SETUP.md](docs/current/workflo
 - Do not hand-edit the merged `package.json` `contributes` block. Edit `package-contributes/*.json`, then run `npm run sync:package-contributes`.
 - For contributes review, prefer `npm run inspect:contributes`, `npm run diff:contributes:fragments`, and `npm run contributes:pr-summary`.
 
-### Package `contributes`（T-003 / T-011）
+### Package `contributes` (T-003 / T-011)
 
-- **`package.json` の `contributes` は手編集しない**。`package-contributes/*.json` をソースとし、`npm run sync:package-contributes` で `package.json` にマージする。
-- **通常は `package.json` の contributes ブロックを開かずに済ませる**: 全体像は **`npm run inspect:contributes`**（Markdown は `--markdown` または `npm run inspect:contributes:markdown`）、フラグメント単位の差分は **`npm run diff:contributes:fragments`**、責務の表は **[docs/current/services-webview/package-contributes-fragments-responsibility.md](docs/current/services-webview/package-contributes-fragments-responsibility.md)**（`npm run docs:package-contributes` で再生成）。PR 説明用に両方まとめる場合は **`npm run contributes:pr-summary`**（`--base=main` 可）。
-- **commands / menus**: `npm run sync:commands`（`package-contributes/commands.json` · `menus.json` を生成してマージ）
-- **configuration**: `npm run sync:configuration`（`package-contributes/configuration.json` を生成してマージ）
-- **languages / snippets / yaml.schemas / jsonValidation**: `package-contributes/languages-snippets.json` と `package-contributes/schemas.json` を編集し、必要なら `npm run sync:package-contributes`
+- **Do not hand-edit the `package.json` `contributes` block**. Use `package-contributes/*.json` as the source, then run `npm run sync:package-contributes` to merge into `package.json`.
+- **Normally avoid opening the `package.json` contributes block**: For the full picture, use **`npm run inspect:contributes`** (Markdown with `--markdown` or `npm run inspect:contributes:markdown`), for fragment-level diffs use **`npm run diff:contributes:fragments`**, for the responsibility table see **[docs/current/services-webview/package-contributes-fragments-responsibility.md](docs/current/services-webview/package-contributes-fragments-responsibility.md)** (regenerate with `npm run docs:package-contributes`). For PR descriptions that combine both, use **`npm run contributes:pr-summary`** (`--base=main` optional).
+- **commands / menus**: `npm run sync:commands` (generates and merges `package-contributes/commands.json` · `menus.json`)
+- **configuration**: `npm run sync:configuration` (generates and merges `package-contributes/configuration.json`)
+- **languages / snippets / yaml.schemas / jsonValidation**: Edit `package-contributes/languages-snippets.json` and `package-contributes/schemas.json`, then run `npm run sync:package-contributes` if needed
 
 ### Key Commands
 
@@ -335,10 +335,10 @@ Detailed setup: [docs/current/workflow-onboarding/SETUP.md](docs/current/workflo
 | `npm run build-webview` | Build React + Vite WebView assets |
 | `npm run check:webview-media-drift` | Regenerate WebView assets and fail if `media/` differs from committed files (same gate as CI **T-002**) |
 | `npm run sync:package-contributes` | Merge `package-contributes/*.json` into `package.json` → `contributes` (**T-003**) |
-| `npm run inspect:contributes` | Merged `contributes` を論理ブロック別に要約表示（**T-011**） |
-| `npm run diff:contributes:fragments` | `package-contributes/` の git diff サマリ（**T-011**） |
-| `npm run docs:package-contributes` | フラグメント責務ドキュメントを再生成（**T-011**） |
-| `npm run contributes:pr-summary` | PR 貼付用 Markdown（inspect + diff、**T-011**） |
+| `npm run inspect:contributes` | Summarize merged `contributes` by logical blocks (**T-011**) |
+| `npm run diff:contributes:fragments` | `package-contributes/` git diff summary (**T-011**) |
+| `npm run docs:package-contributes` | Regenerate fragment responsibility documentation (**T-011**) |
+| `npm run contributes:pr-summary` | Markdown for PR paste (inspect + diff, **T-011**) |
 | `npm run lint` | ESLint (zero warnings) |
 | `npm test` | Compile, lint, unit tests |
 | `npm run test:all:ci` | Full CI-equivalent lane |
@@ -349,7 +349,7 @@ Detailed setup: [docs/current/workflow-onboarding/SETUP.md](docs/current/workflo
 - [Setup](docs/current/workflow-onboarding/SETUP.md) · [Testing](docs/current/workflow-onboarding/TESTING.md) · [Contributing](CONTRIBUTING.md) · [FAQ](docs/current/workflow-onboarding/FAQ.md)
 - [Extension Boundary Guide](docs/current/runtime-boundaries/extension-boundary-guide.md) · [Exporter Boundary Guide](docs/current/runtime-boundaries/exporter-boundary-guide.md)
 - [Adding Built-In Component](docs/current/workflow-onboarding/adding-built-in-component.md) · [Glossary](docs/current/workflow-onboarding/GLOSSARY.md)
-- [Semantic Meaning / Diff Taxonomy（日本語・将来向け）](docs/future/semantic/semantic-meaning-core-ontology-v0-ja.md) · [旧パススタブ](docs/archive/semantic-meaning-core-ontology-v0-ja.md)
+- [Semantic Meaning / Diff Taxonomy (Japanese - Future-oriented)](docs/future/semantic/semantic-meaning-core-ontology-v0-ja.md) · [Old Path Stub](docs/archive/semantic-meaning-core-ontology-v0-ja.md)
 
 ---
 
