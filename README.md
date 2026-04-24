@@ -12,6 +12,8 @@ TextUI Designer is a VS Code extension for teams that want UI structure to be re
 
 Write a `.tui.yml` file describing your page and components. The extension renders a live Preview in a side panel, supports Flow Preview for navigation maps, provides semantic/overlay diff workflows, and can export the design to multiple frontend formats with one command.
 
+![live-preview](resource\live-preview.gif)
+
 ```yaml
 page:
   id: sign-up

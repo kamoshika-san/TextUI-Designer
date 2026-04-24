@@ -632,7 +632,7 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
           top: '3.25rem',
           right: '1rem',
           zIndex: 1000,
-          display: 'flex',
+          display: 'none',
           gap: 4,
           flexWrap: 'wrap',
           alignItems: 'center'
