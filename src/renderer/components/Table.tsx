@@ -4,9 +4,10 @@ import { isComponentDefValue } from '../../domain/dsl-types';
 
 interface TableProps extends TableComponent {
   renderComponent?: (component: ComponentDef, key: number) => React.ReactNode;
+  style?: React.CSSProperties;
 }
 
-export const Table: React.FC<TableProps> = ({ columns = [], rows = [], striped = false, rowHover = false, width, renderComponent }) => {
+export const Table: React.FC<TableProps> = ({ columns = [], rows = [], striped = false, rowHover = false, width, renderComponent, style: externalStyle }) => {
   if (columns.length === 0) {
     return (
       <div className="text-sm text-yellow-300 border border-yellow-700 rounded-md px-3 py-2">
@@ -16,7 +17,7 @@ export const Table: React.FC<TableProps> = ({ columns = [], rows = [], striped =
   }
 
   return (
-    <div className="textui-table-container" style={width ? { width } : undefined}>
+    <div className="textui-table-container" style={width || externalStyle ? { ...(width ? { width } : {}), ...externalStyle } : undefined}>
       <table className="textui-table">
         <thead className="textui-table-head">
           <tr>

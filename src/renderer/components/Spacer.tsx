@@ -9,12 +9,13 @@ const sizeMap: Record<NonNullable<SpacerComponent['size']>, string> = {
   xl: '2rem'
 };
 
-export const Spacer: React.FC<SpacerComponent> = ({
+export const Spacer: React.FC<SpacerComponent & { style?: React.CSSProperties }> = ({
   axis = 'vertical',
   size = 'md',
   width,
   height,
-  token
+  token,
+  style: externalStyle
 }) => {
   const fallbackSize = token || sizeMap[size];
   const resolvedWidth = width || (axis === 'horizontal' ? fallbackSize : '100%');
@@ -24,10 +25,7 @@ export const Spacer: React.FC<SpacerComponent> = ({
     <div
       className={`textui-spacer axis-${axis}`}
       aria-hidden="true"
-      style={{
-        width: resolvedWidth,
-        height: resolvedHeight
-      }}
+      style={{ width: resolvedWidth, height: resolvedHeight, ...externalStyle }}
     />
   );
 };
