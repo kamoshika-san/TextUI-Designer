@@ -134,7 +134,9 @@ function hoistLayoutStyle(inner: React.ReactNode): {
     };
     return {
       layoutStyle,
-      resolvedInner: React.cloneElement(innerEl, { style: { width: '100%' } }),
+      resolvedInner: width
+        ? React.cloneElement(innerEl, { style: { width: '100%' } })
+        : innerEl,
     };
   }
 
