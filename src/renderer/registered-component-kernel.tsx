@@ -66,6 +66,46 @@ export function renderSharedRegisteredOutput(
   };
 }
 
+// flex-row 親の中でコンポーネントが flex アイテムになれるよう、
+// inner の style から flex / width 関連プロパティをラッパーへ引き上げる。
+// jump-target が間に挟まると flex-grow 等が flex item に効かなくなるため。
+const LAYOUT_STYLE_PROPS: ReadonlyArray<keyof React.CSSProperties> = [
+  'flexGrow', 'flexShrink', 'flexBasis', 'width', 'minWidth',
+];
+
+function hoistLayoutStyle(inner: React.ReactNode): {
+  layoutStyle: React.CSSProperties | undefined;
+  resolvedInner: React.ReactNode;
+} {
+  if (!React.isValidElement(inner)) {
+    return { layoutStyle: undefined, resolvedInner: inner };
+  }
+  const innerEl = inner as React.ReactElement<{ style?: React.CSSProperties }>;
+  const innerStyle: React.CSSProperties = innerEl.props.style ?? {};
+  const extracted: Partial<React.CSSProperties> = {};
+  const remaining: React.CSSProperties = { ...innerStyle };
+  let hasLayout = false;
+
+  for (const prop of LAYOUT_STYLE_PROPS) {
+    if (prop in innerStyle) {
+      (extracted as Record<string, unknown>)[prop] = (innerStyle as Record<string, unknown>)[prop];
+      delete (remaining as Record<string, unknown>)[prop];
+      hasLayout = true;
+    }
+  }
+
+  if (!hasLayout) {
+    return { layoutStyle: undefined, resolvedInner: inner };
+  }
+
+  return {
+    layoutStyle: extracted as React.CSSProperties,
+    resolvedInner: React.cloneElement(innerEl, {
+      style: { ...remaining, width: '100%' },
+    }),
+  };
+}
+
 /**
  * インタラクティブプレビュー用: jump-to-DSL のラッパー div。
  */
@@ -78,9 +118,11 @@ export function wrapWithPreviewJumpShell(
   const badgeLabel = componentName ?? 'Component';
   const actionLabel = componentName ?? 'component';
   const jumpTitle =
-    `Ctrl+Shift+Click to jump to DSL / Ctrl+Shift+\u30af\u30ea\u30c3\u30af\u3067DSL\u3078\u30b8\u30e3\u30f3\u30d7: ${context.dslPath}`;
+    `Ctrl+Shift+Click to jump to DSL / Ctrl+Shift+クリックでDSLへジャンプ: ${context.dslPath}`;
   const ariaLabel =
-    `Jump to DSL for ${actionLabel} / ${actionLabel} \u306e DSL \u30bd\u30fc\u30b9\u3078\u30b8\u30e3\u30f3\u30d7`;
+    `Jump to DSL for ${actionLabel} / ${actionLabel} の DSL ソースへジャンプ`;
+
+  const { layoutStyle, resolvedInner } = hoistLayoutStyle(inner);
 
   const triggerJump = () => {
     if (!context.onJumpToDsl || !componentName) {
@@ -93,6 +135,7 @@ export function wrapWithPreviewJumpShell(
     <div
       key={key}
       className="textui-jump-target"
+      style={layoutStyle}
       role="button"
       tabIndex={0}
       aria-label={ariaLabel}
@@ -120,7 +163,7 @@ export function wrapWithPreviewJumpShell(
         <span className="textui-jump-badge-component">{badgeLabel}</span>
         <span className="textui-jump-badge-link">DSL</span>
       </span>
-      {inner}
+      {resolvedInner}
     </div>
   );
 }

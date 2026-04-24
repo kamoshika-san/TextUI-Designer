@@ -1024,7 +1024,8 @@ body.light {
   font-weight: normal;
 }
 
-#root {
+#root,
+.textui-preview-shell-root {
   background-color: var(--color-surface, #1F2937);
   min-height: 100vh;
   padding: 1rem;
@@ -1032,6 +1033,11 @@ body.light {
 }
 
 .textui-preview-root {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  padding: 24px;
+  position: relative;
   --textui-jump-indicator-outline-color: rgba(96, 165, 250, 0.95);
   --textui-jump-indicator-halo-color: rgba(59, 130, 246, 0.16);
   --textui-jump-indicator-background-color: rgba(59, 130, 246, 0.06);
@@ -1042,7 +1048,8 @@ body.light {
   --textui-jump-badge-accent-text-color: rgb(191 219 254);
 }
 
-.light #root {
+.light #root,
+.light .textui-preview-shell-root {
   background-color: var(--color-background, #F9FAFB);
 }
 
