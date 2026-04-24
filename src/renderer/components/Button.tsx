@@ -20,12 +20,6 @@ const kindClasses: Record<ButtonKind, string> = {
   submit: 'textui-button submit',
 };
 
-const sizeClasses: Record<string, string> = {
-  sm: 'px-2 py-1 text-sm',
-  md: 'px-4 py-2 text-base',
-  lg: 'px-6 py-3 text-lg',
-};
-
 export const Button: React.FC<ButtonProps> = ({
   kind = 'primary',
   label,
@@ -37,10 +31,9 @@ export const Button: React.FC<ButtonProps> = ({
   onClick,
   action,
 }) => {
-  const className = [
-    kindClasses[kind],
-    sizeClasses[size]
-  ].join(' ');
+  const className = size !== 'md'
+    ? `${kindClasses[kind]} ${size}`
+    : kindClasses[kind];
 
   // action.trigger がある場合は postMessage でナビゲーションイベントを発火する
   const handleClick = action?.trigger
