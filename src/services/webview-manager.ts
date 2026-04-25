@@ -1,130 +1,111 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as path from 'path';
 import { WebViewLifecycleManager } from './webview/webview-lifecycle-manager';
 import { WebViewUpdateManager } from './webview/webview-update-manager';
 import { WebViewMessageHandler } from './webview/webview-message-handler';
 import type { YamlSchemaLoader } from './webview/yaml-parser';
 import type { IThemeManager, IWebViewManager } from '../types';
+import { PreviewController } from './preview/preview-controller';
+import { VscodePreviewHost } from './preview/vscode-preview-host';
+import { NodePreviewThemeFilePort } from './preview/node-preview-theme-file-port';
 
 /**
  * WebViewManager（ファサード）
  * 各専用クラスに処理を委譲する
  */
 export class WebViewManager implements IWebViewManager {
-  private lifecycleManager: WebViewLifecycleManager;
-  private updateManager: WebViewUpdateManager;
-  private messageHandler: WebViewMessageHandler;
-  private themeManager: IThemeManager | undefined;
-  private context: vscode.ExtensionContext;
+  updateManager: WebViewUpdateManager;
+  messageHandler: WebViewMessageHandler;
+  private _themeManager: IThemeManager | undefined;
+  private controller: PreviewController;
 
   constructor(context: vscode.ExtensionContext, themeManager?: IThemeManager, schemaLoader?: YamlSchemaLoader) {
-    this.context = context;
-    this.themeManager = themeManager;
-    this.lifecycleManager = new WebViewLifecycleManager(context);
-    this.updateManager = new WebViewUpdateManager(this.lifecycleManager, schemaLoader);
+    const lifecycleManager = new WebViewLifecycleManager(context);
+    this.updateManager = new WebViewUpdateManager(lifecycleManager, schemaLoader);
     this.messageHandler = new WebViewMessageHandler(
       context,
-      this.lifecycleManager,
+      lifecycleManager,
       this.updateManager,
       themeManager
     );
+    const previewHost = new VscodePreviewHost(lifecycleManager);
+    const themeFilePort = new NodePreviewThemeFilePort();
+    this._themeManager = themeManager;
+    this.controller = new PreviewController({
+      previewHost,
+      updateManager: this.updateManager,
+      messageHandler: this.messageHandler,
+      themeManager,
+      themeFilePort
+    });
+  }
+
+  get themeManager(): IThemeManager | undefined {
+    return this._themeManager;
+  }
+
+  set themeManager(themeManager: IThemeManager | undefined) {
+    this._themeManager = themeManager;
+    this.messageHandler.themeManager = themeManager;
+    this.controller.setThemeManager(themeManager);
   }
 
   async openPreview(): Promise<void> {
-    if (this.lifecycleManager.hasPanel()) {
-      this.lifecycleManager.revealPanel();
-    } else {
-      await this.lifecycleManager.createPreviewPanel();
-      this.messageHandler.setupMessageHandler();
-    }
+    await this.controller.openPreview();
   }
 
   async updatePreview(forceUpdate: boolean = false): Promise<void> {
-    await this.updateManager.updatePreview(forceUpdate);
+    await this.controller.updatePreview(forceUpdate);
   }
 
   sendUpdatingSignal(): void {
-    this.messageHandler.sendUpdatingSignal();
+    this.controller.sendUpdatingSignal();
   }
 
   closePreview(): void {
-    this.lifecycleManager.closePanel();
+    this.controller.closePreview();
   }
 
   setLastTuiFile(filePath: string, updatePreview: boolean = false): void {
-    const previousFilePath = this.updateManager.getLastTuiFile();
-    this.updateManager.setLastTuiFile(filePath, updatePreview);
-    void this.syncThemeForDslFile(filePath, previousFilePath);
+    this.controller.setLastTuiFile(filePath, updatePreview);
   }
 
   getLastTuiFile(): string | undefined {
-    return this.updateManager.getLastTuiFile();
+    return this.controller.getLastTuiFile();
   }
 
   applyThemeVariables(css: string): void {
-    this.messageHandler.applyThemeVariables(css);
+    this.controller.applyThemeVariables(css);
   }
 
   notifyThemeChange(theme: 'light' | 'dark'): void {
-    this.messageHandler.notifyThemeChange(theme);
+    this.controller.notifyThemeChange(theme);
   }
 
   notifyPreviewSettingsChanged(): void {
-    this.messageHandler.sendPreviewSettings();
+    this.controller.notifyPreviewSettingsChanged();
   }
 
   hasPanel(): boolean {
-    return this.lifecycleManager.hasPanel();
+    return this.controller.hasPanel();
   }
 
   getPanel(): vscode.WebviewPanel | undefined {
-    return this.lifecycleManager.getPanel();
+    return this.controller.getPanel() as vscode.WebviewPanel | undefined;
   }
 
   dispose(): void {
-    this.updateManager.dispose();
-    this.lifecycleManager.dispose();
+    this.controller.dispose();
   }
 
   openDevTools(): void {
-    this.updateManager.openDevTools();
+    this.controller.openDevTools();
   }
 
   async switchTheme(themePath: string): Promise<void> {
-    return await this.messageHandler.switchTheme(themePath);
+    return await this.controller.switchTheme(themePath);
   }
 
   async sendAvailableThemes(): Promise<void> {
-    return await this.messageHandler.sendAvailableThemes();
-  }
-
-  private async syncThemeForDslFile(filePath: string, previousFilePath?: string): Promise<void> {
-    if (!this.themeManager) {
-      return;
-    }
-
-    const nextFolder = path.dirname(filePath);
-    const previousFolder = previousFilePath ? path.dirname(previousFilePath) : undefined;
-    if (previousFolder === nextFolder) {
-      return;
-    }
-
-    const resolvedThemePath = this.resolveThemePathForDirectory(nextFolder);
-    this.themeManager.setThemePath(resolvedThemePath);
-    await this.themeManager.loadTheme();
-    this.applyThemeVariables(this.themeManager.generateCSSVariables());
-    await this.sendAvailableThemes();
-  }
-
-  private resolveThemePathForDirectory(directoryPath: string): string | undefined {
-    for (const themeFileName of ['textui-theme.yml', 'textui-theme.yaml']) {
-      const candidatePath = path.join(directoryPath, themeFileName);
-      if (fs.existsSync(candidatePath)) {
-        return candidatePath;
-      }
-    }
-
-    return undefined;
+    return await this.controller.sendAvailableThemes();
   }
 }

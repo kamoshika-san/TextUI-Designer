@@ -1,5 +1,6 @@
 export * from './schema';
 export * from './services';
+export * from './host';
 export * from './theme';
 export * from './cache';
 export * from './performance';
