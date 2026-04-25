@@ -137,6 +137,7 @@ describe('MCP flow tools', () => {
       execFileSync('git', ['init'], { cwd: gitRepo, encoding: 'utf8' });
       execFileSync('git', ['config', 'user.name', 'Codex Test'], { cwd: gitRepo, encoding: 'utf8' });
       execFileSync('git', ['config', 'user.email', 'codex@example.com'], { cwd: gitRepo, encoding: 'utf8' });
+      execFileSync('git', ['config', 'commit.gpgsign', 'false'], { cwd: gitRepo, encoding: 'utf8' });
       fs.mkdirSync(path.join(gitRepo, 'screens'), { recursive: true });
       fs.writeFileSync(path.join(gitRepo, 'screens', 'cart.tui.yml'), 'page:\n  id: cart\n  title: Cart\n  layout: vertical\n  components: []\n', 'utf8');
       fs.writeFileSync(path.join(gitRepo, 'screens', 'shipping.tui.yml'), 'page:\n  id: shipping\n  title: Shipping\n  layout: vertical\n  components: []\n', 'utf8');
