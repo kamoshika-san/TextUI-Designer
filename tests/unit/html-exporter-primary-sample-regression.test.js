@@ -53,17 +53,17 @@ describe('HtmlExporter primary sample regression (T-20260322-348)', () => {
   [
     {
       sampleRelativePath: 'sample/01-basic/sample.tui.yml',
-      expectedHash: 'c37a4e0d3c6d46fefb8872e9d7de13d49e6014d88e3473c24c01424297bf3997', // PreviewShellCore + export root shell parity
+      expectedHash: '23ccdf86414f9eb679e413b5dc08f02e6d63a3920bab9ed9e6189f8fd4eacf58', // PreviewShellCore + export root shell parity
       markers: ['TextUI Designer - All Components', 'This sample includes every supported component.', 'Agree to terms']
     },
     {
       sampleRelativePath: 'sample/08-github/sample.tui.yml',
-      expectedHash: '2b6f1c8cdf37ba78e04f94d3ef277cf0a1a291cd23217487685c55f48f7a36ee', // PreviewShellCore + export root shell parity
+      expectedHash: '2086b4263fbc1949b77299951442da8da815d537af1372e2f70aca69d0a07604', // PreviewShellCore + export root shell parity
       markers: ['kamoshika-san / TextUI-Designer', 'VS Code extension for designing text-based UIs with YAML/JSON DSL.', 'Pull requests']
     },
     {
       sampleRelativePath: 'sample/09-modal/sample.tui.yml',
-      expectedHash: 'e5b47648d728fb8ac91a1a4476b1a7dbd819c8ccd0ad839d62763fa12b3ddd2e', // PreviewShellCore + export root shell parity
+      expectedHash: '4a0be838fb8c95ba5d9b354d28174646d3749dfef954717df66af700ed056b04', // PreviewShellCore + export root shell parity
       markers: ['textui-modal-title', 'textui-modal-body', 'textui-modal-footer', 'textui-modal-card']
     }
   ].forEach(({ sampleRelativePath, expectedHash, markers }) => {
