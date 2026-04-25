@@ -162,7 +162,7 @@ describe('semantic diff v2 entity scan', () => {
     assert.strictEqual(entityDiffs[0].diffs[0].explanation.evidence.length, 0);
   });
 
-  it('emits entity_renamed as surface event with empty evidence', () => {
+  it('emits entity_renamed with before/after title predicates and empty evidence', () => {
     const previous = makeDoc('previous', { id: 'dash', title: 'Dashboard' });
     const next = makeDoc('next', { id: 'dash', title: 'Home' });
 
@@ -171,8 +171,8 @@ describe('semantic diff v2 entity scan', () => {
 
     assert.strictEqual(record.decision.diff_event, 'entity_renamed');
     assert.deepStrictEqual(record.explanation.evidence, []);
-    assert.strictEqual(record.explanation.before_predicate, undefined);
-    assert.strictEqual(record.explanation.after_predicate, undefined);
+    assert.deepStrictEqual(record.explanation.before_predicate, { fact: 'entity_state', op: 'eq', value: 'Dashboard' });
+    assert.deepStrictEqual(record.explanation.after_predicate, { fact: 'entity_state', op: 'eq', value: 'Home' });
   });
 
   it('emits both entity_renamed and entity_state_changed when title and state both change', () => {

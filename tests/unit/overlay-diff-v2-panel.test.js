@@ -263,6 +263,58 @@ describe('OverlayDiffV2Panel — evidence and predicate rendering', () => {
     assert.match(html, /unknown\.shape/);
     assert.doesNotMatch(html, /transition-evidence-table/);
   });
+
+  it('suppresses before/after predicates when state_machine.transition evidence is present', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(OverlayDiffV2Panel, {
+        result: makeResult([{
+          decision: {
+            diffEvent: 'transition_edge_changed',
+            targetId: 't1',
+            confidence: 1.0,
+            confidenceBand: 'high',
+          },
+          explanation: {
+            evidence: [{
+              evidence_shape: 'state_machine.transition',
+              before: { from: 'idle', to: 'busy', trigger: 'start' },
+              after: { from: 'idle', to: 'done', trigger: 'finish' },
+            }],
+            beforePredicate: { fact: 'entity_state', op: 'eq', value: { kind: 'v2.transition_edge_snapshot', from: 'idle', to: 'busy', trigger: 'start' } },
+            afterPredicate: { fact: 'entity_state', op: 'eq', value: { kind: 'v2.transition_edge_snapshot', from: 'idle', to: 'done', trigger: 'finish' } },
+          },
+        }]),
+      })
+    );
+
+    assert.match(html, /transition-evidence-table/);
+    assert.doesNotMatch(html, /before-after-predicates/);
+    assert.doesNotMatch(html, /v2\.transition_edge_snapshot/);
+  });
+
+  it('renders before/after title predicates for entity_renamed', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(OverlayDiffV2Panel, {
+        result: makeResult([{
+          decision: {
+            diffEvent: 'entity_renamed',
+            targetId: 'dash',
+            confidence: 1.0,
+            confidenceBand: 'high',
+          },
+          explanation: {
+            evidence: [],
+            beforePredicate: { fact: 'entity_state', op: 'eq', value: 'Dashboard' },
+            afterPredicate: { fact: 'entity_state', op: 'eq', value: 'Home' },
+          },
+        }]),
+      })
+    );
+
+    assert.match(html, /before-after-predicates/);
+    assert.match(html, /Dashboard/);
+    assert.match(html, /Home/);
+  });
 });
 
 describe('renderPredicateCompact', () => {

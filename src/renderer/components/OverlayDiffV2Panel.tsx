@@ -183,7 +183,10 @@ function ExplanationDetail({
   afterPredicate?: unknown;
 }) {
   const hasEvidence = evidence.length > 0;
-  const hasPredicates = Boolean(beforePredicate || afterPredicate);
+  // Suppress predicates when state_machine.transition evidence is present:
+  // the evidence table already shows from/to/trigger/guard — predicates would be redundant.
+  const suppressPredicates = evidence.some(isStateMachineTransitionEvidence);
+  const hasPredicates = !suppressPredicates && Boolean(beforePredicate || afterPredicate);
   if (!hasEvidence && !hasPredicates) return null;
 
   return (
@@ -193,7 +196,9 @@ function ExplanationDetail({
           <EvidenceItem item={item} />
         </div>
       ))}
-      <BeforeAfterPredicates beforePredicate={beforePredicate} afterPredicate={afterPredicate} />
+      {!suppressPredicates && (
+        <BeforeAfterPredicates beforePredicate={beforePredicate} afterPredicate={afterPredicate} />
+      )}
     </div>
   );
 }
