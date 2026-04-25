@@ -17,7 +17,7 @@ import { isNavigationFlowDSL } from '../../domain/dsl-types';
 import { parseYamlTextAsync } from '../../dsl/yaml-parse-async';
 import { YamlIncludeResolver } from './yaml-include-resolver';
 
-type MessageType = 'export' | 'export-preview' | 'jump-to-dsl' | 'show-jump-to-dsl-help' | 'webview-ready' | 'theme-switch' | 'get-themes' | 'navigate-back' | 'back-to-flow' | 'preview-navigate';
+type MessageType = 'export' | 'export-preview' | 'jump-to-dsl' | 'show-jump-to-dsl-help' | 'webview-ready' | 'theme-switch' | 'get-themes' | 'navigate-back' | 'back-to-flow' | 'preview-navigate' | 'request-semantic-diff-v2' | 'cancel-semantic-diff-v2';
 type MessageHandler = (message: WebViewMessage) => Promise<void>;
 
 interface WebViewMessageHandlerDependencies {
@@ -69,7 +69,9 @@ export class WebViewMessageHandler {
       'theme-switch': async (message) => this.handleThemeSwitchMessage(message),
       'get-themes': async () => this.handleGetThemes(),
       'back-to-flow': async () => this.handleBackToFlow(),
-      'preview-navigate': async (message) => this.handlePreviewNavigate(message)
+      'preview-navigate': async (message) => this.handlePreviewNavigate(message),
+      'request-semantic-diff-v2': async () => this.handleRequestSemanticDiffV2(),
+      'cancel-semantic-diff-v2': async () => this.handleCancelSemanticDiffV2()
     };
   }
 
@@ -210,6 +212,24 @@ export class WebViewMessageHandler {
 
   private async handleShowJumpToDslHelpMessage(): Promise<void> {
     await vscode.commands.executeCommand('textui-designer.showJumpToDslHelp');
+  }
+
+  /**
+   * Wave 3: WebView の「意味」タブが選択された通知。
+   * Extension は v2 計算→送信を許可し、キャッシュ済みがあれば即時再送する。
+   */
+  private async handleRequestSemanticDiffV2(): Promise<void> {
+    this.logger.debug('request-semantic-diff-v2 を受信');
+    this.updateManager.setSemanticV2Subscription(true);
+  }
+
+  /**
+   * Wave 3: WebView の「構造」タブが選択された通知。
+   * Extension は v2 自動配信を停止する（キャッシュは維持）。
+   */
+  private async handleCancelSemanticDiffV2(): Promise<void> {
+    this.logger.debug('cancel-semantic-diff-v2 を受信');
+    this.updateManager.setSemanticV2Subscription(false);
   }
 
   private isMessageType(type: string): type is MessageType {
