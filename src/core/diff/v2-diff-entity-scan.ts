@@ -40,12 +40,22 @@ function makeEntityRecord(
 
 function makeRenameRecord(
   targetId: string,
+  previousTitle: string | undefined,
+  nextTitle: string | undefined,
   confidence: number,
   ambiguityReason?: string
 ): V2DiffRecord {
+  const before = previousTitle !== undefined
+    ? normalizeEntityStateChangedPredicate(previousTitle) : undefined;
+  const after = nextTitle !== undefined
+    ? normalizeEntityStateChangedPredicate(nextTitle) : undefined;
   return {
     decision: buildV2Decision('entity_renamed', targetId, confidence, ambiguityReason),
-    explanation: { evidence: [] },
+    explanation: {
+      evidence: [],
+      ...(before !== undefined ? { before_predicate: before } : {}),
+      ...(after !== undefined ? { after_predicate: after } : {}),
+    },
   };
 }
 
@@ -170,7 +180,13 @@ export function scanEntityDiffs(
     const entityDiffRecords: V2DiffRecord[] = [];
 
     if (previous.page.title !== next.page.title) {
-      entityDiffRecords.push(makeRenameRecord(pair.entityId, pair.confidence, pair.ambiguityReason));
+      entityDiffRecords.push(makeRenameRecord(
+        pair.entityId,
+        previous.page.title,
+        next.page.title,
+        pair.confidence,
+        pair.ambiguityReason
+      ));
     }
 
     const previousState = readEntityState(previous);
