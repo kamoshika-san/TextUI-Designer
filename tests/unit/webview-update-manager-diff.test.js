@@ -70,7 +70,7 @@ describe('WebViewUpdateManager diff delivery wiring', () => {
     assert.strictEqual(msg.diff.nodes.filter((node) => node.changeType === 'modified').length, 1);
   });
 
-  it('posts diff-update-v2 after legacy diff-update when semantic v2 is available', () => {
+  it('posts diff-update-v2 after legacy diff-update when semantic v2 is subscribed and available', () => {
     const lm = makeLifecycleManager(true);
     const mgr = new WebViewUpdateManager(lm, makeSchemaLoader());
 
@@ -91,6 +91,8 @@ describe('WebViewUpdateManager diff delivery wiring', () => {
         },
       }),
     });
+
+    mgr.setSemanticV2Subscription(true);
 
     deliverDiffPayload(
       lm,
@@ -116,7 +118,7 @@ describe('WebViewUpdateManager diff delivery wiring', () => {
     );
   });
 
-  it('keeps legacy diff-update only when semantic v2 payload is unavailable', () => {
+  it('keeps legacy diff-update only when semantic v2 payload is unavailable (subscribed)', () => {
     const lm = makeLifecycleManager(true);
     const mgr = new WebViewUpdateManager(lm, makeSchemaLoader());
 
@@ -126,6 +128,8 @@ describe('WebViewUpdateManager diff delivery wiring', () => {
         result: {},
       }),
     });
+
+    mgr.setSemanticV2Subscription(true);
 
     deliverDiffPayload(
       lm,
@@ -151,7 +155,7 @@ describe('WebViewUpdateManager diff delivery wiring', () => {
     );
   });
 
-  it('delivers diff-update-v2 through compareUi wiring after preview diff delivery', async () => {
+  it('delivers diff-update-v2 through compareUi wiring after preview diff delivery (subscribed)', async () => {
     const lm = makeLifecycleManager(true);
     const mgr = new WebViewUpdateManager(lm, makeSchemaLoader(), {
       updateQueueManager: new DirectWebViewUpdateQueueForTest(),
@@ -167,6 +171,7 @@ describe('WebViewUpdateManager diff delivery wiring', () => {
       content: 'page: {}',
       data: nextDsl,
     });
+    mgr.setSemanticV2Subscription(true);
 
     await mgr.sendYamlToWebview(true);
 
@@ -177,6 +182,111 @@ describe('WebViewUpdateManager diff delivery wiring', () => {
     assert.ok(lm._messages[2].payload);
     assert.ok(Array.isArray(lm._messages[2].payload.screens));
     assert.strictEqual(lm._messages[2].payload.screens.length, 1);
+  });
+
+  describe('Wave 3 lazy-load contract', () => {
+    function makeV2CapableEngine() {
+      return () => ({
+        compareUi: () => ({
+          ok: true,
+          result: {
+            v2: {
+              screens: [
+                {
+                  screen_id: 'screen-main',
+                  diffs: [],
+                  entities: [],
+                },
+              ],
+              metadata: { schemaVersion: 'semantic-diff-v2', totalRecords: 0 },
+            },
+          },
+        }),
+      });
+    }
+
+    it('does not push diff-update-v2 when subscription is off (default)', () => {
+      const lm = makeLifecycleManager(true);
+      const mgr = new WebViewUpdateManager(lm, makeSchemaLoader());
+      mgr.getCoreEngineForSemanticV2 = makeV2CapableEngine();
+
+      mgr.maybeDeliverSemanticV2Panel(
+        { page: { id: 'p', title: 'A', layout: 'vertical', components: [] } },
+        { page: { id: 'p', title: 'B', layout: 'vertical', components: [] } }
+      );
+
+      assert.deepStrictEqual(lm._messages.map((m) => m.type), []);
+      assert.strictEqual(mgr.isSemanticV2Subscribed(), false);
+    });
+
+    it('caches v2 result even when subscription is off, so resubscribe can replay', () => {
+      const lm = makeLifecycleManager(true);
+      const mgr = new WebViewUpdateManager(lm, makeSchemaLoader());
+      mgr.getCoreEngineForSemanticV2 = makeV2CapableEngine();
+
+      mgr.maybeDeliverSemanticV2Panel(
+        { page: { id: 'p', title: 'A', layout: 'vertical', components: [] } },
+        { page: { id: 'p', title: 'B', layout: 'vertical', components: [] } }
+      );
+      assert.deepStrictEqual(lm._messages.map((m) => m.type), []);
+
+      const cached = mgr.getLastSemanticV2ResultForTest();
+      assert.ok(cached, 'v2 result is cached');
+      assert.ok(cached.payload);
+      assert.strictEqual(cached.payload.screens.length, 1);
+    });
+
+    it('replays cached v2 immediately on subscribe', () => {
+      const lm = makeLifecycleManager(true);
+      const mgr = new WebViewUpdateManager(lm, makeSchemaLoader());
+      mgr.getCoreEngineForSemanticV2 = makeV2CapableEngine();
+
+      mgr.maybeDeliverSemanticV2Panel(
+        { page: { id: 'p', title: 'A', layout: 'vertical', components: [] } },
+        { page: { id: 'p', title: 'B', layout: 'vertical', components: [] } }
+      );
+      assert.deepStrictEqual(lm._messages.map((m) => m.type), []);
+
+      mgr.setSemanticV2Subscription(true);
+
+      assert.deepStrictEqual(lm._messages.map((m) => m.type), ['diff-update-v2']);
+    });
+
+    it('subscribe with no cache and no prior DSL is a no-op', () => {
+      const lm = makeLifecycleManager(true);
+      const mgr = new WebViewUpdateManager(lm, makeSchemaLoader());
+
+      mgr.setSemanticV2Subscription(true);
+
+      assert.deepStrictEqual(lm._messages.map((m) => m.type), []);
+      assert.strictEqual(mgr.isSemanticV2Subscribed(), true);
+    });
+
+    it('cancel stops subsequent auto-pushes but keeps the cached v2', () => {
+      const lm = makeLifecycleManager(true);
+      const mgr = new WebViewUpdateManager(lm, makeSchemaLoader());
+      mgr.getCoreEngineForSemanticV2 = makeV2CapableEngine();
+
+      mgr.setSemanticV2Subscription(true);
+      mgr.maybeDeliverSemanticV2Panel(
+        { page: { id: 'p', title: 'A', layout: 'vertical', components: [] } },
+        { page: { id: 'p', title: 'B', layout: 'vertical', components: [] } }
+      );
+      assert.deepStrictEqual(lm._messages.map((m) => m.type), ['diff-update-v2']);
+
+      mgr.setSemanticV2Subscription(false);
+      assert.strictEqual(mgr.isSemanticV2Subscribed(), false);
+
+      mgr.maybeDeliverSemanticV2Panel(
+        { page: { id: 'p', title: 'B', layout: 'vertical', components: [] } },
+        { page: { id: 'p', title: 'C', layout: 'vertical', components: [] } }
+      );
+
+      // Still only the original push; cancel suppresses additional auto-push.
+      assert.deepStrictEqual(lm._messages.map((m) => m.type), ['diff-update-v2']);
+      // Cache reflects the latest computation.
+      assert.ok(mgr.getLastSemanticV2ResultForTest());
+    });
   });
 
   it('keeps legacy diff-update as the only diff message when there is no previous DSL for v2 compareUi', async () => {

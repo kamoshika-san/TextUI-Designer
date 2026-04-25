@@ -44,6 +44,73 @@ function isTextUiDsl(value: PreviewDocument | null): value is TextUIDSL {
   return Boolean(value && typeof value === 'object' && 'page' in value);
 }
 
+function SemanticV2PendingPanel({
+  onSwitchToStructure,
+}: {
+  onSwitchToStructure: () => void;
+}) {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(15,23,42,0.97)',
+        color: '#e2e8f0',
+        fontFamily: 'var(--vscode-font-family, sans-serif)',
+        fontSize: '0.85rem',
+        overflowY: 'auto',
+        zIndex: 100,
+      }}
+    >
+      <div style={{ padding: '12px 20px 0', borderBottom: '1px solid rgba(148,163,184,0.15)' }}>
+        <div style={{ display: 'flex', gap: 0 }}>
+          <button
+            type="button"
+            onClick={onSwitchToStructure}
+            style={{
+              background: 'none',
+              border: 'none',
+              borderBottom: '2px solid transparent',
+              padding: '6px 14px',
+              color: '#94a3b8',
+              fontSize: '0.82rem',
+              cursor: 'pointer',
+            }}
+          >
+            Structure
+          </button>
+          <button
+            type="button"
+            style={{
+              background: 'none',
+              border: 'none',
+              borderBottom: '2px solid #60a5fa',
+              padding: '6px 14px',
+              color: '#60a5fa',
+              fontSize: '0.82rem',
+              cursor: 'default',
+              fontWeight: 600,
+            }}
+          >
+            Semantic v2
+          </button>
+        </div>
+      </div>
+      <div style={{ padding: '20px' }}>
+        <div style={{ color: '#cbd5e1', fontSize: '0.85rem', marginBottom: 6 }}>
+          Waiting for the next preview update to compute semantic v2 diff…
+        </div>
+        <div style={{ color: '#64748b', fontSize: '0.75rem' }}>
+          Edit the .tui.yml to trigger a comparison, or switch back to Structure.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function summarizeExportSourcePath(sourcePath: string | null): { label: string; title?: string } {
   if (!sourcePath) {
     return { label: 'Waiting for preview file' };
@@ -218,6 +285,28 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const requestSemanticV2 = useCallback(() => {
+    vscodeApi?.postMessage?.({ type: 'request-semantic-diff-v2' });
+  }, []);
+
+  const cancelSemanticV2 = useCallback(() => {
+    vscodeApi?.postMessage?.({ type: 'cancel-semantic-diff-v2' });
+  }, []);
+
+  const selectDiffPanelTab = useCallback((tab: DiffPanelTab) => {
+    setDiffPanelTab(prev => {
+      if (prev === tab) {
+        return prev;
+      }
+      if (tab === 'semantic') {
+        requestSemanticV2();
+      } else {
+        cancelSemanticV2();
+      }
+      return tab;
+    });
+  }, [requestSemanticV2, cancelSemanticV2]);
+
   useWebviewMessages({
     postReady,
     applyDslUpdate,
@@ -340,12 +429,21 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
     setShowJumpToDslOnboarding(false);
   };
 
-  if (semanticDiffV2) {
+  const semanticTabActiveForTextDsl = diffPanelTab === 'semantic' && (json === null || isTextUiDsl(json));
+  if (semanticTabActiveForTextDsl) {
+    const handleBackToStructure = () => {
+      selectDiffPanelTab('structure');
+    };
+    if (semanticDiffV2) {
+      return (
+        <OverlayDiffV2Panel
+          result={semanticDiffV2}
+          onSwitchToStructure={handleBackToStructure}
+        />
+      );
+    }
     return (
-      <OverlayDiffV2Panel
-        result={semanticDiffV2}
-        onSwitchToStructure={overlayDiffState ? () => setSemanticDiffV2(null) : undefined}
-      />
+      <SemanticV2PendingPanel onSwitchToStructure={handleBackToStructure} />
     );
   }
 
@@ -632,7 +730,7 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
           top: '3.25rem',
           right: '1rem',
           zIndex: 1000,
-          display: 'none',
+          display: 'flex',
           gap: 4,
           flexWrap: 'wrap',
           alignItems: 'center'
@@ -642,7 +740,7 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
           type="button"
           role="tab"
           aria-selected={diffPanelTab === 'structure'}
-          onClick={() => setDiffPanelTab('structure')}
+          onClick={() => selectDiffPanelTab('structure')}
           style={{
             fontSize: '0.72rem',
             padding: '0.2rem 0.45rem',
@@ -659,7 +757,7 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
           type="button"
           role="tab"
           aria-selected={diffPanelTab === 'semantic'}
-          onClick={() => setDiffPanelTab('semantic')}
+          onClick={() => selectDiffPanelTab('semantic')}
           style={{
             fontSize: '0.72rem',
             padding: '0.2rem 0.45rem',
@@ -676,16 +774,6 @@ const handleJumpToDsl = (dslPath: string, componentName: string, targetFilePath?
           <span style={{ fontSize: '0.75rem', color: '#fbbf24', padding: '0.2rem 0.5rem', borderRadius: '0.375rem', background: 'rgba(251,191,36,0.12)' }}>
             {diffResult.nodes.filter(n => n.changeType !== 'unchanged').length} changes
           </span>
-        ) : null}
-        {diffPanelTab === 'semantic' ? (
-          semanticDiffV2 ? (
-            <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: '0.72rem', color: 'var(--vscode-foreground, #dbeafe)', maxWidth: '14rem' }}>
-              <li>hasChanges: {String(semanticDiffV2.hasChanges)}</li>
-              <li>screens: {semanticDiffV2.payload.screens.length}</li>
-            </ul>
-          ) : (
-            <span style={{ fontSize: '0.72rem', opacity: 0.75 }}>意味 diff (v2) 未受信</span>
-          )
         ) : null}
       </div>
       {conflictResult?.hasConflicts ? (

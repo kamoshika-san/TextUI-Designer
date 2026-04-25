@@ -10,6 +10,7 @@ import { Logger } from '../../utils/logger';
 import { TextUICoreEngine } from '../../core/textui-core-engine';
 import { V2SemanticDiffProvider } from '../../core/diff/v2-semantic-diff-provider';
 import { toVisualDiffV2FromPayload } from '../../domain/diff/semantic-diff-v2-panel-mapper';
+import type { VisualDiffV2Result } from '../../domain/diff/semantic-diff-v2-panel-model';
 import { deliverPreviewPayload } from './preview-webview-deliver';
 import { deliverDiffPayload, deliverSemanticDiffV2Panel } from './diff-webview-deliver';
 import { deliverConflictPayload } from '../diff/conflict-webview-deliver';
@@ -82,6 +83,13 @@ export class WebViewUpdateManager {
   private coreEngineForSemanticV2: TextUICoreEngine | null = null;
   private lastDeliveredDsl: TextUIDSL | null = null;
   private lastConflictResult: ConflictResult | null = null;
+  /**
+   * Wave 3 lazy load: WebView の「意味」タブが選択されたときのみ true。
+   * false のあいだ v2 計算は走らせず、購読開始時に `lastDeliveredDsl` から再計算して送る。
+   */
+  private wantsSemanticV2 = false;
+  /** 直近の v2 結果のキャッシュ。購読再開時の即時再送に使う。 */
+  private lastSemanticV2Result: VisualDiffV2Result | null = null;
 
   constructor(
     lifecycleManager: WebViewLifecycleManager,
@@ -187,12 +195,28 @@ export class WebViewUpdateManager {
   }
 
   /**
-   * 直前 DSL と更新後 DSL から `compareUi` を走らせ、`DiffCompareResult.v2` が付いていれば WebView へ送る。
-   * v2 未生成時は no-op（Wave 3 本線配線）。
+   * 直前 DSL と更新後 DSL から `compareUi` を走らせ、`DiffCompareResult.v2` を生成・キャッシュする。
+   * Wave 3 仕様: 計算は毎回行いキャッシュへ。WebView への送信は購読中（`wantsSemanticV2`）のときのみ。
+   * これにより購読 ON 時に直近の prev→next 差分を即時再生できる。
    */
   private maybeDeliverSemanticV2Panel(previous: TextUIDSL | null, next: TextUIDSL): void {
-    if (!previous || !this.lifecycleManager.getPanel()) {
+    const result = this.computeSemanticV2(previous, next);
+    if (!result) {
       return;
+    }
+    this.lastSemanticV2Result = result;
+    if (!this.wantsSemanticV2) {
+      return;
+    }
+    if (!this.lifecycleManager.getPanel()) {
+      return;
+    }
+    deliverSemanticDiffV2Panel(this.lifecycleManager, result);
+  }
+
+  private computeSemanticV2(previous: TextUIDSL | null, next: TextUIDSL): VisualDiffV2Result | null {
+    if (!previous) {
+      return null;
     }
     const response = this.getCoreEngineForSemanticV2().compareUi({
       previousDsl: previous,
@@ -202,9 +226,33 @@ export class WebViewUpdateManager {
       skipTokenValidation: true
     });
     if (!response.ok || !response.result?.v2) {
+      return null;
+    }
+    return toVisualDiffV2FromPayload(response.result.v2);
+  }
+
+  /**
+   * WebView の「意味」タブ選択／解除を反映する Wave 3 ハンドラ。
+   * 購読開始時にキャッシュ済みの v2 があれば即時送信する。解除時は以後の自動配信のみ止める。
+   */
+  setSemanticV2Subscription(active: boolean): void {
+    this.wantsSemanticV2 = active;
+    if (!active) {
       return;
     }
-    deliverSemanticDiffV2Panel(this.lifecycleManager, toVisualDiffV2FromPayload(response.result.v2));
+    if (this.lastSemanticV2Result && this.lifecycleManager.getPanel()) {
+      deliverSemanticDiffV2Panel(this.lifecycleManager, this.lastSemanticV2Result);
+    }
+  }
+
+  /** Wave 3 テスト用フック: 購読フラグを観測する。 */
+  isSemanticV2Subscribed(): boolean {
+    return this.wantsSemanticV2;
+  }
+
+  /** Wave 3 テスト用フック: 直近の v2 キャッシュを観測する。 */
+  getLastSemanticV2ResultForTest(): VisualDiffV2Result | null {
+    return this.lastSemanticV2Result;
   }
 
   /**
