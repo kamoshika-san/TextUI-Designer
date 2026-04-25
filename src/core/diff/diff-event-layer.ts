@@ -29,3 +29,34 @@ export const DIFF_EVENT_LAYER: Readonly<Record<V2DiffEvent, CompareLogicLayer>> 
 export function diffEventLayer(event: V2DiffEvent): CompareLogicLayer {
   return DIFF_EVENT_LAYER[event];
 }
+
+/**
+ * Stable full order for sorting V2DiffRecord arrays (Design G-2).
+ * structure → surface → semantic; ties within a layer use this fixed position.
+ */
+export const DIFF_EVENT_FULL_ORDER: Readonly<Record<V2DiffEvent, number>> = {
+  entity_added: 0,
+  entity_removed: 1,
+  transition_added: 2,
+  transition_removed: 3,
+  component_added: 4,
+  component_removed: 5,
+  entity_renamed: 6,
+  entity_state_changed: 7,
+  transition_edge_changed: 8,
+  component_action_changed: 9,
+  component_availability_changed: 10,
+  component_guard_changed: 11,
+} as const;
+
+/**
+ * Sort a diffs[] array in-place per Design G-2 full order.
+ * Returns a new array; does not mutate the input.
+ */
+export function sortV2DiffRecords<T extends { decision: { diff_event: V2DiffEvent } }>(
+  records: T[]
+): T[] {
+  return [...records].sort(
+    (a, b) => DIFF_EVENT_FULL_ORDER[a.decision.diff_event] - DIFF_EVENT_FULL_ORDER[b.decision.diff_event]
+  );
+}
