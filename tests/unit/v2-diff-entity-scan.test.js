@@ -143,4 +143,135 @@ describe('semantic diff v2 entity scan', () => {
       value: { stage: 'published' },
     });
   });
+
+  it('emits entity_renamed when same id but title changes', () => {
+    const previous = makeDoc('previous', { id: 'settings', title: 'Settings' });
+    const next = makeDoc('next', { id: 'settings', title: 'Preferences' });
+
+    const screens = entityScan.scanEntityDiffs(previous, next);
+    const entityDiffs = screens[0].entities;
+
+    assert.strictEqual(entityDiffs.length, 1);
+    assert.strictEqual(entityDiffs[0].entity_id, 'settings');
+    assert.strictEqual(entityDiffs[0].diffs.length, 1);
+    const dec = entityDiffs[0].diffs[0].decision;
+    assert.strictEqual(dec.diff_event, 'entity_renamed');
+    assert.strictEqual(dec.target_id, 'settings');
+    assert.strictEqual(dec.confidence, 1.0);
+    assert.strictEqual(dec.confidence_band, 'high');
+    assert.strictEqual(entityDiffs[0].diffs[0].explanation.evidence.length, 0);
+  });
+
+  it('emits entity_renamed with before/after title predicates and empty evidence', () => {
+    const previous = makeDoc('previous', { id: 'dash', title: 'Dashboard' });
+    const next = makeDoc('next', { id: 'dash', title: 'Home' });
+
+    const screens = entityScan.scanEntityDiffs(previous, next);
+    const record = screens[0].entities[0].diffs[0];
+
+    assert.strictEqual(record.decision.diff_event, 'entity_renamed');
+    assert.deepStrictEqual(record.explanation.evidence, []);
+    assert.deepStrictEqual(record.explanation.before_predicate, { fact: 'entity_state', op: 'eq', value: 'Dashboard' });
+    assert.deepStrictEqual(record.explanation.after_predicate, { fact: 'entity_state', op: 'eq', value: 'Home' });
+  });
+
+  it('emits both entity_renamed and entity_state_changed when title and state both change', () => {
+    const previous = makeDoc('previous', {
+      id: 'cart',
+      title: 'Cart',
+      state: { count: 1 },
+    });
+    const next = makeDoc('next', {
+      id: 'cart',
+      title: 'Basket',
+      state: { count: 3 },
+    });
+
+    const screens = entityScan.scanEntityDiffs(previous, next);
+    const entityDiffs = screens[0].entities[0].diffs;
+
+    assert.strictEqual(entityDiffs.length, 2);
+    assert.strictEqual(entityDiffs[0].decision.diff_event, 'entity_renamed');
+    assert.strictEqual(entityDiffs[1].decision.diff_event, 'entity_state_changed');
+  });
+
+  it('does not emit entity_renamed when title is unchanged', () => {
+    const previous = makeDoc('previous', { id: 'home', title: 'Home', state: { active: true } });
+    const next = makeDoc('next', { id: 'home', title: 'Home', state: { active: false } });
+
+    const screens = entityScan.scanEntityDiffs(previous, next);
+    const diffs = screens[0].entities[0].diffs;
+
+    assert.strictEqual(diffs.length, 1);
+    assert.strictEqual(diffs[0].decision.diff_event, 'entity_state_changed');
+  });
+
+  it('propagates entity_renamed into provider metadata totalRecords', () => {
+    const provider = new providerModule.V2SemanticDiffProvider();
+    const previous = makeDoc('previous', { id: 'profile', title: 'Profile' });
+    const next = makeDoc('next', { id: 'profile', title: 'My Profile' });
+
+    const result = provider.compareStructureDiff(previous, next);
+
+    assert.ok(result.v2);
+    assert.strictEqual(result.v2.metadata.totalRecords, 1);
+    assert.strictEqual(result.v2.screens[0].entities[0].diffs[0].decision.diff_event, 'entity_renamed');
+  });
+});
+
+describe('sortV2DiffRecords (Design G-2)', () => {
+  let diffEventLayer;
+
+  before(() => {
+    diffEventLayer = require('../../out/core/diff/diff-event-layer');
+  });
+
+  it('sorts structure before surface before semantic', () => {
+    const makeRecord = (event) => ({ decision: { diff_event: event } });
+
+    const input = [
+      makeRecord('entity_state_changed'),
+      makeRecord('entity_renamed'),
+      makeRecord('entity_removed'),
+      makeRecord('entity_added'),
+    ];
+
+    const sorted = diffEventLayer.sortV2DiffRecords(input);
+
+    assert.strictEqual(sorted[0].decision.diff_event, 'entity_added');
+    assert.strictEqual(sorted[1].decision.diff_event, 'entity_removed');
+    assert.strictEqual(sorted[2].decision.diff_event, 'entity_renamed');
+    assert.strictEqual(sorted[3].decision.diff_event, 'entity_state_changed');
+  });
+
+  it('places entity_renamed (surface) between structure and semantic events', () => {
+    const makeRecord = (event) => ({ decision: { diff_event: event } });
+
+    const input = [
+      makeRecord('component_action_changed'),
+      makeRecord('entity_renamed'),
+      makeRecord('component_added'),
+    ];
+
+    const sorted = diffEventLayer.sortV2DiffRecords(input);
+
+    assert.strictEqual(sorted[0].decision.diff_event, 'component_added');
+    assert.strictEqual(sorted[1].decision.diff_event, 'entity_renamed');
+    assert.strictEqual(sorted[2].decision.diff_event, 'component_action_changed');
+  });
+
+  it('does not mutate the input array', () => {
+    const makeRecord = (event) => ({ decision: { diff_event: event } });
+    const input = [makeRecord('entity_state_changed'), makeRecord('entity_added')];
+    const original = [...input];
+
+    diffEventLayer.sortV2DiffRecords(input);
+
+    assert.deepStrictEqual(input.map(r => r.decision.diff_event), original.map(r => r.decision.diff_event));
+  });
+
+  it('preserves stable full order for all 12 events', () => {
+    const events = Object.keys(diffEventLayer.DIFF_EVENT_FULL_ORDER);
+    assert.strictEqual(events.length, 12);
+  });
 });

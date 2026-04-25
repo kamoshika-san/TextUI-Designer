@@ -17,6 +17,7 @@ import { createNormalizedFlowDiffDocument } from './flow-diff';
 import { scanEntityDiffs } from './v2-diff-entity-scan';
 import { scanComponentDiffs } from './v2-diff-component-scan';
 import { scanTransitionDiffs } from './v2-diff-transition-scan';
+import { sortV2DiffRecords } from './diff-event-layer';
 import type { V2EntityDiff } from './diff-v2-types';
 
 export class V2SemanticDiffProvider implements SemanticDiffProvider {
@@ -64,7 +65,23 @@ export class V2SemanticDiffProvider implements SemanticDiffProvider {
       };
     });
 
-    const totalRecords = populatedScreens.reduce((sum, s) => {
+    const sortedScreens = populatedScreens.map(s => {
+      if ('outOfScope' in s) { return s; }
+      return {
+        ...s,
+        diffs: sortV2DiffRecords(s.diffs),
+        entities: s.entities.map(e => ({
+          ...e,
+          diffs: sortV2DiffRecords(e.diffs),
+          components: e.components.map(c => ({
+            ...c,
+            diffs: sortV2DiffRecords(c.diffs),
+          })),
+        })),
+      };
+    });
+
+    const totalRecords = sortedScreens.reduce((sum, s) => {
       if ('outOfScope' in s) { return sum; }
       const screenDiffs = s.diffs.length;
       const entityDiffs = s.entities.reduce((es, e) => es + e.diffs.length, 0);
@@ -76,7 +93,7 @@ export class V2SemanticDiffProvider implements SemanticDiffProvider {
     }, 0);
 
     const v2: DiffCompareResultV2Payload = {
-      screens: populatedScreens,
+      screens: sortedScreens,
       metadata: { schemaVersion: 'v2-compare-logic/v0', totalRecords },
     };
     return { ...result, v2 };

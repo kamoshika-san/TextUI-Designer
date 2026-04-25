@@ -38,6 +38,27 @@ function makeEntityRecord(
   return { decision: buildV2Decision(event, targetId, confidence, ambiguityReason), explanation: { evidence: resolved } };
 }
 
+function makeRenameRecord(
+  targetId: string,
+  previousTitle: string | undefined,
+  nextTitle: string | undefined,
+  confidence: number,
+  ambiguityReason?: string
+): V2DiffRecord {
+  const before = previousTitle !== undefined
+    ? normalizeEntityStateChangedPredicate(previousTitle) : undefined;
+  const after = nextTitle !== undefined
+    ? normalizeEntityStateChangedPredicate(nextTitle) : undefined;
+  return {
+    decision: buildV2Decision('entity_renamed', targetId, confidence, ambiguityReason),
+    explanation: {
+      evidence: [],
+      ...(before !== undefined ? { before_predicate: before } : {}),
+      ...(after !== undefined ? { after_predicate: after } : {}),
+    },
+  };
+}
+
 function normalizeEntityStateChangedPredicate(value: unknown): CanonicalPredicate {
   return { fact: 'entity_state', op: 'eq', value };
 }
@@ -156,12 +177,28 @@ export function scanEntityDiffs(
     diffs.push(makeEntityRecord('entity_removed', pair.removedEntityId, pair.confidence, pair.ambiguityReason, []));
     diffs.push(makeEntityRecord('entity_added', pair.addedEntityId, pair.confidence, pair.ambiguityReason, []));
   } else {
+    const entityDiffRecords: V2DiffRecord[] = [];
+
+    if (previous.page.title !== next.page.title) {
+      entityDiffRecords.push(makeRenameRecord(
+        pair.entityId,
+        previous.page.title,
+        next.page.title,
+        pair.confidence,
+        pair.ambiguityReason
+      ));
+    }
+
     const previousState = readEntityState(previous);
     const nextState = readEntityState(next);
     if (stableStateStringify(previousState) !== stableStateStringify(nextState)) {
+      entityDiffRecords.push(makeStateRecord(pair.entityId, pair.confidence, previousState, nextState, pair.ambiguityReason));
+    }
+
+    if (entityDiffRecords.length > 0) {
       entities.push({
         entity_id: pair.entityId,
-        diffs: [makeStateRecord(pair.entityId, pair.confidence, previousState, nextState, pair.ambiguityReason)],
+        diffs: entityDiffRecords,
         components: [],
       });
     }

@@ -8,6 +8,7 @@ generated/
 .tmp-cli-test/
 .tmp-cli-test-*/
 .tmp-cli-regression-test/
+tests/regression/*.tui.yml
 .vscode-test/
 .claude/
 *.vsix
