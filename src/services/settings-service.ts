@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { ConfigManager } from '../utils/config-manager';
 import { ErrorHandler } from '../utils/error-handler';
-import { ISettingsService } from '../types';
+import type { ConfigurationChangeEventLike, DisposableLike, ISettingsService } from '../types';
 import { Logger } from '../utils/logger';
 
 /**
@@ -126,7 +126,7 @@ export class SettingsService implements ISettingsService {
   /**
    * 設定変更の監視を開始
    */
-  startWatching(callback: () => void): vscode.Disposable {
+  startWatching(callback: () => void): DisposableLike {
     return vscode.workspace.onDidChangeConfiguration(event => {
       if (event.affectsConfiguration('textui-designer')) {
         this.logger.info('TextUI Designer設定が変更されました');
@@ -144,7 +144,7 @@ export class SettingsService implements ISettingsService {
   /**
    * 特定の設定が変更されたかどうかをチェック
    */
-  hasConfigurationChanged(event: vscode.ConfigurationChangeEvent): boolean {
+  hasConfigurationChanged(event: ConfigurationChangeEventLike): boolean {
     return event.affectsConfiguration('textui-designer');
   }
 } 

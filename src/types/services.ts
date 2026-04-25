@@ -1,6 +1,17 @@
-import * as vscode from 'vscode';
 import type { TextUIDSL } from '../domain/dsl-types';
 import type { SchemaDefinition, SchemaValidationResult } from './schema';
+import type {
+  CancellationTokenLike,
+  CompletionContextLike,
+  CompletionItemLike,
+  CompletionListLike,
+  ConfigurationChangeEventLike,
+  DisposableLike,
+  PositionLike,
+  TextDocumentLike,
+  UriLike,
+  WebviewPanelLike
+} from './host';
 
 export interface ISchemaManager {
   initialize(): Promise<void>;
@@ -37,7 +48,7 @@ export interface IWebViewManager {
   notifyPreviewSettingsChanged(): void;
   dispose(): void;
   hasPanel(): boolean;
-  getPanel(): vscode.WebviewPanel | undefined;
+  getPanel(): WebviewPanelLike | undefined;
   openDevTools(): void;
 }
 
@@ -82,25 +93,25 @@ export interface ISettingsService {
   resetSettings(): Promise<void>;
   showSettings(): Promise<void>;
   showAutoPreviewSetting(): Promise<void>;
-  startWatching(callback: () => void): vscode.Disposable;
-  hasConfigurationChanged(event: vscode.ConfigurationChangeEvent): boolean;
+  startWatching(callback: () => void): DisposableLike;
+  hasConfigurationChanged(event: ConfigurationChangeEventLike): boolean;
 }
 
 export interface IDiagnosticManager {
-  validateAndReportDiagnostics(document: vscode.TextDocument): Promise<void>;
+  validateAndReportDiagnostics(document: TextDocumentLike): Promise<void>;
   clearDiagnostics(): void;
-  clearDiagnosticsForUri(uri: vscode.Uri): void;
+  clearDiagnosticsForUri(uri: UriLike): void;
   clearCache(): void;
   dispose(): void;
 }
 
 export interface ICompletionProvider {
   provideCompletionItems(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    token: vscode.CancellationToken,
-    context: vscode.CompletionContext
-  ): Promise<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>>;
+    document: TextDocumentLike,
+    position: PositionLike,
+    token: CancellationTokenLike,
+    context: CompletionContextLike
+  ): Promise<CompletionItemLike[] | CompletionListLike<CompletionItemLike>>;
 }
 
 export interface ICommandManager {

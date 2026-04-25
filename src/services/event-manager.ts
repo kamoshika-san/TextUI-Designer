@@ -4,6 +4,7 @@ import { ConfigManager } from '../utils/config-manager';
 import { getDocumentKind } from './document-kind-resolver';
 import { Logger } from '../utils/logger';
 import { cursorLineToComponentIndex } from './webview/cursor-to-component';
+import { toVscodeCompletionItemProvider } from './vscode-host-adapters';
 
 /**
  * イベントリスナーの登録・管理
@@ -63,7 +64,7 @@ export class EventManager {
         { language: 'yaml', scheme: 'file' },
         { language: 'yaml', scheme: 'untitled' }
       ],
-      this.services.completionProvider,
+      toVscodeCompletionItemProvider(this.services.completionProvider),
       '-', ':', ' ' // トリガー文字を追加
     );
     

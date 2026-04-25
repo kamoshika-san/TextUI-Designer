@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import type { ErrorObject } from 'ajv';
 import { TextUIMemoryTracker } from '../utils/textui-memory-tracker';
-import type { ISchemaManager, SchemaDefinition } from '../types';
+import type { IDiagnosticManager, ISchemaManager, SchemaDefinition, TextDocumentLike, UriLike } from '../types';
 import { suggestSimilarKeys } from './diagnostics/key-suggestion';
 import { buildDiagnosticTemplate } from './diagnostics/template-builder';
 import { assembleDiagnosticMarkdownMessage } from './diagnostics/diagnostic-message-assembler';
@@ -16,6 +16,7 @@ import {
 import { getValidationSchemaKind } from './document-kind-resolver';
 import { Logger } from '../utils/logger';
 import { FlowDiagnosticsManager } from './diagnostics/flow-diagnostics-manager';
+import { asVscodeTextDocument, asVscodeUri } from './vscode-host-adapters';
 
 /**
  * DiagnosticManager へ注入可能な依存（ユニットテストのモック差し替え用）
@@ -33,7 +34,7 @@ export type DiagnosticManagerDeps = {
  * 診断管理サービス
  * YAML/JSONファイルのバリデーションとエラー表示を担当
  */
-export class DiagnosticManager {
+export class DiagnosticManager implements IDiagnosticManager {
   private readonly logger = new Logger('DiagnosticManager');
   private diagnosticCollection: vscode.DiagnosticCollection;
   private validationCache: Map<string, DiagnosticCacheEntry> = new Map();
@@ -60,7 +61,7 @@ export class DiagnosticManager {
   /**
    * 診断を実行（デバウンス付き）
    */
-  async validateAndReportDiagnostics(document: vscode.TextDocument): Promise<void> {
+  async validateAndReportDiagnostics(document: TextDocumentLike): Promise<void> {
     this.scheduler.schedule(async () => {
       await this.performDiagnostics(document);
     }, this.DEBOUNCE_DELAY);
@@ -69,7 +70,7 @@ export class DiagnosticManager {
   /**
    * 診断を実行
    */
-  private async performDiagnostics(document: vscode.TextDocument): Promise<void> {
+  private async performDiagnostics(document: TextDocumentLike): Promise<void> {
     const text = document.getText();
     const uri = document.uri.toString();
     
@@ -78,7 +79,7 @@ export class DiagnosticManager {
 
     const cached = this.cacheStore.getFresh(uri, text, this.CACHE_TTL);
     if (cached) {
-      this.diagnosticCollection.set(document.uri, cached.diagnostics);
+      this.diagnosticCollection.set(asVscodeUri(document.uri), cached.diagnostics);
       return;
     }
 
@@ -90,14 +91,14 @@ export class DiagnosticManager {
   /**
    * 実際の検証処理を実行
    */
-  private async performValidation(document: vscode.TextDocument, text: string, schemaKind: ValidationSchemaKind): Promise<void> {
+  private async performValidation(document: TextDocumentLike, text: string, schemaKind: ValidationSchemaKind): Promise<void> {
     const uri = document.uri.toString();
     const now = Date.now();
 
     const cached = this.cacheStore.getFresh(uri, text, this.CACHE_TTL, now);
     if (cached) {
       this.logger.debug('キャッシュされた診断結果を使用');
-      this.diagnosticCollection.set(document.uri, cached.diagnostics);
+      this.diagnosticCollection.set(asVscodeUri(document.uri), cached.diagnostics);
       return;
     }
 
@@ -112,11 +113,11 @@ export class DiagnosticManager {
       );
       diagnostics.push(diag);
     } else if (result.errors && result.schema) {
-      diagnostics = this.createDiagnosticsFromErrors(result.errors, text, document, result.schema);
+      diagnostics = this.createDiagnosticsFromErrors(result.errors, text, asVscodeTextDocument(document), result.schema);
     }
 
     if (schemaKind === 'navigation' && !result.errorMessage) {
-      diagnostics = diagnostics.concat(this.flowDiagnosticsManager.createDiagnostics(document, text));
+      diagnostics = diagnostics.concat(this.flowDiagnosticsManager.createDiagnostics(asVscodeTextDocument(document), text));
     }
 
     const cacheEntry = {
@@ -134,7 +135,7 @@ export class DiagnosticManager {
       diagnosticCount: diagnostics.length
     });
 
-    this.diagnosticCollection.set(document.uri, diagnostics);
+    this.diagnosticCollection.set(asVscodeUri(document.uri), diagnostics);
   }
 
   /**
@@ -228,9 +229,9 @@ export class DiagnosticManager {
   /**
    * 特定のURIの診断をクリア
    */
-  clearDiagnosticsForUri(uri: vscode.Uri): void {
+  clearDiagnosticsForUri(uri: UriLike): void {
     const uriString = uri.toString();
-    this.diagnosticCollection.delete(uri);
+    this.diagnosticCollection.delete(asVscodeUri(uri));
     this.cacheStore.delete(uriString);
     this.cacheStore.clearLegacyKeys(uriString);
   }

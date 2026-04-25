@@ -4,6 +4,16 @@ import { Logger } from '../utils/logger';
 import { CompletionContextAnalyzer } from './completion-context-analyzer';
 import { CompletionCache } from './completion-cache';
 import { DescriptorCompletionEngine } from './schema-completion-engine';
+import { asVscodeCompletionContext, asVscodePosition, asVscodeTextDocument } from './vscode-host-adapters';
+import type {
+  CancellationTokenLike,
+  CompletionContextLike,
+  CompletionItemLike,
+  CompletionListLike,
+  ICompletionProvider,
+  PositionLike,
+  TextDocumentLike
+} from '../types';
 
 /**
  * 補完プロバイダー（YAML/JSON の IntelliSense）。
@@ -11,7 +21,7 @@ import { DescriptorCompletionEngine } from './schema-completion-engine';
  * 候補の正本は descriptor カタログ（`DescriptorCompletionEngine` → `COMPONENT_DEFINITIONS` / `COMPONENT_PROPERTIES`）。
  * JSON Schema（`SchemaManager`）は補完経路では読み込まない（診断・バリデーション・スキーマ登録は別系統）。
  */
-export class TextUICompletionProvider implements vscode.CompletionItemProvider {
+export class TextUICompletionProvider implements ICompletionProvider {
   private static readonly NAVIGATION_FLOW_PROPERTIES = ['id', 'title', 'entry', 'screens', 'transitions'];
   private static readonly NAVIGATION_SCREEN_PROPERTIES = ['id', 'page', 'title'];
   private static readonly NAVIGATION_TRANSITION_PROPERTIES = ['from', 'to', 'trigger', 'label', 'condition', 'params'];
@@ -76,11 +86,14 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
    * 補完を提供（デバウンス付き）
    */
   async provideCompletionItems(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    _token: vscode.CancellationToken,
-    context: vscode.CompletionContext
-  ): Promise<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
+    document: TextDocumentLike,
+    position: PositionLike,
+    _token: CancellationTokenLike,
+    context: CompletionContextLike
+  ): Promise<CompletionItemLike[] | CompletionListLike<CompletionItemLike>> {
+    const vsDocument = asVscodeTextDocument(document);
+    const vsPosition = asVscodePosition(position);
+    const vsContext = asVscodeCompletionContext(context);
     // 既存のタイマーをクリア
     if (this.completionTimeout) {
       clearTimeout(this.completionTimeout);
@@ -90,7 +103,7 @@ export class TextUICompletionProvider implements vscode.CompletionItemProvider {
     return new Promise((resolve) => {
       this.completionTimeout = setTimeout(async () => {
         try {
-          const items = await this.generateCompletionItems(document, position, context);
+          const items = await this.generateCompletionItems(vsDocument, vsPosition, vsContext);
           resolve(items);
         } catch (error) {
           this.logger.error('補完処理でエラーが発生しました:', error);

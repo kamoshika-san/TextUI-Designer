@@ -2,40 +2,64 @@ import * as vscode from 'vscode';
 import { SchemaManager } from './schema-manager';
 import { WebViewManager } from './webview-manager';
 import { CommandManager } from './command-manager';
-import { ExportService } from './export-service';
 import { TemplateService } from './template-service';
 import { SettingsService } from './settings-service';
 import { ExportManager } from '../exporters';
 import { ThemeManager } from './theme-manager';
 import { DiagnosticManager } from './diagnostic-manager';
 import { TextUICompletionProvider } from './completion-provider';
-import { RuntimeInspectionService } from './runtime-inspection-service';
-import { createRuntimeInspectionCommandBindings } from './runtime-inspection-command-bindings';
+import {
+  createApplicationRuntime,
+  type ServiceFactoryResult,
+  type CommonRuntimeBindings
+} from './common-runtime-factory';
 import type {
   ISchemaManager,
   IThemeManager,
   IWebViewManager,
   IExportManager,
-  IExportService,
   ITemplateService,
   ISettingsService,
   IDiagnosticManager,
-  ICompletionProvider,
-  ICommandManager
+  ICompletionProvider
 } from '../types';
 import type { ServiceFactoryOverrides } from './service-initializer';
 
-export interface ServiceFactoryResult {
-  schemaManager: ISchemaManager;
-  themeManager: IThemeManager;
-  webViewManager: IWebViewManager;
-  exportManager: IExportManager;
-  exportService: IExportService;
-  templateService: ITemplateService;
-  settingsService: ISettingsService;
-  diagnosticManager: IDiagnosticManager;
-  completionProvider: ICompletionProvider;
-  commandManager: ICommandManager;
+export interface VscodeServiceBindings {
+  context: vscode.ExtensionContext;
+  factoryOverrides: ServiceFactoryOverrides;
+}
+
+export function createVscodeBindings(
+  context: vscode.ExtensionContext,
+  factoryOverrides: ServiceFactoryOverrides
+): CommonRuntimeBindings {
+  const f = factoryOverrides;
+  return {
+    extensionPath: context.extensionPath,
+    createSchemaManager: (): ISchemaManager =>
+      f.createSchemaManager ? f.createSchemaManager(context) : new SchemaManager(context),
+    createThemeManager: (): IThemeManager =>
+      f.createThemeManager ? f.createThemeManager(context) : new ThemeManager(context),
+    createWebViewManager: (themeManager: IThemeManager, schemaManager: ISchemaManager): IWebViewManager =>
+      f.createWebViewManager
+        ? f.createWebViewManager(context, themeManager, schemaManager)
+        : new WebViewManager(context, themeManager, schemaManager),
+    createExportManager: (): IExportManager =>
+      f.createExportManager ? f.createExportManager() : new ExportManager(),
+    createTemplateService: (): ITemplateService =>
+      f.createTemplateService ? f.createTemplateService() : new TemplateService(),
+    createSettingsService: (): ISettingsService =>
+      f.createSettingsService ? f.createSettingsService() : new SettingsService(),
+    createDiagnosticManager: (schemaManager: ISchemaManager): IDiagnosticManager =>
+      f.createDiagnosticManager ? f.createDiagnosticManager(schemaManager) : new DiagnosticManager(schemaManager),
+    createCompletionProvider: (_schemaManager: ISchemaManager): ICompletionProvider =>
+      f.createCompletionProvider ? f.createCompletionProvider(_schemaManager) : new TextUICompletionProvider(),
+    createCommandManager: (deps) =>
+      f.createCommandManager
+        ? f.createCommandManager(context, deps)
+        : new CommandManager(context, deps)
+  };
 }
 
 export class ServiceFactory {
@@ -45,66 +69,8 @@ export class ServiceFactory {
   ) {}
 
   create(): ServiceFactoryResult {
-    const f = this.factoryOverrides;
-
-    const schemaManager: ISchemaManager = f.createSchemaManager
-      ? f.createSchemaManager(this.context)
-      : new SchemaManager(this.context);
-    const themeManager: IThemeManager = f.createThemeManager
-      ? f.createThemeManager(this.context)
-      : new ThemeManager(this.context);
-
-    const webViewManager: IWebViewManager = f.createWebViewManager
-      ? f.createWebViewManager(this.context, themeManager, schemaManager)
-      : new WebViewManager(this.context, themeManager, schemaManager);
-
-    const exportManager: IExportManager = f.createExportManager
-      ? f.createExportManager()
-      : new ExportManager();
-    const exportService: IExportService = new ExportService(exportManager, themeManager, this.context.extensionPath);
-
-    const templateService: ITemplateService = f.createTemplateService
-      ? f.createTemplateService()
-      : new TemplateService();
-
-    const settingsService: ISettingsService = f.createSettingsService
-      ? f.createSettingsService()
-      : new SettingsService();
-
-    const diagnosticManager: IDiagnosticManager = f.createDiagnosticManager
-      ? f.createDiagnosticManager(schemaManager)
-      : new DiagnosticManager(schemaManager);
-
-    const completionProvider: ICompletionProvider = f.createCompletionProvider
-      ? f.createCompletionProvider(schemaManager)
-      : new TextUICompletionProvider();
-
-    const runtimeInspectionService = new RuntimeInspectionService();
-    const commandManagerDependencies = {
-      webViewManager,
-      exportService,
-      templateService,
-      settingsService,
-      schemaManager,
-      themeManager,
-      runtimeInspection: createRuntimeInspectionCommandBindings(runtimeInspectionService)
-    };
-
-    const commandManager: ICommandManager = f.createCommandManager
-      ? f.createCommandManager(this.context, commandManagerDependencies)
-      : new CommandManager(this.context, commandManagerDependencies);
-
-    return {
-      schemaManager,
-      themeManager,
-      webViewManager,
-      exportManager,
-      exportService,
-      templateService,
-      settingsService,
-      diagnosticManager,
-      completionProvider,
-      commandManager
-    };
+    return createApplicationRuntime(
+      createVscodeBindings(this.context, this.factoryOverrides)
+    );
   }
 }
