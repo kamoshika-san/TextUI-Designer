@@ -13,10 +13,6 @@ tests/regression/*.tui.yml
 .claude/
 *.vsix
 media/
-!media/
-!media/.gitkeep
-!media/assets/
-!media/assets/.gitkeep
 icon.svg
 .codex/
 .cursor/
