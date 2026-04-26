@@ -10,6 +10,12 @@ installUnhandledRejectionLogger('VscodeBootstrap');
 export async function bootstrapVscode(context: vscode.ExtensionContext): Promise<void> {
   logger.info('アクティベーション開始');
 
+  if (lifecycleManager) {
+    logger.warn('前回の lifecycleManager が残っています。再初期化します。');
+    await lifecycleManager.deactivate().catch(err => logger.error('前回マネージャーのクリーンアップ失敗:', err));
+    lifecycleManager = undefined;
+  }
+
   try {
     lifecycleManager = new ExtensionLifecycleManager(context);
     await lifecycleManager.activate();

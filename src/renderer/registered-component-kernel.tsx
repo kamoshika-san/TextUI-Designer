@@ -177,7 +177,7 @@ export function wrapWithPreviewJumpShell(
       tabIndex={0}
       aria-label={ariaLabel}
       title={jumpTitle}
-      onClick={(event) => {
+      onClickCapture={(event) => {
         if (!(event.ctrlKey && event.shiftKey)) {
           return;
         }

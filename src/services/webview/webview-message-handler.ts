@@ -400,6 +400,8 @@ export class WebViewMessageHandler {
       const targetFilePath = path.resolve(path.dirname(flowFilePath), screen.page);
       this.logger.debug(`preview-navigate: trigger="${trigger}" → ${targetFilePath}`);
       this.updateManager.setLastTuiFile(targetFilePath, true);
+      const targetUri = vscode.Uri.file(targetFilePath);
+      await vscode.window.showTextDocument(targetUri, { preserveFocus: true, preview: false });
     } catch (error) {
       this.logger.warn(`preview-navigate エラー: ${error}`);
     }
