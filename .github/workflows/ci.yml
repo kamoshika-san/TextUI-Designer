@@ -136,6 +136,9 @@ jobs:
     - name: Check exporter SSoT guards
       run: npm run check:ssot:exporters
 
+    - name: Build webview assets
+      run: npm run build-webview
+
     - name: Run full CI test command
       run: npm run test:all:ci
 
@@ -195,6 +198,9 @@ jobs:
 
     - name: Validate sample assets
       run: npm run validate:samples:compiled
+
+    - name: Build webview assets
+      run: npm run build-webview
 
     - name: Run full CI test command with coverage
       run: npm run test:all:ci
