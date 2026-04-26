@@ -6,6 +6,17 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-04-27
+
+### Fixed
+- **Jump to DSL: suppress screen transition on Ctrl+Shift+Click** — switching to `onClickCapture` intercepts the event in the capture phase so the preview panel no longer navigates to the next screen when jumping to DSL.
+- **DSL sync on preview navigation** — after navigating between screens in the individual-screen preview, the corresponding DSL file now opens automatically in a preview tab (italic title) in editor column 1 (`ViewColumn.One`), staying in sync without accumulating fixed tabs.
+- **MCP server disconnect after extension update** — a guard in `vscode-bootstrap.ts` now disposes any lingering `lifecycleManager` before re-initializing, preventing MCP server connection failure after hot-reload or extension update.
+
+### Changed
+- **Semantic diff v2 tab buttons hidden** — the "構造 / 意味" tab-switch buttons in the top-right of the individual-screen preview are now hidden (`display: none`) pending full semantic-diff v2 rollout.
+- **`media/` excluded from git** — WebView build artifacts under `media/` are now `.gitignore`d. The `webview-media-drift` CI job and `check:webview-media-drift` script have been removed; CI now runs `build-webview` before the test suite instead.
+
 ## [0.9.3] - 2026-04-24
 
 ### Changed
