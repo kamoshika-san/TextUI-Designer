@@ -20,6 +20,14 @@
   ],
   "enabledApiProposals": [],
   "main": "./out/extension.js",
+  "exports": {
+    "./core": "./out/core/textui-core-engine.js",
+    "./core/*": "./out/core/*.js",
+    "./domain": "./out/domain/dsl-types.js",
+    "./domain/*": "./out/domain/*.js",
+    "./dsl": "./out/dsl/load-dsl-with-includes.js",
+    "./dsl/*": "./out/dsl/*.js"
+  },
   "files": [
     "out/**/*",
     "node_modules/ajv/**/*",
