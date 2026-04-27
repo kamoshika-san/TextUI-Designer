@@ -69,6 +69,16 @@ const testsNoDeepInternalExportersRestriction = ["error", {
     ],
 }];
 
+/** T-20260427-009: Core/Domain/DSL layers must not import vscode API — ensures future npm publish / Obsidian portability */
+const coreVscodeImportRestriction = ["error", {
+    patterns: [
+        {
+            group: ["vscode"],
+            message: "Core/Domain/DSL layers must not import 'vscode'. Use port interfaces or inject VSCode APIs from the service layer. (Arch: T-20260427-009)",
+        },
+    ],
+}];
+
 /** T-110: WebView レーンから Export ランタイムへの逆流を抑止（docs/current/testing-ci/import-boundaries-4-lanes.md）*/
 const rendererToExportersImportRestriction = ["warn", {
     patterns: [
@@ -234,5 +244,23 @@ export default [{
     },
     rules: {
         "no-restricted-imports": rendererToExportersImportRestriction,
+    },
+}, {
+    files: [
+        "src/core/**/*.ts",
+        "src/core/**/*.tsx",
+        "src/domain/**/*.ts",
+        "src/dsl/**/*.ts",
+    ],
+    plugins: {
+        "@typescript-eslint": typescriptEslint,
+    },
+    languageOptions: {
+        parser: tsParser,
+        ecmaVersion: 2022,
+        sourceType: "module",
+    },
+    rules: {
+        "no-restricted-imports": coreVscodeImportRestriction,
     },
 }];
