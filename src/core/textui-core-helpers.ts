@@ -118,6 +118,6 @@ export function resolveJsonPointer(target: unknown, pointer: string): unknown {
 }
 
 export function toPageId(title: string): string {
-  const normalized = title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
+  const normalized = title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').split('-').filter(s => s !== '').join('-');
   return normalized || 'generated-page';
 }
