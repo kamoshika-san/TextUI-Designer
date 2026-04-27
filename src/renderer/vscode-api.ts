@@ -30,6 +30,13 @@ declare global {
   }
 }
 
+let _platformBridge: VSCodeApi | undefined;
+
+/** Obsidian など非 VSCode 環境からブリッジを注入する（設定済みならフォールバックより優先）*/
+export function setPlatformBridge(bridge: VSCodeApi): void {
+  _platformBridge = bridge;
+}
+
 export function getVSCodeApi(): VSCodeApi | undefined {
-  return window.vscode;
+  return _platformBridge ?? window.vscode;
 }
