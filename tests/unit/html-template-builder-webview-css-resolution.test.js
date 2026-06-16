@@ -6,6 +6,10 @@ const path = require('path');
 const { readWebviewCssIfPresent } = require('../../out/exporters/html-template-builder.js');
 
 describe('html-template-builder webview CSS resolution (T-20260328-097)', () => {
+  const repoRoot = path.resolve(__dirname, '../..');
+  const localAssetsDir = path.join(repoRoot, 'out', 'media', 'assets');
+  const localFallbackCssPath = path.join(localAssetsDir, 'index-000-local-fallback-test.css');
+
   it('prefers an explicit extensionPath asset when present', () => {
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-webview-css-'));
     const assetsDir = path.join(tempRoot, 'media', 'assets');
@@ -25,6 +29,9 @@ describe('html-template-builder webview CSS resolution (T-20260328-097)', () => 
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'textui-webview-css-missing-'));
 
     try {
+      fs.mkdirSync(localAssetsDir, { recursive: true });
+      fs.writeFileSync(localFallbackCssPath, '.from-local-fallback { color: blue; }');
+
       const localCss = readWebviewCssIfPresent();
       const resolvedCss = readWebviewCssIfPresent(tempRoot);
 
@@ -32,6 +39,12 @@ describe('html-template-builder webview CSS resolution (T-20260328-097)', () => 
       assert.strictEqual(resolvedCss, localCss);
     } finally {
       fs.rmSync(tempRoot, { recursive: true, force: true });
+      fs.rmSync(localFallbackCssPath, { force: true });
+      try {
+        fs.rmdirSync(localAssetsDir);
+      } catch {
+        // Keep any pre-existing local build assets intact.
+      }
     }
   });
 
