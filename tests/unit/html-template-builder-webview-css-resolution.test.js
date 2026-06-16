@@ -34,4 +34,10 @@ describe('html-template-builder webview CSS resolution (T-20260328-097)', () => 
       fs.rmSync(tempRoot, { recursive: true, force: true });
     }
   });
+
+  it('does not fall back to local built assets when the explicit extensionPath does not exist', () => {
+    const missingRoot = path.join(os.tmpdir(), `textui-webview-css-absent-${process.pid}-${Date.now()}`);
+
+    assert.strictEqual(readWebviewCssIfPresent(missingRoot), undefined);
+  });
 });
