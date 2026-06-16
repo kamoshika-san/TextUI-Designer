@@ -119,7 +119,7 @@ export function readWebviewCssIfPresent(fromDir?: string): string | undefined {
     path.join(__dirname, '..', '..', 'media', 'assets')
   ];
   const candidates = fromDir
-    ? [path.join(fromDir, 'media', 'assets'), ...localCandidates]
+    ? [path.join(fromDir, 'media', 'assets')]
     : localCandidates;
   for (const assetsDir of candidates) {
     try {
@@ -136,6 +136,12 @@ export function readWebviewCssIfPresent(fromDir?: string): string | undefined {
     } catch {
       continue;
     }
+  }
+  if (fromDir && !fs.existsSync(fromDir)) {
+    return undefined;
+  }
+  if (fromDir) {
+    return readWebviewCssIfPresent();
   }
   return undefined;
 }
