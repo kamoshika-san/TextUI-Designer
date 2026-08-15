@@ -1,6 +1,6 @@
 const debug = require('debug')('extract-zip')
 // eslint-disable-next-line node/no-unsupported-features/node-builtins
-const { createWriteStream, promises: fs } = require('fs')
+const { createWriteStream, constants: fsConstants, promises: fs } = require('fs')
 const getStream = require('get-stream')
 const path = require('path')
 const { promisify } = require('util')
@@ -10,21 +10,58 @@ const yauzl = require('yauzl')
 const openZip = promisify(yauzl.open)
 const pipeline = promisify(stream.pipeline)
 
+function isOutsideExtractDir (resolvedPath, extractDir) {
+  const relativeTarget = path.relative(extractDir, resolvedPath)
+  return path.isAbsolute(relativeTarget) || relativeTarget.split(path.sep).includes('..')
+}
+
 /**
  * CVE-2026-56876 / GHSA-jmr9-qjv8-65gv:
  * reject symlink targets that resolve outside the extraction directory.
+ * `destParentReal` must already be fs.realpath() of the destination parent
+ * so an intermediate in-tree directory symlink cannot hide an escape.
  */
-function assertSymlinkTargetWithinDir (link, destPath, extractDir, fileName) {
-  const normalizedLink = String(link).replace(/\0/g, '')
-  if (path.isAbsolute(normalizedLink)) {
+function assertSymlinkTargetWithinDir (link, destParentReal, extractDir, fileName) {
+  const rawLink = String(link)
+  if (rawLink.includes('\0')) {
+    throw new Error(`Out of bound symlink target "${link}" found while processing file ${fileName}`)
+  }
+  if (path.isAbsolute(rawLink)) {
     throw new Error(`Out of bound symlink target "${link}" found while processing file ${fileName}`)
   }
 
-  const resolvedTarget = path.resolve(path.dirname(destPath), normalizedLink)
-  const relativeTarget = path.relative(extractDir, resolvedTarget)
-  if (path.isAbsolute(relativeTarget) || relativeTarget.split(path.sep).includes('..')) {
+  const resolvedTarget = path.resolve(destParentReal, rawLink)
+  if (isOutsideExtractDir(resolvedTarget, extractDir)) {
     throw new Error(`Out of bound symlink target "${link}" found while processing file ${fileName}`)
   }
+  return rawLink
+}
+
+async function assertPathWithinExtractDir (resolvedPath, extractDir, fileName) {
+  if (isOutsideExtractDir(resolvedPath, extractDir)) {
+    throw new Error(`Out of bound path "${resolvedPath}" found while processing file ${fileName}`)
+  }
+}
+
+async function createSafeWriteStream (dest, mode, extractDir, fileName) {
+  let st
+  try {
+    st = await fs.lstat(dest)
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      throw err
+    }
+  }
+  if (st && st.isSymbolicLink()) {
+    throw new Error(`Refusing to write through symlink "${dest}" found while processing file ${fileName}`)
+  }
+
+  const destParentReal = await fs.realpath(path.dirname(dest))
+  await assertPathWithinExtractDir(destParentReal, extractDir, fileName)
+  await assertPathWithinExtractDir(path.resolve(destParentReal, path.basename(dest)), extractDir, fileName)
+
+  const flags = fsConstants.O_WRONLY | fsConstants.O_CREAT | fsConstants.O_TRUNC | (fsConstants.O_NOFOLLOW || 0)
+  return createWriteStream(dest, { mode, flags })
 }
 
 class Extractor {
@@ -73,11 +110,7 @@ class Extractor {
           await fs.mkdir(destDir, { recursive: true })
 
           const canonicalDestDir = await fs.realpath(destDir)
-          const relativeDestDir = path.relative(this.opts.dir, canonicalDestDir)
-
-          if (relativeDestDir.split(path.sep).includes('..')) {
-            throw new Error(`Out of bound path "${canonicalDestDir}" found while processing file ${entry.fileName}`)
-          }
+          await assertPathWithinExtractDir(canonicalDestDir, this.opts.dir, entry.fileName)
 
           await this.extractEntry(entry)
           debug('finished processing', entry.fileName)
@@ -140,14 +173,16 @@ class Extractor {
 
     debug('opening read stream', dest)
     const readStream = await promisify(this.zipfile.openReadStream.bind(this.zipfile))(entry)
+    const destParentReal = await fs.realpath(path.dirname(dest))
+    await assertPathWithinExtractDir(destParentReal, this.opts.dir, entry.fileName)
 
     if (symlink) {
       const link = await getStream(readStream)
       debug('creating symlink', link, dest)
-      assertSymlinkTargetWithinDir(link, dest, this.opts.dir, entry.fileName)
-      await fs.symlink(link, dest)
+      const sanitizedLink = assertSymlinkTargetWithinDir(link, destParentReal, this.opts.dir, entry.fileName)
+      await fs.symlink(sanitizedLink, dest)
     } else {
-      await pipeline(readStream, createWriteStream(dest, { mode: procMode }))
+      await pipeline(readStream, await createSafeWriteStream(dest, procMode, this.opts.dir, entry.fileName))
     }
   }
 
