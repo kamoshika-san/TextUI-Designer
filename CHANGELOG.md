@@ -6,6 +6,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+### Security
+- **CVE-2026-56876 / GHSA-jmr9-qjv8-65gv**: 推移依存の `extract-zip` (<=2.0.1) はシンボリックリンク先を検証せず、悪意ある zip で展開ディレクトリ外を指せる。公式パッチは無く、`puppeteer-core` 25 / `@puppeteer/browsers` 3 は ESM 専用かつ Node 22 以上のためここでは上げられない。ローカル修正版 `vendor/extract-zip@2.0.2` を直接依存としてピンし、`overrides` の `$extract-zip` でツリー全体に適用して展開先外のシンボリックリンクを拒否する。
+
 ## [0.9.4] - 2026-04-27
 
 ### Fixed

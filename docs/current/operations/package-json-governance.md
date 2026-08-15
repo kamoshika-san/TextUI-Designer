@@ -134,6 +134,7 @@ Do not remove or rename scripts in the same ticket that changes CI, release, or 
 
 Current notable dependency policy:
 
+- `extract-zip` is a direct `file:vendor/extract-zip` pin (local 2.0.2) plus `"overrides": { "extract-zip": "$extract-zip" }` because npm has no patched release for CVE-2026-56876 / GHSA-jmr9-qjv8-65gv, and `puppeteer-core` 24 must stay on CommonJS / Node 18–20. The `$extract-zip` form is required so the `file:` spec resolves from the repo root rather than from `@puppeteer/browsers`. Include `vendor/extract-zip/**/*` in `files` so the `file:` dependency packs.
 - `chokidar` is a direct runtime dependency because `textui validate --watch` requires file watching at runtime.
 - `@types/*`, `typescript`, `eslint`, `mocha`, `vite`, `webpack`, and similar tools stay in `devDependencies`.
 - `autoprefixer`, `postcss`, `tailwindcss` は `npm run build-webview`（Vite + PostCSS/Tailwind）でのみ使用し、拡張の実行時（`out/**` / CLI / MCP）では `require()` しないため `devDependencies` に置く。
