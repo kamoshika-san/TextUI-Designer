@@ -652,6 +652,7 @@
     "chokidar": "^3.6.0",
     "extract-zip": "file:vendor/extract-zip",
     "puppeteer-core": "^24.39.1",
+    "yauzl": "3.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "yaml": "^2.8.3"
@@ -687,7 +688,7 @@
     },
     "serialize-javascript": "7.0.5",
     "terser-webpack-plugin": "5.3.17",
-    "yauzl": "3.2.1",
+    "yauzl": "$yauzl",
     "extract-zip": "$extract-zip"
   }
 }

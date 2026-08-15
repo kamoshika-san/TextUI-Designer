@@ -3,8 +3,9 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const extractZip = require('../../vendor/extract-zip');
-const { assertSymlinkTargetWithinDir } = extractZip;
+const vendorExtractZip = require('../../vendor/extract-zip');
+const installedExtractZip = require('extract-zip');
+const { assertSymlinkTargetWithinDir } = vendorExtractZip;
 
 const IFLNK = 0o120777;
 const IFREG = 0o100644;
@@ -80,6 +81,12 @@ describe('extract-zip CVE-2026-56876 symlink traversal', () => {
     fs.rmSync(tempRoot, { recursive: true, force: true });
   });
 
+  it('uses the installed extract-zip override, not only the vendor path', () => {
+    const installed = require('extract-zip/package.json');
+    assert.strictEqual(installed.version, '2.0.3');
+    assert.strictEqual(installedExtractZip.assertSymlinkTargetWithinDir, vendorExtractZip.assertSymlinkTargetWithinDir);
+  });
+
   it('rejects a relative symlink that escapes the extraction directory', async () => {
     const zipPath = path.join(tempRoot, 'escape.zip');
     const destDir = path.join(tempRoot, 'out');
@@ -88,7 +95,7 @@ describe('extract-zip CVE-2026-56876 symlink traversal', () => {
     ]));
 
     await assert.rejects(
-      () => extractZip(zipPath, { dir: destDir }),
+      () => installedExtractZip(zipPath, { dir: destDir }),
       /Out of bound symlink target/
     );
     assert.strictEqual(fs.existsSync(path.join(destDir, 'evil-link')), false);
@@ -102,9 +109,47 @@ describe('extract-zip CVE-2026-56876 symlink traversal', () => {
     ]));
 
     await assert.rejects(
-      () => extractZip(zipPath, { dir: destDir }),
+      () => installedExtractZip(zipPath, { dir: destDir }),
       /Out of bound symlink target/
     );
+  });
+
+  it('rejects an intermediate in-tree directory symlink that would escape', async () => {
+    const zipPath = path.join(tempRoot, 'via-dir-link.zip');
+    const destDir = path.join(tempRoot, 'out');
+    const secretPath = path.join(tempRoot, 'secret');
+    fs.writeFileSync(secretPath, 'UNCHANGED');
+    fs.writeFileSync(zipPath, createStoredZip([
+      { name: 'inside/up', content: '..', unixMode: IFLNK },
+      { name: 'inside/up/escape', content: '../secret', unixMode: IFLNK },
+      { name: 'escape', content: 'PWNED' }
+    ]));
+
+    await assert.rejects(
+      () => installedExtractZip(zipPath, { dir: destDir }),
+      /Out of bound symlink target/
+    );
+    assert.strictEqual(fs.existsSync(path.join(destDir, 'escape')), false);
+    assert.strictEqual(fs.readFileSync(secretPath, 'utf8'), 'UNCHANGED');
+  });
+
+  it('refuses to write a regular file through a planted outside symlink', async () => {
+    const zipPath = path.join(tempRoot, 'write-through.zip');
+    const destDir = path.join(tempRoot, 'out');
+    const secretPath = path.join(tempRoot, 'secret');
+    fs.mkdirSync(destDir, { recursive: true });
+    fs.writeFileSync(secretPath, 'UNCHANGED');
+    fs.symlinkSync(path.relative(destDir, secretPath), path.join(destDir, 'escape'));
+    fs.writeFileSync(zipPath, createStoredZip([
+      { name: 'escape', content: 'PWNED' }
+    ]));
+
+    await assert.rejects(
+      () => installedExtractZip(zipPath, { dir: destDir }),
+      /Refusing to write through symlink|ELOOP/
+    );
+    assert.strictEqual(fs.readFileSync(secretPath, 'utf8'), 'UNCHANGED');
+    assert.strictEqual(fs.readlinkSync(path.join(destDir, 'escape')), path.relative(destDir, secretPath));
   });
 
   it('extracts a regular file and an in-tree relative symlink', async () => {
@@ -115,7 +160,7 @@ describe('extract-zip CVE-2026-56876 symlink traversal', () => {
       { name: 'docs/alias.txt', content: 'readme.txt', unixMode: IFLNK }
     ]));
 
-    await extractZip(zipPath, { dir: destDir });
+    await installedExtractZip(zipPath, { dir: destDir });
 
     assert.strictEqual(fs.readFileSync(path.join(destDir, 'docs/readme.txt'), 'utf8'), 'hello');
     assert.strictEqual(fs.readlinkSync(path.join(destDir, 'docs/alias.txt')), 'readme.txt');
@@ -124,12 +169,16 @@ describe('extract-zip CVE-2026-56876 symlink traversal', () => {
 
   it('keeps in-tree relative targets and rejects drive-escaping relatives', () => {
     const extractDir = path.join(tempRoot, 'out');
-    const destPath = path.join(extractDir, 'docs', 'link');
+    const destParent = path.join(extractDir, 'docs');
     assert.doesNotThrow(() => {
-      assertSymlinkTargetWithinDir('../readme.txt', destPath, extractDir, 'docs/link');
+      assertSymlinkTargetWithinDir('../readme.txt', destParent, extractDir, 'docs/link');
     });
     assert.throws(
-      () => assertSymlinkTargetWithinDir('../../outside', destPath, extractDir, 'docs/link'),
+      () => assertSymlinkTargetWithinDir('../../outside', destParent, extractDir, 'docs/link'),
+      /Out of bound symlink target/
+    );
+    assert.throws(
+      () => assertSymlinkTargetWithinDir('ok\0../secret', destParent, extractDir, 'docs/link'),
       /Out of bound symlink target/
     );
   });
