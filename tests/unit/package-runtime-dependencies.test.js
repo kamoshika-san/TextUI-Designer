@@ -19,4 +19,26 @@ describe('package runtime dependencies', () => {
     assert.ok(pkg.dependencies.react);
     assert.ok(pkg.dependencies['react-dom']);
   });
+
+  it('overrides extract-zip to the local CVE-2026-56876 patch', () => {
+    const pkg = readPackageJson();
+    assert.strictEqual(pkg.dependencies['extract-zip'], 'file:vendor/extract-zip');
+    assert.strictEqual(pkg.overrides['extract-zip'], '$extract-zip');
+
+    const lock = JSON.parse(fs.readFileSync(path.join(workspaceRoot, 'package-lock.json'), 'utf8'));
+    const linked = lock.packages['node_modules/extract-zip'];
+    const vendored = lock.packages['vendor/extract-zip'];
+    assert.ok(linked && linked.link === true, 'extract-zip must link from node_modules to the vendor copy');
+    assert.ok(
+      typeof linked.resolved === 'string' && linked.resolved.includes('vendor/extract-zip'),
+      `expected vendor resolve, got ${linked.resolved}`
+    );
+    assert.ok(vendored, 'vendor/extract-zip must be recorded in the lockfile');
+    assert.strictEqual(vendored.version, '2.0.2');
+
+    const installed = JSON.parse(
+      fs.readFileSync(path.join(workspaceRoot, 'node_modules/extract-zip/package.json'), 'utf8')
+    );
+    assert.strictEqual(installed.version, '2.0.2');
+  });
 });
