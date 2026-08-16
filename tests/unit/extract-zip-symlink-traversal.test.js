@@ -83,7 +83,7 @@ describe('extract-zip CVE-2026-56876 symlink traversal', () => {
 
   it('uses the installed extract-zip override, not only the vendor path', () => {
     const installed = require('extract-zip/package.json');
-    assert.strictEqual(installed.version, '2.0.3');
+    assert.strictEqual(installed.version, '2.0.4');
     assert.strictEqual(installedExtractZip.assertSymlinkTargetWithinDir, vendorExtractZip.assertSymlinkTargetWithinDir);
   });
 
@@ -133,6 +133,62 @@ describe('extract-zip CVE-2026-56876 symlink traversal', () => {
     assert.strictEqual(fs.readFileSync(secretPath, 'utf8'), 'UNCHANGED');
   });
 
+  it('rejects a leak symlink whose target string walks through an in-tree directory link', async () => {
+    const zipPath = path.join(tempRoot, 'leak-via-target.zip');
+    const destDir = path.join(tempRoot, 'out');
+    const secretPath = path.join(tempRoot, 'secret');
+    fs.writeFileSync(secretPath, 'UNCHANGED');
+    fs.writeFileSync(zipPath, createStoredZip([
+      { name: 'inside/up', content: '..', unixMode: IFLNK },
+      { name: 'leak', content: 'inside/up/../secret', unixMode: IFLNK }
+    ]));
+
+    await assert.rejects(
+      () => installedExtractZip(zipPath, { dir: destDir }),
+      /Out of bound symlink target/
+    );
+    assert.strictEqual(fs.existsSync(path.join(destDir, 'leak')), false);
+    assert.strictEqual(fs.readFileSync(secretPath, 'utf8'), 'UNCHANGED');
+  });
+
+  it('rejects a chained directory-link walk that would reach a host file', async () => {
+    const zipPath = path.join(tempRoot, 'chain-leak.zip');
+    const destDir = path.join(tempRoot, 'out');
+    const hostSecret = path.join(tempRoot, 'host-secret');
+    fs.writeFileSync(hostSecret, 'HOST-SECRET');
+    fs.writeFileSync(zipPath, createStoredZip([
+      { name: 'a/up', content: '..', unixMode: IFLNK },
+      { name: 'a/up2', content: 'up/..', unixMode: IFLNK },
+      { name: 'a/up3', content: 'up2/..', unixMode: IFLNK },
+      { name: 'a/leak', content: 'up3/../../host-secret', unixMode: IFLNK }
+    ]));
+
+    await assert.rejects(
+      () => installedExtractZip(zipPath, { dir: destDir }),
+      /Out of bound symlink target/
+    );
+    assert.strictEqual(fs.existsSync(path.join(destDir, 'a/leak')), false);
+    assert.strictEqual(fs.readFileSync(hostSecret, 'utf8'), 'HOST-SECRET');
+  });
+
+  it('does not mkdir outside the extract dir through an outbound directory link', async () => {
+    const zipPath = path.join(tempRoot, 'mkdir-escape.zip');
+    const destDir = path.join(tempRoot, 'out');
+    const outsideDir = path.join(tempRoot, 'newdir');
+    fs.writeFileSync(zipPath, createStoredZip([
+      { name: 'inside/up', content: '..', unixMode: IFLNK },
+      { name: 'outer', content: 'inside/up/../..', unixMode: IFLNK },
+      { name: 'outer/newdir/pwned.txt', content: 'PWNED' }
+    ]));
+
+    await assert.rejects(
+      () => installedExtractZip(zipPath, { dir: destDir }),
+      /Out of bound/
+    );
+    assert.strictEqual(fs.existsSync(outsideDir), false);
+    assert.strictEqual(fs.existsSync(path.join(destDir, 'outer/newdir/pwned.txt')), false);
+  });
+
   it('refuses to write a regular file through a planted outside symlink', async () => {
     const zipPath = path.join(tempRoot, 'write-through.zip');
     const destDir = path.join(tempRoot, 'out');
@@ -167,17 +223,18 @@ describe('extract-zip CVE-2026-56876 symlink traversal', () => {
     assert.strictEqual(fs.readFileSync(path.join(destDir, 'docs/alias.txt'), 'utf8'), 'hello');
   });
 
-  it('keeps in-tree relative targets and rejects drive-escaping relatives', () => {
+  it('keeps in-tree relative targets and rejects drive-escaping relatives', async () => {
     const extractDir = path.join(tempRoot, 'out');
+    fs.mkdirSync(extractDir, { recursive: true });
     const destParent = path.join(extractDir, 'docs');
-    assert.doesNotThrow(() => {
-      assertSymlinkTargetWithinDir('../readme.txt', destParent, extractDir, 'docs/link');
-    });
-    assert.throws(
+    await assert.doesNotReject(() =>
+      assertSymlinkTargetWithinDir('../readme.txt', destParent, extractDir, 'docs/link')
+    );
+    await assert.rejects(
       () => assertSymlinkTargetWithinDir('../../outside', destParent, extractDir, 'docs/link'),
       /Out of bound symlink target/
     );
-    assert.throws(
+    await assert.rejects(
       () => assertSymlinkTargetWithinDir('ok\0../secret', destParent, extractDir, 'docs/link'),
       /Out of bound symlink target/
     );

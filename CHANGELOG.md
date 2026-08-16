@@ -7,7 +7,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [Unreleased]
 
 ### Security
-- **CVE-2026-56876 / GHSA-jmr9-qjv8-65gv**: 推移依存の `extract-zip` (<=2.0.1) はシンボリックリンク先を検証せず、悪意ある zip で展開ディレクトリ外を指せる。公式パッチは無く、`puppeteer-core` 25 / `@puppeteer/browsers` 3 は ESM 専用かつ Node 22 以上のためここでは上げられない。ローカル修正版 `vendor/extract-zip@2.0.3` を直接依存としてピンし、`overrides` の `$extract-zip` でツリー全体に適用する。リンク先は `fs.realpath` した親基準で判定し、中間ディレクトリのシンボリックリンク経由の迂回と、既存リンクを follow した通常ファイル書き込みを拒否する。`yauzl` は 3.2.1 を `$yauzl` で再ピンする。
+- **CVE-2026-56876 / GHSA-jmr9-qjv8-65gv**: 推移依存の `extract-zip` (<=2.0.1) はシンボリックリンク先を検証せず、悪意ある zip で展開ディレクトリ外を指せる。公式パッチは無く、`puppeteer-core` 25 / `@puppeteer/browsers` 3 は ESM 専用かつ Node 22 以上のためここでは上げられない。ローカル修正版 `vendor/extract-zip@2.0.4` を直接依存としてピンし、`overrides` の `$extract-zip` でツリー全体に適用する。リンク先は字面の `path.resolve` ではなく中間シンボリックリンクを follow する walk で判定し、作成後は `fs.realpath.native` で再検証する。`mkdir` は外向きリンクを follow しない。`yauzl` は 3.2.1 を `$yauzl` で再ピンする。
 
 ## [0.9.4] - 2026-04-27
 

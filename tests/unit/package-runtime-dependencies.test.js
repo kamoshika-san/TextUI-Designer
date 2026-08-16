@@ -34,7 +34,7 @@ describe('package runtime dependencies', () => {
       `expected vendor resolve, got ${linked.resolved}`
     );
     assert.ok(vendored, 'vendor/extract-zip must be recorded in the lockfile');
-    assert.strictEqual(vendored.version, '2.0.3');
+    assert.strictEqual(vendored.version, '2.0.4');
     assert.strictEqual(pkg.dependencies.yauzl, '3.2.1');
     assert.strictEqual(pkg.overrides.yauzl, '$yauzl');
     const yauzlLocked = lock.packages['node_modules/yauzl'];
@@ -44,6 +44,6 @@ describe('package runtime dependencies', () => {
     const installed = JSON.parse(
       fs.readFileSync(path.join(workspaceRoot, 'node_modules/extract-zip/package.json'), 'utf8')
     );
-    assert.strictEqual(installed.version, '2.0.3');
+    assert.strictEqual(installed.version, '2.0.4');
   });
 });
