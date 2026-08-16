@@ -62,13 +62,18 @@ async function walkPathWithinExtractDir (startReal, relPath, extractDir, fileNam
         throw err
       }
       let lex = current
+      let sawUnresolvedName = false
       for (const rest of parts.slice(i)) {
         if (rest === '' || rest === '.') {
           continue
         }
         if (rest === '..') {
+          if (sawUnresolvedName) {
+            throw outOfBoundTargetError(relPath, fileName)
+          }
           lex = path.dirname(lex)
         } else {
+          sawUnresolvedName = true
           lex = path.join(lex, rest)
         }
         if (isOutsideExtractDir(lex, extractDir)) {
@@ -128,6 +133,9 @@ async function assertCreatedSymlinkStaysInside (dest, extractDir, fileName) {
     real = await realpathNative(dest)
   } catch (err) {
     if (err.code === 'ENOENT') {
+      const link = await fs.readlink(dest)
+      const destParentReal = await realpathNative(path.dirname(dest))
+      await assertSymlinkTargetWithinDir(link, destParentReal, extractDir, fileName)
       return
     }
     throw err

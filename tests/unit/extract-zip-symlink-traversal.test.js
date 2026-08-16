@@ -151,6 +151,24 @@ describe('extract-zip CVE-2026-56876 symlink traversal', () => {
     assert.strictEqual(fs.readFileSync(secretPath, 'utf8'), 'UNCHANGED');
   });
 
+  it('rejects a dangling symlink target that later entries could turn into an escape', async () => {
+    const zipPath = path.join(tempRoot, 'dangling-then-dir-link.zip');
+    const destDir = path.join(tempRoot, 'out');
+    const secretPath = path.join(tempRoot, 'secret');
+    fs.writeFileSync(secretPath, 'UNCHANGED');
+    fs.writeFileSync(zipPath, createStoredZip([
+      { name: 'leak', content: 'inside/up/../secret', unixMode: IFLNK },
+      { name: 'inside/up', content: '..', unixMode: IFLNK }
+    ]));
+
+    await assert.rejects(
+      () => installedExtractZip(zipPath, { dir: destDir }),
+      /Out of bound symlink target/
+    );
+    assert.strictEqual(fs.existsSync(path.join(destDir, 'leak')), false);
+    assert.strictEqual(fs.readFileSync(secretPath, 'utf8'), 'UNCHANGED');
+  });
+
   it('rejects a chained directory-link walk that would reach a host file', async () => {
     const zipPath = path.join(tempRoot, 'chain-leak.zip');
     const destDir = path.join(tempRoot, 'out');
