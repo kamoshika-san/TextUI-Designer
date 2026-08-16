@@ -1,7 +1,7 @@
 {
   "name": "extract-zip",
-  "version": "2.0.3",
-  "description": "Patched extract-zip 2.0.1 with realpath symlink target validation (CVE-2026-56876 / GHSA-jmr9-qjv8-65gv)",
+  "version": "2.0.4",
+  "description": "Patched extract-zip 2.0.1 with kernel-style symlink walk (CVE-2026-56876 / GHSA-jmr9-qjv8-65gv)",
   "main": "index.js",
   "types": "index.d.ts",
   "bin": {
