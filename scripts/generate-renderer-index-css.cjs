@@ -20,9 +20,8 @@ function main() {
 
   const header = [
     '/* Tailwind CSS */',
-    '@tailwind base;',
-    '@tailwind components;',
-    '@tailwind utilities;',
+    '@import "tailwindcss" source(none);',
+    '@source "./**/*.{js,jsx,ts,tsx}";',
     '',
     '/* VS Codeテーマ変数を無効化 */',
     ':root {',
