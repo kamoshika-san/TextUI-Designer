@@ -138,8 +138,8 @@ Current notable dependency policy:
 - `yauzl` is a direct `3.2.1` pin plus `"overrides": { "yauzl": "$yauzl" }` so the file-linked `extract-zip` cannot pull `yauzl@2.10.0` and diverge from `npm ci`.
 - `chokidar` is a direct runtime dependency because `textui validate --watch` requires file watching at runtime.
 - `@types/*`, `typescript`, `eslint`, `mocha`, `vite`, `webpack`, and similar tools stay in `devDependencies`.
-- `autoprefixer`, `postcss`, `tailwindcss` は `npm run build-webview`（Vite + PostCSS/Tailwind）でのみ使用し、拡張の実行時（`out/**` / CLI / MCP）では `require()` しないため `devDependencies` に置く。
-- 上記CSSビルド系は成果物 `media/**` に変換済みで同梱されるため、`files` に `node_modules/autoprefixer|postcss|tailwindcss` を追加しない。
+- `@tailwindcss/postcss`, `postcss`, `tailwindcss` は `npm run build-webview`（Vite + PostCSS/Tailwind v4）でのみ使用し、拡張の実行時（`out/**` / CLI / MCP）では `require()` しないため `devDependencies` に置く。Tailwind v4 はベンダープレフィックスを自前で付与するため、PostCSS 設定に `autoprefixer` は使わない。
+- 上記CSSビルド系は成果物 `media/**` に変換済みで同梱されるため、`files` に `node_modules/@tailwindcss/postcss|postcss|tailwindcss` を追加しない。
 - Do not rely on transitive runtime dependencies for source `require()` calls.
 
 ## Verification
