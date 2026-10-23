@@ -1,22 +1,22 @@
 const path = require('path');
 const { runTests } = require('@vscode/test-electron');
+const { isRetryableError } = require('./retryable-error');
 
 const DEFAULT_RETRY_COUNT = 3;
 const RETRY_BACKOFF_MS = 5000;
-const RETRYABLE_PATTERNS = [
-  /Failed to get JSON/i,
-  /Failed to parse response from https:\/\/update\.code\.visualstudio\.com\/api\/releases\/stable/i,
-  /request timeout/i,
-  /Expected TextUI preview command to create a webview tab/i
-];
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function isRetryableError(error) {
-  const message = error instanceof Error ? `${error.message}\n${error.stack ?? ''}` : String(error);
-  return RETRYABLE_PATTERNS.some(pattern => pattern.test(message));
+function retryReason(error) {
+  if (error && typeof error === 'object' && typeof error.code === 'string' && error.code) {
+    return error.code;
+  }
+  if (error instanceof Error && error.message) {
+    return error.message.split('\n')[0];
+  }
+  return String(error).split('\n')[0];
 }
 
 async function main() {
@@ -42,7 +42,7 @@ async function main() {
 
       const waitMs = RETRY_BACKOFF_MS * attempt;
       console.warn(
-        `[vscode-smoke] transient VS Code update service error detected; retrying (${attempt}/${retryCount}) after ${waitMs}ms`
+        `[vscode-smoke] transient VS Code download error (${retryReason(error)}); retrying (${attempt}/${retryCount}) after ${waitMs}ms`
       );
       await sleep(waitMs);
     }
