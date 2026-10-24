@@ -7,6 +7,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [Unreleased]
 
 ### Security
+- **GHSA-m5mm-p8h7-m29v / CVE-2026-115897**: 推移依存の `serialize-javascript`（overrides で `7.0.5` に固定）は、関数ソースが `</script` で終わる場合に HTML エスケープが抜け、`<script>` 埋め込み時に XSS になり得る。overrides をパッチ版 `7.1.3` に上げた。
+- **brace-expansion DoS（GHSA-q2hr-2g5m-vwhr ほか）**: overrides の `5.0.8` は `5.0.12` 未満の再帰・二次計算量の DoS 対象のままなので、`5.0.12` に上げた。Dependabot の security update はピンで `5.0.8` に止まり `security_update_not_possible` になっていた。
 - **CVE-2026-56876 / GHSA-jmr9-qjv8-65gv**: 推移依存の `extract-zip` (<=2.0.1) はシンボリックリンク先を検証せず、悪意ある zip で展開ディレクトリ外を指せる。公式パッチは無く、`puppeteer-core` 25 / `@puppeteer/browsers` 3 は ESM 専用かつ Node 22 以上のためここでは上げられない。ローカル修正版 `vendor/extract-zip@2.0.4` を直接依存としてピンし、`overrides` の `$extract-zip` でツリー全体に適用する。リンク先は字面の `path.resolve` ではなく中間シンボリックリンクを follow する walk で判定し、作成後は `fs.realpath.native` で再検証する。`mkdir` は外向きリンクを follow しない。`yauzl` は 3.2.1 を `$yauzl` で再ピンする。
 
 ## [0.9.4] - 2026-04-27
