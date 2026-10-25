@@ -651,7 +651,7 @@
     "ajv": "^8.18.0",
     "chokidar": "^3.6.0",
     "extract-zip": "file:vendor/extract-zip",
-    "puppeteer-core": "^24.39.1",
+    "puppeteer-core": "^25.16.0",
     "yauzl": "3.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
